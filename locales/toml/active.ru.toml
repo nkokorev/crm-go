@@ -1,0 +1,18 @@
+[MyUnreadEmails]
+description = "The number of unread emails I have"
+one = "I have {{.PluralCount}} unread email."
+other = "I have {{.PluralCount}} unread emails."
+
+[PersonUnreadEmails]
+description = "The number of unread emails a person has"
+one = "{{.Name}} has {{.UnreadEmailCount}} unread email."
+other = "{{.Name}} has {{.UnreadEmailCount}} unread emails."
+
+[InvalidRequest]
+description = "Некорректный запрос"
+one = "!Некорректный запрос"
+
+[HelloPerson]
+description = "Hello string value"
+one = "Привет {{.Name}}!"
+other = "Привет {{.Name}} другие"

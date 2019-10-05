@@ -1,0 +1,10 @@
+[UserNotFound]
+description = "Пользователь не найден"
+one = "Пользователь не найден"
+
+[UserPasswordIncorrect]
+description = "Введеный пароль не верный"
+one = "Вы указали не верный пароль"
+
+[LoginInvalidCredentials]
+one = "Не верно указаны учетные данные"
