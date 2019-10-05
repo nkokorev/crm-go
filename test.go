@@ -2,6 +2,7 @@ package crm
 
 import "fmt"
 
-func Hi(name string) {
+func HiMyLord(name string) {
 	fmt.Printf("Hello, %v!!!", name)
+	fmt.Println("End\r")
 }
