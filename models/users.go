@@ -4,23 +4,16 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
-	u "github.com/nkokorev/crm/http/utils"
-	t "github.com/nkokorev/crm/locales"
-	db "github.com/nkokorev/crm/database"
+	_ "github.com/nkokorev/auth-server/locales"
+	"github.com/nkokorev/crm-go/database"
+	t "github.com/nkokorev/crm-go/locales"
+	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
-	"strings"
 	"time"
 )
 
-type DBModel struct {
-	ID        uint `gorm:"primary_key" json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt *time.Time `sql:"index" json:"-"`
-}
-
 type User struct {
-	DBModel
+	ID        uint `gorm:"primary_key;unique_index;" json:"-"`
 	Username string `json:"username" gorm:"unique_index"`
 	Email string `json:"email" gorm:"unique_index"`
 	Name string `json:"name"`
@@ -29,20 +22,27 @@ type User struct {
 	Password string `json:"-"` // json:"-"
 	//Token string               `json:"token";sql:"-"`
 	Accounts         []Account `json:"accounts" gorm:"many2many:account_users;"`
+	//Permissions         []Permission `json:"permissions"`
+	//Permissions []Permission `json:"permissions" gorm:"many2many:user_permissions;"`
+	Permissions   []Permission `gorm:"polymorphic:Owner;"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt *time.Time `sql:"index" json:"-"`
 }
 
 // Авторизует пользователя, в случае успеха возвращает jwt-token
-func AuthLogin(username, password string) (cryptToken string, error Error) {
+func AuthLogin(username, password string) (cryptToken string, error u.Error) {
 
 	user := &User{}
 
-	err := db.GetDB().Where("username = ?", username).First(&user).Error
+	err := database.GetDB().Where("username = ?", username).First(&user).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			error.AddErrors("username", t.Trans(t.UserNotFound) )
 		} else {
 			error.Message = "Connection error. Please retry"
 		}
+		return "", error
 	}
 
 	// если пользователь не найден temp.Username == nil, то пароль не будет искаться, т.к. он будет равен нулю (не с чем сравнивать)
@@ -75,7 +75,7 @@ func GetUserProfile(u uint) *User {
 
 	user := &User{}
 
-	db.GetDB().Preload("Accounts").Where("id = ?", u).First(&user)
+	database.GetDB().Preload("Accounts").Where("id = ?", u).First(&user)
 
 	//db.Preload("Accounts", func(db *gorm.DB) *gorm.DB {
 	//	return db.Table("accounts").Select("accounts.id, accounts.name, account_users.account_id, account_users.user_id")
@@ -87,136 +87,109 @@ func GetUserProfile(u uint) *User {
 
 func GetUser(u uint) *User {
 	user := &User{}
-	db.GetDB().First(&user, u)
+	database.GetDB().First(&user, u)
 	return user
 }
 
-//Validate incoming user details...
-func (user *User) Validate() (map[string] interface{}, bool) {
+// создает пользователя на основе переданной структуры *User. Пароль должен быть в явном виде, чтобы его можно было провалидировать.
+func (user *User) Create() (error u.Error) {
 
-	errors := make(map[string]string)
-
-	if !strings.Contains(user.Email, "@") {
-		return u.Message(false, "Email address is required"), false
+	error = user.Validate()
+	if error.HasErrors() {
+		return
 	}
 
-	if len(user.Password) < 6 {
-		return u.Message(false, "Password is required"), false
+	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		error.Message = t.Trans(t.UserFailedToCreate)
+		return
+	}
+	user.Password = string(password)
+
+	err = database.GetDB().Create(user).Error
+	if err != nil {
+		error.Message = t.Trans(t.UserFailedToCreate)
+	}
+
+	return
+}
+
+//Validate incoming user details...
+func (user *User) Validate() (error u.Error) {
+
+	error = u.VerifyEmail(user.Email, true)
+	if error.HasErrors() {
+		error.Message = t.Trans(t.UserCreateInvalidCredentials)
+		return
+	}
+
+	error = u.VerifyPassword(user.Password)
+	if error.HasErrors() {
+		error.Message = t.Trans(t.UserCreateInvalidCredentials)
+		return
+	}
+
+	if len(user.Username) > 25 {
+		error.AddErrors("username", t.Trans(t.UserInputIsTooLong) )
+	}
+	if len(user.Name) > 25 {
+		error.AddErrors("name", t.Trans(t.UserInputIsTooLong) )
+	}
+	if len(user.Surname) > 25 {
+		error.AddErrors("surname", t.Trans(t.UserInputIsTooLong) )
+	}
+	if len(user.Patronymic) > 25 {
+		error.AddErrors("patronymic", t.Trans(t.UserInputIsTooLong) )
+	}
+
+	if error.HasErrors() {
+		error.Message = t.Trans(t.UserCreateInvalidCredentials)
+		return
 	}
 
 	//Email must be unique
 	temp := &User{}
 
 	//check for errors and duplicate emails
-	//err := db.GetDB().Table("users").Where("email = ?", user.Email).First(temp).Error
-
-	err := db.GetDB().Table("users").Where("email = ?", user.Email).First(temp).Error
+	err := database.GetDB().Table("users").Where("email = ?", user.Email).First(temp).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
-		return u.Message(false, "Connection error. Please retry"), false
+		error.Message = t.Trans(t.UserFailedToCreate)
+		return
 	}
 	if temp.Email != "" {
-		//t.GetBundle()
-		errors["email"] = "Username already in use by another user"
-		//return u.Message(false, "Email address already in use by another user."), false
+		error.AddErrors("email", t.Trans(t.EmailAlreadyUse) )
 	}
 
-	//check for errors and duplicate username
-	err = db.GetDB().Table("users").Where("username = ?", user.Username).First(temp).Error
+	temp = &User{} // set to empty
+
+	err = database.GetDB().Table("users").Where("username = ?", user.Username).First(temp).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
-		return u.Message(false, "Connection error. Please retry"), false
+		error.Message = t.Trans(t.UserFailedToCreate)
+		return
 	}
 	if temp.Username != "" {
-		errors["username"] = "Username already in use by another user"
+		error.AddErrors("username", t.Trans(t.UsernameAlreadyUse) )
 	}
 
-	if len(errors) > 0 {
-		return u.MessageWithErrors("Ошибки заполнения формы", errors), false
+	if error.HasErrors() {
+		error.Message = t.Trans(t.UserCreateInvalidCredentials)
 	}
-	return u.Message(false, "Requirement passed"), true
-}
-
-func (user *User) Create() (map[string] interface{}) {
-
-	if resp, ok := user.Validate(); !ok {
-		return resp
-	}
-
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	user.Password = string(hashedPassword)
-
-	db.GetDB().Create(user)
-
-	if user.ID <= 0 {
-		return u.Message(false, "Failed to create user, connection error.")
-	}
-
-	fmt.Println("User create") // заменить потом на логи
-
-	user.Password = "" //delete password
-
-	response := u.Message(true, "User has been created")
-	response["user"] = user
-	return response
+	return
 }
 
 
-
-func UserLoginOld(username, password string) (map[string]interface{}) {
-
-	myErrors := make(map[string]string)
-
-	user := &User{}
-
-	err := db.GetDB().Where("username = ?", username).First(&user).Error
-
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			myErrors["username"] = t.Trans(t.UserNotFound)
-		} else {
-			return u.Message(false, "Connection error. Please retry")
-		}
-	}
-
-	// если пользователь не найден temp.Username == nil, то пароль не будет искаться, т.к. он будет равен нулю (не с чем сравнивать)
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword { //Password does not match!
-		myErrors["password"] = t.Trans(t.UserPasswordIncorrect)
-	}
-
-	if len(myErrors) > 0 {
-		return u.MessageWithErrors(t.Trans(t.LoginInvalidCredentials), myErrors)
-	}
-
-	expiresAt := time.Now().Add(time.Minute * 100000).Unix()
-	claims := Token{
-		user.ID,
-		0,
-		jwt.StandardClaims{
-			ExpiresAt: expiresAt,
-			Issuer:    "AuthServer",
-		},
-	}
-	cryptToken, err := claims.CreateToken()
-
-	resp := u.Message(true, "Logged In")
-	resp["token"] = cryptToken
-	return resp
-}
 
 
 
 func GetUsersAccount(u uint) (accounts []Account) {
-
-	//var accounts []Account
 	user := GetUser(u)
-
-	db.GetDB().Model(&user).Related(&accounts,  "Accounts")
+	database.GetDB().Model(&user).Related(&accounts,  "Accounts")
 	return
 }
 
 // add User To Account
 // remove User from Account
 func AssociateUserToAccount(user *User, account *Account) error{
-	db.GetDB().Model(&user).Association("Accounts").Replace(account)
+	database.GetDB().Model(&user).Association("Accounts").Replace(account)
 	return nil
 }

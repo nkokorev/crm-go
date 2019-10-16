@@ -36,7 +36,9 @@ func init() {
 
 	db = conn
 
-	db.LogMode(true)
+	fmt.Println("DB, LogMode: ", os.Getenv("dev") == "true")
+
+	db.LogMode(os.Getenv("dev") == "true")
 
 	//Migrate()
 }

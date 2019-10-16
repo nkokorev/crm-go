@@ -3,8 +3,50 @@ description = "Пользователь не найден"
 one = "Пользователь не найден"
 
 [UserPasswordIncorrect]
-description = "Введеный пароль не верный"
 one = "Вы указали не верный пароль"
+
+[UserPasswordRequired]
+one = "Требуется пароль"
+
+[UserPasswordIsTooShort]
+one = "Пароль слишком короткий"
+
+[UserPasswordIsTooLong]
+one = "Пароль слишком длинный"
+
+[UserPasswordIsTooSimple]
+one = "Пароль слишком простой"
+
+[UserCreateInvalidCredentials]
+one = "Не верно указаны учетные данные"
 
 [LoginInvalidCredentials]
 one = "Не верно указаны учетные данные"
+
+[EmailUncorrected]
+one = "Неверно указан email-адрес"
+
+[EmailInvalidFormat]
+one = "Некорректный формат email-адреса"
+
+[EmailDoesNotExist]
+one = "Email адрес не существует"
+
+[EmailIsTooLong]
+one = "Email слишком длинный"
+
+[EmailAlreadyUse]
+one = "Этот еmail адрес уже используется"
+
+[UsernameAlreadyUse]
+one = "Это имя пользователя уже используется"
+
+[UserInputIsTooLong]
+one = "Введеные данные слишком длинные"
+
+[UserFailedToCreate]
+one = "Неудалось создать пользователя"
+
+[EmailUnresolvableHost]
+one = "Хост {{.Host}} неотвечает. Проверьте ваш email-адрес!"
+
