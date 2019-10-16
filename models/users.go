@@ -9,11 +9,14 @@ import (
 	t "github.com/nkokorev/crm-go/locales"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
+	"log"
+	"reflect"
 	"time"
 )
 
 type User struct {
 	ID        uint `gorm:"primary_key;unique_index;" json:"-"`
+	HashID string `json:"hash_id" gorm:"type:varchar(10);unique_index;"`
 	Username string `json:"username" gorm:"unique_index"`
 	Email string `json:"email" gorm:"unique_index"`
 	Name string `json:"name"`
@@ -28,6 +31,117 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	DeletedAt *time.Time `sql:"index" json:"-"`
+}
+
+//Create new User by &User{}. Dont hash pwd. HashID will be created (2 attempts).
+func (user *User) Create() (error u.Error) {
+
+	error = user.Validate()
+	if error.HasErrors() {
+		return
+	}
+
+	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		error.Message = t.Trans(t.UserFailedToCreate)
+		return
+	}
+	user.Password = string(password)
+
+	hash := u.RandStringBytes(u.LENGTH_HASH_ID); count := 0
+	database.GetDB().Model(&User{}).Where("hash_id = ?", hash).Count(&count)
+	if count != 0 {
+		count = 0
+		hash = u.RandStringBytes(u.LENGTH_HASH_ID)
+		database.GetDB().Model(&User{}).Where("hash_id = ?", hash).Count(&count)
+		if count != 0 {
+			error.Message = t.Trans(t.UserFailedToCreate)
+			return
+		}
+	}
+	user.HashID = hash
+
+	err = database.GetDB().Create(user).Error
+	if err != nil {
+		error.Message = t.Trans(t.UserFailedToCreate)
+	}
+
+	fmt.Println("Create USER: ", user)
+	return
+}
+
+//Validate incoming user details...
+func (user *User) Validate() (error u.Error) {
+
+	error = u.VerifyEmail(user.Email, true)
+	if error.HasErrors() {
+		error.Message = t.Trans(t.UserCreateInvalidCredentials)
+		return
+	}
+
+	error = u.VerifyPassword(user.Password)
+	if error.HasErrors() {
+		error.Message = t.Trans(t.UserCreateInvalidCredentials)
+		return
+	}
+
+	if len(user.Username) > 25 {
+		error.AddErrors("username", t.Trans(t.UserInputIsTooLong) )
+	}
+	if len(user.Name) > 25 {
+		error.AddErrors("name", t.Trans(t.UserInputIsTooLong) )
+	}
+	if len(user.Surname) > 25 {
+		error.AddErrors("surname", t.Trans(t.UserInputIsTooLong) )
+	}
+	if len(user.Patronymic) > 25 {
+		error.AddErrors("patronymic", t.Trans(t.UserInputIsTooLong) )
+	}
+
+	if error.HasErrors() {
+		error.Message = t.Trans(t.UserCreateInvalidCredentials)
+		return
+	}
+
+	//Email must be unique
+	temp := &User{}
+
+	//check for errors and duplicate emails
+	err := database.GetDB().Unscoped().Model(&User{}).Where("email = ?", user.Email).First(temp).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		error.Message = t.Trans(t.UserFailedToCreate)
+		return
+	}
+	if temp.Email != "" {
+		error.AddErrors("email", t.Trans(t.EmailAlreadyUse) )
+	}
+
+	temp = &User{} // set to empty
+
+	err = database.GetDB().Unscoped().Model(&User{}).Where("username = ?", user.Username).First(temp).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		error.Message = t.Trans(t.UserFailedToCreate)
+		return
+	}
+	if temp.Username != "" {
+		error.AddErrors("username", t.Trans(t.UsernameAlreadyUse) )
+	}
+
+	if error.HasErrors() {
+		error.Message = t.Trans(t.UserCreateInvalidCredentials)
+	}
+	return
+}
+
+func (user *User) Delete() (error u.Error) {
+	if reflect.TypeOf(user.ID).String() != "uint" {
+		log.Println("Невозможно удалить пользователя, не задан ID")
+		error.Message = "Error deleting user: no ID specified"
+		return
+	}
+	database.GetDB().Delete(&user)
+
+	return
 }
 
 // Авторизует пользователя, в случае успеха возвращает jwt-token
@@ -89,92 +203,6 @@ func GetUser(u uint) *User {
 	user := &User{}
 	database.GetDB().First(&user, u)
 	return user
-}
-
-// создает пользователя на основе переданной структуры *User. Пароль должен быть в явном виде, чтобы его можно было провалидировать.
-func (user *User) Create() (error u.Error) {
-
-	error = user.Validate()
-	if error.HasErrors() {
-		return
-	}
-
-	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		error.Message = t.Trans(t.UserFailedToCreate)
-		return
-	}
-	user.Password = string(password)
-
-	err = database.GetDB().Create(user).Error
-	if err != nil {
-		error.Message = t.Trans(t.UserFailedToCreate)
-	}
-
-	return
-}
-
-//Validate incoming user details...
-func (user *User) Validate() (error u.Error) {
-
-	error = u.VerifyEmail(user.Email, true)
-	if error.HasErrors() {
-		error.Message = t.Trans(t.UserCreateInvalidCredentials)
-		return
-	}
-
-	error = u.VerifyPassword(user.Password)
-	if error.HasErrors() {
-		error.Message = t.Trans(t.UserCreateInvalidCredentials)
-		return
-	}
-
-	if len(user.Username) > 25 {
-		error.AddErrors("username", t.Trans(t.UserInputIsTooLong) )
-	}
-	if len(user.Name) > 25 {
-		error.AddErrors("name", t.Trans(t.UserInputIsTooLong) )
-	}
-	if len(user.Surname) > 25 {
-		error.AddErrors("surname", t.Trans(t.UserInputIsTooLong) )
-	}
-	if len(user.Patronymic) > 25 {
-		error.AddErrors("patronymic", t.Trans(t.UserInputIsTooLong) )
-	}
-
-	if error.HasErrors() {
-		error.Message = t.Trans(t.UserCreateInvalidCredentials)
-		return
-	}
-
-	//Email must be unique
-	temp := &User{}
-
-	//check for errors and duplicate emails
-	err := database.GetDB().Table("users").Where("email = ?", user.Email).First(temp).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		error.Message = t.Trans(t.UserFailedToCreate)
-		return
-	}
-	if temp.Email != "" {
-		error.AddErrors("email", t.Trans(t.EmailAlreadyUse) )
-	}
-
-	temp = &User{} // set to empty
-
-	err = database.GetDB().Table("users").Where("username = ?", user.Username).First(temp).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		error.Message = t.Trans(t.UserFailedToCreate)
-		return
-	}
-	if temp.Username != "" {
-		error.AddErrors("username", t.Trans(t.UsernameAlreadyUse) )
-	}
-
-	if error.HasErrors() {
-		error.Message = t.Trans(t.UserCreateInvalidCredentials)
-	}
-	return
 }
 
 
