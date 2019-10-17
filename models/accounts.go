@@ -5,6 +5,9 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/nkokorev/crm-go/database"
 	u "github.com/nkokorev/crm-go/utils"
+	_ "github.com/nkokorev/auth-server/locales"
+	t "github.com/nkokorev/crm-go/locales"
+	"log"
 	"reflect"
 	"time"
 )
@@ -22,6 +25,65 @@ type Account struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	DeletedAt *time.Time `sql:"index" json:"-"`
 }
+
+// Создает новый аккаунт по структуре account. Аккаунт привязывается к владельцу по user_id, добавляя его в список пользователей аккаунта.
+func (account *Account) Create(owner *User) (error u.Error) {
+
+	if reflect.TypeOf(owner.ID).String() != "uint" {
+		log.Println("Невозможно создать аккаунт, у пользователя не задан ID")
+		error.Message = "Can't create new account: user ID not specified"
+		return
+	}
+
+	account.HashID, error = CreateHashID(account)
+	if error.HasErrors() {
+		error.Message = t.Trans(t.AccountFailedToCreate)
+		return
+	}
+
+	// account Owner
+	account.UserID = owner.ID
+
+	err := database.GetDB().Create(account).Error
+	if err != nil {
+		error.Message = t.Trans(t.AccountFailedToCreate)
+		return
+	}
+
+	// user.AddToAccount()
+	roles := []Role{} // owner
+	account.AddUser(owner, roles)
+
+	return
+}
+
+// Мягкое удаление аккаунта (до 30 дней)
+func (account *Account) SoftDelete() (error u.Error) {
+
+	if reflect.TypeOf(account.ID).String() != "uint" {
+		error.Message = t.Trans(t.AccountDeletionError)
+		return
+	}
+
+	database.GetDB().Delete(&account)
+	return
+}
+
+// Удаление аккаунта и всех связанных данных!!
+func (account *Account) Delete() (error u.Error) {
+
+	if reflect.TypeOf(account.ID).String() != "uint" {
+		error.Message = t.Trans(t.AccountDeletionError)
+		return
+	}
+
+	database.GetDB().Unscoped().Delete(&account)
+	return
+}
+
+
+
+
 
 // создает новый токен
 var CreateAccountToken = func (userId, accountId uint) (cryptToken string, error error) {
@@ -73,11 +135,11 @@ func GetAccountByHashID(hash string) *Account {
 	return account
 }
 
-// Создает новый аккаунт с указанным именем и призывает его к владельцу
-func (user *User) CreateAccount(name string) (hash string) {
-	db := database.GetDB()
-	hash = u.RandStringBytes(u.LENGTH_HASH_ID)
-	fmt.Println( reflect.TypeOf(db.Create(&Account{Name: name, HashID: hash, UserID: user.ID})).String() )
+
+// Add user to account with roles
+func (acc *Account) AddUser(user *User, roles... []Role) (error u.Error) {
+
+	database.GetDB().Model(&user).Association("Accounts").Append(acc)
 	return
 }
 
@@ -97,4 +159,6 @@ func RemoveUserFromAccount(user *User, account *Account) {
 	db := database.GetDB()
 	db.Model(&user).Association("Accounts").Delete(account)
 }
+
+
 

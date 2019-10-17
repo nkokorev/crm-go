@@ -47,6 +47,15 @@ one = "Введеные данные слишком длинные"
 [UserFailedToCreate]
 one = "Неудалось создать пользователя"
 
+[UserDeletionError]
+one = "Ошибка удаления пользователя: не указан ID"
+
+[UserNotPermissionToCreateAccount]
+one = "У вас нет прав на создание аккаунта"
+
 [EmailUnresolvableHost]
 one = "Хост {{.Host}} неотвечает. Проверьте ваш email-адрес!"
+
+[AccountDeletionError]
+one = "Ошибка удаления аккаунта: не указан ID"
 

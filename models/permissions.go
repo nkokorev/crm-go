@@ -12,6 +12,7 @@ type Permission struct {
 }
 
 const (
+	PermissionCreateAccount 				 = 10 // Право на создание нового аккаунта (= true)
 	PermissionStoreListing           = 101 // Доступ к списку складов
 	PermissionStoreEditing           = 102 // Редактирование данных склада
 	PermissionStoreCreating          = 103 // Создание склада
@@ -26,7 +27,7 @@ func (user *User) PermissionInitial(account *Account, role string) {
 
 func (user *User) PermissionCheck(CheckedPermissions uint) (status bool) {
 	status = false // default
-	return
+	return true
 }
 
 

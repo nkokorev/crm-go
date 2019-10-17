@@ -2,8 +2,8 @@ package database
 
 import (
 	"fmt"
-	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/jinzhu/gorm"
 	"github.com/joho/godotenv"
 	"os"
 )
@@ -11,11 +11,13 @@ import (
 var db *gorm.DB
 
 func GetDB() *gorm.DB {
+	//fmt.Println("Запрос переменной db: ", db)
 	return db
 }
 
 func init() {
 
+	//fmt.Println("Инициализация БД CRM-GO")
 	e := godotenv.Load()
 	if e != nil {
 		fmt.Print(e)
@@ -33,14 +35,9 @@ func init() {
 	if err != nil {
 		fmt.Print(err)
 	}
-
+	//conn.LogMode(false)
 	db = conn
-
-	fmt.Println("DB, LogMode: ", os.Getenv("dev") == "true")
-
-	db.LogMode(os.Getenv("dev") == "true")
-
-	//Migrate()
 }
+
 
 

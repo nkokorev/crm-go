@@ -47,6 +47,16 @@ one = "The entered field is too long"
 [UserFailedToCreate]
 one = "Failed to create user"
 
+[UserDeletionError]
+one = "User deletion error: no ID specified"
+
+[UserNotPermissionToCreateAccount]
+one = "You may not create an account"
+
 [EmailUnresolvableHost]
 one = "Unresolvable {{.Host}} host. Check your email! "
+
+[AccountDeletionError]
+one = "Account deletion error: no ID specified"
+
 

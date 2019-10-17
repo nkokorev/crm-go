@@ -9,7 +9,6 @@ import (
 	t "github.com/nkokorev/crm-go/locales"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 	"reflect"
 	"time"
 )
@@ -33,10 +32,10 @@ type User struct {
 	DeletedAt *time.Time `sql:"index" json:"-"`
 }
 
-//Create new User by &User{}. Dont hash pwd. HashID will be created (2 attempts).
+//Create new User by &User{}. Dont hash pwd. HashID will be created.
 func (user *User) Create() (error u.Error) {
 
-	error = user.Validate()
+	error = user.ValidateCreate()
 	if error.HasErrors() {
 		return
 	}
@@ -48,30 +47,22 @@ func (user *User) Create() (error u.Error) {
 	}
 	user.Password = string(password)
 
-	hash := u.RandStringBytes(u.LENGTH_HASH_ID); count := 0
-	database.GetDB().Model(&User{}).Where("hash_id = ?", hash).Count(&count)
-	if count != 0 {
-		count = 0
-		hash = u.RandStringBytes(u.LENGTH_HASH_ID)
-		database.GetDB().Model(&User{}).Where("hash_id = ?", hash).Count(&count)
-		if count != 0 {
-			error.Message = t.Trans(t.UserFailedToCreate)
-			return
-		}
+	user.HashID, error = CreateHashID(user)
+	if error.HasErrors() {
+		error.Message = t.Trans(t.UserFailedToCreate)
+		return
 	}
-	user.HashID = hash
 
 	err = database.GetDB().Create(user).Error
 	if err != nil {
 		error.Message = t.Trans(t.UserFailedToCreate)
 	}
 
-	fmt.Println("Create USER: ", user)
 	return
 }
 
-//Validate incoming user details...
-func (user *User) Validate() (error u.Error) {
+// Full Validate incoming user details for create new user...
+func (user *User) ValidateCreate() (error u.Error) {
 
 	error = u.VerifyEmail(user.Email, true)
 	if error.HasErrors() {
@@ -133,16 +124,33 @@ func (user *User) Validate() (error u.Error) {
 	return
 }
 
-func (user *User) Delete() (error u.Error) {
+// SoftDelete user by user.ID.
+func (user *User) SoftDelete() (error u.Error) {
+
 	if reflect.TypeOf(user.ID).String() != "uint" {
-		log.Println("Невозможно удалить пользователя, не задан ID")
-		error.Message = "Error deleting user: no ID specified"
+		error.Message = t.Trans(t.UserDeletionError)
 		return
 	}
-	database.GetDB().Delete(&user)
 
+	database.GetDB().Delete(&user)
 	return
 }
+
+// Delete User from BD !!!. При удалении пользователя удаляются все связанными с ним данные.
+func (user *User) Delete() (error u.Error) {
+
+	if reflect.TypeOf(user.ID).String() != "uint" {
+		error.Message = t.Trans(t.UserDeletionError)
+		return
+	}
+
+	database.GetDB().Unscoped().Delete(&user)
+	return
+}
+
+
+
+
 
 // Авторизует пользователя, в случае успеха возвращает jwt-token
 func AuthLogin(username, password string) (cryptToken string, error u.Error) {
@@ -205,7 +213,10 @@ func GetUser(u uint) *User {
 	return user
 }
 
-
+// создание нового аккаунт см.: (account *Account) Create(user *User)
+func (user *User) CreateAccount(account *Account) (error u.Error) {
+	return account.Create(user)
+}
 
 
 

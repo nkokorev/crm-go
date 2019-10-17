@@ -1,25 +1,33 @@
 package locales
 
 const (
-	UserNotFound           = "UserNotFound" // user.*.toml: Пользователь не найден
-	UserPasswordIncorrect  = "UserPasswordIncorrect"
-	UserPasswordRequired  = "UserPasswordRequired"
+	UserNotFound          	= "UserNotFound" // user.*.toml: Пользователь не найден
+	UserPasswordIncorrect  	= "UserPasswordIncorrect"
+	UserPasswordRequired  	= "UserPasswordRequired"
 	UserPasswordIsTooShort  = "UserPasswordIsTooShort"
-	UserPasswordIsTooLong  = "UserPasswordIsTooLong"
-	UserPasswordIsTooSimple  = "UserPasswordIsTooSimple"
-	UserInputIsTooLong  = "UserInputIsTooLong"
+	UserPasswordIsTooLong  	= "UserPasswordIsTooLong"
+	UserPasswordIsTooSimple = "UserPasswordIsTooSimple"
+	UserDeletionError  		= "UserDeletionError"
+	UserInputIsTooLong  	= "UserInputIsTooLong"
+	UserFailedToCreate  	= "UserFailedToCreate"
+	UsernameAlreadyUse 		= "UsernameAlreadyUse"
 
-	UserFailedToCreate  = "UserFailedToCreate"
+	UserNotPermissionToCreateAccount  	= "UserNotPermissionToCreateAccount"
+	UserCreateInvalidCredentials  		= "UserCreateInvalidCredentials"
+
 	LoginInvalidCredentials  = "LoginInvalidCredentials"
-	UserCreateInvalidCredentials  = "UserCreateInvalidCredentials"
-	AccountNotFound  = "AccountNotFound"
 
-	EmailUncorrected = "EmailUncorrected"
-	EmailInvalidFormat = "EmailInvalidFormat"
-	EmailDoesNotExist = "EmailDoesNotExist"
-	EmailIsTooLong = "EmailIsTooLong"
-	EmailAlreadyUse = "EmailAlreadyUse"
-	EmailUnresolvableHost = "EmailUnresolvableHost"
 
-	UsernameAlreadyUse = "UsernameAlreadyUse"
+	AccountNotFound  		= "AccountNotFound"
+	AccountFailedToCreate  	= "AccountFailedToCreate"
+	AccountDeletionError  	= "AccountDeletionError"
+
+	EmailUncorrected 		= "EmailUncorrected"
+	EmailInvalidFormat 		= "EmailInvalidFormat"
+	EmailDoesNotExist 		= "EmailDoesNotExist"
+	EmailIsTooLong 			= "EmailIsTooLong"
+	EmailAlreadyUse 		= "EmailAlreadyUse"
+	EmailUnresolvableHost 	= "EmailUnresolvableHost"
+
+
 )

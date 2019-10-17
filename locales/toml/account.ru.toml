@@ -1,3 +1,7 @@
 [AccountNotFound]
 one = "Аккаунт не найден"
 
+[AccountFailedToCreate]
+one = "Неудалось создать аккаунт"
+
+

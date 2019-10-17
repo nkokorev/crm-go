@@ -7,6 +7,7 @@ import (
 	t "github.com/nkokorev/crm-go/locales"
 	"net"
 	"net/smtp"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -52,7 +53,9 @@ func VerifyEmail(email string, opt_deep... bool) (error Error) {
 	}
 	error = ValidateFormat(email)
 
-
+	if (os.Getenv("http_dev") == "true") {
+		return
+	}
 	if !error.HasErrors() {
 		if deep {
 			error = ValidateEmailDeepHost(email)

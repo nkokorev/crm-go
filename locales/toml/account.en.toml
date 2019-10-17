@@ -1,2 +1,6 @@
 [AccountNotFound]
 one = "Account Not Found"
+
+[AccountFailedToCreate]
+one = "Failed to create account"
+
