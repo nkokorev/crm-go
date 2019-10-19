@@ -1,12 +1,11 @@
 package models
 
 import (
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/nkokorev/crm-go/database"
-	u "github.com/nkokorev/crm-go/utils"
 	_ "github.com/nkokorev/auth-server/locales"
+	"github.com/nkokorev/crm-go/database"
 	t "github.com/nkokorev/crm-go/locales"
+	u "github.com/nkokorev/crm-go/utils"
 	"log"
 	"reflect"
 	"time"
@@ -19,8 +18,11 @@ type Account struct {
 	Name string `json:"name"` // СтанПроф / ООО ПК ВТВ-Инжинеринг / Ратус Медия / X6-Band (должно ли быть уникальным??)
 	//Label string `json:"label"` // accountId : stan-prof / vtvent / ratus-media / x6-band
 	UserID uint `json:"-"` // владелец
-	Users         []User `json:"users" gorm:"many2many:account_users;"`
-	Stores         []Store `json:"stores"`
+	AUsers 		[]AccountUser `json:"-"`
+	Users       []User `json:"users" gorm:"many2many:account_users;"`
+	ApiKeys		[]ApiKey `json:"-"`
+	Roles 		[]Role	`json:"roles"`
+	Stores      []Store `json:"stores"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	DeletedAt *time.Time `sql:"index" json:"-"`
@@ -52,7 +54,7 @@ func (account *Account) Create(owner *User) (error u.Error) {
 
 	// user.AddToAccount()
 	roles := []Role{} // owner
-	account.AddUser(owner, roles)
+	error = account.AddUser(owner, roles)
 
 	return
 }
@@ -65,7 +67,10 @@ func (account *Account) SoftDelete() (error u.Error) {
 		return
 	}
 
-	database.GetDB().Delete(&account)
+	if err := database.GetDB().Delete(&account).Error; err != nil {
+		error.Message = "Cant Soft Delete account"
+		return
+	}
 	return
 }
 
@@ -77,12 +82,55 @@ func (account *Account) Delete() (error u.Error) {
 		return
 	}
 
-	database.GetDB().Unscoped().Delete(&account)
+	if err := database.GetDB().Unscoped().Delete(&account).Error; err != nil {
+		error.Message = "Cant Delete account"
+		return
+	}
+	return
+}
+
+// Add user to account with roles (?) / permissions(?)
+func (account *Account) AddUser(user *User, roles... []Role) (error u.Error) {
+
+	if err := database.GetDB().Model(&account).Association("Users").Append(user).Error; err != nil {
+		error.Message = "Cant add User to this Account"
+		return
+	}
+	return
+}
+
+// исключение пользователя из аккаунта
+func (account *Account) RemoveUser(user *User, roles... []Role) (error u.Error) {
+
+	if err := database.GetDB().Model(&account).Association("Users").Delete(user).Error; err != nil {
+		error.Message = "Cant Remove User from Account"
+		return
+	}
 	return
 }
 
 
 
+// ######### ниже не проверенные фукнции ###########
+
+
+// Создает голую роль в аккаунте с разрешениями (Permission / []Permissions)
+func (account *Account) CreateRole(role Role, values... interface{}) (error u.Error){
+	error = role.Create(*account)
+	return
+}
+
+
+// Создает роль администратора
+func (account *Account) CreateAdminRole(role *Role) (error u.Error) {
+
+	// 1. Создаем роли и привязываем их к аккаунту
+	role.Name = "Администратор аккаунта"
+	role.Description = "Полный доступ ко всем элементам и настройкам системы."
+
+
+	return
+}
 
 
 // создает новый токен
@@ -133,31 +181,6 @@ func GetAccountByHashID(hash string) *Account {
 	db.Where("hash_id = ?", hash).First(account)
 
 	return account
-}
-
-
-// Add user to account with roles
-func (acc *Account) AddUser(user *User, roles... []Role) (error u.Error) {
-
-	database.GetDB().Model(&user).Association("Accounts").Append(acc)
-	return
-}
-
-
-func AddUserToAccount(user *User, account *Account) {
-
-	fmt.Println("Add User to Account: ", account.Name, "User name: ", user.Username)
-
-	db := database.GetDB()
-	db.Model(&user).Association("Accounts").Append(account)
-}
-
-func RemoveUserFromAccount(user *User, account *Account) {
-
-	fmt.Println("Remove User from Account: ", account.Name, "User name: ", user.Username)
-
-	db := database.GetDB()
-	db.Model(&user).Association("Accounts").Delete(account)
 }
 
 

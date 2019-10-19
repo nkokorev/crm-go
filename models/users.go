@@ -13,24 +13,41 @@ import (
 	"time"
 )
 
+// global User
 type User struct {
-	ID        uint `gorm:"primary_key;unique_index;" json:"-"`
-	HashID string `json:"hash_id" gorm:"type:varchar(10);unique_index;"`
-	Username string `json:"username" gorm:"unique_index"`
-	Email string `json:"email" gorm:"unique_index"`
-	Name string `json:"name"`
-	Surname string `json:"surname"`
-	Patronymic string `json:"patronymic"`
-	Password string `json:"-"` // json:"-"
+	ID        	uint `gorm:"primary_key;unique_index;" json:"-"`
+	HashID 		string `json:"hash_id" gorm:"type:varchar(10);unique_index;"`
+	Username 	string `json:"username" gorm:"unique_index"`
+	Email 		string `json:"email" gorm:"unique_index"`
+	Name 		string `json:"name"`
+	Surname 	string `json:"surname"`
+	Patronymic 	string `json:"patronymic"`
+	Password 	string `json:"-"` // json:"-"
 	//Token string               `json:"token";sql:"-"`
-	Accounts         []Account `json:"accounts" gorm:"many2many:account_users;"`
+	Accounts    []Account `json:"accounts" gorm:"many2many:account_users;"`
+	AUsers 		[]AccountUser `json:"-"` // ??
 	//Permissions         []Permission `json:"permissions"`
 	//Permissions []Permission `json:"permissions" gorm:"many2many:user_permissions;"`
-	Permissions   []Permission `gorm:"polymorphic:Owner;"`
+
+	//Permissions   []Permission `gorm:"polymorphic:Owner;"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	DeletedAt *time.Time `sql:"index" json:"-"`
 }
+
+// specific name fixed user in the account
+type AccountUser struct {
+	ID        	uint `gorm:"primary_key;unique_index;" json:"-"`
+	UserID 		uint // belong to user
+	AccountID 	uint // belong to account
+	Permissions []Permission `json:"permissions" gorm:"many2many:account_user_permissions;"`
+	Roles   	[]Role `json:"roles" gorm:"many2many:account_user_roles;"`
+	ApiKeys		[]ApiKey `json:"-"`
+}
+
+/*func (AccountUser) TableName() string {
+	return "account_users"
+}*/
 
 //Create new User by &User{}. Dont hash pwd. HashID will be created.
 func (user *User) Create() (error u.Error) {
@@ -53,9 +70,9 @@ func (user *User) Create() (error u.Error) {
 		return
 	}
 
-	err = database.GetDB().Create(user).Error
-	if err != nil {
+	if err = database.GetDB().Create(user).Error; err != nil {
 		error.Message = t.Trans(t.UserFailedToCreate)
+		return
 	}
 
 	return
@@ -132,7 +149,10 @@ func (user *User) SoftDelete() (error u.Error) {
 		return
 	}
 
-	database.GetDB().Delete(&user)
+	if err := database.GetDB().Delete(&user).Error; err != nil {
+		error.Message = t.Trans(t.UserDeletionError)
+		return
+	}
 	return
 }
 
@@ -144,11 +164,28 @@ func (user *User) Delete() (error u.Error) {
 		return
 	}
 
-	database.GetDB().Unscoped().Delete(&user)
+	if err := database.GetDB().Unscoped().Delete(&user).Error; err != nil {
+		error.Message = t.Trans(t.UserDeletionError)
+		return
+	}
+
 	return
 }
 
-
+// Вспомогательная функция получения пользователя ассоциированного с пользователем
+func (aUser *AccountUser) LoadFromDB() (error u.Error) {
+	//database.GetDB().Model(&auser).Where("account_id = ? AND user_id = ?", acc_id, user_id).First(&auser, "account_id = ? AND user_id = ?", acc_id, user_id)
+	err := database.GetDB().Model(&aUser).First(&aUser, "account_id = ? AND user_id = ?", aUser.AccountID, aUser.UserID).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			error.Message = "Record not found"
+		} else {
+			error.Message = "Connection error. Please retry"
+		}
+		return
+	}
+	return
+}
 
 
 

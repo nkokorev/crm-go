@@ -59,4 +59,21 @@ one = "Unresolvable {{.Host}} host. Check your email! "
 [AccountDeletionError]
 one = "Account deletion error: no ID specified"
 
+[AccountUnableRemoveOwner]
+one = "Unable to remove account owner"
+
+[PermissionFailedToCreate]
+one = "Failed to create permission"
+
+[RoleFailedToCreate]
+one = "Failed to create role"
+
+[RoleFailedAddPermissions]
+one = "Failed add permission to account"
+
+[RoleDeletionError]
+one = "Failed deleted role"
+
+[RoleFailedRemovePermissions]
+one = "Failed to remove permissions from role"
 

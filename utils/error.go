@@ -1,5 +1,7 @@
 package utils
 
+import "fmt"
+
 type Error struct {
 	Message string `json:"message"`
 	Errors map[string]string `json:"message"`
@@ -46,4 +48,11 @@ func (e *Error) GetMsg() string {
 
 func (e *Error) GetResponse() (string, map[string]string) {
 	return e.GetMsg(), e.GetErrors()
+}
+
+func (e *Error) Println()  {
+	fmt.Println(e.GetMsg())
+	for _, r := range e.GetErrors() {
+		fmt.Println(r)
+	}
 }

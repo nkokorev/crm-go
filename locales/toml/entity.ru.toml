@@ -59,3 +59,20 @@ one = "Хост {{.Host}} неотвечает. Проверьте ваш email-
 [AccountDeletionError]
 one = "Ошибка удаления аккаунта: не указан ID"
 
+[AccountUnableRemoveOwner]
+one = "Невозможно удалить владельца аккаунта"
+
+[PermissionFailedToCreate]
+one = "Неудалось создать новое правило"
+
+[RoleFailedToCreate]
+one = "Неудалось создать новую роль"
+
+[RoleFailedAddPermissions]
+one = "Неудалось добавить права для роли"
+
+[RoleDeletionError]
+one = "Неудалось удалить роль"
+
+[RoleFailedRemovePermissions]
+one = "Неудалось удалить права для роли"

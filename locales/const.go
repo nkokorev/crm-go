@@ -21,6 +21,7 @@ const (
 	AccountNotFound  		= "AccountNotFound"
 	AccountFailedToCreate  	= "AccountFailedToCreate"
 	AccountDeletionError  	= "AccountDeletionError"
+	AccountUnableRemoveOwner  	= "AccountUnableRemoveOwner"
 
 	EmailUncorrected 		= "EmailUncorrected"
 	EmailInvalidFormat 		= "EmailInvalidFormat"
@@ -28,6 +29,13 @@ const (
 	EmailIsTooLong 			= "EmailIsTooLong"
 	EmailAlreadyUse 		= "EmailAlreadyUse"
 	EmailUnresolvableHost 	= "EmailUnresolvableHost"
+
+	PermissionFailedToCreate	= "PermissionFailedToCreate"
+
+	RoleFailedToCreate 		= "RoleFailedToCreate"
+	RoleFailedAddPermissions 		= "RoleFailedAddPermissions"
+	RoleDeletionError 		= "RoleDeletionError"
+	RoleFailedRemovePermissions 		= "RoleFailedRemovePermissions"
 
 
 )
