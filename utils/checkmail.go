@@ -1,10 +1,9 @@
 package utils
 
 import (
-	"errors"
 	"fmt"
 	_ "github.com/nkokorev/auth-server/locales"
-	t "github.com/nkokorev/crm-go/locales"
+	e "github.com/nkokorev/crm-go/errors"
 	"net"
 	"net/smtp"
 	"os"
@@ -13,32 +12,9 @@ import (
 	"time"
 )
 
-type SmtpError struct {
-	Err error
-}
-
-func (e SmtpError) Error() string {
-	return e.Err.Error()
-}
-
-func (e SmtpError) Code() string {
-	return e.Err.Error()[0:3]
-}
-
-func NewSmtpError(err error) SmtpError {
-	return SmtpError{
-		Err: err,
-	}
-}
-
 const forceDisconnectAfter = time.Second * 5
 
 var (
-	ErrBadFormat        = errors.New("invalid format")
-	ErrUnresolvableHost = errors.New("unresolvable host")
-
-	emailRegexp = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-
 	userRegexp = regexp.MustCompile("^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+$")
 	hostRegexp = regexp.MustCompile("^[^\\s]+\\.[^\\s]+$")
 	// As per RFC 5332 secion 3.2.3: https://tools.ietf.org/html/rfc5322#section-3.2.3
@@ -46,66 +22,66 @@ var (
 	userDotRegexp = regexp.MustCompile("(^[.]{1})|([.]{1}$)|([.]{2,})")
 )
 
-func VerifyEmail(email string, opt_deep... bool) (error Error) {
+func VerifyEmail(email string, opt_deep... bool) error {
+
 	deep := false
 	if len(opt_deep) > 0 {
 		deep = opt_deep[0]
 	}
-	error = ValidateFormat(email)
+
+	err := ValidateFormat(email)
+	if err != nil {
+		return  err
+	}
 
 	if (os.Getenv("http_dev") == "true") {
-		return
+		return nil
 	}
-	if !error.HasErrors() {
-		if deep {
-			error = ValidateEmailDeepHost(email)
-		} else {
-			error = ValidateHost(email)
-		}
+
+	if deep {
+		err = ValidateEmailDeepHost(email)
+	} else {
+		err = ValidateHost(email)
 	}
-	return
+
+	return err
 }
 
-func ValidateFormat(email string) (error Error) {
+func ValidateFormat(email string) error {
 
 	if len(email) < 6 || len(email) > 254 {
-		error.AddErrors("email", t.Trans(t.EmailInvalidFormat) )
-		return
+		return e.EmailInvalidFormat
 	}
 
 	at := strings.LastIndex(email, "@")
 	if at <= 0 || at > len(email)-3 {
-		error.AddErrors("email", t.Trans(t.EmailInvalidFormat) )
-		return
+		return e.EmailInvalidFormat
 	}
 
 	user := email[:at]
 	host := email[at+1:]
 
 	if len(user) > 64 {
-		error.AddErrors("email", t.Trans(t.EmailInvalidFormat) )
-		return
+		return e.EmailInvalidFormat
 	}
 
 	if userDotRegexp.MatchString(user) || !userRegexp.MatchString(user) || !hostRegexp.MatchString(host) {
-		error.AddErrors("email", t.Trans(t.EmailInvalidFormat) )
-		return
+		return e.EmailInvalidFormat
 	}
 
 	switch host {
 	case "localhost", "example.com":
-		error.AddErrors("email", t.Trans(t.EmailInvalidFormat) )
-		return
+		return e.EmailInvalidFormat
 		//return nil // хоть это и валидный адрес, лесом....
 	}
 
 	/*if !emailRegexp.MatchString(email) {
 		error.AddErrors("email", t.Trans(t.EmailInvalidFormat) )
 	}*/
-	return
+	return nil
 }
 
-func ValidateHost(email string) (error Error) {
+func ValidateHost(email string) error {
 
 	at := strings.LastIndex(email, "@")
 	host := email[at+1:]
@@ -114,49 +90,44 @@ func ValidateHost(email string) (error Error) {
 		if _, err := net.LookupIP(host); err != nil {
 			// Only fail if both MX and A records are missing - any of the
 			// two is enough for an email to be deliverable
-			error.AddErrors("email", t.Trans(t.EmailUnresolvableHost) )
-			return
+			//error.AddErrors("email", t.Trans(t.EmailUnresolvableHost) )
+			return e.EmailInvalidFormat
 		}
 	}
-	return
+	return nil
 }
 
-func ValidateEmailDeepHost(email string) (error Error) {
+func ValidateEmailDeepHost(email string) error {
 	_, host := split(email)
+
 	mx, err := net.LookupMX(host)
 	if err != nil {
-		error.AddErrors("email", t.Trans(t.EmailDoesNotExist) )
-		return
-		//return ErrUnresolvableHost
+		return e.EmailDoesNotExist
 	}
 
 	client, err := DialTimeout(fmt.Sprintf("%s:%d", mx[0].Host, 25), forceDisconnectAfter)
 	if err != nil {
-		error.AddErrors("email", t.Trans(t.EmailDoesNotExist) )
-		return
-		//return NewSmtpError(err)
+		return e.EmailDoesNotExist
 	}
 	defer client.Close()
 
 	err = client.Hello("checkmail.me")
 	if err != nil {
-		error.AddErrors("email", t.Trans(t.EmailDoesNotExist) )
-		return
+		return e.EmailDoesNotExist
 		//return NewSmtpError(err)
 	}
+
 	err = client.Mail("lansome-cowboy@gmail.com")
 	if err != nil {
-		error.AddErrors("email", t.Trans(t.EmailDoesNotExist) )
-		return
-		//return NewSmtpError(err)
+		return e.EmailDoesNotExist
 	}
+
 	err = client.Rcpt(email)
 	if err != nil {
-		error.AddErrors("email", t.Trans(t.EmailDoesNotExist) )
-		return
-		//return NewSmtpError(err)
+		return e.EmailDoesNotExist
 	}
-	return
+
+	return nil
 }
 
 // DialTimeout returns a new Client connected to an SMTP server at addr.

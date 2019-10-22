@@ -41,6 +41,15 @@ one = "Email already in use by another user"
 [UsernameAlreadyUse]
 one = "Username already in use by another user"
 
+[UserUsernameIsTooLong]
+one = "Username is too long"
+
+[UserUsernameIsTooShort]
+one = "Username is too short"
+
+[UserUsernameForbiddenCharacters]
+one = "The user name contains forbidden characters"
+
 [UserInputIsTooLong]
 one = "The entered field is too long"
 
@@ -52,6 +61,12 @@ one = "User deletion error: no ID specified"
 
 [UserNotPermissionToCreateAccount]
 one = "You may not create an account"
+
+[UserFailedAddRole]
+one = "Failed add role for user"
+
+[UserFailedRemoveRole]
+one = "Failed remove role from user"
 
 [EmailUnresolvableHost]
 one = "Unresolvable {{.Host}} host. Check your email! "

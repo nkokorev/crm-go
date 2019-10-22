@@ -5,24 +5,25 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	_ "github.com/nkokorev/auth-server/locales"
-	"github.com/nkokorev/crm-go/database"
+	"github.com/nkokorev/crm-go/database/base"
 	t "github.com/nkokorev/crm-go/locales"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
 	"reflect"
 	"time"
+	//"unicode/utf8"
 )
 
 // global User
 type User struct {
 	ID        	uint `gorm:"primary_key;unique_index;" json:"-"`
-	HashID 		string `json:"hash_id" gorm:"type:varchar(10);unique_index;"`
-	Username 	string `json:"username" gorm:"unique_index"`
-	Email 		string `json:"email" gorm:"unique_index"`
+	HashID 		string `json:"hash_id" gorm:"type:varchar(10);unique_index;not null;"`
+	Username 	string `json:"username" gorm:"unique_index;not null;"`
+	Email 		string `json:"email" gorm:"unique_index;not null;"`
 	Name 		string `json:"name"`
 	Surname 	string `json:"surname"`
 	Patronymic 	string `json:"patronymic"`
-	Password 	string `json:"-"` // json:"-"
+	Password 	string `json:"-" gorm:"not null"` // json:"-"
 	//Token string               `json:"token";sql:"-"`
 	Accounts    []Account `json:"accounts" gorm:"many2many:account_users;"`
 	AUsers 		[]AccountUser `json:"-"` // ??
@@ -30,8 +31,9 @@ type User struct {
 	//Permissions []Permission `json:"permissions" gorm:"many2many:user_permissions;"`
 
 	//Permissions   []Permission `gorm:"polymorphic:Owner;"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CreatedAt *time.Time `json:"created_at;omitempty"`
+	UpdatedAt *time.Time `json:"updated_at;omitempty"`
+
 	DeletedAt *time.Time `sql:"index" json:"-"`
 }
 
@@ -64,16 +66,21 @@ func (user *User) Create() (error u.Error) {
 	}
 	user.Password = string(password)
 
-	user.HashID, error = CreateHashID(user)
+	//user.HashID = u.RandStringBytes(u.LENGTH_HASH_ID)
+	user.HashID, error = u.CreateHashID(user)
 	if error.HasErrors() {
 		error.Message = t.Trans(t.UserFailedToCreate)
 		return
 	}
 
-	if err = database.GetDB().Create(user).Error; err != nil {
+	if err = base.GetDB().Create(user).Error; err != nil {
+		fmt.Println(user)
 		error.Message = t.Trans(t.UserFailedToCreate)
 		return
 	}
+
+	base.GetDB().Save(user)
+
 
 	return
 }
@@ -81,28 +88,34 @@ func (user *User) Create() (error u.Error) {
 // Full Validate incoming user details for create new user...
 func (user *User) ValidateCreate() (error u.Error) {
 
-	error = u.VerifyEmail(user.Email, true)
-	if error.HasErrors() {
+	err := u.VerifyEmail(user.Email, false)
+	if err != nil {
+		error.AddErrors("email", err.Error())
 		error.Message = t.Trans(t.UserCreateInvalidCredentials)
 		return
 	}
 
-	error = u.VerifyPassword(user.Password)
-	if error.HasErrors() {
+	err = u.VerifyPassword(user.Password)
+	if err != nil {
+		error.AddErrors("email", err.Error())
 		error.Message = t.Trans(t.UserCreateInvalidCredentials)
 		return
 	}
 
-	if len(user.Username) > 25 {
-		error.AddErrors("username", t.Trans(t.UserInputIsTooLong) )
+	err = u.VerifyUsername(user.Username)
+	if err != nil {
+		error.AddErrors("username", err.Error() )
+		error.Message = t.Trans(t.UserCreateInvalidCredentials)
+		return
 	}
-	if len(user.Name) > 25 {
+
+	if len([]rune(user.Name)) > 25 {
 		error.AddErrors("name", t.Trans(t.UserInputIsTooLong) )
 	}
-	if len(user.Surname) > 25 {
+	if len([]rune(user.Surname)) > 25 {
 		error.AddErrors("surname", t.Trans(t.UserInputIsTooLong) )
 	}
-	if len(user.Patronymic) > 25 {
+	if len([]rune(user.Patronymic)) > 25 {
 		error.AddErrors("patronymic", t.Trans(t.UserInputIsTooLong) )
 	}
 
@@ -115,7 +128,7 @@ func (user *User) ValidateCreate() (error u.Error) {
 	temp := &User{}
 
 	//check for errors and duplicate emails
-	err := database.GetDB().Unscoped().Model(&User{}).Where("email = ?", user.Email).First(temp).Error
+	err = base.GetDB().Unscoped().Model(&User{}).Where("email = ?", user.Email).First(temp).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		error.Message = t.Trans(t.UserFailedToCreate)
 		return
@@ -126,7 +139,7 @@ func (user *User) ValidateCreate() (error u.Error) {
 
 	temp = &User{} // set to empty
 
-	err = database.GetDB().Unscoped().Model(&User{}).Where("username = ?", user.Username).First(temp).Error
+	err = base.GetDB().Unscoped().Model(&User{}).Where("username = ?", user.Username).First(temp).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		error.Message = t.Trans(t.UserFailedToCreate)
 		return
@@ -149,7 +162,7 @@ func (user *User) SoftDelete() (error u.Error) {
 		return
 	}
 
-	if err := database.GetDB().Delete(&user).Error; err != nil {
+	if err := base.GetDB().Delete(&user).Error; err != nil {
 		error.Message = t.Trans(t.UserDeletionError)
 		return
 	}
@@ -164,7 +177,7 @@ func (user *User) Delete() (error u.Error) {
 		return
 	}
 
-	if err := database.GetDB().Unscoped().Delete(&user).Error; err != nil {
+	if err := base.GetDB().Unscoped().Delete(&user).Error; err != nil {
 		error.Message = t.Trans(t.UserDeletionError)
 		return
 	}
@@ -172,10 +185,30 @@ func (user *User) Delete() (error u.Error) {
 	return
 }
 
+// добавляет роль пользователю
+func (aUser AccountUser) AppendRole(role Role) (error u.Error) {
+	err := base.GetDB().Model(&aUser).Association("Roles").Append(&role).Error
+	if err != nil {
+		error.Message = t.Trans(t.UserFailedAddRole)
+		return
+	}
+	return
+}
+
+// удаляет роль у пользователя
+func (aUser AccountUser) RemoveRole(role Role) (error u.Error) {
+	err := base.GetDB().Model(&aUser).Association("Roles").Delete(&role).Error
+	if err != nil {
+		error.Message = t.Trans(t.UserFailedRemoveRole)
+		return
+	}
+	return
+}
+
 // Вспомогательная функция получения пользователя ассоциированного с пользователем
 func (aUser *AccountUser) LoadFromDB() (error u.Error) {
 	//database.GetDB().Model(&auser).Where("account_id = ? AND user_id = ?", acc_id, user_id).First(&auser, "account_id = ? AND user_id = ?", acc_id, user_id)
-	err := database.GetDB().Model(&aUser).First(&aUser, "account_id = ? AND user_id = ?", aUser.AccountID, aUser.UserID).Error
+	err := base.GetDB().Model(&aUser).First(&aUser, "account_id = ? AND user_id = ?", aUser.AccountID, aUser.UserID).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			error.Message = "Record not found"
@@ -189,12 +222,14 @@ func (aUser *AccountUser) LoadFromDB() (error u.Error) {
 
 
 
+
+
 // Авторизует пользователя, в случае успеха возвращает jwt-token
 func AuthLogin(username, password string) (cryptToken string, error u.Error) {
 
 	user := &User{}
 
-	err := database.GetDB().Where("username = ?", username).First(&user).Error
+	err := base.GetDB().Where("username = ?", username).First(user).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			error.AddErrors("username", t.Trans(t.UserNotFound) )
@@ -234,7 +269,7 @@ func GetUserProfile(u uint) *User {
 
 	user := &User{}
 
-	database.GetDB().Preload("Accounts").Where("id = ?", u).First(&user)
+	base.GetDB().Preload("Accounts").Where("id = ?", u).First(&user)
 
 	//db.Preload("Accounts", func(db *gorm.DB) *gorm.DB {
 	//	return db.Table("accounts").Select("accounts.id, accounts.name, account_users.account_id, account_users.user_id")
@@ -246,7 +281,7 @@ func GetUserProfile(u uint) *User {
 
 func GetUser(u uint) *User {
 	user := &User{}
-	database.GetDB().First(&user, u)
+	base.GetDB().First(&user, u)
 	return user
 }
 
@@ -259,13 +294,13 @@ func (user *User) CreateAccount(account *Account) (error u.Error) {
 
 func GetUsersAccount(u uint) (accounts []Account) {
 	user := GetUser(u)
-	database.GetDB().Model(&user).Related(&accounts,  "Accounts")
+	base.GetDB().Model(&user).Related(&accounts,  "Accounts")
 	return
 }
 
 // add User To Account
 // remove User from Account
 func AssociateUserToAccount(user *User, account *Account) error{
-	database.GetDB().Model(&user).Association("Accounts").Replace(account)
+	base.GetDB().Model(&user).Association("Accounts").Replace(account)
 	return nil
 }

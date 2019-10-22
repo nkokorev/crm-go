@@ -10,7 +10,13 @@ const (
 	UserDeletionError  		= "UserDeletionError"
 	UserInputIsTooLong  	= "UserInputIsTooLong"
 	UserFailedToCreate  	= "UserFailedToCreate"
+	UserFailedAddRole 		= "UserFailedAddRole"
+	UserFailedRemoveRole 		= "UserFailedRemoveRole"
+
 	UsernameAlreadyUse 		= "UsernameAlreadyUse"
+	UserUsernameIsTooLong		= "UserUsernameIsTooLong"
+	UserUsernameIsTooShort		= "UserUsernameIsTooShort"
+	UserUsernameForbiddenCharacters		= "UserUsernameForbiddenCharacters"
 
 	UserNotPermissionToCreateAccount  	= "UserNotPermissionToCreateAccount"
 	UserCreateInvalidCredentials  		= "UserCreateInvalidCredentials"

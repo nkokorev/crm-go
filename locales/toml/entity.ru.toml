@@ -41,6 +41,15 @@ one = "Этот еmail адрес уже используется"
 [UsernameAlreadyUse]
 one = "Это имя пользователя уже используется"
 
+[UserUsernameIsTooLong]
+one = "Имя пользователя слишком длинное"
+
+[UserUsernameIsTooShort]
+one = "Имя пользователя слишком короткое"
+
+[UserUsernameForbiddenCharacters]
+one = "The user name contains forbidden characters"
+
 [UserInputIsTooLong]
 one = "Введеные данные слишком длинные"
 
@@ -52,6 +61,12 @@ one = "Ошибка удаления пользователя: не указан
 
 [UserNotPermissionToCreateAccount]
 one = "У вас нет прав на создание аккаунта"
+
+[UserFailedAddRole]
+one = "Неудалось добавить роль пользователю"
+
+[UserFailedRemoveRole]
+one = "Неудалось удалить роль у пользователя"
 
 [EmailUnresolvableHost]
 one = "Хост {{.Host}} неотвечает. Проверьте ваш email-адрес!"

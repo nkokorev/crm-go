@@ -1,6 +1,8 @@
 package utils
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Error struct {
 	Message string `json:"message"`
@@ -56,3 +58,11 @@ func (e *Error) Println()  {
 		fmt.Println(r)
 	}
 }
+
+func (e *Error) Printf()  {
+	fmt.Println(e.GetMsg())
+	for k, r := range e.GetErrors() {
+		fmt.Printf("%s | %s", k,r)
+	}
+}
+

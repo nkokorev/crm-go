@@ -1,23 +1,34 @@
 package utils
 
 import (
+	"errors"
 	_ "github.com/nkokorev/auth-server/locales"
+	e "github.com/nkokorev/crm-go/errors"
 	t "github.com/nkokorev/crm-go/locales"
+	"regexp"
 	"unicode"
 )
 
-func VerifyPassword(pwd string) (error Error) {
+// todo может сделать больше переменных и затрансовать их сразу?
+var (
+	UserPasswordIsTooShort	= errors.New(t.Trans(t.UserPasswordIsTooShort))
+	UserPasswordRequired	= errors.New(t.Trans(t.UserPasswordRequired))
+	UserPasswordIsTooLong	= errors.New(t.Trans(t.UserPasswordIsTooLong))
+	UserPasswordIsTooSimple	= errors.New(t.Trans(t.UserPasswordIsTooSimple))
+)
+
+func VerifyPassword(pwd string) error {
 
 	if len(pwd) < 6 {
-		error.AddErrors("password", t.Trans(t.UserPasswordIsTooShort) )
+		return UserPasswordIsTooShort
 	}
 
 	if len(pwd) == 0 {
-		error.AddErrors("password", t.Trans(t.UserPasswordRequired) )
+		return UserPasswordRequired
 	}
 
 	if len(pwd) > 25 {
-		error.AddErrors("password", t.Trans(t.UserPasswordIsTooLong) )
+		return UserPasswordIsTooLong
 	}
 
 	letters := 0
@@ -39,8 +50,27 @@ func VerifyPassword(pwd string) (error Error) {
 	}
 
 	if ! (number && upper && special && letters >= 5) {
-		error.AddErrors("password", t.Trans(t.UserPasswordIsTooSimple) )
+		return UserPasswordIsTooSimple
 	}
 
-	return
+	return nil
+}
+
+func VerifyUsername(username string) error {
+
+	if len(username) < 3 {
+		return e.UserUsernameIsTooShort
+	}
+	if len(username) > 25 || len([]rune(username)) > 25 {
+		return e.UserUsernameIsTooLong
+	}
+
+	var rxUsername = regexp.MustCompile("^[a-zA-Z0-9,-,_]+$")
+
+	if !rxUsername.MatchString(username) {
+		return e.UserUsernameForbiddenCharacters
+	}
+
+
+	return nil
 }

@@ -3,7 +3,7 @@ package models
 import (
 	"github.com/dgrijalva/jwt-go"
 	_ "github.com/nkokorev/auth-server/locales"
-	"github.com/nkokorev/crm-go/database"
+	"github.com/nkokorev/crm-go/database/base"
 	t "github.com/nkokorev/crm-go/locales"
 	u "github.com/nkokorev/crm-go/utils"
 	"log"
@@ -37,7 +37,7 @@ func (account *Account) Create(owner *User) (error u.Error) {
 		return
 	}
 
-	account.HashID, error = CreateHashID(account)
+	account.HashID, error = u.CreateHashID(account)
 	if error.HasErrors() {
 		error.Message = t.Trans(t.AccountFailedToCreate)
 		return
@@ -46,15 +46,16 @@ func (account *Account) Create(owner *User) (error u.Error) {
 	// account Owner
 	account.UserID = owner.ID
 
-	err := database.GetDB().Create(account).Error
+	err := base.GetDB().Create(account).Error
 	if err != nil {
 		error.Message = t.Trans(t.AccountFailedToCreate)
 		return
 	}
 
 	// user.AddToAccount()
-	roles := []Role{} // owner
-	error = account.AddUser(owner, roles)
+	//roles := []Role{} // owner
+	// todo неплохо бы давать владельцу права администратора по-умолчанию
+	error = account.AppendUser(owner)
 
 	return
 }
@@ -67,7 +68,7 @@ func (account *Account) SoftDelete() (error u.Error) {
 		return
 	}
 
-	if err := database.GetDB().Delete(&account).Error; err != nil {
+	if err := base.GetDB().Delete(&account).Error; err != nil {
 		error.Message = "Cant Soft Delete account"
 		return
 	}
@@ -82,17 +83,17 @@ func (account *Account) Delete() (error u.Error) {
 		return
 	}
 
-	if err := database.GetDB().Unscoped().Delete(&account).Error; err != nil {
+	if err := base.GetDB().Unscoped().Delete(&account).Error; err != nil {
 		error.Message = "Cant Delete account"
 		return
 	}
 	return
 }
 
-// Add user to account with roles (?) / permissions(?)
-func (account *Account) AddUser(user *User, roles... []Role) (error u.Error) {
+// Add user to account
+func (account *Account) AppendUser(user *User) (error u.Error) {
 
-	if err := database.GetDB().Model(&account).Association("Users").Append(user).Error; err != nil {
+	if err := base.GetDB().Model(&account).Association("Users").Append(user).Error; err != nil {
 		error.Message = "Cant add User to this Account"
 		return
 	}
@@ -100,38 +101,36 @@ func (account *Account) AddUser(user *User, roles... []Role) (error u.Error) {
 }
 
 // исключение пользователя из аккаунта
-func (account *Account) RemoveUser(user *User, roles... []Role) (error u.Error) {
+func (account *Account) RemoveUser(user *User) (error u.Error) {
 
-	if err := database.GetDB().Model(&account).Association("Users").Delete(user).Error; err != nil {
+	if err := base.GetDB().Model(&account).Association("Users").Delete(user).Error; err != nil {
 		error.Message = "Cant Remove User from Account"
 		return
 	}
 	return
 }
 
-
-
 // ######### ниже не проверенные фукнции ###########
-
-
+// todo надо доработать: передавать роль по ссылке или нет !!!
 // Создает голую роль в аккаунте с разрешениями (Permission / []Permissions)
-func (account *Account) CreateRole(role Role, values... interface{}) (error u.Error){
-	error = role.Create(*account)
-	return
+func (account Account) CreateRole(role *Role, values... interface{}) (error u.Error){
+	return role.Create(account, values...)
 }
 
-
 // Создает роль администратора
-func (account *Account) CreateAdminRole(role *Role) (error u.Error) {
+func (account Account) CreateAdminRole(role *Role) (error u.Error) {
 
 	// 1. Создаем роли и привязываем их к аккаунту
 	role.Name = "Администратор аккаунта"
 	role.Description = "Полный доступ ко всем элементам и настройкам системы."
+	//role.AccountID = account.ID
 
+	// todo добавить роль к аккаунту и назначить права администратора
+	role.Create(account)
+	role.AppendAdminPermissions()
 
 	return
 }
-
 
 // создает новый токен
 var CreateAccountToken = func (userId, accountId uint) (cryptToken string, error error) {
@@ -153,7 +152,7 @@ func GetAccount(u uint) *Account {
 
 	account := &Account{}
 	//acc := &Account{}
-	db := database.GetDB()
+	db := base.GetDB()
 	//db.GetDB().Model(&acc).Association("Accounts")
 	//db.GetDB().Preload( "Accounts" ).First (&acc)
 
@@ -170,7 +169,7 @@ func GetAccountByHashID(hash string) *Account {
 
 	account := &Account{}
 	//acc := &Account{}
-	db := database.GetDB()
+	db := base.GetDB()
 	//db.GetDB().Model(&acc).Association("Accounts")
 	//db.GetDB().Preload( "Accounts" ).First (&acc)
 

@@ -7,4 +7,3 @@ type Shop struct {
 	//OwnerID int // тип магазина
 	//OwnerType string // тип магазина
 }
-
