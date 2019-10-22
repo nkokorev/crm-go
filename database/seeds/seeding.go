@@ -12,5 +12,8 @@ func init() {
 		//UserSeeding()
 		//PermissionSeeding()
 	}
+	//UserSeeding()
+	//PermissionSeeding()
+
 }
 

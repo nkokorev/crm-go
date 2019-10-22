@@ -1,34 +1,23 @@
 package utils
 
 import (
-	"errors"
 	_ "github.com/nkokorev/auth-server/locales"
 	e "github.com/nkokorev/crm-go/errors"
-	t "github.com/nkokorev/crm-go/locales"
 	"regexp"
 	"unicode"
 )
 
-// todo может сделать больше переменных и затрансовать их сразу?
-var (
-	UserPasswordIsTooShort	= errors.New(t.Trans(t.UserPasswordIsTooShort))
-	UserPasswordRequired	= errors.New(t.Trans(t.UserPasswordRequired))
-	UserPasswordIsTooLong	= errors.New(t.Trans(t.UserPasswordIsTooLong))
-	UserPasswordIsTooSimple	= errors.New(t.Trans(t.UserPasswordIsTooSimple))
-)
-
 func VerifyPassword(pwd string) error {
 
-	if len(pwd) < 6 {
-		return UserPasswordIsTooShort
+	if len([]rune(pwd)) == 0 {
+		return e.UserPasswordIsRequired
+	}
+	if len([]rune(pwd)) < 6 {
+		return e.UserPasswordIsTooShort
 	}
 
-	if len(pwd) == 0 {
-		return UserPasswordRequired
-	}
-
-	if len(pwd) > 25 {
-		return UserPasswordIsTooLong
+	if len([]rune(pwd)) > 25 {
+		return e.UserPasswordIsTooLong
 	}
 
 	letters := 0
@@ -50,7 +39,7 @@ func VerifyPassword(pwd string) error {
 	}
 
 	if ! (number && upper && special && letters >= 5) {
-		return UserPasswordIsTooSimple
+		return e.UserPasswordIsTooSimple
 	}
 
 	return nil
@@ -58,6 +47,9 @@ func VerifyPassword(pwd string) error {
 
 func VerifyUsername(username string) error {
 
+	if len(username) == 0 {
+		return e.UserUsernameIsRequired
+	}
 	if len(username) < 3 {
 		return e.UserUsernameIsTooShort
 	}

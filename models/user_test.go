@@ -2,7 +2,6 @@ package models
 
 import (
 	"github.com/nkokorev/crm-go/database/base"
-	"reflect"
 	"testing"
 )
 
@@ -39,19 +38,16 @@ func TestExistAccountUserTable(t *testing.T) {
 
 func TestUser_Create(t *testing.T) {
 
-	user := User{
+	test_user_1 := User{
 		Username:"admin_test",
 		Email: "testmail@ratus-dev.ru",
-		//Name:"Nikita",
 		Name:"РеальноеИмя",
-		//Surname:"Kokorev",
 		Surname:"РеальнаяФамилия",
-		//Patronymic:"Romanovich",
 		Patronymic:"РеальноеОтчество",
 		Password: "qwerty123#Aa",
 	}
 
-	myErr := user.Create()
+	myErr := test_user_1.Create()
 	if myErr.HasErrors() {
 		t.Error(myErr.Message)
 		for k, r := range myErr.GetErrors() {
@@ -59,27 +55,22 @@ func TestUser_Create(t *testing.T) {
 		}
 		return
 	} else {
-		defer user.Delete()
+		defer test_user_1.Delete()
 	}
 
-	// убеждаемся, что новый пользователь создан
-	if user.ID == 0 {
+	// убеждаемся, что в нового пользователя загружены новые данные после создания
+	if test_user_1.ID == 0 {
 		t.Errorf("User ID == 0, expected > 0")
+		return
 	}
-
 	temp_user := User{}
-	if err := base.GetDB().First(&temp_user, user.ID).Error; err != nil {
-		t.Errorf("Cant find created user: %v", err.Error())
-	}
-
-	if !reflect.DeepEqual(user, temp_user) {
-		t.Error("Данные пользователей созданного и найденого пользователей несовпадают:")
-		t.Error(user)
-		t.Error(temp_user)
+	if base.GetDB().First(&temp_user, test_user_1.ID).RecordNotFound() {
+		t.Errorf("Cant find created user: %v", test_user_1.Username)
+		return
 	}
 
 	// тестируем невалидные данные пользователей. Эти пользователи не должны быть созданы
-	users := []User{
+	test_users := []User{
 		{}, // ничего нет %)
 		{Username:"", Email: "mail-test@ratus-dev.ru", Password: "qwerty123#Aa"}, // нет username
 		{Username:"admin_test", Email: "mail-test@ratus-dev.ru", Password: "qwerty123#Aa"}, // повторяющийся Username
@@ -96,16 +87,11 @@ func TestUser_Create(t *testing.T) {
 		{Username:"test_user_10", Password: "qwerty123#Aa"}, // Нет email'a
 	}
 
-	for i, _ := range users {
-		myErr := users[i].Create()
+	for i, _ := range test_users {
+		myErr := test_users[i].Create()
 		if !myErr.HasErrors() {
-			t.Errorf("создан пользователь с невалидными данными: %v", users[i].Username)
-			defer  users[i].Delete()
-		} else {
-			/*t.Error(myErr.Message)
-			for k, r := range myErr.GetErrors() {
-				t.Errorf("%s | %s", k,r)
-			}*/
+			t.Errorf("создан пользователь с невалидными данными: %v", test_users[i].Username)
+			defer  test_users[i].Delete()
 		}
 	}
 
@@ -127,7 +113,99 @@ func TestUser_Create(t *testing.T) {
 		}
 		return
 	} else {
-		test_user_2.Delete()
+		defer test_user_2.Delete()
 	}
 
+}
+
+func TestUser_Delete(t *testing.T) {
+	test_user := User{Username:"test_user", Email:"testmail@ratus-dev.ru", Password:"qwerty1#R"}
+	e := test_user.Create()
+	if e.HasErrors() {
+		if e.HasErrors() {
+			t.Error(e.Message)
+			for k, r := range e.GetErrors() {
+				t.Errorf("%s | %s", k,r)
+			}
+			return
+		}
+	} else {
+		defer test_user.Delete()
+	}
+
+	// убеждаемся, что новый пользователь создан
+	if test_user.ID == 0 {
+		t.Errorf("User ID == 0, expected > 0")
+		return
+	}
+
+	userID := test_user.ID
+
+	e = test_user.Delete()
+	if e.HasErrors() {
+		if e.HasErrors() {
+			t.Error(e.Message)
+			for k, r := range e.GetErrors() {
+				t.Errorf("%s | %s", k,r)
+			}
+			return
+		}
+	}
+
+	temp_user := User{}
+	base.GetDB().First(&temp_user,userID)
+
+	if temp_user.ID == userID {
+		t.Errorf("найден пользователь, который должен быть удален ID: %v", userID)
+	}
+
+}
+
+func TestUser_SoftDelete(t *testing.T) {
+	test_user := User{Username:"test_user", Email:"testmail@ratus-dev.ru", Password:"qwerty1#R"}
+	e := test_user.Create()
+	if e.HasErrors() {
+		if e.HasErrors() {
+			t.Error(e.Message)
+			for k, r := range e.GetErrors() {
+				t.Errorf("%s | %s", k,r)
+			}
+			return
+		}
+	} else {
+		defer test_user.Delete()
+	}
+
+	// убеждаемся, что новый пользователь создан
+	if test_user.ID == 0 {
+		t.Errorf("User ID == 0, expected > 0")
+		return
+	}
+
+	userID := test_user.ID
+
+	e = test_user.SoftDelete()
+	if e.HasErrors() {
+		if e.HasErrors() {
+			t.Error(e.Message)
+			for k, r := range e.GetErrors() {
+				t.Errorf("%s | %s", k,r)
+			}
+			return
+		}
+	}
+
+	temp_user := User{}
+
+	// без специального условия мы его не должны найти
+	base.GetDB().First(&temp_user,userID)
+	if temp_user.ID == userID {
+		t.Errorf("найден пользователь, который должен быть удален ID: %v", userID)
+	}
+
+	// теперь мы его должны найти т.к. ищем все, без учета deleted_at
+	base.GetDB().Unscoped().First(&temp_user,userID)
+	if temp_user.ID != userID {
+		t.Errorf("не найден пользователь, который должен быть мягко удален ID: %v", userID)
+	}
 }

@@ -52,11 +52,12 @@ func (account *Account) Create(owner *User) (error u.Error) {
 		return
 	}
 
+	base.GetDB().Save(account)
+
 	// user.AddToAccount()
 	//roles := []Role{} // owner
 	// todo неплохо бы давать владельцу права администратора по-умолчанию
 	error = account.AppendUser(owner)
-
 	return
 }
 

@@ -7,7 +7,10 @@ const (
 	UserPasswordIsTooShort  = "UserPasswordIsTooShort"
 	UserPasswordIsTooLong  	= "UserPasswordIsTooLong"
 	UserPasswordIsTooSimple = "UserPasswordIsTooSimple"
+	UserPasswordIsRequired 	= "UserPasswordIsRequired"
 	UserDeletionError  		= "UserDeletionError"
+	UserDeletionErrorNotID  		= "UserDeletionErrorNotID"
+	UserDeletionErrorHasAccount  		= "UserDeletionErrorHasAccount"
 	UserInputIsTooLong  	= "UserInputIsTooLong"
 	UserFailedToCreate  	= "UserFailedToCreate"
 	UserFailedAddRole 		= "UserFailedAddRole"
@@ -16,6 +19,7 @@ const (
 	UsernameAlreadyUse 		= "UsernameAlreadyUse"
 	UserUsernameIsTooLong		= "UserUsernameIsTooLong"
 	UserUsernameIsTooShort		= "UserUsernameIsTooShort"
+	UserUsernameIsRequired		= "UserUsernameIsRequired"
 	UserUsernameForbiddenCharacters		= "UserUsernameForbiddenCharacters"
 
 	UserNotPermissionToCreateAccount  	= "UserNotPermissionToCreateAccount"

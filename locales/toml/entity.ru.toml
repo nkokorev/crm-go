@@ -17,6 +17,9 @@ one = "Пароль слишком длинный"
 [UserPasswordIsTooSimple]
 one = "Пароль слишком простой"
 
+[UserPasswordIsRequired]
+one = "Поле с паролем обязателено к заполнению"
+
 [UserCreateInvalidCredentials]
 one = "Не верно указаны учетные данные"
 
@@ -47,6 +50,9 @@ one = "Имя пользователя слишком длинное"
 [UserUsernameIsTooShort]
 one = "Имя пользователя слишком короткое"
 
+[UserUsernameIsRequired]
+one = "Имя пользователя обязательно к заполнению"
+
 [UserUsernameForbiddenCharacters]
 one = "The user name contains forbidden characters"
 
@@ -57,6 +63,12 @@ one = "Введеные данные слишком длинные"
 one = "Неудалось создать пользователя"
 
 [UserDeletionError]
+one = "Ошибка удаления пользователя"
+
+[UserDeletionErrorHasAccount]
+one = "Нельзя удалить пользователя, пока у него есть аккаунты"
+
+[UserDeletionErrorNotID]
 one = "Ошибка удаления пользователя: не указан ID"
 
 [UserNotPermissionToCreateAccount]

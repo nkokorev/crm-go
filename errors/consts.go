@@ -12,5 +12,13 @@ var (
 
 	UserUsernameIsTooShort = errors.New(t.Trans(t.UserUsernameIsTooShort))
 	UserUsernameIsTooLong = errors.New(t.Trans(t.UserUsernameIsTooLong))
+	UserUsernameIsRequired = errors.New(t.Trans(t.UserUsernameIsRequired))
 	UserUsernameForbiddenCharacters = errors.New(t.Trans(t.UserUsernameForbiddenCharacters))
+
+	UserPasswordIsRequired = errors.New(t.Trans(t.UserPasswordIsRequired))
+	UserPasswordIsTooShort = errors.New(t.Trans(t.UserPasswordIsTooShort))
+	UserPasswordIsTooLong = errors.New(t.Trans(t.UserPasswordIsTooLong))
+	UserPasswordIsTooSimple = errors.New(t.Trans(t.UserPasswordIsTooSimple))
+
+
 )

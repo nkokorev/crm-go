@@ -12,7 +12,9 @@ func init() {
 	migration := os.Getenv("migration")
 	if migration == "true" || migration == "fresh" {
 		//MigrationTables(migration == "fresh")
+		MigrationTables(true)
 	}
+	//MigrationTables(true)
 }
 
 
@@ -34,7 +36,7 @@ func MigrationTables(freshTables bool) {
 	// теперь создаем таблички
 	db.Debug().AutoMigrate(&models.AccountUser{}, &models.User{}, &models.Account{}, &models.Store{}, &models.Permission{}, &models.Role{}, &models.ApiKey{}, &models.Shop{})
 
-	db.Table("accounts").AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE") // за пользователем удаляются все его аккаунты
+	db.Table("accounts").AddForeignKey("user_id", "users(id)", "RESTRICT", "CASCADE") // за пользователем удаляются все его аккаунты
 
 	db.Table("account_users").AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
 	db.Table("account_users").AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")

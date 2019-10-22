@@ -17,6 +17,9 @@ one = "Password is too long"
 [UserPasswordIsTooSimple]
 one = "Password is too simple"
 
+[UserPasswordIsRequired]
+one = "Password field is required"
+
 [UserCreateInvalidCredentials]
 one = "Invalid credentials are specified"
 
@@ -47,6 +50,9 @@ one = "Username is too long"
 [UserUsernameIsTooShort]
 one = "Username is too short"
 
+[UserUsernameIsRequired]
+one = "Username field is required"
+
 [UserUsernameForbiddenCharacters]
 one = "The user name contains forbidden characters"
 
@@ -57,6 +63,12 @@ one = "The entered field is too long"
 one = "Failed to create user"
 
 [UserDeletionError]
+one = "User deletion error"
+
+[UserDeletionErrorHasAccount]
+one = "You cannot delete a user while they have accounts"
+
+[UserDeletionErrorNotID]
 one = "User deletion error: no ID specified"
 
 [UserNotPermissionToCreateAccount]

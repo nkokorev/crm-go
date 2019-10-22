@@ -158,7 +158,7 @@ func (user *User) ValidateCreate() (error u.Error) {
 func (user *User) SoftDelete() (error u.Error) {
 
 	if reflect.TypeOf(user.ID).String() != "uint" {
-		error.Message = t.Trans(t.UserDeletionError)
+		error.Message = t.Trans(t.UserDeletionErrorNotID)
 		return
 	}
 
@@ -169,11 +169,17 @@ func (user *User) SoftDelete() (error u.Error) {
 	return
 }
 
-// Delete User from BD !!!. При удалении пользователя удаляются все связанными с ним данные.
+// Delete User from BD. При удалении пользователя удаляются все связанными с ним данные, кроме аккаунта(ов)!!!
 func (user *User) Delete() (error u.Error) {
 
 	if reflect.TypeOf(user.ID).String() != "uint" {
-		error.Message = t.Trans(t.UserDeletionError)
+		error.Message = t.Trans(t.UserDeletionErrorNotID)
+		return
+	}
+
+	// проверка на наличие связанных аккаунтов (стоит ограничение внешнего ключа)
+	if base.GetDB().Model(&user).Association("Accounts").Count() > 0 {
+		error.Message = t.Trans(t.UserDeletionErrorHasAccount)
 		return
 	}
 
@@ -218,6 +224,11 @@ func (aUser *AccountUser) LoadFromDB() (error u.Error) {
 		return
 	}
 	return
+}
+
+// создание нового аккаунт см.: (account *Account) Create(user *User)
+func (user *User) CreateAccount(account *Account) (error u.Error) {
+	return account.Create(user)
 }
 
 
@@ -285,10 +296,7 @@ func GetUser(u uint) *User {
 	return user
 }
 
-// создание нового аккаунт см.: (account *Account) Create(user *User)
-func (user *User) CreateAccount(account *Account) (error u.Error) {
-	return account.Create(user)
-}
+
 
 
 
