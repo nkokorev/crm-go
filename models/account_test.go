@@ -23,25 +23,17 @@ func TestAccount_Create(t *testing.T) {
 		Patronymic:"РеальноеОтчество",
 		Password: "qwerty123#Aa",
 	}
-	myErr := test_user_1.Create()
-	if myErr.HasErrors() {
-		t.Error(myErr.Message)
-		for k, r := range myErr.GetErrors() {
-			t.Errorf("%s | %s", k,r)
-		}
-		return
+	err := test_user_1.Create()
+	if err != nil {
+		t.Error(err.Error())
 	} else {
 		defer test_user_1.Delete()
 	}
 
 	test_account_1 := Account {	Name:"Account_Test",}
-	myErr = test_account_1.Create(&test_user_1)
-	if myErr.HasErrors() {
-		t.Error(myErr.Message)
-		for k, r := range myErr.GetErrors() {
-			t.Errorf("%s | %s", k,r)
-		}
-		return
+	err = test_account_1.Create(&test_user_1)
+	if err != nil {
+		t.Error(err.Error())
 	} else {
 		defer test_account_1.Delete()
 	}
@@ -49,42 +41,33 @@ func TestAccount_Create(t *testing.T) {
 	temp_account := Account{}
 	if base.GetDB().First(&temp_account, test_account_1.ID).RecordNotFound() {
 		t.Errorf("Cant find created account: %v", test_account_1.Name)
-		return
 	}
 
 	// проверим, что в аккаунт был добавлен владелец аккаунта
 	if base.GetDB().Model(&test_user_1).Where("account_id = ?", test_account_1.ID).Association("Accounts").Count() != 1 {
 		t.Error("Владелец аккаунта не добавлен в список пользователей аккаунта")
-		return
 	}
 
 	// проверим, что нам не дадут удалить пользователя, если у него есть аккаунты
-	myErr = test_user_1.Delete()
-	if !myErr.HasErrors() {
+	err = test_user_1.Delete()
+	if err == nil {
 		t.Error("Удалось удалить пользователя, при существующем аккаунте")
-		return
 	}
 	if base.GetDB().First(&temp_account, test_account_1.ID).RecordNotFound() {
 		t.Errorf("аккаунт был удален, хотя есть ограничение внешнего ключа: %v", test_account_1.Name)
 	}
 
 	// удаляем аккаунт
-	myErr = test_account_1.Delete()
-	if myErr.HasErrors() {
-		t.Error(myErr.Message)
-		for k, r := range myErr.GetErrors() {
-			t.Errorf("%s | %s", k,r)
-		}
-		return
+	err = test_account_1.Delete()
+	if err != nil {
+		t.Error(err.Error())
 	}
 
 	// удаляем пользователя (должен удалиться)
-	myErr = test_user_1.Delete()
-	if myErr.HasErrors() {
+	err = test_user_1.Delete()
+	if err != nil {
 		t.Error("Неудалось удалить пользователя, хотя аккаунт был удален.")
-		return
 	}
-
 
 }
 

@@ -23,7 +23,7 @@ func UserSeeding()  {
 
 	for _, v := range users {
 		err := v.Create()
-		if err.HasErrors() {
+		if err != nil {
 			fmt.Println("Cant create Users")
 		}
 	}

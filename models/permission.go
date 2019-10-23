@@ -1,10 +1,10 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	_ "github.com/nkokorev/auth-server/locales"
 	"github.com/nkokorev/crm-go/database/base"
-	t "github.com/nkokorev/crm-go/locales"
 	u "github.com/nkokorev/crm-go/utils"
 )
 
@@ -32,26 +32,23 @@ type Permission struct {
 
 
 // Создание нового правила доступа (сугубо внутренняя функция)
-func (permission *Permission) Create() (error u.Error) {
-
-	err := base.GetDB().Create(permission).Error
-	if err != nil {
-		error.Message = t.Trans(t.PermissionFailedToCreate)
-		return
+func (permission *Permission) Create() error {
+	if err := base.GetDB().Create(permission).Error; err != nil {
+		return err
 	}
-	return
+	return nil
 }
 
 // Add Permission To AccountUser
-func (permission *Permission) AddToUser(aUser *AccountUser) (error u.Error) {
+func (permission *Permission) AddToUser(aUser *AccountUser) error {
 	if err := base.GetDB().Model(aUser).Association("Permissions").Append(permission).Error; err != nil {
-		error.Message = "Cant add permission to User"
+		return err
 	}
-	return
+	return nil
 }
 
 // Add Permission To AccountUser
-func (aUser *AccountUser) AppendPermission(i interface{}) (error u.Error) {
+func (aUser *AccountUser) AppendPermission(i interface{}) error {
 
 	permission := &Permission{}
 
@@ -59,18 +56,19 @@ func (aUser *AccountUser) AppendPermission(i interface{}) (error u.Error) {
 
 	case int, uint:
 		if base.GetDB().First(&permission, "code = ?", i.(int)).RecordNotFound() {
-			error.Message = "Cant find permission code: " + fmt.Sprint(i);
+			return errors.New("Cant find permission code: " + fmt.Sprint(i))
 		}
 	case *Permission:
 		permission = i.(*Permission)
 	default:
-		error.Message = "Cant add permission to User"
-		return
+		return errors.New("Cant add permission to User")
 	}
 
-	error = permission.AddToUser(aUser)
-
-	return
+	err := permission.AddToUser(aUser)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Remove Permission From AccountUser

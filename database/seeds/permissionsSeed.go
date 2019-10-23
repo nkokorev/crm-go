@@ -37,7 +37,7 @@ func PermissionSeeding()  {
 
 	for _, v := range permissions {
 		err := v.Create()
-		if err.HasErrors() {
+		if err != nil {
 			fmt.Println("Cant create Permissions")
 		}
 	}

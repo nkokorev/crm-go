@@ -24,19 +24,16 @@ type Role struct {
 }
 
 // создает роль и ассоциирует ее с правами (values[0] = Permission || [] Permissions)
-func (role *Role) Create(account Account, values... interface{}) (error u.Error) {
+func (role *Role) Create(account Account, values... interface{}) (err error) {
 	db := base.GetDB()
 
-	role.HashID, error = u.CreateHashID(role)
-	if error.HasErrors() {
-		error.Message = t.Trans(t.RoleFailedToCreate)
-		return
+	role.HashID, err = u.CreateHashID(role)
+	if err != nil {
+		return err
 	}
 
-	err := db.Model(&account).Association("Roles").Append(role).Error
-	if err != nil {
-		error.Message = t.Trans(t.RoleFailedToCreate)
-		return
+	if err := db.Model(&account).Association("Roles").Append(role).Error; err != nil {
+		return err
 	}
 
 	if (len(values) > 0) {

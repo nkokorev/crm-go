@@ -7,15 +7,19 @@ import (
 )
 
 var (
+	AccountFailedToCreate = errors.New(t.Trans(t.AccountFailedToCreate))
 	AccountDeletionError = errors.New(t.Trans(t.AccountDeletionError))
 
 	EmailDoesNotExist	= errors.New(t.Trans(t.EmailDoesNotExist))
 	EmailInvalidFormat	= errors.New(t.Trans(t.EmailInvalidFormat))
 
+	UserFailedToCreate	= errors.New(t.Trans(t.UserFailedToCreate))
 	UserUsernameIsTooShort = errors.New(t.Trans(t.UserUsernameIsTooShort))
 	UserUsernameIsTooLong = errors.New(t.Trans(t.UserUsernameIsTooLong))
 	UserUsernameIsRequired = errors.New(t.Trans(t.UserUsernameIsRequired))
 	UserUsernameForbiddenCharacters = errors.New(t.Trans(t.UserUsernameForbiddenCharacters))
+	UserDeletionErrorNotID = errors.New(t.Trans(t.UserDeletionErrorNotID))
+	UserDeletionErrorHasAccount = errors.New(t.Trans(t.UserDeletionErrorHasAccount))
 
 	UserPasswordIsRequired = errors.New(t.Trans(t.UserPasswordIsRequired))
 	UserPasswordIsTooShort = errors.New(t.Trans(t.UserPasswordIsTooShort))

@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"fmt"
+	"errors"
 	"github.com/nkokorev/crm-go/database/base"
 	"math/rand"
 	"reflect"
@@ -16,22 +16,18 @@ func RandStringBytes(n int) string {
 	return StringWithCharset(n, letterBytes)
 }
 
-// создает и возвращает уникальный новый хеш для модели IFace interface{}
-func CreateHashID(IFace interface{}) (hash string, error Error) {
+// Создает уникальный hashId для модели. Получать указатель на модель
+func CreateHashID(IFace interface{}) (hash string, error error) {
 
 	model := reflect.ValueOf(IFace)
 
 	if model.Type().Kind() != reflect.Ptr {
-		fmt.Println("Model has not HashID!")
-		error.Message = "Model has not HashID!"
-		return
+		return "", errors.New("Model is not Ptr (*)")
 	}
 
 	Field := model.Elem().FieldByName("HashID")
 	if !Field.IsValid() {
-		fmt.Println("Model has not HashID!")
-		error.Message = "Model has not HashID!"
-		return
+		return "", errors.New("Model has not fiels: HashID")
 	}
 
 	db := base.GetDB()
@@ -46,7 +42,7 @@ func CreateHashID(IFace interface{}) (hash string, error Error) {
 		hash = RandStringBytes(LENGTH_HASH_ID)
 	}
 	if count != 0 {
-		error.Message = "Cant create new hash for User"
+		return "", errors.New("Cant create new hash for Model")
 	}
 	return
 }

@@ -1,12 +1,12 @@
 package models
 
 import (
+	"errors"
 	"github.com/dgrijalva/jwt-go"
 	_ "github.com/nkokorev/auth-server/locales"
 	"github.com/nkokorev/crm-go/database/base"
-	t "github.com/nkokorev/crm-go/locales"
-	u "github.com/nkokorev/crm-go/utils"
 	e "github.com/nkokorev/crm-go/errors"
+	u "github.com/nkokorev/crm-go/utils"
 	"log"
 	"reflect"
 	"time"
@@ -30,27 +30,23 @@ type Account struct {
 }
 
 // Создает новый аккаунт по структуре account. Аккаунт привязывается к владельцу по user_id, добавляя его в список пользователей аккаунта.
-func (account *Account) Create(owner *User) (error u.Error) {
+func (account *Account) Create(owner *User) (err error) {
 
 	if reflect.TypeOf(owner.ID).String() != "uint" {
-		log.Println("Невозможно создать аккаунт, у пользователя не задан ID")
-		error.Message = "Can't create new account: user ID not specified"
-		return
+		return errors.New("Can't create new account: user ID not specified")
 	}
 
-	account.HashID, error = u.CreateHashID(account)
-	if error.HasErrors() {
-		error.Message = t.Trans(t.AccountFailedToCreate)
-		return
+	account.HashID, err = u.CreateHashID(account)
+	if err != nil {
+		return err
 	}
 
 	// account Owner
 	account.UserID = owner.ID
 
-	err := base.GetDB().Create(account).Error
+	err = base.GetDB().Create(account).Error
 	if err != nil {
-		error.Message = t.Trans(t.AccountFailedToCreate)
-		return
+		return err
 	}
 
 	base.GetDB().Save(account)
@@ -59,11 +55,10 @@ func (account *Account) Create(owner *User) (error u.Error) {
 	if account.AppendUser(owner) != nil {
 		// вообще это фаталити, т.к. аккаунт создан, но пользователь не добавился в аккаунт, хотя права доступа к нему он имеет
 		// пользователь не увидит созданный аккаунт, в списке доступных аккаунтов, следовательно не сможет зайти или удалить этот аккаунт
-		error.Message = "Can't append user to your account"
 		if err := account.Delete(); err != nil {
-			error.Message = "Can't append user in his account. And account user not deleted!"
+			return errors.New("Can't append user in his account. And account user not deleted!")
 		}
-		return
+		return errors.New("Can't append user to your account")
 	}
 	return
 }
@@ -81,7 +76,7 @@ func (account *Account) SoftDelete() error {
 	return nil
 }
 
-// Удаление аккаунта и всех связанных данных!!
+// Удаление аккаунта и всех связанных данных
 func (account *Account) Delete() error {
 	if reflect.TypeOf(account.ID).String() != "uint" {
 		log.Println("Переданный аккаунт для удаления не содержит ID: ", account)
@@ -94,7 +89,7 @@ func (account *Account) Delete() error {
 	return nil
 }
 
-// Add user to account
+// Добавление к аккаунту пользователя
 func (account *Account) AppendUser(user *User) error {
 	if err := base.GetDB().Model(&account).Association("Users").Append(user).Error; err != nil {
 		return err
@@ -103,13 +98,12 @@ func (account *Account) AppendUser(user *User) error {
 }
 
 // исключение пользователя из аккаунта
-func (account *Account) RemoveUser(user *User) (error u.Error) {
+func (account *Account) RemoveUser(user *User) error {
 
 	if err := base.GetDB().Model(&account).Association("Users").Delete(user).Error; err != nil {
-		error.Message = "Cant Remove User from Account"
-		return
+		return err
 	}
-	return
+	return nil
 }
 
 
@@ -118,7 +112,7 @@ func (account *Account) RemoveUser(user *User) (error u.Error) {
 // ######### ниже не проверенные фукнции ###########
 // todo надо доработать: передавать роль по ссылке или нет !!!
 // Создает голую роль в аккаунте с разрешениями (Permission / []Permissions)
-func (account Account) CreateRole(role *Role, values... interface{}) (error u.Error){
+func (account Account) CreateRole(role *Role, values... interface{}) error {
 	return role.Create(account, values...)
 }
 

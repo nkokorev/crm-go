@@ -6,6 +6,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/nkokorev/auth-server/locales"
 	"github.com/nkokorev/crm-go/database/base"
+	e "github.com/nkokorev/crm-go/errors"
 	t "github.com/nkokorev/crm-go/locales"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
@@ -31,40 +32,36 @@ type User struct {
 }
 
 //Create new User by &User{}. Dont hash pwd. HashID will be created.
-func (user *User) Create() (error u.Error) {
+func (user *User) Create() (err error) {
 
-	error = user.ValidateCreate()
-	if error.HasErrors() {
-		return
+	myErr := user.ValidateCreate()
+	if myErr.HasErrors() {
+		return e.UserFailedToCreate
 	}
 
 	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		error.Message = t.Trans(t.UserFailedToCreate)
-		return
+		return err
 	}
 	user.Password = string(password)
 
-	//user.HashID = u.RandStringBytes(u.LENGTH_HASH_ID)
-	user.HashID, error = u.CreateHashID(user)
-	if error.HasErrors() {
-		error.Message = t.Trans(t.UserFailedToCreate)
-		return
+	user.HashID, err = u.CreateHashID(user)
+	if err != nil {
+		return err
 	}
 
 	if err = base.GetDB().Create(user).Error; err != nil {
-		fmt.Println(user)
-		error.Message = t.Trans(t.UserFailedToCreate)
-		return
+		return err
 	}
 
-	base.GetDB().Save(user)
+	if err = base.GetDB().Save(user).Error; err != nil {
+		return  err
+	}
 
-
-	return
+	return nil
 }
 
-// Full Validate incoming user details for create new user...
+// Full Validate incoming user fields
 func (user *User) ValidateCreate() (error u.Error) {
 
 	err := u.VerifyEmail(user.Email, false)
@@ -134,50 +131,41 @@ func (user *User) ValidateCreate() (error u.Error) {
 }
 
 // SoftDelete user by user.ID.
-func (user *User) SoftDelete() (error u.Error) {
+func (user *User) SoftDelete() error {
 
 	if reflect.TypeOf(user.ID).String() != "uint" {
-		error.Message = t.Trans(t.UserDeletionErrorNotID)
-		return
+		return e.UserDeletionErrorNotID
 	}
 
 	if err := base.GetDB().Delete(&user).Error; err != nil {
-		error.Message = t.Trans(t.UserDeletionError)
-		return
+		return err
 	}
-	return
+	return nil
 }
 
 // Delete User from BD. При удалении пользователя удаляются все связанными с ним данные, кроме аккаунта(ов)!!!
-func (user *User) Delete() (error u.Error) {
+func (user *User) Delete() error {
 
 	if reflect.TypeOf(user.ID).String() != "uint" {
-		error.Message = t.Trans(t.UserDeletionErrorNotID)
-		return
+		return e.UserDeletionErrorNotID
 	}
 
 	// проверка на наличие связанных аккаунтов (стоит ограничение внешнего ключа)
 	if base.GetDB().Model(&user).Association("Accounts").Count() > 0 {
-		error.Message = t.Trans(t.UserDeletionErrorHasAccount)
-		return
+		return e.UserDeletionErrorHasAccount
 	}
 
 	if err := base.GetDB().Unscoped().Delete(&user).Error; err != nil {
-		error.Message = t.Trans(t.UserDeletionError)
-		return
+		return err
 	}
 
-	return
+	return nil
 }
-
-
 
 // создание нового аккаунт см.: (account *Account) Create(user *User)
-func (user *User) CreateAccount(account *Account) (error u.Error) {
+func (user *User) CreateAccount(account *Account) error {
 	return account.Create(user)
 }
-
-
 
 
 
