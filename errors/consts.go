@@ -7,6 +7,8 @@ import (
 )
 
 var (
+	AccountDeletionError = errors.New(t.Trans(t.AccountDeletionError))
+
 	EmailDoesNotExist	= errors.New(t.Trans(t.EmailDoesNotExist))
 	EmailInvalidFormat	= errors.New(t.Trans(t.EmailInvalidFormat))
 

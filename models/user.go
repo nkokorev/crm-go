@@ -14,7 +14,6 @@ import (
 	//"unicode/utf8"
 )
 
-// global User
 type User struct {
 	ID        	uint `gorm:"primary_key;unique_index;" json:"-"`
 	HashID 		string `json:"hash_id" gorm:"type:varchar(10);unique_index;not null;"`
@@ -24,32 +23,12 @@ type User struct {
 	Surname 	string `json:"surname"`
 	Patronymic 	string `json:"patronymic"`
 	Password 	string `json:"-" gorm:"not null"` // json:"-"
-	//Token string               `json:"token";sql:"-"`
 	Accounts    []Account `json:"accounts" gorm:"many2many:account_users;"`
 	AUsers 		[]AccountUser `json:"-"` // ??
-	//Permissions         []Permission `json:"permissions"`
-	//Permissions []Permission `json:"permissions" gorm:"many2many:user_permissions;"`
-
-	//Permissions   []Permission `gorm:"polymorphic:Owner;"`
 	CreatedAt *time.Time `json:"created_at;omitempty"`
 	UpdatedAt *time.Time `json:"updated_at;omitempty"`
-
 	DeletedAt *time.Time `sql:"index" json:"-"`
 }
-
-// specific name fixed user in the account
-type AccountUser struct {
-	ID        	uint `gorm:"primary_key;unique_index;" json:"-"`
-	UserID 		uint // belong to user
-	AccountID 	uint // belong to account
-	Permissions []Permission `json:"permissions" gorm:"many2many:account_user_permissions;"`
-	Roles   	[]Role `json:"roles" gorm:"many2many:account_user_roles;"`
-	ApiKeys		[]ApiKey `json:"-"`
-}
-
-/*func (AccountUser) TableName() string {
-	return "account_users"
-}*/
 
 //Create new User by &User{}. Dont hash pwd. HashID will be created.
 func (user *User) Create() (error u.Error) {
@@ -191,40 +170,7 @@ func (user *User) Delete() (error u.Error) {
 	return
 }
 
-// добавляет роль пользователю
-func (aUser AccountUser) AppendRole(role Role) (error u.Error) {
-	err := base.GetDB().Model(&aUser).Association("Roles").Append(&role).Error
-	if err != nil {
-		error.Message = t.Trans(t.UserFailedAddRole)
-		return
-	}
-	return
-}
 
-// удаляет роль у пользователя
-func (aUser AccountUser) RemoveRole(role Role) (error u.Error) {
-	err := base.GetDB().Model(&aUser).Association("Roles").Delete(&role).Error
-	if err != nil {
-		error.Message = t.Trans(t.UserFailedRemoveRole)
-		return
-	}
-	return
-}
-
-// Вспомогательная функция получения пользователя ассоциированного с пользователем
-func (aUser *AccountUser) LoadFromDB() (error u.Error) {
-	//database.GetDB().Model(&auser).Where("account_id = ? AND user_id = ?", acc_id, user_id).First(&auser, "account_id = ? AND user_id = ?", acc_id, user_id)
-	err := base.GetDB().Model(&aUser).First(&aUser, "account_id = ? AND user_id = ?", aUser.AccountID, aUser.UserID).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			error.Message = "Record not found"
-		} else {
-			error.Message = "Connection error. Please retry"
-		}
-		return
-	}
-	return
-}
 
 // создание нового аккаунт см.: (account *Account) Create(user *User)
 func (user *User) CreateAccount(account *Account) (error u.Error) {

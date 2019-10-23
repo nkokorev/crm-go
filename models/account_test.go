@@ -23,7 +23,6 @@ func TestAccount_Create(t *testing.T) {
 		Patronymic:"РеальноеОтчество",
 		Password: "qwerty123#Aa",
 	}
-
 	myErr := test_user_1.Create()
 	if myErr.HasErrors() {
 		t.Error(myErr.Message)
@@ -35,10 +34,7 @@ func TestAccount_Create(t *testing.T) {
 		defer test_user_1.Delete()
 	}
 
-	test_account_1 := Account {
-		Name:"Account_Test",
-	}
-
+	test_account_1 := Account {	Name:"Account_Test",}
 	myErr = test_account_1.Create(&test_user_1)
 	if myErr.HasErrors() {
 		t.Error(myErr.Message)
@@ -53,9 +49,15 @@ func TestAccount_Create(t *testing.T) {
 	temp_account := Account{}
 	if base.GetDB().First(&temp_account, test_account_1.ID).RecordNotFound() {
 		t.Errorf("Cant find created account: %v", test_account_1.Name)
+		return
 	}
 
-	// проверим, что при удалении пользователя, аккаунт тоже удалится
+	// проверим, что в аккаунт был добавлен владелец аккаунта
+	if base.GetDB().Model(&test_user_1).Where("account_id = ?", test_account_1.ID).Association("Accounts").Count() != 1 {
+		t.Error("Владелец аккаунта не добавлен в список пользователей аккаунта")
+		return
+	}
+
 	// проверим, что нам не дадут удалить пользователя, если у него есть аккаунты
 	myErr = test_user_1.Delete()
 	if !myErr.HasErrors() {

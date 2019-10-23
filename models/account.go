@@ -6,6 +6,7 @@ import (
 	"github.com/nkokorev/crm-go/database/base"
 	t "github.com/nkokorev/crm-go/locales"
 	u "github.com/nkokorev/crm-go/utils"
+	e "github.com/nkokorev/crm-go/errors"
 	"log"
 	"reflect"
 	"time"
@@ -54,51 +55,51 @@ func (account *Account) Create(owner *User) (error u.Error) {
 
 	base.GetDB().Save(account)
 
-	// user.AddToAccount()
-	//roles := []Role{} // owner
-	// todo неплохо бы давать владельцу права администратора по-умолчанию
-	error = account.AppendUser(owner)
+	// Права не назначаем, т.к. он владелец аккаунта
+	if account.AppendUser(owner) != nil {
+		// вообще это фаталити, т.к. аккаунт создан, но пользователь не добавился в аккаунт, хотя права доступа к нему он имеет
+		// пользователь не увидит созданный аккаунт, в списке доступных аккаунтов, следовательно не сможет зайти или удалить этот аккаунт
+		error.Message = "Can't append user to your account"
+		if err := account.Delete(); err != nil {
+			error.Message = "Can't append user in his account. And account user not deleted!"
+		}
+		return
+	}
 	return
 }
 
 // Мягкое удаление аккаунта (до 30 дней)
-func (account *Account) SoftDelete() (error u.Error) {
+func (account *Account) SoftDelete() error {
 
 	if reflect.TypeOf(account.ID).String() != "uint" {
-		error.Message = t.Trans(t.AccountDeletionError)
-		return
+		return e.AccountDeletionError
 	}
 
 	if err := base.GetDB().Delete(&account).Error; err != nil {
-		error.Message = "Cant Soft Delete account"
-		return
+		return err
 	}
-	return
+	return nil
 }
 
 // Удаление аккаунта и всех связанных данных!!
-func (account *Account) Delete() (error u.Error) {
-
+func (account *Account) Delete() error {
 	if reflect.TypeOf(account.ID).String() != "uint" {
-		error.Message = t.Trans(t.AccountDeletionError)
-		return
+		log.Println("Переданный аккаунт для удаления не содержит ID: ", account)
+		return e.AccountDeletionError
 	}
 
 	if err := base.GetDB().Unscoped().Delete(&account).Error; err != nil {
-		error.Message = "Cant Delete account"
-		return
+		return err
 	}
-	return
+	return nil
 }
 
 // Add user to account
-func (account *Account) AppendUser(user *User) (error u.Error) {
-
+func (account *Account) AppendUser(user *User) error {
 	if err := base.GetDB().Model(&account).Association("Users").Append(user).Error; err != nil {
-		error.Message = "Cant add User to this Account"
-		return
+		return err
 	}
-	return
+	return nil
 }
 
 // исключение пользователя из аккаунта
@@ -110,6 +111,9 @@ func (account *Account) RemoveUser(user *User) (error u.Error) {
 	}
 	return
 }
+
+
+
 
 // ######### ниже не проверенные фукнции ###########
 // todo надо доработать: передавать роль по ссылке или нет !!!

@@ -104,12 +104,13 @@ func (aUser *AccountUser) RemovePermission(i interface{}) (error u.Error) {
 	return
 }
 
-func (user *User) PermissionCheck(CheckedPermissions uint) (status bool) {
 
-	// 1. Проверяем есть ли прямое назначение нужной нам роли (персональная роль), т.к. она перебивает остальные
+func (aUser *AccountUser) PermissionCheck(CheckedPermissions uint) (status bool) {
 
+	// 1. Проверяем владелец или нет ((a *AccountUser) isOwner() bool)
+	// 2. Смотрим персональные права (permissions)
+	// 3. Смотрим права через роли ()
 
-	// 2. Ищем нужный пермишенс через Роли и проверяем его статус
 
 	status = false // default
 	return true

@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/crm.iml" filepath="$PROJECT_DIR$/.idea/crm.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../crm-go/.idea/crm-go.iml" filepath="$PROJECT_DIR$/../crm-go/.idea/crm-go.iml" />
     </modules>
   </component>
 </project>
