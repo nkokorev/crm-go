@@ -31,13 +31,14 @@ type Permission struct {
 }
 
 
-// Создание нового правила доступа (сугубо внутренняя функция)
+// Создание нового правила доступа (сугубо системная функция)
 func (permission *Permission) Create() error {
 	if err := base.GetDB().Create(permission).Error; err != nil {
 		return err
 	}
 	return nil
 }
+
 
 // Add Permission To AccountUser
 func (permission *Permission) AddToUser(aUser *AccountUser) error {
