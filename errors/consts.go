@@ -32,6 +32,7 @@ var (
 
 	RoleDeletionError = errors.New(t.Trans(t.RoleDeletionError))
 	RoleDeletedFailedHasUsers = errors.New(t.Trans(t.RoleDeletedFailedHasUsers))
+	RoleChangeOwnerRoleFailed = errors.New(t.Trans(t.RoleChangeOwnerRoleFailed))
 
 
 )

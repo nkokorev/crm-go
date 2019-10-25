@@ -150,7 +150,11 @@ func (user *User) Delete() error {
 	}
 
 	// проверка на наличие связанных аккаунтов (стоит ограничение внешнего ключа)
-	if base.GetDB().Model(&user).Association("Accounts").Count() > 0 {
+	count := 0
+	if err := base.GetDB().Model(&Account{}).Where("user_id = ?", user.ID).Count(&count).Error; err != nil {
+		return e.UserDeletionErrorHasAccount
+	}
+	if count > 0 {
 		return e.UserDeletionErrorHasAccount
 	}
 
@@ -165,8 +169,6 @@ func (user *User) Delete() error {
 func (user *User) CreateAccount(account *Account) error {
 	return account.Create(user)
 }
-
-
 
 // Авторизует пользователя, в случае успеха возвращает jwt-token
 func AuthLogin(username, password string) (cryptToken string, error u.Error) {
@@ -228,8 +230,6 @@ func GetUser(u uint) *User {
 	base.GetDB().First(&user, u)
 	return user
 }
-
-
 
 
 

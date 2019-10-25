@@ -47,6 +47,7 @@ const (
 	RoleDeletionError 		= "RoleDeletionError"
 	RoleDeletedFailedHasUsers 		= "RoleDeletedFailedHasUsers"
 	RoleFailedRemovePermissions 		= "RoleFailedRemovePermissions"
+	RoleChangeOwnerRoleFailed 		= "RoleChangeOwnerRoleFailed"
 
 
 )

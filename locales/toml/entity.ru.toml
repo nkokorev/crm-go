@@ -107,4 +107,8 @@ one = "Неудалось удалить роль: роль использует
 [RoleFailedRemovePermissions]
 one = "Неудалось удалить права для роли"
 
+[RoleChangeOwnerRoleFailed]
+one = "Изменение прав владельца аккаунта - не разрешено!"
+
+
 

@@ -107,3 +107,6 @@ one = "Failed to delete role: the role is being used by other users"
 [RoleFailedRemovePermissions]
 one = "Failed to remove permissions from role"
 
+[RoleChangeOwnerRoleFailed]
+one = "Changing the role of the account owner is not allowed!"
+

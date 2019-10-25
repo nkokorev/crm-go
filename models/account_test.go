@@ -30,7 +30,7 @@ func TestAccount_Create(t *testing.T) {
 	} else {
 		defer func() {
 			if err := test_user_1.Delete(); err != nil {
-				t.Error("неудалось удалить роль: ", err.Error())
+				t.Error("неудалось удалить пользователя: ", err.Error())
 			}
 		}()
 	}
@@ -81,7 +81,6 @@ func TestAccount_Create(t *testing.T) {
 		if err := aUser.GetAccountUser(test_user_1.ID, test_account_1.ID); err != nil {
 			t.Error(err.Error())
 		}
-
 		if aUser.RoleID != owner_role.ID {
 			t.Error("Владелец аккаунта не получил роль создателя", aUser)
 		}

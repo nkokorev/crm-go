@@ -1,8 +1,11 @@
 package models
 
 import (
+	"fmt"
+	"github.com/jinzhu/gorm"
 	_ "github.com/nkokorev/auth-server/locales"
 	"github.com/nkokorev/crm-go/database/base"
+	e "github.com/nkokorev/crm-go/errors"
 )
 
 type AccountUser struct {
@@ -15,23 +18,25 @@ type AccountUser struct {
 	ApiKeys		[]ApiKey `json:"-"`
 }
 
-// добавляет роль пользователю
+// устанавливает новую роль пользователю. (временный) Запрет на изменение роли owner user.
 func (aUser *AccountUser) SetNewRole(role *Role) error {
+
+	currentRole := Role{}
+	err := base.GetDB().Model(aUser).Related(&currentRole).Error;
+	if err != nil && !gorm.IsRecordNotFoundError(err) {
+		fmt.Println("Hash is not", aUser, currentRole)
+		return err
+	}
+
+	if currentRole.Tag == "owner" {
+		return e.RoleChangeOwnerRoleFailed
+	}
 
 	if err := base.GetDB().Model(aUser).Update("RoleID", role.ID).Error; err != nil {
 		return err
 	}
 	return nil
 }
-
-// удаляет роль у пользователя
-/*func (aUser *AccountUser) RemoveRole(role *Role) error {
-	err := base.GetDB().Model(aUser).Association("Roles").Delete(role).Error
-	if err != nil {
-		return err
-	}
-	return nil
-}*/
 
 // Вспомогательная функция получения пользователя ассоциированного с пользователем
 func (aUser *AccountUser) GetAccountUser(user_id, account_id uint) error {
@@ -42,9 +47,6 @@ func (aUser *AccountUser) GetAccountUser(user_id, account_id uint) error {
 	return nil
 }
 
-
-
-// ########### дописать и допроверить
 func (aUser *AccountUser) SetOwnerRole() error {
 	role := Role{}
 	err := base.GetDB().First(&role, "tag = 'owner'").Error
@@ -52,7 +54,7 @@ func (aUser *AccountUser) SetOwnerRole() error {
 		return err
 	}
 
-	if err := aUser.SetNewRole(&role);err != nil {
+	if err := aUser.SetNewRole(&role); err != nil {
 		return err
 	}
 	return nil
