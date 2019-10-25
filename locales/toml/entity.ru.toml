@@ -74,10 +74,10 @@ one = "Ошибка удаления пользователя: не указан
 [UserNotPermissionToCreateAccount]
 one = "У вас нет прав на создание аккаунта"
 
-[UserFailedAddRole]
+[UserRoleAppendFailed]
 one = "Неудалось добавить роль пользователю"
 
-[UserFailedRemoveRole]
+[UserRoleRemoveFailed]
 one = "Неудалось удалить роль у пользователя"
 
 [EmailUnresolvableHost]
@@ -101,5 +101,10 @@ one = "Неудалось добавить права для роли"
 [RoleDeletionError]
 one = "Неудалось удалить роль"
 
+[RoleDeletedFailedHasUsers]
+one = "Неудалось удалить роль: роль используется другими пользователями"
+
 [RoleFailedRemovePermissions]
 one = "Неудалось удалить права для роли"
+
+

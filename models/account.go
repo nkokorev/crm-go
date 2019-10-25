@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	_ "github.com/nkokorev/auth-server/locales"
 	"github.com/nkokorev/crm-go/database/base"
@@ -33,7 +32,6 @@ type Account struct {
 // Создает новый аккаунт по структуре account. Аккаунт привязывается к владельцу по user_id, добавляя его в список пользователей аккаунта.
 func (account *Account) Create(owner *User) (err error) {
 
-	fmt.Println("СОздаааем акккаунт!!!")
 	if reflect.TypeOf(owner.ID).String() != "uint" {
 		return errors.New("Can't create new account: user ID not specified")
 	}
@@ -46,28 +44,45 @@ func (account *Account) Create(owner *User) (err error) {
 	// account Owner
 	account.UserID = owner.ID
 
-	err = base.GetDB().Create(account).Error
-	if err != nil {
+	if err = base.GetDB().Create(account).Error; err != nil {
 		return err
 	}
 
-	base.GetDB().Save(account)
+	if err = base.GetDB().Save(account).Error; err != nil {
+		return err
+	}
 
 	// Права не назначаем, т.к. он владелец аккаунта
 	if account.AppendUser(owner) != nil {
 		// вообще это фаталити, т.к. аккаунт создан, но пользователь не добавился в аккаунт, хотя права доступа к нему он имеет
 		// пользователь не увидит созданный аккаунт, в списке доступных аккаунтов, следовательно не сможет зайти или удалить этот аккаунт
-		if err := account.Delete(); err != nil {
+		if err = account.Delete(); err != nil {
 			return errors.New("Can't append user in his account. And account user not deleted!")
 		}
 		return errors.New("Can't append user to your account")
 	}
 
-	if err := account.CreateAdminRole(); err != nil {
+	// todo заменить на назначение владельцу роли владельца
+	aUser := AccountUser{}
+	if err = aUser.GetAccountUser(owner.ID, account.ID); err != nil {
+		if err = account.Delete(); err != nil {
+			return errors.New("Can't add role OWNER to user in his account. Account user not deleted!")
+		}
 		return err
 	}
+	if err = aUser.SetOwnerRole(); err != nil {
+		return err
+	}
+	/*
 
-	fmt.Println("Аккаунт создан!!!",account)
+	if err := aUser.SetOwnerRole();err != nil {
+		// ...
+	}
+	*/
+	/*if err := account.CreateAdminRole(); err != nil {
+		return err
+	}*/
+
 	return
 }
 
@@ -89,6 +104,11 @@ func (account *Account) Delete() error {
 	if reflect.TypeOf(account.ID).String() != "uint" {
 		log.Println("Переданный аккаунт для удаления не содержит ID: ", account)
 		return e.AccountDeletionError
+	}
+
+	// удаляем вручную все не системные роли
+	if err := account.RemoveAllRoles(); err != nil {
+		return err
 	}
 
 	if err := base.GetDB().Unscoped().Delete(&account).Error; err != nil {
@@ -114,60 +134,24 @@ func (account *Account) RemoveUser(user *User) error {
 	return nil
 }
 
-
+// удаление всех ролей, не являющимися системными
+func (account *Account) RemoveAllRoles() error {
+	roles := []Role{}
+	if err := base.GetDB().Delete(&roles,"account_id = ? AND system = FALSE", account.ID).Error; err != nil {
+		return err
+	}
+	return nil
+}
 
 
 // ######### ниже не проверенные фукнции ###########
 // Создает голую роль в аккаунте с разрешениями (Permission / []Permissions)
-func (account *Account) CreateRole(role *Role,) error {
-	return role.Create(account)
-}
-
-// создание ролей в контексте аккаунта
-func (account *Account) CreateAdminRole(options_r... *Role) error {
-
-
-	// 1. Создаем роль и привязываем ее к аккаунту
-	role := &Role{}
-	role.Name = "Администратор аккаунта"
-	role.Description = "Полный доступ ко всем элементам и настройкам системы."
-	if err := account.CreateRole(role); err != nil {
-		return err
+func (account *Account) CreateRole(role *Role) error {
+	if reflect.TypeOf(account.ID).String() != "uint" {
+		return errors.New("Cant create role, not found account ID")
 	}
-
-	// 2. Назначаем роли все возможные права (full-assets)
-	permissions := []Permission{}
-	if err := base.GetDB().Find(&permissions).Error; err != nil {
-		return err
-	}
-
-	role.AppendPermission(permissions)
-
-	if len(options_r) > 0 {
-		options_r[0] = role
-	}
-	return nil
-}
-func (account *Account) CreateManagerRole()  {
-
-}
-func (account *Account) CreateMarketerRole()  {
-
-}
-
-// Создает роль администратора
-func (account Account) CreateAdminRoleOld(role *Role) (error u.Error) {
-
-	// 1. Создаем роли и привязываем их к аккаунту
-	role.Name = "Администратор аккаунта"
-	role.Description = "Полный доступ ко всем элементам и настройкам системы."
-	//role.AccountID = account.ID
-
-	// todo добавить роль к аккаунту и назначить права администратора
-	role.Create(&account)
-	role.AppendAdminPermissions()
-
-	return
+	role.AccountID = account.ID
+	return role.Create()
 }
 
 // создает новый токен

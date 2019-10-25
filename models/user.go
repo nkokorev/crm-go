@@ -12,7 +12,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"reflect"
 	"time"
-	//"unicode/utf8"
 )
 
 type User struct {

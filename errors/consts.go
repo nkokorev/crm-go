@@ -26,5 +26,12 @@ var (
 	UserPasswordIsTooLong = errors.New(t.Trans(t.UserPasswordIsTooLong))
 	UserPasswordIsTooSimple = errors.New(t.Trans(t.UserPasswordIsTooSimple))
 
+	UserRoleAppendFailed = errors.New(t.Trans(t.UserRoleAppendFailed))
+	UserRoleRemoveFailed = errors.New(t.Trans(t.UserRoleRemoveFailed))
+
+
+	RoleDeletionError = errors.New(t.Trans(t.RoleDeletionError))
+	RoleDeletedFailedHasUsers = errors.New(t.Trans(t.RoleDeletedFailedHasUsers))
+
 
 )

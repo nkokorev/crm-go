@@ -74,10 +74,10 @@ one = "User deletion error: no ID specified"
 [UserNotPermissionToCreateAccount]
 one = "You may not create an account"
 
-[UserFailedAddRole]
+[UserRoleAppendFailed]
 one = "Failed add role for user"
 
-[UserFailedRemoveRole]
+[UserRoleRemoveFailed]
 one = "Failed remove role from user"
 
 [EmailUnresolvableHost]
@@ -100,6 +100,9 @@ one = "Failed add permission to account"
 
 [RoleDeletionError]
 one = "Failed deleted role"
+
+[RoleDeletedFailedHasUsers]
+one = "Failed to delete role: the role is being used by other users"
 
 [RoleFailedRemovePermissions]
 one = "Failed to remove permissions from role"

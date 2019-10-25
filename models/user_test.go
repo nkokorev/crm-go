@@ -90,17 +90,14 @@ func TestUser_Delete(t *testing.T) {
 		t.Errorf("User ID == 0, expected > 0")
 	}
 
-	// запоминаем ID нашего пользователя
-	userID := test_user.ID
-
 	// проверяем удаление пользователя
 	if err = test_user.Delete(); err != nil {
 		t.Error(err.Error())
 	}
 
 	// проверям, что пользователь удалился
-	if !base.GetDB().First(&test_user, userID).RecordNotFound() {
-		t.Errorf("найден пользователь, который должен быть удален ID: %v", userID)
+	if !base.GetDB().First(&User{}, "hash_id = ?",test_user.HashID).RecordNotFound() {
+		t.Errorf("найден пользователь, который должен быть удален hash_id: %v", test_user.HashID)
 	}
 
 }

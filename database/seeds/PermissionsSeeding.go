@@ -22,15 +22,15 @@ var permissions = []models.Permission{
 	{Name: "Создание склада", Tag:"store", CodeName: "PermissionStoreCreating", Code: 403, Description: "Возможность создать склад."},
 	{Name: "Удаление склада", Tag:"store", CodeName: "PermissionStoreDeleting", Code: 404, Description: "Возможность удалить склад со всеми его данными."},
 
-	{Name: "Просмотр товаров", Tag:"product", CodeName: "PermissionProductListing", Code: 401, Description: "Доступ к списку товаров"},
-	{Name: "Редактирование товаров", Tag:"product", CodeName: "PermissionProductEditing", Code: 402, Description: "Редактирование товаров"},
-	{Name: "Создание товаров", Tag:"product", CodeName: "PermissionProductCreating", Code: 403, Description: "Возможность создать новый товар"},
-	{Name: "Удаление товаров", Tag:"product", CodeName: "PermissionProductDeleting", Code: 404, Description: "Возможность удалить товар"},
+	{Name: "Просмотр товаров", Tag:"product", CodeName: "PermissionProductListing", Code: 405, Description: "Доступ к списку товаров"},
+	{Name: "Редактирование товаров", Tag:"product", CodeName: "PermissionProductEditing", Code: 406, Description: "Редактирование товаров"},
+	{Name: "Создание товаров", Tag:"product", CodeName: "PermissionProductCreating", Code: 407, Description: "Возможность создать новый товар"},
+	{Name: "Удаление товаров", Tag:"product", CodeName: "PermissionProductDeleting", Code: 408, Description: "Возможность удалить товар"},
 
 	// Аккаунт 7хх
-	{Name: "Управление ролями", Tag:"account", CodeName: "PermissionRoleManagement", Code: 701, Description: "Возможность управлять ролями (создавать, редактировать и удалять)."},
-	{Name: "Управление API-ключами", Tag:"account", CodeName: "PermissionAPIManagement", Code: 702, Description: "Возможность управлять API-ключами (создавать, редактировать и удалять)."},
-	{Name: "Администратор аккаунта", Tag:"account", CodeName: "PermissionAccountManagement", Code: 777, Description: "Администратор аккаунта, который имеет полный доступ к системе."},
+	{Name: "Управление API-ключами", Tag:"account", CodeName: "PermissionAPIManagement", Code: 700, Description: "Возможность управлять API-ключами (создавать, редактировать и удалять)."},
+	//{Name: "Управление ролями", Tag:"account", CodeName: "PermissionRoleManagement", Code: 701, Description: "Возможность управлять ролями (создавать, редактировать и удалять)."},
+
 }
 
 // разворачивает базовые разрешения для всех пользователей

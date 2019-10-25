@@ -39,7 +39,6 @@ func (permission *Permission) Create() error {
 	return nil
 }
 
-
 // Add Permission To AccountUser
 func (permission *Permission) AddToUser(aUser *AccountUser) error {
 	if err := base.GetDB().Model(aUser).Association("Permissions").Append(permission).Error; err != nil {

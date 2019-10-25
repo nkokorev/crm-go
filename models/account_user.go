@@ -3,8 +3,6 @@ package models
 import (
 	_ "github.com/nkokorev/auth-server/locales"
 	"github.com/nkokorev/crm-go/database/base"
-	t "github.com/nkokorev/crm-go/locales"
-	u "github.com/nkokorev/crm-go/utils"
 )
 
 type AccountUser struct {
@@ -18,24 +16,22 @@ type AccountUser struct {
 }
 
 // добавляет роль пользователю
-func (aUser *AccountUser) AppendRole(role *Role) (error u.Error) {
-	err := base.GetDB().Model(aUser).Association("Roles").Append(&role).Error
-	if err != nil {
-		error.Message = t.Trans(t.UserFailedAddRole)
-		return
+func (aUser *AccountUser) SetNewRole(role *Role) error {
+
+	if err := base.GetDB().Model(aUser).Update("RoleID", role.ID).Error; err != nil {
+		return err
 	}
-	return
+	return nil
 }
 
 // удаляет роль у пользователя
-func (aUser *AccountUser) RemoveRole(role *Role) (error u.Error) {
+/*func (aUser *AccountUser) RemoveRole(role *Role) error {
 	err := base.GetDB().Model(aUser).Association("Roles").Delete(role).Error
 	if err != nil {
-		error.Message = t.Trans(t.UserFailedRemoveRole)
-		return
+		return err
 	}
-	return
-}
+	return nil
+}*/
 
 // Вспомогательная функция получения пользователя ассоциированного с пользователем
 func (aUser *AccountUser) GetAccountUser(user_id, account_id uint) error {
@@ -46,3 +42,78 @@ func (aUser *AccountUser) GetAccountUser(user_id, account_id uint) error {
 	return nil
 }
 
+
+
+// ########### дописать и допроверить
+func (aUser *AccountUser) SetOwnerRole() error {
+	role := Role{}
+	err := base.GetDB().First(&role, "tag = 'owner'").Error
+	if err != nil {
+		return err
+	}
+
+	if err := aUser.SetNewRole(&role);err != nil {
+		return err
+	}
+	return nil
+}
+func (aUser *AccountUser) SetAdminRole() error {
+	role := Role{}
+	err := base.GetDB().First(&role, "tag = 'admin'").Error
+	if err != nil {
+		return err
+	}
+
+	if err := aUser.SetNewRole(&role);err != nil {
+		return err
+	}
+	return nil
+}
+func (aUser *AccountUser) SetManagerRole() error {
+	role := Role{}
+	err := base.GetDB().First(&role, "tag = 'manager'").Error
+	if err != nil {
+		return err
+	}
+
+	if err := aUser.SetNewRole(&role);err != nil {
+		return err
+	}
+	return nil
+}
+func (aUser *AccountUser) SetMarketerRole() error {
+	role := Role{}
+	err := base.GetDB().First(&role, "tag = 'marketer'").Error
+	if err != nil {
+		return err
+	}
+
+	if err := aUser.SetNewRole(&role);err != nil {
+		return err
+	}
+	return nil
+}
+func (aUser *AccountUser) SetAuthorRole() error {
+	role := Role{}
+	err := base.GetDB().First(&role, "tag = 'author'").Error
+	if err != nil {
+		return err
+	}
+
+	if err := aUser.SetNewRole(&role);err != nil {
+		return err
+	}
+	return nil
+}
+func (aUser *AccountUser) SetViewerRole() error {
+	role := Role{}
+	err := base.GetDB().First(&role, "tag = 'viewer'").Error
+	if err != nil {
+		return err
+	}
+
+	if err := aUser.SetNewRole(&role);err != nil {
+		return err
+	}
+	return nil
+}

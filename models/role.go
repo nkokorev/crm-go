@@ -3,7 +3,7 @@ package models
 import (
 	_ "github.com/nkokorev/auth-server/locales"
 	"github.com/nkokorev/crm-go/database/base"
-	t "github.com/nkokorev/crm-go/locales"
+	e "github.com/nkokorev/crm-go/errors"
 	u "github.com/nkokorev/crm-go/utils"
 	"reflect"
 )
@@ -21,9 +21,10 @@ type Role struct {
 	HashID string `json:"hash_id" gorm:"type:varchar(10);unique_index;"`
 	Tag 		string `json:"tag" gorm:"size:255"` // admin, manager, marketer...
 	AccountID uint `json:"-"` // belong to account account owner, foreign_key <= реализация в будущем!!
-	System 		bool `json:"system"` // дефолтная ли роль или нет
+	System 		bool `json:"system" gorm:"default:false"` // дефолтная ли роль или нет
 	Name string `json:"name" gorm:"size:255"` // название роли в системе: Администратор / Менеджер / Оператор / Кладовщик / Маркетолог
 	Description string `json:"description" gorm:"size:255;"` // Описание роли: 'Роль для новых администраторов склада...'
+	AUsers 		[]AccountUser `json:"-"`
 	Permissions []Permission `json:"permissions" gorm:"many2many:role_permissions;"` // одна роль имеет много прав (permissions)
 }
 
@@ -44,20 +45,22 @@ func (role *Role) Create() (err error) {
 	return
 }
 
-// удаляет роль (в контексте из аккаунта, т.к. каждая роль привязана строго к 1 аккаунту)
-func (role *Role) Delete() (error u.Error) {
+// системная функция: удаляет роль
+func (role *Role) Delete() error {
 
 	if reflect.TypeOf(role.ID).String() != "uint" {
-		error.Message = t.Trans(t.RoleDeletionError)
-		return
+		return e.RoleDeletionError
+	}
+
+	// проверяем, есть ли привязанные пользователи
+	if base.GetDB().Model(role).Association("AUsers").Count() > 0 {
+		return e.RoleDeletedFailedHasUsers
 	}
 
 	if err := base.GetDB().Unscoped().Delete(&role).Error; err != nil {
-		error.Message = t.Trans(t.RoleDeletionError)
-		return
+		return err
 	}
-
-	return
+	return nil
 }
 
 // связывает роли и разрешения: []Permissions
@@ -78,14 +81,10 @@ func (role *Role) RemovePermissions(permissions []Permission) error {
 	return nil
 }
 
+// todo переписать функции, т.к. теперь другая бизнес логика
 // Назначает роль пользователю
-func (role *Role) AppendUser(aUser AccountUser) (error u.Error) {
-	return aUser.AppendRole(role)
-}
-
-// удаляет у пользователя роль
-func (role *Role) RemoveUser(aUser AccountUser) (error u.Error) {
-	return aUser.RemoveRole(role)
+func (role *Role) AppendUser(aUser *AccountUser) error {
+	return aUser.SetNewRole(role)
 }
 
 
