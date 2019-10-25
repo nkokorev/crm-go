@@ -68,7 +68,6 @@ func TestAccount_Create(t *testing.T) {
 	}
 
 	// #4. проверим, что у пользователя права создателя аккаунта
-	// todo дописать проверку роль создателя
 	owner_role := Role{}
 	err = base.GetDB().First(&owner_role, "tag = 'owner'").Error
 	if err != nil && !gorm.IsRecordNotFoundError(err){
