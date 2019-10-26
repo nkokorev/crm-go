@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/nkokorev/crm-go/database/base"
 	"testing"
 )
@@ -132,6 +133,24 @@ func TestRole_AppendPermissions(t *testing.T) {
 		}()
 	}
 
+	test_user_1 := User{
+		Username:"user_test_2",
+		Email: "mail-test@ratus-dev.ru",
+		Name:"РеальноеИмя",
+		Surname:"РеальнаяФамилия",
+		Patronymic:"РеальноеОтчество",
+		Password: "qwerty123#Aa",
+	}
+	if err := test_user_1.Create(); err != nil {
+		t.Error(err.Error())
+	} else {
+		defer func() {
+			if err := test_user_1.Delete(); err != nil {
+				t.Error("неудалось удалить пользователя: ", err.Error())
+			}
+		}()
+	}
+
 	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", AccountID: test_account.ID, Description: "Test crating role for account"}
 	if err := test_role_1.Create(); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
@@ -142,6 +161,56 @@ func TestRole_AppendPermissions(t *testing.T) {
 			}
 		}()
 	}
+
+	// todo: все что ниже
+	// # 1. Проверим можно ли добавить для роли новые разрешения
+	/*permissions := []Permission{}
+	if err := base.GetDB().Find(&permissions, "code_name = 'PermissionUserListing' OR code_name = 'PermissionUserEditing'").Error; err != nil {
+		t.Error("Cant find system permissions: ", err.Error())
+	}
+	fmt.Println("permissions: ", permissions)*/
+	if err := test_role_1.SetPermissions([]int{PermissionStoreEditing,PermissionStoreDeleting,PermissionProductEditing});err != nil {
+		t.Error(err)
+	}
+
+	permission := Permission{}
+	if err := permission.Find(PermissionStoreEditing); err != nil {
+		t.Error("Cant find permission code: ", PermissionStoreEditing)
+	}
+	fmt.Println("permission: ", permission)
+
+
+	/*p, err := FindPermissions(PermissionStoreEditing)
+	if err != nil {
+		t.Error("Cant find permission code: ", PermissionStoreEditing)
+	}
+	fmt.Println("[]Permission{}: ", p)*/
+
+	// # 2. Проверим можно ли удалить у роли разрешения
+
+	// # 3. А теперь узнаем как влияет добавление и удаление на реальные возможности пользователя
+	if err := test_account.AppendUser(&test_user_1); err !=nil {
+		t.Error("Cant append user to account", test_user_1, test_account)
+	}
+
+	aUser := AccountUser{}
+	if err := aUser.GetAccountUser(test_user_1.ID, test_account.ID); err != nil {
+		t.Error("Cant get account user!", test_user_1, test_account)
+	}
+	if err := aUser.SetNewRole(&test_role_1); err != nil {
+		t.Error("Cant set new role to test user", test_user_1, test_role_1)
+	} else {
+		defer func() {
+			if err := aUser.SetManagerRole(); err != nil {
+				t.Error("Cant set manager to test user", test_user_1, test_role_1, test_account)
+			}
+		}()
+	}
+
+
+
+
+
 
 	// todo ...
 }

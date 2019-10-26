@@ -53,7 +53,6 @@ func TestAccountUser_GetAccountUser(t *testing.T) {
 }
 
 func TestAccountUser_SetNewRole(t *testing.T) {
-	// todo check change owner role
 
 	test_owner_user := User{
 		Username:"user_test",
@@ -114,7 +113,7 @@ func TestAccountUser_SetNewRole(t *testing.T) {
 		t.Error("Перенезначение роли для роли owner! : ", test_owner_account_user, test_role_1, test_account)
 	}
 
-	// проверяем назначение роли для нового пользователя
+	// 3. Проверяем назначение роли для нового пользователя
 	test_user_2 := User{
 		Username:"user_test_2",
 		Email: "mail-test@ratus-dev.ru",
@@ -142,6 +141,5 @@ func TestAccountUser_SetNewRole(t *testing.T) {
 	if err := test_account_user.SetNewRole(&test_role_1); err != nil {
 		t.Error("Неудалось назначить новую роль пользователю, не являющимся владельцем аккаунта")
 	}
-
 
 }

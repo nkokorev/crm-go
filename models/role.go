@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	_ "github.com/nkokorev/auth-server/locales"
 	"github.com/nkokorev/crm-go/database/base"
 	e "github.com/nkokorev/crm-go/errors"
@@ -12,6 +13,123 @@ const (
 	RoleOverallAdmin 		 = 100 // Право на создание нового аккаунта (= true)
 	RoleOverallManager           = 101 // Доступ к списку складов
 	RoleOverallMarketer           = 102 // Редактирование данных склада
+)
+
+var (
+	// Доступ ко всем данным и функционалу аккаунта
+	permissionsOwner = []int{
+		PermissionUserListing,
+		PermissionUserEditing,
+		PermissionUserAppend,
+		PermissionUserDeleting,
+
+		PermissionStoreListing,
+		PermissionStoreEditing,
+		PermissionStoreCreating,
+		PermissionStoreDeleting,
+		PermissionProductListing,
+		PermissionProductEditing,
+		PermissionProductCreating,
+		PermissionProductDeleting,
+
+		PermissionAPIManagement,
+	}
+
+	// Как и владелец, но не может менять владельца аккаунта и биллинговую информацию
+	permissionsAdmin = []int{
+		PermissionUserListing,
+		PermissionUserEditing,
+		PermissionUserAppend,
+		PermissionUserDeleting,
+
+		PermissionStoreListing,
+		PermissionStoreEditing,
+		PermissionStoreCreating,
+		PermissionStoreDeleting,
+		PermissionProductListing,
+		PermissionProductEditing,
+		PermissionProductCreating,
+		PermissionProductDeleting,
+
+		PermissionAPIManagement,
+	}
+
+	// Не может менять (добавлять) пользователей, биллинговую и системную информацию
+	permissionsManager = []int{
+		PermissionUserListing,
+		PermissionUserEditing,
+		PermissionUserAppend,
+		PermissionUserDeleting,
+
+		PermissionStoreListing,
+		PermissionStoreEditing,
+		PermissionStoreCreating,
+		PermissionStoreDeleting,
+		PermissionProductListing,
+		PermissionProductEditing,
+		PermissionProductCreating,
+		PermissionProductDeleting,
+
+		PermissionAPIManagement,
+	}
+
+	// Может читать отчеты, доступ к аналитике, может управлять разделом маркетинга + доступ к редактуре текстов как у автора БЕЗ рецензирования.
+	permissionsMarketer = []int{
+		PermissionUserListing,
+		PermissionUserEditing,
+		PermissionUserAppend,
+		PermissionUserDeleting,
+
+		PermissionStoreListing,
+		PermissionStoreEditing,
+		PermissionStoreCreating,
+		PermissionStoreDeleting,
+		PermissionProductListing,
+		PermissionProductEditing,
+		PermissionProductCreating,
+		PermissionProductDeleting,
+
+		PermissionAPIManagement,
+	}
+
+	// может создавать и редактировать описания товаров, статей, письма и т.д., но не может запускать их в продакшен без рецензирования вышестоящего (спец.роль принятия правок).
+	permissionsAuthor = []int{
+		PermissionUserListing,
+		PermissionUserEditing,
+		PermissionUserAppend,
+		PermissionUserDeleting,
+
+		PermissionStoreListing,
+		PermissionStoreEditing,
+		PermissionStoreCreating,
+		PermissionStoreDeleting,
+		PermissionProductListing,
+		PermissionProductEditing,
+		PermissionProductCreating,
+		PermissionProductDeleting,
+
+		PermissionAPIManagement,
+	}
+
+	// не может вносить изменения (никакие!!!). Может смотреть отчеты, товары, склады, письма и т.д.
+	permissionsViewer = []int{
+		PermissionUserListing,
+		PermissionUserEditing,
+		PermissionUserAppend,
+		PermissionUserDeleting,
+
+		PermissionStoreListing,
+		PermissionStoreEditing,
+		PermissionStoreCreating,
+		PermissionStoreDeleting,
+		PermissionProductListing,
+		PermissionProductEditing,
+		PermissionProductCreating,
+		PermissionProductDeleting,
+
+		PermissionAPIManagement,
+	}
+
 )
 
 // Список ролей в системе. Каждая роль имеет список прав (permissions).
@@ -63,8 +181,33 @@ func (role *Role) Delete() error {
 	return nil
 }
 
+// устанавливает для роли ТОЛЬКО переданные разрешения, остальные разрешения удаляются
+func (role *Role) SetPermissions(codes []int) error {
+	for i, v := range codes {
+		fmt.Printf("SetPermissions: i: %v, v: %v \r\n", i,v)
+	}
+	return nil
+}
+
+// добавляет роли переданные разрешения, остальные разрешения остаются без изменений
+func (role *Role) AppendPermissions(codes []int) error {
+	for i, v := range codes {
+		fmt.Printf("AppendPermissions: i: %v, v: %v \r\n", i,v)
+	}
+	return nil
+}
+// убирает у роли переданные разрешения
+func (role *Role) RemovePermissions(codes []int) error {
+	for i, v := range codes {
+		fmt.Printf("RemovePermissions: i: %v, v: %v \r\n", i,v)
+	}
+	return nil
+}
+
+
+
 // связывает роли и разрешения: []Permissions
-func (role *Role) AppendPermissions(permissions []Permission) error {
+func (role *Role) AppendPermissionsOLD(permissions []Permission) error {
 
 	if err := base.GetDB().Model(role).Association("Permissions").Append(&permissions).Error; err != nil {
 		return err
@@ -73,7 +216,7 @@ func (role *Role) AppendPermissions(permissions []Permission) error {
 }
 
 // развязывает роли и разрешения
-func (role *Role) RemovePermissions(permissions []Permission) error {
+func (role *Role) RemovePermissionsOLD(permissions []Permission) error {
 
 	if err := base.GetDB().Model(role).Association("Permissions").Delete(&permissions).Error; err != nil {
 		return err
@@ -81,58 +224,48 @@ func (role *Role) RemovePermissions(permissions []Permission) error {
 	return nil
 }
 
-// todo переписать функции, т.к. теперь другая бизнес логика
 // Назначает роль пользователю
 func (role *Role) AppendUser(aUser *AccountUser) error {
 	return aUser.SetNewRole(role)
 }
 
 
-
-
-
 // todo реализовать сидерские функции базового наполнения crm таблиц данных
 
 // системная функция для установки прав администратора
 // todo реализовать функционал
-func (role *Role) setOwnerPermissions() error {
-	permissions := []Permission{}
-	if err := role.AppendPermissions(permissions); err != nil {
+func (role *Role) setPermissionsOwner() error {
+	if err := role.AppendPermissions(permissionsOwner); err != nil {
 		return nil
 	}
 	return nil
 }
-func (role *Role) setAdminPermissions() error {
-	permissions := []Permission{}
-	if err := role.AppendPermissions(permissions); err != nil {
+func (role *Role) setPermissionsAdmin() error {
+	if err := role.AppendPermissions(permissionsAdmin); err != nil {
 		return nil
 	}
 	return nil
 }
-func (role *Role) setManagerPermissions() error {
-	permissions := []Permission{}
-	if err := role.AppendPermissions(permissions); err != nil {
+func (role *Role) setPermissionsManager() error {
+	if err := role.AppendPermissions(permissionsManager); err != nil {
 		return nil
 	}
 	return nil
 }
-func (role *Role) setMarketerPermissions() error {
-	permissions := []Permission{}
-	if err := role.AppendPermissions(permissions); err != nil {
+func (role *Role) setPermissionsMarketer() error {
+	if err := role.AppendPermissions(permissionsMarketer); err != nil {
 		return nil
 	}
 	return nil
 }
-func (role *Role) setAuthorPermissions() error {
-	permissions := []Permission{}
-	if err := role.AppendPermissions(permissions); err != nil {
+func (role *Role) setPermissionsAuthor() error {
+	if err := role.AppendPermissions(permissionsAuthor); err != nil {
 		return nil
 	}
 	return nil
 }
-func (role *Role) setViewerPermissions() error {
-	permissions := []Permission{}
-	if err := role.AppendPermissions(permissions); err != nil {
+func (role *Role) setPermissionsViewer() error {
+	if err := role.AppendPermissions(permissionsViewer); err != nil {
 		return nil
 	}
 	return nil

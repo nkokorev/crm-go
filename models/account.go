@@ -41,18 +41,16 @@ func (account *Account) Create(owner *User) (err error) {
 		return err
 	}
 
-	// account Owner
+	// set ID account Owner
 	account.UserID = owner.ID
-
 	if err = base.GetDB().Create(account).Error; err != nil {
 		return err
 	}
-
 	if err = base.GetDB().Save(account).Error; err != nil {
 		return err
 	}
 
-	// Права не назначаем, т.к. он владелец аккаунта
+	// Добавляем пользователя в созданный им аккаунт
 	if account.AppendUser(owner) != nil {
 		// вообще это фаталити, т.к. аккаунт создан, но пользователь не добавился в аккаунт, хотя права доступа к нему он имеет
 		// пользователь не увидит созданный аккаунт, в списке доступных аккаунтов, следовательно не сможет зайти или удалить этот аккаунт
@@ -62,26 +60,22 @@ func (account *Account) Create(owner *User) (err error) {
 		return errors.New("Can't append user to your account")
 	}
 
-	// todo заменить на назначение владельцу роли владельца
+	// назначаем роль владельца владельцу аккаунта
 	aUser := AccountUser{}
 	if err = aUser.GetAccountUser(owner.ID, account.ID); err != nil {
+		// это фаталити, бесхозный акк, нужно его удалить
 		if err = account.Delete(); err != nil {
-			return errors.New("Can't add role OWNER to user in his account. Account user not deleted!")
+			return err
 		}
 		return err
 	}
 	if err = aUser.SetOwnerRole(); err != nil {
+		// это фаталити, бесхозный акк, нужно его удалить
+		if err = account.Delete(); err != nil {
+			return err
+		}
 		return err
 	}
-	/*
-
-	if err := aUser.SetOwnerRole();err != nil {
-		// ...
-	}
-	*/
-	/*if err := account.CreateAdminRole(); err != nil {
-		return err
-	}*/
 
 	return
 }
