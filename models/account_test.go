@@ -131,7 +131,7 @@ func TestAccount_CreateRole(t *testing.T) {
 		}()
 	}
 
-	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", AccountID: test_account.ID, Description: "Test crating role for account"}
+	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag_1", AccountID: test_account.ID, Description: "Test crating role for account"}
 	if err := test_role_1.Create(); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
@@ -154,7 +154,7 @@ func TestAccount_CreateRole(t *testing.T) {
 	}
 
 	// #2. Проверяем системную роль БЕЗ привязки к аккаунту
-	test_role_2 := Role{Name:"Test_Role", System: true, Tag: "test_tag", Description: "Test crating role for account"}
+	test_role_2 := Role{Name:"Test_Role", System: true, Tag: "test_tag_2", Description: "Test crating role for account"}
 	if err := test_role_2.Create(); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {

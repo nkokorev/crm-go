@@ -41,7 +41,7 @@ func (account *Account) Create(owner *User) (err error) {
 		return err
 	}
 
-	// set ID account Owner
+	// set ID account Owner. Нужна обработка удаления пользователя и его аккаунтов
 	account.UserID = owner.ID
 	if err = base.GetDB().Create(account).Error; err != nil {
 		return err
@@ -69,7 +69,7 @@ func (account *Account) Create(owner *User) (err error) {
 		}
 		return err
 	}
-	if err = aUser.SetOwnerRole(); err != nil {
+	if err = aUser.SetRoleOwner(); err != nil {
 		// это фаталити, бесхозный акк, нужно его удалить
 		if err = account.Delete(); err != nil {
 			return err

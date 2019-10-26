@@ -109,7 +109,7 @@ func TestAccountUser_SetNewRole(t *testing.T) {
 	}
 
 	// 2. Убеждаемся, что нельзя назначить новую роль владельцу аккаунта
-	if err := test_owner_account_user.SetManagerRole(); err == nil {
+	if err := test_owner_account_user.SetRoleManager(); err == nil {
 		t.Error("Перенезначение роли для роли owner! : ", test_owner_account_user, test_role_1, test_account)
 	}
 

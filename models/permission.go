@@ -35,7 +35,6 @@ type Permission struct {
 	CodeName 	string `json:"name" gorm:"size:255;unique_index;"` // PermissionStoreListing, PermissionStoreEditing, ...
 	Code 		uint `json:"type" gorm:"unique_index;"`
 	Description string `json:"description" gorm:"size:255;"` // Описание права: 'Право на редактирование товара, изображений и т.д.'
-	//Seeding 	bool `json:"-"` // входит ли в дефолтное разрешение пользователя
 	AUsers   	[]AccountUser `json:"-" gorm:"many2many:account_user_permissions;"`
 	Roles  		[]Role `json:"-" gorm:"many2many:role_permissions;"`
 	ApiKeys 	[]ApiKey `json:"-" gorm:"many2many:api_key_permissions;"`

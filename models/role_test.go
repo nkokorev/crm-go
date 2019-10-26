@@ -89,7 +89,7 @@ func TestRole_Delete(t *testing.T) {
 	} else {
 		// ставим системную роль, чтобы можно было удалить тестовую роль
 		defer func() {
-			if err := test_aUser.SetAdminRole(); err != nil {
+			if err := test_aUser.SetRoleManager(); err != nil {
 				t.Error("Неудалось отвязать роль от aUser")
 			}
 		}()
@@ -201,7 +201,7 @@ func TestRole_AppendPermissions(t *testing.T) {
 		t.Error("Cant set new role to test user", test_user_1, test_role_1)
 	} else {
 		defer func() {
-			if err := aUser.SetManagerRole(); err != nil {
+			if err := aUser.SetRoleManager(); err != nil {
 				t.Error("Cant set manager to test user", test_user_1, test_role_1, test_account)
 			}
 		}()
