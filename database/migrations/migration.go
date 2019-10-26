@@ -46,7 +46,7 @@ func MigrationTables(freshTables bool) {
 
 	db.Table("role_permissions").AddForeignKey("role_id", "roles(id)", "CASCADE", "CASCADE")
 	db.Table("role_permissions").AddForeignKey("permission_id", "permissions(id)", "CASCADE", "CASCADE")
-	db.Table("roles").AddForeignKey("account_id", "accounts(id)", "CASCADE", "SET NULL")
+	db.Table("roles").AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 
 	db.Table("api_key_permissions").AddForeignKey("api_key_id", "api_keys(id)", "CASCADE", "CASCADE")
 	db.Table("api_key_permissions").AddForeignKey("permission_id", "permissions(id)", "CASCADE", "CASCADE")
