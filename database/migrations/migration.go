@@ -27,7 +27,6 @@ func MigrationTables(freshTables bool) {
 		db.DropTableIfExists("api_key_permissions")
 		db.DropTableIfExists("account_user_roles")
 		db.DropTableIfExists("role_permissions")
-		db.DropTableIfExists("account_user_permissions")
 		db.DropTableIfExists("account_users")
 		db.DropTableIfExists("user_roles")
 		db.DropTableIfExists(&models.Shop{},&models.ApiKey{}, &models.Role{}, &models.Permission{}, &models.Role{}, &models.Store{}, &models.AccountUser{}, &models.Account{}, &models.User{})
@@ -42,16 +41,12 @@ func MigrationTables(freshTables bool) {
 	db.Table("account_users").AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Table("account_users").AddForeignKey("role_id", "roles(id)", "RESTRICT", "CASCADE") // нельзя удалить роль, если к ней привязан хотя бы 1 пользователь
 
-	//db.Table("account_user_permissions").AddForeignKey("account_user_id", "account_users(id)", "CASCADE", "CASCADE")
-	//db.Table("account_user_permissions").AddForeignKey("permission_id", "permissions(id)", "CASCADE", "CASCADE")
-
 	db.Table("account_user_roles").AddForeignKey("account_user_id", "account_users(id)", "CASCADE", "CASCADE")
 	db.Table("account_user_roles").AddForeignKey("role_id", "roles(id)", "CASCADE", "CASCADE")
 
-	//db.Table("roles").AddForeignKey("account_id", "accounts(id)", "SET NULL", "SET NULL")
-
 	db.Table("role_permissions").AddForeignKey("role_id", "roles(id)", "CASCADE", "CASCADE")
 	db.Table("role_permissions").AddForeignKey("permission_id", "permissions(id)", "CASCADE", "CASCADE")
+	db.Table("roles").AddForeignKey("account_id", "accounts(id)", "CASCADE", "SET NULL")
 
 	db.Table("api_key_permissions").AddForeignKey("api_key_id", "api_keys(id)", "CASCADE", "CASCADE")
 	db.Table("api_key_permissions").AddForeignKey("permission_id", "permissions(id)", "CASCADE", "CASCADE")

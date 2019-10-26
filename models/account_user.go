@@ -12,8 +12,6 @@ type AccountUser struct {
 	UserID 		uint // belong to user
 	AccountID 	uint // belong to account
 	RoleID   	uint `json:"role_id"`
-	Permissions []Permission `json:"permissions" gorm:"many2many:account_user_permissions;"`
-
 	ApiKeys		[]ApiKey `json:"-"`
 }
 

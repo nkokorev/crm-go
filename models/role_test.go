@@ -16,6 +16,7 @@ func TestExistRoleTable(t *testing.T) {
 
 func TestRole_Delete(t *testing.T) {
 
+	// владелец тестового аккаунта
 	test_user_owner := User{
 		Username:"user_test",
 		Email: "testmail@ratus-dev.ru",
@@ -34,7 +35,7 @@ func TestRole_Delete(t *testing.T) {
 		}()
 	}
 
-	// пользователь для тестовой роли
+	// другой пользователь для тестовой роли
 	test_user_2 := User{
 		Username:"user_test_2",
 		Email: "mail-test@ratus-dev.ru",
@@ -64,6 +65,7 @@ func TestRole_Delete(t *testing.T) {
 		}()
 	}
 
+	// добавляем в тестовый аккаунт тестового пользователя
 	if err := test_account.AppendUser(&test_user_2); err != nil {
 		t.Error("Неудалось добавить пользователя в аккаунт", err.Error())
 	}
@@ -79,11 +81,13 @@ func TestRole_Delete(t *testing.T) {
 		}()
 	}
 
+	// наш тестовый пользователь в представлении AUser
 	test_aUser := AccountUser{}
 	if err := test_aUser.GetAccountUser(test_user_2.ID, test_account.ID); err != nil {
 		t.Error("Неудалось найти aUser: ", test_aUser)
 	}
 
+	// устанавливаем роль тестовому пользователю
 	if err := test_aUser.SetNewRole(&test_role_1); err != nil {
 		t.Error("Неудалось привязать роль к aUser")
 	} else {
@@ -95,7 +99,7 @@ func TestRole_Delete(t *testing.T) {
 		}()
 	}
 
-	// проверяем, что нельзя удалить роль, если к ней привязан хотя бы 1 пользователь
+	// # 1. проверяем, что нельзя удалить роль, если к ней привязан хотя бы 1 пользователь
 	if err := test_role_1.Delete(); err == nil {
 		t.Error("Удалена роль, хотя к ней привязан пользователь: ", test_user_2.Name)
 	}

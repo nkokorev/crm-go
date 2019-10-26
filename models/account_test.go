@@ -234,7 +234,7 @@ func TestAccount_RemoveAllRoles(t *testing.T) {
 		t.Errorf("Неудалось создать тестовые роли для аккаунта или не совпадает число созданных ролей: %v", test_account.Name)
 	}
 
-	// запомним, есть ли системные роли в аккаунте
+	// проверим наличие системных ролей
 	countSystemRoles := 0
 	base.GetDB().Model(&Role{}).Where("system = TRUE").Count(&countSystemRoles)
 	if countSystemRoles < 1 {

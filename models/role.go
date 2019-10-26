@@ -138,7 +138,7 @@ type Role struct {
 	ID        uint `gorm:"primary_key;unique_index;" json:"-"`
 	HashID string `json:"hash_id" gorm:"type:varchar(10);unique_index;"`
 	Tag 		string `json:"tag" gorm:"size:255;unique;" ` // admin, manager, marketer...
-	AccountID uint `json:"-"` // belong to account account owner, foreign_key <= реализация в будущем!!
+	AccountID uint `json:"-"  gorm:"default:NULL"` // belong to account account owner, foreign_key <= реализация в будущем!!
 	System 		bool `json:"system" gorm:"default:false"` // дефолтная ли роль или нет
 	Name string `json:"name" gorm:"size:255"` // название роли в системе: Администратор / Менеджер / Оператор / Кладовщик / Маркетолог
 	Description string `json:"description" gorm:"size:255;"` // Описание роли: 'Роль для новых администраторов склада...'
@@ -163,7 +163,7 @@ func (role *Role) Create() (err error) {
 	return
 }
 
-// системная функция: удаляет роль
+// удаляет роль, проверяя привязанных пользователей
 func (role *Role) Delete() error {
 
 	if reflect.TypeOf(role.ID).String() != "uint" {
