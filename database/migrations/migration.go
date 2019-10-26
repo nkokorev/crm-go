@@ -24,7 +24,6 @@ func MigrationTables(freshTables bool) {
 
 	// ломать не строить (последовательность важна)
 	if freshTables {
-		db.DropTableIfExists("api_key_permissions")
 		db.DropTableIfExists("account_user_roles")
 		db.DropTableIfExists("role_permissions")
 		db.DropTableIfExists("account_users")
@@ -48,6 +47,6 @@ func MigrationTables(freshTables bool) {
 	db.Table("role_permissions").AddForeignKey("permission_id", "permissions(id)", "CASCADE", "CASCADE")
 	db.Table("roles").AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 
-	db.Table("api_key_permissions").AddForeignKey("api_key_id", "api_keys(id)", "CASCADE", "CASCADE")
-	db.Table("api_key_permissions").AddForeignKey("permission_id", "permissions(id)", "CASCADE", "CASCADE")
+	//db.Table("api_key_permissions").AddForeignKey("api_key_id", "api_keys(id)", "CASCADE", "CASCADE")
+	//db.Table("api_key_permissions").AddForeignKey("permission_id", "permissions(id)", "CASCADE", "CASCADE")
 }

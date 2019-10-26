@@ -9,6 +9,7 @@ import (
 	u "github.com/nkokorev/crm-go/utils"
 )
 
+// Добавил право - добавь к роли!
 const (
 	PermissionUserListing		= 	201
 	PermissionUserEditing		= 	202
@@ -36,7 +37,6 @@ type Permission struct {
 	Code 		uint `json:"type" gorm:"unique_index;"`
 	Description string `json:"description" gorm:"size:255;"` // Описание права: 'Право на редактирование товара, изображений и т.д.'
 	Roles  		[]Role `json:"-" gorm:"many2many:role_permissions;"`
-	ApiKeys 	[]ApiKey `json:"-" gorm:"many2many:api_key_permissions;"`
 }
 
 // Создание нового правила доступа (сугубо системная функция)
@@ -58,7 +58,6 @@ func (permission *Permission) Find(code_int uint) error {
 	return nil
 }
 
-
 // массовый поиск по кодам прав
 func FindPermissions(values... uint) (p []Permission, err error) {
 	count_v := len(values)
@@ -72,7 +71,6 @@ func FindPermissions(values... uint) (p []Permission, err error) {
 	}
 	return
 }
-
 
 
 // ######### ниже олдфаг функции (переписать / исключить)

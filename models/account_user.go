@@ -12,7 +12,7 @@ type AccountUser struct {
 	UserID 		uint // belong to user
 	AccountID 	uint // belong to account
 	RoleID   	uint `json:"role_id"`
-	ApiKeys		[]ApiKey `json:"-"`
+	ApiKeys		[]ApiKey `json:"-"` // ???
 }
 
 // устанавливает новую роль пользователю. (временный) Запрет на изменение роли owner user.

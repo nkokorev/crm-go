@@ -16,6 +16,7 @@ const (
 )
 
 var (
+	// ### Список прав для пользователей (aUser) ### ///
 	// Доступ ко всем данным и функционалу аккаунта
 	permissionsOwner = []int{
 		PermissionUserListing,
@@ -130,6 +131,63 @@ var (
 		PermissionAPIManagement,
 	}
 
+	// ### Список прав для API ключей ### ///
+	// полный доступ у API ключа
+	permissionsFullAccess = []int{
+		PermissionUserListing,
+		PermissionUserEditing,
+		PermissionUserAppend,
+		PermissionUserDeleting,
+
+		PermissionStoreListing,
+		PermissionStoreEditing,
+		PermissionStoreCreating,
+		PermissionStoreDeleting,
+		PermissionProductListing,
+		PermissionProductEditing,
+		PermissionProductCreating,
+		PermissionProductDeleting,
+
+		PermissionAPIManagement,
+	}
+
+	// список прав для интеграции с сайтом
+	permissionsSiteAccess = []int{
+		PermissionUserListing,
+		PermissionUserEditing,
+		PermissionUserAppend,
+		PermissionUserDeleting,
+
+		PermissionStoreListing,
+		PermissionStoreEditing,
+		PermissionStoreCreating,
+		PermissionStoreDeleting,
+		PermissionProductListing,
+		PermissionProductEditing,
+		PermissionProductCreating,
+		PermissionProductDeleting,
+
+		PermissionAPIManagement,
+	}
+
+	// список прав чтения статистических данных
+	permissionsReadAccess = []int{
+		PermissionUserListing,
+		PermissionUserEditing,
+		PermissionUserAppend,
+		PermissionUserDeleting,
+
+		PermissionStoreListing,
+		PermissionStoreEditing,
+		PermissionStoreCreating,
+		PermissionStoreDeleting,
+		PermissionProductListing,
+		PermissionProductEditing,
+		PermissionProductCreating,
+		PermissionProductDeleting,
+
+		PermissionAPIManagement,
+	}
 )
 
 // Список ролей в системе. Каждая роль имеет список прав (permissions).
@@ -138,11 +196,13 @@ type Role struct {
 	ID        uint `gorm:"primary_key;unique_index;" json:"-"`
 	HashID string `json:"hash_id" gorm:"type:varchar(10);unique_index;"`
 	Tag 		string `json:"tag" gorm:"size:255;unique;" ` // admin, manager, marketer...
+	Type 		string `json:"type" gorm:"size:25;default:'gui'" ` // тип роли: gui / api / any
 	AccountID uint `json:"-"  gorm:"default:NULL"` // belong to account account owner, foreign_key <= реализация в будущем!!
 	System 		bool `json:"system" gorm:"default:false"` // дефолтная ли роль или нет
 	Name string `json:"name" gorm:"size:255"` // название роли в системе: Администратор / Менеджер / Оператор / Кладовщик / Маркетолог
 	Description string `json:"description" gorm:"size:255;"` // Описание роли: 'Роль для новых администраторов склада...'
 	AUsers 		[]AccountUser `json:"-"`
+	APIKeys 	[]ApiKey `json:"-"`
 	Permissions []Permission `json:"permissions" gorm:"many2many:role_permissions;"` // одна роль имеет много прав (permissions)
 }
 
@@ -196,6 +256,7 @@ func (role *Role) AppendPermissions(codes []int) error {
 	}
 	return nil
 }
+
 // убирает у роли переданные разрешения
 func (role *Role) RemovePermissions(codes []int) error {
 	for i, v := range codes {
@@ -276,7 +337,24 @@ func (role *Role) setPermissionsViewer() error {
 	}
 	return nil
 }
-
+func (role *Role) setPermissionsFullAccess() error {
+	if err := role.SetPermissions(permissionsFullAccess); err != nil {
+		return nil
+	}
+	return nil
+}
+func (role *Role) setPermissionsSiteAccess() error {
+	if err := role.SetPermissions(permissionsSiteAccess); err != nil {
+		return nil
+	}
+	return nil
+}
+func (role *Role) setPermissionsReadAccess() error {
+	if err := role.SetPermissions(permissionsReadAccess); err != nil {
+		return nil
+	}
+	return nil
+}
 
 
 // добавляет к роли стандартные права администратора
