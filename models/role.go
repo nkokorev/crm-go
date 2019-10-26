@@ -54,7 +54,7 @@ var (
 		PermissionAPIManagement,
 	}
 
-	// Не может менять (добавлять) пользователей, биллинговую и системную информацию
+	// Не может управлять пользователями, смотреть и изменять биллинговую и системную информацию
 	permissionsManager = []int{
 		PermissionUserListing,
 		PermissionUserEditing,
@@ -137,7 +137,7 @@ var (
 type Role struct {
 	ID        uint `gorm:"primary_key;unique_index;" json:"-"`
 	HashID string `json:"hash_id" gorm:"type:varchar(10);unique_index;"`
-	Tag 		string `json:"tag" gorm:"size:255"` // admin, manager, marketer...
+	Tag 		string `json:"tag" gorm:"size:255;unique;" ` // admin, manager, marketer...
 	AccountID uint `json:"-"` // belong to account account owner, foreign_key <= реализация в будущем!!
 	System 		bool `json:"system" gorm:"default:false"` // дефолтная ли роль или нет
 	Name string `json:"name" gorm:"size:255"` // название роли в системе: Администратор / Менеджер / Оператор / Кладовщик / Маркетолог
@@ -204,7 +204,13 @@ func (role *Role) RemovePermissions(codes []int) error {
 	return nil
 }
 
-
+// вспомогательная функция поиска роли по тегу
+func (role *Role) GetRoleByTag(tag string) error {
+	if err := base.GetDB().First(&role, "tag = ?", tag).Error; err != nil {
+		return err
+	}
+	return nil
+}
 
 // связывает роли и разрешения: []Permissions
 func (role *Role) AppendPermissionsOLD(permissions []Permission) error {
@@ -235,37 +241,37 @@ func (role *Role) AppendUser(aUser *AccountUser) error {
 // системная функция для установки прав администратора
 // todo реализовать функционал
 func (role *Role) setPermissionsOwner() error {
-	if err := role.AppendPermissions(permissionsOwner); err != nil {
+	if err := role.SetPermissions(permissionsOwner); err != nil {
 		return nil
 	}
 	return nil
 }
 func (role *Role) setPermissionsAdmin() error {
-	if err := role.AppendPermissions(permissionsAdmin); err != nil {
+	if err := role.SetPermissions(permissionsAdmin); err != nil {
 		return nil
 	}
 	return nil
 }
 func (role *Role) setPermissionsManager() error {
-	if err := role.AppendPermissions(permissionsManager); err != nil {
+	if err := role.SetPermissions(permissionsManager); err != nil {
 		return nil
 	}
 	return nil
 }
 func (role *Role) setPermissionsMarketer() error {
-	if err := role.AppendPermissions(permissionsMarketer); err != nil {
+	if err := role.SetPermissions(permissionsMarketer); err != nil {
 		return nil
 	}
 	return nil
 }
 func (role *Role) setPermissionsAuthor() error {
-	if err := role.AppendPermissions(permissionsAuthor); err != nil {
+	if err := role.SetPermissions(permissionsAuthor); err != nil {
 		return nil
 	}
 	return nil
 }
 func (role *Role) setPermissionsViewer() error {
-	if err := role.AppendPermissions(permissionsViewer); err != nil {
+	if err := role.SetPermissions(permissionsViewer); err != nil {
 		return nil
 	}
 	return nil

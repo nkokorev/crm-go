@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"github.com/jinzhu/gorm"
 	_ "github.com/nkokorev/auth-server/locales"
 	"github.com/nkokorev/crm-go/database/base"
@@ -24,10 +23,10 @@ func (aUser *AccountUser) SetNewRole(role *Role) error {
 	currentRole := Role{}
 	err := base.GetDB().Model(aUser).Related(&currentRole).Error;
 	if err != nil && !gorm.IsRecordNotFoundError(err) {
-		fmt.Println("Hash is not", aUser, currentRole)
 		return err
 	}
 
+	// нельзя менять роль владельца аккаунта на какую-либо еще
 	if currentRole.Tag == "owner" {
 		return e.RoleChangeOwnerRoleFailed
 	}
@@ -47,73 +46,81 @@ func (aUser *AccountUser) GetAccountUser(user_id, account_id uint) error {
 	return nil
 }
 
-func (aUser *AccountUser) SetOwnerRole() error {
+// ниже вспомогательные функции простановки системных ролей пользователям
+func (aUser *AccountUser) SetRoleOwner() error {
+	// 1. Ищем необходимую роль
 	role := Role{}
-	err := base.GetDB().First(&role, "tag = 'owner'").Error
-	if err != nil {
+	if err := role.GetRoleByTag("owner");err != nil {
 		return err
 	}
 
+	// 2. Ставим пользователю найденную роль
 	if err := aUser.SetNewRole(&role); err != nil {
 		return err
 	}
+
 	return nil
 }
-func (aUser *AccountUser) SetAdminRole() error {
+func (aUser *AccountUser) SetRoleAdmin() error {
+	// 1. Ищем необходимую роль
 	role := Role{}
-	err := base.GetDB().First(&role, "tag = 'admin'").Error
-	if err != nil {
+	if err := role.GetRoleByTag("admin");err != nil {
 		return err
 	}
 
+	// 2. Ставим пользователю найденную роль
 	if err := aUser.SetNewRole(&role);err != nil {
 		return err
 	}
 	return nil
 }
-func (aUser *AccountUser) SetManagerRole() error {
+func (aUser *AccountUser) SetRoleManager() error {
+	// 1. Ищем необходимую роль
 	role := Role{}
-	err := base.GetDB().First(&role, "tag = 'manager'").Error
-	if err != nil {
+	if err := role.GetRoleByTag("manager");err != nil {
 		return err
 	}
 
+	// 2. Ставим пользователю найденную роль
 	if err := aUser.SetNewRole(&role);err != nil {
 		return err
 	}
 	return nil
 }
-func (aUser *AccountUser) SetMarketerRole() error {
+func (aUser *AccountUser) SetRoleMarketer() error {
+	// 1. Ищем необходимую роль
 	role := Role{}
-	err := base.GetDB().First(&role, "tag = 'marketer'").Error
-	if err != nil {
+	if err := role.GetRoleByTag("marketer");err != nil {
 		return err
 	}
 
+	// 2. Ставим пользователю найденную роль
 	if err := aUser.SetNewRole(&role);err != nil {
 		return err
 	}
 	return nil
 }
-func (aUser *AccountUser) SetAuthorRole() error {
+func (aUser *AccountUser) SetRoleAuthor() error {
+	// 1. Ищем необходимую роль
 	role := Role{}
-	err := base.GetDB().First(&role, "tag = 'author'").Error
-	if err != nil {
+	if err := role.GetRoleByTag("author");err != nil {
 		return err
 	}
 
+	// 2. Ставим пользователю найденную роль
 	if err := aUser.SetNewRole(&role);err != nil {
 		return err
 	}
 	return nil
 }
-func (aUser *AccountUser) SetViewerRole() error {
+func (aUser *AccountUser) SetRoleViewer() error {
+	// 1. Ищем необходимую роль
 	role := Role{}
-	err := base.GetDB().First(&role, "tag = 'viewer'").Error
-	if err != nil {
+	if err := role.GetRoleByTag("viewer");err != nil {
 		return err
 	}
 
+	// 2. Ставим пользователю найденную роль
 	if err := aUser.SetNewRole(&role);err != nil {
 		return err
 	}
