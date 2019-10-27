@@ -15,8 +15,17 @@ type AccountUser struct {
 	ApiKeys		[]ApiKey `json:"-"` // ???
 }
 
+// Вспомогательная функция получения пользователя ассоциированного с пользователем
+func (aUser *AccountUser) GetAccountUser(user_id, account_id uint) error {
+	err := base.GetDB().First(aUser,"user_id = ? AND account_id = ?", user_id, account_id).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // устанавливает новую роль пользователю. (временный) Запрет на изменение роли owner user.
-func (aUser *AccountUser) SetNewRole(role *Role) error {
+func (aUser *AccountUser) SetRole(role *Role) error {
 
 	currentRole := Role{}
 	err := base.GetDB().Model(aUser).Related(&currentRole).Error;
@@ -35,25 +44,16 @@ func (aUser *AccountUser) SetNewRole(role *Role) error {
 	return nil
 }
 
-// Вспомогательная функция получения пользователя ассоциированного с пользователем
-func (aUser *AccountUser) GetAccountUser(user_id, account_id uint) error {
-	err := base.GetDB().First(aUser,"user_id = ? AND account_id = ?", user_id, account_id).Error
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // ниже вспомогательные функции простановки системных ролей пользователям
 func (aUser *AccountUser) SetRoleOwner() error {
 	// 1. Ищем необходимую роль
 	role := Role{}
-	if err := role.GetRoleByTag("owner");err != nil {
+	if err := role.FindRoleByTag("owner");err != nil {
 		return err
 	}
 
 	// 2. Ставим пользователю найденную роль
-	if err := aUser.SetNewRole(&role); err != nil {
+	if err := aUser.SetRole(&role); err != nil {
 		return err
 	}
 
@@ -62,12 +62,12 @@ func (aUser *AccountUser) SetRoleOwner() error {
 func (aUser *AccountUser) SetRoleAdmin() error {
 	// 1. Ищем необходимую роль
 	role := Role{}
-	if err := role.GetRoleByTag("admin");err != nil {
+	if err := role.FindRoleByTag("admin");err != nil {
 		return err
 	}
 
 	// 2. Ставим пользователю найденную роль
-	if err := aUser.SetNewRole(&role);err != nil {
+	if err := aUser.SetRole(&role);err != nil {
 		return err
 	}
 	return nil
@@ -75,12 +75,12 @@ func (aUser *AccountUser) SetRoleAdmin() error {
 func (aUser *AccountUser) SetRoleManager() error {
 	// 1. Ищем необходимую роль
 	role := Role{}
-	if err := role.GetRoleByTag("manager");err != nil {
+	if err := role.FindRoleByTag("manager");err != nil {
 		return err
 	}
 
 	// 2. Ставим пользователю найденную роль
-	if err := aUser.SetNewRole(&role);err != nil {
+	if err := aUser.SetRole(&role);err != nil {
 		return err
 	}
 	return nil
@@ -88,12 +88,12 @@ func (aUser *AccountUser) SetRoleManager() error {
 func (aUser *AccountUser) SetRoleMarketer() error {
 	// 1. Ищем необходимую роль
 	role := Role{}
-	if err := role.GetRoleByTag("marketer");err != nil {
+	if err := role.FindRoleByTag("marketer");err != nil {
 		return err
 	}
 
 	// 2. Ставим пользователю найденную роль
-	if err := aUser.SetNewRole(&role);err != nil {
+	if err := aUser.SetRole(&role);err != nil {
 		return err
 	}
 	return nil
@@ -101,12 +101,12 @@ func (aUser *AccountUser) SetRoleMarketer() error {
 func (aUser *AccountUser) SetRoleAuthor() error {
 	// 1. Ищем необходимую роль
 	role := Role{}
-	if err := role.GetRoleByTag("author");err != nil {
+	if err := role.FindRoleByTag("author");err != nil {
 		return err
 	}
 
 	// 2. Ставим пользователю найденную роль
-	if err := aUser.SetNewRole(&role);err != nil {
+	if err := aUser.SetRole(&role);err != nil {
 		return err
 	}
 	return nil
@@ -114,12 +114,12 @@ func (aUser *AccountUser) SetRoleAuthor() error {
 func (aUser *AccountUser) SetRoleViewer() error {
 	// 1. Ищем необходимую роль
 	role := Role{}
-	if err := role.GetRoleByTag("viewer");err != nil {
+	if err := role.FindRoleByTag("viewer");err != nil {
 		return err
 	}
 
 	// 2. Ставим пользователю найденную роль
-	if err := aUser.SetNewRole(&role);err != nil {
+	if err := aUser.SetRole(&role);err != nil {
 		return err
 	}
 	return nil

@@ -16,7 +16,7 @@ func TestExistRoleTable(t *testing.T) {
 
 func TestRole_Delete(t *testing.T) {
 
-	// владелец тестового аккаунта
+	// создаем пользователя-владельца для создания тестового аккаунта
 	test_user_owner := User{
 		Username:"user_test",
 		Email: "testmail@ratus-dev.ru",
@@ -35,7 +35,7 @@ func TestRole_Delete(t *testing.T) {
 		}()
 	}
 
-	// другой пользователь для тестовой роли
+	// создаем пользователя для тестовой роли
 	test_user_2 := User{
 		Username:"user_test_2",
 		Email: "mail-test@ratus-dev.ru",
@@ -54,6 +54,7 @@ func TestRole_Delete(t *testing.T) {
 		}()
 	}
 
+	// создаем тестовый аккаунт от имени тестового пользователя-владельца
 	test_account := Account {Name:"Account_Test"}
 	if err := test_user_owner.CreateAccount(&test_account); err != nil {
 		t.Error(err.Error())
@@ -70,29 +71,31 @@ func TestRole_Delete(t *testing.T) {
 		t.Error("Неудалось добавить пользователя в аккаунт", err.Error())
 	}
 
-	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", AccountID: test_account.ID, Description: "Test crating role for account"}
-	if err := test_role_1.Create(); err != nil {
+	// создаем тестовую роль в контексте аккаунта
+	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", Description: "Test crating role for account"}
+	if err := test_account.CreateRole(&test_role_1); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {
-			if err := test_role_1.Delete(); err != nil {
+			if err := test_account.RemoveRole(&test_role_1); err != nil {
 				t.Error("неудалось удалить роль: ", err.Error())
 			}
 		}()
 	}
 
-	// наш тестовый пользователь в представлении AUser
+	// находим нашего тестового пользователя в представлении AUser
 	test_aUser := AccountUser{}
 	if err := test_aUser.GetAccountUser(test_user_2.ID, test_account.ID); err != nil {
 		t.Error("Неудалось найти aUser: ", test_aUser)
 	}
 
-	// устанавливаем роль тестовому пользователю
-	if err := test_aUser.SetNewRole(&test_role_1); err != nil {
+	// устанавливаем роль тестовому пользователю aUser
+	if err := test_aUser.SetRole(&test_role_1); err != nil {
 		t.Error("Неудалось привязать роль к aUser")
 	} else {
 		// ставим системную роль, чтобы можно было удалить тестовую роль
 		defer func() {
+			// 0. Проверим, что можно установить системную роль
 			if err := test_aUser.SetRoleManager(); err != nil {
 				t.Error("Неудалось отвязать роль от aUser")
 			}
@@ -201,7 +204,7 @@ func TestRole_AppendPermissions(t *testing.T) {
 	if err := aUser.GetAccountUser(test_user_1.ID, test_account.ID); err != nil {
 		t.Error("Cant get account user!", test_user_1, test_account)
 	}
-	if err := aUser.SetNewRole(&test_role_1); err != nil {
+	if err := aUser.SetRole(&test_role_1); err != nil {
 		t.Error("Cant set new role to test user", test_user_1, test_role_1)
 	} else {
 		defer func() {

@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	RoleOverallAdmin 		 = 100 // Право на создание нового аккаунта (= true)
-	RoleOverallManager           = 101 // Доступ к списку складов
-	RoleOverallMarketer           = 102 // Редактирование данных склада
+	//RoleOverallAdmin 		 = 100 // Право на создание нового аккаунта (= true)
+	//RoleOverallManager           = 101 // Доступ к списку складов
+	//RoleOverallMarketer           = 102 // Редактирование данных склада
 )
 
 var (
@@ -206,7 +206,7 @@ type Role struct {
 	Permissions []Permission `json:"permissions" gorm:"many2many:role_permissions;"` // одна роль имеет много прав (permissions)
 }
 
-// создает роль в системе
+// создает роль в системе.
 func (role *Role) Create() (err error) {
 
 	if role.HashID, err = u.CreateHashID(role); err != nil {
@@ -224,6 +224,7 @@ func (role *Role) Create() (err error) {
 }
 
 // удаляет роль, проверяя привязанных пользователей
+// не рекомендуется вызывать эту функцию напрямую, лучше из аккаунта т.к. там проверка на системность роли (которую нельзя удалять)
 func (role *Role) Delete() error {
 
 	if reflect.TypeOf(role.ID).String() != "uint" {
@@ -235,7 +236,8 @@ func (role *Role) Delete() error {
 		return e.RoleDeletedFailedHasUsers
 	}
 
-	if err := base.GetDB().Unscoped().Delete(&role).Error; err != nil {
+	// если все хорошо - удаляем роль с концами
+	if err := base.GetDB().Unscoped().Delete(role).Error; err != nil {
 		return err
 	}
 	return nil
@@ -266,7 +268,7 @@ func (role *Role) RemovePermissions(codes []int) error {
 }
 
 // вспомогательная функция поиска роли по тегу
-func (role *Role) GetRoleByTag(tag string) error {
+func (role *Role) FindRoleByTag(tag string) error {
 	if err := base.GetDB().First(&role, "tag = ?", tag).Error; err != nil {
 		return err
 	}
@@ -293,7 +295,7 @@ func (role *Role) RemovePermissionsOLD(permissions []Permission) error {
 
 // Назначает роль пользователю
 func (role *Role) AppendUser(aUser *AccountUser) error {
-	return aUser.SetNewRole(role)
+	return aUser.SetRole(role)
 }
 
 

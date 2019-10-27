@@ -138,7 +138,7 @@ func TestAccountUser_SetNewRole(t *testing.T) {
 	if err := test_account_user.GetAccountUser(test_user_2.ID, test_account.ID); err != nil {
 		t.Error("Неудалось найти ассоциированного пользователя")
 	}
-	if err := test_account_user.SetNewRole(&test_role_1); err != nil {
+	if err := test_account_user.SetRole(&test_role_1); err != nil {
 		t.Error("Неудалось назначить новую роль пользователю, не являющимся владельцем аккаунта")
 	}
 

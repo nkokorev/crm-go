@@ -1,24 +1,68 @@
 package models
 
 import (
+	"errors"
 	"github.com/nkokorev/crm-go/database/base"
+	e "github.com/nkokorev/crm-go/errors"
+	u "github.com/nkokorev/crm-go/utils"
+	"reflect"
 	"time"
 )
 
 type ApiKey struct {
-	ID			uint `gorm:"primary_key;unique_index;" json:"-"`
-	Token 		string `json:"hash_id" gorm:"unique_index;varchar(32)"`
-	AccountID 	uint `json:"account_id" gorm:"index;"` // Owner token, foreignKey !
-	UserID 		string `json:"creator_id"` // кто создал, можно потом привязать к hash_id
-	Label 		string `json:"name" gorm:"size:255"` // 'Токен для сайта'
-	Status 		bool `json:"status"`
-	RoleID   	uint `json:"role_id"`
+	ID			uint `json:"-" gorm:"primary_key;unique_index;"`
+	Token 		string `json:"hash_id" gorm:"unique_index;varchar(32)"` // сам ключ доступа длиной в 32 символа
+	AccountID 	uint `json:"-" gorm:"index;"` // Owner token, foreignKey !
+	// todo: надо доработать, чтобы модель подгружала сразу нужные данные с ролями и владельцами
+	User		User `gorm:"foreignkey:UserID"`
+	UserID 		uint `json:"user_id"` //
+	Name 		string `json:"name" gorm:"size:255"` // Назначение: 'Токен для сайта', 'Для тестовых подключений'
+	Status 		bool `json:"status" gorm:"default:true"` // статус ключа (активирован ли)
+
+	// todo: надо доработать, чтобы модель подгружала сразу нужные данные с ролями и владельцами
+	Role		Role `gorm:"foreignkey:RoleID;default:NULL"`
+	RoleID   	uint `json:"role_id"` // роль определяет уровнь доступа токена
 	CreatedAt 	time.Time `json:"created_at"`
 	UpdatedAt 	time.Time `json:"updated_at"`
 }
 
+// создает apiKey с токеном доступа
+func (key *ApiKey) Create(user *User, account *Account, role *Role ) error {
+
+	if err := key.createToken();err != nil {
+		return err
+	}
+	key.AccountID = account.ID
+	key.UserID = user.ID
+	key.RoleID = role.ID
+
+	if err := base.GetDB().Create(key).Error; err != nil {
+		return err
+	}
+	if err := base.GetDB().Save(key).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// удаляет ключ
+func (key *ApiKey) Delete() error {
+
+	if reflect.TypeOf(key.ID).String() != "uint" {
+		return e.RoleDeletionError
+	}
+
+	if err := base.GetDB().Unscoped().Delete(key).Error; err != nil {
+		return err
+	}
+
+	// возможно тут нужно обнулять данные модели..
+	return nil
+}
+
 // устанавливает новую роль api ключу.
-func (key *ApiKey) SetNewRole(role *Role) error {
+func (key *ApiKey) SetRole(role *Role) error {
 
 	if err := base.GetDB().Model(key).Update("RoleID", role.ID).Error; err != nil {
 		return err
@@ -27,15 +71,15 @@ func (key *ApiKey) SetNewRole(role *Role) error {
 }
 
 // ниже вспомогательные функции простановки системных ролей api-ключам
-func (key *ApiKey) SetRoleFullAssets() error {
+func (key *ApiKey) SetRoleFullAccess() error {
 	// 1. Ищем необходимую роль
 	role := Role{}
-	if err := role.GetRoleByTag("full-assets");err != nil {
+	if err := role.FindRoleByTag("full-access");err != nil {
 		return err
 	}
 
 	// 2. Ставим пользователю найденную роль
-	if err := key.SetNewRole(&role);err != nil {
+	if err := key.SetRole(&role);err != nil {
 		return err
 	}
 	return nil
@@ -43,12 +87,12 @@ func (key *ApiKey) SetRoleFullAssets() error {
 func (key *ApiKey) SetRoleSiteAccess() error {
 	// 1. Ищем необходимую роль
 	role := Role{}
-	if err := role.GetRoleByTag("site-access");err != nil {
+	if err := role.FindRoleByTag("site-access");err != nil {
 		return err
 	}
 
 	// 2. Ставим пользователю найденную роль
-	if err := key.SetNewRole(&role);err != nil {
+	if err := key.SetRole(&role);err != nil {
 		return err
 	}
 	return nil
@@ -56,13 +100,27 @@ func (key *ApiKey) SetRoleSiteAccess() error {
 func (key *ApiKey) SetRoleReadAccess() error {
 	// 1. Ищем необходимую роль
 	role := Role{}
-	if err := role.GetRoleByTag("read-access");err != nil {
+	if err := role.FindRoleByTag("read-access");err != nil {
 		return err
 	}
 
 	// 2. Ставим пользователю найденную роль
-	if err := key.SetNewRole(&role);err != nil {
+	if err := key.SetRole(&role);err != nil {
 		return err
 	}
+	return nil
+}
+
+func (key *ApiKey) createToken() error {
+
+	token := u.RandStringBytes(32)
+
+	// проверям, что такого токена нет
+	if !base.GetDB().First(&ApiKey{}, "token = ?",token).RecordNotFound() {
+		return errors.New("Cant create token!")
+	}
+
+	key.Token = token
+
 	return nil
 }

@@ -101,9 +101,9 @@ func (account *Account) Delete() error {
 	}
 
 	// удаляем вручную все не системные роли
-	if err := account.RemoveAllRoles(); err != nil {
+	/*if err := account.RemoveAllRoles(); err != nil {
 		return err
-	}
+	}*/
 
 	if err := base.GetDB().Unscoped().Delete(&account).Error; err != nil {
 		return err
@@ -137,16 +137,50 @@ func (account *Account) RemoveAllRoles() error {
 	return nil
 }
 
+// удаляет роль, проверяя ее на системность и владение аккаунтом
+func (account *Account) RemoveRole(role *Role) error {
 
-// ######### ниже не проверенные фукнции ###########
-// Создает голую роль в аккаунте с разрешениями (Permission / []Permissions)
-func (account *Account) CreateRole(role *Role) error {
+	// проверим, что аккаунт создан (есть действительный его ID)
 	if reflect.TypeOf(account.ID).String() != "uint" {
 		return errors.New("Cant create role, not found account ID")
 	}
+
+	// проверим, что роль не системная
+	if role.System {
+		return errors.New("Нельзя удалить системную роль")
+	}
+
+	// проверим, что роль принадлежит текущему аккаунту
+	if role.AccountID != account.ID {
+		return errors.New("Указанная роль не принадлежит текущему аккаунту")
+	}
+
+	if err := role.Delete();err != nil {
+		return err
+	}
+	return nil
+}
+
+// создает роль, привязывая ее к аккаунту и выставляя прочие параметры
+func (account *Account) CreateRole(role *Role) error {
+
+	// проверим, что аккаунт создан (есть действительный его ID)
+	if reflect.TypeOf(account.ID).String() != "uint" {
+		return errors.New("Cant create role, not found account ID")
+	}
+	// привязываем к роли аккаунт
 	role.AccountID = account.ID
+
+	// указываем, что роль НЕ системная
+	role.System = false
+
 	return role.Create()
 }
+
+
+// ######### ниже не проверенные фукнции ###########
+// Создает голую роль в аккаунте с разрешениями (Permission / []Permissions)
+
 
 // создает новый токен
 var CreateAccountToken = func (userId, accountId uint) (cryptToken string, error error) {

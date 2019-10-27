@@ -13,7 +13,10 @@ func Respond(w http.ResponseWriter, data map[string] interface{})  {
 	w.Header().Add("Content-Type", "application/json")
 	//w.Header().Set("Access-Control-Allow-Origin", "*")
 	//fmt.Println("Respond")
-	json.NewEncoder(w).Encode(data)
+
+	if err := json.NewEncoder(w).Encode(data);err != nil {
+		// todo может не выйти json...
+	}
 }
 
 func MessageWithErrors(message string, errors map[string]string) (map[string]interface{}) {
