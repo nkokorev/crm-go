@@ -16,22 +16,25 @@ func TestExistUserTable(t *testing.T) {
 func TestUser_Create(t *testing.T) {
 
 	test_user_1 := User{
-		Username:"admin_test",
+		Username:"user_test",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",
 		Patronymic:"РеальноеОтчество",
 		Password: "qwerty123#Aa",
 	}
-
 	err := test_user_1.Create()
 	if err != nil {
-		t.Error(err.Error())
+		t.Error("Неудалось создать пользователя: ", err.Error())
 	} else {
-		defer test_user_1.Delete()
+		defer func() {
+			if err := test_user_1.Delete(); err != nil {
+				t.Error("неудалось удалить пользователя: ", err.Error())
+			}
+		}()
 	}
 
-	// убеждаемся, что в нового пользователя загружены новые данные после создания
+	// 1. убеждаемся, что в нового пользователя загружены новые данные после создания
 	if test_user_1.ID == 0 {
 		t.Errorf("User ID == 0, expected > 0")
 	}
@@ -40,10 +43,23 @@ func TestUser_Create(t *testing.T) {
 		t.Errorf("Cant find created user: %v", test_user_1.Username)
 	}
 
-	// тестируем на всякий, что валидатор работает встроенный в функцию
+	// 2. проверим, что нельзя повторно тут же создать дубль пользователя с тем же ID
+	test_user_1.Username = "Test User Double" // меняем имя пользователя
+	test_user_1.Email = "mail-test@ratus-dev.ru" // меняем почту
+	if err := test_user_1.Create(); err == nil {
+		t.Error("Удалось повторно создать пользователя, который был уже создан")
+	} else {
+		defer func() {
+			if err := test_user_1.Delete(); err != nil {
+				t.Error("неудалось удалить пользователя: ", err.Error())
+			}
+		}()
+	}
+
+	// 3. тестируем валидатор встроенный в функцию (валидатор еще тестируется отдельной функцией)
 	test_users := []User{
 		{}, // ничего нет %)
-		{Username:"admin_test", Email: "mail-test@ratus-dev.ru", Password: "qwerty123#Aa"}, // повторяющийся Username
+		{Username:"user_test", Email: "mail-test@ratus-dev.ru", Password: "qwerty123#Aa"}, // повторяющийся Username
 		{Username:"test_user_9", Email: "testmail@ratus-dev.ru", Password: "qwerty123#Aa"}, // Этот еmail-адрес уже используется
 		{Username:"", Email: "mail-test@ratus-dev.ru", Password: "qwerty123#Aa"}, // нет username
 		{Username:"Почтальон!",Email: "mail-test@ratus-dev.ru", Password: "qwerty123#Aa"}, // not ANCII

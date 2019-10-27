@@ -77,7 +77,7 @@ func TestRole_Delete(t *testing.T) {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {
-			if err := test_account.RemoveRole(&test_role_1); err != nil {
+			if err := test_account.DeleteRole(&test_role_1); err != nil {
 				t.Error("неудалось удалить роль: ", err.Error())
 			}
 		}()
@@ -103,7 +103,7 @@ func TestRole_Delete(t *testing.T) {
 	}
 
 	// # 1. проверяем, что нельзя удалить роль, если к ней привязан хотя бы 1 пользователь
-	if err := test_role_1.Delete(); err == nil {
+	if err := test_role_1.delete(); err == nil {
 		t.Error("Удалена роль, хотя к ней привязан пользователь: ", test_user_2.Name)
 	}
 
@@ -158,12 +158,12 @@ func TestRole_AppendPermissions(t *testing.T) {
 		}()
 	}
 
-	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", AccountID: test_account.ID, Description: "Test crating role for account"}
-	if err := test_role_1.Create(); err != nil {
+	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", Description: "Test crating role for account"}
+	if err := test_account.CreateRole(&test_role_1); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {
-			if err := test_role_1.Delete(); err != nil {
+			if err := test_account.DeleteRole(&test_role_1); err != nil {
 				t.Error("неудалось удалить роль: ", err.Error())
 			}
 		}()

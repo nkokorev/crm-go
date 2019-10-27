@@ -1,19 +1,27 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	_ "github.com/nkokorev/auth-server/locales"
 	"github.com/nkokorev/crm-go/database/base"
 	e "github.com/nkokorev/crm-go/errors"
 	u "github.com/nkokorev/crm-go/utils"
+	"os"
 	"reflect"
 )
 
-const (
-	//RoleOverallAdmin 		 = 100 // Право на создание нового аккаунта (= true)
-	//RoleOverallManager           = 101 // Доступ к списку складов
-	//RoleOverallMarketer           = 102 // Редактирование данных склада
-)
+var roles = []Role {
+	{ Name: "Владелец аккаунта",Tag:"owner", 	System: true, Description: "Доступ ко всем данным и функционалу аккаунта."},
+	{ Name: "Администратор", 	Tag:"admin", 	System: true, Description: "Доступ ко всем данным и функционалу аккаунта. Не может менять владельца аккаунта."},
+	{ Name: "Менеджер", 		Tag:"manager", 	System: true, Description: "Не может добавлять пользователей, не может менять биллинговую информацию."},
+	{ Name: "Маркетолог", 		Tag:"marketer", System: true, Description: "Читает все клиентские данные, может изменять все что касается маркетинга, но не заказы или склады."},
+	{ Name: "Автор", 			Tag:"author", 	System: true, Description: "Может создавать контент: писать статьи, письма, описания к товарам и т.д."},
+	{ Name: "Наблюдатель", 		Tag:"viewer", 	System: true, Description: "The Viewer can view reports in the account"},
+	{ Name: "Full Access", 		Tag:"full-access", 	Type:	"api",	System: true, Description: "Доступ ко всем функциям API"},
+	{ Name: "Site Access", 		Tag:"site-access", 	Type:	"api",	System: true, Description: "Доступ к аккаунту через API, необходимый для интеграции с сайтом"},
+	{ Name: "Read Access", 		Tag:"read-access", 	Type:	"api",	System: true, Description: "Доступ к чтению основной информации об аккаунте."},
+}
 
 var (
 	// ### Список прав для пользователей (aUser) ### ///
@@ -207,7 +215,15 @@ type Role struct {
 }
 
 // создает роль в системе.
-func (role *Role) Create() (err error) {
+func (role *Role) create() (err error) {
+
+	// проверка на попытку создать дубль роли, которая уже была создан
+	if reflect.TypeOf(role.ID).String() == "uint" {
+		if role.ID > 0 && !base.GetDB().First(&Role{}, role.ID).RecordNotFound() {
+			// todo need to translation
+			return errors.New("Can't create new role: already crated!")
+		}
+	}
 
 	if role.HashID, err = u.CreateHashID(role); err != nil {
 		return err
@@ -224,8 +240,7 @@ func (role *Role) Create() (err error) {
 }
 
 // удаляет роль, проверяя привязанных пользователей
-// не рекомендуется вызывать эту функцию напрямую, лучше из аккаунта т.к. там проверка на системность роли (которую нельзя удалять)
-func (role *Role) Delete() error {
+func (role *Role) delete() error {
 
 	if reflect.TypeOf(role.ID).String() != "uint" {
 		return e.RoleDeletionError
@@ -359,10 +374,26 @@ func (role *Role) setPermissionsReadAccess() error {
 }
 
 
-// добавляет к роли стандартные права администратора
-func (role Role) AppendAdminPermissions() (error u.Error) {
-	// todo дописать функцию
-	return
+func init() {
+	// seeding can be: "" / "true" / "fresh"
+	seeding := os.Getenv("seeding")
+	if seeding == "true" ||  seeding == "fresh"{
+		roleSeeding()
+	}
+}
+
+
+// разворачивает базовые разрешения для всех пользователей
+func roleSeeding()  {
+
+	//base.GetDB().Unscoped().Delete(Role{})
+
+	for _, v := range roles {
+		err := v.create()
+		if err != nil {
+			fmt.Println("Cant create Roles")
+		}
+	}
 }
 
 

@@ -16,6 +16,7 @@ func TestExistAccountTable(t *testing.T) {
 
 func TestAccount_Create(t *testing.T) {
 
+	// создаем пользователя владельца аккаунта
 	test_user_1 := User{
 		Username:"user_test",
 		Email: "testmail@ratus-dev.ru",
@@ -35,6 +36,7 @@ func TestAccount_Create(t *testing.T) {
 		}()
 	}
 
+	// создаем тестовый аккаунт
 	test_account_1 := Account {	Name:"Account_Test",}
 	err = test_account_1.Create(&test_user_1)
 	if err != nil {
@@ -47,18 +49,29 @@ func TestAccount_Create(t *testing.T) {
 		}()
 	}
 
-	// #1. проверяем что аккаунт действительно создан
+	// 1. проверим, что нельзя создать думабль аккаунта
+	if err := test_account_1.Create(&test_user_1); err == nil {
+		t.Error("Удалось повторно создать аккаунт, который был уже создан")
+	} else {
+		defer func() {
+			if err := test_account_1.Delete(); err != nil {
+				t.Error("неудалось удалить аккаунт: ", err.Error())
+			}
+		}()
+	}
+
+	// 2. проверяем что аккаунт действительно создан
 	temp_account := Account{}
 	if base.GetDB().First(&temp_account, test_account_1.ID).RecordNotFound() {
 		t.Errorf("Cant find created account: %v", test_account_1.Name)
 	}
 
-	// #2. проверим, что в аккаунт был добавлен владелец аккаунта
+	// 3. проверим, что в аккаунт был добавлен владелец аккаунта
 	if base.GetDB().Model(&test_user_1).Where("account_id = ?", test_account_1.ID).Association("Accounts").Count() != 1 {
 		t.Error("Владелец аккаунта не добавлен в список пользователей аккаунта")
 	}
 
-	// #3. проверим, что нам не дадут удалить пользователя, если у него есть аккаунты
+	// 4. проверим, что нам не дадут удалить пользователя, если у него есть аккаунты
 	err = test_user_1.Delete()
 	if err == nil {
 		t.Error("Удалось удалить пользователя, при существующем аккаунте")
@@ -67,7 +80,7 @@ func TestAccount_Create(t *testing.T) {
 		t.Errorf("аккаунт был удален, хотя есть ограничение внешнего ключа: %v", test_account_1.Name)
 	}
 
-	// #4. проверим, что у пользователя права создателя аккаунта
+	// 5. проверим, что у пользователя права создателя аккаунта
 	owner_role := Role{}
 	err = base.GetDB().First(&owner_role, "tag = 'owner'").Error
 	if err != nil && !gorm.IsRecordNotFoundError(err){
@@ -85,16 +98,9 @@ func TestAccount_Create(t *testing.T) {
 		}
 	}
 
-	// удаляем аккаунт
-	err = test_account_1.Delete()
-	if err != nil {
-		t.Error(err.Error())
-	}
-
 	// удаляем пользователя (должен удалиться)
-	err = test_user_1.Delete()
-	if err != nil {
-		t.Error("Неудалось удалить пользователя, хотя аккаунт был удален.")
+	if err := test_user_1.Delete(); err == nil {
+		t.Error("Удалось удалить пользователя, хотя у него был аккаунт.")
 	}
 
 }
@@ -137,7 +143,7 @@ func TestAccount_CreateRole(t *testing.T) {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {
-			if err := test_account.RemoveRole(&test_role_1); err != nil {
+			if err := test_account.DeleteRole(&test_role_1); err != nil {
 				t.Error("неудалось удалить роль: ", err.Error())
 			}
 		}()
@@ -156,11 +162,11 @@ func TestAccount_CreateRole(t *testing.T) {
 
 	// 2. Проверяем системную роль БЕЗ привязки к аккаунту
 	test_role_2 := Role{Name:"Test_Role_2", System: true, Tag: "test_tag_2", Description: "Test crating role for account"}
-	if err := test_role_2.Create(); err != nil {
+	if err := test_role_2.create(); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {
-			if err := test_role_2.Delete(); err != nil {
+			if err := test_role_2.delete(); err != nil {
 				t.Error("неудалось удалить роль: ", err.Error())
 			}
 		}()
@@ -217,14 +223,14 @@ func TestAccount_RemoveRole(t *testing.T) {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {
-			if err := test_account.RemoveRole(&test_role_1); err != nil {
+			if err := test_account.DeleteRole(&test_role_1); err != nil {
 				t.Error("неудалось удалить роль: ", err.Error())
 			}
 		}()
 	}
 
 	// проверим, что функция удаления действительно работает
-	if err := test_account.RemoveRole(&test_role_1); err !=nil {
+	if err := test_account.DeleteRole(&test_role_1); err !=nil {
 		t.Error("Неудалось удалить тестовую роль", err.Error())
 	}
 
@@ -274,15 +280,15 @@ func TestAccount_RemoveAllRoles(t *testing.T) {
 		}
 
 	for i, _ := range test_roles {
-		err := test_roles[i].Create();
-		if err != nil || test_roles[i].ID == 0 {
+
+		if err := test_account.CreateRole(&test_roles[i]); err != nil {
 			t.Error("неудалось создать роль: ", err)
 		} else {
-			/*defer func(i int) {
-				if err :=  test_roles[i].Delete(); err != nil {
+			defer func(i int) {
+				if err :=  test_account.DeleteRole(&test_roles[i]); err != nil {
 					t.Error("неудалось удалить роль: ", err.Error())
 				}
-			}(i)*/
+			}(i)
 		}
 	}
 
@@ -299,7 +305,7 @@ func TestAccount_RemoveAllRoles(t *testing.T) {
 	}
 
 	// #1. Проверим удаление привязанных к аккаунту ролей
-	if err := test_account.RemoveAllRoles(); err != nil {
+	if err := test_account.DeleteAllRoles(); err != nil {
 		t.Errorf("Неудалось удалить тестовые роли для аккаунта : %v", test_account.Name)
 	}
 
@@ -355,7 +361,7 @@ func TestAccount_Delete(t *testing.T) {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {
-			if err := test_account.RemoveRole(&test_role_1); err != nil {
+			if err := test_account.DeleteRole(&test_role_1); err != nil {
 				t.Error("неудалось удалить роль: ", err.Error())
 			}
 		}()

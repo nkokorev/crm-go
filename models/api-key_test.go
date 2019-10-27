@@ -64,7 +64,7 @@ func TestApiKey_Create(t *testing.T) {
 
 	// 1. Пробуем создать apiKey
 	test_api_key_1 := ApiKey{Name: "TestApiKey_1"}
-	if err := test_api_key_1.Create(&test_owner_user, &test_account, &test_role_full_access);err != nil {
+	if err := test_account.CreateApiKey(&test_api_key_1, &test_role_full_access);err != nil {
 		t.Error("Неудалось создать API Key для тестового аккаунта", err.Error())
 	}
 
@@ -134,7 +134,7 @@ func TestApiKey_Delete(t *testing.T) {
 
 	// 1. Пробуем создать apiKey
 	test_api_key_1 := ApiKey{Name: "TestApiKey_1"}
-	if err := test_api_key_1.Create(&test_owner_user, &test_account, &test_role_full_access);err != nil {
+	if err := test_account.CreateApiKey(&test_api_key_1, &test_role_full_access);err != nil {
 		t.Error("Неудалось создать API Key для тестового аккаунта", err.Error())
 	}
 
@@ -145,7 +145,7 @@ func TestApiKey_Delete(t *testing.T) {
 
 	// 2. Проверяем удаление ключа
 	token := test_api_key_1.Token // запоминаем токен
-	if err := test_api_key_1.Delete(); err !=nil {
+	if err := test_account.DeleteApiKey(&test_api_key_1); err !=nil {
 		t.Error("Неудалось удалить аккаунт", err.Error())
 	}
 	// убеждаемся, что ключ удален
@@ -200,7 +200,7 @@ func TestApiKey_SetRole(t *testing.T) {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {
-			if err := test_account.RemoveRole(&test_role_1); err != nil {
+			if err := test_account.DeleteRole(&test_role_1); err != nil {
 				t.Error("неудалось удалить роль: ", err.Error())
 			}
 		}()
@@ -208,7 +208,7 @@ func TestApiKey_SetRole(t *testing.T) {
 
 	// 1. Пробуем создать apiKey с системной ролью
 	test_api_key_1 := ApiKey{Name: "TestApiKey_1"}
-	if err := test_api_key_1.Create(&test_owner_user, &test_account, &test_role_full_access);err != nil {
+	if err := test_account.CreateApiKey(&test_api_key_1, &test_role_full_access);err != nil {
 		t.Error("Неудалось создать API Key для тестового аккаунта", err.Error())
 	}
 	// убеждаемся, что новый api-ключ создан
@@ -218,7 +218,7 @@ func TestApiKey_SetRole(t *testing.T) {
 
 	// 2. Пробуем создать apiKey с нашей ролью в контексте аккаунта
 	test_api_key_2 := ApiKey{Name: "TestApiKey_2"}
-	if err := test_api_key_2.Create(&test_owner_user, &test_account, &test_role_1);err != nil {
+	if err := test_account.CreateApiKey(&test_api_key_2, &test_role_1);err != nil {
 		t.Error("Неудалось создать API Key для тестового аккаунта", err.Error())
 	}
 	// убеждаемся, что новый api-ключ создан

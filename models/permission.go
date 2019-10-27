@@ -7,6 +7,7 @@ import (
 	_ "github.com/nkokorev/auth-server/locales"
 	"github.com/nkokorev/crm-go/database/base"
 	u "github.com/nkokorev/crm-go/utils"
+	"reflect"
 )
 
 // Добавил право - добавь к роли!
@@ -41,6 +42,16 @@ type Permission struct {
 
 // Создание нового правила доступа (сугубо системная функция)
 func (permission *Permission) Create() error {
+
+	// проверка на попытку создать дубль разрешения, которое уже было создано
+	if reflect.TypeOf(permission.ID).String() == "uint" {
+		if permission.ID > 0 && !base.GetDB().First(&Permission{}, permission.ID).RecordNotFound() {
+			// todo need to translation
+			return errors.New("Can't create new role: already crated!")
+		}
+	}
+
+	// создаем правило
 	if err := base.GetDB().Create(permission).Error; err != nil {
 		return err
 	}

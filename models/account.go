@@ -32,6 +32,15 @@ type Account struct {
 // Создает новый аккаунт по структуре account. Аккаунт привязывается к владельцу по user_id, добавляя его в список пользователей аккаунта.
 func (account *Account) Create(owner *User) (err error) {
 
+	// проверка на попытку создать дубль аккаунта, который уже был создан
+	if reflect.TypeOf(account.ID).String() == "uint" {
+		if account.ID > 0 && !base.GetDB().First(&Account{}, account.ID).RecordNotFound() {
+			// todo need to translation
+			return errors.New("Can't create new account: account with this ID already crated!")
+		}
+	}
+
+	// проверяем, что пользователь, который создает аккаунт действительно создан
 	if reflect.TypeOf(owner.ID).String() != "uint" {
 		return errors.New("Can't create new account: user ID not specified")
 	}
@@ -128,17 +137,24 @@ func (account *Account) RemoveUser(user *User) error {
 	return nil
 }
 
-// удаление всех ролей, не являющимися системными
-func (account *Account) RemoveAllRoles() error {
-	roles := []Role{}
-	if err := base.GetDB().Delete(&roles,"account_id = ? AND system = FALSE", account.ID).Error; err != nil {
-		return err
+// создает роль, привязывая ее к аккаунту и выставляя прочие параметры
+func (account *Account) CreateRole(role *Role) error {
+
+	// проверим, что аккаунт создан (есть действительный его ID)
+	if reflect.TypeOf(account.ID).String() != "uint" {
+		return errors.New("Cant create role, not found account ID")
 	}
-	return nil
+	// привязываем к роли аккаунт
+	role.AccountID = account.ID
+
+	// указываем, что роль НЕ системная
+	role.System = false
+
+	return role.create()
 }
 
 // удаляет роль, проверяя ее на системность и владение аккаунтом
-func (account *Account) RemoveRole(role *Role) error {
+func (account *Account) DeleteRole(role *Role) error {
 
 	// проверим, что аккаунт создан (есть действительный его ID)
 	if reflect.TypeOf(account.ID).String() != "uint" {
@@ -155,26 +171,62 @@ func (account *Account) RemoveRole(role *Role) error {
 		return errors.New("Указанная роль не принадлежит текущему аккаунту")
 	}
 
-	if err := role.Delete();err != nil {
+	if err := role.delete();err != nil {
 		return err
 	}
 	return nil
 }
 
-// создает роль, привязывая ее к аккаунту и выставляя прочие параметры
-func (account *Account) CreateRole(role *Role) error {
-
-	// проверим, что аккаунт создан (есть действительный его ID)
-	if reflect.TypeOf(account.ID).String() != "uint" {
-		return errors.New("Cant create role, not found account ID")
+// удаление всех ролей, не являющимися системными
+func (account *Account) DeleteAllRoles() error {
+	roles := []Role{}
+	if err := base.GetDB().Delete(&roles,"account_id = ? AND system = FALSE", account.ID).Error; err != nil {
+		return err
 	}
-	// привязываем к роли аккаунт
-	role.AccountID = account.ID
+	return nil
+}
 
-	// указываем, что роль НЕ системная
-	role.System = false
+// создает API ключ и привязывает его к аккаунту
+func (account *Account) CreateApiKey(key *ApiKey, role *Role) error {
 
-	return role.Create()
+	// проверяем, что контекст действителен
+	if reflect.TypeOf(account.ID).String() != "uint" {
+		return errors.New("Can't create new api-key: account ID not specified")
+	}
+
+	// привязывает ключ к аккаунту
+	key.AccountID = account.ID
+
+	// назначаем роль
+	key.RoleID = role.ID
+
+	// создаем api-key
+	if err := key.create(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Удаляет API ключ, принадлежащий аккаунту
+func (account *Account) DeleteApiKey(key *ApiKey) error {
+
+	// проверяем, что контекст действителен
+	if reflect.TypeOf(account.ID).String() != "uint" {
+		return errors.New("Can't create new api-key: account ID not specified")
+	}
+
+	// проверяем, что ключ принадлежит этому аккаунту
+	if key.AccountID != account.ID {
+		return errors.New("Невозможно удалить api-key, т.к. он не принадлежит текущему аккаунту")
+	}
+
+	// удаляем api-key
+	if err := key.delete(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
@@ -30,8 +31,15 @@ type User struct {
 	DeletedAt *time.Time `sql:"index" json:"-"`
 }
 
-//Create new User by &User{}. Dont hash pwd. HashID will be created.
 func (user *User) Create() (err error) {
+
+	// проверка на попытку создать дубль пользователя, который уже был создан
+	if reflect.TypeOf(user.ID).String() == "uint" {
+		if user.ID > 0 && !base.GetDB().First(&User{}, user.ID).RecordNotFound() {
+			// todo need to translation
+			return errors.New("Can't create new user: user with this ID already crated!")
+		}
+	}
 
 	myErr := user.ValidateCreate()
 	if myErr.HasErrors() {

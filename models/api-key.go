@@ -13,9 +13,6 @@ type ApiKey struct {
 	ID			uint `json:"-" gorm:"primary_key;unique_index;"`
 	Token 		string `json:"hash_id" gorm:"unique_index;varchar(32)"` // сам ключ доступа длиной в 32 символа
 	AccountID 	uint `json:"-" gorm:"index;"` // Owner token, foreignKey !
-	// todo: надо доработать, чтобы модель подгружала сразу нужные данные с ролями и владельцами
-	User		User `gorm:"foreignkey:UserID"`
-	UserID 		uint `json:"user_id"` //
 	Name 		string `json:"name" gorm:"size:255"` // Назначение: 'Токен для сайта', 'Для тестовых подключений'
 	Status 		bool `json:"status" gorm:"default:true"` // статус ключа (активирован ли)
 
@@ -27,18 +24,24 @@ type ApiKey struct {
 }
 
 // создает apiKey с токеном доступа
-func (key *ApiKey) Create(user *User, account *Account, role *Role ) error {
+func (key *ApiKey) create() error {
 
+	// проверка повторного создания ключа
+	if reflect.TypeOf(key.ID).String() == "uint" {
+		if key.ID > 0 && !base.GetDB().First(&ApiKey{}, key.ID).RecordNotFound() {
+			return errors.New("Can't create new api-key: already crated!")
+		}
+	}
+
+	// создаем уникальный токен
 	if err := key.createToken();err != nil {
 		return err
 	}
-	key.AccountID = account.ID
-	key.UserID = user.ID
-	key.RoleID = role.ID
-
+	// создаем api-ключ в БД
 	if err := base.GetDB().Create(key).Error; err != nil {
 		return err
 	}
+	// фиксим баг с timestamps
 	if err := base.GetDB().Save(key).Error; err != nil {
 		return err
 	}
@@ -47,7 +50,7 @@ func (key *ApiKey) Create(user *User, account *Account, role *Role ) error {
 }
 
 // удаляет ключ
-func (key *ApiKey) Delete() error {
+func (key *ApiKey) delete() error {
 
 	if reflect.TypeOf(key.ID).String() != "uint" {
 		return e.RoleDeletionError
