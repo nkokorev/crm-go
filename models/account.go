@@ -150,7 +150,7 @@ func (account *Account) CreateRole(role *Role) error {
 	// указываем, что роль НЕ системная
 	role.System = false
 
-	return role.create()
+	return role.create([]int{})
 }
 
 // удаляет роль, проверяя ее на системность и владение аккаунтом

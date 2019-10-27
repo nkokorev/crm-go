@@ -173,10 +173,13 @@ func (user *User) Delete() error {
 	return nil
 }
 
-// создание нового аккаунт см.: (account *Account) Create(user *User)
+// создание нового аккаунт в контексте пользователя
 func (user *User) CreateAccount(account *Account) error {
 	return account.Create(user)
 }
+
+
+/// #### ниже функции надо доработать
 
 // Авторизует пользователя, в случае успеха возвращает jwt-token
 func AuthLogin(username, password string) (cryptToken string, error u.Error) {

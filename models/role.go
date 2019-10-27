@@ -214,8 +214,8 @@ type Role struct {
 	Permissions []Permission `json:"permissions" gorm:"many2many:role_permissions;"` // одна роль имеет много прав (permissions)
 }
 
-// создает роль в системе.
-func (role *Role) create() (err error) {
+// создает роль в системе. ?? не возможно создать роль без разрешений... же?
+func (role *Role) create(codes []int) (err error) {
 
 	// проверка на попытку создать дубль роли, которая уже была создан
 	if reflect.TypeOf(role.ID).String() == "uint" {
@@ -232,6 +232,11 @@ func (role *Role) create() (err error) {
 	if err = base.GetDB().Create(&role).Error; err != nil {
 		return err
 	}
+
+	if err = role.SetPermissions(codes);err != nil {
+		return
+	}
+
 	if err = base.GetDB().Save(role).Error; err != nil {
 		return err
 	}
@@ -260,9 +265,18 @@ func (role *Role) delete() error {
 
 // устанавливает для роли ТОЛЬКО переданные разрешения, остальные разрешения удаляются
 func (role *Role) SetPermissions(codes []int) error {
-	for i, v := range codes {
-		fmt.Printf("SetPermissions: i: %v, v: %v \r\n", i,v)
+
+	// ищем права с указанными кодами
+	permissions := []Permission{}
+	if err := base.GetDB().Find(&permissions, "code IN (?)", codes).Error; err != nil {
+		return err
 	}
+
+	// назначаем права для роли
+	if err := base.GetDB().Model(role).Association("Permissions").Replace(permissions).Error; err != nil {
+		return nil
+	}
+
 	return nil
 }
 
@@ -316,7 +330,7 @@ func (role *Role) AppendUser(aUser *AccountUser) error {
 
 // todo реализовать сидерские функции базового наполнения crm таблиц данных
 
-// системная функция для установки прав администратора
+// системные функции для установки прав для системных ролей
 // todo реализовать функционал
 func (role *Role) setPermissionsOwner() error {
 	if err := role.SetPermissions(permissionsOwner); err != nil {
@@ -386,14 +400,84 @@ func init() {
 // разворачивает базовые разрешения для всех пользователей
 func roleSeeding()  {
 
-	//base.GetDB().Unscoped().Delete(Role{})
+	//base.GetDB().Unscoped().Delete(&Role{})
 
+	// проверяем что в системе нет ролей
+	if !base.GetDB().Find(&Role{}).RecordNotFound() {
+		return
+	}
+
+
+
+	// создаем системные роли
 	for _, v := range roles {
-		err := v.create()
+
+		// 1. Найдем необходимые пермишены
+		//permI := []int{}
+		switch v.Tag {
+		case "owner":
+			if err :=  v.create(permissionsOwner);err != nil {
+				fmt.Println("Неудалось установить парава для роли owner", err.Error())
+			}
+		case "admin":
+			if err :=  v.create(permissionsAdmin);err != nil {
+				fmt.Println("Неудалось установить парава для роли admin", err.Error())
+			}
+		case "manager":
+			if err :=  v.create(permissionsManager);err != nil {
+				fmt.Println("Неудалось установить парава для роли manager", err.Error())
+			}
+		case "marketer":
+			if err :=  v.create(permissionsMarketer);err != nil {
+				fmt.Println("Неудалось установить парава для роли marketer", err.Error())
+			}
+		case "author":
+			if err :=  v.create(permissionsAuthor);err != nil {
+				fmt.Println("Неудалось установить парава для роли author", err.Error())
+			}
+		case "viewer":
+			if err :=  v.create(permissionsViewer);err != nil {
+				fmt.Println("Неудалось установить парава для роли viewer", err.Error())
+			}
+		case "full-access":
+			if err :=  v.create(permissionsFullAccess);err != nil {
+				fmt.Println("Неудалось установить парава для роли full-access", err.Error())
+			}
+		case "site-access":
+			if err :=  v.create(permissionsSiteAccess);err != nil {
+				fmt.Println("Неудалось установить парава для роли site-access", err.Error())
+			}
+		case "read-access":
+			if err :=  v.create(permissionsReadAccess);err != nil {
+				fmt.Println("Неудалось установить парава для роли read-access", err.Error())
+			}
+		}
+
+		/*err := v.create()
 		if err != nil {
 			fmt.Println("Cant create Roles")
-		}
+		}*/
 	}
+
+	// назначаем права
+
+	/*role := Role{}
+	if err := role.FindRoleByTag("owner");err != nil {
+		fmt.Printf("Cant find role owner by tag: %v \r\n", err.Error())
+	}
+	if err := role.setPermissionsOwner();err != nil{
+		fmt.Printf("Cant set permissions owner for role owner: %v", err.Error())
+	}
+
+	if err := role.FindRoleByTag("admin");err !=nil {
+		fmt.Printf("Cant find role owner by tag: %v \r\n", err.Error())
+	}
+	if err := role.setPermissionsAdmin();err != nil{
+		fmt.Printf("Cant set permissions owner for role owner: %v \r\n", err.Error())
+	}*/
+
+
+
 }
 
 
