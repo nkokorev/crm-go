@@ -109,7 +109,12 @@ func ValidateEmailDeepHost(email string) error {
 	if err != nil {
 		return e.EmailDoesNotExist
 	}
-	defer client.Close()
+	defer func() {
+		if err := client.Close();err!=nil {
+			// тут можно какой-то лог записать
+			return
+		}
+	}()
 
 	err = client.Hello("checkmail.me")
 	if err != nil {
@@ -138,7 +143,11 @@ func DialTimeout(addr string, timeout time.Duration) (*smtp.Client, error) {
 		return nil, err
 	}
 
-	t := time.AfterFunc(timeout, func() { conn.Close() })
+	t := time.AfterFunc(timeout, func() {
+		if err := conn.Close(); err != nil {
+			// todo there...
+		}
+	})
 	defer t.Stop()
 
 	host, _, _ := net.SplitHostPort(addr)

@@ -8,6 +8,7 @@ import (
 	"github.com/nkokorev/crm-go/database/base"
 	e "github.com/nkokorev/crm-go/errors"
 	t "github.com/nkokorev/crm-go/locales"
+	"os"
 
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
@@ -70,7 +71,8 @@ func (user *User) ValidateCreate() (error u.Error) {
 		}
 	}
 
-	err := u.VerifyEmail(user.Email, false)
+	// проверка почты должна быть полной, но при тестах часто используется обычная проверка
+	err := u.VerifyEmail(user.Email, !(os.Getenv("http_dev") == "true"))
 	if err != nil {
 		error.AddErrors("email", err.Error())
 		error.Message = t.Trans(t.UserCreateInvalidCredentials)

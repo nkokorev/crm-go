@@ -145,5 +145,60 @@ func TestAccountUser_SetNewRole(t *testing.T) {
 }
 
 func TestAccountUser_CheckPermission(t *testing.T) {
+	// в отличии от (*Role) HasPermissions() bool тут надо проверить среди пользователей с разными пролями
 
+	// создаем владельца аккаунта
+	test_owner_user := User{
+		Username:"user_test",
+		Email: "testmail@ratus-dev.ru",
+		Name:"РеальноеИмя",
+		Surname:"РеальнаяФамилия",
+		Patronymic:"РеальноеОтчество",
+		Password: "qwerty123#Aa",
+	}
+	if err := test_owner_user.Create(); err != nil {
+		t.Error(err.Error())
+	} else {
+		defer func() {
+			if err := test_owner_user.Delete(); err != nil {
+				t.Error("неудалось удалить пользователя: ", err.Error())
+			}
+		}()
+	}
+
+	/*// создаем обычного пользователя, которого потом добавим в аккаунт и будем тестировать на различные права
+	test_user_1 := User{
+		Username:"user_test",
+		Email: "testmail@ratus-dev.ru",
+		Name:"РеальноеИмя",
+		Surname:"РеальнаяФамилия",
+		Patronymic:"РеальноеОтчество",
+		Password: "qwerty123#Aa",
+	}
+	if err := test_user_1.Create(); err != nil {
+		t.Error(err.Error())
+	} else {
+		defer func() {
+			if err := test_user_1.Delete(); err != nil {
+				t.Error("неудалось удалить пользователя: ", err.Error())
+			}
+		}()
+	}
+
+	// создаем тестовый аккаунт, от имени владельца аккаунта
+	test_account := Account {Name:"Account_Test"}
+	if err := test_owner_user.CreateAccount(&test_account); err != nil {
+		t.Error(err.Error())
+	} else {
+		defer func() {
+			if err := test_account.Delete(); err != nil {
+				t.Error("неудалось удалить аккаунт: ", err.Error())
+			}
+		}()
+	}
+
+	if err := test_account.AppendUser(&test_user_1); err !=nil {
+		t.Error("Неудалось добавить пользователя в тестовый аккаунт")
+	}*/
+	// todo code there...
 }
