@@ -241,8 +241,6 @@ func GetUser(u uint) *User {
 	return user
 }
 
-
-
 func GetUsersAccount(u uint) (accounts []Account) {
 	user := GetUser(u)
 	base.GetDB().Model(&user).Related(&accounts,  "Accounts")

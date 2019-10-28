@@ -171,7 +171,7 @@ func (account *Account) RemoveUser(user *User) error {
 }
 
 // создает индивидуальную для системы роль в аккаунте
-func (account *Account) CreateRole(role *Role) error {
+func (account *Account) CreateRole(role *Role, codes []int) error {
 
 	// проверим, что аккаунт создан (есть действительный его ID)
 	if reflect.TypeOf(account.ID).String() != "uint" {
@@ -183,7 +183,7 @@ func (account *Account) CreateRole(role *Role) error {
 	// указываем, что роль НЕ системная
 	role.System = false
 
-	return role.create([]int{})
+	return role.create(codes)
 }
 
 // удаляет роль, проверяя ее на системность и права владения аккаунтом

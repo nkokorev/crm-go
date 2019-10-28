@@ -13,3 +13,7 @@ func TestExistPermissionTable(t *testing.T) {
 	}
 }
 
+func TestPermission_Find(t *testing.T) {
+	// todo дописать код проверки функции
+}
+

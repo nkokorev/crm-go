@@ -17,7 +17,6 @@ func init() {
 	//MigrationTables(true)
 }
 
-
 func MigrationTables(freshTables bool) {
 
 	db := base.GetDB()

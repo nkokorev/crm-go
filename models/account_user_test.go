@@ -84,7 +84,7 @@ func TestAccountUser_SetNewRole(t *testing.T) {
 	}
 
 	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", AccountID: test_account.ID, Description: "Test crating role for account"}
-	if err := test_account.CreateRole(&test_role_1); err != nil {
+	if err := test_account.CreateRole(&test_role_1, []int{}); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {
@@ -141,5 +141,9 @@ func TestAccountUser_SetNewRole(t *testing.T) {
 	if err := test_account_user.SetRole(&test_role_1); err != nil {
 		t.Error("Неудалось назначить новую роль пользователю, не являющимся владельцем аккаунта")
 	}
+
+}
+
+func TestAccountUser_CheckPermission(t *testing.T) {
 
 }

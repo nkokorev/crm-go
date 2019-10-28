@@ -44,6 +44,16 @@ func (aUser *AccountUser) SetRole(role *Role) error {
 	return nil
 }
 
+// получить роль пользователя
+func (aUser *AccountUser) GetRole(role *Role) error {
+
+	// Найдем роль пользователя
+	if err := base.GetDB().Model(aUser).Related(role).Error;err != nil {
+		return err
+	}
+	return nil
+}
+
 // ниже вспомогательные функции простановки системных ролей пользователям
 func (aUser *AccountUser) SetRoleOwner() error {
 	// 1. Ищем необходимую роль
@@ -123,4 +133,44 @@ func (aUser *AccountUser) SetRoleViewer() error {
 		return err
 	}
 	return nil
+}
+
+// Проверяет, является ли aUser владельцем связанного аккаунта
+func (aUser *AccountUser) IsOwner() bool{
+
+	// найдем аккаунт пользователя
+	account := Account{}
+	if err := base.GetDB().Model(aUser).Related(&account); err != nil {
+		return false
+	}
+
+	// ID владелец аккаунта совпадает с ID аккаунта связанного с пользователем?
+	if account.ID == aUser.AccountID {
+		return true
+	}
+
+	return false
+}
+
+// Проверяем права доступа для конкретного пользователя.
+func (aUser *AccountUser) CheckPermission(permission_code uint) bool {
+
+	// 1. Получаем роль пользователя
+	role := Role{}
+	if err := aUser.GetRole(&role); err != nil {
+		return false
+	}
+
+	// 2. Если пользователь имеет роль владельца аккаунта (для API своя проверка) - сразу даем зеленый свет - это ускоряет работу.
+	if role.Tag == "owner" {
+		return true
+	}
+
+	// Если роль отличная от owner, то сделаем прямой запрос в БД через функцию Роли
+	if role.hasPermission(permission_code) {
+		return true
+	}
+
+	// не нашли доказательств наличия права
+	return false
 }

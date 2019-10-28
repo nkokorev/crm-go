@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"github.com/nkokorev/crm-go/database/base"
 	"testing"
 )
@@ -73,7 +72,7 @@ func TestRole_Delete(t *testing.T) {
 
 	// создаем тестовую роль в контексте аккаунта
 	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", Description: "Test crating role for account"}
-	if err := test_account.CreateRole(&test_role_1); err != nil {
+	if err := test_account.CreateRole(&test_role_1, []int{}); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {
@@ -140,26 +139,9 @@ func TestRole_AppendPermissions(t *testing.T) {
 		}()
 	}
 
-	test_user_1 := User{
-		Username:"user_test_2",
-		Email: "mail-test@ratus-dev.ru",
-		Name:"РеальноеИмя",
-		Surname:"РеальнаяФамилия",
-		Patronymic:"РеальноеОтчество",
-		Password: "qwerty123#Aa",
-	}
-	if err := test_user_1.Create(); err != nil {
-		t.Error(err.Error())
-	} else {
-		defer func() {
-			if err := test_user_1.Delete(); err != nil {
-				t.Error("неудалось удалить пользователя: ", err.Error())
-			}
-		}()
-	}
-
+	// создаем роль с 0 разрешений.
 	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", Description: "Test crating role for account"}
-	if err := test_account.CreateRole(&test_role_1); err != nil {
+	if err := test_account.CreateRole(&test_role_1, []int{}); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {
@@ -169,59 +151,159 @@ func TestRole_AppendPermissions(t *testing.T) {
 		}()
 	}
 
-	// todo: все что ниже
-	// # 1. Проверим можно ли добавить для роли новые разрешения
-	/*permissions := []Permission{}
-	if err := base.GetDB().Find(&permissions, "code_name = 'PermissionUserListing' OR code_name = 'PermissionUserEditing'").Error; err != nil {
-		t.Error("Cant find system permissions: ", err.Error())
-	}
-	fmt.Println("permissions: ", permissions)*/
-	if err := test_role_1.SetPermissions([]int{PermissionStoreEditing,PermissionStoreDeleting,PermissionProductEditing});err != nil {
-		t.Error(err)
+	// 1. Проверим, что у новой роли нет прав
+	if base.GetDB().Model(&test_role_1).Association("Permissions").Count() > 0 {
+		t.Error("У новой роли есть права, хотя быть их не должно")
 	}
 
-	permission := Permission{}
-	if err := permission.Find(PermissionStoreEditing); err != nil {
-		t.Error("Cant find permission code: ", PermissionStoreEditing)
-	}
-	fmt.Println("permission: ", permission)
-
-
-	/*p, err := FindPermissions(PermissionStoreEditing)
-	if err != nil {
-		t.Error("Cant find permission code: ", PermissionStoreEditing)
-	}
-	fmt.Println("[]Permission{}: ", p)*/
-
-	// # 2. Проверим можно ли удалить у роли разрешения
-
-	// # 3. А теперь узнаем как влияет добавление и удаление на реальные возможности пользователя
-	if err := test_account.AppendUser(&test_user_1); err !=nil {
-		t.Error("Cant append user to account", test_user_1, test_account)
+	// 2. Проверим назначение правила
+	if err := test_role_1.AppendPermissions([]int{PermissionUserAppend}); err != nil {
+		t.Error("Неудалось назначить права для тестовой роли")
 	}
 
-	aUser := AccountUser{}
-	if err := aUser.GetAccountUser(test_user_1.ID, test_account.ID); err != nil {
-		t.Error("Cant get account user!", test_user_1, test_account)
+	// 3. Проверим, что правило назначилось для роли-1
+	temp_permission := Permission{}
+	if err := temp_permission.Find(PermissionUserAppend); err != nil {
+		t.Error("Неудалось найти правило PermissionStoreListing")
 	}
-	if err := aUser.SetRole(&test_role_1); err != nil {
-		t.Error("Cant set new role to test user", test_user_1, test_role_1)
+	// должен найти одно(1) соответствие
+	if base.GetDB().Model(&test_role_1).Where("permission_id = ?", temp_permission.ID).Association("Permissions").Count() != 1 {
+		t.Error("Неудалось найти назначенное правило для роли")
+	}
+
+}
+
+func TestRole_RemovePermissions(t *testing.T) {
+	test_owner_user := User{
+		Username:"user_test",
+		Email: "testmail@ratus-dev.ru",
+		Name:"РеальноеИмя",
+		Surname:"РеальнаяФамилия",
+		Patronymic:"РеальноеОтчество",
+		Password: "qwerty123#Aa",
+	}
+	if err := test_owner_user.Create(); err != nil {
+		t.Error(err.Error())
 	} else {
 		defer func() {
-			if err := aUser.SetRoleManager(); err != nil {
-				t.Error("Cant set manager to test user", test_user_1, test_role_1, test_account)
+			if err := test_owner_user.Delete(); err != nil {
+				t.Error("неудалось удалить пользователя: ", err.Error())
 			}
 		}()
 	}
 
+	test_account := Account {Name:"Account_Test"}
+	if err := test_owner_user.CreateAccount(&test_account); err != nil {
+		t.Error(err.Error())
+	} else {
+		defer func() {
+			if err := test_account.Delete(); err != nil {
+				t.Error("неудалось удалить аккаунт: ", err.Error())
+			}
+		}()
+	}
 
+	// создаем роль, с PermissionStoreListing.
+	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", Description: "Test crating role for account"}
+	if err := test_account.CreateRole(&test_role_1, []int{PermissionStoreListing}); err != nil {
+		t.Error("неудалось создать роль: ", err.Error())
+	} else {
+		defer func() {
+			if err := test_account.DeleteRole(&test_role_1); err != nil {
+				t.Error("неудалось удалить роль: ", err.Error())
+			}
+		}()
+	}
 
+	// 1. Проверим, что правило назначилось для роли-1 (можем проверить через check permissions... но не будем)
+	temp_permission := Permission{}
+	if err := temp_permission.Find(PermissionStoreListing); err != nil {
+		t.Error("Неудалось найти правило PermissionStoreListing")
+	}
+	// должен найти одно(1) соответствие
+	if base.GetDB().Model(&test_role_1).Where("permission_id = ?", temp_permission.ID).Association("Permissions").Count() != 1 {
+		t.Error("Неудалось найти назначенное правило для роли")
+	}
 
-
-
-	// todo ...
+	// теперь проверим, что правило удалилось
+	if err := test_role_1.RemovePermissions([]int{PermissionStoreListing}); err != nil {
+		t.Error("Неудалось удалить права у роли")
+	}
+	// проверим, что права удалились
+	if base.GetDB().Model(&test_role_1).Where("permission_id = ?", temp_permission.ID).Association("Permissions").Count() != 0 {
+		t.Error("Нашлось правило для роли, которое мы убрали у нее")
+	}
 }
 
-func TestRole_RemovePermissions(t *testing.T) {
+func TestRole_hasPermission(t *testing.T)  {
+
+	// создаем владельца аккаунта
+	test_owner_user := User{
+		Username:"user_test",
+		Email: "testmail@ratus-dev.ru",
+		Name:"РеальноеИмя",
+		Surname:"РеальнаяФамилия",
+		Patronymic:"РеальноеОтчество",
+		Password: "qwerty123#Aa",
+	}
+	if err := test_owner_user.Create(); err != nil {
+		t.Error(err.Error())
+	} else {
+		defer func() {
+			if err := test_owner_user.Delete(); err != nil {
+				t.Error("неудалось удалить пользователя: ", err.Error())
+			}
+		}()
+	}
+
+	// создаем тестовый аккаунт, от имени владельца аккаунта
+	test_account := Account {Name:"Account_Test"}
+	if err := test_owner_user.CreateAccount(&test_account); err != nil {
+		t.Error(err.Error())
+	} else {
+		defer func() {
+			if err := test_account.Delete(); err != nil {
+				t.Error("неудалось удалить аккаунт: ", err.Error())
+			}
+		}()
+	}
+
+	// создаем роль, с test_permission.
+	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", Description: "Test crating role for account"}
+	if err := test_account.CreateRole(&test_role_1, []int{PermissionStoreListing}); err != nil {
+		t.Error("неудалось создать роль: ", err.Error())
+	} else {
+		defer func() {
+			if err := test_account.DeleteRole(&test_role_1); err != nil {
+				t.Error("неудалось удалить роль: ", err.Error())
+			}
+		}()
+	}
+
+	// 1. Проверяем, что роль имеет нужный нам пермишен
+	if !test_role_1.hasPermission(PermissionStoreListing) {
+		t.Error("Тестовая роль не получила пермишен PermissionStoreListing код: ", PermissionStoreListing)
+	}
+	// 2. Проверим, что роль НЕ имеет второй пермишен, который мы не назначали роли
+	if test_role_1.hasPermission(PermissionUserAppend) {
+		t.Error("Тестовая роль получила пермишен PermissionStoreListing код: ", PermissionUserAppend)
+	}
+
+	// 3. Проверим, что добавленная роль, теперь проверяется
+	if err := test_role_1.AppendPermissions([]int{PermissionUserAppend}); err != nil {
+		t.Error("Неудалось назначить новое правило для роли")
+	}
+	// Теперь правило [PermissionUserAppend] должно присутствовать
+	if ! test_role_1.hasPermission(PermissionUserAppend) {
+		t.Error("Тестовая роль НЕ получила пермишен PermissionStoreListing код: ", PermissionUserAppend)
+	}
+
+	// 4. Проверим удаление прав
+	if err := test_role_1.RemovePermissions([]int{PermissionStoreListing}); err != nil {
+		t.Error("Неудалось удалить правило для роли")
+	}
+	if test_role_1.hasPermission(PermissionStoreListing) {
+		t.Error("Тестовая роль имеет пермишен PermissionStoreListing, хотя он был удален, код: ", PermissionStoreListing)
+	}
 
 }

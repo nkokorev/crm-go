@@ -200,7 +200,7 @@ func TestAccount_CreateRole(t *testing.T) {
 
 	// создаем тестовую роль в контексте аккаунта (т.е. НЕ системную)
 	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", Description: "Test crating role for account"}
-	if err := test_account.CreateRole(&test_role_1); err != nil {
+	if err := test_account.CreateRole(&test_role_1, []int{int(PermissionUserAppend)}); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {
@@ -278,9 +278,15 @@ func TestAccount_RemoveRole(t *testing.T) {
 		}()
 	}
 
+	// найдем существующий пермишен, который потребуется для создания роли
+	test_permission := Permission{}
+	if err := test_permission.Find(PermissionStoreListing); err != nil {
+		t.Error("Неудалось найти правило для тестовой роли")
+	}
+
 	// создаем тестовую роль в контексте аккаунта (т.е. НЕ системную)
 	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", Description: "Test crating role for account"}
-	if err := test_account.CreateRole(&test_role_1); err != nil {
+	if err := test_account.CreateRole(&test_role_1, []int{int(test_permission.Code)}); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {
@@ -342,7 +348,7 @@ func TestAccount_RemoveAllRoles(t *testing.T) {
 
 	for i, _ := range test_roles {
 
-		if err := test_account.CreateRole(&test_roles[i]); err != nil {
+		if err := test_account.CreateRole(&test_roles[i], []int{}); err != nil {
 			t.Error("неудалось создать роль: ", err)
 		} else {
 			defer func(i int) {
@@ -418,7 +424,7 @@ func TestAccount_Delete(t *testing.T) {
 
 	// создадим роль в аккаунте, чтобы проверить ее удаление (не совсем отсюда, но может пригодиться)
 	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", Description: "Test crating role for account"}
-	if err := test_account.CreateRole(&test_role_1); err != nil {
+	if err := test_account.CreateRole(&test_role_1, []int{}); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {

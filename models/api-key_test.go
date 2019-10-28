@@ -196,7 +196,7 @@ func TestApiKey_SetRole(t *testing.T) {
 
 	// создаем тестовую роль в контексте аккаунта, чтобы затестить ключ
 	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", Type: "api", Description: "Test crating role for account"}
-	if err := test_account.CreateRole(&test_role_1); err != nil {
+	if err := test_account.CreateRole(&test_role_1, []int{}); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {

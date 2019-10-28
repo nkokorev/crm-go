@@ -59,7 +59,6 @@ var permissions = []Permission{
 	{Name: "Управление ролями", Tag:"account", CodeName: "PermissionRoleManagement", Code: 701, Description: "Возможность управлять ролями (создавать, назначать, редактировать и удалять)."},
 	{Name: "Управление биллингом", Tag:"account", CodeName: "PermissionBillingManagement", Code: 702, Description: "Возможность управлять платежной информацией"},
 	{Name: "Управление аккаунтом", Tag:"account", CodeName: "PermissionAccountManagement", Code: 703, Description: "Администрирование первичных данных аккаунта"},
-
 }
 
 type Permission struct {
@@ -70,6 +69,14 @@ type Permission struct {
 	Code 		uint `json:"type" gorm:"unique_index;"`
 	Description string `json:"description" gorm:"size:255;"` // Описание права: 'Право на редактирование товара, изображений и т.д.'
 	Roles  		[]Role `json:"-" gorm:"many2many:role_permissions;"`
+}
+
+func init() {
+	// seeding can be: "" / "true" / "fresh"
+	seeding := os.Getenv("seeding")
+	if seeding == "true" ||  seeding == "fresh"{
+		permissionSeeding()
+	}
 }
 
 // Создание нового правила доступа (сугубо системная функция)
@@ -90,16 +97,16 @@ func (permission *Permission) create() error {
 	return nil
 }
 
-// Ищет нужный пермишен по заданному ключу
+// Ищет нужный пермишен по заданному коду права
 func (permission *Permission) Find(code_int uint) error {
-	// todo: дописать простой поиск по коду
-	fmt.Println("Seach code: ", code_int)
-	err := base.GetDB().Find(permission, "code = ?", code_int).Error;
-	if err != nil && !gorm.IsRecordNotFoundError(err) {
+	err := base.GetDB().First(permission, "code = ?", code_int).Error;
+	if err != nil || gorm.IsRecordNotFoundError(err) {
 		return err
 	}
 	return nil
 }
+
+
 
 // массовый поиск по кодам прав
 func FindPermissions(values... uint) (p []Permission, err error) {
@@ -115,30 +122,7 @@ func FindPermissions(values... uint) (p []Permission, err error) {
 	return
 }
 
-
-// ######### ниже олдфаг функции (переписать / исключить)
-
-
-// todo: написать функцию и тест к ней (см. тест для role <> permissions)
-func (aUser *AccountUser) PermissionCheck(CheckedPermissions uint) (status bool) {
-
-	// 1. Проверяем владелец или нет ((a *AccountUser) isOwner() bool)
-	// 2. Смотрим персональные права (permissions)
-	// 3. Смотрим права через роли ()
-
-
-	status = false // default
-	return true
-}
-
-func init() {
-	// seeding can be: "" / "true" / "fresh"
-	seeding := os.Getenv("seeding")
-	if seeding == "true" ||  seeding == "fresh"{
-		permissionSeeding()
-	}
-}
-
+// заливает первичные права в БД
 func permissionSeeding()  {
 
 	if !base.GetDB().Find(&Permission{}).RecordNotFound() {

@@ -73,6 +73,39 @@ func (key *ApiKey) SetRole(role *Role) error {
 	return nil
 }
 
+// получить роль пользователя
+func (key *ApiKey) GetRole(role *Role) error {
+
+	// Найдем роль пользователя
+	if err := base.GetDB().Model(key).Related(role).Error;err != nil {
+		return err
+	}
+	return nil
+}
+
+// Проверяем права доступа для конкретного api-ключа.
+func (key *ApiKey) CheckPermission(permission_code uint) bool {
+
+	// 1. Получаем роль доступа
+	role := Role{}
+	if err := key.GetRole(&role); err != nil {
+		return false
+	}
+
+	// 2. Если пользователь имеет роль владельца аккаунта (или аналогичный ключ) - сразу даем зеленый свет - это сильно ускоряет работу.
+	if role.Tag == "full-access" {
+		return true
+	}
+
+	// Если роль отличная от full-access, то сделаем прямой запрос в БД через функцию Роли
+	if role.hasPermission(permission_code) {
+		return true
+	}
+
+	// не нашли доказательств наличия права
+	return false
+}
+
 // ниже вспомогательные функции простановки системных ролей api-ключам
 func (key *ApiKey) SetRoleFullAccess() error {
 	// 1. Ищем необходимую роль
