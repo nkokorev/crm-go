@@ -45,6 +45,7 @@ func VerifyPassword(pwd string) error {
 	return nil
 }
 
+// проверяет имя пользователя на соответствие правилам. Не проверяет уникальность
 func VerifyUsername(username string) error {
 
 	if len(username) == 0 {

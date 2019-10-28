@@ -155,9 +155,11 @@ func (account *Account) Delete() error {
 
 // Добавление к аккаунту пользователя
 func (account *Account) AppendUser(user *User) error {
+	// добавляем пользователя в аккаунт путем ассоциации (many-to-many)
 	if err := base.GetDB().Model(&account).Association("Users").Append(user).Error; err != nil {
 		return err
 	}
+
 	return nil
 }
 

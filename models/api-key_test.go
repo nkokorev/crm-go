@@ -226,3 +226,13 @@ func TestApiKey_SetRole(t *testing.T) {
 		t.Errorf("ApiKey ID == 0, expected > 0")
 	}
 }
+
+func TestApiKey_SetRoleFullAccess(t *testing.T) {
+	// todo дописать простой тестик
+}
+func TestApiKey_SetRoleSiteAccess(t *testing.T) {
+	// todo дописать простой тестик
+}
+func TestApiKey_SetRoleReadAccess(t *testing.T) {
+	// todo дописать простой тестик
+}

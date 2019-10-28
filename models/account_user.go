@@ -16,6 +16,7 @@ type AccountUser struct {
 }
 
 // Вспомогательная функция получения пользователя ассоциированного с пользователем
+// todo: надо бы переименовать эту функцию
 func (aUser *AccountUser) GetAccountUser(user_id, account_id uint) error {
 	err := base.GetDB().First(aUser,"user_id = ? AND account_id = ?", user_id, account_id).Error
 	if err != nil {
@@ -47,7 +48,7 @@ func (aUser *AccountUser) SetRole(role *Role) error {
 // получить роль пользователя
 func (aUser *AccountUser) GetRole(role *Role) error {
 
-	// Найдем роль пользователя
+	// Найдем роль пользователя (ее может не быть)
 	if err := base.GetDB().Model(aUser).Related(role).Error;err != nil {
 		return err
 	}
@@ -158,6 +159,7 @@ func (aUser *AccountUser) CheckPermission(permission_code uint) bool {
 	// 1. Получаем роль пользователя
 	role := Role{}
 	if err := aUser.GetRole(&role); err != nil {
+		// у пользователя может не быть роли в аккаунте, в этом случае он безправный
 		return false
 	}
 

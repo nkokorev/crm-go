@@ -71,10 +71,17 @@ func (user *User) ValidateCreate() (error u.Error) {
 		}
 	}
 
-	// проверка почты должна быть полной, но при тестах часто используется обычная проверка
+	// проверка почты должна быть полной, но при тестах часто используется сокращенная проверка
 	err := u.VerifyEmail(user.Email, !(os.Getenv("http_dev") == "true"))
 	if err != nil {
 		error.AddErrors("email", err.Error())
+		error.Message = t.Trans(t.UserCreateInvalidCredentials)
+		return
+	}
+
+	// проверка на уникальность email-адреса
+	if !base.GetDB().First(&User{}, "email = ?", user.Email).RecordNotFound() {
+		error.AddErrors("email", "этот адрес уже используется" )
 		error.Message = t.Trans(t.UserCreateInvalidCredentials)
 		return
 	}
@@ -86,9 +93,17 @@ func (user *User) ValidateCreate() (error u.Error) {
 		return
 	}
 
+	// проверим корректность заполнения имени пользователя
 	err = u.VerifyUsername(user.Username)
 	if err != nil {
 		error.AddErrors("username", err.Error() )
+		error.Message = t.Trans(t.UserCreateInvalidCredentials)
+		return
+	}
+
+	// проверка на уникальность username
+	if !base.GetDB().First(&User{}, "username = ?", user.Username).RecordNotFound() {
+		error.AddErrors("username", "этот username уже используется" )
 		error.Message = t.Trans(t.UserCreateInvalidCredentials)
 		return
 	}
