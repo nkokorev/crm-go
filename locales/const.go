@@ -11,7 +11,7 @@ const (
 	UserDeletionError  		= "UserDeletionError"
 	UserDeletionErrorNotID  		= "UserDeletionErrorNotID"
 	UserDeletionErrorHasAccount  		= "UserDeletionErrorHasAccount"
-	UserInputIsTooLong  	= "UserInputIsTooLong"
+
 	UserFailedToCreate  	= "UserFailedToCreate"
 	UserRoleAppendFailed 		= "UserRoleAppendFailed"
 	UserRoleRemoveFailed 		= "UserRoleRemoveFailed"
@@ -48,6 +48,10 @@ const (
 	RoleDeletedFailedHasUsers 		= "RoleDeletedFailedHasUsers"
 	RoleFailedRemovePermissions 		= "RoleFailedRemovePermissions"
 	RoleChangeOwnerRoleFailed 		= "RoleChangeOwnerRoleFailed"
+
+	InputIsTooLong  	= "InputIsTooLong"
+	InputIsTooShort  	= "InputIsTooShort"
+	InputIsRequired  	= "InputIsRequired"
 
 
 )

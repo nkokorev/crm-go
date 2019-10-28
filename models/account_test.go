@@ -84,7 +84,7 @@ func TestAccount_Create(t *testing.T) {
 	owner_role := Role{}
 	err = base.GetDB().First(&owner_role, "tag = 'owner'").Error
 	if err != nil && !gorm.IsRecordNotFoundError(err){
-		t.Error("неудалось создать роль", err.Error())
+		t.Error("неудалось найти роль owner", err.Error())
 	}
 	if gorm.IsRecordNotFoundError(err) {
 		t.Skip("Не найдена роль OWNER")
@@ -93,6 +93,7 @@ func TestAccount_Create(t *testing.T) {
 		if err := aUser.GetAccountUser(test_user_1.ID, test_account_1.ID); err != nil {
 			t.Error(err.Error())
 		}
+		// собственно сама проверка роли владельца аккаунта
 		if aUser.RoleID != owner_role.ID {
 			t.Error("Владелец аккаунта не получил роль создателя", aUser)
 		}
@@ -102,6 +103,66 @@ func TestAccount_Create(t *testing.T) {
 	if err := test_user_1.Delete(); err == nil {
 		t.Error("Удалось удалить пользователя, хотя у него был аккаунт.")
 	}
+
+}
+
+func TestAccount_ValidateCreate(t *testing.T) {
+
+	// В тестах мы вызываем функцию валидатора, хотя можно вызывать функцию создания аккаунта
+	// Тест создания аккаунта в ф-ии теста создания аккаунта
+
+	// создаем пользователя владельца аккаунта
+	test_user_1 := User{
+		Username:"user_test",
+		Email: "testmail@ratus-dev.ru",
+		Name:"РеальноеИмя",
+		Surname:"РеальнаяФамилия",
+		Patronymic:"РеальноеОтчество",
+		Password: "qwerty123#Aa",
+	}
+	err := test_user_1.Create()
+	if err != nil {
+		t.Error("Неудалось создать пользователя: ", err.Error())
+	} else {
+		defer func() {
+			if err := test_user_1.Delete(); err != nil {
+				t.Error("неудалось удалить пользователя: ", err.Error())
+			}
+		}()
+	}
+
+	// 1. Убедимся, что простой аккаунт от действительного пользователя создается и тут все Ок
+	test_account_1 := Account {	Name:"Account_Test",}
+	if myErr := test_account_1.ValidateCreate(&test_user_1); myErr.HasErrors() {
+		t.Error("Неудалось пройти валидацию нормальному аккаунту")
+	}
+
+	// 2. Убедимся, что аккаунт без имени не будет создан
+	test_account_2 := Account {	Name:"",}
+	if myErr := test_account_2.ValidateCreate(&test_user_1); !myErr.HasErrors() {
+		t.Error("Удалось пройти валидацию аккаунту без имени")
+	}
+
+	// 3. Убедимся, что аккаунт с коротким именим Кириллицей не будет создан
+	test_account_3 := Account {	Name:"ЦЙ",}
+	if myErr := test_account_3.ValidateCreate(&test_user_1); !myErr.HasErrors() {
+		t.Error("Удалось пройти валидацию аккаунту с коротким именем")
+	}
+
+	// 4. Убедимся, что нельзя создать аккаунт от еще несуществующего пользователя
+	test_user_2 := User{
+		Username:"user_test_2",
+		Email: "test-mail@ratus-dev.ru",
+		Name:"РеальноеИмя",
+		Surname:"РеальнаяФамилия",
+		Patronymic:"РеальноеОтчество",
+		Password: "qwerty123#Aa",
+	}
+	test_account_4 := Account {	Name:"Account_Test",}
+	if myErr := test_account_4.ValidateCreate(&test_user_2); !myErr.HasErrors() {
+		t.Error("Удалось пройти валидацию аккаунту с несуществующим пользователем")
+	}
+
 
 }
 

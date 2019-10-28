@@ -6,6 +6,7 @@ import (
 	_ "github.com/nkokorev/auth-server/locales"
 	"github.com/nkokorev/crm-go/database/base"
 	e "github.com/nkokorev/crm-go/errors"
+	t "github.com/nkokorev/crm-go/locales"
 	u "github.com/nkokorev/crm-go/utils"
 	"log"
 	"reflect"
@@ -32,17 +33,10 @@ type Account struct {
 // Создает новый аккаунт по структуре account. Аккаунт привязывается к владельцу по user_id, добавляя его в список пользователей аккаунта.
 func (account *Account) Create(owner *User) (err error) {
 
-	// проверка на попытку создать дубль аккаунта, который уже был создан
-	if reflect.TypeOf(account.ID).String() == "uint" {
-		if account.ID > 0 && !base.GetDB().First(&Account{}, account.ID).RecordNotFound() {
-			// todo need to translation
-			return errors.New("Can't create new account: account with this ID already crated!")
-		}
-	}
-
-	// проверяем, что пользователь, который создает аккаунт действительно создан
-	if reflect.TypeOf(owner.ID).String() != "uint" {
-		return errors.New("Can't create new account: user ID not specified")
+	// проверим валидацию данных аккаунта
+	myErr := account.ValidateCreate(owner)
+	if myErr.HasErrors() {
+		return e.AccountFailedToCreate
 	}
 
 	account.HashID, err = u.CreateHashID(account)
@@ -84,6 +78,45 @@ func (account *Account) Create(owner *User) (err error) {
 			return err
 		}
 		return err
+	}
+
+	return
+}
+
+func (account *Account) ValidateCreate(owner *User) (error u.Error) {
+
+	// проверка на попытку создать дубль аккаунта, который уже был создан
+	if reflect.TypeOf(account.ID).String() == "uint" {
+		if account.ID > 0 && !base.GetDB().First(&Account{}, account.ID).RecordNotFound() {
+			error.Message = t.Trans(t.AccountFailedToCreate)
+			return
+		}
+	}
+
+	// проверяем, что пользователь, который создает аккаунт действительно создан
+	if reflect.TypeOf(owner.ID).String() != "uint" || owner.ID < 1 || base.GetDB().First(&User{}, owner.ID).RecordNotFound() {
+		error.Message = t.Trans(t.AccountFailedToCreate)
+		return
+	}
+
+	// проверим заполнение имени аккаунта
+	if len([]rune(account.Name)) < 1 {
+		error.AddErrors("name", t.Trans(t.InputIsRequired) )
+	}
+
+	// проверим заполнение имени аккаунта (не слишком ли оно короткое)
+	if len([]rune(account.Name)) < 3 {
+		error.AddErrors("name", t.Trans(t.InputIsTooShort) )
+	}
+
+	// проверим заполнение имени аккаунта, не слишком ли оно длинное
+	if len([]rune(account.Name)) > 25 {
+		error.AddErrors("name", t.Trans(t.InputIsTooLong) )
+	}
+
+	if error.HasErrors() {
+		error.Message = t.Trans(t.AccountFailedToCreate)
+		return
 	}
 
 	return

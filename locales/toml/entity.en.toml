@@ -56,9 +56,6 @@ one = "Username field is required"
 [UserUsernameForbiddenCharacters]
 one = "The user name contains forbidden characters"
 
-[UserInputIsTooLong]
-one = "The entered field is too long"
-
 [UserFailedToCreate]
 one = "Failed to create user"
 
@@ -110,3 +107,11 @@ one = "Failed to remove permissions from role"
 [RoleChangeOwnerRoleFailed]
 one = "Changing the role of the account owner is not allowed!"
 
+[InputIsTooLong]
+one = "The entered field is too long"
+
+[InputIsTooShort]
+one = "The entered field is too short"
+
+[InputIsRequired]
+one = "The entered field is required"

@@ -34,5 +34,9 @@ var (
 	RoleDeletedFailedHasUsers = errors.New(t.Trans(t.RoleDeletedFailedHasUsers))
 	RoleChangeOwnerRoleFailed = errors.New(t.Trans(t.RoleChangeOwnerRoleFailed))
 
+	InputIsTooLong = errors.New(t.Trans(t.InputIsTooLong))
+	InputIsTooShort = errors.New(t.Trans(t.InputIsTooShort))
+	InputIsRequired = errors.New(t.Trans(t.InputIsRequired))
+
 
 )

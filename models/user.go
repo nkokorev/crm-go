@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
@@ -9,6 +8,7 @@ import (
 	"github.com/nkokorev/crm-go/database/base"
 	e "github.com/nkokorev/crm-go/errors"
 	t "github.com/nkokorev/crm-go/locales"
+
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
 	"reflect"
@@ -32,14 +32,6 @@ type User struct {
 }
 
 func (user *User) Create() (err error) {
-
-	// проверка на попытку создать дубль пользователя, который уже был создан
-	if reflect.TypeOf(user.ID).String() == "uint" {
-		if user.ID > 0 && !base.GetDB().First(&User{}, user.ID).RecordNotFound() {
-			// todo need to translation
-			return errors.New("Can't create new user: user with this ID already crated!")
-		}
-	}
 
 	myErr := user.ValidateCreate()
 	if myErr.HasErrors() {
@@ -71,6 +63,13 @@ func (user *User) Create() (err error) {
 // Full Validate incoming user fields
 func (user *User) ValidateCreate() (error u.Error) {
 
+	// проверка на попытку создать дубль пользователя, который уже был создан
+	if reflect.TypeOf(user.ID).String() == "uint" {
+		if user.ID > 0 && !base.GetDB().First(&User{}, user.ID).RecordNotFound() {
+			error.Message = t.Trans(t.UserCreateInvalidCredentials)
+		}
+	}
+
 	err := u.VerifyEmail(user.Email, false)
 	if err != nil {
 		error.AddErrors("email", err.Error())
@@ -93,13 +92,13 @@ func (user *User) ValidateCreate() (error u.Error) {
 	}
 
 	if len([]rune(user.Name)) > 25 {
-		error.AddErrors("name", t.Trans(t.UserInputIsTooLong) )
+		error.AddErrors("name", t.Trans(t.InputIsTooLong) )
 	}
 	if len([]rune(user.Surname)) > 25 {
-		error.AddErrors("surname", t.Trans(t.UserInputIsTooLong) )
+		error.AddErrors("surname", t.Trans(t.InputIsTooLong) )
 	}
 	if len([]rune(user.Patronymic)) > 25 {
-		error.AddErrors("patronymic", t.Trans(t.UserInputIsTooLong) )
+		error.AddErrors("patronymic", t.Trans(t.InputIsTooLong) )
 	}
 
 	if error.HasErrors() {
