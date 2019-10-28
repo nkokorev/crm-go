@@ -24,7 +24,7 @@ func (aUser *AccountUser) GetAccountUser(user_id, account_id uint) error {
 	return nil
 }
 
-// устанавливает новую роль пользователю. (временный) Запрет на изменение роли owner user.
+// устанавливает новую роль пользователю. Запрет на изменение роли owner user.
 func (aUser *AccountUser) SetRole(role *Role) error {
 
 	currentRole := Role{}

@@ -13,7 +13,7 @@ import (
 
 var roles = []Role {
 	{ Name: "Владелец аккаунта",Tag:"owner", 	System: true, Description: "Доступ ко всем данным и функционалу аккаунта."},
-	{ Name: "Администратор", 	Tag:"admin", 	System: true, Description: "Доступ ко всем данным и функционалу аккаунта. Не может менять владельца аккаунта."},
+	{ Name: "Администратор", 	Tag:"admin", 	System: true, Description: "Доступ ко всем данным и функционалу аккаунта. Не может удалить аккаунт или менять владельца аккаунта."},
 	{ Name: "Менеджер", 		Tag:"manager", 	System: true, Description: "Не может добавлять пользователей, не может менять биллинговую информацию."},
 	{ Name: "Маркетолог", 		Tag:"marketer", System: true, Description: "Читает все клиентские данные, может изменять все что касается маркетинга, но не заказы или склады."},
 	{ Name: "Автор", 			Tag:"author", 	System: true, Description: "Может создавать контент: писать статьи, письма, описания к товарам и т.д."},
@@ -23,8 +23,9 @@ var roles = []Role {
 	{ Name: "Read Access", 		Tag:"read-access", 	Type:	"api",	System: true, Description: "Доступ к чтению основной информации об аккаунте."},
 }
 
+// ### Список прав для ролей пользователей ### //
 var (
-	// ### Список прав для пользователей (aUser) ### ///
+
 	// Доступ ко всем данным и функционалу аккаунта
 	permissionsOwner = []int{
 		PermissionUserListing,
@@ -36,15 +37,19 @@ var (
 		PermissionStoreEditing,
 		PermissionStoreCreating,
 		PermissionStoreDeleting,
+
 		PermissionProductListing,
 		PermissionProductEditing,
 		PermissionProductCreating,
 		PermissionProductDeleting,
 
 		PermissionAPIManagement,
+		PermissionRoleManagement,
+		PermissionBillingManagement,
+		PermissionAccountManagement,
 	}
 
-	// Как и владелец, но не может менять владельца аккаунта и биллинговую информацию
+	// Как и владелец, но не может менять биллинговую информацию
 	permissionsAdmin = []int{
 		PermissionUserListing,
 		PermissionUserEditing,
@@ -55,88 +60,46 @@ var (
 		PermissionStoreEditing,
 		PermissionStoreCreating,
 		PermissionStoreDeleting,
+
 		PermissionProductListing,
 		PermissionProductEditing,
 		PermissionProductCreating,
 		PermissionProductDeleting,
 
 		PermissionAPIManagement,
+		PermissionRoleManagement,
+		PermissionAccountManagement,
 	}
 
 	// Не может управлять пользователями, смотреть и изменять биллинговую и системную информацию
 	permissionsManager = []int{
-		PermissionUserListing,
-		PermissionUserEditing,
-		PermissionUserAppend,
-		PermissionUserDeleting,
-
 		PermissionStoreListing,
 		PermissionStoreEditing,
 		PermissionStoreCreating,
 		PermissionStoreDeleting,
+
 		PermissionProductListing,
 		PermissionProductEditing,
 		PermissionProductCreating,
 		PermissionProductDeleting,
-
-		PermissionAPIManagement,
 	}
 
 	// Может читать отчеты, доступ к аналитике, может управлять разделом маркетинга + доступ к редактуре текстов как у автора БЕЗ рецензирования.
 	permissionsMarketer = []int{
-		PermissionUserListing,
-		PermissionUserEditing,
-		PermissionUserAppend,
-		PermissionUserDeleting,
-
 		PermissionStoreListing,
-		PermissionStoreEditing,
-		PermissionStoreCreating,
-		PermissionStoreDeleting,
 		PermissionProductListing,
-		PermissionProductEditing,
-		PermissionProductCreating,
-		PermissionProductDeleting,
-
-		PermissionAPIManagement,
 	}
 
 	// может создавать и редактировать описания товаров, статей, письма и т.д., но не может запускать их в продакшен без рецензирования вышестоящего (спец.роль принятия правок).
 	permissionsAuthor = []int{
-		PermissionUserListing,
-		PermissionUserEditing,
-		PermissionUserAppend,
-		PermissionUserDeleting,
-
-		PermissionStoreListing,
-		PermissionStoreEditing,
-		PermissionStoreCreating,
-		PermissionStoreDeleting,
-		PermissionProductListing,
-		PermissionProductEditing,
-		PermissionProductCreating,
-		PermissionProductDeleting,
-
-		PermissionAPIManagement,
+		// как появятся роли...
 	}
 
 	// не может вносить изменения (никакие!!!). Может смотреть отчеты, товары, склады, письма и т.д.
 	permissionsViewer = []int{
 		PermissionUserListing,
-		PermissionUserEditing,
-		PermissionUserAppend,
-		PermissionUserDeleting,
-
 		PermissionStoreListing,
-		PermissionStoreEditing,
-		PermissionStoreCreating,
-		PermissionStoreDeleting,
 		PermissionProductListing,
-		PermissionProductEditing,
-		PermissionProductCreating,
-		PermissionProductDeleting,
-
-		PermissionAPIManagement,
 	}
 
 	// ### Список прав для API ключей ### ///
@@ -151,50 +114,27 @@ var (
 		PermissionStoreEditing,
 		PermissionStoreCreating,
 		PermissionStoreDeleting,
+
 		PermissionProductListing,
 		PermissionProductEditing,
 		PermissionProductCreating,
 		PermissionProductDeleting,
 
-		PermissionAPIManagement,
+		PermissionRoleManagement,
+		PermissionAccountManagement,
 	}
 
 	// список прав для интеграции с сайтом
 	permissionsSiteAccess = []int{
-		PermissionUserListing,
-		PermissionUserEditing,
-		PermissionUserAppend,
-		PermissionUserDeleting,
-
 		PermissionStoreListing,
-		PermissionStoreEditing,
-		PermissionStoreCreating,
-		PermissionStoreDeleting,
 		PermissionProductListing,
-		PermissionProductEditing,
-		PermissionProductCreating,
-		PermissionProductDeleting,
-
-		PermissionAPIManagement,
 	}
 
 	// список прав чтения статистических данных
 	permissionsReadAccess = []int{
 		PermissionUserListing,
-		PermissionUserEditing,
-		PermissionUserAppend,
-		PermissionUserDeleting,
-
 		PermissionStoreListing,
-		PermissionStoreEditing,
-		PermissionStoreCreating,
-		PermissionStoreDeleting,
 		PermissionProductListing,
-		PermissionProductEditing,
-		PermissionProductCreating,
-		PermissionProductDeleting,
-
-		PermissionAPIManagement,
 	}
 )
 
@@ -331,7 +271,6 @@ func (role *Role) AppendUser(aUser *AccountUser) error {
 // todo реализовать сидерские функции базового наполнения crm таблиц данных
 
 // системные функции для установки прав для системных ролей
-// todo реализовать функционал
 func (role *Role) setPermissionsOwner() error {
 	if err := role.SetPermissions(permissionsOwner); err != nil {
 		return nil
@@ -406,8 +345,6 @@ func roleSeeding()  {
 	if !base.GetDB().Find(&Role{}).RecordNotFound() {
 		return
 	}
-
-
 
 	// создаем системные роли
 	for _, v := range roles {

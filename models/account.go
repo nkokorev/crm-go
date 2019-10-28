@@ -170,7 +170,7 @@ func (account *Account) RemoveUser(user *User) error {
 	return nil
 }
 
-// создает роль, привязывая ее к аккаунту и выставляя прочие параметры
+// создает индивидуальную для системы роль в аккаунте
 func (account *Account) CreateRole(role *Role) error {
 
 	// проверим, что аккаунт создан (есть действительный его ID)
@@ -186,7 +186,7 @@ func (account *Account) CreateRole(role *Role) error {
 	return role.create([]int{})
 }
 
-// удаляет роль, проверяя ее на системность и владение аккаунтом
+// удаляет роль, проверяя ее на системность и права владения аккаунтом
 func (account *Account) DeleteRole(role *Role) error {
 
 	// проверим, что аккаунт создан (есть действительный его ID)
@@ -210,7 +210,7 @@ func (account *Account) DeleteRole(role *Role) error {
 	return nil
 }
 
-// удаление всех ролей, не являющимися системными
+// удаление всех ролей аккаунта, не являющимися системными
 func (account *Account) DeleteAllRoles() error {
 	roles := []Role{}
 	if err := base.GetDB().Delete(&roles,"account_id = ? AND system = FALSE", account.ID).Error; err != nil {
