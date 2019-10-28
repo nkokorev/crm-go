@@ -7,7 +7,6 @@ import (
 	"github.com/nkokorev/crm-go/database/base"
 	e "github.com/nkokorev/crm-go/errors"
 	u "github.com/nkokorev/crm-go/utils"
-	"os"
 	"reflect"
 )
 
@@ -116,15 +115,6 @@ type Role struct {
 	APIKeys 	[]ApiKey `json:"-"`
 	Permissions []Permission `json:"permissions" gorm:"many2many:role_permissions;"` // одна роль имеет много прав (permissions)
 }
-
-func init() {
-	// seeding can be: "" / "true" / "fresh"
-	seeding := os.Getenv("seeding")
-	if seeding == "true" ||  seeding == "fresh"{
-		roleSeeding()
-	}
-}
-
 
 // создает роль в системе. ?? не возможно создать роль без разрешений... же?
 func (role *Role) create(codes []int) (err error) {
@@ -295,14 +285,14 @@ func (role *Role) AppendUser(aUser *AccountUser) error {
 }
 
 // разворачивает базовые разрешения для всех пользователей
-func roleSeeding()  {
+func RoleSeeding()  {
 
-	//base.GetDB().Unscoped().Delete(&Role{})
+	base.GetDB().Unscoped().Delete(&Role{})
 
 	// проверяем что в системе нет ролей
-	if !base.GetDB().Find(&Role{}).RecordNotFound() {
+	/*if !base.GetDB().Find(&Role{}).RecordNotFound() {
 		return
-	}
+	}*/
 
 	// создаем системные роли
 	for _, v := range roles {

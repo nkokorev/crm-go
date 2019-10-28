@@ -6,7 +6,6 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/nkokorev/auth-server/locales"
 	"github.com/nkokorev/crm-go/database/base"
-	"os"
 	"reflect"
 )
 
@@ -71,14 +70,6 @@ type Permission struct {
 	Roles  		[]Role `json:"-" gorm:"many2many:role_permissions;"`
 }
 
-func init() {
-	// seeding can be: "" / "true" / "fresh"
-	seeding := os.Getenv("seeding")
-	if seeding == "true" ||  seeding == "fresh"{
-		permissionSeeding()
-	}
-}
-
 // Создание нового правила доступа (сугубо системная функция)
 func (permission *Permission) create() error {
 
@@ -106,28 +97,14 @@ func (permission *Permission) Find(code_int uint) error {
 	return nil
 }
 
-
-
-// массовый поиск по кодам прав
-func FindPermissions(values... uint) (p []Permission, err error) {
-	count_v := len(values)
-	for i := 0; i < count_v; i++ {
-		p := Permission{}
-		err = p.Find(values[i]);
-		if err != nil {
-			break
-		}
-		fmt.Println( p.Name )
-	}
-	return
-}
-
 // заливает первичные права в БД
-func permissionSeeding()  {
+func PermissionSeeding()  {
 
-	if !base.GetDB().Find(&Permission{}).RecordNotFound() {
+	base.GetDB().Unscoped().Delete(&Permission{})
+
+	/*if !base.GetDB().Find(&Permission{}).RecordNotFound() {
 		return
-	}
+	}*/
 
 	for _, v := range permissions {
 		err := v.create()

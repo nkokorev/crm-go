@@ -13,6 +13,12 @@ func TestExistPermissionTable(t *testing.T) {
 	}
 }
 
+func TestExistPermissionData(t *testing.T) {
+	if base.GetDB().Find(&Permission{}).RecordNotFound() {
+		t.Error("В базе отсутствуют базовые права")
+	}
+}
+
 func TestPermission_Find(t *testing.T) {
 	// todo дописать код проверки функции
 }

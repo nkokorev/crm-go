@@ -12,8 +12,8 @@ func init() {
 		//UserSeeding()
 		//PermissionSeeding()
 	}
-	//PermissionSeeding()
-	//RoleSeeding()
+	//models.PermissionSeeding()
+	//models.RoleSeeding()
 	//UserSeeding()
 }
 

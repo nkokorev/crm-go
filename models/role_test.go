@@ -13,6 +13,12 @@ func TestExistRoleTable(t *testing.T) {
 	}
 }
 
+func TestExistRoleData(t *testing.T) {
+	if base.GetDB().Find(&Role{}).RecordNotFound() {
+		t.Error("В базе отсутствуют базовые роли")
+	}
+}
+
 func TestRole_Delete(t *testing.T) {
 
 	// создаем пользователя-владельца для создания тестового аккаунта

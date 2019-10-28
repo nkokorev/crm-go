@@ -9,9 +9,11 @@ import (
 func TestExistAccountTable(t *testing.T) {
 	db := base.GetDB()
 	if !db.HasTable(&Account{}) {
+
 		tableName := db.NewScope(&Account{}).GetModelStruct().TableName(db)
 		t.Errorf("%v table is not exist!",tableName)
 	}
+
 }
 
 func TestAccount_Create(t *testing.T) {
