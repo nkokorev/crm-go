@@ -3,19 +3,7 @@ package migrations
 import (
 	"github.com/nkokorev/crm-go/database/base"
 	"github.com/nkokorev/crm-go/models"
-	"os"
 )
-
-func init() {
-
-	// migration can be: "" / "true" / "fresh"
-	migration := os.Getenv("migration")
-	if migration == "true" || migration == "fresh" {
-		//MigrationTables(migration == "fresh")
-		MigrationTables(true)
-	}
-	//MigrationTables(true)
-}
 
 func MigrationTables(freshTables bool) {
 
