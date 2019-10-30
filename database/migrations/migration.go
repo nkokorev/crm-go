@@ -22,6 +22,7 @@ func MigrationTables(freshTables bool) {
 	db.Debug().AutoMigrate(&models.AccountUser{}, &models.User{}, &models.Account{}, &models.Store{}, &models.Permission{}, &models.Role{}, &models.ApiKey{}, &models.Shop{})
 
 	db.Table("accounts").AddForeignKey("user_id", "users(id)", "RESTRICT", "CASCADE") // за пользователем удаляются все его аккаунты
+	//db.Table("users").AddForeignKey("account_id", "accounts(id)", "SET NULL", "CASCADE")
 
 	db.Table("account_users").AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
 	db.Table("account_users").AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")

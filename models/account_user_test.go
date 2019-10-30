@@ -14,27 +14,27 @@ func TestExistAccountUserTable(t *testing.T) {
 }
 
 func TestAccountUser_GetAccountUser(t *testing.T) {
-	test_user_1 := User{
-		Username:"user_test",
+	test_user_owner := User{
+		Username:"test_user_owner",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",
 		Patronymic:"РеальноеОтчество",
 		Password: "qwerty123#Aa",
 	}
-	err := test_user_1.Create()
+	err := test_user_owner.Create()
 	if err != nil {
 		t.Error(err.Error())
 	} else {
 		defer func() {
-			if err := test_user_1.Delete(); err != nil {
+			if err := test_user_owner.Delete(); err != nil {
 				t.Error("неудалось удалить пользователя: ", err.Error())
 			}
 		}()
 	}
 
 	test_account_1 := Account {	Name:"Account_Test",}
-	err = test_account_1.Create(&test_user_1)
+	err = test_user_owner.CreateAccount(&test_account_1)
 	if err != nil {
 		t.Error(err.Error())
 	} else {
@@ -46,7 +46,7 @@ func TestAccountUser_GetAccountUser(t *testing.T) {
 	}
 
 	test_acc_user_1 := AccountUser{}
-	err = test_acc_user_1.GetAccountUser(test_user_1.ID, test_account_1.ID)
+	err = test_acc_user_1.GetAccountUser(test_user_owner.ID, test_account_1.ID)
 	if err != nil {
 		t.Error("неудалось найти ассоциированного пользователя", err.Error())
 	}
@@ -55,7 +55,7 @@ func TestAccountUser_GetAccountUser(t *testing.T) {
 func TestAccountUser_SetNewRole(t *testing.T) {
 
 	test_owner_user := User{
-		Username:"user_test",
+		Username:"test_user_owner",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",
@@ -135,7 +135,7 @@ func TestAccountUser_SetNewRole(t *testing.T) {
 			}
 		}()
 	}
-	if err := test_account.AppendUser(&test_user_2); err != nil {
+	if _,err := test_account.AppendUser(&test_user_2); err != nil {
 		t.Error("Невышло добавить пользователя в аккаунт", test_account, test_user_2)
 	}
 	test_account_user := AccountUser{}
@@ -224,7 +224,9 @@ func TestAccountUser_CheckPermission(t *testing.T) {
 	}
 
 	// добавляем подопытного в новенький аккаунт
-	if err := test_account.AppendUser(&test_user_1); err !=nil {
+	test_aUser_1 := &AccountUser{}
+	test_aUser_1, err := test_account.AppendUser(&test_user_1)
+	if err != nil {
 		t.Error("Неудалось добавить пользователя в тестовый аккаунт")
 	}
 
@@ -235,11 +237,11 @@ func TestAccountUser_CheckPermission(t *testing.T) {
 		return
 	}
 	// получаем aUser_1
-	test_aUser_1 := AccountUser{}
+	/*test_aUser_1 := AccountUser{}
 	if err := test_aUser_1.GetAccountUser(test_user_1.ID, test_account.ID); err != nil {
 		t.Error("Не вышло найти test_aUser_1")
 		return
-	}
+	}*/
 
 	// 1. Проверим права у владельца аккаунта
 	if ! test_aUserOwner.CheckPermission(PermissionBillingManagement) {

@@ -19,20 +19,20 @@ func TestExistAccountTable(t *testing.T) {
 func TestAccount_Create(t *testing.T) {
 
 	// создаем пользователя владельца аккаунта
-	test_user_1 := User{
-		Username:"user_test",
+	test_user_owner := User{
+		Username:"test_user_owner",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",
 		Patronymic:"РеальноеОтчество",
 		Password: "qwerty123#Aa",
 	}
-	err := test_user_1.Create()
+	err := test_user_owner.Create()
 	if err != nil {
 		t.Error("Неудалось создать пользователя: ", err.Error())
 	} else {
 		defer func() {
-			if err := test_user_1.Delete(); err != nil {
+			if err := test_user_owner.Delete(); err != nil {
 				t.Error("неудалось удалить пользователя: ", err.Error())
 			}
 		}()
@@ -40,8 +40,7 @@ func TestAccount_Create(t *testing.T) {
 
 	// создаем тестовый аккаунт
 	test_account_1 := Account {	Name:"Account_Test",}
-	err = test_account_1.Create(&test_user_1)
-	if err != nil {
+	if err := test_user_owner.CreateAccount(&test_account_1);err!=nil {
 		t.Error("Неудалось создать аккаунт: ", err.Error())
 	} else {
 		defer func() {
@@ -52,9 +51,8 @@ func TestAccount_Create(t *testing.T) {
 	}
 
 	// 1. проверим, что нельзя создать думабль аккаунта
-	if err := test_account_1.Create(&test_user_1); err == nil {
+	if err := test_user_owner.CreateAccount(&test_account_1);err==nil {
 		t.Error("Удалось повторно создать аккаунт, который был уже создан")
-	} else {
 		defer func() {
 			if err := test_account_1.Delete(); err != nil {
 				t.Error("неудалось удалить аккаунт: ", err.Error())
@@ -69,12 +67,12 @@ func TestAccount_Create(t *testing.T) {
 	}
 
 	// 3. проверим, что в аккаунт был добавлен владелец аккаунта
-	if base.GetDB().Model(&test_user_1).Where("account_id = ?", test_account_1.ID).Association("Accounts").Count() != 1 {
+	if base.GetDB().Model(&test_user_owner).Where("account_id = ?", test_account_1.ID).Association("Accounts").Count() != 1 {
 		t.Error("Владелец аккаунта не добавлен в список пользователей аккаунта")
 	}
 
 	// 4. проверим, что нам не дадут удалить пользователя, если у него есть аккаунты
-	err = test_user_1.Delete()
+	err = test_user_owner.Delete()
 	if err == nil {
 		t.Error("Удалось удалить пользователя, при существующем аккаунте")
 	}
@@ -92,7 +90,7 @@ func TestAccount_Create(t *testing.T) {
 		t.Skip("Не найдена роль OWNER")
 	} else {
 		aUser := AccountUser{}
-		if err := aUser.GetAccountUser(test_user_1.ID, test_account_1.ID); err != nil {
+		if err := aUser.GetAccountUser(test_user_owner.ID, test_account_1.ID); err != nil {
 			t.Error(err.Error())
 		}
 		// собственно сама проверка роли владельца аккаунта
@@ -101,8 +99,8 @@ func TestAccount_Create(t *testing.T) {
 		}
 	}
 
-	// удаляем пользователя (должен удалиться)
-	if err := test_user_1.Delete(); err == nil {
+	// Проверим, что нельзя удалить пользователя, пока у него есть существующее аккаунты
+	if err := test_user_owner.Delete(); err == nil {
 		t.Error("Удалось удалить пользователя, хотя у него был аккаунт.")
 	}
 
@@ -114,20 +112,20 @@ func TestAccount_ValidateCreate(t *testing.T) {
 	// Тест создания аккаунта в ф-ии теста создания аккаунта
 
 	// создаем пользователя владельца аккаунта
-	test_user_1 := User{
-		Username:"user_test",
+	test_user_owner := User{
+		Username:"test_user_owner",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",
 		Patronymic:"РеальноеОтчество",
 		Password: "qwerty123#Aa",
 	}
-	err := test_user_1.Create()
+	err := test_user_owner.Create()
 	if err != nil {
 		t.Error("Неудалось создать пользователя: ", err.Error())
 	} else {
 		defer func() {
-			if err := test_user_1.Delete(); err != nil {
+			if err := test_user_owner.Delete(); err != nil {
 				t.Error("неудалось удалить пользователя: ", err.Error())
 			}
 		}()
@@ -135,19 +133,19 @@ func TestAccount_ValidateCreate(t *testing.T) {
 
 	// 1. Убедимся, что простой аккаунт от действительного пользователя создается и тут все Ок
 	test_account_1 := Account {	Name:"Account_Test",}
-	if myErr := test_account_1.ValidateCreate(&test_user_1); myErr.HasErrors() {
+	if myErr := test_account_1.ValidateCreate(&test_user_owner); myErr.HasErrors() {
 		t.Error("Неудалось пройти валидацию нормальному аккаунту")
 	}
 
 	// 2. Убедимся, что аккаунт без имени не будет создан
 	test_account_2 := Account {	Name:"",}
-	if myErr := test_account_2.ValidateCreate(&test_user_1); !myErr.HasErrors() {
+	if myErr := test_account_2.ValidateCreate(&test_user_owner); !myErr.HasErrors() {
 		t.Error("Удалось пройти валидацию аккаунту без имени")
 	}
 
 	// 3. Убедимся, что аккаунт с коротким именим Кириллицей не будет создан
 	test_account_3 := Account {	Name:"ЦЙ",}
-	if myErr := test_account_3.ValidateCreate(&test_user_1); !myErr.HasErrors() {
+	if myErr := test_account_3.ValidateCreate(&test_user_owner); !myErr.HasErrors() {
 		t.Error("Удалось пройти валидацию аккаунту с коротким именем")
 	}
 
@@ -171,26 +169,26 @@ func TestAccount_ValidateCreate(t *testing.T) {
 func TestAccount_CreateRole(t *testing.T) {
 	// 1. Проверяем НЕ системную роль с привязкой к аккаунту
 	// (только такая и должна быть, т.к. системные роли без привязки к аккаунту идут)
-	test_user := User{
-		Username:"user_test",
+	test_user_owner := User{
+		Username:"test_user_owner",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",
 		Patronymic:"РеальноеОтчество",
 		Password: "qwerty123#Aa",
 	}
-	if err := test_user.Create(); err != nil {
+	if err := test_user_owner.Create(); err != nil {
 		t.Error(err.Error())
 	} else {
 		defer func() {
-			if err := test_user.Delete(); err != nil {
+			if err := test_user_owner.Delete(); err != nil {
 				t.Error("неудалось удалить пользователя: ", err.Error())
 			}
 		}()
 	}
 
 	test_account := Account {Name:"Account_Test"}
-	if err := test_user.CreateAccount(&test_account); err != nil {
+	if err := test_user_owner.CreateAccount(&test_account); err != nil {
 		t.Error(err.Error())
 	} else {
 		defer func() {
@@ -251,7 +249,7 @@ func TestAccount_RemoveRole(t *testing.T) {
 
 	// создаем пользователя владельца тестового аккаунта
 	test_owner_user := User{
-		Username:"user_test",
+		Username:"test_user_owner",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",
@@ -312,26 +310,27 @@ func TestAccount_RemoveRole(t *testing.T) {
 
 func TestAccount_RemoveAllRoles(t *testing.T) {
 
-	test_user := User{
-		Username:"user_test",
+	// создадим владельца аккаунта
+	test_user_owner := User{
+		Username:"test_user_owner",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",
 		Patronymic:"РеальноеОтчество",
 		Password: "qwerty123#Aa",
 	}
-	if err := test_user.Create(); err != nil {
+	if err := test_user_owner.Create(); err != nil {
 		t.Error(err.Error())
 	} else {
 		defer func() {
-			if err := test_user.Delete(); err != nil {
+			if err := test_user_owner.Delete(); err != nil {
 				t.Error("неудалось удалить пользователя: ", err.Error())
 			}
 		}()
 	}
 
 	test_account := Account {Name:"Account_Test"}
-	if err := test_user.CreateAccount(&test_account); err != nil {
+	if err := test_user_owner.CreateAccount(&test_account); err != nil {
 		t.Error(err.Error())
 	} else {
 		defer func() {
@@ -394,19 +393,19 @@ func TestAccount_RemoveAllRoles(t *testing.T) {
 func TestAccount_Delete(t *testing.T) {
 
 	// создадим пользователя, от чьего имени будем создавать тестовый аккаунт
-	test_user := User{
-		Username:"user_test",
+	test_user_owner := User{
+		Username:"test_user_owner",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",
 		Patronymic:"РеальноеОтчество",
 		Password: "qwerty123#Aa",
 	}
-	if err := test_user.Create(); err != nil {
+	if err := test_user_owner.Create(); err != nil {
 		t.Error(err.Error())
 	} else {
 		defer func() {
-			if err := test_user.Delete(); err != nil {
+			if err := test_user_owner.Delete(); err != nil {
 				t.Error("неудалось удалить пользователя: ", err.Error())
 			}
 		}()
@@ -414,7 +413,7 @@ func TestAccount_Delete(t *testing.T) {
 
 	// создадим тестовый аккаунт, чтобы в нем создать тестовую роль
 	test_account := Account {Name:"Account_Test"}
-	if err := test_user.CreateAccount(&test_account); err != nil {
+	if err := test_user_owner.CreateAccount(&test_account); err != nil {
 		t.Error(err.Error())
 	} else {
 		defer func() {
@@ -458,11 +457,91 @@ func TestAccount_Delete(t *testing.T) {
 	}
 
 	// #3. Проверим, что пользователь (owner) остался на месте
-	if base.GetDB().First(&User{}, "hash_id = ?",test_user.HashID).RecordNotFound() {
-		t.Errorf("удален пользователь после удаления его аккаунта, user hash_id: %v", test_user.HashID)
+	if base.GetDB().First(&User{}, "hash_id = ?",test_user_owner.HashID).RecordNotFound() {
+		t.Errorf("удален пользователь после удаления его аккаунта, user hash_id: %v", test_user_owner.HashID)
 	}
 
 }
 
+func TestAccount_AppendUser(t *testing.T) {
 
+	// создаем пользователя владельца тестового аккаунта
+	test_owner_user := User{
+		Username:"test_user_owner",
+		Email: "testmail@ratus-dev.ru",
+		Name:"РеальноеИмя",
+		Surname:"РеальнаяФамилия",
+		Patronymic:"РеальноеОтчество",
+		Password: "qwerty123#Aa",
+	}
+	if err := test_owner_user.Create(); err != nil {
+		t.Error(err.Error())
+	} else {
+		defer func() {
+			if err := test_owner_user.Delete(); err != nil {
+				t.Error("неудалось удалить пользователя: ", err.Error())
+			}
+		}()
+	}
+
+	// создаем тестовый аккаунт, в который будем добавлять пользователей
+	test_account := Account {Name:"Account_Test"}
+	if err := test_owner_user.CreateAccount(&test_account); err != nil {
+		t.Error(err.Error())
+	} else {
+		defer func() {
+			if err := test_account.Delete(); err != nil {
+				t.Error("неудалось удалить аккаунт: ", err.Error())
+			}
+		}()
+	}
+
+
+	// 2. Создадим пользователя, но не до конца и попробуем его добавить в аккаунт
+	test_user := User{
+		Username:"test_user_11",
+		Email: "test-mail@ratus-dev.ru",
+		Name:"РеальноеИмя",
+		Surname:"РеальнаяФамилия",
+		Patronymic:"РеальноеОтчество",
+		Password: "qwerty123#Aa",
+	}
+	if myErr := test_user.ValidateCreate(); myErr.HasErrors() {
+		t.Error("Неудалось пройти валидацию пользователя")
+		for _,v := range myErr.GetErrors() {
+			t.Error("Ошибка при создании пользователя: ", v)
+		}
+		return
+	}
+
+	// 1. попробуем добавить пользователя в аккаунт
+	if _,err := test_account.AppendUser(&test_user); err == nil {
+		t.Error("Удалось добавить несуществующего пользователя в аккаунт")
+		return
+	}
+
+	// Теперь создадим пользователя по настоящему
+	if err := test_user.Create(); err != nil {
+		t.Error("Неудалось создать тестового пользователя", err.Error())
+		return
+	} else {
+		defer func() {
+			if err := test_user.Delete(); err != nil {
+				t.Error("неудалось удалить пользователя: ", err.Error())
+			}
+		}()
+	}
+
+	// 2. Попробуем добавить уже полностью созданного пользователя
+	if _,err := test_account.AppendUser(&test_user);err!=nil {
+		t.Error("Неудалось нового добавить существуюшего пользователя в аккаунт")
+	}
+
+	// 3. Убедимся, что нельзя добавить пользователя еще раз в один и тот же аккаунт
+	if _,err := test_account.AppendUser(&test_user);err==nil {
+		t.Error("Удалось повторно добавить пользователя в аккаунт")
+	}
+
+
+}
 

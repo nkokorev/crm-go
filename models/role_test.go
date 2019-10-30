@@ -23,7 +23,7 @@ func TestRole_Delete(t *testing.T) {
 
 	// создаем пользователя-владельца для создания тестового аккаунта
 	test_user_owner := User{
-		Username:"user_test",
+		Username:"test_user_owner",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",
@@ -72,7 +72,7 @@ func TestRole_Delete(t *testing.T) {
 	}
 
 	// добавляем в тестовый аккаунт тестового пользователя
-	if err := test_account.AppendUser(&test_user_2); err != nil {
+	if _,err := test_account.AppendUser(&test_user_2); err != nil {
 		t.Error("Неудалось добавить пользователя в аккаунт", err.Error())
 	}
 
@@ -117,7 +117,7 @@ func TestRole_Delete(t *testing.T) {
 func TestRole_AppendPermissions(t *testing.T) {
 
 	test_owner_user := User{
-		Username:"user_test",
+		Username:"test_user_owner",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",
@@ -181,7 +181,7 @@ func TestRole_AppendPermissions(t *testing.T) {
 
 func TestRole_RemovePermissions(t *testing.T) {
 	test_owner_user := User{
-		Username:"user_test",
+		Username:"test_user_owner",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",
@@ -245,7 +245,7 @@ func TestRole_hasPermission(t *testing.T)  {
 
 	// создаем владельца аккаунта
 	test_owner_user := User{
-		Username:"user_test",
+		Username:"test_user_owner",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",

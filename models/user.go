@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
@@ -8,10 +9,9 @@ import (
 	"github.com/nkokorev/crm-go/database/base"
 	e "github.com/nkokorev/crm-go/errors"
 	t "github.com/nkokorev/crm-go/locales"
-	"os"
-
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
+	"os"
 	"reflect"
 	"time"
 )
@@ -25,6 +25,8 @@ type User struct {
 	Surname 	string `json:"surname"`
 	Patronymic 	string `json:"patronymic"`
 	Password 	string `json:"-" gorm:"not null"` // json:"-"
+	//DefaultAccountID uint `json:"default_account_id" gorm:"foreignkey:AccountID;"`
+	DefaultAccountID uint `json:"default_account_id"`
 	Accounts    []Account `json:"accounts" gorm:"many2many:account_users;"`
 	AUsers 		[]AccountUser `json:"-"` // ??
 	CreatedAt *time.Time `json:"created_at;omitempty"`
@@ -81,7 +83,7 @@ func (user *User) ValidateCreate() (error u.Error) {
 
 	// проверка на уникальность email-адреса
 	if !base.GetDB().First(&User{}, "email = ?", user.Email).RecordNotFound() {
-		error.AddErrors("email", "этот адрес уже используется" )
+		error.AddErrors("email", "этот email-адрес уже используется" )
 		error.Message = t.Trans(t.UserCreateInvalidCredentials)
 		return
 	}
@@ -189,11 +191,26 @@ func (user *User) Delete() error {
 	return nil
 }
 
-// создание нового аккаунт в контексте пользователя
+// создание нового аккаунт от имени пользователя
 func (user *User) CreateAccount(account *Account) error {
-	return account.Create(user)
+
+	// проверяем, что пользователь, от имени которого происходит создание аккаунта действительно существует
+	if reflect.TypeOf(user.ID).String() != "uint" || user.ID < 1 || base.GetDB().First(&User{}, user.ID).RecordNotFound() {
+		return errors.New("Невозможно создать аккаунт, от имени пользователя, который не существует")
+	}
+
+	return account.create(user)
 }
 
+// todo: функция обновления пользователя
+func (user *User) Update() error {
+
+	// todo: тут вообще-то должны быть проверки валидности данных..
+	if err := base.GetDB().Save(user).Error;err!= nil {
+		return err
+	}
+	return nil
+}
 
 /// #### ниже функции надо доработать
 

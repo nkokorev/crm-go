@@ -7,5 +7,5 @@ import (
 
 func TestRebase(t *testing.T) {
 	fmt.Println("rebase go!")
-	//Rebase()
+	Rebase()
 }

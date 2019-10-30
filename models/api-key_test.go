@@ -27,7 +27,7 @@ func TestApiKey_Create(t *testing.T) {
 
 	// создадим пользователя, от чьего имени будем создавать тестовый аккаунт
 	test_owner_user := User{
-		Username:"user_test",
+		Username:"test_user_owner",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",
@@ -97,7 +97,7 @@ func TestApiKey_Delete(t *testing.T) {
 
 	// создадим пользователя, от чьего имени будем создавать тестовый аккаунт
 	test_owner_user := User{
-		Username:"user_test",
+		Username:"test_user_owner",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",
@@ -159,7 +159,7 @@ func TestApiKey_SetRole(t *testing.T) {
 
 	// создадим пользователя, от чьего имени будем создавать тестовый аккаунт
 	test_owner_user := User{
-		Username:"user_test",
+		Username:"test_user_owner",
 		Email: "testmail@ratus-dev.ru",
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",

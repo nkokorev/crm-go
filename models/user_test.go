@@ -15,42 +15,42 @@ func TestExistUserTable(t *testing.T) {
 
 func TestUser_Create(t *testing.T) {
 
-	test_user_1 := User{
-		Username:"user_test",
-		Email: "testmail@ratus-dev.ru",
+	test_user_owner := User{
+		Username:"test_user_owner", // не менять!!
+		Email: "testmail@ratus-dev.ru", // не менять!
 		Name:"РеальноеИмя",
 		Surname:"РеальнаяФамилия",
 		Patronymic:"РеальноеОтчество",
 		Password: "qwerty123#Aa",
 	}
-	err := test_user_1.Create()
+	err := test_user_owner.Create()
 	if err != nil {
 		t.Error("Неудалось создать пользователя: ", err.Error())
 	} else {
 		defer func() {
-			if err := test_user_1.Delete(); err != nil {
+			if err := test_user_owner.Delete(); err != nil {
 				t.Error("неудалось удалить пользователя: ", err.Error())
 			}
 		}()
 	}
 
 	// 1. убеждаемся, что в нового пользователя загружены новые данные после создания
-	if test_user_1.ID == 0 {
+	if test_user_owner.ID == 0 {
 		t.Errorf("User ID == 0, expected > 0")
 	}
 	temp_user := User{}
-	if base.GetDB().First(&temp_user, test_user_1.ID).RecordNotFound() {
-		t.Errorf("Cant find created user: %v", test_user_1.Username)
+	if base.GetDB().First(&temp_user, test_user_owner.ID).RecordNotFound() {
+		t.Errorf("Cant find created user: %v", test_user_owner.Username)
 	}
 
 	// 2. проверим, что нельзя повторно тут же создать дубль пользователя с тем же ID
-	test_user_1.Username = "Test User Double" // меняем имя пользователя
-	test_user_1.Email = "mail-test@ratus-dev.ru" // меняем почту
-	if err := test_user_1.Create(); err == nil {
+	test_user_owner.Username = "Test User Double" // меняем имя пользователя
+	test_user_owner.Email = "mail-test@ratus-dev.ru" // меняем почту
+	if err := test_user_owner.Create(); err == nil {
 		t.Error("Удалось повторно создать пользователя, который был уже создан")
 	} else {
 		defer func() {
-			if err := test_user_1.Delete(); err != nil {
+			if err := test_user_owner.Delete(); err != nil {
 				t.Error("неудалось удалить пользователя: ", err.Error())
 			}
 		}()
@@ -59,7 +59,7 @@ func TestUser_Create(t *testing.T) {
 	// 3. тестируем валидатор встроенный в функцию (валидатор еще тестируется отдельной функцией)
 	test_users := []User{
 		{}, // ничего нет %)
-		{Username:"user_test", Email: "mail-test@ratus-dev.ru", Password: "qwerty123#Aa"}, // повторяющийся Username
+		{Username:"test_user_owner", Email: "mail-test@ratus-dev.ru", Password: "qwerty123#Aa"}, // повторяющийся Username
 		{Username:"test_user_9", Email: "testmail@ratus-dev.ru", Password: "qwerty123#Aa"}, // Этот еmail-адрес уже используется
 		{Username:"", Email: "mail-test@ratus-dev.ru", Password: "qwerty123#Aa"}, // нет username
 		{Username:"Почтальон!",Email: "mail-test@ratus-dev.ru", Password: "qwerty123#Aa"}, // not ANCII
@@ -179,4 +179,8 @@ func TestUser_ValidateCreate(t *testing.T) {
 			defer  test_users[i].Delete()
 		}
 	}
+}
+
+func TestUser_Update(t *testing.T) {
+	// todo: дописать тест
 }

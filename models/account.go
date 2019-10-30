@@ -30,8 +30,15 @@ type Account struct {
 	DeletedAt *time.Time `sql:"index" json:"-"`
 }
 
-// Создает новый аккаунт по структуре account. Аккаунт привязывается к владельцу по user_id, добавляя его в список пользователей аккаунта.
-func (account *Account) Create(owner *User) (err error) {
+// Создает новый аккаунт от имени пользователя, добавляя его в список пользователей аккаунта и назначая роль owner.
+func (account *Account) create(owner *User) (err error) {
+
+	// проверим, что пользователь существует
+	if reflect.TypeOf(owner.ID).String() == "uint" {
+		if owner.ID > 0 && base.GetDB().First(&User{}, owner.ID).RecordNotFound() {
+			return errors.New("Невозможно создать аккаунт, от имени пользователя, который не существует")
+		}
+	}
 
 	// проверим валидацию данных аккаунта
 	myErr := account.ValidateCreate(owner)
@@ -54,7 +61,7 @@ func (account *Account) Create(owner *User) (err error) {
 	}
 
 	// Добавляем пользователя в созданный им аккаунт
-	if account.AppendUser(owner) != nil {
+	if _, err = account.AppendUser(owner); err != nil {
 		// вообще это фаталити, т.к. аккаунт создан, но пользователь не добавился в аккаунт, хотя права доступа к нему он имеет
 		// пользователь не увидит созданный аккаунт, в списке доступных аккаунтов, следовательно не сможет зайти или удалить этот аккаунт
 		if err = account.Delete(); err != nil {
@@ -153,14 +160,32 @@ func (account *Account) Delete() error {
 	return nil
 }
 
-// Добавление к аккаунту пользователя
-func (account *Account) AppendUser(user *User) error {
-	// добавляем пользователя в аккаунт путем ассоциации (many-to-many)
-	if err := base.GetDB().Model(&account).Association("Users").Append(user).Error; err != nil {
-		return err
+// Добавление к аккаунту пользователя (почему-то без ролей?!!)
+// todo: а где роли то?
+func (account *Account) AppendUser(user *User) (*AccountUser, error) {
+
+	// проверяем, что пользователь, от имени которого происходит создание аккаунта действительно существует
+	if reflect.TypeOf(user.ID).String() != "uint" || user.ID < 1 || base.GetDB().First(&User{}, user.ID).RecordNotFound() {
+		return nil, errors.New("Невозможно добавить в аккаунт пользователя, который не существует")
 	}
 
-	return nil
+	// проверим, что пользователь уже не в аккаунте
+	if base.GetDB().Model(user).Where("account_id = ?", account.ID).Association("Accounts").Count() > 0 {
+		return nil, errors.New("Невозможно добавить в аккаунт пользователя, т.к. он уже там")
+	}
+
+	// добавляем пользователя в аккаунт путем ассоциации (many-to-many)
+	if err := base.GetDB().Model(account).Association("Users").Append(user).Error; err != nil {
+		return nil, err
+	}
+
+	// найдем нового пользователя aUser
+	aUser := &AccountUser{}
+	if err := aUser.GetAccountUser(user.ID, account.ID); err != nil {
+		return nil, err
+	}
+
+	return aUser, nil
 }
 
 // исключение пользователя из аккаунта
