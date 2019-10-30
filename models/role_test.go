@@ -72,8 +72,8 @@ func TestRole_Delete(t *testing.T) {
 	}
 
 	// добавляем в тестовый аккаунт тестового пользователя
-	if _,err := test_account.AppendUser(&test_user_2); err != nil {
-		t.Error("Неудалось добавить пользователя в аккаунт", err.Error())
+	if _, err := test_account.AppendUser(&test_user_2); err != nil {
+		t.Error("Неудалось добавить пользователя в аккаунт")
 	}
 
 	// создаем тестовую роль в контексте аккаунта

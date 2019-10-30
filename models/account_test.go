@@ -30,6 +30,7 @@ func TestAccount_Create(t *testing.T) {
 	err := test_user_owner.Create()
 	if err != nil {
 		t.Error("Неудалось создать пользователя: ", err.Error())
+		return
 	} else {
 		defer func() {
 			if err := test_user_owner.Delete(); err != nil {
@@ -40,8 +41,9 @@ func TestAccount_Create(t *testing.T) {
 
 	// создаем тестовый аккаунт
 	test_account_1 := Account {	Name:"Account_Test",}
-	if err := test_user_owner.CreateAccount(&test_account_1);err!=nil {
+	if err := test_user_owner.CreateAccount(&test_account_1);err != nil {
 		t.Error("Неудалось создать аккаунт: ", err.Error())
+		return
 	} else {
 		defer func() {
 			if err := test_account_1.Delete(); err != nil {
@@ -50,8 +52,9 @@ func TestAccount_Create(t *testing.T) {
 		}()
 	}
 
+
 	// 1. проверим, что нельзя создать думабль аккаунта
-	if err := test_user_owner.CreateAccount(&test_account_1);err==nil {
+	if err := test_user_owner.CreateAccount(&test_account_1);err == nil {
 		t.Error("Удалось повторно создать аккаунт, который был уже создан")
 		defer func() {
 			if err := test_account_1.Delete(); err != nil {
@@ -200,7 +203,7 @@ func TestAccount_CreateRole(t *testing.T) {
 
 	// создаем тестовую роль в контексте аккаунта (т.е. НЕ системную)
 	test_role_1 := Role{Name:"Test_Role", Tag: "test_tag", Description: "Test crating role for account"}
-	if err := test_account.CreateRole(&test_role_1, []int{int(PermissionUserAppend)}); err != nil {
+	if err := test_account.CreateRole(&test_role_1, []int{PermissionUserAppend}); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {
@@ -225,6 +228,7 @@ func TestAccount_CreateRole(t *testing.T) {
 	test_role_2 := Role{Name:"Test_Role_2", System: true, Tag: "test_tag_2", Description: "Test crating role for account"}
 	if err := test_role_2.create([]int{}); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
+		return
 	} else {
 		defer func() {
 			if err := test_role_2.delete(); err != nil {
@@ -515,7 +519,7 @@ func TestAccount_AppendUser(t *testing.T) {
 	}
 
 	// 1. попробуем добавить пользователя в аккаунт
-	if _,err := test_account.AppendUser(&test_user); err == nil {
+	if _, err := test_account.AppendUser(&test_user);err == nil {
 		t.Error("Удалось добавить несуществующего пользователя в аккаунт")
 		return
 	}
@@ -533,12 +537,12 @@ func TestAccount_AppendUser(t *testing.T) {
 	}
 
 	// 2. Попробуем добавить уже полностью созданного пользователя
-	if _,err := test_account.AppendUser(&test_user);err!=nil {
+	if _, err := test_account.AppendUser(&test_user); err != nil {
 		t.Error("Неудалось нового добавить существуюшего пользователя в аккаунт")
 	}
 
 	// 3. Убедимся, что нельзя добавить пользователя еще раз в один и тот же аккаунт
-	if _,err := test_account.AppendUser(&test_user);err==nil {
+	if _, err := test_account.AppendUser(&test_user);err == nil {
 		t.Error("Удалось повторно добавить пользователя в аккаунт")
 	}
 

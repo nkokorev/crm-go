@@ -135,10 +135,12 @@ func TestAccountUser_SetNewRole(t *testing.T) {
 			}
 		}()
 	}
-	if _,err := test_account.AppendUser(&test_user_2); err != nil {
+
+	test_account_user, err := test_account.AppendUser(&test_user_2);
+	if err != nil {
 		t.Error("Невышло добавить пользователя в аккаунт", test_account, test_user_2)
 	}
-	test_account_user := AccountUser{}
+
 	if err := test_account_user.GetAccountUser(test_user_2.ID, test_account.ID); err != nil {
 		t.Error("Неудалось найти ассоциированного пользователя")
 	}
@@ -224,7 +226,7 @@ func TestAccountUser_CheckPermission(t *testing.T) {
 	}
 
 	// добавляем подопытного в новенький аккаунт
-	test_aUser_1 := &AccountUser{}
+	//test_aUser_1 := &AccountUser{}
 	test_aUser_1, err := test_account.AppendUser(&test_user_1)
 	if err != nil {
 		t.Error("Неудалось добавить пользователя в тестовый аккаунт")

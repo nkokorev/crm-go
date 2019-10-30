@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	_ "github.com/nkokorev/auth-server/locales"
 	"github.com/nkokorev/crm-go/database/base"
@@ -33,11 +34,14 @@ type Account struct {
 // Создает новый аккаунт от имени пользователя, добавляя его в список пользователей аккаунта и назначая роль owner.
 func (account *Account) create(owner *User) (err error) {
 
-	// проверим, что пользователь существует
-	if reflect.TypeOf(owner.ID).String() == "uint" {
-		if owner.ID > 0 && base.GetDB().First(&User{}, owner.ID).RecordNotFound() {
-			return errors.New("Невозможно создать аккаунт, от имени пользователя, который не существует")
-		}
+	// проверим, что пользовательский ID есть
+	if owner.ID < 1 {
+		return e.AccountFailedToCreate
+	}
+
+	// если аккаунт существует, то не надо его создавать повторно
+	if account.ID > 0 {
+		return e.AccountFailedToCreate
 	}
 
 	// проверим валидацию данных аккаунта
@@ -61,7 +65,8 @@ func (account *Account) create(owner *User) (err error) {
 	}
 
 	// Добавляем пользователя в созданный им аккаунт
-	if _, err = account.AppendUser(owner); err != nil {
+	aUser, err := account.AppendUser(owner)
+	if err != nil {
 		// вообще это фаталити, т.к. аккаунт создан, но пользователь не добавился в аккаунт, хотя права доступа к нему он имеет
 		// пользователь не увидит созданный аккаунт, в списке доступных аккаунтов, следовательно не сможет зайти или удалить этот аккаунт
 		if err = account.Delete(); err != nil {
@@ -71,14 +76,6 @@ func (account *Account) create(owner *User) (err error) {
 	}
 
 	// назначаем роль владельца владельцу аккаунта
-	aUser := AccountUser{}
-	if err = aUser.GetAccountUser(owner.ID, account.ID); err != nil {
-		// это фаталити, бесхозный акк, нужно его удалить
-		if err = account.Delete(); err != nil {
-			return err
-		}
-		return err
-	}
 	if err = aUser.SetRoleOwner(); err != nil {
 		// это фаталити, бесхозный акк, нужно его удалить
 		if err = account.Delete(); err != nil {
@@ -91,14 +88,6 @@ func (account *Account) create(owner *User) (err error) {
 }
 
 func (account *Account) ValidateCreate(owner *User) (error u.Error) {
-
-	// проверка на попытку создать дубль аккаунта, который уже был создан
-	if reflect.TypeOf(account.ID).String() == "uint" {
-		if account.ID > 0 && !base.GetDB().First(&Account{}, account.ID).RecordNotFound() {
-			error.Message = t.Trans(t.AccountFailedToCreate)
-			return
-		}
-	}
 
 	// проверяем, что пользователь, который создает аккаунт действительно создан
 	if reflect.TypeOf(owner.ID).String() != "uint" || owner.ID < 1 || base.GetDB().First(&User{}, owner.ID).RecordNotFound() {
@@ -160,32 +149,42 @@ func (account *Account) Delete() error {
 	return nil
 }
 
-// Добавление к аккаунту пользователя (почему-то без ролей?!!)
+// Добавление к аккаунту пользователя, возвращает aUser пользователя
 // todo: а где роли то?
-func (account *Account) AppendUser(user *User) (*AccountUser, error) {
+func (account *Account) AppendUser(user *User) (aUser AccountUser, err error) {
 
+	err = errors.New("Неудалось добавить пользователя")
 	// проверяем, что пользователь, от имени которого происходит создание аккаунта действительно существует
-	if reflect.TypeOf(user.ID).String() != "uint" || user.ID < 1 || base.GetDB().First(&User{}, user.ID).RecordNotFound() {
-		return nil, errors.New("Невозможно добавить в аккаунт пользователя, который не существует")
+	if user.ID < 1 {
+		//return nil, errors.New("Нельзя добавить пользователя, который не существует")
+		return
+	}
+
+	// проверим, что аккаунт тоже существует
+	if account.ID < 1 {
+		//return nil, errors.New("Нельзя добавить пользователя в несуществующимй аккаунт")
+		return
 	}
 
 	// проверим, что пользователь уже не в аккаунте
 	if base.GetDB().Model(user).Where("account_id = ?", account.ID).Association("Accounts").Count() > 0 {
-		return nil, errors.New("Невозможно добавить в аккаунт пользователя, т.к. он уже там")
+		//return nil, errors.New("Невозможно добавить в аккаунт пользователя, т.к. он уже там")
+		return
 	}
 
 	// добавляем пользователя в аккаунт путем ассоциации (many-to-many)
-	if err := base.GetDB().Model(account).Association("Users").Append(user).Error; err != nil {
-		return nil, err
+	if err = base.GetDB().Model(account).Association("Users").Append(user).Error; err != nil {
+		//return nil, err
+		return
 	}
 
 	// найдем нового пользователя aUser
-	aUser := &AccountUser{}
-	if err := aUser.GetAccountUser(user.ID, account.ID); err != nil {
-		return nil, err
+	if err = aUser.GetAccountUser(user.ID, account.ID); err != nil {
+		//return nil, err
+		return
 	}
 
-	return aUser, nil
+	return
 }
 
 // исключение пользователя из аккаунта
@@ -201,9 +200,10 @@ func (account *Account) RemoveUser(user *User) error {
 func (account *Account) CreateRole(role *Role, codes []int) error {
 
 	// проверим, что аккаунт создан (есть действительный его ID)
-	if reflect.TypeOf(account.ID).String() != "uint" {
-		return errors.New("Cant create role, not found account ID")
+	if account.ID < 1 {
+		return  errors.New("Cant create role, not found account ID")
 	}
+
 	// привязываем к роли аккаунт
 	role.AccountID = account.ID
 
@@ -217,8 +217,13 @@ func (account *Account) CreateRole(role *Role, codes []int) error {
 func (account *Account) DeleteRole(role *Role) error {
 
 	// проверим, что аккаунт создан (есть действительный его ID)
-	if reflect.TypeOf(account.ID).String() != "uint" {
-		return errors.New("Cant create role, not found account ID")
+	if account.ID < 1 {
+		return errors.New("Неудалось удалить роль, т.к. не найден аккаунт")
+	}
+
+	if role.ID < 1 {
+		fmt.Println(role)
+		return errors.New("Нельзя удалить роль, которой не существует")
 	}
 
 	// проверим, что роль не системная
@@ -289,6 +294,17 @@ func (account *Account) DeleteApiKey(key *ApiKey) error {
 	return nil
 }
 
+// функция проверяет существенная ли модель
+/*func (account *Account) isExists() bool {
+	if reflect.TypeOf(account.ID).String() != "uint" || account.ID < 1 || base.GetDB().First(&Account{}, account.ID).RecordNotFound() {
+		return false
+	}
+	return true
+}
+// обратная к isExists функция
+func (account *Account) isNotExists() bool {
+	return !account.isExists()
+}*/
 
 // ######### ниже не проверенные фукнции ###########
 // Создает голую роль в аккаунте с разрешениями (Permission / []Permissions)

@@ -5,6 +5,7 @@ import (
 	_ "github.com/nkokorev/auth-server/locales"
 	"github.com/nkokorev/crm-go/database/base"
 	e "github.com/nkokorev/crm-go/errors"
+	"reflect"
 )
 
 type AccountUser struct {
@@ -175,4 +176,16 @@ func (aUser *AccountUser) CheckPermission(permission_code uint) bool {
 
 	// не нашли доказательств наличия права
 	return false
+}
+
+// функция проверяет существенная ли модель
+func (aUser *AccountUser) isExists() bool {
+	if reflect.TypeOf(aUser.ID).String() != "uint" || aUser.ID < 1 || base.GetDB().First(&AccountUser{}, aUser.ID).RecordNotFound() {
+		return false
+	}
+	return true
+}
+// обратная к isExists функция
+func (aUser *AccountUser) isNotExists() bool {
+	return aUser.isExists()
 }

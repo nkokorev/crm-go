@@ -7,7 +7,6 @@ import (
 	"github.com/nkokorev/crm-go/database/base"
 	e "github.com/nkokorev/crm-go/errors"
 	u "github.com/nkokorev/crm-go/utils"
-	"reflect"
 )
 
 var roles = []Role {
@@ -120,11 +119,8 @@ type Role struct {
 func (role *Role) create(codes []int) (err error) {
 
 	// проверка на попытку создать дубль роли, которая уже была создан
-	if reflect.TypeOf(role.ID).String() == "uint" {
-		if role.ID > 0 && !base.GetDB().First(&Role{}, role.ID).RecordNotFound() {
-			// todo need to translation
-			return errors.New("Can't create new role: already crated!")
-		}
+	if role.ID > 0 {
+		return errors.New("Can't create new role: already crated!")
 	}
 
 	if role.HashID, err = u.CreateHashID(role); err != nil {
@@ -152,7 +148,7 @@ func (role *Role) create(codes []int) (err error) {
 // удаляет роль, проверяя привязанных пользователей
 func (role *Role) delete() error {
 
-	if reflect.TypeOf(role.ID).String() != "uint" {
+	if role.ID < 1 {
 		return e.RoleDeletionError
 	}
 

@@ -25,8 +25,8 @@ type User struct {
 	Surname 	string `json:"surname"`
 	Patronymic 	string `json:"patronymic"`
 	Password 	string `json:"-" gorm:"not null"` // json:"-"
-	//DefaultAccountID uint `json:"default_account_id" gorm:"foreignkey:AccountID;"`
-	DefaultAccountID uint `json:"default_account_id"`
+	DefaultAccountID uint `json:"default_account_id" gorm:"default:NULL;"`
+	//AccountID uint `json:"default_account_id" gorm:"foreignkey:AccountID;default:NULL;"`
 	Accounts    []Account `json:"accounts" gorm:"many2many:account_users;"`
 	AUsers 		[]AccountUser `json:"-"` // ??
 	CreatedAt *time.Time `json:"created_at;omitempty"`
@@ -195,9 +195,12 @@ func (user *User) Delete() error {
 func (user *User) CreateAccount(account *Account) error {
 
 	// проверяем, что пользователь, от имени которого происходит создание аккаунта действительно существует
-	if reflect.TypeOf(user.ID).String() != "uint" || user.ID < 1 || base.GetDB().First(&User{}, user.ID).RecordNotFound() {
+	if user.ID < 1 {
 		return errors.New("Невозможно создать аккаунт, от имени пользователя, который не существует")
 	}
+	/*if reflect.TypeOf(user.ID).String() != "uint" || user.ID < 1 || base.GetDB().First(&User{}, user.ID).RecordNotFound() {
+		return errors.New("Невозможно создать аккаунт, от имени пользователя, который не существует")
+	}*/
 
 	return account.create(user)
 }
@@ -211,6 +214,18 @@ func (user *User) Update() error {
 	}
 	return nil
 }
+
+// функция проверяет существенная ли модель
+/*func (user *User) isExists() bool {
+	if reflect.TypeOf(user.ID).String() != "uint" || user.ID < 1 || base.GetDB().First(&User{}, user.ID).RecordNotFound() {
+		return false
+	}
+	return true
+}
+// обратная к isExists функция
+func (user *User) isNotExists() bool {
+	return !user.isExists()
+}*/
 
 /// #### ниже функции надо доработать
 
