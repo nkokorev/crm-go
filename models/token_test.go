@@ -17,7 +17,7 @@ func TestCreateToken(t *testing.T) {
 			Issuer:    "AuthServer",
 		},
 	}
-	_, err := claims.CreateToken()
+	_, err := claims.CreateAESToken()
 	if err!= nil {
 		t.Error("Cant create jwt token: ", err)
 	}

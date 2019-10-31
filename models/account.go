@@ -322,7 +322,7 @@ var CreateAccountToken = func (userId, accountId uint) (cryptToken string, error
 			Issuer:    "AuthServer",
 		},
 	}
-	cryptToken, error = claims.CreateToken()
+	cryptToken, error = claims.CreateAESToken()
 	return
 }
 

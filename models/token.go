@@ -22,7 +22,9 @@ type Token struct {
 	jwt.StandardClaims
 }
 
-func (claims *Token) CreateToken() (cryptToken string, err error) {
+// создает крипто токен
+func (claims Token) CreateAESToken() (cryptToken string, err error) {
+
 	//Create JWT token
 	token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), claims)
 	tokenString, err := token.SignedString([]byte(os.Getenv("token_password")))
@@ -30,15 +32,24 @@ func (claims *Token) CreateToken() (cryptToken string, err error) {
 		return
 	}
 
-	cryptToken, err = encrypt([]byte(os.Getenv("aes_key")),tokenString) //Шифруем токен
+	// шифрует токен
+	cryptToken, err = encryptAES([]byte(os.Getenv("aes_key")),tokenString) //Шифруем токен
 	if err != nil {
 		return
 	}
 	return
 }
 
+// возвращает ассоциированного с аккаунтом пользователя
+func (token Token) GetAccountUser(aUser *AccountUser) error {
+	if err := aUser.GetAccountUser(token.UserId, token.AccountId);err != nil {
+		return err
+	}
+	return nil
+}
+
 // AES кодирование по ключу key[]
-func encrypt(key []byte, message string) (encmess string, err error) {
+func encryptAES(key []byte, message string) (encmess string, err error) {
 	plainText := []byte(message)
 
 	block, err := aes.NewCipher(key)
@@ -63,7 +74,7 @@ func encrypt(key []byte, message string) (encmess string, err error) {
 }
 
 // AES декодирование по ключу key[]
-func decrypt(key []byte, securemess string) (decodedmess string, err error) {
+func decryptAES(key []byte, securemess string) (decodedmess string, err error) {
 	cipherText, err := base64.URLEncoding.DecodeString(securemess)
 	if err != nil {
 		return
@@ -92,9 +103,9 @@ func decrypt(key []byte, securemess string) (decodedmess string, err error) {
 	return
 }
 
-// декодирует token по внутреннему ключу
-func DecryptToken(token string) (tk string, err error) {
-	tk, err = decrypt( []byte(os.Getenv("aes_key")), token)
+// декодирует token по внутреннему ключу с помощью AES
+func decryptAESToken(token string) (tk string, err error) {
+	tk, err = decryptAES( []byte(os.Getenv("aes_key")), token)
 	return
 }
 
@@ -126,7 +137,7 @@ func ParseAndDecryptToken(cryptToken string) (tk *Token, err error) {
 
 	tk = &Token{}
 
-	decryptedToken, err := DecryptToken(cryptToken);
+	decryptedToken, err := decryptAESToken(cryptToken);
 	if err != nil {
 		// логи или еще что-то, чтобы увидеть атаку
 		return

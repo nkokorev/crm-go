@@ -25,7 +25,7 @@ type User struct {
 	Surname 	string `json:"surname"`
 	Patronymic 	string `json:"patronymic"`
 	Password 	string `json:"-" gorm:"not null"` // json:"-"
-	DefaultAccountID uint `json:"default_account_id" gorm:"default:NULL;"`
+	DefaultAccountHashID string `json:"default_account_hash_id" gorm:"type:varchar(10);default:NULL;"` // указывает какой аккаунт по дефолту загружать
 	//AccountID uint `json:"default_account_id" gorm:"foreignkey:AccountID;default:NULL;"`
 	Accounts    []Account `json:"accounts" gorm:"many2many:account_users;"`
 	AUsers 		[]AccountUser `json:"-"` // ??
@@ -237,6 +237,7 @@ func AuthLogin(username, password string) (cryptToken string, error u.Error) {
 	err := base.GetDB().Where("username = ?", username).First(user).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
+			error.Message = t.Trans(t.LoginInvalidCredentials)
 			error.AddErrors("username", t.Trans(t.UserNotFound) )
 		} else {
 			error.Message = "Connection error. Please retry"
@@ -265,7 +266,7 @@ func AuthLogin(username, password string) (cryptToken string, error u.Error) {
 			Issuer:    "AuthServer",
 		},
 	}
-	cryptToken, err = claims.CreateToken()
+	cryptToken, err = claims.CreateAESToken()
 
 	return cryptToken, error
 }
