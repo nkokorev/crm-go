@@ -215,17 +215,6 @@ func (user *User) Update() error {
 	return nil
 }
 
-// функция проверяет существенная ли модель
-/*func (user *User) isExists() bool {
-	if reflect.TypeOf(user.ID).String() != "uint" || user.ID < 1 || base.GetDB().First(&User{}, user.ID).RecordNotFound() {
-		return false
-	}
-	return true
-}
-// обратная к isExists функция
-func (user *User) isNotExists() bool {
-	return !user.isExists()
-}*/
 
 /// #### ниже функции надо доработать
 

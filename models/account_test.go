@@ -226,7 +226,7 @@ func TestAccount_CreateRole(t *testing.T) {
 
 	// 2. Проверяем системную роль БЕЗ привязки к аккаунту
 	test_role_2 := Role{Name:"Test_Role_2", System: true, Tag: "test_tag_2", Description: "Test crating role for account"}
-	if err := test_role_2.create([]int{}); err != nil {
+	if err := test_role_2.create(); err != nil {
 		t.Error("неудалось создать роль: ", err.Error())
 		return
 	} else {
@@ -549,3 +549,50 @@ func TestAccount_AppendUser(t *testing.T) {
 
 }
 
+func TestAccount_CreateProduct(t *testing.T) {
+	// находим аккаунт, в котором будем создавать продукт
+	var test_account Account
+	if err := base.GetDB().Model(&Account{}).First(&test_account,1).Error; err != nil {
+		t.Error("Cant find account for testing", err)
+		return
+	}
+
+	// создаем продукт
+	test_product_1 := &Product{Name:"TestProductName"}
+	if err := test_account.CreateProduct(test_product_1); err != nil {
+		t.Error("Неудалось создать продукт в контексте аккаунта: ", err.Error())
+		return
+	} else {
+		// удаляем в конце, если продукт еще останется
+		defer func() {
+			if err := test_account.DeleteProduct(test_product_1);err != nil {
+				t.Error("Неудалось удалить продукт в контексте аккаунта: ", err.Error())
+			}
+		}()
+	}
+
+	// проверим, что продукт принадлежит нашему аккаунту
+	if test_product_1.AccountID != test_account.ID {
+		t.Errorf("Созданный продукт: не принадлежит аккаунту %v %v", test_product_1.Account.HashID, test_account.HashID)
+		return
+	}
+
+	// проверим, что у аккаунта, есть данный продукт
+	var temp_product Product
+	//temp_product := &Product{}
+	if err := temp_product.getByHashID(test_product_1.HashID); err != nil {
+		t.Error("Дурацкая ошибка: не найден продукт по hash_id: ", err.Error())
+		return
+	}
+
+	// тут все хорошо, пьем чай и можно взять печеньку. Остальной функционал проверяется в контексте продукта (там плюшки покруче)
+}
+
+func TestAccount_DeleteProduct(t *testing.T) {
+	// todo:  проверка на удаление и принадлежность к аккаунту
+
+}
+
+func TestAccount_UpdateProduct(t *testing.T) {
+	// todo: проверка на принадлежность к аккаунту
+}

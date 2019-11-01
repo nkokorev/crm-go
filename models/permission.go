@@ -85,6 +85,10 @@ func (permission *Permission) create() error {
 	if err := base.GetDB().Create(permission).Error; err != nil {
 		return err
 	}
+	// сохраняем
+	if err := base.GetDB().Save(permission).Error; err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -151,3 +151,8 @@ func ParseAndDecryptToken(cryptToken string) (tk *Token, err error) {
 	return
 
 }
+
+// записываем в БД токены, которые мы обновили и больше не действительны вместе с их сроком годности
+func (token Token) DeletedToken()  {
+	// todo
+}

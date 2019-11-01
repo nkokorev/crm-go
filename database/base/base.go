@@ -52,7 +52,7 @@ func init() {
 	if err != nil {
 		fmt.Print(err)
 	}
-	//conn.LogMode(false)
+	conn.LogMode(false)
 	db = conn
 	if err != nil {
 		fmt.Print(err)

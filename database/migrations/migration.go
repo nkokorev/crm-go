@@ -15,11 +15,11 @@ func MigrationTables(freshTables bool) {
 		db.DropTableIfExists("role_permissions")
 		db.DropTableIfExists("account_users")
 		db.DropTableIfExists("user_roles")
-		db.DropTableIfExists(&models.Shop{},&models.ApiKey{}, &models.Role{}, &models.Permission{}, &models.Role{}, &models.Store{}, &models.AccountUser{}, &models.Account{}, &models.User{})
+		db.DropTableIfExists(&models.Product{}, &models.Shop{},&models.ApiKey{}, &models.Role{}, &models.Permission{}, &models.Role{}, &models.Store{}, &models.AccountUser{}, &models.Account{}, &models.User{})
 	}
 
 	// теперь создаем таблички
-	db.Debug().AutoMigrate(&models.AccountUser{}, &models.User{}, &models.Account{}, &models.Store{}, &models.Permission{}, &models.Role{}, &models.ApiKey{}, &models.Shop{})
+	db.Debug().AutoMigrate(&models.AccountUser{}, &models.User{}, &models.Account{}, &models.Store{}, &models.Permission{}, &models.Role{}, &models.ApiKey{}, &models.Shop{},&models.Product{})
 
 	db.Table("accounts").AddForeignKey("user_id", "users(id)", "RESTRICT", "CASCADE") // за пользователем удаляются все его аккаунты
 
@@ -34,4 +34,8 @@ func MigrationTables(freshTables bool) {
 	db.Table("role_permissions").AddForeignKey("permission_id", "permissions(id)", "CASCADE", "CASCADE")
 
 	db.Table("api_keys").AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+
+	//
+
+	db.Table("products").AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }

@@ -99,12 +99,11 @@ var (
 	}
 )
 
-// Список ролей в системе. Каждая роль имеет список прав (permissions).
-// Некоторые аккаунты могут заводить собственные роли (adv accounting).
+// Entity compare
 type Role struct {
 	ID        uint `gorm:"primary_key;unique_index;" json:"-"`
 	HashID string `json:"hash_id" gorm:"type:varchar(10);unique_index;"`
-	Tag 		string `json:"tag" gorm:"size:255;unique;" ` // admin, manager, marketer...
+	Tag 		string `json:"tag" gorm:"size:255;unique;default:null" ` // admin, manager, marketer... default null ?
 	Type 		string `json:"type" gorm:"size:25;default:'gui'" ` // тип роли: gui / api / any
 	AccountID uint `json:"-"  gorm:"default:NULL"` // belong to account account owner, foreign_key <= реализация в будущем!!
 	System 		bool `json:"system" gorm:"default:false"` // дефолтная ли роль или нет
@@ -115,8 +114,14 @@ type Role struct {
 	Permissions []Permission `json:"permissions" gorm:"many2many:role_permissions;"` // одна роль имеет много прав (permissions)
 }
 
+// вспомогательная функция для получения ID
+func (r Role) getID () uint { return r.ID }
+
+func (r Role) getHashID () string { return r.HashID }
+
 // создает роль в системе. ?? не возможно создать роль без разрешений... же?
-func (role *Role) create(codes []int) (err error) {
+//func (role *Role) create(codes []int) (err error) {
+func (role *Role) create() (err error) {
 
 	// проверка на попытку создать дубль роли, которая уже была создан
 	if role.ID > 0 {
@@ -132,11 +137,11 @@ func (role *Role) create(codes []int) (err error) {
 	}
 
 	// если переданы коды разрешений, то назначаем их новой роли
-	if len(codes) > 0 {
+	/*if len(codes) > 0 {
 		if err = role.SetPermissions(codes);err != nil {
 			return err
 		}
-	}
+	}*/
 
 	if err = base.GetDB().Save(role).Error; err != nil {
 		return err
@@ -163,6 +168,23 @@ func (role *Role) delete() error {
 	}
 	return nil
 }
+
+// обновляет данные продукта с защитой служебных полей
+func (role *Role) update() error {
+
+	// указываем какие поля обновлять не надо
+	if err := base.GetDB().Model(role).Omit("id", "hash_id", "tag", "account_id", "system").Updates(role).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// вспомогательная функция для получения ID
+func (r Role) getAccountID () (id uint) { return r.AccountID }
+
+// вспомогательная функция для получения ID
+func (r *Role) setAccountID (id uint) { r.AccountID = id }
 
 // устанавливает для роли ТОЛЬКО переданные разрешения, остальные разрешения удаляются
 func (role *Role) SetPermissions(codes []int) error {
@@ -257,6 +279,14 @@ func (role *Role) FindRoleByTag(tag string) error {
 	return nil
 }
 
+// вспомогательная функция поиска роли по тегу
+func (role *Role) getByHashID(hash_id string) error {
+	if err := base.GetDB().First(&role, "hash_id = ?", hash_id).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 // связывает роли и разрешения: []Permissions
 func (role *Role) AppendPermissionsOLD(permissions []Permission) error {
 
@@ -297,40 +327,67 @@ func RoleSeeding()  {
 		//permI := []int{}
 		switch v.Tag {
 		case "owner":
-			if err :=  v.create(permissionsOwner);err != nil {
-				fmt.Println("Неудалось установить парава для роли owner", err.Error())
+			if err :=  v.create();err != nil {
+				fmt.Println("Неудалось создать системную роль", err.Error())
+			}
+			if err := v.SetPermissions(permissionsOwner); err != nil {
+				fmt.Println("Неудалось установить парава", err.Error())
 			}
 		case "admin":
-			if err :=  v.create(permissionsAdmin);err != nil {
-				fmt.Println("Неудалось установить парава для роли admin", err.Error())
+			if err :=  v.create();err != nil {
+				fmt.Println("Неудалось создать системную роль", err.Error())
+			}
+			if err := v.SetPermissions(permissionsAdmin); err != nil {
+				fmt.Println("Неудалось установить парава", err.Error())
 			}
 		case "manager":
-			if err :=  v.create(permissionsManager);err != nil {
-				fmt.Println("Неудалось установить парава для роли manager", err.Error())
+			if err :=  v.create();err != nil {
+				fmt.Println("Неудалось создать системную роль", err.Error())
+			}
+			if err := v.SetPermissions(permissionsManager); err != nil {
+				fmt.Println("Неудалось установить парава", err.Error())
 			}
 		case "marketer":
-			if err :=  v.create(permissionsMarketer);err != nil {
-				fmt.Println("Неудалось установить парава для роли marketer", err.Error())
+			if err :=  v.create();err != nil {
+				fmt.Println("Неудалось создать системную роль", err.Error())
+			}
+			if err := v.SetPermissions(permissionsMarketer); err != nil {
+				fmt.Println("Неудалось установить парава", err.Error())
 			}
 		case "author":
-			if err :=  v.create(permissionsAuthor);err != nil {
-				fmt.Println("Неудалось установить парава для роли author", err.Error())
+			if err :=  v.create();err != nil {
+				fmt.Println("Неудалось создать системную роль", err.Error())
+			}
+			if err := v.SetPermissions(permissionsAuthor); err != nil {
+				fmt.Println("Неудалось установить парава", err.Error())
 			}
 		case "viewer":
-			if err :=  v.create(permissionsViewer);err != nil {
-				fmt.Println("Неудалось установить парава для роли viewer", err.Error())
+			if err :=  v.create();err != nil {
+				fmt.Println("Неудалось создать системную роль", err.Error())
+			}
+			if err := v.SetPermissions(permissionsViewer); err != nil {
+				fmt.Println("Неудалось установить парава", err.Error())
 			}
 		case "full-access":
-			if err :=  v.create(permissionsFullAccess);err != nil {
-				fmt.Println("Неудалось установить парава для роли full-access", err.Error())
+			if err :=  v.create();err != nil {
+				fmt.Println("Неудалось создать системную роль", err.Error())
+			}
+			if err := v.SetPermissions(permissionsFullAccess); err != nil {
+				fmt.Println("Неудалось установить парава", err.Error())
 			}
 		case "site-access":
-			if err :=  v.create(permissionsSiteAccess);err != nil {
-				fmt.Println("Неудалось установить парава для роли site-access", err.Error())
+			if err :=  v.create();err != nil {
+				fmt.Println("Неудалось создать системную роль", err.Error())
+			}
+			if err := v.SetPermissions(permissionsSiteAccess); err != nil {
+				fmt.Println("Неудалось установить парава", err.Error())
 			}
 		case "read-access":
-			if err :=  v.create(permissionsReadAccess);err != nil {
-				fmt.Println("Неудалось установить парава для роли read-access", err.Error())
+			if err :=  v.create();err != nil {
+				fmt.Println("Неудалось создать системную роль", err.Error())
+			}
+			if err := v.SetPermissions(permissionsReadAccess); err != nil {
+				fmt.Println("Неудалось установить парава", err.Error())
 			}
 		}
 	}

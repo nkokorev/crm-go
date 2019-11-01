@@ -31,6 +31,9 @@ type Account struct {
 	DeletedAt *time.Time `sql:"index" json:"-"`
 }
 
+// хелпер функция для Entity
+func (a Account) getID () (id uint) { return a.ID }
+
 // Создает новый аккаунт от имени пользователя, добавляя его в список пользователей аккаунта и назначая роль owner.
 func (account *Account) create(owner *User) (err error) {
 
@@ -210,7 +213,14 @@ func (account *Account) CreateRole(role *Role, codes []int) error {
 	// указываем, что роль НЕ системная
 	role.System = false
 
-	return role.create(codes)
+	//if err := role.create(codes); err != nil {return  err}
+	// создаем голую роль
+	if err := role.create(); err != nil {return  err}
+
+	// назначаем коды разрешений
+	if err := role.SetPermissions(codes); err != nil {return  err}
+
+	return nil
 }
 
 // удаляет роль, проверяя ее на системность и права владения аккаунтом
@@ -294,17 +304,67 @@ func (account *Account) DeleteApiKey(key *ApiKey) error {
 	return nil
 }
 
-// функция проверяет существенная ли модель
-/*func (account *Account) isExists() bool {
-	if reflect.TypeOf(account.ID).String() != "uint" || account.ID < 1 || base.GetDB().First(&Account{}, account.ID).RecordNotFound() {
-		return false
-	}
-	return true
+// ### Служебные функции ### ///
+
+func (a *Account) GetByID(id uint) error {
+	if err := base.GetDB().First(&a, id).Error;err!=nil {return err}
+	return nil
 }
-// обратная к isExists функция
-func (account *Account) isNotExists() bool {
-	return !account.isExists()
-}*/
+func (a Account) GetByHashID(hash_id uint) error {
+	if err := base.GetDB().First(&a,"hash_id = ?", hash_id).Error;err!=nil {return err}
+	return nil
+}
+
+// ### Many Entity Models  ###
+// Использование функций аккаунта защищает вас от непредумшыленного обхода проверок, вроде проверки тарифного плана.
+
+
+// Создает продукт в контексте аккаунта. Заполняет сопутствующие данные.
+func (account Account) CreateProduct(product *Product) error {
+
+	// присваиваем аккаунт нашему продукту
+	product.AccountID = account.ID
+
+	if err := product.create();err != nil {
+		return err
+	}
+	return nil
+}
+
+// Удаляет продукт в контексте аккаунта
+func (account Account) DeleteProduct(product *Product) error {
+
+	// проверяем, привязан ли к аккаунт текущий продукт
+	if product.AccountID != account.ID {
+		return errors.New("This product not from this account!")
+	}
+
+	// удаляем продукт
+	if err := product.delete();err != nil {
+		return err
+	}
+	return nil
+}
+
+// Обновляет даннные продукта в контексте акканта и проводит необходимые проверки
+func (account Account) UpdateProduct(product *Product) error {
+
+	// проверяем, привязан ли к аккаунт текущий продукт
+	if product.AccountID != account.ID {
+		return errors.New("This product not from this account!")
+	}
+
+	// обновляем продукт
+	if err := product.update();err != nil {
+		return err
+	}
+	return nil
+}
+
+
+
+
+
 
 // ######### ниже не проверенные фукнции ###########
 // Создает голую роль в аккаунте с разрешениями (Permission / []Permissions)
