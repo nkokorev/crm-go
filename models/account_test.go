@@ -580,7 +580,7 @@ func TestAccount_CreateProduct(t *testing.T) {
 	// проверим, что у аккаунта, есть данный продукт
 	var temp_product Product
 	//temp_product := &Product{}
-	if err := temp_product.getByHashID(test_product_1.HashID); err != nil {
+	if err := temp_product.get(test_product_1.HashID); err != nil {
 		t.Error("Дурацкая ошибка: не найден продукт по hash_id: ", err.Error())
 		return
 	}

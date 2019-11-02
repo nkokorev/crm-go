@@ -11,7 +11,7 @@ import (
 
 type ApiKey struct {
 	ID			uint `json:"-" gorm:"primary_key;unique_index;"`
-	Token 		string `json:"hash_id" gorm:"unique_index;varchar(32)"` // сам ключ доступа длиной в 32 символа
+	Token 		string `json:"token" gorm:"unique_index;varchar(32)"` // сам ключ доступа длиной в 32 символа
 	AccountID 	uint `json:"-" gorm:"index;"` // Owner token, foreignKey !
 	Name 		string `json:"name" gorm:"size:255"` // Назначение: 'Токен для сайта', 'Для тестовых подключений'
 	Status 		bool `json:"status" gorm:"default:true"` // статус ключа (активирован ли)
@@ -22,6 +22,9 @@ type ApiKey struct {
 	CreatedAt 	time.Time `json:"created_at"`
 	UpdatedAt 	time.Time `json:"updated_at"`
 }
+
+// вспомогательная функция для получения ID
+func (k ApiKey) getID () uint { return k.ID }
 
 // создает apiKey с токеном доступа
 func (key *ApiKey) create() error {
@@ -61,6 +64,17 @@ func (key *ApiKey) delete() error {
 	}
 
 	// возможно тут нужно обнулять данные модели..
+	return nil
+}
+
+// обновляет данные ключа с защитой служебных полей
+func (key *ApiKey) update() (err error) {
+
+	// указываем какие поля обновлять не надо
+	if err := base.GetDB().Model(&key).Omit("id", "hash_id", "account_id").Updates(key).Error; err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -158,5 +172,20 @@ func (key *ApiKey) createToken() error {
 
 	key.Token = token
 
+	return nil
+}
+
+// вспомогательная функция для получения ID
+func (k ApiKey) getAccountID () (id uint) { return k.AccountID }
+
+// вспомогательная функция для получения ID
+func (k *ApiKey) setAccountID (id uint) { k.AccountID = id }
+
+// ищет продукт по hashID. Возвращает ошибку, если продукт не найден или еще что-то пошло не так
+func (k *ApiKey) get(token string) error {
+
+	if err := base.GetDB().First(k,"token = ?", token).Error;err != nil {
+		return err
+	}
 	return nil
 }

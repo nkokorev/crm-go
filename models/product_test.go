@@ -153,7 +153,7 @@ func TestProduct_Update(t *testing.T) {
 
 	// проверяем изменения
 	test_product_2 := Product{}
-	if err:= test_product_2.getByHashID(hash_id);err != nil {
+	if err:= test_product_2.get(hash_id);err != nil {
 		t.Error("Неудалось найти нужный продукт по хешу")
 	}
 

@@ -25,8 +25,6 @@ type Product struct {
 // вспомогательная функция для получения ID
 func (p Product) getID () uint { return p.ID }
 
-func (p Product) getHashID () string { return p.HashID }
-
 // создает продукт, устанавливая хеш ID
 func (product *Product) create() (err error) {
 
@@ -77,7 +75,7 @@ func (product *Product) update() (err error) {
 }
 
 // ищет продукт по hashID. Возвращает ошибку, если продукт не найден или еще что-то пошло не так
-func (product *Product) getByHashID(hash_id string) error {
+func (product *Product) get(hash_id string) error {
 
 	if err := base.GetDB().First(product,"hash_id = ?", hash_id).Error;err != nil {
 		return err
@@ -97,6 +95,7 @@ func (p *Product) setAccountID (id uint) { p.AccountID = id }
 
 func init() {
 
+	// это для GUI-сервера
 	return
 	if os.Getenv("ENV_VAR") == "test" {
 		return

@@ -15,12 +15,12 @@ type Entity interface {
 
 	getID() uint
 	getAccountID() uint
-	getHashID() string
+	//getHashID() string
 	setAccountID(uint)
 
 	// CRUD model
 	create() error
-	getByHashID (string) error // read ;)
+	get (string) error // read ;)
 	delete() error
 	update() error
 
@@ -45,7 +45,7 @@ func (a Account) DeleteEntity(v Entity) error {
 // ищет по hash_id принадлежающую аккаунту модель связанную с аккаунтом или ошибку, если модель не найдена или не принадлежит этому аккаунту
 func (a Account) GetEntity (hash string, v Entity) error {
 	// получаем саму модель встроенным в модель методом
-	if err := v.getByHashID(hash); err != nil {return err}
+	if err := v.get(hash); err != nil {return err}
 
 	// проверяем принадлежность к аккаунту
 	if ! a.isBelong(v) { return errors.New("This entity not belong current account") }
@@ -55,7 +55,7 @@ func (a Account) GetEntity (hash string, v Entity) error {
 
 // проверяет наличие модели и принадлежность к аккаунту
 func (a Account) HasEntity (hash string, v Entity) bool {
-	if v.getByHashID(hash) != nil { return true }
+	if v.get(hash) != nil { return true }
 	return false
 }
 

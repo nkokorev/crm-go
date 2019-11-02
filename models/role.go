@@ -117,8 +117,6 @@ type Role struct {
 // вспомогательная функция для получения ID
 func (r Role) getID () uint { return r.ID }
 
-func (r Role) getHashID () string { return r.HashID }
-
 // создает роль в системе. ?? не возможно создать роль без разрешений... же?
 //func (role *Role) create(codes []int) (err error) {
 func (role *Role) create() (err error) {
@@ -280,7 +278,7 @@ func (role *Role) FindRoleByTag(tag string) error {
 }
 
 // вспомогательная функция поиска роли по тегу
-func (role *Role) getByHashID(hash_id string) error {
+func (role *Role) get(hash_id string) error {
 	if err := base.GetDB().First(&role, "hash_id = ?", hash_id).Error; err != nil {
 		return err
 	}

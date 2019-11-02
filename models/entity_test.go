@@ -7,7 +7,8 @@ import (
 // test create and delete entity models
 func TestAccount_CreateAndDeleteEntity(t *testing.T) {
 	// для теста новых моделей нужно ее добавить сюда.
-	var es = []Entity{&Product{Name:"TestProduct"}, &Role {Name:"TestRole", Description:"This is new role! (test)"}}
+	var es = []Entity{&Product{Name:"TestProduct"}, &Role {Name:"TestRole", Description:"This is new role! (test)"}, &ApiKey {Name:"for site"}}
+	//var es = []Entity{&Product{Name:"TestProduct"}, &Role {Name:"TestRole", Description:"This is new role! (test)"}}
 	var test_account Account
 
 	// Найдем аккаунт для тестов
