@@ -11,29 +11,19 @@
 5. Валидация входящих данных в контексте пользователя.
 
 # Account
-Аккаунт создается в контексте пользователя. Владелец аккаунта добавляется в список пользователей аккаунта с ролью owner (неизменяема).
-
+Аккаунт создается в контексте пользователя. Владелец аккаунта добавляется в аккаунт с ролью owner (неизменяема).
 
 Доступ к CRUD функциям связанных моделей через методы:
 ```golang
-func (Account) CreateEntity(v Entity) error
-func (Account) GetEntity (hash string, v Entity) error
-func (Account) UpdateEntity (v Entity) error
-func (Account) DeleteEntity(v Entity) error
+func (Account) CreateEntity(v Entity) error {}
+func (Account) GetEntity (hash string, v Entity) error {}
+func (Account) UpdateEntity (v Entity) error {}
+func (Account) DeleteEntity(v Entity) error {}
 ```
+
+Специфичные методы для каждой сущности вызываются уже в контексте медели.
 
 **Микроконтроллеры должны использовать функции в контексте аккаунта** - это защитит от непреднамеренного удаления системный данных. Такие функции автоматически выполняют необходимые проверки и занимаются привязкой данных к аккаунту.
-
-Пример:
-```golang
-// плохо:
-my_role.ID = account.ID
-err := my_role.create()
-
-// хорошо:
-err := account.CreateRole(&my_role)
-```
-Большая часть функций типа {Model}.{Action} имеют только локальную область видимости. Для их использования обращайтесь к функциям аккаунта типа (acc *Account) {Action}{Model} (*Model), прим.: (*Account) CreateRole(*Role)
 
 
 # Role
