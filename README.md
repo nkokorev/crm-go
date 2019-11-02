@@ -15,10 +15,16 @@
 
 Доступ к CRUD функциям связанных моделей через методы:
 ```golang
+// account_id добавляется автоматически
 func (Account) CreateEntity(v Entity) error {}
+
+// Удаление по внутреннему индетификатору, обычно это id.
+func (Account) DeleteEntity(v Entity) error {}
+
+// Методы Update & Get используют в качестве первичного ключа hash_id или его аналог (token у ApiKey)
 func (Account) GetEntity (hash string, v Entity) error {}
 func (Account) UpdateEntity (v Entity) error {}
-func (Account) DeleteEntity(v Entity) error {}
+
 ```
 
 Специфичные методы для каждой сущности вызываются уже в контексте медели.
