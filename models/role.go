@@ -99,7 +99,7 @@ var (
 	}
 )
 
-// Entity compare
+// Support Account Entity
 type Role struct {
 	ID        uint `gorm:"primary_key;unique_index;" json:"-"`
 	HashID string `json:"hash_id" gorm:"type:varchar(10);unique_index;"`

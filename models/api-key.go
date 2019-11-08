@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// Support Account Entity
 type ApiKey struct {
 	ID			uint `json:"-" gorm:"primary_key;unique_index;"`
 	Token 		string `json:"token" gorm:"unique_index;varchar(32)"` // сам ключ доступа длиной в 32 символа
