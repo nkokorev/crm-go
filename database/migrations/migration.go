@@ -34,6 +34,7 @@ func MigrationTables(freshTables bool) {
 	db.Table("role_permissions").AddForeignKey("permission_id", "permissions(id)", "CASCADE", "CASCADE")
 
 	db.Table("api_keys").AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Table("api_keys").AddForeignKey("role_id", "roles(id)", "RESTRICT", "CASCADE") // нельзя удалить роль, если к ней привязан хотя бы 1 ключ
 
 	//
 

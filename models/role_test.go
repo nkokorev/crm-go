@@ -90,7 +90,7 @@ func TestRole_Delete(t *testing.T) {
 
 	// находим нашего тестового пользователя в представлении AUser
 	test_aUser := AccountUser{}
-	if err := test_aUser.GetAccountUser(test_user_2.ID, test_account.ID); err != nil {
+	if err := test_aUser.GetByUserAccountID(test_user_2.ID, test_account.ID); err != nil {
 		t.Error("Неудалось найти aUser: ", test_aUser)
 	}
 

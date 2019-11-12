@@ -18,7 +18,7 @@ type AccountUser struct {
 
 // Вспомогательная функция получения пользователя ассоциированного с пользователем
 // todo: надо бы переименовать эту функцию
-func (aUser *AccountUser) GetAccountUser(user_id, account_id uint) error {
+func (aUser *AccountUser) GetByUserAccountID(user_id, account_id uint) error {
 
 	if err := base.GetDB().First(aUser,"user_id = ? AND account_id = ?", user_id, account_id).Error; err != nil {
 		return err

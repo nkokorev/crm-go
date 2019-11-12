@@ -182,7 +182,7 @@ func (account *Account) AppendUser(user *User) (aUser AccountUser, err error) {
 	}
 
 	// найдем нового пользователя aUser
-	if err = aUser.GetAccountUser(user.ID, account.ID); err != nil {
+	if err = aUser.GetByUserAccountID(user.ID, account.ID); err != nil {
 		//return nil, err
 		return
 	}
@@ -261,6 +261,7 @@ func (account *Account) DeleteAllRoles() error {
 	return nil
 }
 
+// todo функции ниже - устарели, т.к. работаем через Entity
 // создает API ключ и привязывает его к аккаунту
 func (account *Account) CreateApiKey(key *ApiKey, role *Role) error {
 
@@ -373,7 +374,8 @@ func (account Account) UpdateProduct(product *Product) error {
 // создает новый токен
 var CreateAccountToken = func (userId, accountId uint) (cryptToken string, error error) {
 
-	expiresAt := time.Now().Add(time.Minute * 45).Unix()
+	//expiresAt := time.Now().Add(time.Minute * 45).Unix()
+	expiresAt := time.Now().Add(time.Minute * 445).Unix()
 	claims := Token{
 		userId,
 		accountId,

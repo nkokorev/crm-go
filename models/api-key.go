@@ -13,13 +13,14 @@ import (
 type ApiKey struct {
 	ID			uint `json:"-" gorm:"primary_key;unique_index;"`
 	Token 		string `json:"token" gorm:"unique_index;varchar(32)"` // сам ключ доступа длиной в 32 символа
+	//Account		Role `json:"-" gorm:"foreignkey:AccountID;default:NULL"`
 	AccountID 	uint `json:"-" gorm:"index;"` // Owner token, foreignKey !
 	Name 		string `json:"name" gorm:"size:255"` // Назначение: 'Токен для сайта', 'Для тестовых подключений'
 	Status 		bool `json:"status" gorm:"default:true"` // статус ключа (активирован ли)
 
 	// todo: надо доработать, чтобы модель подгружала сразу нужные данные с ролями и владельцами
 	Role		Role `gorm:"foreignkey:RoleID;default:NULL"`
-	RoleID   	uint `json:"role_id"` // роль определяет уровнь доступа токена
+	RoleID   	uint `json:"role_id" gorm:"default:NULL"` // роль определяет уровнь доступа токена
 	CreatedAt 	time.Time `json:"created_at"`
 	UpdatedAt 	time.Time `json:"updated_at"`
 }
@@ -123,6 +124,9 @@ func (key *ApiKey) CheckPermission(permission_code uint) bool {
 
 // ниже вспомогательные функции простановки системных ролей api-ключам
 func (key *ApiKey) SetRoleFullAccess() error {
+
+	// 0. todo: Если ключ еще не создан, эта конструкция работает, но ее можно упростить
+
 	// 1. Ищем необходимую роль
 	role := Role{}
 	if err := role.FindRoleByTag("full-access");err != nil {
@@ -182,10 +186,18 @@ func (k ApiKey) getAccountID () (id uint) { return k.AccountID }
 // вспомогательная функция для получения ID
 func (k *ApiKey) setAccountID (id uint) { k.AccountID = id }
 
-// ищет продукт по hashID. Возвращает ошибку, если продукт не найден или еще что-то пошло не так
+// ищет продукт по hashID. Возвращает ошибку, если ключ не найден или еще что-то пошло не так
 func (k *ApiKey) get(token string) error {
 
 	if err := base.GetDB().First(k,"token = ?", token).Error;err != nil {
+		return err
+	}
+	return nil
+}
+
+func (key *ApiKey) Get(token string) error {
+
+	if err := base.GetDB().First(key,"token = ?", token).Error;err != nil {
 		return err
 	}
 	return nil

@@ -235,6 +235,7 @@ func AuthLogin(username, password string) (cryptToken string, error u.Error) {
 	}
 
 	// если пользователь не найден temp.Username == nil, то пароль не будет искаться, т.к. он будет равен нулю (не с чем сравнивать)
+	// этот код выполняет за +70ms, чтобы нельзя было подобрать паоль
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword { //Password does not match!
 		error.AddErrors("password", t.Trans(t.UserPasswordIncorrect) )
@@ -255,7 +256,12 @@ func AuthLogin(username, password string) (cryptToken string, error u.Error) {
 			Issuer:    "AuthServer",
 		},
 	}
+
 	cryptToken, err = claims.CreateAESToken()
+	if err != nil {
+		error.Message = t.Trans(t.LoginInvalidCredentials)
+		return "", error
+	}
 
 	return cryptToken, error
 }
@@ -274,16 +280,15 @@ func GetUserProfile(u uint) *User {
 	return user
 }
 
-func GetUser(u uint) *User {
-	user := &User{}
-	base.GetDB().First(&user, u)
-	return user
+//func GetUser(u uint) *User {
+func (user *User) GetByID(u uint) error {
+	err := base.GetDB().First(&user, u).Error
+	return err
 }
 
-func GetUsersAccount(u uint) (accounts []Account) {
-	user := GetUser(u)
-	base.GetDB().Model(&user).Related(&accounts,  "Accounts")
-	return
+func (user *User) GetUsersAccount() (accounts []Account, err error) {
+	err = base.GetDB().Model(&user).Related(&accounts,  "Accounts").Error
+	return accounts, err
 }
 
 // add User To Account

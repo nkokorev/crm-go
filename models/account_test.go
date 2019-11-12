@@ -93,7 +93,7 @@ func TestAccount_Create(t *testing.T) {
 		t.Skip("Не найдена роль OWNER")
 	} else {
 		aUser := AccountUser{}
-		if err := aUser.GetAccountUser(test_user_owner.ID, test_account_1.ID); err != nil {
+		if err := aUser.GetByUserAccountID(test_user_owner.ID, test_account_1.ID); err != nil {
 			t.Error(err.Error())
 		}
 		// собственно сама проверка роли владельца аккаунта

@@ -81,7 +81,7 @@ func TestAccount_GetEntity(t *testing.T) {
 	}
 
 	// попробуем найти тестовый продукт по хешу
-	if err := test_account.GetEntity(test_product.HashID, &temp_product); err != nil {
+	if err := test_account.GetEntity(&temp_product, test_product.HashID); err != nil {
 		t.Error("Неудалось получить модель из аккаунта: ", err.Error())
 		return
 	}
@@ -107,7 +107,7 @@ func TestAccount_GetEntity(t *testing.T) {
 	}
 
 	// пробуем найти тестовую роль по хешу
-	if err := test_account.GetEntity(test_role.HashID, &temp_role); err != nil {
+	if err := test_account.GetEntity(&temp_role, test_role.HashID); err != nil {
 		t.Error("Неудалось получить модель из аккаунта: ", err.Error())
 		return
 	}

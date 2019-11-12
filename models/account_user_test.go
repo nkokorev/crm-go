@@ -46,7 +46,7 @@ func TestAccountUser_GetAccountUser(t *testing.T) {
 	}
 
 	test_acc_user_1 := AccountUser{}
-	err = test_acc_user_1.GetAccountUser(test_user_owner.ID, test_account_1.ID)
+	err = test_acc_user_1.GetByUserAccountID(test_user_owner.ID, test_account_1.ID)
 	if err != nil {
 		t.Error("неудалось найти ассоциированного пользователя", err.Error())
 	}
@@ -98,7 +98,7 @@ func TestAccountUser_SetNewRole(t *testing.T) {
 	}
 
 	test_owner_account_user := AccountUser{}
-	if err := test_owner_account_user.GetAccountUser(test_owner_user.ID, test_account.ID); err != nil {
+	if err := test_owner_account_user.GetByUserAccountID(test_owner_user.ID, test_account.ID); err != nil {
 		t.Error("неудалось найти ассоциированного пользователя", err.Error())
 	}
 
@@ -141,7 +141,7 @@ func TestAccountUser_SetNewRole(t *testing.T) {
 		t.Error("Невышло добавить пользователя в аккаунт", test_account, test_user_2)
 	}
 
-	if err := test_account_user.GetAccountUser(test_user_2.ID, test_account.ID); err != nil {
+	if err := test_account_user.GetByUserAccountID(test_user_2.ID, test_account.ID); err != nil {
 		t.Error("Неудалось найти ассоциированного пользователя")
 	}
 	if err := test_account_user.SetRole(&test_role_1); err != nil {
@@ -234,7 +234,7 @@ func TestAccountUser_CheckPermission(t *testing.T) {
 
 	// получаем aUserOwner
 	test_aUserOwner := AccountUser{}
-	if err := test_aUserOwner.GetAccountUser(test_owner_user.ID, test_account.ID); err != nil {
+	if err := test_aUserOwner.GetByUserAccountID(test_owner_user.ID, test_account.ID); err != nil {
 		t.Error("Не вышло найти test_aUserOwner")
 		return
 	}

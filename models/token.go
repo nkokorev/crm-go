@@ -42,7 +42,7 @@ func (claims Token) CreateAESToken() (cryptToken string, err error) {
 
 // возвращает ассоциированного с аккаунтом пользователя
 func (token Token) GetAccountUser(aUser *AccountUser) error {
-	if err := aUser.GetAccountUser(token.UserId, token.AccountId);err != nil {
+	if err := aUser.GetByUserAccountID(token.UserId, token.AccountId);err != nil {
 		return err
 	}
 	return nil
