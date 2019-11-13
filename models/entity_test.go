@@ -69,7 +69,7 @@ func TestAccount_GetEntity(t *testing.T) {
 
 	// создадим тестовый продукт
 	test_product.Name = "Test account"
-	if err := test_account.CreateProduct(&test_product);err != nil {
+	if err := test_account.CreateEntity(&test_product);err != nil {
 		t.Error("Неудалось создать продукт в аккаунте: ", test_product, err)
 		return
 	} else {

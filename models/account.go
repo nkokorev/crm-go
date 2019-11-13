@@ -262,48 +262,6 @@ func (account *Account) DeleteAllRoles() error {
 }
 
 // todo функции ниже - устарели, т.к. работаем через Entity
-// создает API ключ и привязывает его к аккаунту
-func (account *Account) CreateApiKey(key *ApiKey, role *Role) error {
-
-	// проверяем, что контекст действителен
-	if reflect.TypeOf(account.ID).String() != "uint" {
-		return errors.New("Can't create new api-key: account ID not specified")
-	}
-
-	// привязывает ключ к аккаунту
-	key.AccountID = account.ID
-
-	// назначаем роль
-	key.RoleID = role.ID
-
-	// создаем api-key
-	if err := key.create(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Удаляет API ключ, принадлежащий аккаунту
-func (account *Account) DeleteApiKey(key *ApiKey) error {
-
-	// проверяем, что контекст действителен
-	if reflect.TypeOf(account.ID).String() != "uint" {
-		return errors.New("Can't create new api-key: account ID not specified")
-	}
-
-	// проверяем, что ключ принадлежит этому аккаунту
-	if key.AccountID != account.ID {
-		return errors.New("Невозможно удалить api-key, т.к. он не принадлежит текущему аккаунту")
-	}
-
-	// удаляем api-key
-	if err := key.delete(); err != nil {
-		return err
-	}
-
-	return nil
-}
 
 // ### Служебные функции ### ///
 
@@ -319,56 +277,6 @@ func (a Account) GetByHashID(hash_id uint) error {
 // ### Many Entity Models  ###
 // Использование функций аккаунта защищает вас от непредумшыленного обхода проверок, вроде проверки тарифного плана.
 
-
-// Создает продукт в контексте аккаунта. Заполняет сопутствующие данные.
-func (account Account) CreateProduct(product *Product) error {
-
-	// присваиваем аккаунт нашему продукту
-	product.AccountID = account.ID
-
-	if err := product.create();err != nil {
-		return err
-	}
-	return nil
-}
-
-// Удаляет продукт в контексте аккаунта
-func (account Account) DeleteProduct(product *Product) error {
-
-	// проверяем, привязан ли к аккаунт текущий продукт
-	if product.AccountID != account.ID {
-		return errors.New("This product not from this account!")
-	}
-
-	// удаляем продукт
-	if err := product.delete();err != nil {
-		return err
-	}
-	return nil
-}
-
-// Обновляет даннные продукта в контексте акканта и проводит необходимые проверки
-func (account Account) UpdateProduct(product *Product) error {
-
-	// проверяем, привязан ли к аккаунт текущий продукт
-	if product.AccountID != account.ID {
-		return errors.New("This product not from this account!")
-	}
-
-	// обновляем продукт
-	if err := product.update();err != nil {
-		return err
-	}
-	return nil
-}
-
-
-
-
-
-
-// ######### ниже не проверенные фукнции ###########
-// Создает голую роль в аккаунте с разрешениями (Permission / []Permissions)
 
 
 // создает новый токен

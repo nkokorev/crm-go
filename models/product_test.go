@@ -75,7 +75,7 @@ func TestProduct_Create(t *testing.T){
 			t.Errorf("Неудалось удалить тестовый продукт: %v %v", test_product_2.HashID, err.Error())
 		}
 	}
-	if err := account.CreateProduct(&test_product_2); err != nil {
+	if err := account.CreateEntity(&test_product_2); err != nil {
 		t.Errorf("Неудалось создать тестовый продукт: %v", test_product_2.HashID)
 	} else {
 		if err := test_product_2.delete();err!=nil {

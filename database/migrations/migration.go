@@ -11,11 +11,12 @@ func MigrationTables(freshTables bool) {
 
 	// ломать не строить (последовательность важна)
 	if freshTables {
+
 		db.DropTableIfExists("account_user_roles")
 		db.DropTableIfExists("role_permissions")
 		db.DropTableIfExists("account_users")
 		db.DropTableIfExists("user_roles")
-		db.DropTableIfExists(&models.Product{}, &models.Shop{},&models.ApiKey{}, &models.Role{}, &models.Permission{}, &models.Role{}, &models.Store{}, &models.AccountUser{}, &models.Account{}, &models.User{})
+		db.DropTableIfExists(&models.Product{}, &models.Shop{},&models.ApiKey{}, &models.Role{}, &models.Permission{}, &models.Role{}, &models.Store{}, &models.AccountUser{}, &models.Account{}, &models.User{}, )
 	}
 
 	// теперь создаем таблички

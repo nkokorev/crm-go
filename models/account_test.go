@@ -559,13 +559,13 @@ func TestAccount_CreateProduct(t *testing.T) {
 
 	// создаем продукт
 	test_product_1 := &Product{Name:"TestProductName"}
-	if err := test_account.CreateProduct(test_product_1); err != nil {
+	if err := test_account.CreateEntity(test_product_1); err != nil {
 		t.Error("Неудалось создать продукт в контексте аккаунта: ", err.Error())
 		return
 	} else {
 		// удаляем в конце, если продукт еще останется
 		defer func() {
-			if err := test_account.DeleteProduct(test_product_1);err != nil {
+			if err := test_account.DeleteEntity(test_product_1);err != nil {
 				t.Error("Неудалось удалить продукт в контексте аккаунта: ", err.Error())
 			}
 		}()

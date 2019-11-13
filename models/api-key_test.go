@@ -64,8 +64,13 @@ func TestApiKey_Create(t *testing.T) {
 
 	// 1. Пробуем создать apiKey
 	test_api_key_1 := ApiKey{Name: "TestApiKey_1"}
-	if err := test_account.CreateApiKey(&test_api_key_1, &test_role_full_access);err != nil {
+	//if err := test_account.CreateApiKey(&test_api_key_1, &test_role_full_access);err != nil {
+	if err := test_account.CreateEntity(&test_api_key_1);err != nil {
 		t.Error("Неудалось создать API Key для тестового аккаунта", err.Error())
+	}
+	if err := test_api_key_1.SetRoleFullAccess(); err != nil {
+		t.Error("Неудалось назначть роли")
+		return
 	}
 
 	// убеждаемся, что новый api-ключ создан
@@ -134,7 +139,7 @@ func TestApiKey_Delete(t *testing.T) {
 
 	// 1. Пробуем создать apiKey
 	test_api_key_1 := ApiKey{Name: "TestApiKey_1"}
-	if err := test_account.CreateApiKey(&test_api_key_1, &test_role_full_access);err != nil {
+	if err := test_account.CreateEntity(&test_api_key_1);err != nil {
 		t.Error("Неудалось создать API Key для тестового аккаунта", err.Error())
 	}
 
@@ -145,7 +150,7 @@ func TestApiKey_Delete(t *testing.T) {
 
 	// 2. Проверяем удаление ключа
 	token := test_api_key_1.Token // запоминаем токен
-	if err := test_account.DeleteApiKey(&test_api_key_1); err !=nil {
+	if err := test_account.DeleteEntity(&test_api_key_1); err !=nil {
 		t.Error("Неудалось удалить аккаунт", err.Error())
 	}
 	// убеждаемся, что ключ удален
@@ -200,7 +205,7 @@ func TestApiKey_SetRole(t *testing.T) {
 		t.Error("неудалось создать роль: ", err.Error())
 	} else {
 		defer func() {
-			if err := test_account.DeleteRole(&test_role_1); err != nil {
+			if err := test_account.DeleteEntity(&test_role_1); err != nil {
 				t.Error("неудалось удалить роль: ", err.Error())
 			}
 		}()
@@ -208,9 +213,21 @@ func TestApiKey_SetRole(t *testing.T) {
 
 	// 1. Пробуем создать apiKey с системной ролью
 	test_api_key_1 := ApiKey{Name: "TestApiKey_1"}
-	if err := test_account.CreateApiKey(&test_api_key_1, &test_role_full_access);err != nil {
+	//if err := test_account.CreateApiKey(&test_api_key_1, &test_role_full_access);err != nil {
+	if err := test_account.CreateEntity(&test_api_key_1);err != nil {
 		t.Error("Неудалось создать API Key для тестового аккаунта", err.Error())
+	} else {
+		defer func() {
+			if err := test_account.DeleteEntity(&test_api_key_1); err != nil {
+				t.Error("Неудалось удалить API KEY")
+				return
+			}
+		}()
 	}
+	// Добавляем полный доступ.
+	// todo
+
+
 	// убеждаемся, что новый api-ключ создан
 	if test_api_key_1.ID == 0 {
 		t.Errorf("ApiKey ID == 0, expected > 0")
@@ -218,8 +235,16 @@ func TestApiKey_SetRole(t *testing.T) {
 
 	// 2. Пробуем создать apiKey с нашей ролью в контексте аккаунта
 	test_api_key_2 := ApiKey{Name: "TestApiKey_2"}
-	if err := test_account.CreateApiKey(&test_api_key_2, &test_role_1);err != nil {
+	//if err := test_account.CreateApiKey(&test_api_key_2, &test_role_1);err != nil {
+	if err := test_account.CreateEntity(&test_api_key_2);err != nil {
 		t.Error("Неудалось создать API Key для тестового аккаунта", err.Error())
+	} else {
+		defer func() {
+			if err := test_account.DeleteEntity(&test_api_key_2); err != nil {
+				t.Error("Неудалось удалить API KEY")
+				return
+			}
+		}()
 	}
 	// убеждаемся, что новый api-ключ создан
 	if test_api_key_2.ID == 0 {
