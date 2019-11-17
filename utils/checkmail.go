@@ -1,9 +1,8 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
-	_ "github.com/nkokorev/auth-server/locales"
-	e "github.com/nkokorev/crm-go/errors"
 	"net"
 	"net/smtp"
 	"os"
@@ -20,6 +19,8 @@ var (
 	// As per RFC 5332 secion 3.2.3: https://tools.ietf.org/html/rfc5322#section-3.2.3
 	// Dots are not allowed in the beginning, end or in occurances of more than 1 in the email address
 	userDotRegexp = regexp.MustCompile("(^[.]{1})|([.]{1}$)|([.]{2,})")
+
+	EmailInvalidFormat = errors.New("Неверный формат почты")
 )
 
 func VerifyEmail(email string, opt_deep... bool) error {
@@ -50,34 +51,31 @@ func VerifyEmail(email string, opt_deep... bool) error {
 func ValidateFormat(email string) error {
 
 	if len(email) < 6 || len(email) > 254 {
-		return e.EmailInvalidFormat
+		return errors.New("Неверный формат")
 	}
 
 	at := strings.LastIndex(email, "@")
 	if at <= 0 || at > len(email)-3 {
-		return e.EmailInvalidFormat
+		return errors.New("Неверный формат")
 	}
 
 	user := email[:at]
 	host := email[at+1:]
 
 	if len(user) > 64 {
-		return e.EmailInvalidFormat
+		return errors.New("Неверный формат")
 	}
 
 	if userDotRegexp.MatchString(user) || !userRegexp.MatchString(user) || !hostRegexp.MatchString(host) {
-		return e.EmailInvalidFormat
+		return errors.New("Неверный формат")
 	}
 
 	switch host {
 	case "localhost", "example.com":
-		return e.EmailInvalidFormat
+		return errors.New("Неверный формат")
 		//return nil // хоть это и валидный адрес, лесом....
 	}
 
-	/*if !emailRegexp.MatchString(email) {
-		error.AddErrors("email", t.Trans(t.EmailInvalidFormat) )
-	}*/
 	return nil
 }
 
@@ -91,7 +89,7 @@ func ValidateHost(email string) error {
 			// Only fail if both MX and A records are missing - any of the
 			// two is enough for an email to be deliverable
 			//error.AddErrors("email", t.Trans(t.EmailUnresolvableHost) )
-			return e.EmailInvalidFormat
+			return errors.New("Неверный формат")
 		}
 	}
 	return nil
@@ -102,12 +100,12 @@ func ValidateEmailDeepHost(email string) error {
 
 	mx, err := net.LookupMX(host)
 	if err != nil {
-		return e.EmailDoesNotExist
+		return errors.New("Ненайден почтовый адрес")
 	}
 
 	client, err := DialTimeout(fmt.Sprintf("%s:%d", mx[0].Host, 25), forceDisconnectAfter)
 	if err != nil {
-		return e.EmailDoesNotExist
+		return errors.New("Ненайден почтовый адрес")
 	}
 	defer func() {
 		if err := client.Close();err!=nil {
@@ -118,18 +116,18 @@ func ValidateEmailDeepHost(email string) error {
 
 	err = client.Hello("checkmail.me")
 	if err != nil {
-		return e.EmailDoesNotExist
+		return errors.New("Ненайден почтовый адрес")
 		//return NewSmtpError(err)
 	}
 
 	err = client.Mail("lansome-cowboy@gmail.com")
 	if err != nil {
-		return e.EmailDoesNotExist
+		return errors.New("Ненайден почтовый адрес")
 	}
 
 	err = client.Rcpt(email)
 	if err != nil {
-		return e.EmailDoesNotExist
+		return errors.New("Ненайден почтовый адрес")
 	}
 
 	return nil

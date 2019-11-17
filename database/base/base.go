@@ -1,32 +1,29 @@
 package base
 
+
 import (
-	//_ "database/sql"
-	//_ "database/sql/driver"
+	"database/sql"
 	"fmt"
-	//_ "github.com/jackc/pgx"
-	"github.com/jinzhu/gorm"
-	//_ "github.com/jinzhu/gorm/dialects/postgres"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
-	_ "github.com/joho/godotenv/autoload"
 	"log"
 	"os"
 )
 
-var db *gorm.DB
+var Db *sql.DB
 
-func GetDB() *gorm.DB {
-	return db
+func GetDB() *sql.DB {
+	return Db
 }
 
 
-func init() {
+func Connect() *sql.DB{
 
-	//fmt.Println("Инициализация БД CRM-GO")
 
-	if os.Getenv("ENV_VAR") == "test" {
-		e := godotenv.Load("/home/mex388/go/src/github.com/nkokorev/crm-go/.env.test")
+	env := os.Getenv("ENV_VAR");
+
+	if len(env) > 0 {
+		e := godotenv.Load("/home/mex388/go/src/github.com/nkokorev/crm-go/.env." + env)
 		if e != nil {
 			log.Fatal("Error loading test .env file")
 		}
@@ -41,25 +38,24 @@ func init() {
 	password := os.Getenv("db_pass")
 	dbName := os.Getenv("db_name")
 	//dbHost := os.Getenv("db_host")
-	dbType := os.Getenv("db_type")
+	//dbType := os.Getenv("db_type")
 
-	//dbUri := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s", dbHost, username, dbName, password)
 	dbUri := fmt.Sprintf("%s:%s@/%s?parseTime=true&charset=utf8", username,password,dbName )
-	//dbUri := fmt.Sprintf("ratuscrm:pestik@/crm_test?charset=utf8&parseTime=True&loc=Local")
-	//fmt.Println(dbUri)
-	//conn, err := gorm.Open("postgres", dbUri)
-	conn, err := gorm.Open(dbType, dbUri)
-	if err != nil {
-		fmt.Print(err)
-	}
-	conn.LogMode(false)
-	db = conn
-	if err != nil {
-		fmt.Print(err)
-	}
-	//conn.LogMode(false)
-	db = conn
 
+	db, err := sql.Open("mysql", dbUri)
+
+	if err != nil {
+		log.Fatal("Cant open sql connection", err)
+	}
+
+	// Пингуем
+	if err = db.Ping(); err != nil {
+		log.Fatal("Нет пинга к БД",err)
+	}
+
+	Db = db
+
+	return db
 }
 
 
