@@ -12,7 +12,12 @@ func Rebase()  {
 	}
 
 	//migrations.MigrationTables(true)
+	//migrations.MigrationTables2(true)
+	//migrations.MigrationTables3(true)
+
+
 	//models.PermissionSeeding()
-	//models.RoleSeeding()
+	//models.CreateSystemRoles()
 	//seeds.UserSeeding()
+	//models.CreateSystemEavAttr()
 }

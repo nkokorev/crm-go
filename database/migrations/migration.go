@@ -5,6 +5,7 @@ import (
 	"github.com/nkokorev/crm-go/models"
 )
 
+
 func MigrationTables(freshTables bool) {
 
 	db := base.GetDB()
@@ -16,11 +17,12 @@ func MigrationTables(freshTables bool) {
 		db.DropTableIfExists("role_permissions")
 		db.DropTableIfExists("account_users")
 		db.DropTableIfExists("user_roles")
-		db.DropTableIfExists(&models.Product{}, &models.Shop{},&models.ApiKey{}, &models.Role{}, &models.Permission{}, &models.Role{}, &models.Store{}, &models.AccountUser{}, &models.Account{}, &models.User{}, )
+		db.DropTableIfExists(
+			&models.ApiKey{}, &models.Role{}, &models.Permission{}, &models.Role{}, &models.Store{}, &models.AccountUser{}, &models.Account{}, &models.User{}, )
 	}
 
 	// теперь создаем таблички
-	db.Debug().AutoMigrate(&models.AccountUser{}, &models.User{}, &models.Account{}, &models.Store{}, &models.Permission{}, &models.Role{}, &models.ApiKey{}, &models.Shop{},&models.Product{})
+	db.Debug().AutoMigrate(&models.AccountUser{}, &models.User{}, &models.Account{}, &models.Store{}, &models.Permission{}, &models.Role{}, &models.ApiKey{})
 
 	db.Table("accounts").AddForeignKey("user_id", "users(id)", "RESTRICT", "CASCADE") // за пользователем удаляются все его аккаунты
 
@@ -39,5 +41,92 @@ func MigrationTables(freshTables bool) {
 
 	//
 
+
+
+}
+
+func MigrationTables2(freshTables bool)  {
+	db := base.GetDB()
+
+	if freshTables {
+
+		db.DropTableIfExists("category_products")
+		db.DropTableIfExists(&models.Product{},&models.Category{}, &models.Store{}, &models.StoreWebSite{})
+	}
+
+	db.Debug().AutoMigrate( &models.Store{}, &models.StoreWebSite{}, &models.Product{}, &models.Category{}, )
+
 	db.Table("products").AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Table("products").AddForeignKey("category_id", "categories(id)", "CASCADE", "CASCADE")
+	db.Table("products").AddForeignKey("product_price_id", "product_prices(id)", "CASCADE", "CASCADE")
+
+	db.Table("categories").AddForeignKey("parent_id", "categories(hash_id)", "CASCADE", "CASCADE")
+	db.Table("categories").AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Table("categories").AddForeignKey("store_id", "stores(hash_id)", "CASCADE", "CASCADE")
+}
+
+
+func MigrationTables3(freshTables bool)  {
+
+	db := base.GetDB()
+
+	if freshTables {
+
+		db.DropTableIfExists("category_products")
+
+
+		db.DropTableIfExists("eav_attr_set_products")
+		db.DropTableIfExists("eav_attr_products")
+		db.DropTableIfExists("eav_attr_input_types")
+		db.DropTableIfExists("eav_attr_types")
+		db.DropTableIfExists("eav_attr_eav_attr_sets")
+		db.DropTableIfExists("eav_attr_varchar")
+		db.DropTableIfExists("eav_attrs")
+
+		db.DropTableIfExists(&models.EavAttrSet{}, &models.EavAttrInputType{}, &models.EavAttrType{}, &models.EavAttrVarchar{}, &models.EavAttr{},
+			&models.Category{}, &models.Product{}, models.Store{}, &models.StoreWebSite{},   )
+
+	}
+
+	db.AutoMigrate(&models.Product{}, &models.Category{}, &models.Store{}, &models.StoreWebSite{},
+	&models.EavAttr{}, &models.EavAttrVarchar{}, &models.EavAttrType{}, &models.EavAttrInputType{}, &models.EavAttrSet{})
+
+
+
+	db.Table("products").AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Table("products").AddForeignKey("category_id", "categories(id)", "CASCADE", "CASCADE")
+	db.Table("products").AddForeignKey("product_price_id", "product_prices(id)", "CASCADE", "CASCADE")
+	db.Table("products").AddForeignKey("eav_attr_set_id", "eav_attr_sets(id)", "CASCADE", "CASCADE")
+
+	db.Table("categories").AddForeignKey("parent_id", "categories(hash_id)", "CASCADE", "CASCADE")
+	db.Table("categories").AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Table("categories").AddForeignKey("store_id", "stores(hash_id)", "CASCADE", "CASCADE")
+
+
+	db.Table("eav_attrs").AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Table("eav_attrs").AddForeignKey("eav_attr_type_id", "eav_attr_types(id)", "CASCADE", "CASCADE")
+	db.Table("eav_attrs").AddForeignKey("eav_attr_input_type_id", "eav_attr_input_types(id)", "CASCADE", "CASCADE")
+
+
+	db.Table("eav_attr_varchar").AddForeignKey("eav_attr_id", "eav_attrs(id)", "CASCADE", "CASCADE")
+
+
+	//db.Table("eav_attr_eav_attr_groups").AddForeignKey("eav_attr_id", "eav_attrs(id)", "CASCADE", "CASCADE")
+	//db.Table("eav_attr_eav_attr_groups").AddForeignKey("eav_attr_group_id", "eav_attr_groups(id)", "CASCADE", "CASCADE")
+
+	db.Table("eav_attr_eav_attr_sets").AddForeignKey("eav_attr_id", "eav_attrs(id)", "CASCADE", "CASCADE")
+	db.Table("eav_attr_eav_attr_sets").AddForeignKey("eav_attr_set_id", "eav_attr_sets(id)", "CASCADE", "CASCADE")
+
+	//db.Table("eav_attr_group_products").AddForeignKey("product_id", "products(id)", "CASCADE", "CASCADE")
+	//db.Table("eav_attr_group_products").AddForeignKey("eav_attr_group_id", "eav_attr_groups(id)", "CASCADE", "CASCADE")
+	db.Table("eav_attr_products").AddForeignKey("eav_attr_id", "eav_attrs(id)", "CASCADE", "CASCADE")
+	db.Table("eav_attr_products").AddForeignKey("product_id", "products(id)", "CASCADE", "CASCADE")
+
+	db.Table("eav_attr_set_products").AddForeignKey("eav_attr_id", "eav_attrs(id)", "CASCADE", "CASCADE")
+	db.Table("eav_attr_set_products").AddForeignKey("product_id", "products(id)", "CASCADE", "CASCADE")
+
+	//db.Table("eav_attr_set").AddForeignKey("product_id", "products(id)", "CASCADE", "CASCADE")
+
+
+
 }

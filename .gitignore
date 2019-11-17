@@ -1,3 +1,4 @@
 # Editor directories and files
 /.idea
 .env.test
+main.go

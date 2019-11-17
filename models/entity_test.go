@@ -7,7 +7,12 @@ import (
 // test create and delete entity models
 func TestAccount_CreateAndDeleteEntity(t *testing.T) {
 	// для теста новых моделей нужно ее добавить сюда.
-	var es = []Entity{&Product{Name:"TestProduct"}, &Role {Name:"TestRole", Description:"This is new role! (test)"}, &ApiKey {Name:"for site"}}
+	var es = []Entity{
+		&Product{Name:"TestProduct"},
+		&Role {Name:"TestRole", Description:"This is new role! (test)"},
+		&ApiKey {Name:"for site"},
+		&Category {Name:"Test category"},
+	}
 	//var es = []Entity{&Product{Name:"TestProduct"}, &Role {Name:"TestRole", Description:"This is new role! (test)"}}
 	var test_account Account
 
@@ -20,7 +25,7 @@ func TestAccount_CreateAndDeleteEntity(t *testing.T) {
 	// создаем циклами и циклами удаляем
 	for i, v := range es {
 		if err := test_account.CreateEntity(es[i]); err != nil {
-			t.Errorf("Неудалось создать продукт!\r\n" +
+			t.Errorf("Неудалось создать Entity!\r\n" +
 				"Account: %v \r\n" +
 				"Entity: %v,\r\n" +
 				"Error: %v", test_account, es[i], err)

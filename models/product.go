@@ -2,10 +2,7 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"github.com/nkokorev/crm-go/database/base"
-	"os"
-
 	//e "github.com/nkokorev/crm-go/errors"
 	//t "github.com/nkokorev/crm-go/locales"
 	u "github.com/nkokorev/crm-go/utils"
@@ -15,9 +12,24 @@ import (
 type Product struct {
 	ID        	uint 	`gorm:"primary_key;unique_index;" json:"-"`
 	HashID 		string 	`json:"hash_id" gorm:"type:varchar(10);unique_index;not null;"`
-	Name 		string 	`json:"name" gorm:"not null;"`
 	Account    Account 	`json:"-" gorm:"not null;"`
-	AccountID 	uint 	`json:"-"`
+	AccountID 	uint 	`json:"-" gorm:"index,not null;"` // к какому аккаунту он принадлежит
+
+	Name 		string 	`json:"name" gorm:"not null;"`
+	Sku 		string 	`json:"sku" gorm:"not null;"` // Stock Keeping Unit
+
+	Price		float64	`json:"price" gorm:"default:0.0"` // стоимость товара
+	//ProductPrice		EntityPrice	`json:"product_price"` // загружаем в структуру продукта
+	//ProductPriceID		uint	`json:"-" gorm:"default:null"` // стоимость товара
+
+	// ### Атрибуты
+	EavAttrSet	EavAttrSet	`json:"eav_attr_set" gorm:"default:null;"` // какой набор атрибутов будет у продукта
+	EavAttrSetID	uint	`json:"-" gorm:"default:null;"` // какой набор атрибутов будет у продукта
+	EavAttrs	[]EavAttr	`json:"-" gorm:"many2many:eav_attr_products"` // какие атрибуты дополнительно будут у продукта | ManyToMany
+	Categories 	[]Category	`json:"-" gorm:"many2many:category_products"` // к какой категории относится продукт | ManyToMany
+
+
+	//EavAttrGroup		[]EavAttrGroup 	`gorm:"many2many:eav_attr_group_product;"`
 }
 
 // Все связывающие функции внутренние и вызываются в контексте аккаунта. Безопасные функции экспортируются и их можно вызвать напрямую.
@@ -25,7 +37,7 @@ type Product struct {
 // вспомогательная функция для получения ID
 func (p Product) getID () uint { return p.ID }
 
-// создает продукт, устанавливая хеш ID
+// создает продукт в БД, устанавливая хеш ID
 func (product *Product) create() (err error) {
 
 	// проверяем на повторное создание (иначе будет апдейт)
@@ -63,7 +75,7 @@ func (product *Product) delete() (err error) {
 	return nil
 }
 
-// обновляет данные продукта с защитой служебных полей
+// обновляет данные продукта в БД с защитой служебных полей
 func (product *Product) update() (err error) {
 
 	// указываем какие поля обновлять не надо
@@ -74,7 +86,7 @@ func (product *Product) update() (err error) {
 	return nil
 }
 
-// ищет продукт по hashID. Возвращает ошибку, если продукт не найден или еще что-то пошло не так
+// ищет продукт по hashID в БД. Возвращает ошибку, если продукт не найден или еще что-то пошло не так
 func (product *Product) get(hash_id string) error {
 
 	if err := base.GetDB().First(product,"hash_id = ?", hash_id).Error;err != nil {
@@ -86,50 +98,5 @@ func (product *Product) get(hash_id string) error {
 // вспомогательная функция для получения ID
 func (p Product) getAccountID () (id uint) { return p.AccountID }
 
-// вспомогательная функция для получения ID
+// вспомогательная функция для установки аккаунта
 func (p *Product) setAccountID (id uint) { p.AccountID = id }
-
-// ## Helpers func
-
-
-
-func init() {
-
-	// это для GUI-сервера
-	return
-	if os.Getenv("ENV_VAR") == "test" {
-		return
-	}
-
-	db := base.GetDB()
-
-	db.DropTableIfExists(&Product{})
-	db.AutoMigrate(&Product{})
-
-	db.Table("products").AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-
-	account := Account{}
-	db.Find(&account,2)
-
-	products := []Product{
-		{Name:"Дянь хун", Account:account},
-		{Name:"Дянь мун", Account:account},
-		{Name:"Дянь сан", Account:account},
-	}
-
-	for i,v := range products{
-		err := v.create()
-		if err != nil { fmt.Printf("Охтыж боже мой... не удалось: %v %v, err: %v \r\n", i, v.Name, err);
-			return
-		}
-	}
-
-	test_product := Product{}
-	db.LogMode(true)
-
-	db.Preload("Account").Find(&test_product,1)
-
-	fmt.Println("Мы нашли продукт: ", test_product)
-	fmt.Println("У аккаунта: ", test_product.Account.Name)
-
-}

@@ -309,7 +309,7 @@ func (role *Role) AppendUser(aUser *AccountUser) error {
 }
 
 // разворачивает базовые разрешения для всех пользователей
-func RoleSeeding()  {
+func CreateSystemRoles()  {
 
 	base.GetDB().Unscoped().Delete(&Role{})
 

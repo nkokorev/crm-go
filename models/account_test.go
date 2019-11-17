@@ -550,6 +550,7 @@ func TestAccount_AppendUser(t *testing.T) {
 }
 
 func TestAccount_CreateProduct(t *testing.T) {
+
 	// находим аккаунт, в котором будем создавать продукт
 	var test_account Account
 	if err := base.GetDB().Model(&Account{}).First(&test_account,1).Error; err != nil {
