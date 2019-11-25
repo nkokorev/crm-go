@@ -2,22 +2,33 @@ package base
 
 
 import (
-	"database/sql"
+	//"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
+	//_ "github.com/go-sql-driver/mysql"
+	//_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v4"
 	"log"
 	"os"
 )
 
-var Db *sql.DB
+var pool *sqlx.DB
 
-func GetDB() *sql.DB {
-	return Db
+func GetDB() *sqlx.DB {
+	return pool
+}
+
+func SetDB(p *sqlx.DB)  {
+	pool = p
+}
+
+func GetPool() *sqlx.DB {
+	return pool
 }
 
 
-func Connect() *sql.DB{
+func Connect() *sqlx.DB {
 
 
 	env := os.Getenv("ENV_VAR");
@@ -37,26 +48,31 @@ func Connect() *sql.DB{
 	username := os.Getenv("db_user")
 	password := os.Getenv("db_pass")
 	dbName := os.Getenv("db_name")
-	//dbHost := os.Getenv("db_host")
+	dbHost := os.Getenv("db_host")
 	//dbType := os.Getenv("db_type")
 
-	dbUri := fmt.Sprintf("%s:%s@/%s?parseTime=true&charset=utf8", username,password,dbName )
+	//dbUri := fmt.Sprintf("%s:%s@/%s?parseTime=true&charset=utf8", username,password,dbName )
+	dbUri := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s", dbHost, username,dbName, password)
 
-	db, err := sql.Open("mysql", dbUri)
+	//db, err := sql.Open("mysql", dbUri)
 
+	db, err := sqlx.Connect("postgres", dbUri)
 	if err != nil {
-		log.Fatal("Cant open sql connection", err)
+		log.Fatalln(err)
 	}
+
+	fmt.Println(dbUri)
 
 	// Пингуем
 	if err = db.Ping(); err != nil {
 		log.Fatal("Нет пинга к БД",err)
 	}
 
-	Db = db
+	SetDB(db)
 
 	return db
 }
+
 
 
 
