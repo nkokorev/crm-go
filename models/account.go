@@ -1,103 +1,43 @@
 package models
 
 import (
-
-	"github.com/nkokorev/crm-go/database/base"
 	"time"
 )
 
 type Account struct {
-	ID uint `json:"id"`
-	Name string `json:"name"`
-	CreatedAt 	time.Time `json:"created_at"`
-	UpdatedAt 	time.Time `json:"updated_at"`
-	DeletedAt 	*time.Time `json:"-"`
+	ID uint `json:"id" db:"id"`
+	Name string `json:"name" db:"name"`
+	CreatedAt 	time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt 	time.Time `json:"updated_at" db:"updated_at"`
+	DeletedAt 	*time.Time `json:"-" db:"deleted_at"`
 }
-
 
 // создает аккаунт, несмотря на a.ID
 func (a *Account) Create () error {
+	return GetPool().Create(a).Error
 
-	pool := base.GetPool()
+	/*rows, err := base.GetPool().NamedQuery("INSERT INTO users (username,email,password) VALUES (:username, :email, :password) RETURNING *",u)
+	if err != nil {return err}
+	defer rows.Close()
 
-	// создаем объект с необходимыми полями
-	res, err := pool.Exec("insert into accounts (name) VALUES (?)", a.Name);
-	if err != nil {
-		return err
+	// сканируем результат RETURNING
+	if rows.Next() {
+		return rows.StructScan(&u)
 	}
-
-	// получаем id вставки, при удачном создании
-	id, err := res.LastInsertId()
-	if err != nil {
-		return err
-	}
-
-	// присваиваем нужный ID аккаунту
-	a.ID = uint(id)
-
-	// читаем из БД сохраненный объект и возвращаем ошибку
-	return a.Get()
+	return nil*/
 }
 
 // осуществляет поиск по a.ID
 func (a *Account) Get () error {
-
-	return base.GetPool().QueryRow("select id,name,created_at,updated_at,deleted_at from accounts where id = ? AND deleted_at = 0;", a.ID).
-		Scan(&a.ID, &a.Name, &a.CreatedAt, &a.UpdatedAt, &a.DeletedAt);
-
+	return GetPool().First(a.ID).Error
 }
 
-// сохраняет все необходимые поля
-func (a *Account) save () error {
-	res, err := base.GetPool().Exec("update accounts set name = ?, deleted_at = ? where id = ? ", a.Name, a.DeletedAt, a.ID);
-	if err != nil {
-		return err
-	}
-
-	// получаем id вставки, при удачном создании
-	id, err := res.LastInsertId()
-	if err != nil {
-		return err
-	}
-
-	// присваиваем нужный ID аккаунту
-	a.ID = uint(id)
-
-	return a.Get()
-}
-func (a *Account) delete () error {
-	return nil
+// сохраняет ВСЕ необходимые поля
+func (a *Account) Save () error {
+	return GetPool().Save(a).Error
 }
 
-// ### пробуем упростить
-
-func (a *Account) getID() uint {
-	return a.ID
+// # Delete
+func (a *Account) Delete () error {
+	return GetDB().Model(a).Where("id = ?", a.ID).Delete(a).Error
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"github.com/nkokorev/crm-go/database/base"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
 	"strings"
@@ -38,10 +37,10 @@ func (p *Product) Create() error {
 
 	//utils.TimeTrack(time.Now(), "Create product: ")
 
-	cols := "(sku, name)"
-	sqlStr := "insert into products " + cols + " values (?,?) "
+	//cols := "(sku, name)"
+	//sqlStr := "insert into products " + cols + " values (?,?) "
 
-	pool := base.GetPool()
+	/*pool := base.GetPool()
 	res, err := pool.Exec(sqlStr, p.SKU, p.Name)
 	if err != nil {
 		fmt.Println(err)
@@ -55,7 +54,7 @@ func (p *Product) Create() error {
 		return err
 	}
 
-
+*/
 	//fmt.Println(id)
 
 	//pool.QueryRow()
@@ -87,16 +86,16 @@ func (p *Product) Create() error {
 func CreateProducts(count int)  {
 
 	utils.TimeTrack(time.Now(), "Create products: ")
-	pool := base.GetPool()
+	pool := GetPool()
 
 	// очистим таблицу продуктов
-	_, err := pool.Exec("delete from products;")
+	err := pool.Exec("delete from products;")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// clear eav_product_attributes
-	_, err = pool.Exec("delete from eav_product_attributes;")
+	err = pool.Exec("delete from eav_product_attributes;")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -110,13 +109,13 @@ func CreateProducts(count int)  {
 	}
 	sqlStr = strings.TrimSuffix(sqlStr, ",")
 
-	_, err = pool.Exec("insert into products (sku, name) values " + sqlStr)
+	err = pool.Exec("insert into products (sku, name) values " + sqlStr)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// каждому продукту по каждому атрибуту в подарок
-	_, err = pool.Exec("INSERT INTO eav_product_attributes (product_id, eav_attributes_id)\nSELECT DISTINCT products.id, eav_attributes.id FROM products, eav_attributes;")
+	err = pool.Exec("INSERT INTO eav_product_attributes (product_id, eav_attributes_id)\nSELECT DISTINCT products.id, eav_attributes.id FROM products, eav_attributes;")
 	if err != nil {
 		log.Fatal(err)
 	}
