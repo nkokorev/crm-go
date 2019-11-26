@@ -1,8 +1,13 @@
 package models
 
 import (
+	"errors"
+	"fmt"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
+	"os"
+	"regexp"
+	"unicode"
 	//"gopkg.in/guregu/null.v3"
 	"time"
 )
@@ -34,14 +39,18 @@ func (u *User) Create () error {
 
 	// проверим входящие сообщения
 	if err := u.ValidateCreate(); err != nil {
+		fmt.Println("Пользователь проверку не прошел", err)
 		return err
 	}
+
 	// Создаем пароль
 	password, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
 	u.Password = string(password)
+
+
 
 	return db.Create(u).Error
 }
@@ -69,109 +78,143 @@ func (u *User) Delete () error {
 // ### HELPERS FUNC ###
 
 func (u *User) Exist() bool {
-	return db.First(u, "ip = ?", u.ID).RecordNotFound()
+	return db.Unscoped().First(u, "ip = ?", u.ID).RecordNotFound()
+}
+
+func (User) ExistEmail(email string) bool {
+	return db.Unscoped().First(&User{},"email = ?", email).RecordNotFound()
+}
+
+func (User) ExistUsername(username string) bool {
+	return db.Unscoped().First(&User{},"username = ?", username).RecordNotFound()
+}
+
+// ### Verify FUNC ###
+
+func (User) VerifyPassword(pwd string) error {
+
+	if len([]rune(pwd)) == 0 {
+		return errors.New("Поле необходимо заполнить")
+	}
+	if len([]rune(pwd)) < 6 {
+		return errors.New("Слишком короткий пароль")
+	}
+
+	if len([]rune(pwd)) > 25 {
+		return errors.New("Слишком длинный пароль")
+	}
+
+	letters := 0
+	var number, upper, special bool
+	for _, c := range pwd {
+		switch {
+		case unicode.IsNumber(c):
+			number = true
+		case unicode.IsUpper(c):
+			upper = true
+			letters++
+		case unicode.IsPunct(c) || unicode.IsSymbol(c):
+			special = true
+		case unicode.IsLetter(c) || c == ' ':
+			letters++
+		default:
+			//return false, false, false, false
+		}
+	}
+
+	if ! (number && upper && special && letters >= 5) {
+		return errors.New("Пароль слишком простой")
+	}
+
+	return nil
+}
+
+// проверяет имя пользователя на соответствие правилам. Не проверяет уникальность
+func (User) VerifyUsername(username string) error {
+
+	if len(username) == 0 {
+		return errors.New("Поле необходимо заполнить")
+	}
+	if len(username) < 3 {
+		return errors.New("Имя пользователя слишком короткое")
+	}
+	if len(username) > 25 || len([]rune(username)) > 25 {
+		return errors.New("Имя пользователя слишком длинное")
+	}
+
+	var rxUsername = regexp.MustCompile("^[a-zA-Z0-9,-,_]+$")
+
+	if !rxUsername.MatchString(username) {
+		return errors.New("Используйте только a-z,A-Z,0-9 а также символ -")
+	}
+
+	if !(User{}).ExistUsername(username) {
+		return errors.New("Данный username уже используется")
+	}
+
+	return nil
+}
+
+// Проверка email для нового пользователя
+func (User) VerifyEmail(email string) error {
+
+	if err := u.VerifyEmail(email, !(os.Getenv("http_dev") == "true") ); err != nil {
+		return err
+	}
+
+	if !(User{}).ExistEmail(email) {
+		return errors.New("Данный email-адрес уже используется")
+	}
+
+	return nil
 }
 
 
 // Проверка входящих полей
 func (user *User) ValidateCreate() error {
 
-	e := u.Error{"Не верно указанные данные", map[interface{}]interface{}{} }
-	e.AddErrors("email", "Данный email уже используется")
-	e.AddErrors("vals", 12)
+	//e := u.Error{"Не верно указанные данные", map[interface{}]interface{}{} }
 
+	var e u.Error
+	//e := u.Error{}
 
-	if true {
+	// 1. Проверка username пользователя
+	if err := user.VerifyUsername(user.Username); err != nil {
+		e.AddErrors("username", err.Error())
+		e.Message = "Неверно заполнены поля"
 		return e
 	}
 
-	/*// проверка на попытку создать дубль пользователя, который уже был создан
-	if reflect.TypeOf(user.ID).String() == "uint" {
-		if user.ID > 0 && !base.GetDB().First(&User{}, user.ID).RecordNotFound() {
-			error.Message = t.Trans(t.UserCreateInvalidCredentials)
-		}
-	}*/
-
-	// проверка почты должна быть полной, но при тестах часто используется сокращенная проверка
-	/*err := u.VerifyEmail(user.Email, !(os.Getenv("http_dev") == "true"))
-	if err != nil {
-		error.AddErrors("email", err.Error())
-		error.Message = t.Trans(t.UserCreateInvalidCredentials)
-		return
+	// 2. Проверка email
+	if err := user.VerifyEmail(user.Email); err != nil {
+		e.AddErrors("email", err.Error())
+		e.Message = "Неверно заполнены поля"
+		return e
 	}
 
-	// проверка на уникальность email-адреса
-	if !base.GetDB().First(&User{}, "email = ?", user.Email).RecordNotFound() {
-		error.AddErrors("email", "этот адрес уже используется" )
-		error.Message = t.Trans(t.UserCreateInvalidCredentials)
-		return
+	// 3. Проверка password
+	if err := user.VerifyPassword(user.Password); err != nil {
+		e.AddErrors("password", err.Error())
+		e.Message = "Неверно заполнены поля"
+		return e
 	}
 
-	err = u.VerifyPassword(user.Password)
-	if err != nil {
-		error.AddErrors("email", err.Error())
-		error.Message = t.Trans(t.UserCreateInvalidCredentials)
-		return
-	}
-
-	// проверим корректность заполнения имени пользователя
-	err = u.VerifyUsername(user.Username)
-	if err != nil {
-		error.AddErrors("username", err.Error() )
-		error.Message = t.Trans(t.UserCreateInvalidCredentials)
-		return
-	}
-
-	// проверка на уникальность username
-	if !base.GetDB().First(&User{}, "username = ?", user.Username).RecordNotFound() {
-		error.AddErrors("username", "этот username уже используется" )
-		error.Message = t.Trans(t.UserCreateInvalidCredentials)
-		return
-	}
-
+	// 4. Проверка дополнительных полей на длину
 	if len([]rune(user.Name)) > 25 {
-		error.AddErrors("name", t.Trans(t.InputIsTooLong) )
+		e.AddErrors("name", "Поле слишком длинное" )
 	}
 	if len([]rune(user.Surname)) > 25 {
-		error.AddErrors("surname", t.Trans(t.InputIsTooLong) )
+		e.AddErrors("surname", "Поле слишком длинное")
 	}
 	if len([]rune(user.Patronymic)) > 25 {
-		error.AddErrors("patronymic", t.Trans(t.InputIsTooLong) )
+		e.AddErrors("patronymic", "Поле слишком длинное" )
 	}
 
-	if error.HasErrors() {
-		error.Message = t.Trans(t.UserCreateInvalidCredentials)
-		return
+	// проверка пользователя
+	if e.HasErrors() {
+		e.Message = "Неверно заполнены поля"
+		return e
 	}
 
-	//Email must be unique
-	temp := &User{}
-
-	//check for errors and duplicate emails
-	err = base.GetDB().Unscoped().Model(&User{}).Where("email = ?", user.Email).First(temp).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		error.Message = t.Trans(t.UserFailedToCreate)
-		return
-	}
-	if temp.Email != "" {
-		error.AddErrors("email", t.Trans(t.EmailAlreadyUse) )
-	}
-
-	temp = &User{} // set to empty
-
-	err = base.GetDB().Unscoped().Model(&User{}).Where("username = ?", user.Username).First(temp).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		error.Message = t.Trans(t.UserFailedToCreate)
-		return
-	}
-	if temp.Username != "" {
-		error.AddErrors("username", t.Trans(t.UsernameAlreadyUse) )
-	}
-
-	if error.HasErrors() {
-		error.Message = t.Trans(t.UserCreateInvalidCredentials)
-	}*/
-
-	//return u.Error{"email", pairs }
 	return nil
 }

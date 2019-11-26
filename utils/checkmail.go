@@ -100,12 +100,12 @@ func ValidateEmailDeepHost(email string) error {
 
 	mx, err := net.LookupMX(host)
 	if err != nil {
-		return errors.New("Ненайден почтовый адрес")
+		return errors.New(fmt.Sprintf("Несуществующий домен почты: %v", host))
 	}
 
 	client, err := DialTimeout(fmt.Sprintf("%s:%d", mx[0].Host, 25), forceDisconnectAfter)
 	if err != nil {
-		return errors.New("Ненайден почтовый адрес")
+		return errors.New(fmt.Sprintf("Почтовый сервер не отвечает: %v", mx[0].Host))
 	}
 	defer func() {
 		if err := client.Close();err!=nil {
@@ -116,18 +116,18 @@ func ValidateEmailDeepHost(email string) error {
 
 	err = client.Hello("checkmail.me")
 	if err != nil {
-		return errors.New("Ненайден почтовый адрес")
+		return errors.New( "Похоже, почтовый сервер не готов принять почту")
 		//return NewSmtpError(err)
 	}
 
 	err = client.Mail("lansome-cowboy@gmail.com")
 	if err != nil {
-		return errors.New("Ненайден почтовый адрес")
+		return errors.New("Почтовый адрес не может принять почту")
 	}
 
 	err = client.Rcpt(email)
 	if err != nil {
-		return errors.New("Ненайден почтовый адрес")
+		return errors.New("Похоже, почтовый адрес не сущесвует")
 	}
 
 	return nil

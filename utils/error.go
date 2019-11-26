@@ -46,29 +46,4 @@ func (e *Error) GetError(key interface{}) interface{} {
 	return e.Errors[key]
 }
 
-func (e *Error) SetMsg(msg string) {
-	e.Message = msg
-}
-
-func (e *Error) GetMsg() string {
-	return e.Message
-}
-
-func (e *Error) GetResponse() (string, map[interface{}]interface{}) {
-	return e.GetMsg(), e.GetErrors()
-}
-
-func (e *Error) Println()  {
-	fmt.Println(e.GetMsg())
-	for _, r := range e.GetErrors() {
-		fmt.Println(r)
-	}
-}
-
-func (e *Error) Printf()  {
-	fmt.Println(e.GetMsg())
-	for k, r := range e.GetErrors() {
-		fmt.Printf("%s | %s", k,r)
-	}
-}
 

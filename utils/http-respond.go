@@ -1,11 +1,9 @@
 package utils
 
 import (
-	//"encoding/json"
 	"errors"
-	"fmt"
-	"net/http"
 	"github.com/json-iterator/go"
+	"net/http"
 )
 
 func Message(status bool, message string) (map[interface{}]interface{}) {
@@ -24,20 +22,19 @@ func MessageWithErrors(message string, errors map[interface{}]interface{}) (map[
 	return map[interface{}]interface{} {"status" : false, "message" : message, "errors" : errors}
 }
 
-// todo дописать нормально
-func MessageError(message string, err error) (map[interface{}]interface{}) {
+// Готовит сообщение с ошибкой
+func MessageError(err error, m_opt... string) (map[interface{}]interface{}) {
+
 	e := Error{}
 	errors.As(err, &e)
 
-	mp := map[interface{}]interface{} {
-		"status" : false,
-		"message" : message,
-		"errors" : e.GetErrors(),
+	if len(m_opt) > 0 {
+		e.Message = m_opt[0]
 	}
-	fmt.Println(mp)
+
 	return map[interface{}]interface{} {
 		"status" : false,
-		"message" : message,
+		"message" : e.Message,
 		"errors" : e.GetErrors(),
 	}
 }
