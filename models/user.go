@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
 	"os"
@@ -17,7 +16,7 @@ type User struct {
 	//HashID 		string `json:"hash_id" gorm:"type:varchar(10);unique_index;not null;"`
 	Username 	string `json:"username" `
 	Email 		string `json:"email"`
-	Password 	string `json:"password"` // json:"-"
+	Password 	string `json:"-"` // json:"-"
 
 	Name 		string `json:"name"`
 	Surname 	string `json:"surname"`
@@ -39,25 +38,22 @@ func (u *User) Create () error {
 
 	// проверим входящие сообщения
 	if err := u.ValidateCreate(); err != nil {
-		fmt.Println("Пользователь проверку не прошел", err)
 		return err
 	}
 
-	// Создаем пароль
+	// Создаем крипто пароль
 	password, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
 	u.Password = string(password)
 
-
-
 	return db.Create(u).Error
 }
 
 // осуществляет поиск по ID
 func (u *User) Get () error {
-	return db.First(u.ID).Error
+	return db.First(u,u.ID).Error
 }
 
 // сохраняет все поля в модели, кроме id, deleted_at
@@ -142,7 +138,7 @@ func (User) VerifyUsername(username string) error {
 		return errors.New("Имя пользователя слишком длинное")
 	}
 
-	var rxUsername = regexp.MustCompile("^[a-zA-Z0-9,-,_]+$")
+	var rxUsername = regexp.MustCompile("^[a-zA-Z0-9,'-',_]+$")
 
 	if !rxUsername.MatchString(username) {
 		return errors.New("Используйте только a-z,A-Z,0-9 а также символ -")
@@ -173,10 +169,7 @@ func (User) VerifyEmail(email string) error {
 // Проверка входящих полей
 func (user *User) ValidateCreate() error {
 
-	//e := u.Error{"Не верно указанные данные", map[interface{}]interface{}{} }
-
 	var e u.Error
-	//e := u.Error{}
 
 	// 1. Проверка username пользователя
 	if err := user.VerifyUsername(user.Username); err != nil {
@@ -210,7 +203,7 @@ func (user *User) ValidateCreate() error {
 		e.AddErrors("patronymic", "Поле слишком длинное" )
 	}
 
-	// проверка пользователя
+	// проверка итоговых ошибок
 	if e.HasErrors() {
 		e.Message = "Неверно заполнены поля"
 		return e

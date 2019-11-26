@@ -50,20 +50,25 @@ func VerifyEmail(email string, opt_deep... bool) error {
 
 func ValidateFormat(email string) error {
 
-	if len(email) < 6 || len(email) > 254 {
-		return errors.New("Неверный формат")
+	// todo edit!
+	if len(email) < 6 {
+		return errors.New("Email-адрес слишком короткий")
 	}
+	if len(email) > 254 {
+		return errors.New("Email-адрес слишком длинный")
+	}
+
 
 	at := strings.LastIndex(email, "@")
 	if at <= 0 || at > len(email)-3 {
-		return errors.New("Неверный формат")
+		return errors.New("Email-адрес указан не верно")
 	}
 
 	user := email[:at]
 	host := email[at+1:]
 
 	if len(user) > 64 {
-		return errors.New("Неверный формат")
+		return errors.New("Email-адрес указан не верно")
 	}
 
 	if userDotRegexp.MatchString(user) || !userRegexp.MatchString(user) || !hostRegexp.MatchString(host) {
@@ -72,7 +77,7 @@ func ValidateFormat(email string) error {
 
 	switch host {
 	case "localhost", "example.com":
-		return errors.New("Неверный формат")
+		return errors.New("Данный email-адрес не существует")
 		//return nil // хоть это и валидный адрес, лесом....
 	}
 
