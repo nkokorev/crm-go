@@ -22,7 +22,6 @@ type User struct {
 	Surname 	string `json:"surname"`
 	Patronymic 	string `json:"patronymic"`
 
-
 	DefaultAccountID int `json:"default_account_id"` // указывает какой аккаунт по дефолту загружать
 
 	CreatedAt time.Time `json:"created_at"`
@@ -62,8 +61,8 @@ func (u *User) Save () error {
 }
 
 // обновляет все схожие с интерфейсом поля, кроме id, deleted_at
-func (u *User) Update (i interface{}) error {
-	return db.Model(u).Where("id = ?", u.ID).Omit("id", "deleted_at").Update(i).Find(u, "id = ?", u.ID).Error
+func (u *User) Update (input interface{}) error {
+	return db.Model(u).Where("id = ?", u.ID).Omit("id", "deleted_at").Update(input).Find(u, "id = ?", u.ID).Error
 }
 
 // удаляет пользователя по ID
@@ -73,8 +72,9 @@ func (u *User) Delete () error {
 
 // ### HELPERS FUNC ###
 
-func (u *User) Exist() bool {
-	return db.Unscoped().First(u, "ip = ?", u.ID).RecordNotFound()
+// Существует ли пользователь с указанным ID
+func (User) Exist(id uint) bool {
+	return db.Unscoped().First(&User{}, "ip = ?", id).RecordNotFound()
 }
 
 func (User) ExistEmail(email string) bool {
@@ -85,7 +85,7 @@ func (User) ExistUsername(username string) bool {
 	return db.Unscoped().First(&User{},"username = ?", username).RecordNotFound()
 }
 
-// ### Verify FUNC ###
+// ### Validate & Verify FUNC ###
 
 func (User) VerifyPassword(pwd string) error {
 
@@ -138,7 +138,7 @@ func (User) VerifyUsername(username string) error {
 		return errors.New("Имя пользователя слишком длинное")
 	}
 
-	var rxUsername = regexp.MustCompile("^[a-zA-Z0-9,'-',_]+$")
+	var rxUsername = regexp.MustCompile("^[a-zA-Z0-9,\\-_]+$")
 
 	if !rxUsername.MatchString(username) {
 		return errors.New("Используйте только a-z,A-Z,0-9 а также символ -")
@@ -165,9 +165,8 @@ func (User) VerifyEmail(email string) error {
 	return nil
 }
 
-
 // Проверка входящих полей
-func (user *User) ValidateCreate() error {
+func (user User) ValidateCreate() error {
 
 	var e u.Error
 
