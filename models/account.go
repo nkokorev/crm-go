@@ -36,3 +36,14 @@ func (a *Account) Update (input interface{}) error {
 func (a *Account) Delete () error {
 	return db.Model(Account{}).Where("id = ?", a.ID).Delete(a).Error
 }
+
+// удаляет с концами
+func (a *Account) DeleteUnscoped () error {
+	return db.Model(Account{}).Where("id = ?", a.ID).Unscoped().Delete(a).Error
+}
+
+// ### Account func
+
+func (a *Account) AppendUser (user *User) error {
+	return db.Model(&user).Association("accounts").Append(a).Error
+}

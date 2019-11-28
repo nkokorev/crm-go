@@ -28,6 +28,8 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	DeletedAt *time.Time `json:"-"`
+
+	Accounts []Account `json:"accounts" gorm:"many2many:user_accounts"`
 }
 
 
@@ -215,13 +217,47 @@ func (user User) ValidateCreate() error {
 }
 
 
-// ### Account FUNC ###
+// ### Account's FUNC ###
 
-//Только реальные пользователи могут создавать аккаунты
-func (user User) CreateAccount(a *Account) error {
+func (user *User) GetAccounts() error {
+	return db.Preload("Accounts").First(&user).Error
+}
+
+// проверяет доступ и возвращает данные аккаунта
+func (user *User) GetAccount(account *Account) error {
+	return db.Model(user).Where("user_id = ?", user.ID).Association("Accounts").Find(account).Error
+}
+
+// создание аккаунта от пользователя
+func (user *User) CreateAccount(a *Account) error {
+
 	// 1. Создаем аккаунт
+	if err := a.Create(); err != nil {
+		return err
+	}
 
 	// 2. Привязываем аккаунт к пользователю
+	if err := a.AppendUser(user); err != nil {
+		return err
+	}
+
+	// 3. Назначает роль owner
+
+	return nil
+}
+
+// удаляет аккаунт, если пользователь имеет такие права
+func (user *User) DeleteAccount(a *Account) error {
+
+	// 1. Проверяем доступ "= проверяем права на удаление аккаунта"
+	if db.Model(user).Where("account_id = ?", a.ID).Association("Accounts").Count() == 0 {
+		return errors.New("Account not exist or your have't permissions for this account")
+	}
+
+	// 2. Привязываем аккаунт к пользователю. Реально удаляем через месяц.
+	if err := a.Delete(); err != nil {
+		return err
+	}
 
 	return nil
 }

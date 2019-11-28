@@ -174,29 +174,46 @@ func UploadEavData() {
 }
 
 func UploadTestData() {
-	var err error
-	pool := models.GetPool()
 
 	// 1. Создаем пользователей
-	users := []models.User{
+	users := [] *models.User{
 		{Username:"admin", Email:"kokorevn@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович"},
 		{Username:"nkokorev", Email:"mex388@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович"},
 		{Username:"vpopov", Email:"vp@357gr.ru", Password:"qwerty109#QW", Name:"Василий", Surname:"Попов", Patronymic:"Николаевич"},
 	}
+
+	accounts := [] *models.Account{
+		{Name:"RatusMedia"},
+		{Name:"Rus Marketing"},
+		{Name:"357 грамм"},
+	}
+
 	for i,_ := range users {
+
 		if err := users[i].Create(); err != nil {
 			log.Fatalf("Неудалось создать базового пользователя: %v, Error: %s", users[i], err)
 			return
 		}
+
+		if err := users[i].CreateAccount(accounts[i]); err != nil {
+			log.Fatalf("Неудалось создать аккаунт: %v, Error: %s", accounts[i], err)
+			return
+		}
+
+		if err := accounts[i].AppendUser(users[0]); err != nil {
+			log.Fatalf("Неудалось добавить админа в аккаунт: %v, Error: %s", accounts[i], err)
+			return
+		}
+
 	}
 
 
 
-	// 2. Создаем аккаунты (RatusMedia, Rus-Marketing, 357gr,... )
+/*	// 2. Создаем аккаунты (RatusMedia, Rus-Marketing, 357gr,... )
 	err = pool.Exec("insert into accounts\n    (name, created_at)\nvalues\n    ('RatusMedia', NOW()),\n    ('Rus Marketing', NOW()),\n    ('357 грамм', NOW())\n").Error
 	if err != nil {
 		log.Fatal("Cant insert into table eav_attr_type: ", err)
-	}
+	}*/
 
 
 }
