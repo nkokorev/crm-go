@@ -15,16 +15,6 @@ type Account struct {
 // создает аккаунт, несмотря на a.ID
 func (a *Account) Create () error {
 	return GetPool().Create(a).Error
-
-	/*rows, err := base.GetPool().NamedQuery("INSERT INTO users (username,email,password) VALUES (:username, :email, :password) RETURNING *",u)
-	if err != nil {return err}
-	defer rows.Close()
-
-	// сканируем результат RETURNING
-	if rows.Next() {
-		return rows.StructScan(&u)
-	}
-	return nil*/
 }
 
 // осуществляет поиск по a.ID
@@ -32,12 +22,17 @@ func (a *Account) Get () error {
 	return GetPool().First(a.ID).Error
 }
 
-// сохраняет ВСЕ необходимые поля
+// сохраняет ВСЕ необходимые поля, кроме id, deleted_at и возвращает в Account обновленные данные
 func (a *Account) Save () error {
-	return GetPool().Save(a).Error
+	return db.Model(Account{}).Omit("id", "deleted_at").Save(a).Find(a, "id = ?", a.ID).Error
+}
+
+// обновляет данные аккаунта кроме id, deleted_at и возвращает в Account обновленные данные
+func (a *Account) Update (input interface{}) error {
+	return db.Model(Account{}).Where("id = ?", a.ID).Omit("id", "deleted_at").Update(input).Find(a, "id = ?", a.ID).Error
 }
 
 // # Delete
 func (a *Account) Delete () error {
-	return GetDB().Model(a).Where("id = ?", a.ID).Delete(a).Error
+	return db.Model(Account{}).Where("id = ?", a.ID).Delete(a).Error
 }

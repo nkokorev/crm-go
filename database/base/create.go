@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	"log"
-
 )
 
 func RefreshTables() {
@@ -16,7 +15,7 @@ func RefreshTables() {
 	pool := models.GetPool()
 
 	// дропаем системные таблицы
-	err = pool.Exec("drop table if exists eav_product_attributes, eav_product_values_varchar, eav_varchar_values, eav_attributes, eav_attr_type, api_keys, products, accounts, users").Error
+	err = pool.Exec("drop table if exists eav_product_attributes, eav_product_values_varchar, eav_varchar_values, eav_attributes, eav_attr_type, api_keys, user_accounts, products, accounts, users").Error
 	if err != nil {
 		fmt.Println("Cant create table accounts", err)
 	}
@@ -27,7 +26,7 @@ func RefreshTables() {
 		fmt.Println("Cant create table users", err)
 	}
 
-	// Таблица типов атрибутов EAV-модели. В зависимости от типа атрибута и его параметров он соответствующем образом обрабатывается во фронтенде и бэкенде.
+	// Таблица аккаунтов.
 	err = pool.Exec("create table  accounts (\n id SERIAL PRIMARY KEY UNIQUE,\n name varchar(32),\n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT null\n);\n").Error
 	if err != nil {
 		fmt.Println("Cant create table accounts", err)
@@ -98,6 +97,12 @@ func RefreshTables() {
 	}*/
 
 	// ## ВНешние таблицы связи
+
+	// M:M User <> Account
+	err = pool.Exec("create table user_accounts (\n    user_id INT REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE ,\n    account_id INT REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE ,\n    constraint uix_user_accounts_user_account_id UNIQUE (user_id, account_id)\n);\n\n").Error
+	if err != nil {
+		fmt.Println("Cant create table accounts", err)
+	}
 
 	// M:M Products <> Attributes
 	err = pool.Exec("create table eav_product_attributes (\n     product_id INT REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE ,\n     eav_attributes_id INT REFERENCES eav_attributes(id) ON DELETE CASCADE ON UPDATE CASCADE ,\n     constraint uix_eav_product_attributes_product_account_id unique (product_id, eav_attributes_id)\n);\n\n").Error
@@ -172,10 +177,27 @@ func UploadTestData() {
 	var err error
 	pool := models.GetPool()
 
-	// Добавляем основные аккаунты
+	// 1. Создаем пользователей
+	users := []models.User{
+		{Username:"admin", Email:"kokorevn@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович"},
+		{Username:"nkokorev", Email:"mex388@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович"},
+		{Username:"vpopov", Email:"vp@357gr.ru", Password:"qwerty109#QW", Name:"Василий", Surname:"Попов", Patronymic:"Николаевич"},
+	}
+	for i,_ := range users {
+		if err := users[i].Create(); err != nil {
+			log.Fatalf("Неудалось создать базового пользователя: %v, Error: %s", users[i], err)
+			return
+		}
+	}
+
+
+
+	// 2. Создаем аккаунты (RatusMedia, Rus-Marketing, 357gr,... )
 	err = pool.Exec("insert into accounts\n    (name, created_at)\nvalues\n    ('RatusMedia', NOW()),\n    ('Rus Marketing', NOW()),\n    ('357 грамм', NOW())\n").Error
 	if err != nil {
 		log.Fatal("Cant insert into table eav_attr_type: ", err)
 	}
+
+
 }
 

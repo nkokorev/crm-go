@@ -21,6 +21,7 @@ type User struct {
 	Name 		string `json:"name"`
 	Surname 	string `json:"surname"`
 	Patronymic 	string `json:"patronymic"`
+	//Phone	 	string `json:"patronymic"` // нужно проработать формат данных
 
 	DefaultAccountID int `json:"default_account_id"` // указывает какой аккаунт по дефолту загружать
 
@@ -57,18 +58,19 @@ func (u *User) Get () error {
 
 // сохраняет все поля в модели, кроме id, deleted_at
 func (u *User) Save () error {
-	return db.Omit("id", "deleted_at").Save(u).Error
+	return db.Model(User{}).Omit("id", "deleted_at").Save(u).Find(u, "id = ?", u.ID).Error
 }
 
-// обновляет все схожие с интерфейсом поля, кроме id, deleted_at
+// обновляет все схожие с интерфейсом поля, кроме id, username, deleted_at
 func (u *User) Update (input interface{}) error {
-	return db.Model(u).Where("id = ?", u.ID).Omit("id", "deleted_at").Update(input).Find(u, "id = ?", u.ID).Error
+	return db.Model(User{}).Where("id = ?", u.ID).Omit("id", "username", "deleted_at").Update(input).Find(u, "id = ?", u.ID).Error
 }
 
 // удаляет пользователя по ID
 func (u *User) Delete () error {
-	return db.Model(u).Where("id = ?", u.ID).Delete(u).Error
+	return db.Model(User{}).Where("id = ?", u.ID).Delete(u).Error
 }
+
 
 // ### HELPERS FUNC ###
 
@@ -84,6 +86,7 @@ func (User) ExistEmail(email string) bool {
 func (User) ExistUsername(username string) bool {
 	return db.Unscoped().First(&User{},"username = ?", username).RecordNotFound()
 }
+
 
 // ### Validate & Verify FUNC ###
 
@@ -207,6 +210,18 @@ func (user User) ValidateCreate() error {
 		e.Message = "Неверно заполнены поля"
 		return e
 	}
+
+	return nil
+}
+
+
+// ### Account FUNC ###
+
+//Только реальные пользователи могут создавать аккаунты
+func (user User) CreateAccount(a *Account) error {
+	// 1. Создаем аккаунт
+
+	// 2. Привязываем аккаунт к пользователю
 
 	return nil
 }
