@@ -5,11 +5,14 @@ import (
 )
 
 type Account struct {
-	ID uint `json:"id" db:"id"`
-	Name string `json:"name" db:"name"`
-	CreatedAt 	time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt 	time.Time `json:"updated_at" db:"updated_at"`
+	ID uint
+	Name string
+	CreatedAt 	time.Time
+	UpdatedAt 	time.Time
 	DeletedAt 	*time.Time `json:"-" db:"deleted_at"`
+	
+	Users []User `json:"users" gorm:"many2many:user_accounts"`
+	ApiKeys []ApiKey `json:"api_keys"`
 }
 
 // создает аккаунт, несмотря на a.ID
@@ -19,7 +22,7 @@ func (a *Account) Create () error {
 
 // осуществляет поиск по a.ID
 func (a *Account) Get () error {
-	return GetPool().First(a.ID).Error
+	return db.First(a,a.ID).Error
 }
 
 // сохраняет ВСЕ необходимые поля, кроме id, deleted_at и возвращает в Account обновленные данные
@@ -37,13 +40,23 @@ func (a *Account) Delete () error {
 	return db.Model(Account{}).Where("id = ?", a.ID).Delete(a).Error
 }
 
-// удаляет с концами
+// удаляет аккаунт с концами
 func (a *Account) DeleteUnscoped () error {
 	return db.Model(Account{}).Where("id = ?", a.ID).Unscoped().Delete(a).Error
 }
 
-// ### Account func
 
+// ### Account inner func
+
+// добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то ничего не произойдет.
 func (a *Account) AppendUser (user *User) error {
 	return db.Model(&user).Association("accounts").Append(a).Error
+}
+
+func (a *Account) RemoveUser (user *User) error {
+	return db.Model(&user).Association("accounts").Delete(a).Error
+}
+
+func (a *Account) GetUsers () error {
+	return db.Preload("Users").First(&a).Error
 }
