@@ -39,7 +39,7 @@ func RefreshTables() {
 	}
 
 	// Таблица APIKey
-	err = pool.Exec("create table api_keys (\n  id SERIAL PRIMARY KEY UNIQUE,\n     token varchar(32) not null unique,\n     account_id int NOT NULL REFERENCES accounts (id) ON DELETE CASCADE ON UPDATE CASCADE,\n     name varchar(255) default '',\n     status boolean default true,\n     created_at timestamp default NOW(),\n     updated_at timestamp default CURRENT_TIMESTAMP,\n     constraint uix_api_key_token_account_id unique (token, account_id)\n     -- foreign key (account_id) references accounts(id) on delete cascade\n);\n\n").Error
+	err = pool.Exec("create table api_keys (\n  id SERIAL PRIMARY KEY UNIQUE,\n     token varchar(255) NOT NULL UNIQUE ,\n     account_id int NOT NULL REFERENCES accounts (id) ON DELETE CASCADE ON UPDATE CASCADE,\n     name varchar(255) default '',\n     status BOOLEAN DEFAULT TRUE,\n     created_at timestamp default NOW(),\n     updated_at timestamp default CURRENT_TIMESTAMP,\n     constraint uix_api_keys_token_account_id UNIQUE (token, account_id)\n     -- foreign key (account_id) references accounts(id) on delete cascade\n);\n\n").Error
 	if err != nil {
 		fmt.Println("Cant create table api_keys", err)
 	}

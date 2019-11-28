@@ -46,7 +46,7 @@ func (a *Account) DeleteUnscoped () error {
 }
 
 
-// ### Account inner func
+// ### Account inner USER func
 
 // добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то ничего не произойдет.
 func (a *Account) AppendUser (user *User) error {
@@ -59,4 +59,24 @@ func (a *Account) RemoveUser (user *User) error {
 
 func (a *Account) GetUsers () error {
 	return db.Preload("Users").First(&a).Error
+}
+
+// ### Account inner func API KEYS
+
+func (a *Account) CreateApiToken(key *ApiKey) error {
+	// 1. Привязываем к аккаунту
+	key.AccountID = a.ID
+
+
+	// 2. Создаем
+	if err := key.create(); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (a *Account) GetApiKeys() error {
+	return db.Preload("ApiKeys").First(&a).Error
 }
