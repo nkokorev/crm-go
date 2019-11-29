@@ -23,18 +23,21 @@ func MessageWithErrors(message string, errors map[interface{}]interface{}) (map[
 }
 
 // Готовит сообщение с ошибкой
-func MessageError(err error, m_opt... string) (map[interface{}]interface{}) {
+func MessageError(err error) (map[interface{}]interface{}) {
 
 	e := Error{}
-	errors.As(err, &e)
+	resp := map[interface{}]interface{}{}
+	resp["status"] = false
 
-	if len(m_opt) > 0 {
-		e.Message = m_opt[0]
+	if errors.As(err, &e) {
+		resp["message"] = e.Message
+
+		if len(e.Errors) > 0 {
+			resp["errors"] = e.GetErrors()
+		}
+	} else {
+		resp["message"] = err.Error()
 	}
 
-	return map[interface{}]interface{} {
-		"status" : false,
-		"message" : e.Message,
-		"errors" : e.GetErrors(),
-	}
+	return resp
 }

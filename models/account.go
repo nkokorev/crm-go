@@ -88,5 +88,9 @@ func (a *Account) DeleteApiKey(key *ApiKey) error {
 // ### Account inner func API KEYS
 
 func (a Account) CreateProduct(p *Product) error {
-	return nil
+	p.AccountID = a.ID
+	return p.create()
+}
+func (a Account) UpdateProduct(p *Product, input interface{}) error {
+	return p.update(input)
 }

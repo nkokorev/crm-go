@@ -33,7 +33,7 @@ func RefreshTables() {
 	}
 
 	// Таблица продуктов
-	err = pool.Exec("create table products (\n  id SERIAL PRIMARY KEY UNIQUE,\n     account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n     sku varchar(32) default '',\n     name varchar(255) default '',\n     constraint uix_products_sku_account_id unique (sku, account_id)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
+	err = pool.Exec("create table products (\n  id SERIAL PRIMARY KEY UNIQUE,\n     account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n     sku varchar(32),\n     name varchar(255) default '',\n     constraint uix_products_sku_account_id UNIQUE (sku, account_id)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
 	if err != nil {
 		fmt.Println("Cant create table products", err)
 	}

@@ -1,15 +1,27 @@
 package models
 
+import (
+	"fmt"
+	"github.com/nkokorev/crm-go/utils"
+)
+
 type Product struct {
 	ID uint	`json:"id"`
 	AccountID uint `json:"-"`
-	SKU string `json:"sku"`
+	SKU string `json:"sku" gorm:"default:NULL"`
 	Name string `json:"name"`
 	
 	Account Account `json:"-"`
+	Properties []Property `json:"properties"`
 }
 
 func (p *Product) create() error {
+	// провекра, что такого
+	if !db.Unscoped().First(&Product{},"sku = ?", p.SKU).RecordNotFound() {
+		fmt.Println(p)
+		return utils.Error{Message: fmt.Sprintf("Продукт с SKU = [%v] уже существует",p.SKU) }
+	}
+
 	return db.Create(p).Error
 }
 
