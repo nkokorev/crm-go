@@ -39,7 +39,7 @@ func RefreshTables() {
 	}
 
 	// Таблица APIKey
-	err = pool.Exec("create table api_keys (\n  id SERIAL PRIMARY KEY UNIQUE,\n     token varchar(255) NOT NULL UNIQUE ,\n     account_id int NOT NULL REFERENCES accounts (id) ON DELETE CASCADE ON UPDATE CASCADE,\n     name varchar(255) default '',\n     status BOOLEAN DEFAULT TRUE,\n     created_at timestamp default NOW(),\n     updated_at timestamp default CURRENT_TIMESTAMP,\n     constraint uix_api_keys_token_account_id UNIQUE (token, account_id)\n     -- foreign key (account_id) references accounts(id) on delete cascade\n);\n\n").Error
+	err = pool.Exec("create table api_keys (\n  token VARCHAR(255) PRIMARY KEY UNIQUE,\n  account_id int NOT NULL REFERENCES accounts (id) ON DELETE CASCADE ON UPDATE CASCADE,\n  name VARCHAR(255) default '',\n  status BOOLEAN NOT NULL DEFAULT TRUE,\n  created_at timestamp default NOW(),\n  updated_at timestamp default CURRENT_TIMESTAMP,\n    constraint uix_api_keys_token_account_id UNIQUE (token, account_id)\n     -- foreign key (account_id) references accounts(id) on delete cascade\n);\n\n").Error
 	if err != nil {
 		fmt.Println("Cant create table api_keys", err)
 	}
@@ -202,6 +202,12 @@ func UploadTestData() {
 
 		if err := accounts[i].AppendUser(users[0]); err != nil {
 			log.Fatalf("Неудалось добавить админа в аккаунт: %v, Error: %s", accounts[i], err)
+			return
+		}
+
+		apiKey := &models.ApiKey{Name:"Key for site", Status:true}
+		if err := accounts[i].CreateApiToken(apiKey); err != nil {
+			log.Fatalf("Неудалось создать API ключ для аккаунта: %v, Error: %s", accounts[i], err)
 			return
 		}
 

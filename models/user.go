@@ -29,7 +29,7 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	DeletedAt *time.Time `json:"-"`
 
-	Accounts []Account `json:"accounts" gorm:"many2many:user_accounts"`
+	Accounts []Account `json:"-" gorm:"many2many:user_accounts"`
 }
 
 

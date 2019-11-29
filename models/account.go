@@ -11,8 +11,8 @@ type Account struct {
 	UpdatedAt 	time.Time
 	DeletedAt 	*time.Time `json:"-" db:"deleted_at"`
 	
-	Users []User `json:"users" gorm:"many2many:user_accounts"`
-	ApiKeys []ApiKey `json:"api_keys"`
+	Users []User `json:"-" gorm:"many2many:user_accounts"`
+	ApiKeys []ApiKey `json:"-"`
 }
 
 // создает аккаунт, несмотря на a.ID
@@ -47,6 +47,7 @@ func (a *Account) DeleteUnscoped () error {
 
 
 // ### Account inner USER func
+// todo: пересмотреть работу функций под AccountUser
 
 // добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то ничего не произойдет.
 func (a *Account) AppendUser (user *User) error {
@@ -57,6 +58,7 @@ func (a *Account) RemoveUser (user *User) error {
 	return db.Model(&user).Association("accounts").Delete(a).Error
 }
 
+// загружает список обычных пользователей аккаунта
 func (a *Account) GetUsers () error {
 	return db.Preload("Users").First(&a).Error
 }
@@ -67,16 +69,24 @@ func (a *Account) CreateApiToken(key *ApiKey) error {
 	// 1. Привязываем к аккаунту
 	key.AccountID = a.ID
 
-
 	// 2. Создаем
 	if err := key.create(); err != nil {
 		return err
 	}
 
 	return nil
-
 }
 
 func (a *Account) GetApiKeys() error {
 	return db.Preload("ApiKeys").First(&a).Error
+}
+
+func (a *Account) DeleteApiKey(key *ApiKey) error {
+	return key.delete()
+}
+
+// ### Account inner func API KEYS
+
+func (a Account) CreateProduct(p *Product) error {
+	return nil
 }

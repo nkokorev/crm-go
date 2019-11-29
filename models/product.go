@@ -1,124 +1,35 @@
 package models
 
-import (
-	"fmt"
-	"github.com/nkokorev/crm-go/utils"
-	"log"
-	"strings"
-	"time"
-)
-
 type Product struct {
 	ID uint	`json:"id"`
 	AccountID uint `json:"-"`
 	SKU string `json:"sku"`
 	Name string `json:"name"`
+	
+	Account Account `json:"-"`
 }
 
 func (p *Product) create() error {
-	return nil
+	return db.Create(p).Error
+}
+
+// осуществляет поиск по Token
+func (p *Product) get () error {
+	// тут будет .Preload()
+	return db.First(p, p.ID).Error
 }
 
 func (p *Product) save() error {
-	return nil
+	// тут будет сохранение связанных данных
+	return db.Model(p).Omit("id","account_id","deleted_at").Save(p).Find(p, p.ID).Error
+}
+
+// обновляет все схожие с интерфейсом поля, кроме id, account_id, deleted_at
+func (p *Product) update (input interface{}) error {
+	return db.Model(p).Where("id = ?", p.ID).Omit("id", "account_id", "deleted_at").Update(input).Find(p, "id = ?", p.ID).Error
 }
 
 func (p *Product) delete() error {
-	return nil
+	return db.Model(p).Where("id = ?", p.ID).Delete(p).Error
 }
 
-func (p *Product) get() error {
-	return nil
-}
-
-
-
-func (p *Product) Create() error {
-
-	//utils.TimeTrack(time.Now(), "Create product: ")
-
-	//cols := "(sku, name)"
-	//sqlStr := "insert into products " + cols + " values (?,?) "
-
-	/*pool := base.GetPool()
-	res, err := pool.Exec(sqlStr, p.SKU, p.Name)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	id, _ := res.LastInsertId()
-	//fmt.Println("ID: ", id)
-
-	row := pool.QueryRow("select * from products where id = ?", id)
-	if err := row.Scan(&p.ID, &p.AccountID, &p.SKU, &p.Name); err != nil {
-		return err
-	}
-
-*/
-	//fmt.Println(id)
-
-	//pool.QueryRow()
-
-	/*v := reflect.TypeOf(*p)
-
-	// проверка типа
-	for i := 0; i < v.NumField(); i++ {
-		fmt.Println(v.Field(i).Name)
-	}*/
-
-
-	/*val := reflect.Indirect(reflect.ValueOf(p))
-
-	for i:=0; i < val.Type().NumField(); i++ {
-		fmt.Println(val.Type().Field(i).Name)
-	}
-
-	val2 := reflect.ValueOf(p).Elem()
-	for i:=0; i<val2.NumField();i++{
-		fmt.Println(val2.Type().Field(i).Name)
-	}*/
-	//fmt.Println(val.Type().Field(0).Name)
-
-	return nil
-}
-
-// Создает кучу продуктов
-func CreateProducts(count int)  {
-
-	utils.TimeTrack(time.Now(), "Create products: ")
-	pool := GetPool()
-
-	// очистим таблицу продуктов
-	err := pool.Exec("delete from products;")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// clear eav_product_attributes
-	err = pool.Exec("delete from eav_product_attributes;")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-
-
-	sqlStr := ""
-
-	for i:= 0; i < count; i++ {
-		sqlStr += fmt.Sprintf("('sku-%v','name-%v'),", i, i)
-	}
-	sqlStr = strings.TrimSuffix(sqlStr, ",")
-
-	err = pool.Exec("insert into products (sku, name) values " + sqlStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// каждому продукту по каждому атрибуту в подарок
-	err = pool.Exec("INSERT INTO eav_product_attributes (product_id, eav_attributes_id)\nSELECT DISTINCT products.id, eav_attributes.id FROM products, eav_attributes;")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// каждому продукту
-}

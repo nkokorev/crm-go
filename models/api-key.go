@@ -1,53 +1,55 @@
 package models
 
 import (
-	"github.com/satori/go.uuid"
+	"github.com/segmentio/ksuid"
+	"strings"
 	"time"
 )
 
 type ApiKey struct {
-	ID uint `json:"id"`
-	Token string `json:"token"` // varchar(32)
+	Token string `json:"token"` // ID
 	AccountID uint `json:"-"`
 	Name string `json:"name"`
 	Status bool `json:"status"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+
+	Account Account `json:"-"`
 }
 
 // ### CRUD FUNC ###
 
-// Создает нового пользователя с новым ID
-func (a *ApiKey) create () error {
+// Создает новый ключ, генерирует token (первичный ключ)
+func (key *ApiKey) create () error {
 
-	//guid := xid.New()
-	//a.Token = guid.String()
-	a.Token = uuid.Must(uuid.NewV4()).String()
+	key.Token = strings.ToLower(ksuid.New().String())
 
-
-	//fmt.Println(uuid.Must(uuid.NewV4()))
-	//fmt.Println( strings.ToLower(ksuid.New().String()))
-
-
-	return db.Create(a).Error
+	return db.Create(key).Error
 }
 
-// осуществляет поиск по ID
-func (a *ApiKey) Get () error {
-	return db.First(a,a.ID).Error
+// осуществляет поиск по Token
+func (key *ApiKey) get () error {
+	return db.First(key, "token = ?", key.Token).Error
 }
 
 // сохраняет все поля в модели, кроме id, token, account_id, deleted_at
-func (a *ApiKey) Save () error {
-	return db.Model(User{}).Omit("id", "token","account_id","deleted_at").Save(a).Find(a, "id = ?", a.ID).Error
+func (key *ApiKey) save () error {
+	return db.Model(ApiKey{}).Omit("token","account_id","deleted_at").Save(key).Find(key, "token = ?", key.Token).Error
 }
 
 // обновляет все схожие с интерфейсом поля, кроме id, token, deleted_at
-func (a *ApiKey) Update (input interface{}) error {
-	return db.Model(User{}).Where("id = ?", a.ID).Omit("id", "token","account_id","deleted_at").Update(input).Find(a, "id = ?", a.ID).Error
+func (key *ApiKey) update (input interface{}) error {
+	return db.Model(ApiKey{}).Where("token = ?", key.Token).Omit("token","account_id","deleted_at").Update(input).Find(key, "token = ?", key.Token).Error
 }
 
 // удаляет пользователя по ID
-func (a *ApiKey) Delete () error {
-	return db.Model(User{}).Where("id = ?", a.ID).Delete(a).Error
+func (key *ApiKey) delete () error {
+	return db.Model(ApiKey{}).Where("token = ?", key.Token).Delete(key).Error
+}
+
+// ### Account func
+
+// Предзагружает аккаунт и делает поиск по ключам
+func (key *ApiKey) GetAccount() error {
+	return db.Preload("Account").First(&key, "token = ?", key.Token).Error
 }
