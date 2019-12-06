@@ -10,14 +10,17 @@ type Account struct {
 	CreatedAt 	time.Time
 	UpdatedAt 	time.Time
 	DeletedAt 	*time.Time `json:"-" db:"deleted_at"`
-	
-	Users []User `json:"-" gorm:"many2many:user_accounts"`
-	ApiKeys []ApiKey `json:"-"`
+
+	Users 		[]User `json:"-" gorm:"many2many:user_accounts"`
+	ApiKeys 	[]ApiKey `json:"-"`
+
+	Products 	[]Product `json:"-"`
+	Stocks		[]Stock `json:"-"`
 }
 
 // создает аккаунт, несмотря на a.ID
 func (a *Account) Create () error {
-	return GetPool().Create(a).Error
+	return db.Create(a).Error
 }
 
 // осуществляет поиск по a.ID
@@ -85,12 +88,47 @@ func (a *Account) DeleteApiKey(key *ApiKey) error {
 	return key.delete()
 }
 
-// ### Account inner func API KEYS
+
+// ### Stock functions
+func (a Account) StockCreate(stock *Stock) error {
+	stock.AccountID = a.ID
+	return stock.create()
+}
+
+// загружает список складов в аккаунт
+func (a Account) StockLoad() error {
+	return (Stock{}).GetAll(a.ID, &a.Stocks)
+}
+
+func (a Account) StockGets(stocks *[]Stock) error {
+	return (Stock{}).GetAll(a.ID, stocks)
+}
+
+// обработка принадлежности к аккаунту
+func (a Account) StockGet(stock *Stock, stock_id uint) error {
+	return stock.Get(a.ID, stock_id)
+}
+
+
+
+// ### Account inner func Products
+
+func (a *Account) GetProducts() error {
+	//return db.Preload("Products").Preload("Products.Offers", "account_id = 3").First(&a).Error
+	return db.Preload("Products").Preload("Products.Offers").First(&a).Error
+}
 
 func (a Account) CreateProduct(p *Product) error {
 	p.AccountID = a.ID
 	return p.create()
 }
+
 func (a Account) UpdateProduct(p *Product, input interface{}) error {
 	return p.update(input)
+}
+
+// EAVAttributes
+func (a Account) CreateEavAttribute(ea *EavAttribute) error {
+	ea.AccountID = a.ID
+	return ea.create()
 }

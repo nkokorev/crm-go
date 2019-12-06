@@ -6,7 +6,7 @@ import (
 
 type Error struct {
 	Message string `json:"message"`
-	Errors map[interface{}]interface{} `json:"message"`
+	Errors map[string]interface{} `json:"message"`
 }
 
 // Пиздец важная функция
@@ -24,24 +24,24 @@ func (error Error) HasErrors() (status bool) {
 	return
 }
 
-func (e *Error) AddErrors(key interface{}, value interface{}) {
+func (e *Error) AddErrors(key string, value interface{}) {
 	if e.Errors == nil {
 		//e.Errors = make(map[]interface{})
-		e.Errors = make(map[interface{}]interface{})
+		e.Errors = make(map[string]interface{})
 	}
 	e.Errors[key] = value
 }
 
-func (e *Error) GetErrors() map[interface{}]interface{} {
+func (e *Error) GetErrors() map[string]interface{} {
 	if e.Errors == nil {
-		e.Errors = make(map[interface{}]interface{})
+		e.Errors = make(map[string]interface{})
 	}
 	return e.Errors
 }
 
-func (e *Error) GetError(key interface{}) interface{} {
+func (e *Error) GetError(key string) interface{} {
 	if e.Errors == nil {
-		e.Errors = make(map[interface{}]interface{})
+		e.Errors = make(map[string]interface{})
 	}
 	return e.Errors[key]
 }

@@ -15,7 +15,7 @@ func RefreshTables() {
 	pool := models.GetPool()
 
 	// дропаем системные таблицы
-	err = pool.Exec("drop table if exists eav_product_attributes, eav_product_values_varchar, eav_varchar_values, eav_attributes, eav_attr_type, api_keys, user_accounts, products, accounts, users").Error
+	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, api_keys, user_accounts, stock_products, stocks, product_cart, products, accounts, users").Error
 	if err != nil {
 		fmt.Println("Cant create table accounts", err)
 	}
@@ -33,10 +33,42 @@ func RefreshTables() {
 	}
 
 	// Таблица продуктов
-	err = pool.Exec("create table products (\n  id SERIAL PRIMARY KEY UNIQUE,\n     account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n     sku varchar(32),\n     name varchar(255) default '',\n     constraint uix_products_sku_account_id UNIQUE (sku, account_id)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
+	err = pool.Exec("create table products (\n  id SERIAL PRIMARY KEY UNIQUE,\n     account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n     sku VARCHAR(32) NOT NULL, -- Stock Keeping Unit («складская учётная единица»)\n     name VARCHAR(255),\n     url VARCHAR(255), -- в карточку товара\n     constraint uix_products_article_account_id UNIQUE (sku, account_id)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
 	if err != nil {
 		fmt.Println("Cant create table products", err)
 	}
+
+	// Физически склады (Stocks). Объект принимает товары (приходы), списывает и т.д.
+	err = pool.Exec("create table stocks (\n  id SERIAL PRIMARY KEY UNIQUE,\n    account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    code VARCHAR(255), -- уникальный код склада\n    name VARCHAR(255) NOT NULL,    \n    address VARCHAR(255), -- потом можно более детально сделать адрес\n\n    created_at timestamp DEFAULT NOW(),\n    updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n    deleted_at timestamp DEFAULT null,\n        constraint uix_stocks_account_code_id UNIQUE (account_id, code)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
+	if err != nil {
+		fmt.Println("Cant create table products", err)
+	}
+
+	// Таблица продуктов
+	err = pool.Exec("create table stock_products (\n    id SERIAL PRIMARY KEY UNIQUE,\n    account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для ускорения поиска\n    stock_id INT NOT NULL REFERENCES stocks(id) ON DELETE CASCADE ON UPDATE CASCADE, -- поиск по складу\n    product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE, -- поиск по продукту\n\n    in_stock DECIMAL DEFAULT 0.0, -- запас\n    stockpile DECIMAL DEFAULT 0.0, -- резерв (зарезервировано) тут может быть условие, можно ли резеревировать больше остатка\n    \n    -- allow_reserve_out_of_stock BOOLEAN DEFAULT FALSE, -- можно ли резервировать больше реального запаса\n      \n     constraint uix_stock_products_account_store_product_id UNIQUE (account_id, stock_id, product_id)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
+	if err != nil {
+		fmt.Println("Cant create table products", err)
+	}
+
+
+
+	// склад (stock)
+	// интернет-магазин (store)
+	// витрина (store_view)
+	// карточка товара (product_cart)
+
+
+
+	err = pool.Exec("create table product_cart (\n  id SERIAL PRIMARY KEY UNIQUE,\n  account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n  -- stock_id INT NOT NULL REFERENCES stocks(id) ON DELETE CASCADE ON UPDATE CASCADE,\n  -- store_id INT NOT NULL REFERENCES stores(id) ON DELETE CASCADE ON UPDATE CASCADE,\n  name VARCHAR(255), -- h1 страницы\n  -- description VARCHAR(255), -- описание ?\n  -- url VARCHAR(255), -- канонический url карточки товара (если надо) \n  url_key VARCHAR(255), -- url имя страницы: home, scooter-s1, audi-a8, koowheel-k10\n  \n  -- meta group \n  meta_title VARCHAR (255),\n  meta_description VARCHAR (255),\n  meta_keywords VARCHAR (255)\n     -- constraint uix_products_article_account_id UNIQUE (article, account_id)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
+	if err != nil {
+		fmt.Println("Cant create table products", err)
+	}
+
+	//// Таблица товарных предложений для продуктов
+	//err = pool.Exec("create table product_offers (\n  id SERIAL PRIMARY KEY UNIQUE,\n  account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE, \n  sku VARCHAR(32), -- уникальный индетификатор предложения в рамках одного аккаунта в магазине / складе\n  label VARCHAR(255), -- метка товарного предложения (\"в подрочной упаковке\", \"в разломе\", ...)\n     constraint uix_product_offers_sku_account_id UNIQUE (sku, account_id)\n);\n\n").Error
+	//if err != nil {
+	//	fmt.Println("Cant create table products", err)
+	//}
 
 	// Таблица APIKey
 	err = pool.Exec("create table api_keys (\n  token VARCHAR(255) PRIMARY KEY UNIQUE,\n  account_id int NOT NULL REFERENCES accounts (id) ON DELETE CASCADE ON UPDATE CASCADE,\n  name VARCHAR(255) default '',\n  status BOOLEAN NOT NULL DEFAULT TRUE,\n  created_at timestamp default NOW(),\n  updated_at timestamp default CURRENT_TIMESTAMP,\n    constraint uix_api_keys_token_account_id UNIQUE (token, account_id)\n     -- foreign key (account_id) references accounts(id) on delete cascade\n);\n\n").Error
@@ -53,7 +85,7 @@ func RefreshTables() {
 	}
 
 	// [eav_attributes] Таблица атрибутов EAV-модели.
-	err = pool.Exec("create table  eav_attributes (\n id serial primary key unique,\n -- account_id INT DEFAULT 0 REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- index !!! null == system\n code varchar(32), -- json: color, price, description. Уникальные значения только в рамках одного аккаунта!\n eav_attr_type_code varchar(32) REFERENCES eav_attr_type(code) ON DELETE CASCADE ON UPDATE CASCADE, -- index !!!\n multiple boolean default false, -- множественный выбор (first() / findAll())\n label varchar(32), -- label: Цвет, цена, описание\n required BOOLEAN DEFAULT FALSE\n -- constraint uix_eav_attributes_code_account_id unique (code, account_id) -- уникальные значения в рамках одного аккаунта\n \n);").Error
+	err = pool.Exec("create table  eav_attributes (\n id serial primary key unique,\n account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE , -- системные нафиг, все привязаны к аккаунту\n code VARCHAR(32), -- json: color, price, description. Уникальные значения только в рамках одного аккаунта!\n attr_type_code varchar(32) REFERENCES eav_attr_type(code) ON DELETE CASCADE ON UPDATE CASCADE, -- index !!!\n multiple BOOLEAN DEFAULT FALSE, -- множественный выбор (first() / findAll())\n label VARCHAR(32), -- label: Цвет, цена, описание\n required BOOLEAN DEFAULT FALSE,\n CONSTRAINT uix_eav_attributes_code_account_id UNIQUE (code, account_id) -- уникальные значения в рамках одного аккаунта\n \n);").Error
 	if err != nil {
 		log.Fatal("Cant create table eav_attributes: ", err)
 	}
@@ -61,10 +93,10 @@ func RefreshTables() {
 	// ### Создание таблиц для хранения значений атрибутов [VARCHAR, TEXT, DATE, BOOLEAN, INT, DECIMAL]
 
 	// 1. [eav_attr_values_varchar] хранение значений атрибутов EAV-модели типа VARCHAR.
-	err = pool.Exec("create table  eav_varchar_values (\n id SERIAL PRIMARY KEY UNIQUE,\n eav_attr_id INT REFERENCES eav_attributes(id) ON DELETE CASCADE ON UPDATE CASCADE, -- внешний ключ, указывающий на владельца\n -- eav_attr_type_code varchar(32), # внешний ключ, указывающий на тип атрибута \n value varchar(255) default ''\n);").Error
-	if err != nil {
-		log.Fatal("Cant create table eav_attr_varchar", err)
-	}
+	//err = pool.Exec("create table  eav_varchar_values (\n id SERIAL PRIMARY KEY UNIQUE,\n eav_attr_id INT REFERENCES eav_attributes(id) ON DELETE CASCADE ON UPDATE CASCADE, -- внешний ключ, указывающий на владельца\n -- eav_attr_type_code varchar(32), # внешний ключ, указывающий на тип атрибута \n value varchar(255) default ''\n);").Error
+	//if err != nil {
+	//	log.Fatal("Cant create table eav_attr_varchar", err)
+	//}
 
 	/*// 2. [eav_attr_values_text] хранение значений атрибутов EAV-модели типа TEXT.
 	_, err = pool.Exec("create or replace table  eav_attr_values_text (\n id int unsigned auto_increment primary key,\n eav_attr_id int unsigned, # внешний ключ, указывающий на владельца\n eav_attr_type_id int unsigned, # внешний ключ, указывающий на тип атрибута \n value text default '',\n foreign key (eav_attr_id) references eav_attributes(id) on delete cascade\n # foreign key (eav_attr_type_id) references eav_attr_type(id) on delete cascade\n);")
@@ -104,17 +136,17 @@ func RefreshTables() {
 		fmt.Println("Cant create table accounts", err)
 	}
 
-	// M:M Products <> Attributes
-	err = pool.Exec("create table eav_product_attributes (\n     product_id INT REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE ,\n     eav_attributes_id INT REFERENCES eav_attributes(id) ON DELETE CASCADE ON UPDATE CASCADE ,\n     constraint uix_eav_product_attributes_product_account_id unique (product_id, eav_attributes_id)\n);\n\n").Error
-	if err != nil {
-		fmt.Println("Cant create table accounts", err)
-	}
+	//// M:M Products <> Attributes
+	//err = pool.Exec("create table eav_product_offer_attributes (\n     account_id INT REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- обязательно, чтобы ускорить выборку\n     product_offer_id INT REFERENCES product_offers(id) ON DELETE CASCADE ON UPDATE CASCADE,\n     eav_attributes_id INT REFERENCES eav_attributes(id) ON DELETE CASCADE ON UPDATE CASCADE,\n     constraint uix_eav_product_attributes_account_product_eav_attributes_id unique (account_id, product_offer_id, eav_attributes_id)\n);\n\n").Error
+	//if err != nil {
+	//	fmt.Println("Cant create table accounts", err)
+	//}
 
 	// M:M Products <> Varchar values
-	err = pool.Exec("create table eav_product_values_varchar (\n     product_id INT REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE ,\n     eav_varchar_value_id INT REFERENCES eav_varchar_values(id) ON DELETE CASCADE ON UPDATE CASCADE,\n     constraint uix_eav_product_values_varchar_product_value_id unique (product_id, eav_varchar_value_id)\n     \n);\n\n").Error
-	if err != nil {
-		fmt.Println("Cant create table accounts", err)
-	}
+	// err = pool.Exec("create table eav_product_values_varchar (\n     product_id INT REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE ,\n     eav_varchar_value_id INT REFERENCES eav_varchar_values(id) ON DELETE CASCADE ON UPDATE CASCADE,\n     constraint uix_eav_product_values_varchar_product_value_id unique (product_id, eav_varchar_value_id)\n     \n);\n\n").Error
+	//if err != nil {
+	//	fmt.Println("Cant create table accounts", err)
+	//}
 
 	// загружаем стоковые данные для EAV таблиц
 	UploadEavData()
@@ -160,16 +192,16 @@ func UploadEavData() {
 	}
 
 	// Добавляем в таблицу атрибутов EAV-моделей системные атрибуты.
-	err = pool.Exec("insert into eav_attributes\n    (eav_attr_type_code, label, code, required, multiple)\nvalues\n    ('text_field', 'Имя продукта', 'name', false, false),\n    ('text_field', 'Производитель', 'manufactures', false, false),\n    ('text_editor', 'Описание', 'description', false, false),\n    ('decimal', 'Цена', 'price', false, false),\n    ('date', 'Дата производства', 'manufacture_date', false, false),\n    ('text_field', 'Размер одежды', 'clothing_size', false, true),\n    ('text_field', 'Тип упаковки', 'pkg_type', false, true),\n    ('text_field', 'Состав', 'composition', false, false)\n    ").Error
+	/*err = pool.Exec("insert into eav_attributes\n    (account_id, eav_attr_type_code, label, code, required, multiple)\nvalues\n    (3,'text_field', 'Имя продукта', 'name', false, false),\n    (3,'text_field', 'Производитель', 'manufactures', false, false),\n    (3,'text_editor', 'Описание', 'description', false, false),\n    (3,'decimal', 'Цена', 'price', false, false),\n    (3,'date', 'Дата производства', 'manufacture_date', false, false),\n    (3,'text_field', 'Размер одежды', 'clothing_size', false, true),\n    (3,'text_field', 'Тип упаковки', 'pkg_type', false, true),\n    (3,'text_field', 'Состав', 'composition', false, false)\n    ").Error
 	if err != nil {
 		log.Fatal("Cant insert into table eav_attributes: ", err)
-	}
+	}*/
 
 	// загружаем значения varchar
-	err = pool.Exec("insert into eav_varchar_values\n    (eav_attr_id, value)\nvalues\n    (6, 'S'), -- Размер одежды\n    (6, 'M'), -- Размер одежды\n    (6, 'L'), -- Размер одежды\n    (7, 'Без упаковки (без упаковки)'), -- Тип упаковки\n    (7, 'Подарочный пакет'), -- Тип упаковки\n    (8, 'хлопок 90%, эластан 10%'),-- Состав\n    (8, 'вискоза 89%, эластан 11%'), -- Состав\n    (8, 'вискоза 89%, эластан 11%'), -- Состав\n    (8, 'хлопок 100%') -- Состав\n    ").Error
+	/*err = pool.Exec("insert into eav_varchar_values\n    (eav_attr_id, value)\nvalues\n    (6, 'S'), -- Размер одежды\n    (6, 'M'), -- Размер одежды\n    (6, 'L'), -- Размер одежды\n    (7, 'Без упаковки (без упаковки)'), -- Тип упаковки\n    (7, 'Подарочный пакет'), -- Тип упаковки\n    (8, 'хлопок 90%, эластан 10%'),-- Состав\n    (8, 'вискоза 89%, эластан 11%'), -- Состав\n    (8, 'вискоза 89%, эластан 11%'), -- Состав\n    (8, 'хлопок 100%') -- Состав\n    ").Error
 	if err != nil {
 		log.Fatal("Cant insert into table eav_attr_values_varchar: ", err)
-	}
+	}*/
 
 }
 
@@ -182,11 +214,18 @@ func UploadTestData() {
 		{Username:"vpopov", Email:"vp@357gr.ru", Password:"qwerty109#QW", Name:"Василий", Surname:"Попов", Patronymic:"Николаевич"},
 	}
 
+	// 2. Аккаунты
 	accounts := [] *models.Account{
 		{Name:"RatusMedia"},
 		{Name:"Rus Marketing"},
 		{Name:"357 грамм"},
 	}
+
+	attributes := [] *models.EavAttribute{
+		{Code:"size", Label:"Размер одежды", Multiple:false, Required:false, AttrTypeCode: "text_field"},
+	}
+
+	// 3. Стоковые атрибуты продуктов в аккаунте
 
 	for i,_ := range users {
 
@@ -212,6 +251,13 @@ func UploadTestData() {
 		}
 
 	}
+	for _, r := range attributes {
+		if err := accounts[2].CreateEavAttribute(r); err != nil {
+			log.Fatalf("Неудалось добавить атрибут %v в аккаунт, Error: %s", r.Label, err)
+			return
+		}
+	}
+
 
 
 

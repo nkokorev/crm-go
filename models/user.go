@@ -78,15 +78,15 @@ func (u *User) Delete () error {
 
 // Существует ли пользователь с указанным ID
 func (User) Exist(id uint) bool {
-	return db.Unscoped().First(&User{}, "ip = ?", id).RecordNotFound()
+	return !db.Unscoped().First(&User{}, "ip = ?", id).RecordNotFound()
 }
 
 func (User) ExistEmail(email string) bool {
-	return db.Unscoped().First(&User{},"email = ?", email).RecordNotFound()
+	return !db.Unscoped().First(&User{},"email = ?", email).RecordNotFound()
 }
 
 func (User) ExistUsername(username string) bool {
-	return db.Unscoped().First(&User{},"username = ?", username).RecordNotFound()
+	return !db.Unscoped().First(&User{},"username = ?", username).RecordNotFound()
 }
 
 
@@ -149,7 +149,7 @@ func (User) VerifyUsername(username string) error {
 		return errors.New("Используйте только a-z,A-Z,0-9 а также символ -")
 	}
 
-	if !(User{}).ExistUsername(username) {
+	if (User{}).ExistUsername(username) {
 		return errors.New("Данный username уже используется")
 	}
 
@@ -163,7 +163,7 @@ func (User) VerifyEmail(email string) error {
 		return err
 	}
 
-	if !(User{}).ExistEmail(email) {
+	if (User{}).ExistEmail(email) {
 		return errors.New("Данный email-адрес уже используется")
 	}
 
@@ -244,6 +244,11 @@ func (user *User) CreateAccount(a *Account) error {
 	// 3. Назначает роль owner
 
 	return nil
+}
+
+// функция прокладка, обновление можно вызвать и из интерфейса аккаунта
+func (user *User) UpdateAccount(a *Account, input interface{}) error {
+	return a.Update(input)
 }
 
 // удаляет аккаунт, если пользователь имеет такие права
