@@ -12,9 +12,10 @@ type Product struct {
 	AccountID uint `json:"-"`
 
 	// Article string `json:"article"` // артикул товара из иных соображений (часто публичный)
-	SKU string `json:"sku"` // складской индектификатор
+	SKU string `json:"sku" gorm:"default:NULL"` // складской индектификатор
 
 	Name string `json:"name"`
+	Description string `json:"description"` // pgsql: text
 
 	Account Account `json:"-"`
 	// Offers []ProductOffer `json:"offers"`

@@ -94,26 +94,23 @@ func (a Account) StockCreate(stock *Stock) error {
 	stock.AccountID = a.ID
 	return stock.Create()
 }
-// загружает список складов в аккаунт
 func (a *Account) StockLoad() (err error) {
 	a.Stocks, err = (Stock{}).GetAll(a.ID)
 	return err
-	//return (Stock{}).getAll(a.ID, &a.Stocks)
 }
-
-
 
 // ### Account inner func Products
-
-func (a *Account) GetProducts() error {
-	//return db.Preload("Products").Preload("Products.Offers", "account_id = 3").First(&a).Error
-	return db.Preload("Products").Preload("Products.Offers").First(&a).Error
-}
-
-func (a Account) CreateProduct(p *Product) error {
+func (a Account) ProductCreate(p *Product) error {
 	p.AccountID = a.ID
 	return p.Create()
 }
+func (a *Account) ProductLoad() (err error) {
+	a.Products, err = (Product{}).GetAll(a.ID)
+	return err
+	//return db.Preload("Products").Preload("Products.Offers").First(&a).Error
+}
+
+
 
 
 // EAVAttributes
