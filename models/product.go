@@ -10,26 +10,42 @@ import (
 type Product struct {
 	ID uint	`json:"id"`
 	AccountID uint `json:"-"`
+	ProductGroupID uint `json:"product_group_id"` // группа товаров (они много на что могут влиять, в том числе и на каталог, группы атрибутов)
 
 	// Article string `json:"article"` // артикул товара из иных соображений (часто публичный)
 	SKU string `json:"sku" gorm:"default:NULL"` // складской индектификатор
+	URL string `json:"url"` // идентификатор страницы (products/syao-chzhun )
 
 	Name string `json:"name"`
+	ShortDescription string `json:"short_description"` // pgsql: varchar
 	Description string `json:"description"` // pgsql: text
+
+
 
 	Account Account `json:"-"`
 	// Offers []ProductOffer `json:"offers"`
+
 }
 
-func (p *Product) Create() error {
+func (p *Product) Create(inputs... map[string]interface{}) error {
 
-	if p.Name == "" {
-		return utils.Error{Message:"Ошибки при создании продукта", Errors: map[string]interface{} {"name":"Имя продукта обязательно к заполнению"} }
+	// 1. проверяем принадлежность к аккаунту
+	if p.AccountID < 1 {
+		return errors.New("Необходимо указать Account ID")
 	}
+
+	// 2. Получение всех атрибутов товара данной группы
+
+
+
+	/*if p.Name == "" {
+		return utils.Error{Message:"Ошибки при создании продукта", Errors: map[string]interface{} {"name":"Имя продукта обязательно к заполнению"} }
+	}*/
 
 	if p.ExistSKU() {
 		return utils.Error{Message: fmt.Sprintf("Продукт с SKU = [%v] уже существует",p.SKU) }
 	}
+
 
 	// создаем продукт
 	if err := db.Create(p).Error; err != nil {
