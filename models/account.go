@@ -92,21 +92,13 @@ func (a *Account) DeleteApiKey(key *ApiKey) error {
 // ### Stock functions
 func (a Account) StockCreate(stock *Stock) error {
 	stock.AccountID = a.ID
-	return stock.create()
+	return stock.Create()
 }
-
 // загружает список складов в аккаунт
-func (a Account) StockLoad() error {
-	return (Stock{}).GetAll(a.ID, &a.Stocks)
-}
-
-func (a Account) StockGets(stocks *[]Stock) error {
-	return (Stock{}).GetAll(a.ID, stocks)
-}
-
-// обработка принадлежности к аккаунту
-func (a Account) StockGet(stock *Stock, stock_id uint) error {
-	return stock.Get(a.ID, stock_id)
+func (a *Account) StockLoad() (err error) {
+	a.Stocks, err = (Stock{}).GetAll(a.ID)
+	return err
+	//return (Stock{}).getAll(a.ID, &a.Stocks)
 }
 
 
@@ -120,12 +112,9 @@ func (a *Account) GetProducts() error {
 
 func (a Account) CreateProduct(p *Product) error {
 	p.AccountID = a.ID
-	return p.create()
+	return p.Create()
 }
 
-func (a Account) UpdateProduct(p *Product, input interface{}) error {
-	return p.update(input)
-}
 
 // EAVAttributes
 func (a Account) CreateEavAttribute(ea *EavAttribute) error {

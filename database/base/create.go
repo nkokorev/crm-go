@@ -33,13 +33,13 @@ func RefreshTables() {
 	}
 
 	// Таблица продуктов
-	err = pool.Exec("create table products (\n  id SERIAL PRIMARY KEY UNIQUE,\n     account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n     sku VARCHAR(32) NOT NULL, -- Stock Keeping Unit («складская учётная единица»)\n     name VARCHAR(255),\n     url VARCHAR(255), -- в карточку товара\n     constraint uix_products_article_account_id UNIQUE (sku, account_id)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
+	err = pool.Exec("create table products (\n  id SERIAL PRIMARY KEY UNIQUE,\n     account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    -- article VARCHAR(32) NOT NULL, -- публичный артикул\n     sku VARCHAR(32) NOT NULL, -- Stock Keeping Unit («складская учётная единица»)\n     \n     name VARCHAR(255),\n     url VARCHAR(255), -- в карточку товара\n    -- constraint uix_products_article_account_id UNIQUE (article, account_id)\n     constraint uix_products_sku_account_id UNIQUE (sku, account_id)\n     \n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
 	if err != nil {
 		fmt.Println("Cant create table products", err)
 	}
 
 	// Физически склады (Stocks). Объект принимает товары (приходы), списывает и т.д.
-	err = pool.Exec("create table stocks (\n  id SERIAL PRIMARY KEY UNIQUE,\n    account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    code VARCHAR(255), -- уникальный код склада\n    name VARCHAR(255) NOT NULL,    \n    address VARCHAR(255), -- потом можно более детально сделать адрес\n\n    created_at timestamp DEFAULT NOW(),\n    updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n    deleted_at timestamp DEFAULT null,\n        constraint uix_stocks_account_code_id UNIQUE (account_id, code)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
+	err = pool.Exec("create table stocks (\n  id SERIAL PRIMARY KEY UNIQUE,\n    account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    code VARCHAR(255), -- уникальный код склада\n    name VARCHAR(255) NOT NULL,    \n    address VARCHAR(255), -- потом можно более детально сделать адрес\n\n    -- created_at timestamp DEFAULT NOW(),\n    -- updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n    -- deleted_at timestamp DEFAULT null,\n        constraint uix_stocks_account_code_id UNIQUE (account_id, code)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
 	if err != nil {
 		fmt.Println("Cant create table products", err)
 	}
