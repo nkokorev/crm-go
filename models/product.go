@@ -20,10 +20,8 @@ type Product struct {
 	ShortDescription string `json:"short_description"` // pgsql: varchar
 	Description string `json:"description"` // pgsql: text
 
-
-
 	Account Account `json:"-"`
-	// Offers []ProductOffer `json:"offers"`
+	Offers []Offer `json:"offers" gorm:"many2many:offer_products"`
 
 }
 
@@ -62,7 +60,9 @@ func (p *Product) Get () error {
 		return errors.New("Необходимо указать Account ID")
 	}
 
-	err := db.Model(Product{}).Where("id = ? AND account_id = ?", p.ID, p.AccountID).First(p).Error;
+	//err := db.Model(Product{}).Preload("Offers").Where("id = ? AND account_id = ?", p.ID, p.AccountID).First(p).Error;
+
+	err := db.Model(Product{}).Preload("Offers").Preload("Offers.Composition").Where("id = ? AND account_id = ?", p.ID, p.AccountID).First(p).Error;
 
 	if err != nil && err == gorm.ErrRecordNotFound {
 		return utils.Error{Message:fmt.Sprintf("Указанный продукт с id = %v не найден.", p.ID)}

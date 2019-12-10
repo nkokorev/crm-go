@@ -74,7 +74,7 @@ func RefreshTables() {
 
 
 	//// Таблица оферов (чуть шире, чем товарные предложения, т.к. может быть несколько продуктов (2 по цене 1, наборы))
-	err = pool.Exec("create table offers (\n  id SERIAL PRIMARY KEY UNIQUE,\n  account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  -- product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE, \n\n  name VARCHAR(255), -- метка товарного предложения (\"в подрочной упаковке\", \"в разломе\", ...)\n  price DECIMAL (20,2) -- 2 знака после запятой\n  \n\n);\n\n").Error
+	err = pool.Exec("create table offers (\n  id SERIAL PRIMARY KEY UNIQUE,\n  account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  -- product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE, \n\n  name VARCHAR(255), -- метка товарного предложения (\"в подрочной упаковке\", \"в разломе\", ...)\n  price DECIMAL (20,2) CONSTRAINT positive_price CHECK (price > 0), -- 2 знака после запятой\n  discount DECIMAL (20,2) DEFAULT 0.0 CONSTRAINT positive_discount CHECK ( discount <= price ) -- 2 знака после запятой \n\n);\n\n").Error
 	if err != nil {
 		fmt.Println("Cant create table products", err)
 	}
@@ -84,9 +84,6 @@ func RefreshTables() {
 	if err != nil {
 		fmt.Println("Cant create table products", err)
 	}
-
-
-
 
 	// Таблица APIKey
 	err = pool.Exec("create table api_keys (\n  token VARCHAR(255) PRIMARY KEY UNIQUE,\n  account_id int NOT NULL REFERENCES accounts (id) ON DELETE CASCADE ON UPDATE CASCADE,\n  name VARCHAR(255) default '',\n  status BOOLEAN NOT NULL DEFAULT TRUE,\n  created_at timestamp default NOW(),\n  updated_at timestamp default CURRENT_TIMESTAMP,\n    constraint uix_api_keys_token_account_id UNIQUE (token, account_id)\n     -- foreign key (account_id) references accounts(id) on delete cascade\n);\n\n").Error
@@ -155,7 +152,7 @@ func RefreshTables() {
 	}
 
 	// M:M Offer <> Product
-	err = pool.Exec("create table offer_products (\n  id SERIAL PRIMARY KEY UNIQUE,\n  account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  offer_id INT NOT NULL REFERENCES offers(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  -- product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,\n  \n  volume DECIMAL(13,3) NOT NULL -- какой объем входит в оффер (шт, литры, граммы, кг и т.д.) \n\n);\n\n").Error
+	err = pool.Exec("create table offer_products (\n  id SERIAL PRIMARY KEY UNIQUE,\n  account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  offer_id INT NOT NULL REFERENCES offers(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  -- product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,\n  \n  volume DECIMAL(13,3) NOT NULL DEFAULT 0.0 -- какой объем входит в оффер (шт, литры, граммы, кг и т.д.) \n\n);\n\n").Error
 	if err != nil {
 		fmt.Println("Cant create table products", err)
 	}
@@ -276,6 +273,10 @@ func UploadTestData() {
 		{AccountID:3, ParentID:2, ShopID:1, Code:"tea.china", URL:"china", Name:"Китайский чай", Breadcrumb: "Китайский чай", Description:""}, // country = china & type = tea
 		{AccountID:3, ParentID:2, ShopID:1, Code:"tea.taiwan", URL:"taiwan", Name:"Тайваньский чай", Breadcrumb: "Тайваньский чай", Description:""}, // country = taiwan & type = tea
 
+		{AccountID:3, ParentID:5, ShopID:1, Code:"accessories.tableware.brewing", URL:"tableware-for-brewing", Name:"Посуда для заварки китайского чая", Breadcrumb: "Посуда для заварки китайского чая", Description:""}, // country = taiwan & type = tea
+
+		{AccountID:3, ParentID:16, ShopID:1, Code:"accessories.tableware.brewing.gunfu", URL:"gunfu", Name:"Типоды (Гунфу)", Breadcrumb: "Типоды (Гунфу чайники)", Description:""}, // country = taiwan & type = tea
+
 	}
 
 	products := [] *models.Product{
@@ -290,6 +291,14 @@ func UploadTestData() {
 		{AccountID:3, ProductGroupID: 8, SKU:"1018", URL:"chzhun-go-hun", Name:"Чжун Го Хун"},
 		{AccountID:3, ProductGroupID: 8, SKU:"859", URL:"dyan-hun-sosnovye-igly", Name:"Дянь Хун \"Сосновые иглы\""},
 		{AccountID:3, ProductGroupID: 8, SKU:"965", URL:"li-chzhi-hun-cha", Name:"Ли Чжи Хун Ча"},
+
+		{AccountID:3, ProductGroupID: 17, SKU:"80", URL:"samadoyo-b-06", Name:"SAMADOYO B-06 (600 мл)", ShortDescription:"Чайник с кнопкой (типод)"},
+	}
+
+	offers := [] *models.Offer{
+		{AccountID:3, Name:"25гр (пробник)", Price:275.00, Discount:0},
+		{AccountID:3, Name:"50гр", Price:550.00, Discount:0},
+		{AccountID:3, Name:"100гр", Price:1100.00, Discount:0},
 	}
 
 
@@ -343,6 +352,18 @@ func UploadTestData() {
 			log.Fatalf("Неудалось создать продукт для 357 грамм", r.Name, err)
 			return
 		}
+	}
+
+	for _, r := range offers {
+		if err := r.Create(); err != nil {
+			log.Fatalf("Неудалось создать offer для 357 грамм", r.Name, err)
+			return
+		}
+		if err := r.ProductAppend(*products[10], 25.0);err != nil {
+			log.Fatalf("Неудалось добавить продукт %v в офер %v 357 грамм", products[10].Name, r.Name, err)
+			return
+		}
+
 	}
 
 	for _, r := range attributes {
