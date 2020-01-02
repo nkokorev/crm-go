@@ -16,14 +16,11 @@ type Offer struct {
 	//Properties []EavProductOfferAttribute `json:"properties"`
 	//Properties []Property `json:"properties"`
 
-	//Volume float64 `json:"volume"`
-
-	//Products []Product `json:"-" gorm:"many2many:product_product_offer"`
-	Products []Product `json:"-" gorm:"many2many:offer_products"`
-	Composition []OfferProduct `json:"composition"`
+	Products []Product `json:"-" gorm:"many2many:offer_compositions"`
+	Composition []OfferComposition `json:"composition"`
 
 	Account Account `json:"-"`
-	//Product Product	`json:"-"`
+	Product Product	`json:"-"`
 }
 
 func (offer *Offer) Create () error {
@@ -37,8 +34,15 @@ func (offer *Offer) Create () error {
 }
 
 func (offer *Offer) ProductAppend (product Product, volume float64) error {
-	return db.Model(OfferProduct{}).Create(&OfferProduct{AccountID:offer.AccountID, OfferID:offer.ID, ProductID:product.ID, Volume:volume}).Error
-	//return db.Model(offer).Association("Products").Append(&product).Error
+	return db.Model(OfferComposition{}).Create(&OfferComposition{AccountID:offer.AccountID, OfferID:offer.ID, ProductID:product.ID, Volume:volume}).Error
 }
 
+func (offer Offer) GetAll(v_opt... uint) (offers []Offer, err error) {
 
+	account_id := offer.AccountID
+	if len(v_opt) > 0 {
+		account_id = v_opt[0]
+	}
+	err = db.Model(Offer{}).Order("id asc").Preload("Composition").Where("account_id = ?", account_id).Find(&offers).Error
+	return
+}

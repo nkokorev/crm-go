@@ -1,6 +1,6 @@
 package models
 
-type OfferProduct struct {
+type OfferComposition struct {
 	ID uint	`json:"-"`
 	AccountID uint `json:"-"`
 	ProductID uint `json:"product_id"`

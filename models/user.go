@@ -124,7 +124,7 @@ func (User) VerifyPassword(pwd string) error {
 	}
 
 	if ! (number && upper && special && letters >= 5) {
-		return errors.New("Пароль слишком простой")
+		return errors.New("Слишком простой пароль: проверьте наличие обязательных символов.")
 	}
 
 	return nil
@@ -175,16 +175,16 @@ func (user User) ValidateCreate() error {
 
 	var e u.Error
 
-	// 1. Проверка username пользователя
-	if err := user.VerifyUsername(user.Username); err != nil {
-		e.AddErrors("username", err.Error())
+	// 1. Проверка email
+	if err := user.VerifyEmail(user.Email); err != nil {
+		e.AddErrors("email", err.Error())
 		e.Message = "Неверно заполнены поля"
 		return e
 	}
 
-	// 2. Проверка email
-	if err := user.VerifyEmail(user.Email); err != nil {
-		e.AddErrors("email", err.Error())
+	// 2. Проверка username пользователя
+	if err := user.VerifyUsername(user.Username); err != nil {
+		e.AddErrors("username", err.Error())
 		e.Message = "Неверно заполнены поля"
 		return e
 	}

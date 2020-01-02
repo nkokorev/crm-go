@@ -15,13 +15,13 @@ func RefreshTables() {
 	pool := models.GetPool()
 
 	// дропаем системные таблицы
-	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, api_keys, user_accounts, offer_products, product_card_offers, offers, product_cards, product_groups, stock_products, stocks, shops, products, accounts, users").Error
+	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, api_keys, user_accounts, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, users").Error
 	if err != nil {
 		fmt.Println("Cant create table accounts", err)
 	}
 
 	// Таблица типов атрибутов EAV-модели. В зависимости от типа атрибута и его параметров он соответствующем образом обрабатывается во фронтенде и бэкенде.
-	err = pool.Exec("create table  users (\n id SERIAL PRIMARY KEY UNIQUE,\n username varchar(32) NOT NULL UNIQUE,\n email varchar(32) NOT NULL UNIQUE,\n password varchar(255) NOT NULL UNIQUE,\n \n name varchar(32) DEFAULT '',\n surname varchar(32) DEFAULT '',\n patronymic varchar(32) DEFAULT '',\n \n default_account_id INT DEFAULT NULL,\n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT NULL\n);\n").Error
+	err = pool.Exec("create table  users (\n id SERIAL PRIMARY KEY UNIQUE,\n username varchar(32) NOT NULL UNIQUE,\n email varchar(60) NOT NULL UNIQUE,\n password varchar(255) NOT NULL UNIQUE,\n \n name varchar(32) DEFAULT '',\n surname varchar(32) DEFAULT '',\n patronymic varchar(32) DEFAULT '',\n \n default_account_id INT DEFAULT NULL,\n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT NULL\n);\n").Error
 	if err != nil {
 		fmt.Println("Cant create table users", err)
 	}
@@ -152,7 +152,7 @@ func RefreshTables() {
 	}
 
 	// M:M Offer <> Product
-	err = pool.Exec("create table offer_products (\n  id SERIAL PRIMARY KEY UNIQUE,\n  account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  offer_id INT NOT NULL REFERENCES offers(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  -- product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,\n  \n  volume DECIMAL(13,3) NOT NULL DEFAULT 0.0 -- какой объем входит в оффер (шт, литры, граммы, кг и т.д.) \n\n);\n\n").Error
+	err = pool.Exec("create table offer_compositions (\n  id SERIAL PRIMARY KEY UNIQUE,\n  account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  offer_id INT NOT NULL REFERENCES offers(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  -- product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,\n  \n  volume DECIMAL(13,3) NOT NULL DEFAULT 0.0 -- какой объем входит в оффер (шт, литры, граммы, кг и т.д.) \n\n);\n\n").Error
 	if err != nil {
 		fmt.Println("Cant create table products", err)
 	}
@@ -292,13 +292,18 @@ func UploadTestData() {
 		{AccountID:3, ProductGroupID: 8, SKU:"859", URL:"dyan-hun-sosnovye-igly", Name:"Дянь Хун \"Сосновые иглы\""},
 		{AccountID:3, ProductGroupID: 8, SKU:"965", URL:"li-chzhi-hun-cha", Name:"Ли Чжи Хун Ча"},
 
-		{AccountID:3, ProductGroupID: 17, SKU:"80", URL:"samadoyo-b-06", Name:"SAMADOYO B-06 (600 мл)", ShortDescription:"Чайник с кнопкой (типод)"},
+		{AccountID:3, ProductGroupID: 17, SKU:"80", URL:"samadoyo-b-06", Name:"SAMADOYO B-06 (600 мл)", ShortDescription:"Чайник с кнопкой (типод)"}, // 12
 	}
 
 	offers := [] *models.Offer{
-		{AccountID:3, Name:"25гр (пробник)", Price:275.00, Discount:0},
+		{AccountID:3, Name:"25гр (пробник)", Price:350.00, Discount:0},
 		{AccountID:3, Name:"50гр", Price:550.00, Discount:0},
-		{AccountID:3, Name:"100гр", Price:1100.00, Discount:0},
+		{AccountID:3, Name:"100гр", Price:1100.00, Discount:150},
+		{AccountID:3, Name:"100гр + типод", Price:2200.00, Discount:400},
+	}
+
+	pcs := [] *models.ProductCard{
+		{AccountID:3,ShopID:1,URL:"teguanin"},
 	}
 
 
@@ -354,17 +359,55 @@ func UploadTestData() {
 		}
 	}
 
+
+
 	for _, r := range offers {
 		if err := r.Create(); err != nil {
 			log.Fatalf("Неудалось создать offer для 357 грамм", r.Name, err)
 			return
 		}
-		if err := r.ProductAppend(*products[10], 25.0);err != nil {
-			log.Fatalf("Неудалось добавить продукт %v в офер %v 357 грамм", products[10].Name, r.Name, err)
-			return
-		}
 
 	}
+
+
+
+	if err := offers[0].ProductAppend(*products[10], 25.0); err != nil {
+		log.Fatalf("Неудалось добавить продукт в оффер, Error: %s", err)
+		return
+	}
+	if err := offers[1].ProductAppend(*products[10], 50.0); err != nil {
+		log.Fatalf("Неудалось добавить продукт в оффер, Error: %s", err)
+		return
+	}
+	if err := offers[2].ProductAppend(*products[10], 100.0); err != nil {
+		log.Fatalf("Неудалось добавить продукт в оффер, Error: %s", err)
+		return
+	}
+	if err := offers[3].ProductAppend(*products[10], 100.0); err != nil {
+		log.Fatalf("Неудалось добавить продукт в оффер, Error: %s", err)
+		return
+	}
+	if err := offers[3].ProductAppend(*products[11], 1.0); err != nil {
+		log.Fatalf("Неудалось добавить продукт в оффер, Error: %s", err)
+		return
+	}
+
+	for _, r := range pcs {
+		if err := r.Create(); err != nil {
+			log.Fatalf("Неудалось создать pcs для 357 грамм", r.URL, err)
+			return
+		}
+	}
+
+	for i,_ := range offers {
+		if err := pcs[0].OfferAppend(*offers[i], i); err != nil {
+			log.Fatalf("Неудалось добавить продукт в оффер, Error: %s", err)
+			return
+		}
+	}
+
+
+
 
 	for _, r := range attributes {
 		if err := accounts[2].CreateEavAttribute(r); err != nil {
@@ -372,9 +415,6 @@ func UploadTestData() {
 			return
 		}
 	}
-
-
-
 
 /*	// 2. Создаем аккаунты (RatusMedia, Rus-Marketing, 357gr,... )
 	err = pool.Exec("insert into accounts\n    (name, created_at)\nvalues\n    ('RatusMedia', NOW()),\n    ('Rus Marketing', NOW()),\n    ('357 грамм', NOW())\n").Error

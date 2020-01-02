@@ -24,6 +24,10 @@ func (key *ApiKey) create () error {
 
 	key.Token = strings.ToLower(ksuid.New().String())
 
+	if key.AccountID == 3 {
+		key.Token = "1ukyryxpfprxpy17i4ldlrz9kg3"
+	}
+
 	return db.Create(key).Error
 }
 

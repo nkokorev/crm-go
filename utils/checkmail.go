@@ -52,7 +52,8 @@ func ValidateFormat(email string) error {
 	if len(email) < 6 {
 		return errors.New("Email-адрес слишком короткий")
 	}
-	if len(email) > 254 {
+	// ограничиваем 60 вместо 254
+	if len(email) > 60 {
 		return errors.New("Email-адрес слишком длинный")
 	}
 
