@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	"log"
+	"time"
 )
 
 func RefreshTables() {
@@ -15,15 +16,20 @@ func RefreshTables() {
 	pool := models.GetPool()
 
 	// дропаем системные таблицы
-	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, api_keys, user_accounts, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, users").Error
+	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, api_keys, user_accounts, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, user_email_verifications, users").Error
 	if err != nil {
 		fmt.Println("Cant create table accounts", err)
 	}
 
 	// Таблица типов атрибутов EAV-модели. В зависимости от типа атрибута и его параметров он соответствующем образом обрабатывается во фронтенде и бэкенде.
-	err = pool.Exec("create table  users (\n id SERIAL PRIMARY KEY UNIQUE,\n username varchar(32) NOT NULL UNIQUE,\n email varchar(60) NOT NULL UNIQUE,\n password varchar(255) NOT NULL UNIQUE,\n \n name varchar(32) DEFAULT '',\n surname varchar(32) DEFAULT '',\n patronymic varchar(32) DEFAULT '',\n \n default_account_id INT DEFAULT NULL,\n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT NULL\n);\n").Error
+	err = pool.Exec("create table  users (\n id SERIAL PRIMARY KEY UNIQUE,\n username varchar(32) NOT NULL UNIQUE,\n email varchar(255) NOT NULL UNIQUE,\n password varchar(255) NOT NULL UNIQUE,\n \n name varchar(32) DEFAULT '',\n surname varchar(32) DEFAULT '',\n patronymic varchar(32) DEFAULT '',\n \n default_account_id INT DEFAULT NULL,\n -- email_verification BOOLEAN NOT NULL DEFAULT FALSE,\n email_verified_at TIMESTAMP DEFAULT NULL,\n \n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT NULL\n);\n").Error
 	if err != nil {
 		fmt.Println("Cant create table users", err)
+	}
+
+	err = pool.Exec("create table  user_email_verifications (\n token varchar(255) NOT NULL PRIMARY KEY UNIQUE,\n email varchar(255) NOT NULL UNIQUE,\n user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE, -- сравниваем с текущем email'ом\n \n created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n expired_at TIMESTAMP DEFAULT NOW() + INTERVAL '3 DAY'\n);\n").Error
+	if err != nil {
+		fmt.Println("Cant create table user_email_send", err)
 	}
 
 	// Таблица аккаунтов.
@@ -234,11 +240,12 @@ func UploadEavData() {
 
 func UploadTestData() {
 
+	timeNow := time.Now();
 	// 1. Создаем пользователей
 	users := [] *models.User{
-		{Username:"admin", Email:"kokorevn@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович"},
-		{Username:"nkokorev", Email:"mex388@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович"},
-		{Username:"vpopov", Email:"vp@357gr.ru", Password:"qwerty109#QW", Name:"Василий", Surname:"Попов", Patronymic:"Николаевич"},
+		{Username:"admin", Email:"kokorevn@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt:&timeNow},
+		{Username:"nkokorev", Email:"mex388@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt: &timeNow},
+		{Username:"vpopov", Email:"vp@357gr.ru", Password:"qwerty109#QW", Name:"Василий", Surname:"Попов", Patronymic:"Николаевич",EmailVerifiedAt: &timeNow},
 	}
 
 	// 2. Аккаунты
@@ -315,7 +322,7 @@ func UploadTestData() {
 
 	for i,_ := range users {
 
-		if err := users[i].Create(); err != nil {
+		if err := users[i].Create(false); err != nil {
 			log.Fatalf("Неудалось создать базового пользователя: %v, Error: %s", users[i], err)
 			return
 		}

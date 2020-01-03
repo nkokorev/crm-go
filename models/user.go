@@ -25,6 +25,9 @@ type User struct {
 
 	DefaultAccountID int `json:"default_account_id"` // указывает какой аккаунт по дефолту загружать
 
+	EmailVerifiedAt *time.Time `json:"email_verified_at" gorm:"default:null"`
+	//EmailVerification bool `json:"email_verification" gorm:"default:false"`
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	DeletedAt *time.Time `json:"-"`
@@ -36,7 +39,7 @@ type User struct {
 // ### CRUD FUNC ###
 
 // Создает нового пользователя с новым ID
-func (u *User) Create () error {
+func (u *User) Create (sendEmailVerification bool) error {
 
 	// проверим входящие сообщения
 	if err := u.ValidateCreate(); err != nil {
@@ -50,7 +53,16 @@ func (u *User) Create () error {
 	}
 	u.Password = string(password)
 
-	return db.Create(u).Error
+	if db.Create(u).Error != nil {
+		return err
+	}
+
+	if sendEmailVerification {
+		if err := u.SendEmailVerification(); err !=nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // осуществляет поиск по ID
@@ -214,6 +226,17 @@ func (user User) ValidateCreate() error {
 	}
 
 	return nil
+}
+
+func (user User) SendEmailVerification() error {
+
+	if err := (&UserEmailVerification{UserID:user.ID,Email:user.Email}).Create();err != nil {
+		return err;
+	}
+
+	// todo: send email verification
+
+	return  nil
 }
 
 
