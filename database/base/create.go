@@ -27,7 +27,7 @@ func RefreshTables() {
 		fmt.Println("Cant create table users", err)
 	}
 
-	err = pool.Exec("create table  user_email_verifications (\n token varchar(255) NOT NULL PRIMARY KEY UNIQUE,\n email varchar(255) NOT NULL UNIQUE,\n user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE, -- сравниваем с текущем email'ом\n \n created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n expired_at TIMESTAMP DEFAULT NOW() + INTERVAL '3 DAY'\n);\n").Error
+	err = pool.Exec("create table  user_email_verifications (\n token varchar(255) NOT NULL PRIMARY KEY UNIQUE,\n email varchar(255) NOT NULL UNIQUE,\n user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE, -- сравниваем с текущем email'ом\n \n created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n--  expired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);\n").Error
 	if err != nil {
 		fmt.Println("Cant create table user_email_send", err)
 	}

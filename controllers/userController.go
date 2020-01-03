@@ -67,7 +67,6 @@ func UserEmailVerification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := v.EmailVerified(); err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Верификация email провалена"))
 		return
 	}

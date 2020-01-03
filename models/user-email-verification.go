@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	u "github.com/nkokorev/crm-go/utils"
 	"github.com/segmentio/ksuid"
 	"strings"
 	"time"
@@ -14,7 +15,7 @@ type UserEmailVerification struct {
 	User User `json:"-"`
 
 	CreatedAt time.Time `json:"created_at"`
-	ExpiredAt time.Time `json:"updated_at"`
+	//ExpiredAt time.Time `json:"updated_at"`
 
 
 }
@@ -36,7 +37,6 @@ func (umv *UserEmailVerification) Create() error {
 
 // осуществляет поиск по ID
 func (umv *UserEmailVerification) Get () error {
-	//return db.First(umv,"token = ?", umv.Token).Related(&umv.User, "User").Error
 	return db.First(umv,"token = ?", umv.Token).Error
 }
 
@@ -48,17 +48,28 @@ func (umv *UserEmailVerification) Delete () error {
 //
 func (umv *UserEmailVerification) EmailVerified () error {
 
-	// 1. Ищем целевого пользователя
-	var user User
-	if err := db.First(&user, "id = ? AND email = ?", umv.UserID, umv.Email).Error; err!= nil {
-		return errors.New("Пользователь не найден")
+	var e u.Error
+
+	// 1. Проверяем дату (не заэкспирелся ли токен)
+	if !time.Now().Add(-time.Hour * 24).Before(umv.CreatedAt) {
+		//e.AddErrors("email", err.Error())
+		e.Message = "Проверочный ключ устарел"
+		return e
 	}
 
-	// 2. Если все в порядке активируем учетную запись пользователя
+	// 2. Ищем целевого пользователя
+	var user User
+	if err := db.First(&user, "id = ? AND email = ?", umv.UserID, umv.Email).Error; err != nil {
+		e.Message = "Пользователь не найден"
+		return e
+		//return errors.New("Пользователь не найден")
+	}
+
+	// 3. Если все в порядке активируем учетную запись пользователя
 	timeNow := time.Now()
 	user.EmailVerifiedAt = &timeNow
 
-	// 3. Сохраняем обновленные данные пользователя
+	// 4. Сохраняем обновленные данные пользователя
 	if err := user.Save(); err != nil {
 		return err
 	}
