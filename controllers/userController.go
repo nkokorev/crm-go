@@ -21,7 +21,6 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 		EmailVerificated bool `json:"email_verificated"` //default false
 	}{}
 
-
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		//u.Respond(w, u.MessageError(err, "Invalid request - cant decode json request."))
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
@@ -31,18 +30,21 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	user.Password = user.NativePwd
 
 	if err := user.Create(!user.EmailVerificated); err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Cant create user")) // что это?)
 		return
 	}
 
-	// 1. создаем token для email-verification
-	// 2. создаем jwt-token для аутентификации пользователя
+	// 1. создаем jwt-token для аутентификации пользователя
+	token, err := (models.JWT{UserId:user.ID}).CreateCryptoToken()
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Cant create jwt-token"))
+		return
+	}
 
 
 	resp := u.Message(true, "POST user / User Create")
 	resp["user"] = user.User
-	resp["token"] = "fdshfsdfshjKdskfdKDFjocvmidsifjiIfjhosfdsd"
+	resp["token"] = token
 	u.Respond(w, resp)
 }
 
@@ -64,14 +66,27 @@ func UserEmailVerification(w http.ResponseWriter, r *http.Request) {
 
 	// пробуем пройти верификацию
 	if err := (models.User{}).EmailVerified(AccessData.Token); err != nil {
-		u.Respond(w, u.MessageError(err, "Верификация email провалена"))
+		u.Respond(w, u.MessageError(err, "Не удалось пройти верификаицю email"))
 		return
 	}
 
-	// создаем короткий token для пользователя (?)
-
 	resp := u.Message(true, "Верификация прошла успешно!")
-	//resp["user"] = user.User
-	//resp["token"] = v // что этО?)
+	u.Respond(w, resp)
+}
+
+func UserGetProfile(w http.ResponseWriter, r *http.Request) {
+
+	userID := r.Context().Value("user_id").(uint)
+
+	user := models.User{ID: userID}
+	fmt.Println("userID: ", userID)
+	if err := user.Get(); err !=nil {
+		u.Respond(w, u.MessageError(err, "Неудалось найти пользователя")) // вообще тут нужен релогин
+		return
+	}
+
+	resp := u.Message(true, "POST user / User Create")
+	resp["user"] = user
+	//resp["token"] = token
 	u.Respond(w, resp)
 }

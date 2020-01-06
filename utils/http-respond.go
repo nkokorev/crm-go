@@ -2,8 +2,10 @@ package utils
 
 import (
 	"errors"
+	"github.com/gorilla/mux"
 	"github.com/json-iterator/go"
 	"net/http"
+	"strconv"
 )
 
 func Message(status bool, message string) (map[string]interface{}) {
@@ -47,4 +49,13 @@ func MessageError(err error, opt_msg... string) (map[string]interface{}) {
 	}
 
 	return resp
+}
+
+func GetFromRequestUINT(r *http.Request, val_name string) (uint, error) {
+
+	vars := mux.Vars(r)
+	str_int_id := vars[val_name]
+
+	id, err := strconv.ParseUint(str_int_id, 10, 32)
+	return uint(id), err
 }
