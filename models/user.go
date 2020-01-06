@@ -230,15 +230,62 @@ func (user User) ValidateCreate() error {
 
 func (user User) SendEmailVerification() error {
 
-	if err := (&UserEmailVerification{UserID:user.ID,Email:user.Email}).Create();err != nil {
+	// 1. Создаем токен
+	if err := (&UserEmailAccessToken{UserID:user.ID, Type:"verification", Email:user.Email}).Create();err != nil {
 		return err;
 	}
 
+	// 2. Посылаем уведомление с токеном
 	// todo: send email verification
 
 	return  nil
 }
 
+// проверяет token, в случае успеха удаляет его из БД
+func (User) EmailVerified(token string) error {
+
+	var user User
+	var e u.Error
+	uat := UserEmailAccessToken{Token:token}
+
+	// 1. Пробуем найти токен
+	err := uat.Get()
+	if err != nil {
+		e.Message = "Проверочный код не найден"
+		return e
+	}
+
+	// 2. Проверяем тип токена (вообще это системная ошибка)
+	if uat.Type != "verification" {
+		e.Message = "Тип токена указан не верно"
+		return e
+	}
+
+	// 3. Проверяем время жизни token
+	if !time.Now().Add(-time.Hour * 24).Before(uat.CreatedAt) {
+		e.Message = "Проверочный ключ устарел"
+		return e
+	}
+
+	// 4. Проверяем существование пользователя с данными токена
+	if err := db.First(&user, "id = ? AND email = ?", uat.UserID, uat.Email).Error; err != nil {
+		e.Message = "Пользователь не найден"
+		return e
+	}
+
+	// 5. Если все в порядке активируем учетную запись пользователя и сохраняем данные
+	timeNow := time.Now()
+	user.EmailVerifiedAt = &timeNow
+
+	// 6. Сохраняем обновленные данные пользователя
+	if err := user.Save(); err != nil {
+		e.Message = "Неудалось обновить данные пользователя"
+		return e
+	}
+
+	// 7. Удаляем проверочный код (больше не нужен)
+	return uat.Delete()
+}
 
 // ### Account's FUNC ###
 

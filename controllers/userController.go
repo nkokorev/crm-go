@@ -31,7 +31,8 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	user.Password = user.NativePwd
 
 	if err := user.Create(!user.EmailVerificated); err != nil {
-		u.Respond(w, u.MessageError(err, "Cant create user"))
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Cant create user")) // что это?)
 		return
 	}
 
@@ -52,28 +53,25 @@ func UserEmailVerification(w http.ResponseWriter, r *http.Request) {
 
 	//time.Sleep(1 * time.Second)
 
-	v := models.UserEmailVerification{}
+	AccessData := struct {
+		Token string `json:"token"`
+	}{}
 
-	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
-		//u.Respond(w, u.MessageError(err, "Invalid request - cant decode json request."))
+	if err := json.NewDecoder(r.Body).Decode(&AccessData); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	err := v.Get()
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Проверочный код не найден"))
-		return
-	}
-
-	if err := v.EmailVerified(); err != nil {
+	// пробуем пройти верификацию
+	if err := (models.User{}).EmailVerified(AccessData.Token); err != nil {
 		u.Respond(w, u.MessageError(err, "Верификация email провалена"))
 		return
 	}
-	// создаем короткий token для пользователя
+
+	// создаем короткий token для пользователя (?)
 
 	resp := u.Message(true, "Верификация прошла успешно!")
 	//resp["user"] = user.User
-	resp["token"] = v
+	//resp["token"] = v // что этО?)
 	u.Respond(w, resp)
 }

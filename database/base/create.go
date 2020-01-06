@@ -16,7 +16,7 @@ func RefreshTables() {
 	pool := models.GetPool()
 
 	// дропаем системные таблицы
-	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, api_keys, user_accounts, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, user_email_verifications, users").Error
+	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, api_keys, user_accounts, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, user_email_access_tokens, users").Error
 	if err != nil {
 		fmt.Println("Cant create table accounts", err)
 	}
@@ -27,7 +27,8 @@ func RefreshTables() {
 		fmt.Println("Cant create table users", err)
 	}
 
-	err = pool.Exec("create table  user_email_verifications (\n token varchar(255) NOT NULL PRIMARY KEY UNIQUE,\n email varchar(255) NOT NULL UNIQUE,\n user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE, -- сравниваем с текущем email'ом\n \n created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n--  expired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);\n").Error
+	// в этой таблице хранятся пользовательские email-уведомления
+	err = pool.Exec("--create table  user_email_verifications (\n--create table  user_email_notified (\ncreate table  user_email_access_tokens (\ntoken varchar(255) PRIMARY KEY UNIQUE,\ntype VARCHAR(255) NOT NULL DEFAULT 'verification', -- verification, recover (username, password, email), join to account, ...\nemail varchar(255) NOT NULL, -- куда фактически был отправлен token (для безопасности)\nuser_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE, -- ID пользователя, для которого выполняется процедура \ncreated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n--  expired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);\n").Error
 	if err != nil {
 		fmt.Println("Cant create table user_email_send", err)
 	}
