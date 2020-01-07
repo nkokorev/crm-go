@@ -5,6 +5,7 @@ import (
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
 	"os"
+	"reflect"
 	"regexp"
 	"unicode"
 	//"gopkg.in/guregu/null.v3"
@@ -39,50 +40,64 @@ type User struct {
 // ### CRUD FUNC ###
 
 // Создает нового пользователя с новым ID
-func (u *User) Create (sendEmailVerification bool) error {
+// Для единости интерфейса нельзя иметь обязательные переменные
+//func (u *User) Create (sendEmailVerification bool) error {
+// 1. bool - send email veryfication
+func (user *User) Create (v_opt... interface{} ) error {
 
 	// проверим входящие сообщения
-	if err := u.ValidateCreate(); err != nil {
+	if err := user.ValidateCreate(); err != nil {
 		return err
 	}
 
 	// Создаем крипто пароль
-	password, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
-	u.Password = string(password)
+	user.Password = string(password)
 
-	if db.Create(u).Error != nil {
+	if db.Create(user).Error != nil {
 		return err
 	}
 
-	if sendEmailVerification {
+	//if len(v_opt) > 0 && reflect.Type(v_opt[0].type(Type)).Kind() == reflect.Bool {
+	if len(v_opt) > 0 && reflect.ValueOf(v_opt[0]).Type().Kind() == reflect.Bool {
+
+		if reflect.ValueOf(v_opt[0]).Bool() {
+			if err := user.SendEmailVerification(); err !=nil {
+				return err
+			}
+		}
+
+
+	}
+	/*if sendEmailVerification {
 		if err := u.SendEmailVerification(); err !=nil {
 			return err
 		}
-	}
+	}*/
 	return nil
 }
 
 // осуществляет поиск по ID
-func (u *User) Get () error {
-	return db.First(u,u.ID).Error
+func (user *User) Get () error {
+	return db.First(user,user.ID).Error
 }
 
 // сохраняет все поля в модели, кроме id, deleted_at
-func (u *User) Save () error {
-	return db.Model(User{}).Omit("id", "deleted_at").Save(u).Find(u, "id = ?", u.ID).Error
+func (user *User) Save () error {
+	return db.Model(User{}).Omit("id", "deleted_at").Save(user).Find(user, "id = ?", user.ID).Error
 }
 
 // обновляет все схожие с интерфейсом поля, кроме id, username, deleted_at
-func (u *User) Update (input interface{}) error {
-	return db.Model(User{}).Where("id = ?", u.ID).Omit("id", "username", "deleted_at").Update(input).Find(u, "id = ?", u.ID).Error
+func (user *User) Update (input interface{}) error {
+	return db.Model(User{}).Where("id = ?", user.ID).Omit("id", "username", "deleted_at").Update(input).Find(user, "id = ?", user.ID).Error
 }
 
 // удаляет пользователя по ID
-func (u *User) Delete () error {
-	return db.Model(User{}).Where("id = ?", u.ID).Delete(u).Error
+func (user *User) Delete () error {
+	return db.Model(User{}).Where("id = ?", user.ID).Delete(user).Error
 }
 
 
@@ -285,11 +300,12 @@ func (User) EmailVerified(token string) error {
 
 	// 7. Удаляем проверочный код (больше не нужен)
 	return uat.Delete()
+	//return nil
 }
 
 // ### Account's FUNC ###
 
-func (user *User) GetAccounts() error {
+func (user *User) LoadAccounts() error {
 	return db.Preload("Accounts").First(&user).Error
 }
 

@@ -5,10 +5,12 @@ import (
 )
 
 type Account struct {
-	ID uint
-	Name string
-	CreatedAt 	time.Time
-	UpdatedAt 	time.Time
+	ID uint `json:"id"`
+	Name string `json:"name"`
+	Website string `json:"website"`
+	Type string `json:"type"`
+	CreatedAt 	time.Time `json:"created_at"`
+	UpdatedAt 	time.Time `json:"-"`
 	DeletedAt 	*time.Time `json:"-" db:"deleted_at"`
 
 	Users 		[]User `json:"-" gorm:"many2many:user_accounts"`

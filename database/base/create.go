@@ -34,7 +34,7 @@ func RefreshTables() {
 	}
 
 	// Таблица аккаунтов.
-	err = pool.Exec("create table  accounts (\n id SERIAL PRIMARY KEY UNIQUE,\n name varchar(32),\n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT null\n);\n").Error
+	err = pool.Exec("create table  accounts (\n id SERIAL PRIMARY KEY UNIQUE,\n name varchar(255),\n website varchar(255),\n type varchar(255),\n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT null\n);\n").Error
 	if err != nil {
 		fmt.Println("Cant create table accounts", err)
 	}

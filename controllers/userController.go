@@ -34,12 +34,17 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 1. создаем jwt-token для аутентификации пользователя
+	// 1. Добавляем пользователя в аккаунт
+	// todo add user to account
+
+	// 2. создаем jwt-token для аутентификации пользователя
 	token, err := (models.JWT{UserId:user.ID}).CreateCryptoToken()
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Cant create jwt-token"))
 		return
 	}
+
+
 
 
 	resp := u.Message(true, "POST user / User Create")
@@ -87,6 +92,25 @@ func UserGetProfile(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "POST user / User Create")
 	resp["user"] = user
+	//resp["token"] = token
+	u.Respond(w, resp)
+}
+
+func UserGetAccounts(w http.ResponseWriter, r *http.Request) {
+
+	userID := r.Context().Value("user_id").(uint)
+
+	user := models.User{ID: userID}
+	if err := user.LoadAccounts(); err !=nil {
+		u.Respond(w, u.MessageError(err, "Неудалось найти пользователя")) // вообще тут нужен релогин
+		return
+	}
+
+	fmt.Println(user)
+	fmt.Println(user.Accounts)
+
+	resp := u.Message(true, "GET users/accounts")
+	resp["accounts"] = user.Accounts
 	//resp["token"] = token
 	u.Respond(w, resp)
 }
