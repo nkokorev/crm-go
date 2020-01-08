@@ -2,6 +2,8 @@ package models
 
 import (
 	"errors"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/jinzhu/gorm"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
 	"os"
@@ -303,6 +305,7 @@ func (User) EmailVerified(token string) error {
 	//return nil
 }
 
+
 // ### Account's FUNC ###
 
 func (user *User) LoadAccounts() error {
@@ -351,4 +354,78 @@ func (user *User) DeleteAccount(a *Account) error {
 	}
 
 	return nil
+}
+
+
+/// ### Auth FUNC ###
+
+// Авторизует пользователя: загружает пользователя с предзагрузкой аккаунтов и, в случае успеха возвращает jwt-token
+func (user *User) AuthLogin(username, password string, staySignedIn... bool) (string, error) {
+
+	//user := &User{}
+	var e u.Error
+
+	// Делаем предзагрузку аккаунтов, чтобы потом их еще раз не подгружать
+	if err := db.Preload("Accounts").Where("username = ?", username).First(user).Error; err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			e.AddErrors("username", "Пользователь не найден")
+			e.Message = "Не верно указаны данные"
+		} else {
+			e.Message = "Внутренняя ошибка. Попробуйте позже"
+		}
+		return "", e
+	}
+
+
+	// если пользователь не найден temp.Username == nil, то пароль не будет искаться, т.к. он будет равен нулю (не с чем сравнивать)
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword { //Password does not match!
+		e.AddErrors("password", "Не верный пароль")
+	}
+
+	if e.HasErrors() {
+		e.Message = "Не верно указаны данные"
+		return "", e
+	}
+
+	expiresAt := time.Now().Add(time.Minute * 10).Unix()
+	claims := JWT{
+		user.ID,
+		0,
+		jwt.StandardClaims{
+			ExpiresAt: expiresAt,
+			Issuer:    "AuthServer",
+		},
+	}
+	return claims.CreateCryptoToken()
+}
+
+// Вход в аккаунт из-под пользователя. Возвращает новый токен
+func (user *User) LoginInAccount(account_id uint) (string, error) {
+
+	var e u.Error
+
+	if user.ID < 1 || account_id < 1 {
+		e.Message = "Внутренняя ошибка во входе в аккаунт"
+		return "", e
+	}
+
+	// 1. Проверяем что такой аккаунт существует
+
+	// 2. Проверяем, что у пользователя есть к нему доступ
+
+	// 3. Создаем долгий ключ для входа
+	expiresAt := time.Now().Add(time.Hour * 2).Unix()
+	claims := JWT{
+		user.ID,
+		account_id,
+		jwt.StandardClaims{
+			ExpiresAt: expiresAt,
+			Issuer:    "GUI Server",
+		},
+	}
+
+	return claims.CreateCryptoToken()
+
 }
