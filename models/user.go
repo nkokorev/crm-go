@@ -401,7 +401,7 @@ func (user *User) AuthLogin(username, password string, staySignedIn... bool) (st
 	return claims.CreateCryptoToken()
 }
 
-// Вход в аккаунт из-под пользователя. Возвращает новый токен
+// Вход в аккаунт из-под пользователя. Делает необходимые проверки и возвращает новый токен/
 func (user *User) LoginInAccount(account_id uint) (string, error) {
 
 	var e u.Error

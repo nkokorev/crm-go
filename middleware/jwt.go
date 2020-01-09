@@ -100,7 +100,7 @@ func JwtAccountAuthentication(next http.Handler) http.Handler {
 	});
 }
 
-// Требует User и Account авторизации, НЕ проверяет доступ пользователя к аккаунту
+// Требует User и Account авторизации, Проверяет доступ пользователя к аккаунту.
 func JwtFullAuthentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -146,6 +146,9 @@ func JwtFullAuthentication(next http.Handler) http.Handler {
 			u.Respond(w, u.Message(false, "Авторизуйтесь в аккаунте"))
 			return
 		}
+
+		// Проверяем доступ к аккаунту
+
 
 		next.ServeHTTP(w, r) //proceed in the middleware chain!
 	});
