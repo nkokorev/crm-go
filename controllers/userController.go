@@ -19,7 +19,8 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	user := struct {
 		models.User
 		NativePwd string `json:"password"`
-		EmailVerificated bool `json:"email_verificated"` //default false
+		InviteToken string `json:"inviteToken"` //
+		EmailVerificated bool `json:"emailVerificated"` //default false
 	}{}
 
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
@@ -124,9 +125,6 @@ func UserAuthorization(w http.ResponseWriter, r *http.Request)  {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
-
-	fmt.Println("UserAuth: ", v)
-
 
 	token, err := user.AuthLogin(v.Username, v.Password, v.StaySignedIn)
 	if err != nil {
