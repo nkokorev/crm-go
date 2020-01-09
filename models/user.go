@@ -7,7 +7,6 @@ import (
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
 	"os"
-	"reflect"
 	"regexp"
 	"unicode"
 	//"gopkg.in/guregu/null.v3"
@@ -38,14 +37,16 @@ type User struct {
 	Accounts []Account `json:"-" gorm:"many2many:user_accounts"`
 }
 
+// структура настроек
+type UserCreateSettings struct {
+	SendEmailVerification bool
+}
 
 // ### CRUD FUNC ###
 
 // Создает нового пользователя с новым ID
 // Для единости интерфейса нельзя иметь обязательные переменные
-//func (u *User) Create (sendEmailVerification bool) error {
-// 1. bool - send email veryfication
-func (user *User) Create (v_opt... interface{} ) error {
+func (user *User) Create (v_opt... UserCreateSettings ) error {
 
 	// проверим входящие сообщения
 	if err := user.ValidateCreate(); err != nil {
@@ -63,22 +64,18 @@ func (user *User) Create (v_opt... interface{} ) error {
 		return err
 	}
 
-	//if len(v_opt) > 0 && reflect.Type(v_opt[0].type(Type)).Kind() == reflect.Bool {
-	if len(v_opt) > 0 && reflect.ValueOf(v_opt[0]).Type().Kind() == reflect.Bool {
 
-		if reflect.ValueOf(v_opt[0]).Bool() {
+	// проверяем надо ли посылать уведомление для верификации аккаунта
+	if len(v_opt) > 0 {
+		createSettings := v_opt[0]
+
+		if createSettings.SendEmailVerification {
 			if err := user.SendEmailVerification(); err !=nil {
 				return err
 			}
 		}
-
-
 	}
-	/*if sendEmailVerification {
-		if err := u.SendEmailVerification(); err !=nil {
-			return err
-		}
-	}*/
+
 	return nil
 }
 

@@ -342,7 +342,7 @@ func UploadTestData() {
 
 	for i,_ := range users {
 
-		if err := users[i].Create(false); err != nil {
+		if err := users[i].Create(models.UserCreateSettings{SendEmailVerification:false}); err != nil {
 			log.Fatalf("Неудалось создать базового пользователя: %v, Error: %s", users[i], err)
 			return
 		}
