@@ -31,7 +31,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 
 	user.Password = user.NativePwd
 
-	if err := user.Create(!user.EmailVerificated); err != nil {
+	if err := user.Create(models.UserCreateSettings{SendEmailVerification:!user.EmailVerificated}); err != nil {
 		u.Respond(w, u.MessageError(err, "Cant create user")) // что это?)
 		return
 	}
