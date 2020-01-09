@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 // this is CRM settings. If json - public, else - private
 type CrmSetting struct {
@@ -14,4 +16,12 @@ type CrmSetting struct {
 
 func (settings *CrmSetting) Create() error {
 	return db.Create(settings).Error
+}
+// Берет по первому ID
+func (CrmSetting) Get () (*CrmSetting, error) {
+	settings := &CrmSetting{}
+	err := db.First(settings).Error;
+
+	return settings, err
+
 }

@@ -22,7 +22,18 @@ type Account struct {
 
 // создает аккаунт, несмотря на a.ID
 func (a *Account) Create () error {
-	return db.Create(a).Error
+
+	// Верификация данных
+
+	// Создание и сохранение аккаунта
+	if err := db.Create(a).Error; err != nil {
+		return err
+	}
+	if err := db.Save(a).Error; err != nil {
+		return  err
+	}
+
+	return nil
 }
 
 // осуществляет поиск по a.ID

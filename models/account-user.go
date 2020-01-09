@@ -1,8 +1,8 @@
 package models
 
 type AccountUser struct {
-	User
-	Account
+	User User
+	Account Account
 	//Role
 }
 

@@ -60,12 +60,15 @@ func (user *User) Create (v_opt... UserCreateSettings ) error {
 	}
 	user.Password = string(password)
 
-	if db.Create(user).Error != nil {
+	if err := db.Create(user).Error; err != nil {
 		return err
+	}
+	if err := db.Save(user).Error; err != nil {
+		return  err
 	}
 
 
-	// проверяем надо ли посылать уведомление для верификации аккаунта
+	// 1. проверяем надо ли посылать уведомление для верификации аккаунта
 	if len(v_opt) > 0 {
 		createSettings := v_opt[0]
 

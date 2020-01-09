@@ -15,6 +15,19 @@ import (
 func UserCreate(w http.ResponseWriter, r *http.Request) {
 
 	//time.Sleep(1 * time.Second)
+	//crmSettings := r.Context().Value("crmSettings").(models.CrmSetting)
+
+	//u.TimeTrack(time.Now())
+	crmSettings, err := models.CrmSetting{}.Get()
+	if err != nil {
+		u.Respond(w, u.MessageError(nil, "Сервер не может обработать запрос")) // что это?)
+		return
+	}
+
+	if !crmSettings.UserRegistrationAllow {
+		u.Respond(w, u.MessageError(nil, "Создание новых пользователей временно приостановлено")) // что это?)
+		return
+	}
 
 	user := struct {
 		models.User
@@ -31,12 +44,14 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 
 	user.Password = user.NativePwd
 
+	// 1. Создаем пользователя
 	if err := user.Create(models.UserCreateSettings{SendEmailVerification:!user.EmailVerificated}); err != nil {
 		u.Respond(w, u.MessageError(err, "Cant create user")) // что это?)
 		return
 	}
 
-	// 1. Добавляем пользователя в аккаунт
+	// 2. Добавляем пользователя в аккаунт
+
 	// todo add user to account
 
 	// 2. создаем jwt-token для аутентификации пользователя
