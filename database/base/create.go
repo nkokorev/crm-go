@@ -16,19 +16,25 @@ func RefreshTables() {
 	pool := models.GetPool()
 
 	// дропаем системные таблицы
-	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, api_keys, user_accounts, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, user_email_access_tokens, users").Error
+	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, api_keys, user_accounts, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, user_email_access_tokens, users, crm_settings").Error
 	if err != nil {
 		fmt.Println("Cant create table accounts", err)
 	}
 
-	// Таблица типов атрибутов EAV-модели. В зависимости от типа атрибута и его параметров он соответствующем образом обрабатывается во фронтенде и бэкенде.
+	// Таблица системных настроек
+	err = pool.Exec("create table  crm_settings (\n id SERIAL PRIMARY KEY UNIQUE,\n user_registration_allow BOOL NOT NULL DEFAULT TRUE, -- регистрация новых пользователей\n user_registration_invite_only BOOL NOT NULL DEFAULT TRUE, -- регистрация новых пользователей только по инвайтам\n \n created_at timestamp DEFAULT CURRENT_TIMESTAMP,\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP\n --deleted_at timestamp DEFAULT NULL\n);\n").Error
+	if err != nil {
+		fmt.Println("Cant create table crm_settings", err)
+	}
+
+	// Таблица пользователей
 	err = pool.Exec("create table  users (\n id SERIAL PRIMARY KEY UNIQUE,\n username varchar(32) NOT NULL UNIQUE,\n email varchar(255) NOT NULL UNIQUE,\n password varchar(255) NOT NULL UNIQUE,\n \n name varchar(32) DEFAULT '',\n surname varchar(32) DEFAULT '',\n patronymic varchar(32) DEFAULT '',\n \n default_account_id INT DEFAULT NULL,\n -- email_verification BOOLEAN NOT NULL DEFAULT FALSE,\n email_verified_at TIMESTAMP DEFAULT NULL,\n \n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT NULL\n);\n").Error
 	if err != nil {
 		fmt.Println("Cant create table users", err)
 	}
 
 	// в этой таблице хранятся пользовательские email-уведомления
-	err = pool.Exec("--create table  user_email_verifications (\n--create table  user_email_notified (\ncreate table  user_email_access_tokens (\ntoken varchar(255) PRIMARY KEY UNIQUE,\ntype VARCHAR(255) NOT NULL DEFAULT 'verification', -- verification, recover (username, password, email), join to account, ...\nemail varchar(255) NOT NULL, -- куда фактически был отправлен token (для безопасности)\nuser_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE, -- ID пользователя, для которого выполняется процедура \ncreated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n--  expired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);\n").Error
+	err = pool.Exec("--create table  user_email_verifications (\n--create table  user_email_notified (\ncreate table  user_email_access_tokens (\ntoken varchar(255) PRIMARY KEY UNIQUE, -- сам уникальный ключ\ntype VARCHAR(255) NOT NULL DEFAULT 'verification', -- verification, recover (username, password, email), join to account, [invite-one], [invite-unlimited], [invite-free] - свободный инвайт...\nemail varchar(255) NOT NULL, -- куда фактически был отправлен token (для безопасности) или для кого предназначается данный инвайт (например, строго по емейлу)\nuser_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE, -- ID пользователя, для которого выполняется процедура \ncreated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n--  expired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);\n").Error
 	if err != nil {
 		fmt.Println("Cant create table user_email_send", err)
 	}
@@ -61,8 +67,6 @@ func RefreshTables() {
 	if err != nil {
 		fmt.Println("Cant create table products", err)
 	}
-
-
 
 	// M:M Stock <> Product  Таблица продуктов
 	err = pool.Exec("create table stock_products (\n    id SERIAL PRIMARY KEY UNIQUE,\n    account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для ускорения поиска\n    stock_id INT NOT NULL REFERENCES stocks(id) ON DELETE CASCADE ON UPDATE CASCADE, -- поиск по складу\n    product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE, -- поиск по продукту\n\n    in_stock DECIMAL (13,3) DEFAULT 0.0, -- запас\n    stockpile DECIMAL (13,3) DEFAULT 0.0, -- резерв (зарезервировано) тут может быть условие, можно ли резеревировать больше остатка\n    \n    -- allow_reserve_out_of_stock BOOLEAN DEFAULT FALSE, -- можно ли резервировать больше реального запаса\n      \n     constraint uix_stock_products_account_store_product_id UNIQUE (account_id, stock_id, product_id)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
@@ -242,6 +246,16 @@ func UploadEavData() {
 func UploadTestData() {
 
 	timeNow := time.Now();
+
+	// 0. Создаем файл системных настроек
+	crmSettings := &models.CrmSetting{
+		UserRegistrationAllow:      true,
+		UserRegistrationInviteOnly: false,
+		CreatedAt:                  time.Time{},
+		UpdatedAt:                  time.Time{},
+		//DeletedAt:                  nil,
+	}
+
 	// 1. Создаем пользователей
 	users := [] *models.User{
 		{Username:"admin", Email:"kokorevn@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt:&timeNow},
@@ -321,6 +335,11 @@ func UploadTestData() {
 
 	// 3. Стоковые атрибуты продуктов в аккаунте
 
+	if err := crmSettings.Create(); err != nil {
+		log.Fatalf("Неудалось создать файл настроек: %v, Error: %s", crmSettings, err)
+		return
+	}
+
 	for i,_ := range users {
 
 		if err := users[i].Create(false); err != nil {
@@ -367,8 +386,6 @@ func UploadTestData() {
 		}
 	}
 
-
-
 	for _, r := range offers {
 		if err := r.Create(); err != nil {
 			log.Fatalf("Неудалось создать offer для 357 грамм", r.Name, err)
@@ -376,8 +393,6 @@ func UploadTestData() {
 		}
 
 	}
-
-
 
 	if err := offers[0].ProductAppend(*products[10], 25.0); err != nil {
 		log.Fatalf("Неудалось добавить продукт в оффер, Error: %s", err)
