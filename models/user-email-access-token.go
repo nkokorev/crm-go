@@ -120,3 +120,48 @@ func (ueat *EmailAccessToken) CreatUserVerificationToken(user *User) error {
 func (ueat *EmailAccessToken) ExistEmailVerification () bool {
 	return db.First(ueat,"owner_id = ? AND destination_email = ? AND action_type = 'verification'", ueat.OwnerID, ueat.DestinationEmail).Error == gorm.ErrRecordNotFound
 }
+
+// проверяет существование инвайта
+func (ueat *EmailAccessToken) CheckInviteToken() error {
+
+	// 1. Пробуем найти код приглашения
+	if err := db.First(ueat,"token = ? AND destination_email = ? AND action_type = 'invite-user'", ueat.Token, ueat.DestinationEmail).Error;err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return errors.New("Код приглашения не найден")
+		} else {
+			return err
+		}
+	}
+
+	// 2. Проверяем время жизни token
+	if !time.Now().Add(-time.Hour * 72).Before(ueat.CreatedAt) {
+		fmt.Println("Действительно устарел!", ueat.CreatedAt , time.Now())
+		return errors.New("Код приглашения устарел")
+	}
+
+	return nil
+}
+
+// проверяет инвайт для новых пользователей по ключу и емейлу
+func (ueat *EmailAccessToken) UseInviteToken(user *User) error {
+
+	if err := db.First(ueat,"token = ? AND destination_email = ? AND action_type = 'invite-user'", ueat.Token, ueat.DestinationEmail).Error;err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return errors.New("Код приглашения не найден")
+		} else {
+			return err
+		}
+
+	}
+
+	// 3. Проверяем время жизни token
+	if !time.Now().Add(-time.Hour * 72).Before(ueat.CreatedAt) {
+		fmt.Println("Действительно устарел!", ueat.CreatedAt , time.Now())
+		return errors.New("Код приглашения устарел")
+	}
+
+	return ueat.Delete()
+	//return db.First(ueat,"token = ? AND destination_email = ? AND action_type = 'ivite-user'", ueat.Token, ueat.DestinationEmail).Error == gorm.ErrRecordNotFound
+}

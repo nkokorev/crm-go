@@ -25,7 +25,8 @@ type User struct {
 	Patronymic 	string `json:"patronymic"`
 	//Phone	 	string `json:"patronymic"` // нужно проработать формат данных
 
-	DefaultAccountID int `json:"default_account_id"` // указывает какой аккаунт по дефолту загружать
+	DefaultAccountID uint `json:"default_account_id"` // указывает какой аккаунт по дефолту загружать
+	InvitedUserID uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
 
 	EmailVerifiedAt *time.Time `json:"email_verified_at" gorm:"default:null"`
 	//EmailVerification bool `json:"email_verification" gorm:"default:false"`
@@ -38,22 +39,52 @@ type User struct {
 }
 
 // структура настроек
-type UserCreateSettings struct {
+type UserCreateOptions struct {
 	SendEmailVerification bool
+	InviteToken string
 }
 
 // ### CRUD FUNC ###
 
 // Создает нового пользователя с новым ID
 // Для единости интерфейса нельзя иметь обязательные переменные
-func (user *User) Create (v_opt... UserCreateSettings ) error {
+func (user *User) Create (v_opt... UserCreateOptions ) error {
 
-	// проверим входящие сообщения
+	var options UserCreateOptions
+
+	// 1. получаем настройки создания
+	if len(v_opt) > 0 {
+		options = v_opt[0]
+	} else {
+		options = UserCreateOptions{
+			SendEmailVerification: false,
+			InviteToken:           "",
+		}
+	}
+
+	// 2. загружаем системне настройки
+	crmSettings, err := CrmSetting{}.Get()
+	if err != nil {
+		return u.Error{Message:"Сервер не может обработать запрос"}
+	}
+
+	// 3. Если необходимо проверим токен приглашения
+	eat := &EmailAccessToken{Token:options.InviteToken, DestinationEmail:user.Email}
+
+	// 4. Проверяем инвайт, если без него регистрация запрещена
+	if crmSettings.UserRegistrationInviteOnly {
+
+		if err := eat.CheckInviteToken();err != nil {
+			return u.Error{Message:"Ошибки в заполнении формы", Errors: map[string]interface{}{"inviteToken":err.Error()}}
+		}
+	}
+
+	// 5. Проверим другие входящие данные пользователя
 	if err := user.ValidateCreate(); err != nil {
 		return err
 	}
 
-	// Создаем крипто пароль
+	// 6. Создаем крипто пароль
 	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -63,19 +94,25 @@ func (user *User) Create (v_opt... UserCreateSettings ) error {
 	if err := db.Create(user).Error; err != nil {
 		return err
 	}
-	if err := db.Save(user).Error; err != nil {
-		return  err
+
+
+	// 7. Удаляем ключ приглашения
+	if crmSettings.UserRegistrationInviteOnly {
+
+		user.InvitedUserID = eat.OwnerID
+		if err := db.Save(user).Error; err != nil {
+			return  err
+		}
+
+		if err := eat.UseInviteToken(user); err != nil {
+			return err
+		}
 	}
 
-
-	// 1. проверяем надо ли посылать уведомление для верификации аккаунта
-	if len(v_opt) > 0 {
-		createSettings := v_opt[0]
-
-		if createSettings.SendEmailVerification {
-			if err := user.SendEmailVerification(); err !=nil {
-				return err
-			}
+	// 8. Проверяем надо ли отослать письмо
+	if options.SendEmailVerification {
+		if err := user.SendEmailVerification(); err !=nil {
+			return err
 		}
 	}
 
@@ -267,7 +304,7 @@ func (user *User) CreateEmailVerifiedToken() error {
 	return (&EmailAccessToken{}).CreatUserVerificationToken(user)
 }
 
-// проверяет token, в случае успеха удаляет его из БД
+// проверяет token, в случае успеха удаляет его из БД, а в user загружает соответствующего пользователя
 func (user *User) EmailVerification(token string) error {
 	return (&EmailAccessToken{Token:token}).UserEmailVerification(user)
 }
@@ -415,4 +452,19 @@ func (user *User) LoginInAccount(account_id uint) (string, error) {
 
 	return claims.CreateCryptoToken()
 
+}
+
+// создает Invite для пользователя
+func (user *User) CreateInviteForUser (email string, sendMail bool) error {
+
+	// 1. Создаем токен для нового пользователя
+	err := (&EmailAccessToken{DestinationEmail:email, OwnerID:user.ID, ActionType: "invite-user"}).Create()
+	if err != nil {
+		return u.Error{Message:"Неудалось создать приглашение"}
+	}
+
+	// 2. Посылаем уведомление на почту
+	// user.SendNotification()...
+
+	return nil
 }

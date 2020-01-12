@@ -17,13 +17,14 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	//time.Sleep(1 * time.Second)
 	//crmSettings := r.Context().Value("crmSettings").(models.CrmSetting)
 
-	//u.TimeTrack(time.Now())
+	// 1. Подгрузим файл настроек, он тут будет кстати
 	crmSettings, err := models.CrmSetting{}.Get()
 	if err != nil {
 		u.Respond(w, u.MessageError(nil, "Сервер не может обработать запрос")) // что это?)
 		return
 	}
 
+	// 2. Проверяем, что регистрация новых пользователей разрешена
 	if !crmSettings.UserRegistrationAllow {
 		u.Respond(w, u.MessageError(nil, "Создание новых пользователей временно приостановлено")) // что это?)
 		return
@@ -36,17 +37,18 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 		EmailVerificated bool `json:"emailVerificated"` //default false
 	}{}
 
+
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		//u.Respond(w, u.MessageError(err, "Invalid request - cant decode json request."))
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
+	// Подставляем пароль для создания
 	user.Password = user.NativePwd
 
-	// 1. Создаем пользователя
-	if err := user.Create(models.UserCreateSettings{SendEmailVerification:!user.EmailVerificated}); err != nil {
-		u.Respond(w, u.MessageError(err, "Cant create user")) // что это?)
+	// 3. Создаем пользователя
+	if err := user.Create(models.UserCreateOptions{SendEmailVerification:!user.EmailVerificated, InviteToken:user.InviteToken}); err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось создать пользователя")) // что это?)
 		return
 	}
 

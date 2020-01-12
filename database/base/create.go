@@ -28,7 +28,7 @@ func RefreshTables() {
 	}
 
 	// Таблица пользователей
-	err = pool.Exec("create table  users (\n id SERIAL PRIMARY KEY UNIQUE,\n username varchar(32) NOT NULL UNIQUE,\n email varchar(255) NOT NULL UNIQUE,\n password varchar(255) NOT NULL UNIQUE,\n \n name varchar(32) DEFAULT '',\n surname varchar(32) DEFAULT '',\n patronymic varchar(32) DEFAULT '',\n \n default_account_id INT DEFAULT NULL,\n -- email_verification BOOLEAN NOT NULL DEFAULT FALSE,\n email_verified_at TIMESTAMP DEFAULT NULL,\n \n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT NULL\n);\n").Error
+	err = pool.Exec("create table  users (\n id SERIAL PRIMARY KEY UNIQUE,\n username varchar(32) NOT NULL UNIQUE,\n email varchar(255) NOT NULL UNIQUE,\n password varchar(255) NOT NULL UNIQUE,\n \n name varchar(32) DEFAULT '',\n surname varchar(32) DEFAULT '',\n patronymic varchar(32) DEFAULT '',\n \n default_account_id INT DEFAULT NULL,\n -- parent_id INT REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE, -- поиск по продукту\n invited_user_id INT DEFAULT NULL, -- кто пригласил\n -- email_verification BOOLEAN NOT NULL DEFAULT FALSE,\n email_verified_at TIMESTAMP DEFAULT NULL,\n \n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT NULL\n);\n").Error
 	if err != nil {
 		fmt.Println("Cant create table users", err)
 	}
@@ -250,7 +250,7 @@ func UploadTestData() {
 	// 0. Создаем файл системных настроек
 	crmSettings := &models.CrmSetting{
 		UserRegistrationAllow:      true,
-		UserRegistrationInviteOnly: false,
+		UserRegistrationInviteOnly: true,
 		CreatedAt:                  time.Time{},
 		UpdatedAt:                  time.Time{},
 		//DeletedAt:                  nil,
@@ -259,8 +259,8 @@ func UploadTestData() {
 	// 1. Создаем пользователей
 	users := [] *models.User{
 		{Username:"admin", Email:"kokorevn@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt:&timeNow},
-		{Username:"nkokorev", Email:"mex388@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt: &timeNow},
-		{Username:"vpopov", Email:"vp@357gr.ru", Password:"qwerty109#QW", Name:"Василий", Surname:"Попов", Patronymic:"Николаевич",EmailVerifiedAt: &timeNow},
+		{Username:"nkokorev", Email:"mex388@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt: &timeNow, InvitedUserID:1},
+		{Username:"vpopov", Email:"vp@357gr.ru", Password:"qwerty109#QW", Name:"Василий", Surname:"Попов", Patronymic:"Николаевич",EmailVerifiedAt: &timeNow, InvitedUserID:1},
 	}
 
 	// 2. Аккаунты
@@ -328,7 +328,6 @@ func UploadTestData() {
 		{AccountID:3,ShopID:1,URL:"teguanin"},
 	}
 
-
 	attributes := [] *models.EavAttribute{
 		{Code:"size", Label:"Размер одежды", Multiple:false, Required:false, AttrTypeCode: "text_field"},
 	}
@@ -340,9 +339,17 @@ func UploadTestData() {
 		return
 	}
 
+	/*if err := crmSettings.Update(map[string]interface{}{"UserRegistrationInviteOnly":false}); err != nil {
+		log.Fatalf("Неудалось обновить файл настроек: %v, Error: %s", crmSettings, err)
+		return
+	}*/
+	allowUserReg := crmSettings.UserRegistrationInviteOnly
+	crmSettings.UserRegistrationInviteOnly = false
+	crmSettings.Save()
+
 	for i,_ := range users {
 
-		if err := users[i].Create(models.UserCreateSettings{SendEmailVerification:false}); err != nil {
+		if err := users[i].Create(models.UserCreateOptions{SendEmailVerification:false}); err != nil {
 			log.Fatalf("Неудалось создать базового пользователя: %v, Error: %s", users[i], err)
 			return
 		}
@@ -363,6 +370,14 @@ func UploadTestData() {
 			return
 		}
 
+	}
+
+	crmSettings.UserRegistrationInviteOnly = allowUserReg
+	crmSettings.Save()
+
+	if err := users[0].CreateInviteForUser("info@rus-marketing.ru", false); err != nil {
+		log.Fatalf("Неудалось создать инвайт для почтового адреса: %v, Error: %s", "info@rus-marketing.ru", err)
+		return
 	}
 
 	for _, r := range shops {
@@ -428,9 +443,6 @@ func UploadTestData() {
 			return
 		}
 	}
-
-
-
 
 	for _, r := range attributes {
 		if err := accounts[2].CreateEavAttribute(r); err != nil {
