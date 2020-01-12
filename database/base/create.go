@@ -250,7 +250,7 @@ func UploadTestData() {
 	// 0. Создаем файл системных настроек
 	crmSettings := &models.CrmSetting{
 		UserRegistrationAllow:      true,
-		UserRegistrationInviteOnly: true,
+		UserRegistrationInviteOnly: false,
 		CreatedAt:                  time.Time{},
 		UpdatedAt:                  time.Time{},
 		//DeletedAt:                  nil,

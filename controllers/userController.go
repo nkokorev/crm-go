@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -70,7 +69,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 /**
-* Контроллер email-верификации
+* Контроллер проверки и применения кода email-верификации
  */
 func UserEmailVerification(w http.ResponseWriter, r *http.Request) {
 
@@ -101,9 +100,50 @@ func UserEmailVerification(w http.ResponseWriter, r *http.Request) {
 
 	// если все хорошо, возвращаем токен и пользователя для будущей авторизации
 	resp := u.Message(true, "Верификация прошла успешно!")
+	//fmt.Println(token)
 	resp["user"] = user
 	resp["accounts"] = user.Accounts
 	resp["token"] = token
+	u.Respond(w, resp)
+}
+
+// Повторная или первичная отправка email-кода верификации. Возвращает тайминг отправки
+func UserResendEmailVerificationCode(w http.ResponseWriter, r *http.Request) {
+
+	userID := r.Context().Value("user_id").(uint)
+
+	user := models.User{ID: userID}
+	if err := user.Get(); err !=nil {
+		u.Respond(w, u.MessageError(err, "Неудалось найти пользователя")) // вообще тут нужен релогин
+		return
+	}
+
+	// что делать, если пользователь уже подтвержден?
+	if user.EmailVerifiedAt != nil {
+		token, err := user.CreateJWTToken()
+		if err != nil {
+
+		}
+		if err := user.LoadAccounts(); err  != nil {
+
+		}
+		resp := u.Message(true, "Пользователь уже подтвержден")
+		resp["user"] = user
+		resp["token"] = token
+		resp["accounts"] = user.Accounts
+		u.Respond(w, resp)
+		return
+	}
+
+	// Проверяем есть ли токен, если нет - создаем
+	if err := user.SendEmailVerification();err !=nil {
+		u.Respond(w, u.MessageError(err, "Неудалось отправить код подтверждения")) // вообще тут нужен релогин
+		return
+	}
+	// Повторно отправляем токен
+
+	// если все хорошо, возвращаем токен и пользователя для будущей авторизации
+	resp := u.Message(true, "Код подтверждения успешно отправлен!")
 	u.Respond(w, resp)
 }
 
@@ -163,7 +203,6 @@ func UserAuthorization(w http.ResponseWriter, r *http.Request)  {
 
 	// загружаем доступные аккаунты
 	if len(user.Accounts) == 0 {
-		fmt.Println("BSeach accounts")
 		if err := user.LoadAccounts(); err !=nil {
 			u.Respond(w, u.MessageError(err, "Неудалось загрузить аккаунты")) // вообще тут нужен релогин
 			return

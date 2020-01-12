@@ -286,7 +286,7 @@ func (user User) SendEmailVerification() error {
 
 	// 1. Проверяем статус пользователя
 	if user.EmailVerifiedAt != nil {
-		return nil
+		return u.Error{Message:"Email пользователь уже подтвержден"}
 	}
 
 	// 2. Создаем токен.

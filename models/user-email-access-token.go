@@ -79,8 +79,8 @@ func (ueat *EmailAccessToken) UserEmailVerification (user *User) error {
 
 	// 5. Если пользователь уже верифицирован, то не надо его повторно верифицировать
 	if user.EmailVerifiedAt != nil {
-		//return nil
-		return ueat.Delete()
+		return nil
+		//return ueat.Delete()
 	}
 
 	// 6. Если все в порядке активируем учетную запись пользователя и сохраняем данные пользователя
@@ -91,8 +91,8 @@ func (ueat *EmailAccessToken) UserEmailVerification (user *User) error {
 	}
 
 	// 7. Если все хорошо, возвращаем пользователя
-	//return nil
-	return ueat.Delete()
+	return nil
+	//return ueat.Delete()
 }
 
 func (ueat *EmailAccessToken) CreatUserVerificationToken(user *User) error {
@@ -107,9 +107,9 @@ func (ueat *EmailAccessToken) CreatUserVerificationToken(user *User) error {
 		return u.Error{Message:"Email пользователя уже подтвержден"}
 	}
 
-	// 2. Проверка существующего токена
+	// 2. Проверка существующего токена. Если он уже есть, то заного не надо создавать.
 	if !ueat.ExistEmailVerification() {
-		return u.Error{Message:"Email пользователя уже подтвержден"}
+		return nil
 	}
 
 	return ueat.Create()
