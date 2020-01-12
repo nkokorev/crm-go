@@ -34,7 +34,7 @@ func RefreshTables() {
 	}
 
 	// в этой таблице хранятся пользовательские email-уведомления
-	err = pool.Exec("--create table  user_email_verifications (\n--create table  user_email_notified (\ncreate table  user_email_access_tokens (\ntoken varchar(255) PRIMARY KEY UNIQUE, -- сам уникальный ключ\ntype VARCHAR(255) NOT NULL DEFAULT 'verification', -- verification, recover (username, password, email), join to account, [invite-one], [invite-unlimited], [invite-free] - свободный инвайт...\nemail varchar(255) NOT NULL, -- куда фактически был отправлен token (для безопасности) или для кого предназначается данный инвайт (например, строго по емейлу)\nuser_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE, -- ID пользователя, для которого выполняется процедура \ncreated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n--  expired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);\n").Error
+	err = pool.Exec("create table  user_email_access_tokens (\ntoken varchar(255) PRIMARY KEY UNIQUE, -- сам уникальный ключ\ntype VARCHAR(255) NOT NULL DEFAULT 'verification', -- verification, recover (username, password, email), join to account, [invite-one], [invite-unlimited], [invite-free] - свободный инвайт...\ndestination_email varchar(255) NOT NULL, -- куда фактически был отправлен token (для безопасности) или для кого предназначается данный инвайт (например, строго по емейлу)\nowner_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE, -- ID пользователя, кто создавал этот ключ (может быть self) \ncreated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n--  expired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);\n").Error
 	if err != nil {
 		fmt.Println("Cant create table user_email_send", err)
 	}

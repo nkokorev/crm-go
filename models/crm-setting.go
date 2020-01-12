@@ -6,7 +6,7 @@ import (
 
 // this is CRM settings. If json - public, else - private
 type CrmSetting struct {
-	UserRegistrationAllow bool `json:"user_registration_allow" gorm:"user_registration_allow;default:true"`
+	UserRegistrationAllow bool `json:"-" gorm:"user_registration_allow;default:true"`
 	UserRegistrationInviteOnly bool `json:"user_registration_invite_only" gorm:"user_registration_invite_only;default:true"`
 
 	CreatedAt 	time.Time `json:"-"`
@@ -23,5 +23,4 @@ func (CrmSetting) Get () (*CrmSetting, error) {
 	err := db.First(settings).Error;
 
 	return settings, err
-
 }

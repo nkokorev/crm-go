@@ -207,21 +207,21 @@ func (user User) ValidateCreate() error {
 	// 1. Проверка email
 	if err := user.VerifyEmail(user.Email); err != nil {
 		e.AddErrors("email", err.Error())
-		e.Message = "Неверно заполнены поля"
+		e.Message = "Проверьте правильность заполнения формы"
 		return e
 	}
 
 	// 2. Проверка username пользователя
 	if err := user.VerifyUsername(user.Username); err != nil {
 		e.AddErrors("username", err.Error())
-		e.Message = "Неверно заполнены поля"
+		e.Message = "Проверьте правильность заполнения формы"
 		return e
 	}
 
 	// 3. Проверка password
 	if err := user.VerifyPassword(user.Password); err != nil {
 		e.AddErrors("password", err.Error())
-		e.Message = "Неверно заполнены поля"
+		e.Message = "Проверьте правильность заполнения формы"
 		return e
 	}
 
@@ -238,7 +238,7 @@ func (user User) ValidateCreate() error {
 
 	// проверка итоговых ошибок
 	if e.HasErrors() {
-		e.Message = "Неверно заполнены поля"
+		e.Message = "Проверьте правильность заполнения формы"
 		return e
 	}
 
@@ -248,7 +248,7 @@ func (user User) ValidateCreate() error {
 func (user User) SendEmailVerification() error {
 
 	// 1. Создаем токен
-	if err := (&UserEmailAccessToken{UserID:user.ID, Type:"verification", Email:user.Email}).Create();err != nil {
+	if err := (&UserEmailAccessToken{OwnerID:user.ID, Type:"verification", DestinationEmail:user.Email}).Create();err != nil {
 		return err;
 	}
 
@@ -265,10 +265,10 @@ func (User) EmailVerified(token string) error {
 	var e u.Error
 	uat := UserEmailAccessToken{Token:token}
 
-	// 1. Пробуем найти токен
+	// 1. Пробуем найти токен. Этот код - ключ к процессу верификации и поэтому он не должен быть публичным.
 	err := uat.Get()
 	if err != nil {
-		e.Message = "Проверочный код не найден"
+		e.Message = "Указанный код не существует"
 		return e
 	}
 
@@ -280,27 +280,37 @@ func (User) EmailVerified(token string) error {
 
 	// 3. Проверяем время жизни token
 	if !time.Now().Add(-time.Hour * 24).Before(uat.CreatedAt) {
-		e.Message = "Проверочный ключ устарел"
+		e.Message = "Указанный проверочный ключ устарел"
 		return e
 	}
 
-	// 4. Проверяем существование пользователя с данными токена
-	if err := db.First(&user, "id = ? AND email = ?", uat.UserID, uat.Email).Error; err != nil {
-		e.Message = "Пользователь не найден"
+	// 4. Т.к. код предназначается для проверки собственного email-а, то owner_id = user_id AND destination_email = user_email.
+	if err := db.First(&user, "id = ? AND email = ?", uat.OwnerID, uat.DestinationEmail).Error; err != nil {
+		e.Message = "Проверочный код предназначен для другого пользователя"
 		return e
 	}
 
-	// 5. Если все в порядке активируем учетную запись пользователя и сохраняем данные
+	// 5. Если пользователь уже верифицирован, то и кода быть не должно
+	if user.EmailVerifiedAt != nil {
+		// удаляем токен, т.к. он мусорный
+		uat.Delete().Error()
+
+		// возвращаем ошибку
+		e.Message = "Email-пользователя уже был подтвержден."
+		return e
+	}
+
+	// 6. Если все в порядке активируем учетную запись пользователя и сохраняем данные
 	timeNow := time.Now()
 	user.EmailVerifiedAt = &timeNow
 
-	// 6. Сохраняем обновленные данные пользователя
+	// 7. Сохраняем обновленные данные пользователя
 	if err := user.Save(); err != nil {
 		e.Message = "Неудалось обновить данные пользователя"
 		return e
 	}
 
-	// 7. Удаляем проверочный код (больше не нужен)
+	// 8. Удаляем проверочный код (больше не нужен)
 	return uat.Delete()
 	//return nil
 }
