@@ -247,72 +247,29 @@ func (user User) ValidateCreate() error {
 
 func (user User) SendEmailVerification() error {
 
-	// 1. Создаем токен
-	if err := (&UserEmailAccessToken{OwnerID:user.ID, Type:"verification", DestinationEmail:user.Email}).Create();err != nil {
-		return err;
+	// 1. Проверяем статус пользователя
+	if user.EmailVerifiedAt != nil {
+		return nil
 	}
 
-	// 2. Посылаем уведомление с токеном
+	// 2. Создаем токен.
+	if err := user.CreateEmailVerifiedToken(); err != nil {
+		return err
+	}
+
+	// 3. Посылаем уведомление с токеном
 	// todo: send email verification
 
 	return  nil
 }
 
+func (user *User) CreateEmailVerifiedToken() error {
+	return (&EmailAccessToken{}).CreatUserVerificationToken(user)
+}
+
 // проверяет token, в случае успеха удаляет его из БД
-func (User) EmailVerified(token string) error {
-
-	var user User
-	var e u.Error
-	uat := UserEmailAccessToken{Token:token}
-
-	// 1. Пробуем найти токен. Этот код - ключ к процессу верификации и поэтому он не должен быть публичным.
-	err := uat.Get()
-	if err != nil {
-		e.Message = "Указанный код не существует"
-		return e
-	}
-
-	// 2. Проверяем тип токена (вообще это системная ошибка)
-	if uat.Type != "verification" {
-		e.Message = "Тип токена указан не верно"
-		return e
-	}
-
-	// 3. Проверяем время жизни token
-	if !time.Now().Add(-time.Hour * 24).Before(uat.CreatedAt) {
-		e.Message = "Указанный проверочный ключ устарел"
-		return e
-	}
-
-	// 4. Т.к. код предназначается для проверки собственного email-а, то owner_id = user_id AND destination_email = user_email.
-	if err := db.First(&user, "id = ? AND email = ?", uat.OwnerID, uat.DestinationEmail).Error; err != nil {
-		e.Message = "Проверочный код предназначен для другого пользователя"
-		return e
-	}
-
-	// 5. Если пользователь уже верифицирован, то и кода быть не должно
-	if user.EmailVerifiedAt != nil {
-		// удаляем токен, т.к. он мусорный
-		uat.Delete().Error()
-
-		// возвращаем ошибку
-		e.Message = "Email-пользователя уже был подтвержден."
-		return e
-	}
-
-	// 6. Если все в порядке активируем учетную запись пользователя и сохраняем данные
-	timeNow := time.Now()
-	user.EmailVerifiedAt = &timeNow
-
-	// 7. Сохраняем обновленные данные пользователя
-	if err := user.Save(); err != nil {
-		e.Message = "Неудалось обновить данные пользователя"
-		return e
-	}
-
-	// 8. Удаляем проверочный код (больше не нужен)
-	return uat.Delete()
-	//return nil
+func (user *User) EmailVerification(token string) error {
+	return (&EmailAccessToken{Token:token}).UserEmailVerification(user)
 }
 
 
@@ -387,7 +344,6 @@ func (user *User) AuthLogin(username, password string, staySignedIn... bool) (st
 		return "", e
 	}
 
-
 	// если пользователь не найден temp.Username == nil, то пароль не будет искаться, т.к. он будет равен нулю (не с чем сравнивать)
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword { //Password does not match!
@@ -399,7 +355,7 @@ func (user *User) AuthLogin(username, password string, staySignedIn... bool) (st
 		return "", e
 	}
 
-	expiresAt := time.Now().Add(time.Minute * 10).Unix()
+	expiresAt := time.Now().Add(time.Minute * 20).Unix()
 	claims := JWT{
 		user.ID,
 		0,
@@ -409,6 +365,27 @@ func (user *User) AuthLogin(username, password string, staySignedIn... bool) (st
 		},
 	}
 	return claims.CreateCryptoToken()
+}
+
+// создает короткий jwt-токен для пользователя. Весьма опасная фукнция
+func (user *User) CreateJWTToken() (string, error) {
+
+	// Делаем предзагрузку аккаунтов, чтобы потом их еще раз не подгружать
+	if err := db.Preload("Accounts").First(user).Error; err != nil {
+		return "", err
+	}
+
+	expiresAt := time.Now().Add(time.Minute * 20).Unix()
+	claims := JWT{
+		user.ID,
+		0,
+		jwt.StandardClaims{
+			ExpiresAt: expiresAt,
+			Issuer:    "AuthServer",
+		},
+	}
+	return claims.CreateCryptoToken()
+
 }
 
 // Вход в аккаунт из-под пользователя. Делает необходимые проверки и возвращает новый токен/

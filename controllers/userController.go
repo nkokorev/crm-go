@@ -72,7 +72,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
  */
 func UserEmailVerification(w http.ResponseWriter, r *http.Request) {
 
-	//time.Sleep(1 * time.Second)
+	user := &models.User{}
 
 	AccessData := struct {
 		Token string `json:"token"`
@@ -84,12 +84,24 @@ func UserEmailVerification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// пробуем пройти верификацию
-	if err := (models.User{}).EmailVerified(AccessData.Token); err != nil {
+	if err := user.EmailVerification(AccessData.Token); err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось пройти верификаицю email"))
 		return
 	}
 
+	token, err := user.CreateJWTToken()
+	if err != nil {
+		// возвращаем обычную верфикацию
+		resp := u.Message(true, "Верификация прошла успешно! ...")
+		u.Respond(w, resp)
+		return
+	}
+
+	// если все хорошо, возвращаем токен и пользователя для будущей авторизации
 	resp := u.Message(true, "Верификация прошла успешно!")
+	resp["user"] = user
+	resp["accounts"] = user.Accounts
+	resp["token"] = token
 	u.Respond(w, resp)
 }
 
