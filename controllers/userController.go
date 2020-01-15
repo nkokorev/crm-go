@@ -107,6 +107,106 @@ func UserEmailVerification(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+func UserRecoveryUsername(w http.ResponseWriter, r *http.Request) {
+
+
+	// почта пользователя, на которую надо отправить имя пользователя
+	AccessData := struct {
+		Email string `json:"email"`
+	}{}
+
+	if err := json.NewDecoder(r.Body).Decode(&AccessData); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	var user = models.User{Email:AccessData.Email}
+
+	// 1. Пробуем найти пользователя с таким email
+	if err := user.GetByEmail(); err !=nil {
+		u.Respond(w, u.MessageError(err, "Email-адрес не найден"))
+		return
+	}
+
+	// 2. Отправляем имя пользователя ему на почту
+	if err := user.SendEmailRecoveryUsername(); err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось отправить сообщение на ваш email"))
+		return
+	}
+
+	// если все хорошо, возвращаем токен и пользователя для будущей авторизации
+	resp := u.Message(true, "Имя пользователя отправлено на ваш email")
+	u.Respond(w, resp)
+}
+
+func UserRecoveryPassword(w http.ResponseWriter, r *http.Request) {
+
+	//user := &models.User{}
+
+	AccessData := struct {
+		Username string `json:"username"`
+	}{}
+
+	if err := json.NewDecoder(r.Body).Decode(&AccessData); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	var user = models.User{Username:AccessData.Username}
+
+	// 1. Пробуем найти пользователя с таким email
+	if err := user.GetByUsername(); err !=nil {
+		u.Respond(w, u.MessageError(err, "Пользователь не найден"))
+		return
+	}
+
+	// 2. Отправляем имя пользователя ему на почту
+	if err := user.SendEmailRecoveryPassword(); err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось отправить сообщение на ваш email"))
+		return
+	}
+
+	// если все хорошо, возвращаем токен и пользователя для будущей авторизации
+	resp := u.Message(true, "Инструкция по сбросу пароля отправлена на ваш email")
+	u.Respond(w, resp)
+}
+
+// сбрасывает пароль по ключу
+func UserPasswordReset(w http.ResponseWriter, r *http.Request) {
+
+	user := &models.User{}
+
+	AccessData := struct {
+		Token string `json:"token"`
+	}{}
+
+	if err := json.NewDecoder(r.Body).Decode(&AccessData); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	// пробуем пройти верификацию
+	if err := user.EmailResetPassword(AccessData.Token); err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось сбросить пароль"))
+		return
+	}
+
+	token, err := user.CreateJWTToken()
+	if err != nil {
+		resp := u.Message(true, "Не удалось создать ключ доступа...")
+		u.Respond(w, resp)
+		return
+	}
+
+	// если все хорошо, возвращаем токен и пользователя для будущей авторизации
+	resp := u.Message(true, "Пароль успешно сброшен")
+
+	resp["user"] = user
+	//resp["accounts"] = user.Accounts
+	resp["token"] = token
+	u.Respond(w, resp)
+}
+
 // Отправка email-кода верификации для новых пользователей.
 func UserSendEmailInviteVerification(w http.ResponseWriter, r *http.Request) {
 
@@ -146,6 +246,8 @@ func UserSendEmailInviteVerification(w http.ResponseWriter, r *http.Request) {
 	resp["time"] = time.Now().UTC()
 	u.Respond(w, resp)
 }
+
+
 
 func UserGetProfile(w http.ResponseWriter, r *http.Request) {
 
@@ -188,14 +290,15 @@ func UserAuthorization(w http.ResponseWriter, r *http.Request)  {
 	v := &struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
-		StaySignedIn bool `json:"stay_signed_in"`
+		//StaySignedIn bool `json:"staySignedIn"`
+		OnceLogin bool `json:"onceLogin"`
 	}{}
 	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	token, err := user.AuthLogin(v.Username, v.Password, v.StaySignedIn)
+	token, err := user.AuthLogin(v.Username, v.Password, v.OnceLogin)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return

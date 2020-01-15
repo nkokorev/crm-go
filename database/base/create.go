@@ -28,7 +28,7 @@ func RefreshTables() {
 	}
 
 	// Таблица пользователей
-	err = pool.Exec("create table  users (\n id SERIAL PRIMARY KEY UNIQUE,\n username varchar(32) NOT NULL UNIQUE,\n email varchar(255) NOT NULL UNIQUE,\n password varchar(255) NOT NULL UNIQUE,\n \n name varchar(32) DEFAULT '',\n surname varchar(32) DEFAULT '',\n patronymic varchar(32) DEFAULT '',\n \n default_account_id INT DEFAULT NULL,\n -- parent_id INT REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE, -- поиск по продукту\n invited_user_id INT DEFAULT NULL, -- кто пригласил\n -- email_verification BOOLEAN NOT NULL DEFAULT FALSE,\n email_verified_at TIMESTAMP DEFAULT NULL,\n \n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT NULL\n);\n").Error
+	err = pool.Exec("create table  users (\n id SERIAL PRIMARY KEY UNIQUE,\n username varchar(32) NOT NULL UNIQUE,\n email varchar(255) NOT NULL UNIQUE,\n password varchar(255) NOT NULL UNIQUE,\n \n name varchar(32) DEFAULT '',\n surname varchar(32) DEFAULT '',\n patronymic varchar(32) DEFAULT '',\n \n default_account_id INT DEFAULT NULL,\n -- parent_id INT REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE, -- поиск по продукту\n invited_user_id INT DEFAULT NULL, -- кто пригласил\n -- email_verification BOOLEAN NOT NULL DEFAULT FALSE,\n email_verified_at TIMESTAMP DEFAULT NULL,\n password_reset BOOLEAN NOT NULL DEFAULT FALSE, -- флаг сброса пароля\n \n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT NULL\n);\n").Error
 	if err != nil {
 		fmt.Println("Cant create table users", err)
 	}

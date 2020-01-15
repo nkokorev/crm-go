@@ -24,9 +24,11 @@ var EmailTokenType = struct {
 	//USER_EMAIL_VERIFICATION string
 	USER_EMAIL_INVITE_VERIFICATION string
 	USER_EMAIL_PERSONAL_INVITE string
+	USER_EMAIL_RESET_PASSWORD string
 }{
 	USER_EMAIL_INVITE_VERIFICATION: "invite-verification",
 	USER_EMAIL_PERSONAL_INVITE: "personal-invite",
+	USER_EMAIL_RESET_PASSWORD: "reset-password",
 }
 
 
@@ -50,7 +52,6 @@ func (uat *EmailAccessToken) Create() error {
 		uat.Token = "1ukyryxpfprxpy17i4ldlrz9kg3"
 	}*/
 
-	fmt.Println("Создаем токен: ", uat)
 
 	return db.Create(uat).Error
 }
@@ -138,6 +139,9 @@ func (ueat *EmailAccessToken) UserEmailVerification (user *User) error {
 	return ueat.Delete()
 }
 
+
+// ### Create TOKENS ###
+
 // Создает токен для инвайт-верификации
 func (ueat *EmailAccessToken) CreateInviteVerificationToken(user *User) error {
 
@@ -154,6 +158,26 @@ func (ueat *EmailAccessToken) CreateInviteVerificationToken(user *User) error {
 	return ueat.Create()
 
 }
+
+// Создает токен для сброса пароля
+func (ueat *EmailAccessToken) CreateResetPasswordToken(user *User) error {
+
+	// Надо понять, создавать новый или использовать существующий
+	if !db.First(ueat,"owner_id = ? AND destination_email = ? AND action_type = ?", user.ID, user.Email, EmailTokenType.USER_EMAIL_RESET_PASSWORD).RecordNotFound() {
+		return nil
+	}
+
+	ueat.OwnerID = user.ID
+	ueat.DestinationEmail = user.Email
+	ueat.ActionType = EmailTokenType.USER_EMAIL_RESET_PASSWORD
+	ueat.NotificationCount = 0
+
+	return ueat.Create()
+
+}
+
+
+// ### Checking some state ###
 
 // проверяет существование инвайта
 func (ueat *EmailAccessToken) CheckInviteToken() error {

@@ -29,6 +29,7 @@ type User struct {
 	InvitedUserID uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
 
 	EmailVerifiedAt *time.Time `json:"email_verified_at" gorm:"default:null"`
+	PasswordReset bool `json:"password_reset" gorm:"default:FALSE"`
 	//EmailVerification bool `json:"email_verification" gorm:"default:false"`
 
 	CreatedAt time.Time `json:"created_at"`
@@ -122,6 +123,16 @@ func (user *User) Create (v_opt... UserCreateOptions ) error {
 // осуществляет поиск по ID
 func (user *User) Get () error {
 	return db.First(user,user.ID).Error
+}
+
+// осуществляет поиск по email
+func (user *User) GetByEmail () error {
+	return db.First(user,"email = ?", user.Email).Error
+}
+
+// осуществляет поиск по имени пользователя
+func (user *User) GetByUsername () error {
+	return db.First(user,"username = ?", user.Username).Error
 }
 
 // сохраняет все поля в модели, кроме id, deleted_at
@@ -291,21 +302,39 @@ func (user *User) SendEmailVerification() error {
 		return err
 	}
 
-	// 2. Посылаем уведомление с токеном
-	if err := emailToken.SendMail(); err != nil {
-		return err
-	}
-
-	return  nil
+	return  emailToken.SendMail()
 }
-
-
 
 // проверяет token, в случае успеха удаляет его из БД, а в user загружает соответствующего пользователя
 func (user *User) EmailVerification(token string) error {
 	return (&EmailAccessToken{Token:token}).UserEmailVerification(user)
 }
 
+// Отправляет имя пользователя на его почту
+func (user *User) SendEmailRecoveryUsername() error {
+
+	// тут должна быть какая-то задержка...
+	time.Sleep(time.Second * 1)
+	// собственно тут простая отправка письма пользователю с его именем
+	return  nil
+}
+
+// Отправляет ссылку для сброса пароля пользователя на его почту
+func (user *User) SendEmailRecoveryPassword() error {
+
+	// 1. Создаем токен для сброса пароля
+	emailToken := &EmailAccessToken{};
+	if err := emailToken.CreateResetPasswordToken(user); err != nil {
+		return err
+	}
+
+	return  emailToken.SendMail()
+}
+
+// сбрасывает пароль пользователя
+func (user *User) EmailResetPassword(token string) error {
+	return nil
+}
 
 // ### Account's FUNC ###
 
@@ -361,9 +390,8 @@ func (user *User) DeleteAccount(a *Account) error {
 /// ### Auth FUNC ###
 
 // Авторизует пользователя: загружает пользователя с предзагрузкой аккаунтов и, в случае успеха возвращает jwt-token
-func (user *User) AuthLogin(username, password string, staySignedIn... bool) (string, error) {
+func (user *User) AuthLogin(username, password string, onceLogin_opt... bool) (string, error) {
 
-	//user := &User{}
 	var e u.Error
 
 	// Делаем предзагрузку аккаунтов, чтобы потом их еще раз не подгружать
