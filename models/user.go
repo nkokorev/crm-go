@@ -282,27 +282,24 @@ func (user User) ValidateCreate() error {
 	return nil
 }
 
-func (user User) SendEmailVerification() error {
+// Проверяет и отправляет email подтвеждение
+func (user *User) SendEmailVerification() error {
 
-	// 1. Проверяем статус пользователя
-	if user.EmailVerifiedAt != nil {
-		return u.Error{Message:"Email пользователь уже подтвержден"}
-	}
-
-	// 2. Создаем токен.
-	if err := user.CreateEmailVerifiedToken(); err != nil {
+	// 1. Создаем токен
+	emailToken := &EmailAccessToken{};
+	if err := emailToken.CreateInviteVerificationToken(user); err != nil {
 		return err
 	}
 
-	// 3. Посылаем уведомление с токеном
-	// todo: send email verification
+	// 2. Посылаем уведомление с токеном
+	if err := emailToken.SendMail(); err != nil {
+		return err
+	}
 
 	return  nil
 }
 
-func (user *User) CreateEmailVerifiedToken() error {
-	return (&EmailAccessToken{}).CreatUserVerificationToken(user)
-}
+
 
 // проверяет token, в случае успеха удаляет его из БД, а в user загружает соответствующего пользователя
 func (user *User) EmailVerification(token string) error {
@@ -392,7 +389,7 @@ func (user *User) AuthLogin(username, password string, staySignedIn... bool) (st
 		return "", e
 	}
 
-	expiresAt := time.Now().Add(time.Minute * 20).Unix()
+	expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
 	claims := JWT{
 		user.ID,
 		0,
@@ -412,7 +409,7 @@ func (user *User) CreateJWTToken() (string, error) {
 		return "", err
 	}
 
-	expiresAt := time.Now().Add(time.Minute * 20).Unix()
+	expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
 	claims := JWT{
 		user.ID,
 		0,
@@ -440,7 +437,7 @@ func (user *User) LoginInAccount(account_id uint) (string, error) {
 	// 2. Проверяем, что у пользователя есть к нему доступ
 
 	// 3. Создаем долгий ключ для входа
-	expiresAt := time.Now().Add(time.Hour * 2).Unix()
+	expiresAt := time.Now().UTC().Add(time.Hour * 2).Unix()
 	claims := JWT{
 		user.ID,
 		account_id,

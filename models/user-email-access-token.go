@@ -15,13 +15,24 @@ type EmailAccessToken struct {
 	ActionType 	string `json:"action_type"` // json:"verification, recover (username, password, email), join to account"
 	DestinationEmail string `json:"destination_email"` // куда отправлять email и для какого емейла был предназначен токен. Не может быть <null>, только целевые приглашения.
 	OwnerID 	uint `json:"owner_id" ` // userID - создатель токена (может быть self)
+	NotificationCount uint `json:"notification_count"` // число успешных уведомлений
+	NotificationAt time.Time `json:"notification_at"` // время уведомления
 	CreatedAt time.Time `json:"created_at"`
 }
 
-/*const TypeAccessEmail = {
-	"verification" =
+var EmailTokenType = struct {
+	//USER_EMAIL_VERIFICATION string
+	USER_EMAIL_INVITE_VERIFICATION string
+	USER_EMAIL_PERSONAL_INVITE string
+}{
+	USER_EMAIL_INVITE_VERIFICATION: "invite-verification",
+	USER_EMAIL_PERSONAL_INVITE: "personal-invite",
 }
-*/
+
+
+
+
+// ### CRUD function
 func (uat *EmailAccessToken) Create() error {
 
 	if uat.OwnerID <= 0 {
@@ -35,9 +46,11 @@ func (uat *EmailAccessToken) Create() error {
 	uat.Token = strings.ToLower(ksuid.New().String())
 
 	// todo debug
-	if uat.OwnerID == 4 {
+	/*if uat.OwnerID == 4 {
 		uat.Token = "1ukyryxpfprxpy17i4ldlrz9kg3"
-	}
+	}*/
+
+	fmt.Println("Создаем токен: ", uat)
 
 	return db.Create(uat).Error
 }
@@ -52,7 +65,36 @@ func (uat *EmailAccessToken) Delete () error {
 	return db.Model(ApiKey{}).Where("token = ?", uat.Token).Delete(uat).Error
 }
 
+// сохраняет все поля в модели, кроме id, deleted_at
+func (ueat *EmailAccessToken) Update (input interface{}) error {
+	fmt.Println(ueat.NotificationAt)
+	//return db.Model(EmailAccessToken{}).Where("token = ?", ueat.Token).Omit("created_at").Save(ueat).Find(ueat, "token = ?", ueat.Token).Error
+	return db.Model(EmailAccessToken{}).Where("token = ?", ueat.Token).Omit("created_at").Update(input).Error
+}
+
 // ### Helpers FUNC
+
+// проверяет время жизни токена
+func (ueat EmailAccessToken) isExpired() bool  {
+
+	var duration time.Duration
+	c := EmailTokenType
+
+	switch ueat.ActionType {
+		case c.USER_EMAIL_INVITE_VERIFICATION:
+			duration = time.Hour * 48
+			break
+		case c.USER_EMAIL_PERSONAL_INVITE:
+			duration = time.Hour * 48
+			break
+		default:
+			duration = time.Hour * 3
+			break
+	}
+
+	return !time.Now().UTC().Add(-duration).Before(ueat.NotificationAt)
+
+}
 
 // Верифицирует пользователя по токену и возвращает пользователя в случае успеха
 func (ueat *EmailAccessToken) UserEmailVerification (user *User) error {
@@ -62,13 +104,13 @@ func (ueat *EmailAccessToken) UserEmailVerification (user *User) error {
 		return u.Error{Message:"Указанный проверочный код не существует"}
 	}
 
-	// 2. Проверяем тип кода, который соответствует переданному токену
-	if ueat.ActionType != "verification" {
-		return u.Error{Message:"Не верный тип проверочного кода"}
+	// 2. Проверяем тип токена (может быть любого типа верификаци)
+	if ueat.ActionType != EmailTokenType.USER_EMAIL_INVITE_VERIFICATION {
+		return errors.New("Не верный тип кода верификации")
 	}
 
 	// 3. Проверяем время жизни token
-	if !time.Now().Add(-time.Hour * 24).Before(ueat.CreatedAt) {
+	if ueat.isExpired() {
 		return u.Error{Message:"Проверочный код устарел"}
 	}
 
@@ -79,46 +121,38 @@ func (ueat *EmailAccessToken) UserEmailVerification (user *User) error {
 
 	// 5. Если пользователь уже верифицирован, то не надо его повторно верифицировать
 	if user.EmailVerifiedAt != nil {
-		return nil
-		//return ueat.Delete()
+		// todo
+		//return nil
+		return ueat.Delete()
 	}
 
 	// 6. Если все в порядке активируем учетную запись пользователя и сохраняем данные пользователя
-	timeNow := time.Now()
+	timeNow := time.Now().UTC()
 	user.EmailVerifiedAt = &timeNow
 	if err := user.Save(); err != nil {
 		return u.Error{Message:"Неудалось обновить данные верификации"}
 	}
 
 	// 7. Если все хорошо, возвращаем пользователя
-	return nil
-	//return ueat.Delete()
+	//return nil
+	return ueat.Delete()
 }
 
-func (ueat *EmailAccessToken) CreatUserVerificationToken(user *User) error {
+// Создает токен для инвайт-верификации
+func (ueat *EmailAccessToken) CreateInviteVerificationToken(user *User) error {
 
-	ueat.OwnerID = user.ID
-	ueat.DestinationEmail = user.Email
-	ueat.ActionType = "verification"
-
-	// 1. тут будет круто сделать проверки на наличие токена или уже подтвержденного пользователя
-	if user.EmailVerifiedAt != nil {
-		fmt.Println(" user.EmailVerifiedAt: ",  user.EmailVerifiedAt)
-		return u.Error{Message:"Email пользователя уже подтвержден"}
-	}
-
-	// 2. Проверка существующего токена. Если он уже есть, то заного не надо создавать.
-	if !ueat.ExistEmailVerification() {
+	// Надо понять, создавать новый или использовать существующий
+	if !db.First(ueat,"owner_id = ? AND destination_email = ? AND action_type = ?", user.ID, user.Email, EmailTokenType.USER_EMAIL_INVITE_VERIFICATION).RecordNotFound() {
 		return nil
 	}
 
+	ueat.OwnerID = user.ID
+	ueat.DestinationEmail = user.Email
+	ueat.ActionType = EmailTokenType.USER_EMAIL_INVITE_VERIFICATION
+	ueat.NotificationCount = 0
+
 	return ueat.Create()
 
-}
-
-// Проверяет существование токена для пользователя с типом verification
-func (ueat *EmailAccessToken) ExistEmailVerification () bool {
-	return db.First(ueat,"owner_id = ? AND destination_email = ? AND action_type = 'verification'", ueat.OwnerID, ueat.DestinationEmail).Error == gorm.ErrRecordNotFound
 }
 
 // проверяет существование инвайта
@@ -135,8 +169,7 @@ func (ueat *EmailAccessToken) CheckInviteToken() error {
 	}
 
 	// 2. Проверяем время жизни token
-	if !time.Now().Add(-time.Hour * 72).Before(ueat.CreatedAt) {
-		fmt.Println("Действительно устарел!", ueat.CreatedAt , time.Now())
+	if !time.Now().UTC().Add(-time.Hour * 72).Before(ueat.CreatedAt) {
 		return errors.New("Код приглашения устарел")
 	}
 
@@ -157,11 +190,48 @@ func (ueat *EmailAccessToken) UseInviteToken(user *User) error {
 	}
 
 	// 3. Проверяем время жизни token
-	if !time.Now().Add(-time.Hour * 72).Before(ueat.CreatedAt) {
-		fmt.Println("Действительно устарел!", ueat.CreatedAt , time.Now())
+	if !time.Now().UTC().Add(-time.Hour * 72).Before(ueat.CreatedAt) {
 		return errors.New("Код приглашения устарел")
 	}
 
 	return ueat.Delete()
-	//return db.First(ueat,"token = ? AND destination_email = ? AND action_type = 'ivite-user'", ueat.Token, ueat.DestinationEmail).Error == gorm.ErrRecordNotFound
+}
+
+
+// ### Sending func
+
+// Универсальная функция по отсылке уведомления на почту
+func (ueat *EmailAccessToken) SendMail() error {
+
+	// Проверяем все необходимые данные
+	if ueat.Token == "" {
+		return errors.New("Отсутствует токен для отправки")
+	}
+
+	// Проверяем время отправки
+	if !ueat.NotificationAt.Add(time.Minute*3).Before( time.Now().UTC()) {
+		return u.Error{Message:"Подождите несколько минут, прежде чем повторить отправку"}
+	}
+
+	// Проверяем существование email'а
+	if err := u.ValidateEmailDeepHost(ueat.DestinationEmail); err != nil {
+		return err
+	}
+
+
+	// Отправляем сообщение
+	// В зависимости от типа токена отправляется разный URL для верификации чего бы ни было.
+	// обычная верификация: /login/email-verification?t=<token>
+	// инвайт верификация: /login/sign-up/email-verification?t=<token>
+	// todo sending mail to email & type...
+
+	// Обновляем время
+	ueat.NotificationAt = time.Now().UTC()
+	ueat.NotificationCount++
+
+	if err := ueat.Update(ueat); err != nil {
+		return err
+	}
+
+	return nil
 }

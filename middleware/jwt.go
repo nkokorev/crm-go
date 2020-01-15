@@ -16,14 +16,14 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 		tokenHeader := r.Header.Get("Authorization") //Grab the token from the header
 
 		if tokenHeader == "" { //Token is missing, returns with error code 403 Unauthorized
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			u.Respond(w, u.Message(false, "Отсутствует ключ авторизации"))
 			return
 		}
 
 		splitted := strings.Split(tokenHeader, " ") //The token normally comes in format `Bearer {token-body}`, we check if the retrieved token matched this requirement
 		if len(splitted) != 2 {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			u.Respond(w, u.Message(false, "Некорректный ключ авторизации"))
 			return
 		}
@@ -33,13 +33,13 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 		tk := &models.JWT{}
 		//tk, err := models.ParseAndDecryptToken(tokenPart)
 		if err := tk.ParseAndDecryptToken(tokenPart);err != nil {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			u.Respond(w, u.Message(false, "Неудалось прочитать ключ авторизации"))
 			return
 		}
 
 		if tk.UserId < 1 {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			u.Respond(w, u.Message(false, "Пользователь не авторизован"))
 			return
 		}

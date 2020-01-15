@@ -16,7 +16,7 @@ func RandStringBytes(n int) string {
 func StringWithCharset(length int, charset string) string {
 
 	var seededRand *rand.Rand = rand.New(
-		rand.NewSource(time.Now().UnixNano()))
+		rand.NewSource(time.Now().UTC().UnixNano()))
 
 	b := make([]byte, length)
 	for i := range b {
