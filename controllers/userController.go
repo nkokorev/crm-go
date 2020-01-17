@@ -71,7 +71,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 /**
 * Контроллер проверки и применения кода email-верификации
  */
-func UserEmailVerification(w http.ResponseWriter, r *http.Request) {
+func UserEmailVerificationConfirm(w http.ResponseWriter, r *http.Request) {
 
 	user := &models.User{}
 
@@ -85,7 +85,7 @@ func UserEmailVerification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// пробуем пройти верификацию
-	if err := user.EmailVerification(AccessData.Token); err != nil {
+	if err := (&models.EmailAccessToken{Token:AccessData.Token}).UserEmailVerificationConfirm(user); err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось пройти верификаицю email"))
 		return
 	}
@@ -139,20 +139,19 @@ func UserRecoveryUsername(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func UserRecoveryPassword(w http.ResponseWriter, r *http.Request) {
+// Отправляет письмо с инструкцией по сбросу пароля, находя пользователя по username
+func UserRecoveryPasswordSendMail(w http.ResponseWriter, r *http.Request) {
 
-	//user := &models.User{}
-
-	AccessData := struct {
+	jsonData := struct {
 		Username string `json:"username"`
 	}{}
 
-	if err := json.NewDecoder(r.Body).Decode(&AccessData); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&jsonData); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	var user = models.User{Username:AccessData.Username}
+	var user = models.User{Username:jsonData.Username}
 
 	// 1. Пробуем найти пользователя с таким email
 	if err := user.GetByUsername(); err !=nil {
@@ -160,8 +159,8 @@ func UserRecoveryPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Отправляем имя пользователя ему на почту
-	if err := user.SendEmailRecoveryPassword(); err != nil {
+	// 2. Отправляем инструкцию по сбросу пароля на почту пользователя
+	if err := user.RecoveryPasswordSendEmail(); err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось отправить сообщение на ваш email"))
 		return
 	}
@@ -171,39 +170,86 @@ func UserRecoveryPassword(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-// сбрасывает пароль по ключу
-func UserPasswordReset(w http.ResponseWriter, r *http.Request) {
+// сбрасывает пароль по token'у, возвращая авторизацию пользователя
+func UserPasswordResetConfirm(w http.ResponseWriter, r *http.Request) {
 
 	user := &models.User{}
 
-	AccessData := struct {
+	jsonData := struct {
 		Token string `json:"token"`
 	}{}
 
-	if err := json.NewDecoder(r.Body).Decode(&AccessData); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&jsonData); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	// пробуем пройти верификацию
-	if err := user.EmailResetPassword(AccessData.Token); err != nil {
+	// Сбрасываем пароль, если токен действителен
+	if err := (&models.EmailAccessToken{Token:jsonData.Token}).UserPasswordResetConfirm(user); err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось сбросить пароль"))
 		return
 	}
 
 	token, err := user.CreateJWTToken()
 	if err != nil {
-		resp := u.Message(true, "Не удалось создать ключ доступа...")
+		// возвращаем обычную верфикацию
+		resp := u.Message(false, "Пароль сброшен, но не удалось создать токен авторизации")
 		u.Respond(w, resp)
 		return
 	}
 
 	// если все хорошо, возвращаем токен и пользователя для будущей авторизации
 	resp := u.Message(true, "Пароль успешно сброшен")
+	resp["token"] = token // options
 
-	resp["user"] = user
-	//resp["accounts"] = user.Accounts
-	resp["token"] = token
+	resp["user"] = user // options for speed
+	resp["accounts"] = user.Accounts // options for speed
+
+	u.Respond(w, resp)
+}
+
+// Устанавливает новый пароль
+func UserSetPassword(w http.ResponseWriter, r *http.Request)  {
+
+	// 1. Сначала смотрим, что нам прислал пользователь
+	jsonData := struct {
+		PasswordNew string `json:"password_new"` // новый пароль
+		PasswordOld string `json:"password_old,omitempty"`
+	}{}
+
+	if err := json.NewDecoder(r.Body).Decode(&jsonData); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	// 2. Находим текущего пользователя
+	userID := r.Context().Value("user_id").(uint)
+
+	user := models.User{ID: userID}
+	if err := user.Get(); err !=nil {
+		u.Respond(w, u.MessageError(err, "Неудалось найти пользователя")) // вообще тут нужен релогин
+		return
+	}
+
+	// 3. Устанавливаем новый пароль
+	if err := user.SetPassword(jsonData.PasswordNew, jsonData.PasswordOld); err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось установить пароль"))
+		return
+	}
+
+	token, err := user.CreateJWTToken()
+	if err != nil {
+		// возвращаем обычную верфикацию
+		resp := u.Message(false, "Пароль сброшен, но не удалось создать токен авторизации")
+		u.Respond(w, resp)
+		return
+	}
+
+	// если все хорошо, возвращаем токен и пользователя для будущей авторизации
+	resp := u.Message(true, "Новый пароль установлен")
+	resp["token"] = token // options
+	resp["user"] = user // options for speed
+
 	u.Respond(w, resp)
 }
 
@@ -285,6 +331,49 @@ func UserGetAccounts(w http.ResponseWriter, r *http.Request) {
 func UserAuthorization(w http.ResponseWriter, r *http.Request)  {
 
 	time.Sleep(0 * time.Second)
+	user := &models.User{}
+
+	v := &struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+		//StaySignedIn bool `json:"staySignedIn"`
+		OnceLogin bool `json:"onceLogin"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	token, err := user.AuthLogin(v.Username, v.Password, v.OnceLogin)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	// загружаем доступные аккаунты
+	if len(user.Accounts) == 0 {
+		if err := user.LoadAccounts(); err !=nil {
+			u.Respond(w, u.MessageError(err, "Неудалось загрузить аккаунты")) // вообще тут нужен релогин
+			return
+		}
+	}
+
+
+	resp := u.Message(true, "[POST] UserAuthorization - authorization was successful!")
+	resp["token"] = token
+	resp["user"] = user
+	resp["accounts"] = user.Accounts
+	u.Respond(w, resp)
+}
+
+/**
+* NEW!!! Контроллер авторизации по токену. В зависимости от типа токена, может происходит:
+* - обычная одноразовая авторизация
+* - одноразовая авторизация со сбрасыванием пароля
+ */
+func UserTokenAuthorization(w http.ResponseWriter, r *http.Request)  {
+
+	// todo ...
 	user := &models.User{}
 
 	v := &struct {

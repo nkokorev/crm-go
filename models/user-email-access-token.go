@@ -88,6 +88,9 @@ func (ueat EmailAccessToken) isExpired() bool  {
 		case c.USER_EMAIL_PERSONAL_INVITE:
 			duration = time.Hour * 48
 			break
+		case c.USER_EMAIL_RESET_PASSWORD:
+			duration = time.Hour * 24
+			break
 		default:
 			duration = time.Hour * 3
 			break
@@ -97,8 +100,10 @@ func (ueat EmailAccessToken) isExpired() bool  {
 
 }
 
+// ### CONFIRM FUNC ### ///
+
 // Верифицирует пользователя по токену и возвращает пользователя в случае успеха
-func (ueat *EmailAccessToken) UserEmailVerification (user *User) error {
+func (ueat *EmailAccessToken) UserEmailVerificationConfirm (user *User) error {
 
 	// 1. проверяем, есть ли такой токен
 	if err := ueat.Get(); err != nil {
@@ -139,6 +144,41 @@ func (ueat *EmailAccessToken) UserEmailVerification (user *User) error {
 	return ueat.Delete()
 }
 
+// Проверяет токен и сбрасывает пароль пользователю
+func (ueat *EmailAccessToken) UserPasswordResetConfirm (user *User) error {
+
+	// 1. проверяем, есть ли такой токен
+	if err := ueat.Get(); err != nil {
+		return u.Error{Message:"Указанный проверочный код не существует"}
+	}
+
+	// 2. Проверяем тип токена (может быть любого типа верификаци)
+	if ueat.ActionType != EmailTokenType.USER_EMAIL_RESET_PASSWORD {
+		//return errors.New("Не верный тип кода верификации")
+		return u.Error{Message:"Не верный тип токена верфикации"}
+	}
+
+	// 3. Проверяем время жизни token
+	if ueat.isExpired() {
+		return u.Error{Message:"Проверочный код устарел"}
+	}
+
+	// 4. Проверяем связанность токена и пользователя по owner_id = user_id AND destination_email = user_email.
+	if err := db.First(user, "id = ? AND email = ?", ueat.OwnerID, ueat.DestinationEmail).Error; err != nil || &user == nil {
+		return u.Error{Message:"Проверочный код предназначен для другого пользователя"}
+	}
+
+	return user.ResetPassword()
+}
+
+// Удаляет токен по сбросу пароля
+func (EmailAccessToken) UserDeletePasswordReset(user *User) {
+
+	// Удаляем токен, если находим
+	if !db.Delete(EmailAccessToken{},"(owner_id = ? OR destination_email = ?) AND action_type = ?", user.ID, user.Email, EmailTokenType.USER_EMAIL_RESET_PASSWORD).RecordNotFound() {
+		// log.Fatal()...
+	}
+}
 
 // ### Create TOKENS ###
 

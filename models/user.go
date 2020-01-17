@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	u "github.com/nkokorev/crm-go/utils"
@@ -305,11 +306,6 @@ func (user *User) SendEmailVerification() error {
 	return  emailToken.SendMail()
 }
 
-// проверяет token, в случае успеха удаляет его из БД, а в user загружает соответствующего пользователя
-func (user *User) EmailVerification(token string) error {
-	return (&EmailAccessToken{Token:token}).UserEmailVerification(user)
-}
-
 // Отправляет имя пользователя на его почту
 func (user *User) SendEmailRecoveryUsername() error {
 
@@ -319,8 +315,18 @@ func (user *User) SendEmailRecoveryUsername() error {
 	return  nil
 }
 
-// Отправляет ссылку для сброса пароля пользователя на его почту
-func (user *User) SendEmailRecoveryPassword() error {
+// Проверяет пароль пользователя
+func (user User) ComparePassword(password string) bool {
+	// если пользователь не найден temp.Username == nil, то пароль не будет искаться, т.к. он будет равен нулю (не с чем сравнивать)
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return false
+	}
+
+	return true
+}
+
+// Отправляет ссылку для сброса пароля пользователя на его почту и создает токен для сброса
+func (user *User) RecoveryPasswordSendEmail() error {
 
 	// 1. Создаем токен для сброса пароля
 	emailToken := &EmailAccessToken{};
@@ -332,7 +338,39 @@ func (user *User) SendEmailRecoveryPassword() error {
 }
 
 // сбрасывает пароль пользователя
-func (user *User) EmailResetPassword(token string) error {
+func (user *User) ResetPassword() error {
+	user.Password = ""
+	user.PasswordReset = true
+	return user.Save()
+}
+
+// устанавливает новый пароль
+func (user *User) SetPassword(passwordNew, passwordOld string) error {
+
+	// 1. Проверяем старый пароль, при условии, что пароль не сброшен
+	if !user.PasswordReset && !user.ComparePassword(passwordOld) {
+		return u.Error{Message:"Не верно указан старый пароль"}
+	}
+
+
+	// 2. Устанавливаем новый крипто пароль
+	password, err := bcrypt.GenerateFromPassword([]byte(passwordNew), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	user.Password = string(password)
+
+	// 3. Ставим флаг passwordReset = false
+	user.PasswordReset = false
+
+	// 4. Сохраняем данные пользователя
+	if err := user.Save();err!=nil {
+		return err
+	}
+
+	// 5. Очищаем таблицу от токенов по сбросу пароля (если есть)
+	(EmailAccessToken{}).UserDeletePasswordReset(user)
+
 	return nil
 }
 
@@ -407,10 +445,13 @@ func (user *User) AuthLogin(username, password string, onceLogin_opt... bool) (s
 	}
 
 	// если пользователь не найден temp.Username == nil, то пароль не будет искаться, т.к. он будет равен нулю (не с чем сравнивать)
-	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword { //Password does not match!
+	if !user.ComparePassword(password) {
 		e.AddErrors("password", "Не верный пароль")
 	}
+	/*err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword { //Password does not match!
+		e.AddErrors("password", "Не верный пароль")
+	}*/
 
 	if e.HasErrors() {
 		e.Message = "Не верно указаны данные"
