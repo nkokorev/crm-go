@@ -80,7 +80,6 @@ func main() {
 	os.Exit(0)
 }
 
-
 func examplePhone(numToParse string) {
 
 	//num, err := libphonenumber.Get
