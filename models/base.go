@@ -70,6 +70,10 @@ func Connect() *gorm.DB {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	//db = db.Set("gorm:auto_preload", true)
+
+	//db = db.LogMode(true)
+
 	SetDB(db)
 
 	return db

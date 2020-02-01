@@ -1,37 +1,47 @@
 package models
 
-import (
-	"time"
-)
+import "time"
 
 type Account struct {
 	ID uint `json:"id"`
-	Name string `json:"name"`
-	Website string `json:"website"`
-	Type string `json:"type"`
+
+	// данные аккаунта
+	Name string `json:"name" gorm:"type:varchar(255)"`
+	Website string `json:"website" gorm:"type:varchar(255)"`
+	Type string `json:"type" gorm:"type:varchar(255)"`
+
+	// настройки авторизации.
+	// Разделяется AppAuth и ApiAuth -
+	VisibleToClients bool `json:"visible_to_clients" gorm:"default:true"` // скрывать аккаунт в списке доступных для пользователей с ролью 'client'. Нужно для системных аккаунтов.
+	ClientsAreAllowedToLogin bool `json:"allow_to_login_for_clients" gorm:"default:false"` // запрет на вход в ratuscrm для пользователей с ролью 'client' (им не будет выдана авторизация).
+
+	AuthForbiddenForClients bool `json:"auth_forbidden_for_clients" gorm:"default:false"` // запрет авторизации для для пользователей с ролью 'client'.
+
+	//ForbiddenForClient bool `json:"forbidden_for_client" gorm:"default:false"` // запрет на вход через приложение app.ratuscrm.com для пользователей с ролью 'client'
+
 	CreatedAt 	time.Time `json:"created_at"`
 	UpdatedAt 	time.Time `json:"-"`
-	DeletedAt 	*time.Time `json:"-" db:"deleted_at"`
+	DeletedAt 	*time.Time `json:"-" sql:"index"`
 
-	Users 		[]User `json:"-" gorm:"many2many:user_accounts"`
+	//Users 		[]User `json:"-" gorm:"many2many:user_accounts"`
+	Users 		[]User `json:"-" gorm:"many2many:account_users"`
 	ApiKeys 	[]ApiKey `json:"-"`
 
 	Products 	[]Product `json:"-"`
 	Stocks		[]Stock `json:"-"`
 }
 
-// создает аккаунт, несмотря на a.ID
+// создает аккаунт
 func (a *Account) Create () error {
 
 	// Верификация данных
 
-	// Создание и сохранение аккаунта
+	// Создание аккаунта
 	if err := db.Create(a).Error; err != nil {
 		return err
 	}
-	if err := db.Save(a).Error; err != nil {
-		return  err
-	}
+
+
 
 	return nil
 }

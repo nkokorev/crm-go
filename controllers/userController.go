@@ -299,6 +299,12 @@ func UserGetProfile(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value("user_id").(uint)
 
+	/*userID, err := u.GetFromRequestUINT(r, "user_id")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при входе в аккаунт"))
+		return
+	}*/
+
 	user := models.User{ID: userID}
 	if err := user.Get(); err !=nil {
 		u.Respond(w, u.MessageError(err, "Неудалось найти пользователя")) // вообще тут нужен релогин

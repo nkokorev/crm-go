@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	u "github.com/nkokorev/crm-go/utils"
@@ -10,23 +9,35 @@ import (
 	"os"
 	"regexp"
 	"unicode"
-	//"gopkg.in/guregu/null.v3"
+
 	"time"
 )
 
 type User struct {
-	ID        	uint `json:"id"`
-	//HashID 		string `json:"hash_id" gorm:"type:varchar(10);unique_index;not null;"`
-	Username 	string `json:"username" `
-	Email 		string `json:"email"`
-	Password 	string `json:"-"` // json:"-"
+	ID        	uint `json:"id" gorm:"primary_key"`
+	
+	Username 	string `json:"username" gorm:"type:varchar(255);unique_index;default:null;"`
+	Email 		string `json:"email" gorm:"type:varchar(255);unique_index;default:null;"`
+	Phone	 	string `json:"patronymic" gorm:"type:varchar(255);unique_index;default:null;"` // нужно проработать формат данных
+	Password 	string `json:"-" gorm:"type:varchar(255);default:null;"` // json:"-"
 
-	Name 		string `json:"name"`
-	Surname 	string `json:"surname"`
-	Patronymic 	string `json:"patronymic"`
-	//Phone	 	string `json:"patronymic"` // нужно проработать формат данных
+	Name 		string `json:"name" gorm:"type:varchar(255)"`
+	Surname 	string `json:"surname" gorm:"type:varchar(255)"`
+	Patronymic 	string `json:"patronymic" gorm:"type:varchar(255)"`
 
-	DefaultAccountID uint `json:"default_account_id"` // указывает какой аккаунт по дефолту загружать
+
+	//Role 		string `json:"role" gorm:"type:varchar(255);default:'client'"`
+
+	//VAccounts postgres.Hstore `json:"v_accounts" gorm:"type:vector int[][]"`
+	//VAccounts postgres.Hstore `json:"v_accounts"  gorm:"default:null"`
+	//ArrayAccounts pq.Int64Array `json:"array_accounts" gorm:"type:varchar(100)[][]"`
+	//ArrayAccounts types.Slice `json:"array_accounts" gorm:"type:int[][]"`
+	//VectorOld pq.Int64Array `json:"array_accounts" gorm:"type:int[][]"`
+	//Access map[int]string `json:"array_accounts" gorm:"type:int[]varchar(255)"`
+	//ArrayAccounts pq.Int64Array `json:"array_accounts" gorm:"type:int[]"`
+	//Hstore postgres.Hstore
+
+	DefaultAccountID uint `json:"default_account_id" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
 	InvitedUserID uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
 
 	EmailVerifiedAt *time.Time `json:"email_verified_at" gorm:"default:null"`
@@ -35,9 +46,11 @@ type User struct {
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt *time.Time `json:"-"`
+	DeletedAt *time.Time `json:"-" sql:"index"`
 
-	Accounts []Account `json:"-" gorm:"many2many:user_accounts"`
+	//Profile UserProfile `json:"profile" gorm:"preload"`
+
+	Accounts []Account `json:"-" gorm:"many2many:account_users;preload"`
 }
 
 // структура настроек
@@ -97,7 +110,6 @@ func (user *User) Create (v_opt... UserCreateOptions ) error {
 		return err
 	}
 
-
 	// 7. Удаляем ключ приглашения
 	if crmSettings.UserRegistrationInviteOnly {
 
@@ -123,7 +135,13 @@ func (user *User) Create (v_opt... UserCreateOptions ) error {
 
 // осуществляет поиск по ID
 func (user *User) Get () error {
-	return db.First(user,user.ID).Error
+	/*return db.Preload("Accounts", func(db *gorm.DB) *gorm.DB {
+		return db.Order(("accaunts.id DESC"))
+	}).Find(user).Error*/
+
+	//return db.Preload("Account").First(user,user.ID).Error
+	//db.Set("gorm:auto_preload", true)
+	return db.Preload("Accounts").First(user).Error
 }
 
 // осуществляет поиск по email
@@ -136,14 +154,15 @@ func (user *User) GetByUsername () error {
 	return db.First(user,"username = ?", user.Username).Error
 }
 
-// сохраняет все поля в модели, кроме id, deleted_at
+// сохраняет как новую модель... лучше вообще убрать этот метод
 func (user *User) Save () error {
-	return db.Model(User{}).Omit("id", "deleted_at").Save(user).Find(user, "id = ?", user.ID).Error
+	//return db.Model(user).Omit("id", "deleted_at", "created_at", "updated_at").Save(user).Find(user, "id = ?", user.ID).Error
+	return db.Model(user).Omit("id", "deleted_at", "created_at", "updated_at").Save(user).First(user, "id = ?", user.ID).Error
 }
 
-// обновляет все схожие с интерфейсом поля, кроме id, username, deleted_at
+// обновляет указанные данные и сохраняет в текущую модель в БД
 func (user *User) Update (input interface{}) error {
-	return db.Model(User{}).Where("id = ?", user.ID).Omit("id", "username", "deleted_at").Update(input).Find(user, "id = ?", user.ID).Error
+	return db.Model(user).Where("id = ?", user.ID).Omit("id", "username", "created_at", "updated_at", "deleted_at").Update(input).First(user).Error
 }
 
 // удаляет пользователя по ID
@@ -303,6 +322,7 @@ func (user *User) SendEmailVerification() error {
 		return err
 	}
 
+	// 2. Отправляем письмо
 	return  emailToken.SendMail()
 }
 
@@ -399,6 +419,7 @@ func (user *User) CreateAccount(a *Account) error {
 	}
 
 	// 3. Назначает роль owner
+
 
 	return nil
 }
@@ -524,12 +545,18 @@ func (user *User) LoginInAccount(account_id uint) (string, error) {
 func (user *User) CreateInviteForUser (email string, sendMail bool) error {
 
 	// 1. Создаем токен для нового пользователя
-	err := (&EmailAccessToken{DestinationEmail:email, OwnerID:user.ID, ActionType: "invite-user"}).Create()
+	eat := &EmailAccessToken{DestinationEmail:email, OwnerID:user.ID, ActionType: "invite-user"}
+	err := eat.Create()
 	if err != nil {
 		return u.Error{Message:"Неудалось создать приглашение"}
 	}
 
 	// 2. Посылаем уведомление на почту
+	if sendMail {
+		if err := eat.SendMail(); err != nil {
+			return u.Error{Message:"Неудалось отправить приглашение"}
+		}
+	}
 	// user.SendNotification()...
 
 	return nil

@@ -16,66 +16,80 @@ func RefreshTables() {
 	pool := models.GetPool()
 
 	// дропаем системные таблицы
-	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, api_keys, user_accounts, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, email_access_tokens, users, crm_settings").Error
+	//pool.DropTableIfExists(&models.UserProfile{})
+	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, api_keys, account_users, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, email_access_tokens, user_profiles, users, crm_settings").Error
 	if err != nil {
 		fmt.Println("Cant create table accounts", err)
 	}
+
+
 
 	// Таблица системных настроек
 	err = pool.Exec("create table  crm_settings (\n id SERIAL PRIMARY KEY UNIQUE,\n user_registration_allow BOOL NOT NULL DEFAULT TRUE, -- регистрация новых пользователей\n user_registration_invite_only BOOL NOT NULL DEFAULT TRUE, -- регистрация новых пользователей только по инвайтам\n \n created_at timestamp DEFAULT CURRENT_TIMESTAMP,\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP\n --deleted_at timestamp DEFAULT NULL\n);\n").Error
 	if err != nil {
-		fmt.Println("Cant create table crm_settings", err)
+		log.Fatal("Cant create table crm_settings", err)
 	}
 
-	// Таблица пользователей
-	err = pool.Exec("create table  users (\n id SERIAL PRIMARY KEY UNIQUE,\n username varchar(32) NOT NULL UNIQUE,\n email varchar(255) NOT NULL UNIQUE,\n password varchar(255) NOT NULL UNIQUE,\n \n name varchar(32) DEFAULT '',\n surname varchar(32) DEFAULT '',\n patronymic varchar(32) DEFAULT '',\n \n default_account_id INT DEFAULT NULL,\n -- parent_id INT REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE, -- поиск по продукту\n invited_user_id INT DEFAULT NULL, -- кто пригласил\n -- email_verification BOOLEAN NOT NULL DEFAULT FALSE,\n email_verified_at TIMESTAMP DEFAULT NULL,\n password_reset BOOLEAN NOT NULL DEFAULT FALSE, -- флаг сброса пароля\n \n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT NULL\n);\n").Error
+	// Таблица аккаунтов.
+	if false {
+	err = pool.Exec("create table  accounts (\n id SERIAL PRIMARY KEY UNIQUE,\n name varchar(255),\n \n -- настройки доступа к аккаунту через app.ratuscrm.com\n hide_for_client BOOL DEFAULT TRUE, -- скрывать аккаунт в списке доступных для пользователей с ролью 'client'. \n forbidden_for_client BOOL DEFAULT FALSE, -- запрет на вход через приложение app.ratuscrm.com для пользователей с ролью 'client'. \n \n -- все что ui_auth_ имеет смысл только для внешнего сервера авторизации\n ui_auth_is_client BOOL NOT NULL DEFAULT FALSE, -- использовать аккаунт как сервер авторизации и регистрации (через ui.api.ratuscrm.com / api.ratuscrm.com) \n ui_auth_is_registration_allowed BOOL NOT NULL DEFAULT FALSE, -- включить авторизацию через ui.api (может быть полезно выключать )\n ui_auth_is_registration_invite_only BOOL NOT NULL DEFAULT FALSE, -- регистрация новых пользователей только по инвайтам\n \n ui_auth_jwt_key varchar(255),\n ui_auth_aes_key varchar(32), -- AES-CFB 256\n ui_auth_use_aes BOOL DEFAULT TRUE, -- использовать ли AES-CFB 256 поверх токена (рекомендуется)\n \n ui_auth_jwt_exp_hours INT DEFAULT 4, -- время, в течение которого будет доступна авторизация\n \n  \n website varchar(255),\n type varchar(255),\n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT null\n);\n").Error
 	if err != nil {
-		fmt.Println("Cant create table users", err)
+		log.Fatal("Cant create table accounts", err)
 	}
+	}
+	pool.CreateTable(&models.Account{})
+	//pool.Model(&models.User{}).AddForeignKey("user_refer", "users(refer)", "CASCADE", "CASCADE")
+	//pool.Exec("ALTER TABLE accounts \n    ADD CONSTRAINT uix_email_account_id_parent_id unique (email,account_id,parent_id),\n    ADD CONSTRAINT users_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT users_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE;\n\ncreate unique index uix_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\ncreate unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
+
+	// Таблица пользователей
+	if false {
+	err = pool.Exec("create table  users (\n id SERIAL PRIMARY KEY UNIQUE,\n \n parent_id INT REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE DEFAULT NULL, -- указатель на аккаунт родителя. One-to-many, каскад не предусмотрен.  \n account_id INT REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL, -- если аккаунт будет удален, пользователь также удалится. \n \n username varchar(32) NOT NULL,\n email varchar(255) NOT NULL, -- uix_email_account_id_parent_id - ограничение по уникальности\n password varchar(255) NOT NULL UNIQUE,\n \n name varchar(32) DEFAULT '',\n surname varchar(32) DEFAULT '',\n patronymic varchar(32) DEFAULT '',\n \n default_account_id INT DEFAULT NULL,\n invited_user_id INT DEFAULT NULL, -- кто пригласил\n email_verified_at TIMESTAMP DEFAULT NULL,\n password_reset BOOLEAN NOT NULL DEFAULT FALSE, -- флаг сброса пароля\n \n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT NULL,\n --constraint uix_account_id UNIQUE (account_id,shop_id,code)\n--  constraint uix_email_parent_id unique (account_id,email,parent_id)\n constraint uix_email_account_id_parent_id unique (email,account_id,parent_id) -- этот набор должен быть уникальным\n);\ncreate unique index uix_account_id_email_parent_id_not_null on users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\ncreate unique index uix_account_id_email_parent_id_when_null on users (account_id,email,parent_id) WHERE parent_id IS NULL;").Error
+	if err != nil {
+		log.Fatal("Cant create table users", err)
+	}
+	}
+
+	pool.CreateTable(&models.User{})
+	//pool.Model(&models.User{}).AddForeignKey("user_refer", "users(refer)", "CASCADE", "CASCADE")
+	pool.Exec("ALTER TABLE users \n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n    ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n    \n\n-- create unique index uix_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
+
+	// User <> Account
+	pool.Exec("ALTER TABLE account_users \n--     ADD CONSTRAINT uix_email_account_id_parent_id unique (email,account_id,parent_id),\n    ADD CONSTRAINT account_users_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT account_users_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT users_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n--     ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE;\n\n-- create unique index uix_user_id_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
 
 	// в этой таблице хранятся пользовательские email-уведомления
 	err = pool.Exec("create table  email_access_tokens (\ntoken varchar(255) PRIMARY KEY UNIQUE, -- сам уникальный ключ\naction_type VARCHAR(255) NOT NULL DEFAULT 'verification', -- verification, recover (username, password, email), join to account, [invite-one], [invite-unlimited], [invite-free] - свободный инвайт...\ndestination_email varchar(255) NOT NULL, -- куда фактически был отправлен token (для безопасности) или для кого предназначается данный инвайт (например, строго по емейлу)\nowner_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE, -- ID пользователя, кто создавал этот ключ (может быть self) \nnotification_count INT DEFAULT 0, -- число уведомлений\nnotification_at TIMESTAMP DEFAULT NULL, -- время уведомления\ncreated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n--  expired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);\n").Error
 	if err != nil {
-		fmt.Println("Cant create table user_email_send", err)
-	}
-
-	// Таблица аккаунтов.
-	err = pool.Exec("create table  accounts (\n id SERIAL PRIMARY KEY UNIQUE,\n name varchar(255),\n website varchar(255),\n type varchar(255),\n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT null\n);\n").Error
-	if err != nil {
-		fmt.Println("Cant create table accounts", err)
+		log.Fatal("Cant create table user_email_send", err)
 	}
 
 	// Магазины (Shops).
 	err = pool.Exec("create table shops (\n  id SERIAL PRIMARY KEY UNIQUE,\n    account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    name VARCHAR(255) NOT NULL, -- имя магазина    \n    address VARCHAR(255) -- потом можно более детально сделать адрес\n \n);\n\n").Error
 	if err != nil {
-		fmt.Println("Cant create table shops", err)
+		log.Fatal("Cant create table shops", err)
 	}
 
 	err = pool.Exec("create table product_groups (\n    id SERIAL PRIMARY KEY UNIQUE,\n    account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    parent_id INT REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE, -- поиск по продукту\n    shop_id INT NOT NULL REFERENCES shops(id) ON DELETE CASCADE ON UPDATE CASCADE, -- поиск по магазину\n\n    url VARCHAR(255), -- url \"red-tea\" \"china-tea\" \"components\"\n    code VARCHAR(255), -- tea, coffee, china, ... какой-то уникальный (!!) код категории\n    name VARCHAR(255), -- имя каталога (тут можно добавить много других имен, в навигационном меню, например)\n    breadcrumb VARCHAR(255), -- текст в навигационной тепочке    \n    short_description VARCHAR(255), -- карткое описание раздела\n    description text, -- описание раздела\n    \n    meta_title VARCHAR(255), -- описание группы\n    meta_keywords VARCHAR(255), -- описание группы\n    meta_description VARCHAR(255), -- описание группы\n          \n     constraint uix_product_group_account_shop_parent_url_id UNIQUE (account_id,shop_id, parent_id, url),\n     constraint uix_product_group_account_shop_code_id UNIQUE (account_id,shop_id,code)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
 	if err != nil {
-		fmt.Println("Cant create table product_group", err)
+		log.Fatal("Cant create table product_group", err)
 	}
 
 	// Таблица продуктов
 	err = pool.Exec("create table products (\n  id SERIAL PRIMARY KEY UNIQUE,\n     account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n     product_group_id INT REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    -- article VARCHAR(32) NOT NULL, -- публичный артикул\n     sku VARCHAR(32), -- Stock Keeping Unit («складская учётная единица»)\n     url VARCHAR(255) NOT NULL, -- URL страницы\n     \n     name VARCHAR(255),\n  short_description VARCHAR(255), -- карткое описание раздела\n     description text, -- описание товара (32000 знаков)\n    -- constraint uix_products_article_account_id UNIQUE (article, account_id)\n     constraint uix_products_sku_account_id UNIQUE (sku, account_id)\n     \n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
 	if err != nil {
-		fmt.Println("Cant create table products", err)
+		log.Fatal("Cant create table products", err)
 	}
 
 	// Физически склады (Stocks). Объект принимает товары (приходы), списывает и т.д.
 	err = pool.Exec("create table stocks (\n  id SERIAL PRIMARY KEY UNIQUE,\n    account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    code VARCHAR(255), -- уникальный код склада\n    name VARCHAR(255) NOT NULL,    \n    address VARCHAR(255), -- потом можно более детально сделать адрес\n\n    -- created_at timestamp DEFAULT NOW(),\n    -- updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n    -- deleted_at timestamp DEFAULT null,\n        constraint uix_stocks_account_code_id UNIQUE (account_id, code)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
 	if err != nil {
-		fmt.Println("Cant create table products", err)
+		log.Fatal("Cant create table products", err)
 	}
 
 	// M:M Stock <> Product  Таблица продуктов
 	err = pool.Exec("create table stock_products (\n    id SERIAL PRIMARY KEY UNIQUE,\n    account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для ускорения поиска\n    stock_id INT NOT NULL REFERENCES stocks(id) ON DELETE CASCADE ON UPDATE CASCADE, -- поиск по складу\n    product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE, -- поиск по продукту\n\n    in_stock DECIMAL (13,3) DEFAULT 0.0, -- запас\n    stockpile DECIMAL (13,3) DEFAULT 0.0, -- резерв (зарезервировано) тут может быть условие, можно ли резеревировать больше остатка\n    \n    -- allow_reserve_out_of_stock BOOLEAN DEFAULT FALSE, -- можно ли резервировать больше реального запаса\n      \n     constraint uix_stock_products_account_store_product_id UNIQUE (account_id, stock_id, product_id)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
 	if err != nil {
-		fmt.Println("Cant create table products", err)
+		log.Fatal("Cant create table products", err)
 	}
-
-
-
 
 
 	// склад (stock)
@@ -157,9 +171,12 @@ func RefreshTables() {
 	// ## ВНешние таблицы связи
 
 	// M:M User <> Account
+	//pool.CreateTable(&models.AccountUser{})
+	if false {
 	err = pool.Exec("create table user_accounts (\n    user_id INT REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE ,\n    account_id INT REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE ,\n    constraint uix_user_accounts_user_account_id UNIQUE (user_id, account_id)\n);\n\n").Error
 	if err != nil {
 		fmt.Println("Cant create table accounts", err)
+	}
 	}
 
 	// M:M Offer <> Product
@@ -195,28 +212,6 @@ func RefreshTables() {
 
 }
 
-func ReplaceDataBase(name string)  {
-
-	var err error
-	pool := models.GetPool()
-
-	err = pool.Exec("DROP DATABASE IF EXISTS " + name + ";").Error
-	if err != nil {
-		log.Fatalf("Cant drop database: %s, err: %s", name, err)
-	}
-	// пересоздаем создаем базу данных
-	err = pool.Exec("CREATE DATABASE " + name + " OWNER crm ENCODING UTF8;").Error
-	if err != nil {
-		log.Fatalf("Cant create database: %s, err: %s", name, err)
-	}
-
-	// Выбираем тестовую базу и в нее заносим все изменения
-	/*if _, err = pool.Exec("select " + name); err != nil {
-		log.Fatal("Cant set test data base: ", err)
-	}*/
-}
-
-
 // загрузка первоначальных данных в EAV-таблицы
 func UploadEavData() {
 
@@ -250,24 +245,35 @@ func UploadTestData() {
 	// 0. Создаем файл системных настроек
 	crmSettings := &models.CrmSetting{
 		UserRegistrationAllow:      true,
-		UserRegistrationInviteOnly: false,
+		UserRegistrationInviteOnly: true,
 		CreatedAt:                  time.Time{},
 		UpdatedAt:                  time.Time{},
 		//DeletedAt:                  nil,
 	}
 
 	// 1. Создаем пользователей
-	users := [] *models.User{
+	/*users := [] *models.User{
 		{Username:"admin", Email:"kokorevn@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt:&timeNow},
 		{Username:"nkokorev", Email:"mex388@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt: &timeNow, InvitedUserID:1},
 		{Username:"vpopov", Email:"vp@357gr.ru", Password:"qwerty109#QW", Name:"Василий", Surname:"Попов", Patronymic:"Николаевич",EmailVerifiedAt: &timeNow, InvitedUserID:1},
+	}*/
+
+	// 1. Создаем пользователей
+	users := [] *models.User{
+		{Username:"admin", Email:"kokorevn@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt:&timeNow},
+		{Username:"nkokorev", Email:"mex388@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt: &timeNow, InvitedUserID:1,},
+		{Username:"vpopov", Email:"vp@357gr.ru", Password:"qwerty109#QW", Name:"Василий", Surname:"Попов", Patronymic:"Николаевич", EmailVerifiedAt: &timeNow, InvitedUserID:1, },
 	}
 
 	// 2. Аккаунты
 	accounts := [] *models.Account{
 		{Name:"RatusMedia"},
 		{Name:"Rus Marketing"},
+		{Name:"Stan-Prof"},
+		{Name:"Vtvent"},
+		{Name:"CS-Garant"},
 		{Name:"357 грамм"},
+		{Name:"SyndicAd"},
 	}
 
 	shops := [] *models.Shop{
@@ -347,6 +353,20 @@ func UploadTestData() {
 	crmSettings.UserRegistrationInviteOnly = false
 	crmSettings.Save()
 
+	/*for i, _ := range accounts {
+		if err := accounts[i].Create();err != nil {
+			log.Fatal("Неудалось создать аккаунт", err)
+		}
+	}*/
+
+	// Создаем главный аккаунт
+	if err := (&models.Account{Name:"RatusCRM"}).Create(); err != nil {
+		log.Fatal("Неудалось создать главный аккаунт")
+	}
+	// Регистрируем пользователей в аккаунте RatusCRM
+	// Как будто они регистрируются через общий вход: [POST]: ui.api.ratuscrm.com/accounts/{account_id = 1}/users
+	// Нужна коллективная антиспам-защита. Храним большой список ip-адресов, с которых приходит спам. Возможно, проверяем HOST или еще что-то или может выдавать код.
+	
 	for i,_ := range users {
 
 		if err := users[i].Create(models.UserCreateOptions{SendEmailVerification:false}); err != nil {

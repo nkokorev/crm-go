@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"github.com/jinzhu/gorm"
 	u "github.com/nkokorev/crm-go/utils"
 	"github.com/segmentio/ksuid"
@@ -68,7 +67,6 @@ func (uat *EmailAccessToken) Delete () error {
 
 // сохраняет все поля в модели, кроме id, deleted_at
 func (ueat *EmailAccessToken) Update (input interface{}) error {
-	fmt.Println(ueat.NotificationAt)
 	//return db.Model(EmailAccessToken{}).Where("token = ?", ueat.Token).Omit("created_at").Save(ueat).Find(ueat, "token = ?", ueat.Token).Error
 	return db.Model(EmailAccessToken{}).Where("token = ?", ueat.Token).Omit("created_at").Update(input).Error
 }
@@ -277,17 +275,21 @@ func (ueat *EmailAccessToken) SendMail() error {
 		return u.Error{Message:"Подождите несколько минут, прежде чем повторить отправку"}
 	}
 
-	// Проверяем существование email'а
+	// Проверяем существование email'а - depricated (проверем во время отправки)
 	if err := u.ValidateEmailDeepHost(ueat.DestinationEmail); err != nil {
 		return err
 	}
 
 
-	// Отправляем сообщение
+	// Отправляем транзакционное сообщение
 	// В зависимости от типа токена отправляется разный URL для верификации чего бы ни было.
 	// обычная верификация: /login/email-verification?t=<token>
 	// инвайт верификация: /login/sign-up/email-verification?t=<token>
 	// todo sending mail to email & type...
+
+	// using EmailNotification..
+	// 1.
+
 
 	// Обновляем время
 	ueat.NotificationAt = time.Now().UTC()
