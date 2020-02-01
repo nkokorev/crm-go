@@ -1,12 +1,44 @@
 # crm-go
-Main pkg for modules
-
-CRM-GO - основная библиотека для работы с моделями и утилитами.
-
-# Работа с ошибками
-Библиотека обрабатывает ошибки и возвращает максимально полные данные: из БД, описания, внутренние ID элементов и т.д.
-
-**Контроллеры микросервисов должны самостоятельно интерпритировать** такие данные и при необходимости осмысленно передавать в GUI.
-Для валидации данных форм используйте функций типа (*T) Validate<Verb>() e Error. Такие функции возвращают данные по полям.
+Ядро Ratus CRM, включая GUI/API интерфейсы. 
 
 
+## API - интерфейсы
+
+### App ui-api
+URL: `http://ratuscrm.com/api/`
+
+### Public ui-api
+URL: `http://ui.api.ratuscrm.com`
+
+### Public api (Bearer Authentication)
+URL: `http://api.ratuscrm.com`
+
+# 1. UI API
+
+- APP: `http://ratuscrm.com/api/ui/`
+- Public: `http://ui.api.ratuscrm.com`
+
+Методы:
+- CreateUser
+- DeleteUser
+- AuthUser
+
+### Create user
+`[POST] http://<api:schema>/accounts/{account_id}/users`
+
+Parametrs:
+- [required, string] username
+- [required, string] email
+- [required, string] password
+- [required, string] phone
+- [required, string] name
+- [required, string] soname
+- ...
+
+### 
+
+Внутренее api для графического интерфейса (vue-cli):
+http://ratuscrm.com/ui-api/
+
+
+**Микроконтроллеры должны использовать функции в контексте аккаунта**
