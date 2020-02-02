@@ -1,7 +1,6 @@
 # crm-go
 Ядро Ratus CRM, включая GUI/API интерфейсы. 
 
-
 ## API - интерфейсы
 
 ### App/Public ui-api
