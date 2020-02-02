@@ -4,14 +4,62 @@
 
 ## API - интерфейсы
 
-### App ui-api
-URL: `http://ratuscrm.com/api/`
+### App/Public ui-api
+app-url: `http://ratuscrm.com/api/`
+public-url: `http://ui.api.ratuscrm.com`
 
-### Public ui-api
-URL: `http://ui.api.ratuscrm.com`
+**Auth in ui-interface**
+
+You must choose auth settings: 
+1. auth by email & pwd (default)
+2. auth by username & pwd
+3. auth by phone & once code*
+
+We are recommended #1. If you whant hidden user's email - choose #2.
+
+Strong reccomended not change this.
+
+### Methods ui-api
+
+**Create user**
+
+This method create user account in your account of RatusCRM.
+
+see also: *CreateOrUpdate*
+
+**Schema url**
+
+`[POST] <api-url>/accounts/{account_id}/users`
+
+<table>
+<tr>
+<th>parametr</th>
+<th>type</th>
+<th>required</th>
+</tr>
+<tr>
+<td>username</td>
+<td>string</td>
+<td>if auth</td>
+</tr>
+<tr>
+<td>email</td>
+<td>string</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>phone</td>
+<td>string</td>
+<td>no</td>
+</tr>
+</table>
+
+
+<span style="color:'#ef2345'">Attention</span>: one of {username,email,phone} must be not null.
 
 ### Public api (Bearer Authentication)
-URL: `http://api.ratuscrm.com`
+url: `http://api.ratuscrm.com`.<br>
+Create api-token & set role in your account.
 
 # 1. UI API
 
