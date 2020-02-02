@@ -45,17 +45,36 @@ see also: *CreateOrUpdate*
 <tr>
 <td>email</td>
 <td>string</td>
-<td>yes</td>
+<td>if auth</td>
 </tr>
 <tr>
 <td>phone</td>
 <td>string</td>
 <td>no</td>
 </tr>
+<tr>
+<td>password</td>
+<td>string</td>
+<td>no</td>
+</tr>
+<tr>
+<td>name</td>
+<td>string</td>
+<td>no</td>
+</tr>
+<tr>
+<td>soname</td>
+<td>string</td>
+<td>no</td>
+</tr>
 </table>
 
 
-<span style="color:'#ef2345'">Attention</span>: one of {username,email,phone} must be not null.
+Attention: 
+- one of {username,email,phone} must be not null.
+- username, email, phone must be unique | account.
+- if username not null, email not null too.
+- username required email
 
 ### Public api (Bearer Authentication)
 url: `http://api.ratuscrm.com`.<br>
