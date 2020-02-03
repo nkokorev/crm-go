@@ -15,7 +15,7 @@ All methods call by scheme: `<api-url>/<method-scheme>`
 
 ## Account interfaces
 
-Schema of account data:
+DB Schema of account data:
 
 | Json name | Type | Required | Default |Description |
 | --- | :---: | :---: |:---: | --- |
@@ -23,7 +23,8 @@ Schema of account data:
 | `name`  | string | true | - | Имя аккаунта, видно другим пользователям |
 | `website`  | string | no | - | Основной вебсайт компании |
 | `type`  | string | no | - | Основной вебсайт компании |
-| `uiApiEnabled` | bool | yes | false | Включен ли ui-api для аккаунта |
+| `uiApiEnabled` | bool | yes | false | Вклен ли UI-API интерфейс для аккаунта |
+| `uiApiEnabledUserRegistration` | bool | yes | false | Включена регистрация через UI-API |
  
 
 
