@@ -11,13 +11,15 @@ type Account struct {
 	Type string `json:"type" gorm:"type:varchar(255)"` // спорно
 
 	// Настройки аккаунта
-	
-	
-	// UI-API Интерфейс
 
-	UiApiEnabled bool `json:"uiApiEnabled" gorm:"default:false;"` // Принимать ли api запросы по адресу https://ui.api.ratuscrm.com
-	UiApiEnabledUserRegistration bool `json:"uiApiEnabledUserRegistration" gorm:"default:true"` // Включить регистрацию через UI-API интерфейс
-	UiApiUserRegistrationInviteOnly bool `json:"uiApiUserRegistrationInviteOnly" gorm:"default:false;"` // Регистрация новых пользователей только по приглашению
+	// API Интерфейс
+	ApiEnabled bool `json:"apiEnabled" gorm:"default:true;not null"`
+
+	
+	// UI-API Интерфейс (https://ui.api.ratuscrm.com)
+	UiApiEnabled bool `json:"uiApiEnabled" gorm:"default:false;not null"` // Возможно ли подклчюение по UI-API интерфейсу к аккаунту
+	UiApiEnabledUserRegistration bool `json:"uiApiEnabledUserRegistration" gorm:"default:true;not null"` // Включить регистрацию через UI-API интерфейс
+	UiApiUserRegistrationInvitationOnly bool `json:"uiApiUserRegistrationInvitationOnly" gorm:"default:false;not null"` // Регистрация новых пользователей только по приглашению
 
 	// настройки авторизации.
 	// Разделяется AppAuth и ApiAuth -

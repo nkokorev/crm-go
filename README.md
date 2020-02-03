@@ -10,8 +10,12 @@ All parameters use lowerCamelCase style:
 
 All methods call by scheme: `<api-url>/<method-scheme>`
 
-- app-url: `http://ratuscrm.com/api/`
-- public-url: `http://ui.api.ratuscrm.com`
+|  | ignored | required | Auth type | description |
+| --- | :---: |:---: | :---: | --- |
+| http://ratuscrm.com/ui-api/ | `uiApiEnabled` | - | JWT (AES) | JSON UI-Api for app.ratuscrm.com |
+| http://ui.api.ratuscrm.com |  | `uiApiEnabled = true` | JWT (AES) | JSON UI-Api for company websites |
+| http://api.ratuscrm.com |  | `apiEnabled = true` | Bearer token |Standard Rest JSON API   |
+
 
 ## Account interfaces
 
@@ -23,9 +27,10 @@ DB Schema of account data:
 | `name`  | string | - | Имя аккаунта, виден другим пользователям |
 | `website`  | string | - | Основной вебсайт компании |
 | `type`  | string | - | Основной вебсайт компании |
+| `apiEnabled` | bool | true | Включен ли API интерфейс для аккаунта |
 | `uiApiEnabled` | bool | false | Включен ли UI-API интерфейс для аккаунта |
 | `uiApiEnabledUserRegistration` | bool | false | Разрешена регистрация через UI-API |
-| `uiApiUserRegistrationInviteOnly` | bool | false | Регистрация только по персональным приглашеним | 
+| `uiApiUserRegistrationInvitationOnly` | bool | false | Регистрация только по персональным приглашеним | 
 
 ## User interfaces
 

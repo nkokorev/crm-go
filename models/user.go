@@ -15,7 +15,7 @@ import (
 
 type User struct {
 	ID        	uint `json:"id" gorm:"primary_key"`
-	SignedAccountID uint `json:"signedAccountId" gorm:"index;not_null"`
+	SignedAccountID uint `json:"signedAccountId" gorm:"index;not null"`
 	
 	Username 	string `json:"username" gorm:"type:varchar(255);unique_index;default:null;"`
 	Email 		string `json:"email" gorm:"type:varchar(255);unique_index;default:null;"`
