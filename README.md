@@ -17,7 +17,7 @@ All methods call by scheme: `<api-url>/<method-scheme>`
 
 Schema of account data:
 
-| Json  | Type | Required | Default |Description |
+| Json variable | Type | Required | Default |Description |
 | --- | :---: | :---: |:---: | --- |
 | `id`  | uint | true | - | Уникальный идентификатор учетной записи аккаунта |
 | `name`  | string | true | - | Имя аккаунта, видно другим пользователям |
