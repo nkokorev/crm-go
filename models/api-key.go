@@ -11,8 +11,8 @@ type ApiKey struct {
 	AccountID uint `json:"-"`
 	Name string `json:"name"`
 	Status bool `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 
 	Account Account `json:"-"`
 }

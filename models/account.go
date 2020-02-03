@@ -12,14 +12,14 @@ type Account struct {
 
 	// настройки авторизации.
 	// Разделяется AppAuth и ApiAuth -
-	VisibleToClients bool `json:"visible_to_clients" gorm:"default:true"` // скрывать аккаунт в списке доступных для пользователей с ролью 'client'. Нужно для системных аккаунтов.
-	ClientsAreAllowedToLogin bool `json:"allow_to_login_for_clients" gorm:"default:false"` // запрет на вход в ratuscrm для пользователей с ролью 'client' (им не будет выдана авторизация).
+	VisibleToClients bool `json:"visibleToClients" gorm:"default:true"` // скрывать аккаунт в списке доступных для пользователей с ролью 'client'. Нужно для системных аккаунтов.
+	ClientsAreAllowedToLogin bool `json:"allowToLogin_for_clients" gorm:"default:false"` // запрет на вход в ratuscrm для пользователей с ролью 'client' (им не будет выдана авторизация).
 
-	AuthForbiddenForClients bool `json:"auth_forbidden_for_clients" gorm:"default:false"` // запрет авторизации для для пользователей с ролью 'client'.
+	AuthForbiddenForClients bool `json:"authForbiddenForClients" gorm:"default:false"` // запрет авторизации для для пользователей с ролью 'client'.
 
 	//ForbiddenForClient bool `json:"forbidden_for_client" gorm:"default:false"` // запрет на вход через приложение app.ratuscrm.com для пользователей с ролью 'client'
 
-	CreatedAt 	time.Time `json:"created_at"`
+	CreatedAt 	time.Time `json:"createdAt"`
 	UpdatedAt 	time.Time `json:"-"`
 	DeletedAt 	*time.Time `json:"-" sql:"index"`
 

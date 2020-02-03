@@ -1,13 +1,44 @@
 # crm-go
 Ядро Ratus CRM, включая GUI/API интерфейсы. 
 
-## API - интерфейсы
+All parameters use lowerCamelCase style:
+```json
+{"username": "", "mobilePhone": ""}
+```
 
-### App/Public ui-api
-app-url: `http://ratuscrm.com/api/`
-public-url: `http://ui.api.ratuscrm.com`
+## Methods UI-API | Interface
 
-**Auth in ui-interface**
+All methods call by scheme: `<api-url>/<method-scheme>`
+
+- app-url: `http://ratuscrm.com/api/`
+- public-url: `http://ui.api.ratuscrm.com`
+
+### CreateUser
+
+This method create user account in your account of RatusCRM. 
+
+see also: *CreateOrUpdate*
+
+[POST] `/accounts/{account_id}/users`
+
+| Parameters  | Type | Required | Description |
+| ------------- | ------------- | ------------- | ------------- |
+| `username`  | `string`  | no | Уникальное имя пользователя |
+| `email`  | `string`  | no | Контактный email для системных уведомлений | 
+| `mobilePhone`  | `string`  | no | Мобильный телефон для SMS-уведомлений |
+| `password`  | `string`  | no | Минимум одна цифра, строчная, прописная буква и спецсимвол, мин. 8 символов. |
+| `name`  | `string`  | no | Имя пользователя |
+| `surname`  | `string`  | no | Фамилия пользователя |
+| `patronymic`  | `string`  | no | Отчество пользователя |
+
+
+Attention: 
+- one of {username,email,phone} must be not null.
+- username, email, phone must be unique | account.
+- if username not null, email not null too.
+- username required email
+
+### AuthUser
 
 You must choose auth settings: 
 1. auth by email & pwd (default)
@@ -17,63 +48,6 @@ You must choose auth settings:
 We are recommended #1. If you whant hidden user's email - choose #2.
 
 Strong reccomended not change this.
-
-### Methods ui-api
-
-**Create user**
-
-This method create user account in your account of RatusCRM.
-
-see also: *CreateOrUpdate*
-
-**Schema url**
-
-`[POST] <api-url>/accounts/{account_id}/users`
-
-<table>
-<tr>
-<th>parametr</th>
-<th>type</th>
-<th>required</th>
-</tr>
-<tr>
-<td>username</td>
-<td>string</td>
-<td>if auth</td>
-</tr>
-<tr>
-<td>email</td>
-<td>string</td>
-<td>if auth</td>
-</tr>
-<tr>
-<td>phone</td>
-<td>string</td>
-<td>no</td>
-</tr>
-<tr>
-<td>password</td>
-<td>string</td>
-<td>no</td>
-</tr>
-<tr>
-<td>name</td>
-<td>string</td>
-<td>no</td>
-</tr>
-<tr>
-<td>soname</td>
-<td>string</td>
-<td>no</td>
-</tr>
-</table>
-
-
-Attention: 
-- one of {username,email,phone} must be not null.
-- username, email, phone must be unique | account.
-- if username not null, email not null too.
-- username required email
 
 ### Public api (Bearer Authentication)
 url: `http://api.ratuscrm.com`.<br>

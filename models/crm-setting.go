@@ -7,8 +7,8 @@ import (
 // this is CRM settings. If json - public, else - private
 type CrmSetting struct {
 	ID uint `json:"-"`
-	UserRegistrationAllow bool `json:"-" gorm:"user_registration_allow;default:true"`
-	UserRegistrationInviteOnly bool `json:"user_registration_invite_only" gorm:"user_registration_invite_only;"`
+	UserRegistrationAllow bool `json:"-" gorm:"userRegistrationAllow;default:true"`
+	UserRegistrationInviteOnly bool `json:"userRegistrationInviteOnly" gorm:"user_registration_invite_only;"`
 
 	CreatedAt 	time.Time `json:"-"`
 	UpdatedAt 	time.Time `json:"-"`

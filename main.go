@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/nkokorev/crm-go/database/base"
 	"github.com/nkokorev/crm-go/models"
 	"github.com/nkokorev/crm-go/routes"
 	"github.com/ttacon/libphonenumber"
@@ -34,9 +35,9 @@ func main() {
 	defer pool.Close()
 
 	// !!! запускаем миграции
-	//base.RefreshTables()
+	base.RefreshTables()
 
-	examplePhone("+79251952295")
+	//examplePhone("+79251952295")
 
 	pool.DB().SetConnMaxLifetime(0)
 	pool.DB().SetMaxIdleConns(10)

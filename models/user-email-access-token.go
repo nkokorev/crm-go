@@ -11,12 +11,12 @@ import (
 
 type EmailAccessToken struct {
 	Token 	string `json:"token"` // json:"token"
-	ActionType 	string `json:"action_type"` // json:"verification, recover (username, password, email), join to account"
-	DestinationEmail string `json:"destination_email"` // куда отправлять email и для какого емейла был предназначен токен. Не может быть <null>, только целевые приглашения.
-	OwnerID 	uint `json:"owner_id" ` // userID - создатель токена (может быть self)
-	NotificationCount uint `json:"notification_count"` // число успешных уведомлений
-	NotificationAt time.Time `json:"notification_at"` // время уведомления
-	CreatedAt time.Time `json:"created_at"`
+	ActionType 	string `json:"actionType"` // json:"verification, recover (username, password, email), join to account"
+	DestinationEmail string `json:"destinationEmail"` // куда отправлять email и для какого емейла был предназначен токен. Не может быть <null>, только целевые приглашения.
+	OwnerID 	uint `json:"ownerId"` // userID - создатель токена (может быть self)
+	NotificationCount uint `json:"notificationCount"` // число успешных уведомлений
+	NotificationAt time.Time `json:"notificationAt"` // время уведомления
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 var EmailTokenType = struct {

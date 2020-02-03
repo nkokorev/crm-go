@@ -15,10 +15,11 @@ import (
 
 type User struct {
 	ID        	uint `json:"id" gorm:"primary_key"`
+	SignedAccountID uint `json:"signedAccountId" gorm:"index;not_null"`
 	
 	Username 	string `json:"username" gorm:"type:varchar(255);unique_index;default:null;"`
 	Email 		string `json:"email" gorm:"type:varchar(255);unique_index;default:null;"`
-	Phone	 	string `json:"patronymic" gorm:"type:varchar(255);unique_index;default:null;"` // нужно проработать формат данных
+	MobilePhone	string `json:"mobilePhone" gorm:"type:varchar(255);unique_index;default:null;"` // нужно проработать формат данных
 	Password 	string `json:"-" gorm:"type:varchar(255);default:null;"` // json:"-"
 
 	Name 		string `json:"name" gorm:"type:varchar(255)"`
@@ -37,15 +38,15 @@ type User struct {
 	//ArrayAccounts pq.Int64Array `json:"array_accounts" gorm:"type:int[]"`
 	//Hstore postgres.Hstore
 
-	DefaultAccountID uint `json:"default_account_id" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
+	DefaultAccountID uint `json:"defaultAccountId" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
 	InvitedUserID uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
 
-	EmailVerifiedAt *time.Time `json:"email_verified_at" gorm:"default:null"`
-	PasswordReset bool `json:"password_reset" gorm:"default:FALSE"`
+	EmailVerifiedAt *time.Time `json:"emailVerifiedAt" gorm:"default:null"`
+	PasswordReset bool `json:"passwordReset" gorm:"default:FALSE"`
 	//EmailVerification bool `json:"email_verification" gorm:"default:false"`
 
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 	DeletedAt *time.Time `json:"-" sql:"index"`
 
 	//Profile UserProfile `json:"profile" gorm:"preload"`
