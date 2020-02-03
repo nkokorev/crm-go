@@ -6,6 +6,7 @@ import (
 	"github.com/jinzhu/gorm"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
+	"log"
 	"os"
 	"regexp"
 	"unicode"
@@ -78,18 +79,15 @@ func (user *User) Create (v_opt... UserCreateOptions ) error {
 		}
 	}
 
-	// 2. загружаем системне настройки
-	crmSettings, err := CrmSetting{}.Get()
+	// Загружаем настройки аккаунта
+	account, err := GetAccount(user.SignedAccountID)
 	if err != nil {
-		return u.Error{Message:"Сервер не может обработать запрос"}
+		log.Fatal("Неудалось найти аккаунт: ",err)
 	}
 
 	// 3. Если необходимо проверим токен приглашения
 	eat := &EmailAccessToken{Token:options.InviteToken, DestinationEmail:user.Email}
-
-	// 4. Проверяем инвайт, если без него регистрация запрещена
-	if crmSettings.UserRegistrationInviteOnly {
-
+	if account.UiApiUserRegistrationInvitationOnly {
 		if err := eat.CheckInviteToken();err != nil {
 			return u.Error{Message:"Ошибки в заполнении формы", Errors: map[string]interface{}{"inviteToken":err.Error()}}
 		}
@@ -112,7 +110,7 @@ func (user *User) Create (v_opt... UserCreateOptions ) error {
 	}
 
 	// 7. Удаляем ключ приглашения
-	if crmSettings.UserRegistrationInviteOnly {
+	if account.UiApiUserRegistrationInvitationOnly {
 
 		user.InvitedUserID = eat.OwnerID
 		if err := db.Save(user).Error; err != nil {
@@ -410,7 +408,8 @@ func (user *User) GetAccount(account *Account) error {
 func (user *User) CreateAccount(a *Account) error {
 
 	// 1. Создаем аккаунт
-	if err := a.Create(); err != nil {
+	a, err := CreateAccount(*a)
+	if err != nil {
 		return err
 	}
 

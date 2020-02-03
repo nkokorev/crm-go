@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type Account struct {
 	ID uint `json:"id"`
@@ -10,12 +12,9 @@ type Account struct {
 	Website string `json:"website" gorm:"type:varchar(255)"` // спорно
 	Type string `json:"type" gorm:"type:varchar(255)"` // спорно
 
-	// Настройки аккаунта
-
 	// API Интерфейс
 	ApiEnabled bool `json:"apiEnabled" gorm:"default:true;not null"`
 
-	
 	// UI-API Интерфейс (https://ui.api.ratuscrm.com)
 	UiApiEnabled bool `json:"uiApiEnabled" gorm:"default:false;not null"` // Возможно ли подклчюение по UI-API интерфейсу к аккаунту
 	UiApiEnabledUserRegistration bool `json:"uiApiEnabledUserRegistration" gorm:"default:true;not null"` // Включить регистрацию через UI-API интерфейс
@@ -44,8 +43,22 @@ type Account struct {
 	Stocks		[]Stock `json:"-"`
 }
 
+func (a *Account) Reset()                    { a = &Account{} }
+
 // создает аккаунт
-func (a *Account) Create () error {
+func CreateAccount (a Account) (*Account, error) {
+
+	// Верификация данных
+
+	// Создание аккаунта
+	if err := db.Create(&a).Error; err != nil {
+		return nil, err
+	}
+
+	return &a, nil
+}
+
+func (a *Account) CreateToAccount () error {
 
 	// Верификация данных
 
@@ -54,13 +67,16 @@ func (a *Account) Create () error {
 		return err
 	}
 
-
-
 	return nil
 }
 
 // осуществляет поиск по a.ID
-func (a *Account) Get () error {
+func GetAccount (id uint) (a Account, err error) {
+	err = db.Model(&Account{}).First(&a, id).Error
+	return a, err
+}
+
+func (a *Account) GetToAccount () error {
 	return db.First(a,a.ID).Error
 }
 

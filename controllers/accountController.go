@@ -27,7 +27,8 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := acc.Create(); err != nil {
+	account, err := models.CreateAccount(acc.Account)
+	if err != nil {
 		u.Respond(w, u.MessageError(err, "Cant create account")) // что это?)
 		return
 	}
@@ -40,7 +41,7 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST account / Account Create")
-	resp["account"] = acc.Account
+	resp["account"] = account
 	resp["token"] = token
 	u.Respond(w, resp)
 }
@@ -49,14 +50,14 @@ func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
 
 	accountID := r.Context().Value("account_id").(uint)
 
-	acc := models.Account{ID: accountID}
-	if err := acc.Get(); err !=nil {
+	account, err := models.GetAccount(accountID);
+	if err !=nil {
 		u.Respond(w, u.MessageError(err, "Неудалось найти аккаунт")) // вообще тут нужен релогин
 		return
 	}
 
 	resp := u.Message(true, "GET account profile")
-	resp["account"] = acc
+	resp["account"] = account
 	//resp["token"] = token
 	u.Respond(w, resp)
 }

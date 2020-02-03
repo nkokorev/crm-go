@@ -258,10 +258,16 @@ func UploadTestData() {
 	//crmSettings.UserRegistrationInviteOnly = false
 	//crmSettings.Save()
 
-
 	// 1. Создаем главный аккаунт
-	if err := (&models.Account{Name:"RatusCRM",
-		UiApiEnabled:false,}).Create(); err != nil {
+	_, err := models.CreateAccount(
+		models.Account{Name:"RatusCRM",
+			UiApiEnabled:false,
+			UiApiEnabledUserRegistration:false,
+			UiApiUserRegistrationInvitationOnly:false,
+			ApiEnabled: false,
+		});
+
+	if err != nil {
 		log.Fatal("Неудалось создать главный аккаунт")
 	}
 

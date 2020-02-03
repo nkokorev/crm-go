@@ -6,14 +6,12 @@ All parameters use lowerCamelCase style:
 {"username": "", "mobilePhone": ""}
 ```
 
-## Methods UI-API | Interface
-
-All methods call by scheme: `<api-url>/<method-scheme>`
+## API Interface
 
 |  | ignored | required | Auth type | description |
 | --- | :---: |:---: | :---: | --- |
-| http://ratuscrm.com/ui-api/ | `uiApiEnabled` | - | JWT (AES) | JSON UI-Api for app.ratuscrm.com |
-| http://ui.api.ratuscrm.com |  | `uiApiEnabled = true` | JWT (AES) | JSON UI-Api for company websites |
+| http://ratuscrm.com/ui-api/ | `uiApiEnabled` | - | JWT (AES) | JSON UI-API for app.ratuscrm.com |
+| http://ui.api.ratuscrm.com |  | `uiApiEnabled = true` | JWT (AES) | JSON UI-API for company websites |
 | http://api.ratuscrm.com |  | `apiEnabled = true` | Bearer token |Standard Rest JSON API   |
 
 
@@ -27,8 +25,8 @@ DB Schema of account data:
 | `name`  | string | - | Имя аккаунта, виден другим пользователям |
 | `website`  | string | - | Основной вебсайт компании |
 | `type`  | string | - | Основной вебсайт компании |
-| `apiEnabled` | bool | true | Включен ли API интерфейс для аккаунта |
-| `uiApiEnabled` | bool | false | Включен ли UI-API интерфейс для аккаунта |
+| `apiEnabled` | bool | true | Разрешены ли вызовы по API |
+| `uiApiEnabled` | bool | false | Разрешены ли вызовы по UI-API |
 | `uiApiEnabledUserRegistration` | bool | false | Разрешена регистрация через UI-API |
 | `uiApiUserRegistrationInvitationOnly` | bool | false | Регистрация только по персональным приглашеним | 
 
