@@ -13,6 +13,15 @@ All methods call by scheme: `<api-url>/<method-scheme>`
 - app-url: `http://ratuscrm.com/api/`
 - public-url: `http://ui.api.ratuscrm.com`
 
+
+## User interfaces
+
+Пользователь в системе идентифицируется по:
+ - ID аккаунта, через которого пользователь был зарегистрирован
+ - именю учетной записи / email'у / мобильному телефону
+
+Вы можете выбрать доступные варианты авторизации в настройках аккаунта.
+
 ### CreateUser
 
 This method create user account in your account of RatusCRM. 
@@ -22,14 +31,14 @@ see also: *CreateOrUpdate*
 [POST] `/accounts/{account_id}/users`
 
 | Parameters  | Type | Required | Description |
-| ------------- | ------------- | ------------- | ------------- |
-| `username`  | `string`  | no | Уникальное имя пользователя |
-| `email`  | `string`  | no | Контактный email для системных уведомлений | 
-| `mobilePhone`  | `string`  | no | Мобильный телефон для SMS-уведомлений |
-| `password`  | `string`  | no | Минимум одна цифра, строчная, прописная буква и спецсимвол, мин. 8 символов. |
-| `name`  | `string`  | no | Имя пользователя |
-| `surname`  | `string`  | no | Фамилия пользователя |
-| `patronymic`  | `string`  | no | Отчество пользователя |
+| --- | :---: | :---: | --- |
+| `username`  | string  | no | Имя учетной записи пользователя |
+| `email`  | string  | no | Контактный email для системных уведомлений | 
+| `mobilePhone`  | string  | no | Мобильный телефон для SMS-уведомлений |
+| `password`  | string  | no | Минимум одна цифра, строчная, прописная буква и спецсимвол, мин. 8 символов. |
+| `name`  | string  | no | Имя пользователя |
+| `surname`  | string  | no | Фамилия пользователя |
+| `patronymic`  | string  | no | Отчество пользователя |
 
 
 Attention: 

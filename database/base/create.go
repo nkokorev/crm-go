@@ -242,7 +242,7 @@ func UploadTestData() {
 
 	timeNow := time.Now().UTC();
 
-	// 0. Создаем файл системных настроек (Account Settings?)
+	// 0. Создаем файл системных настроек (не Аккаунта RatusCRM!)
 	crmSettings := &models.CrmSetting{
 		UserRegistrationAllow:      true,
 		UserRegistrationInviteOnly: true,
@@ -250,13 +250,26 @@ func UploadTestData() {
 		UpdatedAt:                  time.Time{},
 		//DeletedAt:                  nil,
 	}
+	if err := crmSettings.Create(); err != nil {
+		log.Fatalf("Неудалось создать файл настроек: %v, Error: %s", crmSettings, err)
+		return
+	}
+	//allowUserReg := crmSettings.UserRegistrationInviteOnly
+	//crmSettings.UserRegistrationInviteOnly = false
+	//crmSettings.Save()
 
-	// 1. Создаем пользователей
-	/*users := [] *models.User{
-		{Username:"admin", Email:"kokorevn@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt:&timeNow},
-		{Username:"nkokorev", Email:"mex388@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt: &timeNow, InvitedUserID:1},
-		{Username:"vpopov", Email:"vp@357gr.ru", Password:"qwerty109#QW", Name:"Василий", Surname:"Попов", Patronymic:"Николаевич",EmailVerifiedAt: &timeNow, InvitedUserID:1},
-	}*/
+
+	// 1. Создаем главный аккаунт
+	if err := (&models.Account{Name:"RatusCRM"}).Create(); err != nil {
+		log.Fatal("Неудалось создать главный аккаунт")
+	}
+
+	// 2. Создаем admin аккаунт
+	if err := (&models.User{SignedAccountID:1, Username:"admin", Email:"kokorevn@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt:&timeNow}).Create(); err != nil {
+		log.Fatal("Неудалось создать admin'a ", err)
+	}
+
+	return
 
 	// 1. Создаем пользователей
 	users := [] *models.User{
@@ -341,18 +354,7 @@ func UploadTestData() {
 
 	// 3. Стоковые атрибуты продуктов в аккаунте
 
-	if err := crmSettings.Create(); err != nil {
-		log.Fatalf("Неудалось создать файл настроек: %v, Error: %s", crmSettings, err)
-		return
-	}
 
-	/*if err := crmSettings.Update(map[string]interface{}{"UserRegistrationInviteOnly":false}); err != nil {
-		log.Fatalf("Неудалось обновить файл настроек: %v, Error: %s", crmSettings, err)
-		return
-	}*/
-	allowUserReg := crmSettings.UserRegistrationInviteOnly
-	crmSettings.UserRegistrationInviteOnly = false
-	crmSettings.Save()
 
 	/*for i, _ := range accounts {
 		if err := accounts[i].Create();err != nil {
@@ -360,10 +362,7 @@ func UploadTestData() {
 		}
 	}*/
 
-	// Создаем главный аккаунт
-	if err := (&models.Account{Name:"RatusCRM"}).Create(); err != nil {
-		log.Fatal("Неудалось создать главный аккаунт")
-	}
+
 	// Регистрируем пользователей в аккаунте RatusCRM
 	// Как будто они регистрируются через общий вход: [POST]: ui.api.ratuscrm.com/accounts/{account_id = 1}/users
 	// Нужна коллективная антиспам-защита. Храним большой список ip-адресов, с которых приходит спам. Возможно, проверяем HOST или еще что-то или может выдавать код.
@@ -392,9 +391,6 @@ func UploadTestData() {
 		}
 
 	}
-
-	crmSettings.UserRegistrationInviteOnly = allowUserReg
-	crmSettings.Save()
 
 	if err := users[0].CreateInviteForUser("info@rus-marketing.ru", false); err != nil {
 		log.Fatalf("Неудалось создать инвайт для почтового адреса: %v, Error: %s", "info@rus-marketing.ru", err)

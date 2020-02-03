@@ -10,6 +10,11 @@ type Account struct {
 	Website string `json:"website" gorm:"type:varchar(255)"`
 	Type string `json:"type" gorm:"type:varchar(255)"`
 
+	// Настройки аккаунта
+	UserRegistrationAllow bool `json:"-" gorm:"userRegistrationAllow;default:true"` // разрешено ли создавать новых пользователей
+	UserRegistrationInviteOnly bool `json:"userRegistrationInviteOnly" gorm:"user_registration_invite_only;"`
+
+
 	// настройки авторизации.
 	// Разделяется AppAuth и ApiAuth -
 	VisibleToClients bool `json:"visibleToClients" gorm:"default:true"` // скрывать аккаунт в списке доступных для пользователей с ролью 'client'. Нужно для системных аккаунтов.
@@ -18,6 +23,8 @@ type Account struct {
 	AuthForbiddenForClients bool `json:"authForbiddenForClients" gorm:"default:false"` // запрет авторизации для для пользователей с ролью 'client'.
 
 	//ForbiddenForClient bool `json:"forbidden_for_client" gorm:"default:false"` // запрет на вход через приложение app.ratuscrm.com для пользователей с ролью 'client'
+
+
 
 	CreatedAt 	time.Time `json:"createdAt"`
 	UpdatedAt 	time.Time `json:"-"`
