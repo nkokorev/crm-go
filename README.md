@@ -13,6 +13,19 @@ All methods call by scheme: `<api-url>/<method-scheme>`
 - app-url: `http://ratuscrm.com/api/`
 - public-url: `http://ui.api.ratuscrm.com`
 
+## Account interfaces
+
+Schema of account data:
+
+| Json  | Type | Required | Default |Description |
+| --- | :---: | :---: |:---: | --- |
+| `id`  | uint | true | - | Уникальный идентификатор учетной записи аккаунта |
+| `name`  | string | true | - | Имя аккаунта, видно другим пользователям |
+| `website`  | string | no | - | Основной вебсайт компании |
+| `type`  | string | no | - | Основной вебсайт компании |
+| `uiApiEnabled` | bool | yes | false | Включен ли ui-api для аккаунта |
+ 
+
 
 ## User interfaces
 
