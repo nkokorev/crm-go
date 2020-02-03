@@ -17,16 +17,15 @@ All methods call by scheme: `<api-url>/<method-scheme>`
 
 DB Schema of account data:
 
-| Json name | Type | Required | Default |Description |
-| --- | :---: | :---: |:---: | --- |
-| `id`  | uint | true | - | Уникальный идентификатор учетной записи аккаунта |
-| `name`  | string | true | - | Имя аккаунта, видно другим пользователям |
-| `website`  | string | no | - | Основной вебсайт компании |
-| `type`  | string | no | - | Основной вебсайт компании |
-| `uiApiEnabled` | bool | yes | false | Вклен ли UI-API интерфейс для аккаунта |
-| `uiApiEnabledUserRegistration` | bool | yes | false | Включена регистрация через UI-API |
- 
-
+| Json name | Type | Default |Description |
+| --- | :---: |:---: | --- |
+| `id`  | uint | - | Уникальный ID аккаунта |
+| `name`  | string | - | Имя аккаунта, виден другим пользователям |
+| `website`  | string | - | Основной вебсайт компании |
+| `type`  | string | - | Основной вебсайт компании |
+| `uiApiEnabled` | bool | false | Включен ли UI-API интерфейс для аккаунта |
+| `uiApiEnabledUserRegistration` | bool | false | Разрешена регистрация через UI-API |
+| `uiApiUserRegistrationInviteOnly` | bool | false | Регистрация только по персональным приглашеним | 
 
 ## User interfaces
 
