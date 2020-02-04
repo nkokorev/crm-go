@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/nkokorev/crm-go/utils"
 	"time"
 )
 
@@ -18,6 +19,8 @@ type Account struct {
 	// UI-API Интерфейс (https://ui.api.ratuscrm.com)
 	UiApiEnabled bool `json:"uiApiEnabled" gorm:"default:false;not null"` // Возможно ли подклчюение по UI-API интерфейсу к аккаунту
 	UiApiAesEnabled bool `json:"uiApiAesEnabled" gorm:"default:true;not null"` // Включение AES-128/CFB шифрования
+	UiApiAesKey string `json:"uiApiAesKey" gorm:"type:varchar(16);default:null;"` // 128-битный ключ шифрования
+	UiApiJwtKey string `json:"uiApiJwtKey" gorm:"type:varchar(32);default:null;"` // 128-битный ключ шифрования
 	UiApiEnabledUserRegistration bool `json:"uiApiEnabledUserRegistration" gorm:"default:true;not null"` // Включить регистрацию через UI-API интерфейс
 	UiApiUserRegistrationInvitationOnly bool `json:"uiApiUserRegistrationInvitationOnly" gorm:"default:false;not null"` // Регистрация новых пользователей только по приглашению
 
@@ -44,12 +47,19 @@ type Account struct {
 	Stocks		[]Stock `json:"-"`
 }
 
-func (a *Account) Reset()                    { a = &Account{} }
+func (a *Account) Reset() { a = &Account{} }
 
 // создает аккаунт
-func CreateAccount (a Account) (*Account, error) {
+func CreateAccount (a Account) (_ *Account, err error) {
 
-	// Верификация данных
+	// Если UI-API используется, проверяем ключ
+	a.UiApiAesKey, err = utils.CreateAes128Key()
+	if err != nil {
+		return nil, err
+	}
+
+	a.UiApiJwtKey =  utils.CreateHS256Key()
+
 
 	// Создание аккаунта
 	if err := db.Create(&a).Error; err != nil {
@@ -119,7 +129,9 @@ func (a *Account) GetUsers () error {
 	return db.Preload("Users").First(&a).Error
 }
 
-// ### Account inner func API KEYS
+// ### Account inner func API (+UI) KEYS
+
+
 
 func (a *Account) CreateApiToken(key *ApiKey) error {
 	// 1. Привязываем к аккаунту

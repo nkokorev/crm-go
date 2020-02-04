@@ -39,7 +39,7 @@ func RefreshTables() {
 	}
 	pool.CreateTable(&models.Account{})
 	//pool.Model(&models.User{}).AddForeignKey("user_refer", "users(refer)", "CASCADE", "CASCADE")
-	//pool.Exec("ALTER TABLE accounts \n    ADD CONSTRAINT uix_email_account_id_parent_id unique (email,account_id,parent_id),\n    ADD CONSTRAINT users_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT users_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE;\n\ncreate unique index uix_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\ncreate unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
+	/*pool.Exec("ALTER TABLE accounts \n    ALTER COL\n    ADD CONSTRAINT uix_email_account_id_parent_id unique (email,account_id,parent_id),\n    ADD CONSTRAINT users_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT users_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE;\n\ncreate unique index uix_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\ncreate unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")*/
 
 	// Таблица пользователей
 	if false {
@@ -259,16 +259,17 @@ func UploadTestData() {
 	//crmSettings.Save()
 
 	// 1. Создаем главный аккаунт
-	_, err := models.CreateAccount(
+	account, err := models.CreateAccount(
 		models.Account{Name:"RatusCRM",
-			UiApiEnabled:false,
+			UiApiEnabled:true,
 			UiApiEnabledUserRegistration:false,
 			UiApiUserRegistrationInvitationOnly:false,
 			ApiEnabled: false,
 		});
-
 	if err != nil {
 		log.Fatal("Неудалось создать главный аккаунт")
+	} else {
+		fmt.Println("Account will be created: ", account)
 	}
 
 	// 2. Создаем admin аккаунт
