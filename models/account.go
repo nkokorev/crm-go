@@ -17,6 +17,7 @@ type Account struct {
 
 	// UI-API Интерфейс (https://ui.api.ratuscrm.com)
 	UiApiEnabled bool `json:"uiApiEnabled" gorm:"default:false;not null"` // Возможно ли подклчюение по UI-API интерфейсу к аккаунту
+	UiApiAesEnabled bool `json:"uiApiAesEnabled" gorm:"default:true;not null"` // Включение AES-128/CFB шифрования
 	UiApiEnabledUserRegistration bool `json:"uiApiEnabledUserRegistration" gorm:"default:true;not null"` // Включить регистрацию через UI-API интерфейс
 	UiApiUserRegistrationInvitationOnly bool `json:"uiApiUserRegistrationInvitationOnly" gorm:"default:false;not null"` // Регистрация новых пользователей только по приглашению
 

@@ -21,12 +21,14 @@ DB Schema of account data:
 
 | Json name | Type | Default |Description |
 | --- | :---: |:---: | --- |
-| `id`  | uint | - | Уникальный ID аккаунта |
+| `id`  | uint | `gen` | Уникальный ID аккаунта |
 | `name`  | string | - | Имя аккаунта, виден другим пользователям |
 | `website`  | string | - | Основной вебсайт компании |
 | `type`  | string | - | Основной вебсайт компании |
 | `apiEnabled` | bool | true | Разрешены ли вызовы по API |
 | `uiApiEnabled` | bool | false | Разрешены ли вызовы по UI-API |
+| `uiApiAesEnabled` | bool | true | Включение AES-128/CFB шифрования |
+| `uiApiAesKey` | string | `gen` | 128-битный ключ шифрования |
 | `uiApiEnabledUserRegistration` | bool | false | Разрешена регистрация через UI-API |
 | `uiApiUserRegistrationInvitationOnly` | bool | false | Регистрация только по персональным приглашеним | 
 
