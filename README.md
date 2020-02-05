@@ -10,9 +10,9 @@ All parameters use lowerCamelCase style:
 
 |  | ignored | required | Auth type | description |
 | --- | :---: |:---: | :---: | --- |
-| http://ratuscrm.com/ui-api/ | `uiApiEnabled` | - | JWT (AES) | JSON UI-API for app.ratuscrm.com |
-| http://ui.api.ratuscrm.com |  | `uiApiEnabled = true` | JWT (AES) | JSON UI-API for company websites |
-| http://api.ratuscrm.com |  | `apiEnabled = true` | Bearer token |Standard Rest JSON API   |
+| ratuscrm.com/ui-api | `uiApiEnabled` | - | JWT (AES) | JSON UI-API for app.ratuscrm.com |
+| ui.api.ratuscrm.com |  | `uiApiEnabled = true` | JWT (AES) | JSON UI-API for company websites |
+| api.ratuscrm.com |  | `apiEnabled = true` | Bearer token |Standard Rest JSON API   |
 
 
 ## Account interfaces

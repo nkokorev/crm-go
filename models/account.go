@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"time"
 )
@@ -21,7 +22,7 @@ type Account struct {
 	UiApiAesEnabled bool `json:"uiApiAesEnabled" gorm:"default:true;not null"` // Включение AES-128/CFB шифрования
 	UiApiAesKey string `json:"uiApiAesKey" gorm:"type:varchar(16);default:null;"` // 128-битный ключ шифрования
 	UiApiJwtKey string `json:"uiApiJwtKey" gorm:"type:varchar(32);default:null;"` // 128-битный ключ шифрования
-	UiApiEnabledUserRegistration bool `json:"uiApiEnabledUserRegistration" gorm:"default:true;not null"` // Включить регистрацию через UI-API интерфейс
+	UiApiEnabledUserRegistration bool `json:"uiApiEnabledUserRegistration" gorm:"default:true;not null"` // Разрешить регистрацию через UI-API интерфейс
 	UiApiUserRegistrationInvitationOnly bool `json:"uiApiUserRegistrationInvitationOnly" gorm:"default:false;not null"` // Регистрация новых пользователей только по приглашению
 
 	// настройки авторизации.
@@ -32,8 +33,6 @@ type Account struct {
 	AuthForbiddenForClients bool `json:"authForbiddenForClients" gorm:"default:false"` // запрет авторизации для для пользователей с ролью 'client'.
 
 	//ForbiddenForClient bool `json:"forbidden_for_client" gorm:"default:false"` // запрет на вход через приложение app.ratuscrm.com для пользователей с ролью 'client'
-
-
 
 	CreatedAt 	time.Time `json:"createdAt"`
 	UpdatedAt 	time.Time `json:"-"`
@@ -47,12 +46,22 @@ type Account struct {
 	Stocks		[]Stock `json:"-"`
 }
 
+func (account *Account) BeforeCreate(scope *gorm.Scope) error {
+	account.ID = 0
+	account.CreatedAt = time.Now().UTC()
+
+	//account.UiApiJwtKey =  utils.CreateHS256Key()
+	//scope.SetColumn("ui_api_jwt_key", "fjdsfdfsjkfskjfds")
+	//scope.SetColumn("ID", uuid.New())
+	return nil
+}
+
 func (a *Account) Reset() { a = &Account{} }
 
 // создает аккаунт
 func CreateAccount (a Account) (_ *Account, err error) {
 
-	// Если UI-API используется, проверяем ключ
+	// Создаем ключи для UI API
 	a.UiApiAesKey, err = utils.CreateAes128Key()
 	if err != nil {
 		return nil, err
@@ -62,7 +71,7 @@ func CreateAccount (a Account) (_ *Account, err error) {
 
 
 	// Создание аккаунта
-	if err := db.Create(&a).Error; err != nil {
+	if err := db.Omit("ID", "DeletedAt").Create(&a).Error; err != nil {
 		return nil, err
 	}
 

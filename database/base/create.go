@@ -260,8 +260,9 @@ func UploadTestData() {
 
 	// 1. Создаем главный аккаунт
 	account, err := models.CreateAccount(
-		models.Account{Name:"RatusCRM",
-			UiApiEnabled:true,
+		models.Account{
+			Name:"RatusCRM",
+			UiApiEnabled:false,
 			UiApiEnabledUserRegistration:false,
 			UiApiUserRegistrationInvitationOnly:false,
 			ApiEnabled: false,
