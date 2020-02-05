@@ -28,9 +28,9 @@ DB Schema of account data:
 | `apiEnabled` | bool | true | Разрешены ли вызовы по API |
 | `uiApiEnabled` | bool | false | Разрешены ли вызовы по UI-API |
 | `uiApiAesEnabled` | bool | true | Включение AES-128/CFB шифрования |
-| `uiApiAesKey` | string | `gen` | 128-битный ключ шифрования |
-| `uiApiJwtKey` | string | `gen` | Ключ подписи JWT/HS256 |
-| `uiApiEnabledUserRegistration` | bool | false | Разрешена регистрация через UI-API |
+| `uiApiAesKey` | string | `gen` | 16 символный UTF-8 ключ шифрования AES-128 |
+| `uiApiJwtKey` | string | `gen` | 32 символный UTF-8 Ключ подписи JWT/HS256 |
+| `uiApiEnabledUserRegistration` | bool | false | Разрешить регистрацию через UI-API |
 | `uiApiUserRegistrationInvitationOnly` | bool | false | Регистрация только по персональным приглашеним | 
 
 ## User interfaces
