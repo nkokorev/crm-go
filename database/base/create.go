@@ -25,10 +25,13 @@ func RefreshTables() {
 
 
 	// Таблица системных настроек
-	err = pool.Exec("create table  crm_settings (\n id SERIAL PRIMARY KEY UNIQUE,\n user_registration_allow BOOL NOT NULL DEFAULT TRUE, -- регистрация новых пользователей\n user_registration_invite_only BOOL NOT NULL DEFAULT TRUE, -- регистрация новых пользователей только по инвайтам\n \n created_at timestamp DEFAULT CURRENT_TIMESTAMP,\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP\n --deleted_at timestamp DEFAULT NULL\n);\n").Error
-	if err != nil {
-		log.Fatal("Cant create table crm_settings", err)
+	if false {
+		err = pool.Exec("create table  crm_settings (\n id SERIAL PRIMARY KEY UNIQUE,\n user_registration_allow BOOL NOT NULL DEFAULT TRUE, -- регистрация новых пользователей\n user_registration_invite_only BOOL NOT NULL DEFAULT TRUE, -- регистрация новых пользователей только по инвайтам\n \n created_at timestamp DEFAULT CURRENT_TIMESTAMP,\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP\n --deleted_at timestamp DEFAULT NULL\n);\n").Error
+		if err != nil {
+			log.Fatal("Cant create table crm_settings", err)
+		}
 	}
+	pool.CreateTable(&models.CrmSetting{})
 
 	// Таблица аккаунтов.
 	if false {
@@ -244,11 +247,10 @@ func UploadTestData() {
 
 	// 0. Создаем файл системных настроек (не Аккаунта RatusCRM!)
 	crmSettings := &models.CrmSetting{
-		UserRegistrationAllow:      true,
-		UserRegistrationInviteOnly: true,
-		CreatedAt:                  time.Time{},
-		UpdatedAt:                  time.Time{},
-		//DeletedAt:                  nil,
+		ApiEnabled: true,
+		UiApiPublicEnabled: true,
+		ApiDisabledMessage: "Sorry, the server is under maintenance.",
+		UiApiDisabledMessage: "Sorry, the server is under maintenance.",
 	}
 	if err := crmSettings.Create(); err != nil {
 		log.Fatalf("Неудалось создать файл настроек: %v, Error: %s", crmSettings, err)
@@ -262,15 +264,19 @@ func UploadTestData() {
 	account, err := models.CreateAccount(
 		models.Account{
 			Name:"RatusCRM",
-			UiApiEnabled:false,
+			UiApiPublicEnabled:false,
+			UiApiAesEnabled:true,
 			UiApiEnabledUserRegistration:false,
 			UiApiUserRegistrationInvitationOnly:false,
 			ApiEnabled: false,
-		});
+		})
 	if err != nil {
 		log.Fatal("Неудалось создать главный аккаунт")
-	} else {
-		fmt.Println("Account will be created: ", account)
+	}
+
+	_, err = account.CreateApiKey()
+	if err != nil {
+		log.Fatalf("Неудалось создать API ключ для аккаунта: %v, Error: %s", account, err)
 	}
 
 	// 2. Создаем admin аккаунт
@@ -393,11 +399,11 @@ func UploadTestData() {
 			return
 		}
 
-		apiKey := &models.ApiKey{Name:"Key for site", Status:true}
+		/*apiKey := &models.ApiKey{Name:"Key for site", Status:true}
 		if err := accounts[i].CreateApiToken(apiKey); err != nil {
 			log.Fatalf("Неудалось создать API ключ для аккаунта: %v, Error: %s", accounts[i], err)
 			return
-		}
+		}*/
 
 	}
 

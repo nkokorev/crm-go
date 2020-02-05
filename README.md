@@ -10,9 +10,12 @@ All parameters use lowerCamelCase style:
 
 |  | ignored | required | Auth type | description |
 | --- | :---: |:---: | :---: | --- |
-| ratuscrm.com/ui-api | `uiApiEnabled` | - | JWT (AES) | JSON UI-API for app.ratuscrm.com |
-| ui.api.ratuscrm.com |  | `uiApiEnabled = true` | JWT (AES) | JSON UI-API for company websites |
+| ratuscrm.com/ui-api | `uiApiPublicEnabled` | - | JWT (AES) | JSON UI-API for app.ratuscrm.com |
+| ui.api.ratuscrm.com |  | `uiApiPublicEnabled = true` | JWT (AES) | JSON UI-API for company websites |
 | api.ratuscrm.com |  | `apiEnabled = true` | Bearer token |Standard Rest JSON API   |
+
+
+## CRM Settings
 
 
 ## Account interfaces
@@ -26,7 +29,7 @@ DB Schema of account data:
 | `website`  | string | - | Основной вебсайт компании |
 | `type`  | string | - | Основной вебсайт компании |
 | `apiEnabled` | bool | true | Разрешены ли вызовы по API |
-| `uiApiEnabled` | bool | false | Разрешены ли вызовы по UI-API |
+| `uiApiPublicEnabled` | bool | false | Разрешены ли публичный UI-API |
 | `uiApiAesEnabled` | bool | true | Включение AES-128/CFB шифрования |
 | `uiApiAesKey` | string | `gen` | 16 символный UTF-8 ключ шифрования AES-128 |
 | `uiApiJwtKey` | string | `gen` | 32 символный UTF-8 Ключ подписи JWT/HS256 |

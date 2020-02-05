@@ -7,8 +7,12 @@ import (
 // this is CRM settings. If json - public, else - private
 type CrmSetting struct {
 	ID uint `json:"-"`
-	UserRegistrationAllow bool `json:"-" gorm:"userRegistrationAllow;default:true"`
-	UserRegistrationInviteOnly bool `json:"userRegistrationInviteOnly" gorm:"user_registration_invite_only;"`
+
+	// Глобальные настройки
+	ApiEnabled bool `json:"apiEnabled" gorm:"default:true;not null"` // влючен ли API интерфейс
+	UiApiPublicEnabled bool `json:"uiApiEnabled" gorm:"default:false;not null"` // Включен ли Public UI-API интерфейс (через https://ui.api.ratuscrm.com)
+	ApiDisabledMessage string `json:"apiDisableMessage" gorm:"type:varchar(255);"`
+	UiApiDisabledMessage string `json:"uiApiDisableMessage" gorm:"type:varchar(255);"`
 
 	CreatedAt 	time.Time `json:"-"`
 	UpdatedAt 	time.Time `json:"-"`

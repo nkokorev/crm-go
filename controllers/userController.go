@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+
+
 /**
 * В случае успеха возвращает в теле стандартного ответа [user]
  */
@@ -17,17 +19,18 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	//crmSettings := r.Context().Value("crmSettings").(models.CrmSetting)
 
 	// 1. Подгрузим файл настроек, он тут будет кстати
-	crmSettings, err := models.CrmSetting{}.Get()
+	/*crmSettings, err := models.CrmSetting{}.Get()
 	if err != nil {
 		u.Respond(w, u.MessageError(nil, "Сервер не может обработать запрос")) // что это?)
 		return
-	}
+	}*/
 
 	// 2. Проверяем, что регистрация новых пользователей разрешена
-	if !crmSettings.UserRegistrationAllow {
+	// todo загружаем данные аккаунта
+	/*if !crmSettings.UserRegistrationAllow {
 		u.Respond(w, u.MessageError(nil, "Создание новых пользователей временно приостановлено")) // что это?)
 		return
-	}
+	}*/
 
 	user := struct {
 		models.User

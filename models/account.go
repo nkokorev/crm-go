@@ -17,8 +17,8 @@ type Account struct {
 	// API Интерфейс
 	ApiEnabled bool `json:"apiEnabled" gorm:"default:true;not null"`
 
-	// UI-API Интерфейс (https://ui.api.ratuscrm.com)
-	UiApiEnabled bool `json:"uiApiEnabled" gorm:"default:false;not null"` // Возможно ли подклчюение по UI-API интерфейсу к аккаунту
+	// UI-API Интерфейс (https://ui.api.ratuscrm.com / https://ratuscrm.com/ui-api)
+	UiApiPublicEnabled bool `json:"uiApiPublicEnabled" gorm:"default:false;not null"` // Возможно ли подклчюение по публичному UI-API интерфейсу (через https://ui.api.ratuscrm.com)
 	UiApiAesEnabled bool `json:"uiApiAesEnabled" gorm:"default:true;not null"` // Включение AES-128/CFB шифрования
 	UiApiAesKey string `json:"uiApiAesKey" gorm:"type:varchar(16);default:null;"` // 128-битный ключ шифрования
 	UiApiJwtKey string `json:"uiApiJwtKey" gorm:"type:varchar(32);default:null;"` // 128-битный ключ шифрования
@@ -56,7 +56,7 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
-func (a *Account) Reset() { a = &Account{} }
+func (account *Account) Reset() { account = &Account{} }
 
 // создает аккаунт
 func CreateAccount (a Account) (_ *Account, err error) {
@@ -78,12 +78,12 @@ func CreateAccount (a Account) (_ *Account, err error) {
 	return &a, nil
 }
 
-func (a *Account) CreateToAccount () error {
+func (account *Account) CreateToAccount () error {
 
 	// Верификация данных
 
 	// Создание аккаунта
-	if err := db.Create(a).Error; err != nil {
+	if err := db.Create(account).Error; err != nil {
 		return err
 	}
 
@@ -96,28 +96,28 @@ func GetAccount (id uint) (a Account, err error) {
 	return a, err
 }
 
-func (a *Account) GetToAccount () error {
-	return db.First(a,a.ID).Error
+func (account *Account) GetToAccount () error {
+	return db.First(account, account.ID).Error
 }
 
 // сохраняет ВСЕ необходимые поля, кроме id, deleted_at и возвращает в Account обновленные данные
-func (a *Account) Save () error {
-	return db.Model(Account{}).Omit("id", "deleted_at").Save(a).Find(a, "id = ?", a.ID).Error
+func (account *Account) Save () error {
+	return db.Model(Account{}).Omit("id", "deleted_at").Save(account).Find(account, "id = ?", account.ID).Error
 }
 
 // обновляет данные аккаунта кроме id, deleted_at и возвращает в Account обновленные данные
-func (a *Account) Update (input interface{}) error {
-	return db.Model(Account{}).Where("id = ?", a.ID).Omit("id", "deleted_at").Update(input).Find(a, "id = ?", a.ID).Error
+func (account *Account) Update (input interface{}) error {
+	return db.Model(Account{}).Where("id = ?", account.ID).Omit("id", "deleted_at").Update(input).Find(account, "id = ?", account.ID).Error
 }
 
 // # Delete
-func (a *Account) Delete () error {
-	return db.Model(Account{}).Where("id = ?", a.ID).Delete(a).Error
+func (account *Account) Delete () error {
+	return db.Model(Account{}).Where("id = ?", account.ID).Delete(account).Error
 }
 
 // удаляет аккаунт с концами
-func (a *Account) DeleteUnscoped () error {
-	return db.Model(Account{}).Where("id = ?", a.ID).Unscoped().Delete(a).Error
+func (account *Account) DeleteUnscoped () error {
+	return db.Model(Account{}).Where("id = ?", account.ID).Unscoped().Delete(account).Error
 }
 
 
@@ -125,61 +125,62 @@ func (a *Account) DeleteUnscoped () error {
 // todo: пересмотреть работу функций под AccountUser
 
 // добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то ничего не произойдет.
-func (a *Account) AppendUser (user *User) error {
-	return db.Model(&user).Association("accounts").Append(a).Error
+func (account *Account) AppendUser (user *User) error {
+	return db.Model(&user).Association("accounts").Append(account).Error
 }
 
-func (a *Account) RemoveUser (user *User) error {
-	return db.Model(&user).Association("accounts").Delete(a).Error
+func (account *Account) RemoveUser (user *User) error {
+	return db.Model(&user).Association("accounts").Delete(account).Error
 }
 
 // загружает список обычных пользователей аккаунта
-func (a *Account) GetUsers () error {
-	return db.Preload("Users").First(&a).Error
+func (account *Account) GetUsers () error {
+	return db.Preload("Users").First(&account).Error
 }
 
 // ### Account inner func API (+UI) KEYS
 
 
 
-func (a *Account) CreateApiToken(key *ApiKey) error {
+func (account Account) CreateApiKey() (*ApiKey, error) {
+
 	// 1. Привязываем к аккаунту
-	key.AccountID = a.ID
+	key := &ApiKey{AccountID:account.ID, Name:"Test api key", Status:true}
 
 	// 2. Создаем
 	if err := key.create(); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return key, nil
 }
 
-func (a *Account) GetApiKeys() error {
-	return db.Preload("ApiKeys").First(&a).Error
+func (account *Account) GetApiKeys() error {
+	return db.Preload("ApiKeys").First(&account).Error
 }
 
-func (a *Account) DeleteApiKey(key *ApiKey) error {
+func (account *Account) DeleteApiKey(key *ApiKey) error {
 	return key.delete()
 }
 
 
 // ### Stock functions
-func (a Account) StockCreate(stock *Stock) error {
-	stock.AccountID = a.ID
+func (account Account) StockCreate(stock *Stock) error {
+	stock.AccountID = account.ID
 	return stock.Create()
 }
-func (a *Account) StockLoad() (err error) {
-	a.Stocks, err = (Stock{}).GetAll(a.ID)
+func (account *Account) StockLoad() (err error) {
+	account.Stocks, err = (Stock{}).GetAll(account.ID)
 	return err
 }
 
 // ### Account inner func Products
-func (a Account) ProductCreate(p *Product) error {
-	p.AccountID = a.ID
+func (account Account) ProductCreate(p *Product) error {
+	p.AccountID = account.ID
 	return p.Create()
 }
-func (a *Account) ProductLoad() (err error) {
-	a.Products, err = (Product{}).GetAll(a.ID)
+func (account *Account) ProductLoad() (err error) {
+	account.Products, err = (Product{}).GetAll(account.ID)
 	return err
 	//return db.Preload("Products").Preload("Products.Offers").First(&a).Error
 }
@@ -188,7 +189,7 @@ func (a *Account) ProductLoad() (err error) {
 
 
 // EAVAttributes
-func (a Account) CreateEavAttribute(ea *EavAttribute) error {
-	ea.AccountID = a.ID
+func (account Account) CreateEavAttribute(ea *EavAttribute) error {
+	ea.AccountID = account.ID
 	return ea.create()
 }

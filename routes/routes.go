@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gorilla/mux"
 	"net/http"
+	"os"
 
 	"github.com/nkokorev/crm-go/controllers"
 	//"github.com/nkokorev/gui-server/controllers/old"
@@ -11,10 +12,36 @@ import (
 
 func Handlers() *mux.Router {
 
+	var crmHost string
+
+	switch os.Getenv("APP_ENV") {
+	case "local":
+		crmHost = "crm-local.me"
+	case "public":
+		crmHost = "ratuscrm.com"
+	default:
+		crmHost = "ratuscrm.com"
+	}
+
 	// обрабатываем все запросы со слешем и без
-	//r := mux.NewRouter().StrictSlash(false)
-	r_base := mux.NewRouter()
-	r_base = r_base.PathPrefix("/api").Subrouter()
+	//r_base := mux.NewRouter().StrictSlash(false)
+	r_base := mux.NewRouter().StrictSlash(true)
+
+	// монтируем все три точки входа
+	rApi := r_base.Host("api." + crmHost).Subrouter() // api.ratuscrm.com
+	rUiApi := r_base.Host("app." + crmHost).PathPrefix("/ui-api").Subrouter() // app.ratuscrm.com/ui-api
+	rUiApiPublic := r_base.Host("ui.api." + crmHost).Subrouter() // ui.api.ratuscrm.com
+
+	// подключаем middleware
+	rApi.Use(middleware.BearerAuthentication)
+
+
+	rApi.HandleFunc("/", controllers.CheckApi)
+	rUiApi.HandleFunc("/", controllers.CheckUiApi) // +
+	rUiApiPublic.HandleFunc("/", controllers.CheckUiApiPublic)
+
+
+	//r_base = r_base.PathPrefix("/api").Subrouter()
 
 	// добавляем в ответ Access-Control-Allow-Origin и прочие заголовки для выделенных серверов (dev,local & production servers)
 	r_base.Use(middleware.CorsAccessControl)

@@ -1,16 +1,17 @@
 package models
 
 import (
+	"github.com/nkokorev/crm-go/utils"
 	"github.com/segmentio/ksuid"
-	"strings"
+	"os"
 	"time"
 )
 
 type ApiKey struct {
 	Token string `json:"token"` // ID
-	AccountID uint `json:"-"`
-	Name string `json:"name"`
-	Status bool `json:"status"`
+	AccountID uint `json:"accountId"` // кто создал его
+	Name string `json:"name"` // имя ключа
+	Status bool `json:"status"` // активен ли ключ
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 
@@ -22,9 +23,13 @@ type ApiKey struct {
 // Создает новый ключ, генерирует token (первичный ключ)
 func (key *ApiKey) create () error {
 
-	key.Token = strings.ToLower(ksuid.New().String())
+	if key.AccountID == 0 {
+		return utils.Error{Message:"Ошибка при создании Api-ключа", Errors: map[string]interface{}{"apiKey":"Неудалось привязать ключ к аккаунту"}}
+	}
 
-	if key.AccountID == 3 {
+	key.Token = ksuid.New().String()
+
+	if os.Getenv("APP_ENV") == "local" && key.AccountID == 1 {
 		key.Token = "1ukyryxpfprxpy17i4ldlrz9kg3"
 	}
 
@@ -32,8 +37,10 @@ func (key *ApiKey) create () error {
 }
 
 // осуществляет поиск по Token
-func (key *ApiKey) get () error {
-	return db.First(key, "token = ?", key.Token).Error
+func GetApiKey(token string) (ApiKey, error) {
+	var key ApiKey
+	err := db.First(&key, "token = ?", token).Error
+	return key, err
 }
 
 // сохраняет все поля в модели, кроме id, token, account_id, deleted_at
@@ -54,6 +61,6 @@ func (key *ApiKey) delete () error {
 // ### Account func
 
 // Предзагружает аккаунт и делает поиск по ключам
-func (key *ApiKey) GetAccount() error {
+func (key *ApiKey) GetWithAccount() error {
 	return db.Preload("Account").First(&key, "token = ?", key.Token).Error
 }
