@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 )
 
@@ -10,22 +11,43 @@ type CrmSetting struct {
 
 	// Глобальные настройки
 	ApiEnabled bool `json:"apiEnabled" gorm:"default:true;not null"` // влючен ли API интерфейс
-	UiApiPublicEnabled bool `json:"uiApiEnabled" gorm:"default:false;not null"` // Включен ли Public UI-API интерфейс (через https://ui.api.ratuscrm.com)
+	AppUiApiEnabled bool `json:"appUiApiEnabled" gorm:"default:true;not null"` // Включен ли APP UI-API интерфейс (через https://app.ratuscrm.com/ui-api/)
+	UiApiEnabled bool `json:"uiApiEnabled" gorm:"default:true;not null"` // Включен ли публичный UI-API интерфейс (через https://ui.api.ratuscrm.com)
+
 	ApiDisabledMessage string `json:"apiDisableMessage" gorm:"type:varchar(255);"`
 	UiApiDisabledMessage string `json:"uiApiDisableMessage" gorm:"type:varchar(255);"`
+	AppUiApiDisabledMessage string `json:"appUiApiDisableMessage" gorm:"type:varchar(255);"`
 
 	CreatedAt 	time.Time `json:"-"`
 	UpdatedAt 	time.Time `json:"-"`
 	//DeletedAt 	*time.Time `json:"-" db:"deleted_at"`
 }
 
-func (settings *CrmSetting) Create() error {
-	return db.Create(settings).Error
+// внутренняя чит-фукнция
+func CreateCrmSettings() (*CrmSetting, error) {
+
+	if !db.Model(&CrmSetting{}).First(&CrmSetting{}, "id = 1").RecordNotFound() {
+		return nil, errors.New("Настройки CRM уже загружены!")
+	}
+
+	settings := &CrmSetting{
+		ApiEnabled: true,
+		UiApiEnabled: true,
+		AppUiApiEnabled: true,
+		ApiDisabledMessage: "Sorry, the server is under maintenance.",
+		UiApiDisabledMessage: "Sorry, the server is under maintenance.",
+		AppUiApiDisabledMessage: "Из-за работ на сервере интерфейс временно отключен.",
+	}
+
+	err := db.Create(&settings).Error
+
+	return settings, err
 }
+
 // Берет по первому ID
 func (CrmSetting) Get () (*CrmSetting, error) {
 	settings := &CrmSetting{}
-	err := db.First(settings).Error;
+	err := db.First(settings).Error
 
 	return settings, err
 }

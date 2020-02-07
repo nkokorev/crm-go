@@ -10,13 +10,23 @@ All parameters use lowerCamelCase style:
 
 |  | ignored | required | Auth type | description |
 | --- | :---: |:---: | :---: | --- |
-| ratuscrm.com/ui-api | `uiApiPublicEnabled` | - | JWT (AES) | JSON UI-API for app.ratuscrm.com |
-| ui.api.ratuscrm.com |  | `uiApiPublicEnabled = true` | JWT (AES) | JSON UI-API for company websites |
-| api.ratuscrm.com |  | `apiEnabled = true` | Bearer token |Standard Rest JSON API   |
+| ratuscrm.com/api | `uiApiEnabled` | `appApiEnabled` | JWT (AES) | JSON UI-API for app.ratuscrm.com |
+| ui.api.ratuscrm.com |  | `uiApiEnabled` | JWT (AES) | JSON UI-API for company websites |
+| api.ratuscrm.com |  | `apiEnabled` | Bearer token |Standard Rest JSON API   |
 
 
 ## CRM Settings
 
+| Json name | Type | Default |Description |
+| --- | :---: |:---: | --- |
+| `apiEnabled` | bool | true | Принимать запросы по API |
+| `appUiApiEnabled` | bool | true | Принимать запросы по APP UI-API |
+| `uiApiEnabled` | bool | true | Принимтаь ли запросы по публичному UI-API |
+| `apiDisableMessage` | string | "API is unavailable..." | Ответ при отключенном API |
+| `uiApiDisabledMessage` | string | "UI-API is unavailable..." | Ответ при отключенном публичном UI-API | 
+| `appUiApiDisableMessage` | string | "Из-за работ на сервере..." | Ответ при отключенном APP UI-API | 
+
+При отключенном APP UI-API GUI должен выводить не предложение логина, а специальную заставку.
 
 ## Account interfaces
 
@@ -28,8 +38,8 @@ DB Schema of account data:
 | `name`  | string | - | Имя аккаунта, виден другим пользователям |
 | `website`  | string | - | Основной вебсайт компании |
 | `type`  | string | - | Основной вебсайт компании |
-| `apiEnabled` | bool | true | Разрешены ли вызовы по API |
-| `uiApiPublicEnabled` | bool | false | Разрешены ли публичный UI-API |
+| `apiEnabled` | bool | true | Принимать ли запросы через API |
+| `uiApiEnabled` | bool | false | Принимать ли запросы через публичный UI-API |
 | `uiApiAesEnabled` | bool | true | Включение AES-128/CFB шифрования |
 | `uiApiAesKey` | string | `gen` | 16 символный UTF-8 ключ шифрования AES-128 |
 | `uiApiJwtKey` | string | `gen` | 32 символный UTF-8 Ключ подписи JWT/HS256 |
@@ -76,40 +86,4 @@ You must choose auth settings:
 2. auth by username & pwd
 3. auth by phone & once code*
 
-We are recommended #1. If you whant hidden user's email - choose #2.
-
-Strong reccomended not change this.
-
-### Public api (Bearer Authentication)
-url: `http://api.ratuscrm.com`.<br>
-Create api-token & set role in your account.
-
-# 1. UI API
-
-- APP: `http://ratuscrm.com/api/ui/`
-- Public: `http://ui.api.ratuscrm.com`
-
-Методы:
-- CreateUser
-- DeleteUser
-- AuthUser
-
-### Create user
-`[POST] http://<api:schema>/accounts/{account_id}/users`
-
-Parametrs:
-- [required, string] username
-- [required, string] email
-- [required, string] password
-- [required, string] phone
-- [required, string] name
-- [required, string] soname
-- ...
-
-### 
-
-Внутренее api для графического интерфейса (vue-cli):
-http://ratuscrm.com/ui-api/
-
-
-**Микроконтроллеры должны использовать функции в контексте аккаунта**
+We are recommended #1. If you want hidden user's email - choose #2.

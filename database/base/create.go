@@ -243,43 +243,27 @@ func UploadEavData() {
 
 func UploadTestData() {
 
-	timeNow := time.Now().UTC();
+	timeNow := time.Now().UTC()
 
 	// 0. Создаем файл системных настроек (не Аккаунта RatusCRM!)
-	crmSettings := &models.CrmSetting{
-		ApiEnabled: true,
-		UiApiPublicEnabled: true,
-		ApiDisabledMessage: "Sorry, the server is under maintenance.",
-		UiApiDisabledMessage: "Sorry, the server is under maintenance.",
+	_, err := models.CreateCrmSettings()
+	if err != nil {
+		log.Fatal("Неудалось создать настройки crm-системы")
 	}
-	if err := crmSettings.Create(); err != nil {
-		log.Fatalf("Неудалось создать файл настроек: %v, Error: %s", crmSettings, err)
-		return
-	}
-	//allowUserReg := crmSettings.UserRegistrationInviteOnly
-	//crmSettings.UserRegistrationInviteOnly = false
-	//crmSettings.Save()
 
-	// 1. Создаем главный аккаунт
-	account, err := models.CreateAccount(
-		models.Account{
-			Name:"RatusCRM",
-			UiApiPublicEnabled:false,
-			UiApiAesEnabled:true,
-			UiApiEnabledUserRegistration:false,
-			UiApiUserRegistrationInvitationOnly:false,
-			ApiEnabled: false,
-		})
+	// 1. Создаем главный аккаунт чит-функцией
+	account, err := models.CreateMainAccount()
 	if err != nil {
 		log.Fatal("Неудалось создать главный аккаунт")
 	}
 
+	// 3. Создаем API-ключ в аккаунте
 	_, err = account.CreateApiKey()
 	if err != nil {
 		log.Fatalf("Неудалось создать API ключ для аккаунта: %v, Error: %s", account, err)
 	}
 
-	// 2. Создаем admin аккаунт
+	// 2. Создаем пользователя admin в main аккаунте
 	if err := (&models.User{SignedAccountID:1, Username:"admin", Email:"kokorevn@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt:&timeNow}).Create(); err != nil {
 		log.Fatal("Неудалось создать admin'a ", err)
 	}
@@ -389,10 +373,10 @@ func UploadTestData() {
 			return
 		}
 
-		if err := users[i].CreateAccount(accounts[i]); err != nil {
+		/*if err := users[i].CreateAccount(accounts[i]); err != nil {
 			log.Fatalf("Неудалось создать аккаунт: %v, Error: %s", accounts[i], err)
 			return
-		}
+		}*/
 
 		if err := accounts[i].AppendUser(users[0]); err != nil {
 			log.Fatalf("Неудалось добавить админа в аккаунт: %v, Error: %s", accounts[i], err)
@@ -414,28 +398,28 @@ func UploadTestData() {
 
 	for _, r := range shops {
 		if err := r.Create(); err != nil {
-			log.Fatalf("Неудалось создать магазин для 357 грамм", r.Name, err)
+			log.Fatalf("Неудалось создать магазин для 357 грамм %v %v", r.Name, err)
 			return
 		}
 	}
 
 	for _, r := range product_groups {
 		if err := r.Create(); err != nil {
-			log.Fatalf("Неудалось группу для магазина 357 грамм", r.Name, err)
+			log.Fatalf("Неудалось группу для магазина 357 грамм %v %v", r.Name, err)
 			return
 		}
 	}
 
 	for _, r := range products {
 		if err := r.Create(); err != nil {
-			log.Fatalf("Неудалось создать продукт для 357 грамм", r.Name, err)
+			log.Fatalf("Неудалось создать продукт для 357 грамм %v %v", r.Name, err)
 			return
 		}
 	}
 
 	for _, r := range offers {
 		if err := r.Create(); err != nil {
-			log.Fatalf("Неудалось создать offer для 357 грамм", r.Name, err)
+			log.Fatalf("Неудалось создать offer для 357 грамм %v %v ", r.Name, err)
 			return
 		}
 
@@ -464,7 +448,7 @@ func UploadTestData() {
 
 	for _, r := range pcs {
 		if err := r.Create(); err != nil {
-			log.Fatalf("Неудалось создать pcs для 357 грамм", r.URL, err)
+			log.Fatalf("Неудалось создать pcs для 357 грамм %v %v", r.URL, err)
 			return
 		}
 	}

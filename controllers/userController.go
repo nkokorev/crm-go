@@ -59,7 +59,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	// todo add user to account
 
 	// 2. создаем jwt-token для аутентификации пользователя
-	token, err := (models.JWT{UserId:user.ID}).CreateCryptoToken()
+	token, err := (models.JWT{UserID:user.ID}).CreateCryptoToken()
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Cant create jwt-token"))
 		return

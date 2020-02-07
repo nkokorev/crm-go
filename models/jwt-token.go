@@ -15,8 +15,9 @@ import (
 
 //Token struct declaration
 type JWT struct {
-	UserId uint // if found > 0
-	AccountId uint // if activated > 0
+	UserID uint // if found > 0
+	AccountID uint // if activated > 0
+	SignedAccountID uint // ID of main account
 	//Username string
 	//Email string
 	jwt.StandardClaims

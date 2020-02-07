@@ -8,6 +8,16 @@ import (
 	"strings"
 )
 
+/*
+* ### Auth by JWT ###
+
+	Любой jwt-токен имеет в своем составе информацию о пользователе и аккаунте, выдавшим ключ (signedAccountId).
+	userId - id пользователя, на имя которого выписан ключ
+	accountId - id аккаунта, в котором пользователь авторизован
+	signedAccountId - ВСЕГДА id аккаунта, выдавшего ключ (root account у каждого пользователя).
+
+ */
+
 // Требует авторизации по User
 func JwtUserAuthentication(next http.Handler) http.Handler {
 
@@ -38,20 +48,23 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 			return
 		}
 
-		if tk.UserId < 1 {
+		if tk.UserID < 1 {
 			w.WriteHeader(http.StatusUnauthorized)
 			u.Respond(w, u.Message(false, "Пользователь не авторизован"))
 			return
 		}
 
-		ctx1 := context.WithValue(r.Context(), "user_id", tk.UserId)
+		ctx1 := context.WithValue(r.Context(), "userId", tk.UserID)
 		r = r.WithContext(ctx1)
 
-		ctx2 := context.WithValue(r.Context(), "account_id", tk.AccountId)
+		ctx2 := context.WithValue(r.Context(), "accountId", tk.AccountID)
 		r = r.WithContext(ctx2)
 
+		ctx3 := context.WithValue(r.Context(), "signedAccountId", tk.SignedAccountID)
+		r = r.WithContext(ctx3)
+
 		next.ServeHTTP(w, r) //proceed in the middleware chain!
-	});
+	})
 }
 
 // Требует авторизации по Аккаунту
@@ -84,17 +97,15 @@ func JwtAccountAuthentication(next http.Handler) http.Handler {
 			return
 		}
 
-		if tk.AccountId < 1 {
+		if tk.AccountID < 1 {
 			w.WriteHeader(http.StatusForbidden)
 			u.Respond(w, u.Message(false, "Авторизуйтесь в аккаунте"))
 			return
 		}
 
-		ctx1 := context.WithValue(r.Context(), "user_id", tk.UserId)
-		r = r.WithContext(ctx1)
-
-		ctx2 := context.WithValue(r.Context(), "account_id", tk.AccountId)
-		r = r.WithContext(ctx2)
+		r = r.WithContext(context.WithValue(r.Context(), "userId", tk.UserID))
+		r = r.WithContext(context.WithValue(r.Context(), "accountId", tk.AccountID)) // в какой аккаунт зашел
+		r = r.WithContext(context.WithValue(r.Context(), "signedAccountId", tk.SignedAccountID)) // кто папа аккаунт (чей ключ использовался)
 
 		next.ServeHTTP(w, r) //proceed in the middleware chain!
 	});
@@ -129,19 +140,22 @@ func JwtFullAuthentication(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx1 := context.WithValue(r.Context(), "user_id", tk.UserId)
+		ctx1 := context.WithValue(r.Context(), "userId", tk.UserID)
 		r = r.WithContext(ctx1)
 
-		ctx2 := context.WithValue(r.Context(), "account_id", tk.AccountId)
+		ctx2 := context.WithValue(r.Context(), "accountId", tk.AccountID)
 		r = r.WithContext(ctx2)
 
-		if tk.UserId < 1 {
+		ctx3 := context.WithValue(r.Context(), "signedAccountId", tk.SignedAccountID)
+		r = r.WithContext(ctx3)
+
+		if tk.UserID < 1 {
 			w.WriteHeader(http.StatusForbidden)
 			u.Respond(w, u.Message(false, "Пользователь не авторизован"))
 			return
 		}
 
-		if tk.AccountId < 1 {
+		if tk.AccountID < 1 {
 			w.WriteHeader(http.StatusForbidden)
 			u.Respond(w, u.Message(false, "Авторизуйтесь в аккаунте"))
 			return

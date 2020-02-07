@@ -37,9 +37,14 @@ func (key *ApiKey) create () error {
 }
 
 // осуществляет поиск по Token
-func GetApiKey(token string) (ApiKey, error) {
+func GetApiKey(token string) (*ApiKey, error) {
 	var key ApiKey
 	err := db.First(&key, "token = ?", token).Error
+	return &key, err
+}
+
+func GetApiKeyPreloadAccount(token string) (key *ApiKey, err error) {
+	err = db.Preload("Account").First(key, "token = ?", token).Error
 	return key, err
 }
 

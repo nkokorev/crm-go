@@ -133,6 +133,13 @@ func (user *User) Create (v_opt... UserCreateOptions ) error {
 }
 
 // осуществляет поиск по ID
+func GetUserById (userId uint) (user *User, err error) {
+
+	err = db.Model(&User{}).Find(user, userId).Error
+
+	return user, err
+}
+
 func (user *User) Get () error {
 	/*return db.Preload("Accounts", func(db *gorm.DB) *gorm.DB {
 		return db.Order(("accaunts.id DESC"))
@@ -404,24 +411,28 @@ func (user *User) GetAccount(account *Account) error {
 	return db.Model(user).Where("user_id = ?", user.ID).Association("Accounts").Find(account).Error
 }
 
-// создание аккаунта от пользователя
-func (user *User) CreateAccount(a *Account) error {
+// Только пользователь RatusCRM может создавать новые аккаунты
+func (user User) CreateAccount(input Account) (*Account,error) {
+
+	// Проверяем пользователя и его роль в RatusCRM.
+
+
 
 	// 1. Создаем аккаунт
-	a, err := CreateAccount(*a)
+	a, err := createAccount(input)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// 2. Привязываем аккаунт к пользователю
-	if err := a.AppendUser(user); err != nil {
-		return err
+	if err := a.AppendUser(&user); err != nil {
+		return nil, err
 	}
 
 	// 3. Назначает роль owner
 
 
-	return nil
+	return a, nil
 }
 
 // функция прокладка, обновление можно вызвать и из интерфейса аккаунта
@@ -483,6 +494,7 @@ func (user *User) AuthLogin(username, password string, onceLogin_opt... bool) (s
 	claims := JWT{
 		user.ID,
 		0,
+		user.SignedAccountID,
 		jwt.StandardClaims{
 			ExpiresAt: expiresAt,
 			Issuer:    "AuthServer",
@@ -503,6 +515,7 @@ func (user *User) CreateJWTToken() (string, error) {
 	claims := JWT{
 		user.ID,
 		0,
+		user.SignedAccountID,
 		jwt.StandardClaims{
 			ExpiresAt: expiresAt,
 			Issuer:    "AuthServer",
@@ -531,6 +544,7 @@ func (user *User) LoginInAccount(account_id uint) (string, error) {
 	claims := JWT{
 		user.ID,
 		account_id,
+		user.SignedAccountID,
 		jwt.StandardClaims{
 			ExpiresAt: expiresAt,
 			Issuer:    "GUI Server",

@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"log"
 	"time"
 )
 
@@ -15,19 +16,20 @@ type Account struct {
 	Type string `json:"type" gorm:"type:varchar(255)"` // спорно
 
 	// API Интерфейс
-	ApiEnabled bool `json:"apiEnabled" gorm:"default:true;not null"`
+	ApiEnabled bool `json:"apiEnabled" gorm:"default:true;not null"` // включен ли API интерфейс у аккаунта (false - все ключи отключаются, есть ли смысл в нем?)
 
 	// UI-API Интерфейс (https://ui.api.ratuscrm.com / https://ratuscrm.com/ui-api)
-	UiApiPublicEnabled bool `json:"uiApiPublicEnabled" gorm:"default:false;not null"` // Возможно ли подклчюение по публичному UI-API интерфейсу (через https://ui.api.ratuscrm.com)
-	UiApiAesEnabled bool `json:"uiApiAesEnabled" gorm:"default:true;not null"` // Включение AES-128/CFB шифрования
+	UiApiEnabled bool `json:"uiApiEnabled" gorm:"default:false;not null"` // Принимать ли запросы через публичный UI-API интерфейсу (через https://ui.api.ratuscrm.com)
+	UiApiAesEnabled bool `json:"uiApiAesEnabled" gorm:"default:true;not null"` // Включение AES-128/CFB шифрования для публичного UI-API
 	UiApiAesKey string `json:"uiApiAesKey" gorm:"type:varchar(16);default:null;"` // 128-битный ключ шифрования
 	UiApiJwtKey string `json:"uiApiJwtKey" gorm:"type:varchar(32);default:null;"` // 128-битный ключ шифрования
+
 	UiApiEnabledUserRegistration bool `json:"uiApiEnabledUserRegistration" gorm:"default:true;not null"` // Разрешить регистрацию через UI-API интерфейс
 	UiApiUserRegistrationInvitationOnly bool `json:"uiApiUserRegistrationInvitationOnly" gorm:"default:false;not null"` // Регистрация новых пользователей только по приглашению
 
 	// настройки авторизации.
 	// Разделяется AppAuth и ApiAuth -
-	VisibleToClients bool `json:"visibleToClients" gorm:"default:true"` // скрывать аккаунт в списке доступных для пользователей с ролью 'client'. Нужно для системных аккаунтов.
+	VisibleToClients bool `json:"visibleToClients" gorm:"default:false"` // скрывать аккаунт в списке доступных для пользователей с ролью 'client'. Нужно для системных аккаунтов.
 	ClientsAreAllowedToLogin bool `json:"allowToLogin_for_clients" gorm:"default:false"` // запрет на вход в ratuscrm для пользователей с ролью 'client' (им не будет выдана авторизация).
 
 	AuthForbiddenForClients bool `json:"authForbiddenForClients" gorm:"default:false"` // запрет авторизации для для пользователей с ролью 'client'.
@@ -58,24 +60,62 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 
 func (account *Account) Reset() { account = &Account{} }
 
-// создает аккаунт
-func CreateAccount (a Account) (_ *Account, err error) {
+// Создать аккаунт может только пользователь, который является клиентом аккаунта RatusCRM (ID == 1). Поэтому функция не публичная.
+func createAccount (input Account) (*Account, error) {
+
+	var err error
+	var account Account
 
 	// Создаем ключи для UI API
-	a.UiApiAesKey, err = utils.CreateAes128Key()
+	account.UiApiAesKey, err = utils.CreateAes128Key()
 	if err != nil {
 		return nil, err
 	}
 
-	a.UiApiJwtKey =  utils.CreateHS256Key()
+	account.UiApiJwtKey =  utils.CreateHS256Key()
 
+	// Копируем, то что можно использовать при создании
+	account.Name = input.Name
+	account.Website = input.Website
+	account.Website = input.Website
+
+	account.ApiEnabled = input.ApiEnabled
+
+	account.UiApiEnabled = input.UiApiEnabled
+	account.UiApiAesEnabled = input.UiApiAesEnabled
+	account.UiApiEnabledUserRegistration = input.UiApiEnabledUserRegistration
+	account.UiApiUserRegistrationInvitationOnly = input.UiApiUserRegistrationInvitationOnly
+
+	account.VisibleToClients = input.VisibleToClients
+	account.ClientsAreAllowedToLogin = input.ClientsAreAllowedToLogin
 
 	// Создание аккаунта
-	if err := db.Omit("ID", "DeletedAt").Create(&a).Error; err != nil {
+	if err := db.Omit("ID", "DeletedAt").Create(&account).Error; err != nil {
 		return nil, err
 	}
 
-	return &a, nil
+	return &account, nil
+}
+
+// чит функция для развертывания, т.к. нельзя создать аккаунт из-под несуществующего пользователя
+func CreateMainAccount() (*Account, error) {
+
+	if !db.Model(&Account{}).First(&Account{}, "id = 1").RecordNotFound() {
+		log.Fatal("RatusCRM account уже существует")
+	}
+
+	rootAccount := &Account{
+		Name:"RatusCRM",
+		UiApiEnabled:false,
+		UiApiAesEnabled:true,
+		UiApiEnabledUserRegistration:false,
+		UiApiUserRegistrationInvitationOnly:false,
+		ApiEnabled: false,
+	}
+
+	err := db.Create(rootAccount).Error
+
+	return rootAccount, err
 }
 
 func (account *Account) CreateToAccount () error {
@@ -91,9 +131,15 @@ func (account *Account) CreateToAccount () error {
 }
 
 // осуществляет поиск по a.ID
-func GetAccount (id uint) (a Account, err error) {
+/*func GetAccount (id uint) (a *Account, err error) {
 	err = db.Model(&Account{}).First(&a, id).Error
 	return a, err
+}*/
+
+func GetAccount (id uint) (*Account, error) {
+	var account Account
+	err := db.Model(&Account{}).First(&account, id).Error
+	return &account, err
 }
 
 func (account *Account) GetToAccount () error {

@@ -13,7 +13,7 @@ import (
 func AccountCreate(w http.ResponseWriter, r *http.Request) {
 
 	//time.Sleep(1 * time.Second)
-	userID := r.Context().Value("user_id").(uint)
+	userId := r.Context().Value("userId").(uint)
 
 	acc := struct {
 		models.Account
@@ -27,14 +27,20 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	account, err := models.CreateAccount(acc.Account)
+	user, err := models.GetUserById(userId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Пользователь не существует"))
+		return
+	}
+
+	account, err := user.CreateAccount(acc.Account)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Cant create account")) // что это?)
 		return
 	}
 
 	// 1. создаем jwt-token для аутентификации пользователя
-	token, err := (models.JWT{UserId:userID, AccountId:acc.ID}).CreateCryptoToken()
+	token, err := (models.JWT{UserID:userId, AccountID:acc.ID}).CreateCryptoToken()
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Cant create jwt-token"))
 		return
