@@ -1,17 +1,13 @@
 package main
 
 import (
-	"fmt"
+	"flag"
+	"os"
 	"testing"
 )
 
-func TestCrmSetting_Create(t *testing.T) {
-
-	fmt.Println("Test...")
-	/*pool, err := models.Connect()
-	if err != nil {
-		t.Errorf("Cant connect to database, err")
-	}
-	// закрываем соединение, когда заканчиваем работу
-	defer pool.Close()*/
+func TestMain(m *testing.M) {
+	// call flag.Parse() here if TestMain uses flags
+	flag.Parse()
+	os.Exit(m.Run())
 }

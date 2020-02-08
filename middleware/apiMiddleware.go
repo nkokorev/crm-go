@@ -14,7 +14,7 @@ func ApiEnabled(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// Подгружаем настройки CRM
-		crmSettings, err := models.CrmSetting{}.Get()
+		crmSettings, err := models.GetCrmSettings()
 
 		if err != nil {
 			u.Respond(w, u.MessageError(nil, "Server is unavailable")) // что это?)

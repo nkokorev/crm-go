@@ -245,7 +245,7 @@ func UploadTestData() {
 
 	timeNow := time.Now().UTC()
 
-	// 0. Создаем файл системных настроек (не Аккаунта RatusCRM!)
+	// 0. Создаем файл системных настроек (это не настройки аккаунта RatusCRM!)
 	_, err := models.CreateCrmSettings()
 	if err != nil {
 		log.Fatal("Неудалось создать настройки crm-системы")

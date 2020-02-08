@@ -23,7 +23,7 @@ type CrmSetting struct {
 	//DeletedAt 	*time.Time `json:"-" db:"deleted_at"`
 }
 
-// внутренняя чит-фукнция
+// внутренняя чит-фукнция для создания системных настроек
 func CreateCrmSettings() (*CrmSetting, error) {
 
 	if !db.Model(&CrmSetting{}).First(&CrmSetting{}, "id = 1").RecordNotFound() {
@@ -44,18 +44,15 @@ func CreateCrmSettings() (*CrmSetting, error) {
 	return settings, err
 }
 
-// Берет по первому ID
-func (CrmSetting) Get () (*CrmSetting, error) {
+// Берет первую строку т.е. должна быть единственная запись
+func GetCrmSettings () (*CrmSetting, error) {
 	settings := &CrmSetting{}
 	err := db.First(settings).Error
 
 	return settings, err
 }
 
+// сохраняет текущее состояние настроек в структуруе
 func (settings *CrmSetting) Save () error {
 	return db.Model(settings).Omit("id", "created_at", "updated_at").Save(settings).First(settings).Error
-}
-
-func (settings *CrmSetting) Update (input interface{}) error {
-	return db.Model(settings).Omit("id", "created_at", "updated_at").Update(input).First(settings).Error
 }

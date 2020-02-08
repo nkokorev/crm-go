@@ -15,7 +15,7 @@ func AppUiApiEnabled(next http.Handler) http.Handler {
 
 		fmt.Println("AppUiApiEnabled")
 		// Подгружаем настройки CRM
-		crmSettings, err := models.CrmSetting{}.Get()
+		crmSettings, err := models.GetCrmSettings()
 
 		if err != nil {
 			u.Respond(w, u.MessageError(nil, "Server is unavailable")) // что это?)
@@ -38,7 +38,7 @@ func UiApiEnabled(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// Подгружаем настройки CRM
-		crmSettings, err := models.CrmSetting{}.Get()
+		crmSettings, err := models.GetCrmSettings()
 
 		if err != nil {
 			u.Respond(w, u.MessageError(nil, "Server is unavailable")) // что это?)
@@ -74,7 +74,7 @@ func CheckUiApiEnabled(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// Подгружаем настройки CRM
-		crmSettings, err := models.CrmSetting{}.Get()
+		crmSettings, err := models.GetCrmSettings()
 
 		if err != nil {
 			u.Respond(w, u.MessageError(nil, "Сервер не может обработать запрос")) // что это?)
@@ -99,7 +99,7 @@ func UiApiJWTAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// 1. Подгрузим файл настроек, он тут будет кстати
-		crmSettings, err := models.CrmSetting{}.Get()
+		crmSettings, err := models.GetCrmSettings()
 		if err != nil {
 			u.Respond(w, u.MessageError(nil, "Сервер не может обработать запрос")) // что это?)
 			return
