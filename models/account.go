@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
@@ -64,7 +65,11 @@ func (account *Account) Reset() { account = &Account{} }
 func createAccount (input Account) (*Account, error) {
 
 	var err error
-	var account Account
+	var account Account // returned var
+
+	if err := input.ValidateInputs(); err !=nil {
+		return nil, err
+	}
 
 	// Создаем ключи для UI API
 	account.UiApiAesKey, err = utils.CreateAes128Key()
@@ -77,7 +82,7 @@ func createAccount (input Account) (*Account, error) {
 	// Копируем, то что можно использовать при создании
 	account.Name = input.Name
 	account.Website = input.Website
-	account.Website = input.Website
+	account.Type = input.Type
 
 	account.ApiEnabled = input.ApiEnabled
 
@@ -90,7 +95,7 @@ func createAccount (input Account) (*Account, error) {
 	account.ClientsAreAllowedToLogin = input.ClientsAreAllowedToLogin
 
 	// Создание аккаунта
-	if err := db.Omit("ID", "DeletedAt").Create(&account).Error; err != nil {
+	if err := db.Omit("ID").Create(&account).Error; err != nil {
 		return nil, err
 	}
 
@@ -101,21 +106,44 @@ func createAccount (input Account) (*Account, error) {
 func CreateMainAccount() (*Account, error) {
 
 	if !db.Model(&Account{}).First(&Account{}, "id = 1").RecordNotFound() {
-		log.Fatal("RatusCRM account уже существует")
+		log.Println("RatusCRM account уже существует")
+		return nil, nil
 	}
 
-	rootAccount := &Account{
+	mainAccount, err := createAccount(Account{
 		Name:"RatusCRM",
 		UiApiEnabled:false,
 		UiApiAesEnabled:true,
 		UiApiEnabledUserRegistration:false,
 		UiApiUserRegistrationInvitationOnly:false,
 		ApiEnabled: false,
+	})
+
+	return mainAccount, err
+}
+
+// проверяем входящие данные для создания или обновления аккаунта и возвращаем описательную ошибку
+func (account Account) ValidateInputs() error {
+
+	//fmt.Println(account)
+	if len(account.Name) < 2 {
+		return utils.Error{Message:"Ошибки в заполнении формы", Errors: map[string]interface{}{"name":"Имя компании должно содержать минимум 2 символа"}}
 	}
 
-	err := db.Create(rootAccount).Error
+	if len(account.Name) > 32 { // 256:8 (UTF-8) - хз)
+		return utils.Error{Message:"Ошибки в заполнении формы", Errors: map[string]interface{}{"name":"Имя компании должно быть не более 32 символов"}}
+	}
 
-	return rootAccount, err
+	if len(account.Website) > 255 {
+		fmt.Println("Long website name",account)
+		return utils.Error{Message:"Ошибки в заполнении формы", Errors: map[string]interface{}{"website":"Слишком длинный url"}}
+	}
+
+	if len(account.Type) > 255 {
+		return utils.Error{Message:"Ошибки в заполнении формы", Errors: map[string]interface{}{"type":"Слишком длинный текст"}}
+	}
+
+	return nil
 }
 
 func (account *Account) CreateToAccount () error {
@@ -156,9 +184,14 @@ func (account *Account) Update (input interface{}) error {
 	return db.Model(Account{}).Where("id = ?", account.ID).Omit("id", "deleted_at").Update(input).Find(account, "id = ?", account.ID).Error
 }
 
-// # Delete
-func (account *Account) Delete () error {
-	return db.Model(Account{}).Where("id = ?", account.ID).Delete(account).Error
+// # Soft Delete
+func (account *Account) SoftDelete () error {
+	return db.Where("id = ?", account.ID).Delete(account).Error
+}
+
+// # Hard Delete
+func (account *Account) HardDelete () error {
+	return db.Unscoped().Where("id = ?", account.ID).Delete(account).Error
 }
 
 // удаляет аккаунт с концами
@@ -185,8 +218,6 @@ func (account *Account) GetUsers () error {
 }
 
 // ### Account inner func API (+UI) KEYS
-
-
 
 func (account Account) CreateApiKey() (*ApiKey, error) {
 
@@ -220,6 +251,7 @@ func (account *Account) StockLoad() (err error) {
 	return err
 }
 
+
 // ### Account inner func Products
 func (account Account) ProductCreate(p *Product) error {
 	p.AccountID = account.ID
@@ -230,8 +262,6 @@ func (account *Account) ProductLoad() (err error) {
 	return err
 	//return db.Preload("Products").Preload("Products.Offers").First(&a).Error
 }
-
-
 
 
 // EAVAttributes

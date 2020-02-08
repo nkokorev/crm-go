@@ -10,7 +10,7 @@ type CrmSetting struct {
 	ID uint `json:"-"`
 
 	// Глобальные настройки
-	ApiEnabled bool `json:"apiEnabled" gorm:"default:true;not null"` // влючен ли API интерфейс
+	ApiEnabled bool `json:"apiEnabled" gorm:"default:true;not null"` // влючен ли API интерфейс для аккаунтов
 	AppUiApiEnabled bool `json:"appUiApiEnabled" gorm:"default:true;not null"` // Включен ли APP UI-API интерфейс (через https://app.ratuscrm.com/ui-api/)
 	UiApiEnabled bool `json:"uiApiEnabled" gorm:"default:true;not null"` // Включен ли публичный UI-API интерфейс (через https://ui.api.ratuscrm.com)
 

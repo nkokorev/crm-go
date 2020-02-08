@@ -449,7 +449,7 @@ func (user *User) DeleteAccount(a *Account) error {
 	}
 
 	// 2. Привязываем аккаунт к пользователю. Реально удаляем через месяц.
-	if err := a.Delete(); err != nil {
+	if err := a.SoftDelete(); err != nil {
 		return err
 	}
 
