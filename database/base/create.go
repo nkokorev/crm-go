@@ -24,13 +24,6 @@ func RefreshTables() {
 
 
 
-	// Таблица системных настроек
-	if false {
-		err = pool.Exec("create table  crm_settings (\n id SERIAL PRIMARY KEY UNIQUE,\n user_registration_allow BOOL NOT NULL DEFAULT TRUE, -- регистрация новых пользователей\n user_registration_invite_only BOOL NOT NULL DEFAULT TRUE, -- регистрация новых пользователей только по инвайтам\n \n created_at timestamp DEFAULT CURRENT_TIMESTAMP,\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP\n --deleted_at timestamp DEFAULT NULL\n);\n").Error
-		if err != nil {
-			log.Fatal("Cant create table crm_settings", err)
-		}
-	}
 	pool.CreateTable(&models.CrmSetting{})
 
 	// Таблица аккаунтов.
@@ -95,12 +88,6 @@ func RefreshTables() {
 	}
 
 
-	// склад (stock)
-	// интернет-магазин (store)
-	// витрина (store_view)
-	// карточка товара (product_card)
-
-
 	//// Таблица оферов (чуть шире, чем товарные предложения, т.к. может быть несколько продуктов (2 по цене 1, наборы))
 	err = pool.Exec("create table offers (\n  id SERIAL PRIMARY KEY UNIQUE,\n  account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  -- product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE, \n\n  name VARCHAR(255), -- метка товарного предложения (\"в подрочной упаковке\", \"в разломе\", ...)\n  price DECIMAL (20,2) CONSTRAINT positive_price CHECK (price > 0), -- 2 знака после запятой\n  discount DECIMAL (20,2) DEFAULT 0.0 CONSTRAINT positive_discount CHECK ( discount <= price ) -- 2 знака после запятой \n\n);\n\n").Error
 	if err != nil {
@@ -114,10 +101,14 @@ func RefreshTables() {
 	}
 
 	// Таблица APIKey
+	if false {
 	err = pool.Exec("create table api_keys (\n  token VARCHAR(255) PRIMARY KEY UNIQUE,\n  account_id int NOT NULL REFERENCES accounts (id) ON DELETE CASCADE ON UPDATE CASCADE,\n  name VARCHAR(255) default '',\n  status BOOLEAN NOT NULL DEFAULT TRUE,\n  created_at timestamp default NOW(),\n  updated_at timestamp default CURRENT_TIMESTAMP,\n    constraint uix_api_keys_token_account_id UNIQUE (token, account_id)\n     -- foreign key (account_id) references accounts(id) on delete cascade\n);\n\n").Error
 	if err != nil {
 		fmt.Println("Cant create table api_keys", err)
 	}
+	}
+	pool.CreateTable(&models.ApiKey{})
+	pool.Exec("ALTER TABLE api_keys \n    ADD CONSTRAINT api_keys_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\ncreate unique index uix_api_keys_token_account_id ON api_keys (token,account_id);")
 
 	// ##### EAV
 
@@ -258,7 +249,7 @@ func UploadTestData() {
 	}
 
 	// 3. Создаем API-ключ в аккаунте
-	_, err = account.CreateApiKey()
+	_, err = account.CreateApiKey(models.ApiKey{Name:"Api key for Postman"})
 	if err != nil {
 		log.Fatalf("Неудалось создать API ключ для аккаунта: %v, Error: %s", account, err)
 	}
@@ -267,6 +258,10 @@ func UploadTestData() {
 	if err := (&models.User{SignedAccountID:1, Username:"admin", Email:"kokorevn@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt:&timeNow}).Create(); err != nil {
 		log.Fatal("Неудалось создать admin'a ", err)
 	}
+
+
+
+
 
 	return
 

@@ -1,7 +1,7 @@
 package models
 
 import (
-	"fmt"
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
@@ -61,45 +61,44 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 
 func (account *Account) Reset() { account = &Account{} }
 
-// Создать аккаунт может только пользователь, который является клиентом аккаунта RatusCRM (ID == 1). Поэтому функция не публичная.
-func createAccount (input Account) (*Account, error) {
+func (account Account) create () (*Account, error) {
 
 	var err error
-	var account Account // returned var
+	var outAccount Account // returned var
 
-	if err := input.ValidateInputs(); err !=nil {
+	if err := account.ValidateInputs(); err !=nil {
 		return nil, err
 	}
 
 	// Создаем ключи для UI API
-	account.UiApiAesKey, err = utils.CreateAes128Key()
+	outAccount.UiApiAesKey, err = utils.CreateAes128Key()
 	if err != nil {
 		return nil, err
 	}
 
-	account.UiApiJwtKey =  utils.CreateHS256Key()
+	outAccount.UiApiJwtKey =  utils.CreateHS256Key()
 
 	// Копируем, то что можно использовать при создании
-	account.Name = input.Name
-	account.Website = input.Website
-	account.Type = input.Type
+	outAccount.Name = account.Name
+	outAccount.Website = account.Website
+	outAccount.Type = account.Type
 
-	account.ApiEnabled = input.ApiEnabled
+	outAccount.ApiEnabled = account.ApiEnabled
 
-	account.UiApiEnabled = input.UiApiEnabled
-	account.UiApiAesEnabled = input.UiApiAesEnabled
-	account.UiApiEnabledUserRegistration = input.UiApiEnabledUserRegistration
-	account.UiApiUserRegistrationInvitationOnly = input.UiApiUserRegistrationInvitationOnly
+	outAccount.UiApiEnabled = account.UiApiEnabled
+	outAccount.UiApiAesEnabled = account.UiApiAesEnabled
+	outAccount.UiApiEnabledUserRegistration = account.UiApiEnabledUserRegistration
+	outAccount.UiApiUserRegistrationInvitationOnly = account.UiApiUserRegistrationInvitationOnly
 
-	account.VisibleToClients = input.VisibleToClients
-	account.ClientsAreAllowedToLogin = input.ClientsAreAllowedToLogin
+	outAccount.VisibleToClients = account.VisibleToClients
+	outAccount.ClientsAreAllowedToLogin = account.ClientsAreAllowedToLogin
 
 	// Создание аккаунта
-	if err := db.Omit("ID").Create(&account).Error; err != nil {
+	if err := db.Omit("ID").Create(&outAccount).Error; err != nil {
 		return nil, err
 	}
 
-	return &account, nil
+	return &outAccount, nil
 }
 
 // чит функция для развертывания, т.к. нельзя создать аккаунт из-под несуществующего пользователя
@@ -110,22 +109,19 @@ func CreateMainAccount() (*Account, error) {
 		return nil, nil
 	}
 
-	mainAccount, err := createAccount(Account{
+	return (Account{
 		Name:"RatusCRM",
 		UiApiEnabled:false,
 		UiApiAesEnabled:true,
 		UiApiEnabledUserRegistration:false,
 		UiApiUserRegistrationInvitationOnly:false,
 		ApiEnabled: false,
-	})
-
-	return mainAccount, err
+	}).create()
 }
 
 // проверяем входящие данные для создания или обновления аккаунта и возвращаем описательную ошибку
 func (account Account) ValidateInputs() error {
 
-	//fmt.Println(account)
 	if len(account.Name) < 2 {
 		return utils.Error{Message:"Ошибки в заполнении формы", Errors: map[string]interface{}{"name":"Имя компании должно содержать минимум 2 символа"}}
 	}
@@ -135,7 +131,6 @@ func (account Account) ValidateInputs() error {
 	}
 
 	if len(account.Website) > 255 {
-		fmt.Println("Long website name",account)
 		return utils.Error{Message:"Ошибки в заполнении формы", Errors: map[string]interface{}{"website":"Слишком длинный url"}}
 	}
 
@@ -146,29 +141,61 @@ func (account Account) ValidateInputs() error {
 	return nil
 }
 
-func (account *Account) CreateToAccount () error {
-
-	// Верификация данных
-
-	// Создание аккаунта
-	if err := db.Create(account).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// осуществляет поиск по a.ID
-/*func GetAccount (id uint) (a *Account, err error) {
-	err = db.Model(&Account{}).First(&a, id).Error
-	return a, err
-}*/
-
 func GetAccount (id uint) (*Account, error) {
 	var account Account
 	err := db.Model(&Account{}).First(&account, id).Error
 	return &account, err
 }
+
+
+// ### API KEY ###
+
+func (account Account) CreateApiKey (input ApiKey) (*ApiKey, error) {
+	if account.ID < 1 {
+		return nil, utils.Error{Message:"Внутреняя ошибка платформы", Errors: map[string]interface{}{"apiKey":"Неудалось привязать ключ к аккаунте"}}
+	}
+	input.AccountID = account.ID
+	return input.create()
+}
+
+func (account Account) GetApiKey(token string) (*ApiKey, error) {
+	apiKey, err := GetApiKey(token)
+	if err != nil {
+		return nil, err
+	}
+
+	if apiKey.AccountID != account.ID {
+		return nil, errors.New("ApiKey не принадлежит аккаунту")
+	}
+
+	return apiKey, nil
+}
+
+func (account Account) DeleteApiKey(token string) error {
+
+	apiKey, err := account.GetApiKey(token)
+	if err != nil {
+		return err
+	}
+
+	return apiKey.delete()
+}
+
+func (account Account) UpdateApiKey(token string, input ApiKey) (*ApiKey, error) {
+	apiKey, err := account.GetApiKey(token)
+	if err != nil {
+		return nil, err
+	}
+
+	err = apiKey.update(input)
+
+	return apiKey,err
+
+}
+
+// ### Выше функции покрытые тестами ###
+
+
 
 func (account *Account) GetToAccount () error {
 	return db.First(account, account.ID).Error
@@ -219,26 +246,10 @@ func (account *Account) GetUsers () error {
 
 // ### Account inner func API (+UI) KEYS
 
-func (account Account) CreateApiKey() (*ApiKey, error) {
-
-	// 1. Привязываем к аккаунту
-	key := &ApiKey{AccountID:account.ID, Name:"Test api key", Status:true}
-
-	// 2. Создаем
-	if err := key.create(); err != nil {
-		return nil, err
-	}
-
-	return key, nil
-}
-
 func (account *Account) GetApiKeys() error {
 	return db.Preload("ApiKeys").First(&account).Error
 }
 
-func (account *Account) DeleteApiKey(key *ApiKey) error {
-	return key.delete()
-}
 
 
 // ### Stock functions

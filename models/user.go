@@ -416,10 +416,8 @@ func (user User) CreateAccount(input Account) (*Account,error) {
 
 	// Проверяем пользователя и его роль в RatusCRM.
 
-
-
 	// 1. Создаем аккаунт
-	a, err := createAccount(input)
+	a, err := input.create()
 	if err != nil {
 		return nil, err
 	}

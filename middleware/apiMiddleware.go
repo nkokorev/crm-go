@@ -65,7 +65,7 @@ func BearerAuthentication(next http.Handler) http.Handler {
 			return
 		}
 
-		if !key.Status {
+		if !key.Enabled {
 			resp := u.Message(false, "Auth token is disabled")
 			w.WriteHeader(http.StatusForbidden)
 			u.Respond(w, resp)

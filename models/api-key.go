@@ -1,71 +1,52 @@
 package models
 
 import (
-	"github.com/nkokorev/crm-go/utils"
 	"github.com/segmentio/ksuid"
 	"os"
 	"time"
 )
 
 type ApiKey struct {
-	Token string `json:"token"` // ID
-	AccountID uint `json:"accountId"` // кто создал его
-	Name string `json:"name"` // имя ключа
-	Status bool `json:"status"` // активен ли ключ
+	Token string `json:"token" gorm:"unique_index;not null;"` // ID
+	AccountID uint `json:"accountId" gorm:"index,not null"` // аккаунт-владелец ключа
+	Name string `json:"name"` // имя ключа "Для сайта", "Для CRM"
+	Enabled bool `json:"enabled"` // активен ли ключ
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
-
-	Account Account `json:"-"`
 }
 
-// ### CRUD FUNC ###
+func (apiKey ApiKey) create() (*ApiKey, error)  {
+	var outApiKey ApiKey
 
-// Создает новый ключ, генерирует token (первичный ключ)
-func (key *ApiKey) create () error {
+	outApiKey.AccountID = apiKey.AccountID
+	outApiKey.Name = apiKey.Name
+	outApiKey.Enabled = apiKey.Enabled
 
-	if key.AccountID == 0 {
-		return utils.Error{Message:"Ошибка при создании Api-ключа", Errors: map[string]interface{}{"apiKey":"Неудалось привязать ключ к аккаунту"}}
+	outApiKey.Token = ksuid.New().String()
+
+	if os.Getenv("APP_ENV") == "local" && apiKey.AccountID == 1 {
+		outApiKey.Token = "1ukyryxpfprxpy17i4ldlrz9kg3"
 	}
 
-	key.Token = ksuid.New().String()
+	err := db.Create(&outApiKey).Error
 
-	if os.Getenv("APP_ENV") == "local" && key.AccountID == 1 {
-		key.Token = "1ukyryxpfprxpy17i4ldlrz9kg3"
-	}
-
-	return db.Create(key).Error
+	return &outApiKey, err
 }
 
-// осуществляет поиск по Token
+func (apiKey ApiKey) delete () error {
+	return db.Model(ApiKey{}).Where("token = ?", apiKey.Token).Delete(apiKey).Error
+}
+
+// !!! В контексте аккаунта рекомендуется использовать account.GetApiKey() с проверкой AccountID
 func GetApiKey(token string) (*ApiKey, error) {
 	var key ApiKey
 	err := db.First(&key, "token = ?", token).Error
 	return &key, err
 }
 
-func GetApiKeyPreloadAccount(token string) (key *ApiKey, err error) {
-	err = db.Preload("Account").First(key, "token = ?", token).Error
-	return key, err
+func (apiKey *ApiKey) update(input ApiKey) error {
+	return db.Model(apiKey).Select("Name", "Enabled").Updates(&input).Error
 }
 
-// сохраняет все поля в модели, кроме id, token, account_id, deleted_at
-func (key *ApiKey) save () error {
-	return db.Model(ApiKey{}).Omit("token","account_id","deleted_at").Save(key).Find(key, "token = ?", key.Token).Error
-}
 
-// обновляет все схожие с интерфейсом поля, кроме id, token, deleted_at
-func (key *ApiKey) update (input interface{}) error {
-	return db.Model(ApiKey{}).Where("token = ?", key.Token).Omit("token","account_id","deleted_at").Update(input).Find(key, "token = ?", key.Token).Error
-}
-
-// удаляет пользователя по ID
-func (key *ApiKey) delete () error {
-	return db.Model(ApiKey{}).Where("token = ?", key.Token).Delete(key).Error
-}
-
-// ### Account func
-
-// Предзагружает аккаунт и делает поиск по ключам
-func (key *ApiKey) GetWithAccount() error {
-	return db.Preload("Account").First(&key, "token = ?", key.Token).Error
-}
+// ######## !!!! Все что выше покрыто тестами на прямую или косвено
