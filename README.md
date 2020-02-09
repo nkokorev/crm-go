@@ -43,8 +43,8 @@ DB Schema of account data:
 | `uiApiAesEnabled` | bool | true | Включение AES-128/CFB шифрования |
 | `uiApiAesKey` | string | `gen` | 16 символный UTF-8 ключ шифрования AES-128 |
 | `uiApiJwtKey` | string | `gen` | 32 символный UTF-8 Ключ подписи JWT/HS256 |
-| `uiApiEnabledUserRegistration` | bool | false | Разрешить регистрацию через UI-API |
-| `uiApiUserRegistrationInvitationOnly` | bool | false | Регистрация только по персональным приглашеним | 
+| `EnabledUserRegistration` | bool | false | Разрешить регистрацию новых пользователей |
+| `UserRegistrationInvitationOnly` | bool | false | Регистрация только по персональным приглашеним | 
 
 ## User interfaces
 

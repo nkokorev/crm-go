@@ -12,7 +12,7 @@ func TestAccount_ValidateInputs(t *testing.T) {
 		t.Fatal("Validate account without name")
 	}
 
-	account.Name = utils.RandStringBytes(42)
+	account.Name = utils.RandStringBytes(100)
 	if err := account.ValidateInputs(); err == nil {
 		t.Fatal("Validate account with very long name")
 	}
@@ -181,5 +181,57 @@ func TestAccount_UpdateApiKey(t *testing.T) {
 	}
 	if sKey.AccountID != account.ID {
 		t.Fatal("Удалось обновлением изменить AccountID у ApiKey")
+	}
+}
+
+func TestAccount_CreateUser(t *testing.T) {
+
+	// аккаунт с регистрацией по имени пользователя
+	accountByUsername, err := Account{Name:"Test account CreateUser Username"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer accountByUsername.HardDelete()
+
+	accountByEmail, err := Account{Name:"Test account for CreateUser by Username"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer accountByEmail.HardDelete()
+
+	accountByPhone, err := Account{Name:"Test account for CreateUser by Username"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer accountByPhone.HardDelete()
+
+	// todo дописать список тестов
+	testList := []struct {
+		account *Account
+		user User
+		expected bool
+		}{
+			{accountByUsername, User{Username:""}, false},
+			{accountByEmail, User{Email:"adnsls!@.ru"}, false},
+			{accountByPhone, User{MobilePhone:"adnsls!@.ru"}, false},
+		}
+
+
+	for i, _ := range testList {
+		user, err := testList[i].account.CreateUser(testList[i].user)
+
+		if !testList[i].expected && err == nil {
+			t.Fatalf("Создан пользователь, которого быть не должно : [%v] user: %v", i, user)
+		}
+
+		if testList[i].expected && err != nil {
+			t.Fatalf("Неудалось создать пользователя, который должен быть создан: [%v] user: %v", i, user)
+		}
+
+		// удаляем созданного пользователя
+		if err != nil && user != nil {
+			user.Delete()
+		}
+
 	}
 }

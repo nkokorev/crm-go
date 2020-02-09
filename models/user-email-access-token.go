@@ -15,7 +15,7 @@ type EmailAccessToken struct {
 	DestinationEmail string `json:"destinationEmail"` // куда отправлять email и для какого емейла был предназначен токен. Не может быть <null>, только целевые приглашения.
 	OwnerID 	uint `json:"ownerId"` // userID - создатель токена (может быть self)
 	NotificationCount uint `json:"notificationCount"` // число успешных уведомлений
-	NotificationAt time.Time `json:"notificationAt"` // время уведомления
+	NotificationAt time.Time `json:"notificationAt"` // время ПОСЛЕДНЕГО уведомления
 	CreatedAt time.Time `json:"createdAt"`
 }
 
@@ -31,20 +31,46 @@ var EmailTokenType = struct {
 }
 
 
+// проверяет время жизни токена
+func (eat EmailAccessToken) Expired() bool  {
+
+	var duration time.Duration
+	c := EmailTokenType
+
+	switch eat.ActionType {
+	case c.USER_EMAIL_INVITE_VERIFICATION:
+		duration = time.Hour * 48
+		break
+	case c.USER_EMAIL_PERSONAL_INVITE:
+		duration = time.Hour * 48
+		break
+	case c.USER_EMAIL_RESET_PASSWORD:
+		duration = time.Hour * 24
+		break
+	default:
+		duration = time.Hour * 3
+		break
+	}
+
+	return !time.Now().UTC().Add(-duration).Before(eat.CreatedAt)
+}
+
+
+// ### !!! все что выше покрыто тестами
 
 
 // ### CRUD function
-func (uat *EmailAccessToken) Create() error {
+func (eat *EmailAccessToken) Create() error {
 
-	if uat.OwnerID <= 0 {
+	if eat.OwnerID <= 0 {
 		return errors.New("Необходимо указать владельца токена")
 	}
 
-	if uat.DestinationEmail == "" {
+	if eat.DestinationEmail == "" {
 		return errors.New("Необходимо указать email получателя")
 	}
 
-	uat.Token = strings.ToLower(ksuid.New().String())
+	eat.Token = strings.ToLower(ksuid.New().String())
 
 	// todo debug
 	/*if uat.OwnerID == 4 {
@@ -52,74 +78,57 @@ func (uat *EmailAccessToken) Create() error {
 	}*/
 
 
-	return db.Create(uat).Error
+	return db.Create(eat).Error
 }
 
 // осуществляет поиск по token
-func (uat *EmailAccessToken) Get () error {
-	return db.First(uat,"token = ?", uat.Token).Error
+func GetEmailAccessToken(token string) (*EmailAccessToken, error) {
+	var eat EmailAccessToken
+	err := db.First(&eat,"token = ?", token).Error
+
+	return &eat, err
+}
+func (eat *EmailAccessToken) Get () error {
+	return db.First(eat,"token = ?", eat.Token).Error
 }
 
 // удаляет по token
-func (uat *EmailAccessToken) Delete () error {
-	return db.Model(ApiKey{}).Where("token = ?", uat.Token).Delete(uat).Error
+func (eat *EmailAccessToken) Delete () error {
+	return db.Model(ApiKey{}).Where("token = ?", eat.Token).Delete(eat).Error
 }
 
 // сохраняет все поля в модели, кроме id, deleted_at
-func (ueat *EmailAccessToken) Update (input interface{}) error {
+func (eat *EmailAccessToken) Update (input interface{}) error {
 	//return db.Model(EmailAccessToken{}).Where("token = ?", ueat.Token).Omit("created_at").Save(ueat).Find(ueat, "token = ?", ueat.Token).Error
-	return db.Model(EmailAccessToken{}).Where("token = ?", ueat.Token).Omit("created_at").Update(input).Error
+	return db.Model(EmailAccessToken{}).Where("token = ?", eat.Token).Omit("created_at").Update(input).Error
 }
 
 // ### Helpers FUNC
 
-// проверяет время жизни токена
-func (ueat EmailAccessToken) isExpired() bool  {
 
-	var duration time.Duration
-	c := EmailTokenType
-
-	switch ueat.ActionType {
-		case c.USER_EMAIL_INVITE_VERIFICATION:
-			duration = time.Hour * 48
-			break
-		case c.USER_EMAIL_PERSONAL_INVITE:
-			duration = time.Hour * 48
-			break
-		case c.USER_EMAIL_RESET_PASSWORD:
-			duration = time.Hour * 24
-			break
-		default:
-			duration = time.Hour * 3
-			break
-	}
-
-	return !time.Now().UTC().Add(-duration).Before(ueat.NotificationAt)
-
-}
 
 // ### CONFIRM FUNC ### ///
 
 // Верифицирует пользователя по токену и возвращает пользователя в случае успеха
-func (ueat *EmailAccessToken) UserEmailVerificationConfirm (user *User) error {
+func (eat *EmailAccessToken) UserEmailVerificationConfirm (user *User) error {
 
 	// 1. проверяем, есть ли такой токен
-	if err := ueat.Get(); err != nil {
+	if err := eat.Get(); err != nil {
 		return u.Error{Message:"Указанный проверочный код не существует"}
 	}
 
 	// 2. Проверяем тип токена (может быть любого типа верификаци)
-	if ueat.ActionType != EmailTokenType.USER_EMAIL_INVITE_VERIFICATION {
-		return errors.New("Не верный тип кода верификации")
+	if eat.ActionType != EmailTokenType.USER_EMAIL_INVITE_VERIFICATION {
+		return errors.New("Неверный тип кода верификации")
 	}
 
 	// 3. Проверяем время жизни token
-	if ueat.isExpired() {
+	if eat.Expired() {
 		return u.Error{Message:"Проверочный код устарел"}
 	}
 
 	// 4. Проверяем связанность кода и пользователя по owner_id = user_id AND destination_email = user_email.
-	if err := db.First(user, "id = ? AND email = ?", ueat.OwnerID, ueat.DestinationEmail).Error; err != nil || &user == nil {
+	if err := db.First(user, "id = ? AND email = ?", eat.OwnerID, eat.DestinationEmail).Error; err != nil || &user == nil {
 		return u.Error{Message:"Проверочный код предназначен для другого пользователя"}
 	}
 
@@ -127,7 +136,7 @@ func (ueat *EmailAccessToken) UserEmailVerificationConfirm (user *User) error {
 	if user.EmailVerifiedAt != nil {
 		// todo
 		//return nil
-		return ueat.Delete()
+		return eat.Delete()
 	}
 
 	// 6. Если все в порядке активируем учетную запись пользователя и сохраняем данные пользователя
@@ -139,30 +148,30 @@ func (ueat *EmailAccessToken) UserEmailVerificationConfirm (user *User) error {
 
 	// 7. Если все хорошо, возвращаем пользователя
 	//return nil
-	return ueat.Delete()
+	return eat.Delete()
 }
 
 // Проверяет токен и сбрасывает пароль пользователю
-func (ueat *EmailAccessToken) UserPasswordResetConfirm (user *User) error {
+func (eat *EmailAccessToken) UserPasswordResetConfirm (user *User) error {
 
 	// 1. проверяем, есть ли такой токен
-	if err := ueat.Get(); err != nil {
+	if err := eat.Get(); err != nil {
 		return u.Error{Message:"Указанный проверочный код не существует"}
 	}
 
 	// 2. Проверяем тип токена (может быть любого типа верификаци)
-	if ueat.ActionType != EmailTokenType.USER_EMAIL_RESET_PASSWORD {
+	if eat.ActionType != EmailTokenType.USER_EMAIL_RESET_PASSWORD {
 		//return errors.New("Не верный тип кода верификации")
-		return u.Error{Message:"Не верный тип токена верфикации"}
+		return u.Error{Message:"Неверный тип токена верфикации"}
 	}
 
 	// 3. Проверяем время жизни token
-	if ueat.isExpired() {
+	if eat.Expired() {
 		return u.Error{Message:"Проверочный код устарел"}
 	}
 
 	// 4. Проверяем связанность токена и пользователя по owner_id = user_id AND destination_email = user_email.
-	if err := db.First(user, "id = ? AND email = ?", ueat.OwnerID, ueat.DestinationEmail).Error; err != nil || &user == nil {
+	if err := db.First(user, "id = ? AND email = ?", eat.OwnerID, eat.DestinationEmail).Error; err != nil || &user == nil {
 		return u.Error{Message:"Проверочный код предназначен для другого пользователя"}
 	}
 
@@ -181,36 +190,36 @@ func (EmailAccessToken) UserDeletePasswordReset(user *User) {
 // ### Create TOKENS ###
 
 // Создает токен для инвайт-верификации
-func (ueat *EmailAccessToken) CreateInviteVerificationToken(user *User) error {
+func (eat *EmailAccessToken) CreateInviteVerificationToken(user *User) error {
 
 	// Надо понять, создавать новый или использовать существующий
-	if !db.First(ueat,"owner_id = ? AND destination_email = ? AND action_type = ?", user.ID, user.Email, EmailTokenType.USER_EMAIL_INVITE_VERIFICATION).RecordNotFound() {
+	if !db.First(eat,"owner_id = ? AND destination_email = ? AND action_type = ?", user.ID, user.Email, EmailTokenType.USER_EMAIL_INVITE_VERIFICATION).RecordNotFound() {
 		return nil
 	}
 
-	ueat.OwnerID = user.ID
-	ueat.DestinationEmail = user.Email
-	ueat.ActionType = EmailTokenType.USER_EMAIL_INVITE_VERIFICATION
-	ueat.NotificationCount = 0
+	eat.OwnerID = user.ID
+	eat.DestinationEmail = user.Email
+	eat.ActionType = EmailTokenType.USER_EMAIL_INVITE_VERIFICATION
+	eat.NotificationCount = 0
 
-	return ueat.Create()
+	return eat.Create()
 
 }
 
 // Создает токен для сброса пароля
-func (ueat *EmailAccessToken) CreateResetPasswordToken(user *User) error {
+func (eat *EmailAccessToken) CreateResetPasswordToken(user *User) error {
 
 	// Надо понять, создавать новый или использовать существующий
-	if !db.First(ueat,"owner_id = ? AND destination_email = ? AND action_type = ?", user.ID, user.Email, EmailTokenType.USER_EMAIL_RESET_PASSWORD).RecordNotFound() {
+	if !db.First(eat,"owner_id = ? AND destination_email = ? AND action_type = ?", user.ID, user.Email, EmailTokenType.USER_EMAIL_RESET_PASSWORD).RecordNotFound() {
 		return nil
 	}
 
-	ueat.OwnerID = user.ID
-	ueat.DestinationEmail = user.Email
-	ueat.ActionType = EmailTokenType.USER_EMAIL_RESET_PASSWORD
-	ueat.NotificationCount = 0
+	eat.OwnerID = user.ID
+	eat.DestinationEmail = user.Email
+	eat.ActionType = EmailTokenType.USER_EMAIL_RESET_PASSWORD
+	eat.NotificationCount = 0
 
-	return ueat.Create()
+	return eat.Create()
 
 }
 
@@ -218,10 +227,10 @@ func (ueat *EmailAccessToken) CreateResetPasswordToken(user *User) error {
 // ### Checking some state ###
 
 // проверяет существование инвайта
-func (ueat *EmailAccessToken) CheckInviteToken() error {
+func (eat *EmailAccessToken) CheckInviteToken() error {
 
 	// 1. Пробуем найти код приглашения
-	if err := db.First(ueat,"token = ? AND destination_email = ? AND action_type = 'invite-user'", ueat.Token, ueat.DestinationEmail).Error;err != nil {
+	if err := db.First(eat,"token = ? AND destination_email = ? AND action_type = 'invite-user'", eat.Token, eat.DestinationEmail).Error;err != nil {
 
 		if err == gorm.ErrRecordNotFound {
 			return errors.New("Код приглашения не найден")
@@ -231,7 +240,7 @@ func (ueat *EmailAccessToken) CheckInviteToken() error {
 	}
 
 	// 2. Проверяем время жизни token
-	if !time.Now().UTC().Add(-time.Hour * 72).Before(ueat.CreatedAt) {
+	if !time.Now().UTC().Add(-time.Hour * 72).Before(eat.CreatedAt) {
 		return errors.New("Код приглашения устарел")
 	}
 
@@ -239,9 +248,10 @@ func (ueat *EmailAccessToken) CheckInviteToken() error {
 }
 
 // проверяет инвайт для новых пользователей по ключу и емейлу
-func (ueat *EmailAccessToken) UseInviteToken(user *User) error {
+// todo чем хуже функция delete ?
+func (eat *EmailAccessToken) UseInviteToken(user *User) error {
 
-	if err := db.First(ueat,"token = ? AND destination_email = ? AND action_type = 'invite-user'", ueat.Token, ueat.DestinationEmail).Error;err != nil {
+	if err := db.First(eat,"token = ? AND destination_email = ? AND action_type = 'invite-user'", eat.Token, eat.DestinationEmail).Error;err != nil {
 
 		if err == gorm.ErrRecordNotFound {
 			return errors.New("Код приглашения не найден")
@@ -252,31 +262,31 @@ func (ueat *EmailAccessToken) UseInviteToken(user *User) error {
 	}
 
 	// 3. Проверяем время жизни token
-	if !time.Now().UTC().Add(-time.Hour * 72).Before(ueat.CreatedAt) {
+	if !time.Now().UTC().Add(-time.Hour * 72).Before(eat.CreatedAt) {
 		return errors.New("Код приглашения устарел")
 	}
 
-	return ueat.Delete()
+	return eat.Delete()
 }
 
 
 // ### Sending func
 
 // Универсальная функция по отсылке уведомления на почту
-func (ueat *EmailAccessToken) SendMail() error {
+func (eat *EmailAccessToken) SendMail() error {
 
 	// Проверяем все необходимые данные
-	if ueat.Token == "" {
+	if eat.Token == "" {
 		return errors.New("Отсутствует токен для отправки")
 	}
 
 	// Проверяем время отправки
-	if !ueat.NotificationAt.Add(time.Minute*3).Before( time.Now().UTC()) {
+	if !eat.NotificationAt.Add(time.Minute*3).Before( time.Now().UTC()) {
 		return u.Error{Message:"Подождите несколько минут, прежде чем повторить отправку"}
 	}
 
 	// Проверяем существование email'а - depricated (проверем во время отправки)
-	if err := u.ValidateEmailDeepHost(ueat.DestinationEmail); err != nil {
+	if err := u.ValidateEmailDeepHost(eat.DestinationEmail); err != nil {
 		return err
 	}
 
@@ -292,10 +302,10 @@ func (ueat *EmailAccessToken) SendMail() error {
 
 
 	// Обновляем время
-	ueat.NotificationAt = time.Now().UTC()
-	ueat.NotificationCount++
+	eat.NotificationAt = time.Now().UTC()
+	eat.NotificationCount++
 
-	if err := ueat.Update(ueat); err != nil {
+	if err := eat.Update(eat); err != nil {
 		return err
 	}
 

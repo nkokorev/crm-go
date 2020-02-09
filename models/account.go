@@ -25,8 +25,8 @@ type Account struct {
 	UiApiAesKey string `json:"uiApiAesKey" gorm:"type:varchar(16);default:null;"` // 128-битный ключ шифрования
 	UiApiJwtKey string `json:"uiApiJwtKey" gorm:"type:varchar(32);default:null;"` // 128-битный ключ шифрования
 
-	UiApiEnabledUserRegistration bool `json:"uiApiEnabledUserRegistration" gorm:"default:true;not null"` // Разрешить регистрацию через UI-API интерфейс
-	UiApiUserRegistrationInvitationOnly bool `json:"uiApiUserRegistrationInvitationOnly" gorm:"default:false;not null"` // Регистрация новых пользователей только по приглашению
+	EnabledUserRegistration bool `json:"EnabledUserRegistration" gorm:"default:true;not null"` // Разрешить регистрацию новых пользователей?
+	UserRegistrationInvitationOnly bool `json:"UserRegistrationInvitationOnly" gorm:"default:false;not null"` // Регистрация новых пользователей только по приглашению (в том числе и клиентов)
 
 	// настройки авторизации.
 	// Разделяется AppAuth и ApiAuth -
@@ -87,8 +87,8 @@ func (account Account) create () (*Account, error) {
 
 	outAccount.UiApiEnabled = account.UiApiEnabled
 	outAccount.UiApiAesEnabled = account.UiApiAesEnabled
-	outAccount.UiApiEnabledUserRegistration = account.UiApiEnabledUserRegistration
-	outAccount.UiApiUserRegistrationInvitationOnly = account.UiApiUserRegistrationInvitationOnly
+	outAccount.EnabledUserRegistration = account.EnabledUserRegistration
+	outAccount.UserRegistrationInvitationOnly = account.UserRegistrationInvitationOnly
 
 	outAccount.VisibleToClients = account.VisibleToClients
 	outAccount.ClientsAreAllowedToLogin = account.ClientsAreAllowedToLogin
@@ -113,8 +113,8 @@ func CreateMainAccount() (*Account, error) {
 		Name:"RatusCRM",
 		UiApiEnabled:false,
 		UiApiAesEnabled:true,
-		UiApiEnabledUserRegistration:false,
-		UiApiUserRegistrationInvitationOnly:false,
+		EnabledUserRegistration:false,
+		UserRegistrationInvitationOnly:false,
 		ApiEnabled: false,
 	}).create()
 }
@@ -126,8 +126,8 @@ func (account Account) ValidateInputs() error {
 		return utils.Error{Message:"Ошибки в заполнении формы", Errors: map[string]interface{}{"name":"Имя компании должно содержать минимум 2 символа"}}
 	}
 
-	if len(account.Name) > 32 { // 256:8 (UTF-8) - хз)
-		return utils.Error{Message:"Ошибки в заполнении формы", Errors: map[string]interface{}{"name":"Имя компании должно быть не более 32 символов"}}
+	if len(account.Name) > 42 { // 256:8 (UTF-8) - хз)
+		return utils.Error{Message:"Ошибки в заполнении формы", Errors: map[string]interface{}{"name":"Имя компании должно быть не более 42 символов"}}
 	}
 
 	if len(account.Website) > 255 {
@@ -193,7 +193,18 @@ func (account Account) UpdateApiKey(token string, input ApiKey) (*ApiKey, error)
 
 }
 
-// ### Выше функции покрытые тестами ###
+
+// #### User ####
+
+func (account Account) CreateUser(input User) (*User, error) {
+	input.SignedAccountID = account.ID
+	return input.create()
+}
+
+
+
+
+// !!! ### Выше функции покрытые тестами ###
 
 
 

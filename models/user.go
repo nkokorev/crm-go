@@ -6,7 +6,6 @@ import (
 	"github.com/jinzhu/gorm"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 	"os"
 	"regexp"
 	"unicode"
@@ -27,17 +26,7 @@ type User struct {
 	Surname 	string `json:"surname" gorm:"type:varchar(255)"`
 	Patronymic 	string `json:"patronymic" gorm:"type:varchar(255)"`
 
-
 	//Role 		string `json:"role" gorm:"type:varchar(255);default:'client'"`
-
-	//VAccounts postgres.Hstore `json:"v_accounts" gorm:"type:vector int[][]"`
-	//VAccounts postgres.Hstore `json:"v_accounts"  gorm:"default:null"`
-	//ArrayAccounts pq.Int64Array `json:"array_accounts" gorm:"type:varchar(100)[][]"`
-	//ArrayAccounts types.Slice `json:"array_accounts" gorm:"type:int[][]"`
-	//VectorOld pq.Int64Array `json:"array_accounts" gorm:"type:int[][]"`
-	//Access map[int]string `json:"array_accounts" gorm:"type:int[]varchar(255)"`
-	//ArrayAccounts pq.Int64Array `json:"array_accounts" gorm:"type:int[]"`
-	//Hstore postgres.Hstore
 
 	DefaultAccountID uint `json:"defaultAccountId" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
 	InvitedUserID uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
@@ -55,82 +44,46 @@ type User struct {
 	Accounts []Account `json:"-" gorm:"many2many:account_users;preload"`
 }
 
-// структура настроек
-type UserCreateOptions struct {
-	SendEmailVerification bool
-	InviteToken string
-}
+func (user User) create () (*User, error) {
 
-// ### CRUD FUNC ###
+	var outUser User
 
-// Создает нового пользователя с новым ID
-// Для единости интерфейса нельзя иметь обязательные переменные
-func (user *User) Create (v_opt... UserCreateOptions ) error {
-
-	var options UserCreateOptions
-
-	// 1. получаем настройки создания
-	if len(v_opt) > 0 {
-		options = v_opt[0]
-	} else {
-		options = UserCreateOptions{
-			SendEmailVerification: false,
-			InviteToken:           "",
-		}
-	}
-
-	// Загружаем настройки аккаунта
-	account, err := GetAccount(user.SignedAccountID)
-	if err != nil {
-		log.Fatal("Неудалось найти аккаунт: ",err)
-	}
-
-	// 3. Если необходимо проверим токен приглашения
-	eat := &EmailAccessToken{Token:options.InviteToken, DestinationEmail:user.Email}
-	if account.UiApiUserRegistrationInvitationOnly {
-		if err := eat.CheckInviteToken();err != nil {
-			return u.Error{Message:"Ошибки в заполнении формы", Errors: map[string]interface{}{"inviteToken":err.Error()}}
-		}
-	}
-
-	// 5. Проверим другие входящие данные пользователя
+	// Проверим другие входящие данные пользователя
 	if err := user.ValidateCreate(); err != nil {
-		return err
+		return nil, err
 	}
 
 	// 6. Создаем крипто пароль
 	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+
 	if err != nil {
-		return err
+		return nil, err
 	}
+
 	user.Password = string(password)
 
-	if err := db.Create(user).Error; err != nil {
-		return err
+	// копируем разрешеныне данные
+	outUser.SignedAccountID = user.SignedAccountID
+	outUser.Username = user.Username
+	outUser.Email = user.Email
+	outUser.MobilePhone = user.MobilePhone
+
+	outUser.Name = user.Name
+	outUser.Surname = user.Surname
+	outUser.Patronymic = user.Patronymic
+
+	outUser.DefaultAccountID = user.DefaultAccountID
+	outUser.InvitedUserID = user.InvitedUserID
+
+	if err := db.Create(&outUser).Error; err != nil {
+		return nil, err
 	}
 
-	// 7. Удаляем ключ приглашения
-	if account.UiApiUserRegistrationInvitationOnly {
-
-		user.InvitedUserID = eat.OwnerID
-		if err := db.Save(user).Error; err != nil {
-			return  err
-		}
-
-		if err := eat.UseInviteToken(user); err != nil {
-			return err
-		}
-	}
-
-	// 8. Проверяем надо ли отослать письмо
-	if options.SendEmailVerification {
-		if err := user.SendEmailVerification(); err !=nil {
-			return err
-		}
-	}
-
-	return nil
+	return &outUser, nil
 }
+
+
+
 
 // осуществляет поиск по ID
 func GetUserById (userId uint) (user *User, err error) {
@@ -323,7 +276,7 @@ func (user User) ValidateCreate() error {
 func (user *User) SendEmailVerification() error {
 
 	// 1. Создаем токен
-	emailToken := &EmailAccessToken{};
+	emailToken := &EmailAccessToken{}
 	if err := emailToken.CreateInviteVerificationToken(user); err != nil {
 		return err
 	}
@@ -476,7 +429,7 @@ func (user *User) AuthLogin(username, password string, onceLogin_opt... bool) (s
 
 	// если пользователь не найден temp.Username == nil, то пароль не будет искаться, т.к. он будет равен нулю (не с чем сравнивать)
 	if !user.ComparePassword(password) {
-		e.AddErrors("password", "Не верный пароль")
+		e.AddErrors("password", "Неверный пароль")
 	}
 	/*err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword { //Password does not match!

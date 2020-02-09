@@ -15,43 +15,77 @@ import (
  */
 func UserCreate(w http.ResponseWriter, r *http.Request) {
 
-	//time.Sleep(1 * time.Second)
-	//crmSettings := r.Context().Value("crmSettings").(models.CrmSetting)
+	accountId := r.Context().Value("accountId").(uint)
 
-	// 1. Подгрузим файл настроек, он тут будет кстати
-	/*crmSettings, err := models.CrmSetting{}.Get()
+	account, err := models.GetAccount(accountId)
 	if err != nil {
-		u.Respond(w, u.MessageError(nil, "Сервер не может обработать запрос")) // что это?)
+		u.Respond(w, u.MessageError(err, "Неудалось получить связанный аккаунт"))
 		return
-	}*/
+	}
 
-	// 2. Проверяем, что регистрация новых пользователей разрешена
-	// todo загружаем данные аккаунта
-	/*if !crmSettings.UserRegistrationAllow {
-		u.Respond(w, u.MessageError(nil, "Создание новых пользователей временно приостановлено")) // что это?)
+	if !account.EnabledUserRegistration {
+		u.Respond(w, u.MessageError(err, "Регистрация новых пользователей приостановлена"))
 		return
-	}*/
+	}
 
-	user := struct {
+	input := struct {
 		models.User
-		NativePwd string `json:"password"`
+		NativePwd string `json:"password"` // потому что пароль из User{} не читается т.к. json -
 		InviteToken string `json:"inviteToken"` //
 		EmailVerificated bool `json:"emailVerificated"` //default false
 	}{}
 
-
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	// Подставляем пароль для создания
-	user.Password = user.NativePwd
+	// сохраняем незашифрованный пароль в User
+	input.User.Password = input.NativePwd
 
-	// 3. Создаем пользователя
-	if err := user.Create(models.UserCreateOptions{SendEmailVerification:!user.EmailVerificated, InviteToken:user.InviteToken}); err != nil {
+	// глобальная переменная для регистрации по инвайтам
+	var emailToken *models.EmailAccessToken
+
+	if account.UserRegistrationInvitationOnly {
+
+		emailToken, err = models.GetEmailAccessToken(input.InviteToken)
+
+		if err != nil || emailToken == nil {
+			u.Respond(w, u.MessageError(u.Error{Message:"Неверный код приглашения", Errors: map[string]interface{}{"inviteToken":"Код приглашения не найден"}})) // что это?)
+			return
+		}
+
+		if emailToken.Expired() {
+
+			_ = emailToken.Delete()
+
+			u.Respond(w, u.MessageError(u.Error{Message:"Ваш код приглашения устарел", Errors: map[string]interface{}{"inviteToken":"Используйте другой код"}})) // что это?)
+			return
+		}
+
+		if input.Email != emailToken.DestinationEmail {
+			u.Respond(w, u.MessageError(u.Error{Message:"Неверный код приглашения", Errors: map[string]interface{}{"inviteToken":"Код приглашения не найден"}})) // что это?)
+			return
+		}
+
+		input.User.InvitedUserID = emailToken.OwnerID
+	}
+
+	user, err := account.CreateUser(input.User)
+	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось создать пользователя")) // что это?)
 		return
+	}
+
+	if user != nil && account.UserRegistrationInvitationOnly {
+		defer emailToken.Delete()
+	}
+
+	// todo: тут должна быть какая-то проверка на необходимость отправки письма приглашения
+	if ! input.EmailVerificated {
+		if err := user.SendEmailVerification(); err !=nil {
+			// ..
+		}
 	}
 
 	// 2. Добавляем пользователя в аккаунт
@@ -66,7 +100,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST user / User Create")
-	resp["user"] = user.User
+	resp["user"] = user
 	resp["token"] = token
 	u.Respond(w, resp)
 }

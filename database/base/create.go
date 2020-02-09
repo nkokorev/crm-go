@@ -255,9 +255,24 @@ func UploadTestData() {
 	}
 
 	// 2. Создаем пользователя admin в main аккаунте
-	if err := (&models.User{SignedAccountID:1, Username:"admin", Email:"kokorevn@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt:&timeNow}).Create(); err != nil {
+	adminUser, err := account.CreateUser(
+		models.User{
+			SignedAccountID:1,
+			Username:"admin",
+			Email:"kokorevn@gmail.com",
+			Password:"qwerty109#QW",
+			Name:"Никита",
+			Surname:"Кокорев",
+			Patronymic:"Романович",
+			EmailVerifiedAt:&timeNow},
+		)
+
+	if err != nil {
 		log.Fatal("Неудалось создать admin'a ", err)
 	}
+
+	fmt.Printf("Создан Админ: %v", adminUser)
+
 
 
 
@@ -266,12 +281,12 @@ func UploadTestData() {
 	return
 
 	// 1. Создаем пользователей
-	users := [] *models.User{
-		{SignedAccountID:1, Username:"admin", Email:"kokorevn@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt:&timeNow},
+	//users := [] *models.User{
+	//	{SignedAccountID:1, Username:"admin", Email:"kokorevn@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt:&timeNow},
 		//{SignedAccountID:1, Username:"nkokorev", Email:"mex388@gmail.com", Password:"qwerty109#QW", Name:"Никита", Surname:"Кокорев", Patronymic:"Романович", EmailVerifiedAt: &timeNow, InvitedUserID:1,},
 		//{SignedAccountID:1, Username:"vpopov", Email:"vp@357gr.ru", Password:"qwerty109#QW", Name:"Василий", Surname:"Попов", Patronymic:"Николаевич", EmailVerifiedAt: &timeNow, InvitedUserID:1, },
 		//{SignedAccountID:2, Username:"vpopov", Email:"vp@357gr.ru", Password:"qwerty109#QW", Name:"Василий", Surname:"Попов", Patronymic:"Николаевич", EmailVerifiedAt: &timeNow, InvitedUserID:1, },
-	}
+	//}
 
 	// 2. Аккаунты
 	accounts := [] *models.Account{
@@ -361,35 +376,7 @@ func UploadTestData() {
 	// Как будто они регистрируются через общий вход: [POST]: ui.api.ratuscrm.com/accounts/{account_id = 1}/users
 	// Нужна коллективная антиспам-защита. Храним большой список ip-адресов, с которых приходит спам. Возможно, проверяем HOST или еще что-то или может выдавать код.
 	
-	for i,_ := range users {
 
-		if err := users[i].Create(models.UserCreateOptions{SendEmailVerification:false}); err != nil {
-			log.Fatalf("Неудалось создать базового пользователя: %v, Error: %s", users[i], err)
-			return
-		}
-
-		/*if err := users[i].CreateAccount(accounts[i]); err != nil {
-			log.Fatalf("Неудалось создать аккаунт: %v, Error: %s", accounts[i], err)
-			return
-		}*/
-
-		if err := accounts[i].AppendUser(users[0]); err != nil {
-			log.Fatalf("Неудалось добавить админа в аккаунт: %v, Error: %s", accounts[i], err)
-			return
-		}
-
-		/*apiKey := &models.ApiKey{Name:"Key for site", Status:true}
-		if err := accounts[i].CreateApiToken(apiKey); err != nil {
-			log.Fatalf("Неудалось создать API ключ для аккаунта: %v, Error: %s", accounts[i], err)
-			return
-		}*/
-
-	}
-
-	if err := users[0].CreateInviteForUser("info@rus-marketing.ru", false); err != nil {
-		log.Fatalf("Неудалось создать инвайт для почтового адреса: %v, Error: %s", "info@rus-marketing.ru", err)
-		return
-	}
 
 	for _, r := range shops {
 		if err := r.Create(); err != nil {
