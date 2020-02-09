@@ -229,7 +229,7 @@ func TestAccount_CreateUser(t *testing.T) {
 		}
 
 		// удаляем созданного пользователя
-		if err != nil && user != nil {
+		if err == nil && user != nil {
 			user.Delete()
 		}
 

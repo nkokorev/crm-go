@@ -8,6 +8,23 @@ import (
 	"time"
 )
 
+type authMethod string
+
+const (
+	username  authMethod = "username"
+	email authMethod = "email"
+	phone authMethod = "phone"
+)
+
+/*func (p *authMethod) Scan(value interface{}) error {
+	*p = authMethod(value.([]byte))
+	return nil
+}
+
+func (p authMethod) Value() (driver.Value, error) {
+	return string(p), nil
+}*/
+
 type Account struct {
 	ID uint `json:"id"`
 
@@ -25,8 +42,13 @@ type Account struct {
 	UiApiAesKey string `json:"uiApiAesKey" gorm:"type:varchar(16);default:null;"` // 128-битный ключ шифрования
 	UiApiJwtKey string `json:"uiApiJwtKey" gorm:"type:varchar(32);default:null;"` // 128-битный ключ шифрования
 
+	// Тип авторизация
+	//AuthMethod authMethod `json:"authBy" gorm:"enum('username', 'email', 'mobilePhone');not null;default:'email';"`
+	AuthMethod authMethod `json:"authBy" sql:"type:auth_method;not null;default:'email'"`
 	EnabledUserRegistration bool `json:"EnabledUserRegistration" gorm:"default:true;not null"` // Разрешить регистрацию новых пользователей?
 	UserRegistrationInvitationOnly bool `json:"UserRegistrationInvitationOnly" gorm:"default:false;not null"` // Регистрация новых пользователей только по приглашению (в том числе и клиентов)
+
+
 
 	// настройки авторизации.
 	// Разделяется AppAuth и ApiAuth -
@@ -87,6 +109,8 @@ func (account Account) create () (*Account, error) {
 
 	outAccount.UiApiEnabled = account.UiApiEnabled
 	outAccount.UiApiAesEnabled = account.UiApiAesEnabled
+
+	outAccount.AuthMethod = account.AuthMethod
 	outAccount.EnabledUserRegistration = account.EnabledUserRegistration
 	outAccount.UserRegistrationInvitationOnly = account.UserRegistrationInvitationOnly
 
@@ -116,6 +140,7 @@ func CreateMainAccount() (*Account, error) {
 		EnabledUserRegistration:false,
 		UserRegistrationInvitationOnly:false,
 		ApiEnabled: false,
+		AuthMethod: username,
 	}).create()
 }
 
