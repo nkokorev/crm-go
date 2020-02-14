@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
-	"github.com/nkokorev/crm-go/database/base"
 	"github.com/nkokorev/crm-go/models"
 	"github.com/nkokorev/crm-go/routes"
 	"github.com/ttacon/libphonenumber"
@@ -36,9 +35,10 @@ func main() {
 	defer pool.Close()
 
 	// !!! запускаем миграции
-	base.RefreshTables()
+	//base.RefreshTables()
 
-	//examplePhone("+79251952295")
+	//examplePhone("89251952295")
+	//examplePhone("+380(44)234-68-88")
 
 	pool.DB().SetConnMaxLifetime(0)
 	pool.DB().SetMaxIdleConns(10)
@@ -94,10 +94,9 @@ func examplePhone(numToParse string) {
 
 
 	//fmt.Println("Num: ", num)
-	fmt.Println("National Number: ", *num.NationalNumber)
-	fmt.Println("National Number: ", num.GetPreferredDomesticCarrierCode())
-	fmt.Println("National Formatted: ", formattedNum)
 	fmt.Println("CountryCode: ", *num.CountryCode)
+	fmt.Println("National Number: ", *num.NationalNumber)
+	fmt.Println("National Formatted: ", formattedNum)
 	fmt.Println("RFC3966: ", libphonenumber.Format(num, libphonenumber.RFC3966))
 	fmt.Println("INTERNATIONAL: ", libphonenumber.Format(num, libphonenumber.INTERNATIONAL)) // наиболее популярный
 	fmt.Println("E164: ", libphonenumber.Format(num, libphonenumber.E164))

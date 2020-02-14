@@ -1,9 +1,5 @@
 package utils
 
-import (
-	"testing"
-)
-
 type emails struct {
 	email string
 	result bool
@@ -18,22 +14,3 @@ var tests = []emails{
 	{ "no-user@rus-marketing.ru", false, false }, // такого пользователя нет
 }
 
-func TestVerifyEmail(t *testing.T) {
-	for _, pair := range tests {
-		err := VerifyEmail(pair.email, true)
-
-		// обходим тесты, которые требуют http соединения
-		if ! pair.http_dev {
-			break
-		}
-
-		if pair.result != (err == nil) {
-			t.Error(
-				"For", pair.email,
-				"expected", pair.result,
-				"got", ( !pair.result),
-				"Error: ", err,
-			)
-		}
-	}
-}

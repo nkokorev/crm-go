@@ -6,10 +6,7 @@ import (
 	"github.com/jinzhu/gorm"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
-	"os"
-	"regexp"
-	"unicode"
-
+	"strings"
 	"time"
 )
 
@@ -19,12 +16,13 @@ type User struct {
 	
 	Username 	string `json:"username" gorm:"type:varchar(255);unique_index;default:null;"`
 	Email 		string `json:"email" gorm:"type:varchar(255);unique_index;default:null;"`
-	MobilePhone	string `json:"mobilePhone" gorm:"type:varchar(255);unique_index;default:null;"` // нужно проработать формат данных
+	PhoneRegion string `json:"phoneRegion" gorm:"type:varchar(3);not null;default:'RU';"` // нужно проработать формат данных
+	Phone		string `json:"phone" gorm:"type:varchar(32);unique_index;default:null;"` // нужно проработать формат данных
 	Password 	string `json:"-" gorm:"type:varchar(255);default:null;"` // json:"-"
 
-	Name 		string `json:"name" gorm:"type:varchar(255)"`
-	Surname 	string `json:"surname" gorm:"type:varchar(255)"`
-	Patronymic 	string `json:"patronymic" gorm:"type:varchar(255)"`
+	Name 		string `json:"name" gorm:"type:varchar(64)"`
+	Surname 	string `json:"surname" gorm:"type:varchar(64)"`
+	Patronymic 	string `json:"patronymic" gorm:"type:varchar(64)"`
 
 	//Role 		string `json:"role" gorm:"type:varchar(255);default:'client'"`
 
@@ -47,26 +45,29 @@ type User struct {
 func (user User) create () (*User, error) {
 
 	var outUser User
+	var err error
 
-	// Проверим другие входящие данные пользователя
+	// !!! Проверка существования такого же пользователя для склейки - на строне аккаунта / контроллера !!!
+	// !!! Проверка обязательных полей для конкретных настроек аккаунта на стороне аккаунта / контроллера !!!
 	if err := user.ValidateCreate(); err != nil {
 		return nil, err
 	}
 
-	// 6. Создаем крипто пароль
+	// Теперь создаем крипто пароль
 	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-
 	if err != nil {
 		return nil, err
 	}
-
 	user.Password = string(password)
 
 	// копируем разрешеныне данные
+
 	outUser.SignedAccountID = user.SignedAccountID
+
 	outUser.Username = user.Username
-	outUser.Email = user.Email
-	outUser.MobilePhone = user.MobilePhone
+	outUser.Email = strings.ToLower(user.Email)
+	outUser.PhoneRegion = user.PhoneRegion
+	outUser.Phone = user.Phone
 
 	outUser.Name = user.Name
 	outUser.Surname = user.Surname
@@ -82,8 +83,36 @@ func (user User) create () (*User, error) {
 	return &outUser, nil
 }
 
+// todo неплохо бы тест ей написать
+func (user *User) update (input User) error {
 
+	// выбираем те поля, что можно обновить
+	return db.Model(user).Where("id = ?", user.ID).
+		Select("Username", "Email", "PhoneRegion", "Phone", "Name", "Surname", "Patronymic", "DefaultAccountID").
+		Update(input).First(user).Error
+}
 
+func (user User) hardDelete () error {
+	return db.Model(&User{}).Unscoped().Model(User{}).Where("id = ?", user.ID).Delete(user).Error
+}
+
+func (user User) softDelete () error {
+	return db.Model(&User{}).Where("id = ?", user.ID).Delete(user).Error
+}
+
+func getUserById(userId uint) (*User,error) {
+	user := User{}
+	err := db.Model(&User{}).First(&user, userId).Error
+	return &user, err
+}
+
+func getUnscopedUserById(userId uint) (*User,error) {
+	user := User{}
+	err := db.Model(&User{}).Unscoped().First(&user, userId).Error
+	return &user, err
+}
+
+// Все что выше покрыто тестами (прямым и косвенными)
 
 // осуществляет поиск по ID
 func GetUserById (userId uint) (user *User, err error) {
@@ -125,9 +154,7 @@ func (user *User) Update (input interface{}) error {
 }
 
 // удаляет пользователя по ID
-func (user *User) Delete () error {
-	return db.Model(User{}).Where("id = ?", user.ID).Delete(user).Error
-}
+
 
 
 // ### HELPERS FUNC ###
@@ -146,124 +173,62 @@ func (User) ExistUsername(username string) bool {
 }
 
 
-// ### Validate & Verify FUNC ###
-
-func (User) VerifyPassword(pwd string) error {
-
-	if len([]rune(pwd)) == 0 {
-		return errors.New("Поле необходимо заполнить")
-	}
-	if len([]rune(pwd)) < 6 {
-		return errors.New("Слишком короткий пароль")
-	}
-
-	if len([]rune(pwd)) > 25 {
-		return errors.New("Слишком длинный пароль")
-	}
-
-	letters := 0
-	var number, upper, special bool
-	for _, c := range pwd {
-		switch {
-		case unicode.IsNumber(c):
-			number = true
-		case unicode.IsUpper(c):
-			upper = true
-			letters++
-		case unicode.IsPunct(c) || unicode.IsSymbol(c):
-			special = true
-		case unicode.IsLetter(c) || c == ' ':
-			letters++
-		default:
-			//return false, false, false, false
-		}
-	}
-
-	if ! (number && upper && special && letters >= 5) {
-		return errors.New("Слишком простой пароль: проверьте наличие обязательных символов.")
-	}
-
-	return nil
-}
-
-// проверяет имя пользователя на соответствие правилам. Не проверяет уникальность
-func (User) VerifyUsername(username string) error {
-
-	if len(username) == 0 {
-		return errors.New("Поле необходимо заполнить")
-	}
-	if len(username) < 3 {
-		return errors.New("Имя пользователя слишком короткое")
-	}
-	if len(username) > 25 || len([]rune(username)) > 25 {
-		return errors.New("Имя пользователя слишком длинное")
-	}
-
-	var rxUsername = regexp.MustCompile("^[a-zA-Z0-9,\\-_]+$")
-
-	if !rxUsername.MatchString(username) {
-		return errors.New("Используйте только a-z,A-Z,0-9 а также символ -")
-	}
-
-	if (User{}).ExistUsername(username) {
-		return errors.New("Данный username уже используется")
-	}
-
-	return nil
-}
-
-// Проверка email для нового пользователя
-func (User) VerifyEmail(email string) error {
-
-	if err := u.VerifyEmail(email, !(os.Getenv("http_dev") == "true") ); err != nil {
-		return err
-	}
-
-	if (User{}).ExistEmail(email) {
-		return errors.New("Данный email-адрес уже используется")
-	}
-
-	return nil
-}
-
-// Проверка входящих полей
+// Проверка НЕ нулевых входящих полей для СОЗДАНИЯ пользователя
 func (user User) ValidateCreate() error {
 
 	var e u.Error
+	var username, email, phone bool
 
-	// 1. Проверка email
-	if err := user.VerifyEmail(user.Email); err != nil {
-		e.AddErrors("email", err.Error())
-		e.Message = "Проверьте правильность заполнения формы"
-		return e
+	// 1. Проверка email отдельной функцией
+	if len(user.Email) > 0 {
+		email = true
+
+		if err := u.EmailValidation(user.Email); err != nil {
+			return u.Error{Message:"Проверьте правильность заполнения формы", Errors: map[string]interface{}{"email":err.Error()}}
+		}
 	}
 
 	// 2. Проверка username пользователя
-	if err := user.VerifyUsername(user.Username); err != nil {
-		e.AddErrors("username", err.Error())
-		e.Message = "Проверьте правильность заполнения формы"
-		return e
+	if len(user.Username) > 0 {
+		username = true
+		if err := u.VerifyUsername(user.Username); err != nil {
+			return u.Error{Message:"Проверьте правильность заполнения формы", Errors: map[string]interface{}{"username" : err.Error()}}
+		}
 	}
 
-	// 3. Проверка password
-	if err := user.VerifyPassword(user.Password); err != nil {
-		e.AddErrors("password", err.Error())
-		e.Message = "Проверьте правильность заполнения формы"
-		return e
+	// 3. Проверка телефона
+	if len(user.Phone) > 0 {
+		phone = true
+		if err := u.VerifyPhone(user.Phone, user.PhoneRegion); err != nil {
+			return u.Error{Message:"Не верный формат телефона",Errors: map[string]interface{}{"phone" : err.Error()}}
+		}
 	}
 
-	// 4. Проверка дополнительных полей на длину
-	if len([]rune(user.Name)) > 25 {
-		e.AddErrors("name", "Поле слишком длинное" )
-	}
-	if len([]rune(user.Surname)) > 25 {
-		e.AddErrors("surname", "Поле слишком длинное")
-	}
-	if len([]rune(user.Patronymic)) > 25 {
-		e.AddErrors("patronymic", "Поле слишком длинное" )
+	// 4. Проверка на одно из трех
+	if !(username || email || phone ) {
+		return u.Error{Message:"Отсутствуют обязательные поля", Errors: map[string]interface{}{"username":"Необходимо заполнить поле", "email":"Необходимо заполнить поле", "mobilePhone":"Необходимо заполнить поле"}}
 	}
 
-	// проверка итоговых ошибок
+	// 4. Проверка password
+	if len(user.Password) > 0 {
+		if err := u.VerifyPassword(user.Password); err != nil {
+			return u.Error{Message:"Проверьте правильность заполнения формы", Errors: map[string]interface{}{"password" : err.Error()}}
+		}
+	}
+
+
+	// 5. Проверка дополнительных полей на длину
+	if len([]rune(user.Name)) > 64 {
+		e.AddErrors("name", "Имя слишком длинное" )
+	}
+	if len([]rune(user.Surname)) > 64 {
+		e.AddErrors("surname", "Фамилия слишком длинная")
+	}
+	if len([]rune(user.Patronymic)) > 64 {
+		e.AddErrors("patronymic", "Отчетство слишком длинное" )
+	}
+
+	// Чекаем мелкие ошибки
 	if e.HasErrors() {
 		e.Message = "Проверьте правильность заполнения формы"
 		return e

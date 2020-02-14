@@ -56,7 +56,7 @@ func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
 
 	accountID := r.Context().Value("account_id").(uint)
 
-	account, err := models.GetAccount(accountID);
+	account, err := models.GetAccount(accountID)
 	if err !=nil {
 		u.Respond(w, u.MessageError(err, "Неудалось найти аккаунт")) // вообще тут нужен релогин
 		return

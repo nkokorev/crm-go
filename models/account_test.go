@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/nkokorev/crm-go/utils"
+	"strings"
 	"testing"
 )
 
@@ -187,51 +188,229 @@ func TestAccount_UpdateApiKey(t *testing.T) {
 func TestAccount_CreateUser(t *testing.T) {
 
 	// аккаунт с регистрацией по имени пользователя
-	accountByUsername, err := Account{Name:"Test account CreateUser Username"}.create()
+	account, err := Account{Name:"Test account CreateUser Username"}.create()
 	if err != nil {
 		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
 	}
-	defer accountByUsername.HardDelete()
-
-	accountByEmail, err := Account{Name:"Test account for CreateUser by Username"}.create()
-	if err != nil {
-		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
-	}
-	defer accountByEmail.HardDelete()
-
-	accountByPhone, err := Account{Name:"Test account for CreateUser by Username"}.create()
-	if err != nil {
-		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
-	}
-	defer accountByPhone.HardDelete()
+	defer account.HardDelete()
 
 	// todo дописать список тестов
 	testList := []struct {
 		account *Account
 		user User
 		expected bool
+		description string
 		}{
-			{accountByUsername, User{Username:""}, false},
-			{accountByEmail, User{Email:"adnsls!@.ru"}, false},
-			{accountByPhone, User{MobilePhone:"adnsls!@.ru"}, false},
+			{account, User{Username:"", Email:"", Phone:""}, false, "Хотя бы один из определяющих полей должен быть"},
+			{account, User{Username:"TestUser 1", Email:"adnsls!@.ru"}, false, "Не корректный email"},
+			{account, User{Username:"TestUser 1", Phone:"5456a45355"}, false, "Не корректный телефон"},
 		}
 
 
-	for i, _ := range testList {
-		user, err := testList[i].account.CreateUser(testList[i].user)
+	for i, v := range testList {
+		user, err := v.account.CreateUser(v.user)
 
-		if !testList[i].expected && err == nil {
+		if v.expected == false && err == nil {
 			t.Fatalf("Создан пользователь, которого быть не должно : [%v] user: %v", i, user)
 		}
 
-		if testList[i].expected && err != nil {
+		if v.expected == true && err != nil {
 			t.Fatalf("Неудалось создать пользователя, который должен быть создан: [%v] user: %v", i, user)
 		}
 
 		// удаляем созданного пользователя
 		if err == nil && user != nil {
-			user.Delete()
+			user.hardDelete()
 		}
 
 	}
+}
+
+func TestAccount_GetUserById(t *testing.T) {
+	account, err := Account{Name:"TestAccount_GetUserById"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer account.HardDelete()
+
+	user, err := account.CreateUser(User{Username:"TestUser"})
+	if err!=nil {
+		t.Fatalf("Неудалось создать пользователя %v", err)
+	}
+	defer user.hardDelete()
+
+	userF, err := account.GetUserById(user.ID)
+	if err != nil {
+		t.Fatalf("Неудалось найти пользователя, %v", err)
+	}
+
+	if userF.ID != user.ID || userF.ID == 0 {
+		t.Fatalf("Ошибка: пользователь найден не правильно!")
+	}
+
+}
+
+func TestAccount_GetUserByUsername(t *testing.T) {
+	account, err := Account{Name:"TestAccount_GetUserById"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer account.HardDelete()
+
+	user, err := account.CreateUser(User{Username: utils.RandStringBytes(10)})
+	if err!=nil {
+		t.Fatalf("Неудалось создать пользователя %v", err)
+	}
+	defer user.hardDelete()
+
+	fUser, err := account.GetUserByUsername(user.Username)
+	if err != nil {
+		t.Fatalf("Неудалось найти пользователя, %v", err)
+	}
+
+	if fUser.ID != user.ID || fUser.ID == 0 || fUser.Username != user.Username {
+		t.Fatalf("Ошибка: пользователь найден не правильно!")
+	}
+
+}
+
+func TestAccount_GetUserByEmail(t *testing.T) {
+	account, err := Account{Name:"TestAccount_GetUserById"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer account.HardDelete()
+
+	user, err := account.CreateUser(User{Email: strings.ToLower(utils.RandStringBytes(5)) + "@rus-marketing.com"})
+	if err!=nil {
+		t.Fatalf("Неудалось создать пользователя %v", err)
+	}
+	defer user.hardDelete()
+
+	fUser, err := account.GetUserByEmail(user.Email)
+	if err != nil {
+		t.Fatalf("Неудалось найти пользователя, %v", err)
+	}
+
+	if fUser.ID != user.ID || fUser.ID == 0 || fUser.Email != user.Email {
+		t.Fatalf("Ошибка: пользователь найден не правильно!")
+	}
+
+}
+
+func TestAccount_GetUserByPhone(t *testing.T) {
+	account, err := Account{Name:"TestAccount_GetUserByPhone"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer account.HardDelete()
+
+	user, err := account.CreateUser(User{Phone: "88251001212"})
+	if err!=nil {
+		t.Fatalf("Неудалось создать пользователя %v", err)
+	}
+	defer user.hardDelete()
+
+	fUser, err := account.GetUserByPhone(user.Phone, "")
+	if err != nil {
+		t.Fatalf("Неудалось найти пользователя, %v", err)
+	}
+
+	if fUser.ID != user.ID || fUser.ID == 0 || fUser.Phone != user.Phone {
+		t.Fatalf("Ошибка: пользователь найден не правильно!")
+	}
+
+}
+
+func TestAccount_CheckUserInputRequiredFields(t *testing.T) {
+
+	testList := []struct {
+		account Account
+		user User
+		expected bool
+		description string
+	}{
+		{
+			Account{UiApiUserRegistrationRequiredFields: []string{"username","email","phone"}},
+			User{Username:"", Email:"", Phone:""},
+			false,
+			"Требуемые поля - пустые",
+		},
+		{
+			Account{UiApiUserRegistrationRequiredFields: []string{"email","username"}},
+			User{Username:"TestUser 1", Email:"mail@example.com"},
+			true,
+			"Формально поля есть",
+		},
+		{
+				Account{UiApiUserRegistrationRequiredFields: []string{"name","phone"}},
+				User{Email:"kokorevn@gmail.com", Name:"Никита"},
+				false,
+				"Нет поля с телефоном",
+		},
+		{
+				Account{UiApiUserRegistrationRequiredFields: []string{"name","phone","username"}},
+				User{Username:"",Phone:"+79251952295", Name:"Никита"},
+				false,
+				"Нет поля с телефоном",
+		},
+	}
+
+	for i, v := range testList {
+		err := v.account.CheckUserInputRequiredFields(&v.user)
+
+		// если прошел проверку
+		if v.expected == true && err != nil {
+			t.Fatalf("Проверка провалена, а должна была пройти:\nПользователь %v : \nОжидалось: %v \n user: %v \nТребуемые поля: %v", i, v.expected, v.user, v.account.UiApiUserRegistrationRequiredFields)
+		}
+
+		if v.expected == false && err == nil {
+			t.Fatalf("Проверка прошла успешно, но должна быть провалена:\nПользователь %v : \nОжидалось: %v \n user: %v \nТребуемые поля: %v", i, v.expected, v.user, v.account.UiApiUserRegistrationRequiredFields)
+		}
+
+	}
+
+}
+
+
+func BenchmarkGetAccountByHash(b *testing.B) {
+	// создаем много аккаунтов
+	return
+	/*runAccounts := 50000
+	for i:=0;i < runAccounts;i++ {
+		_, err := Account{Name:"TestAccount"}.create()
+		if err != nil {
+			b.Fatalf("Неудалось создать акаунт, %v", err)
+		}
+		//defer account.HardDelete()
+	}
+	return*/
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		acc, err := GetAccountByHash("arfjdlafkl")
+		if err != nil || acc == nil {
+			b.Fatalf("Неудалось найти аккаунт: %v", err)
+		}
+	}
+
+	b.StopTimer()
+
+}
+
+func BenchmarkGetAccount(b *testing.B) {
+
+	return
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		acc, err := GetAccount(41047)
+		if err != nil || acc == nil {
+			b.Fatalf("Неудалось найти аккаунт: %v", err)
+		}
+	}
+
+	b.StopTimer()
+
 }

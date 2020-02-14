@@ -27,38 +27,60 @@ func Handlers() *mux.Router {
 	//rBase := mux.NewRouter().StrictSlash(false)
 	rBase := mux.NewRouter().StrictSlash(true)
 
-	// монтируем все три точки входа для API
+	// ### Монтируем все три точки входа для API ###
 	rApi := rBase.Host("api." + crmHost).Subrouter() // api.ratuscrm.com
 	rApp := rBase.Host("app." + crmHost).PathPrefix("/ui-api").Subrouter() // app.ratuscrm.com/ui-api
 	rUiApi := rBase.Host("ui.api." + crmHost).Subrouter() // ui.api.ratuscrm.com
 
-	// Функции проверки роутов API
-	rApi.HandleFunc("/", controllers.CheckApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
-	rApp.HandleFunc("/", controllers.CheckAppUiApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions) // +
-	rUiApi.HandleFunc("/", controllers.CheckUiApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
+	// Хелпер-функции проверки роутов API
 
-	// перемещаем точку монтирования для ui/api интерфейсов + отсекаем функции проверки роутов
+
+
+
+
+	// ### Перемещаем точку монтирования для ui/api интерфейсов + отсекаем функции проверки роутов ###
+
 	rApi = rApi.PathPrefix("").Subrouter()
 	rApp = rApp.PathPrefix("").Subrouter()
-	rUiApi = rUiApi.PathPrefix("/accounts/{accountId:[0-9]+}").Subrouter()
+	//rUiApi = rUiApi.PathPrefix("/accounts/{accountId:[0-9]+}").Subrouter()
+	rUiApi = rUiApi.PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter()
 
 	// Дополнительные псевдо-точки для навешивания middleware
 	rAppAuthUser := rApp.PathPrefix("").Subrouter()
 	rAppAuthFull := rApp.PathPrefix("").Subrouter()
 	rUiApiAuthFull := rUiApi.PathPrefix("").Subrouter()
 
-	// Подключаем middleware
-	rApi.Use(middleware.ApiEnabled, middleware.BearerAuthentication)
 
-	rApp.Use(middleware.AppUiApiEnabled)
-	rAppAuthUser.Use(middleware.JwtUserAuthentication)
-	rAppAuthFull.Use(middleware.JwtFullAuthentication)
+	// #### Подключаем Middleware ####
+
+/**
+	middleware.CheckApiStatus - проверяет статус API для всех аккаунтов
+	middleware.CheckAppUiApiStatus - проверяет статус App UI/API в настройках GUI RatusCRM
+	middleware.CheckUiApiStatus - проверяет статус Public UI/API для всех аккаунтов
+
+	middleware.BearerAuthentication - читает с проверкой JWT, проверяет статус API в аккаунте. Дополняет контекст account/accountId
+	middleware.ContextMuxVarAccount - дополняет контекст account/accountId по урлу в {accountHashId}
+	middleware.ContextMainAccount - устанавливает контекст главного аккаунта account/accountId (RatusCRM)
+
+	middleware.JwtUserAuthentication - проверяет JWT и устанавливает в контекст userId
+	middleware.JwtFullAuthentication - проверяет JWT и устанавливает в контекст userId, accountId и account
+*/
 
 
-	rUiApi.Use(middleware.UiApiEnabled,middleware.CheckAccountId, middleware.CheckUiApiEnabled)
-	//rUiApiAuthFull.Use(middleware.CorsAccessControl, middleware.CheckAccountId, middleware.JwtFullAuthentication)
-	rUiApiAuthFull.Use(middleware.CheckAccountId, middleware.CheckUiApiEnabled)
+	// Все запросы API имеют в контексте accountId, account. У них нет userId.
+	rApi.Use(			middleware.CheckApiStatus, 			middleware.BearerAuthentication)
 
+	// Все запросы App UI/API имеют в контексте accountId, account. Могут иметь userId и userId + accountId + account
+	rApp.Use(			middleware.CheckAppUiApiStatus, middleware.ContextMainAccount)
+	rAppAuthUser.Use(	middleware.CheckAppUiApiStatus, middleware.ContextMainAccount, middleware.JwtUserAuthentication) // set userId
+	rAppAuthFull.Use(	middleware.CheckAppUiApiStatus,	middleware.JwtFullAuthentication) // set userId,accountId,account
+
+	// Через UI/API запросы всегда идут в контексте аккаунта
+	rUiApi.Use(			middleware.CheckUiApiStatus,	middleware.ContextMuxVarAccount)
+	rUiApiAuthFull.Use(	middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccount, middleware.JwtFullAuthentication) // set userId,accountId,account
+
+
+	// ### Передаем запросы в обработку ###
 	ApiRoutes(rApi)
 	AppRoutes(rApp, rAppAuthUser, rAppAuthFull)
 	UiApiRoutes(rUiApi, rUiApiAuthFull)
@@ -77,7 +99,10 @@ var UserRoutes = func (rBase, rUser, r_acc, r_full *mux.Router) {
 	// hidden: code for auth: account_name: <>
 	rBase.HandleFunc("/auth", controllers.UserAuthorization).Methods(http.MethodPost, http.MethodOptions)
 
-	rBase.HandleFunc("", controllers.UserCreate).Methods(http.MethodPost, http.MethodOptions)
+	// Три способа регистрации
+	rBase.HandleFunc("sign-up", controllers.UserSignUp).Methods(http.MethodPost, http.MethodOptions) // проверяет UiApiUserRegistrationRequiredFields
+
+	rBase.HandleFunc("", controllers.UserRegistration).Methods(http.MethodPost, http.MethodOptions) // deprecated
 	rUser.HandleFunc("", controllers.UserGetProfile).Methods(http.MethodGet, http.MethodOptions)
 
 	rBase.HandleFunc("/email-verification", controllers.UserEmailVerificationConfirm).Methods(http.MethodPost, http.MethodOptions)

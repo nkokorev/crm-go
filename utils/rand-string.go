@@ -9,12 +9,13 @@ import (
 )
 
 //const letterBytes = "1234567890abcdefghijklmnopqrstuvwxyz"
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const letterBytesChar = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const letterBytesNum = "abcdefghijklmnopqrstuvwxyz1234567890"
 const LENGTH_HASH_ID  = 8
 
 
 func RandStringBytes(n int) string {
-	return StringWithCharset(n, letterBytes)
+	return StringWithCharset(n, letterBytesNum)
 }
 
 func StringWithCharset(length int, charset string) string {
@@ -30,9 +31,15 @@ func StringWithCharset(length int, charset string) string {
 }
 
 
-func RandStringBytesMaskImprSrcUnsafe(n int) string {
-	var src = rand.NewSource((time.Now().Add(time.Minute*268)).UnixNano())
+func RandStringBytesMaskImprSrcUnsafe(n int, withNum bool) string {
 
+	letterBytes := letterBytesChar
+
+	if withNum {
+		letterBytes = letterBytesNum
+	}
+
+	var src = rand.NewSource((time.Now().Add(time.Minute*268)).UnixNano())
 
 	const (
 		letterIdxBits = 6                    // 6 bits to represent a letter index
@@ -59,7 +66,7 @@ func RandStringBytesMaskImprSrcUnsafe(n int) string {
 
 // Считаем длину ключа 128 битным
 func CreateAes128Key() (string, error) {
-	str := RandStringBytesMaskImprSrcUnsafe(16)
+	str := RandStringBytesMaskImprSrcUnsafe(16, false)
 	return str, ValidationAesKey(str)
 }
 func ValidationAesKey(key string) error {
@@ -82,5 +89,5 @@ func ValidationAesKey(key string) error {
 	return nil
 }
 func CreateHS256Key() string {
-	return RandStringBytesMaskImprSrcUnsafe(32)
+	return RandStringBytesMaskImprSrcUnsafe(32, false)
 }

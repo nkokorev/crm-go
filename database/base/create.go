@@ -25,31 +25,14 @@ func RefreshTables() {
 
 
 	pool.CreateTable(&models.CrmSetting{})
-
-	// Таблица аккаунтов.
-	if false {
-	err = pool.Exec("create table  accounts (\n id SERIAL PRIMARY KEY UNIQUE,\n name varchar(255),\n \n -- настройки доступа к аккаунту через app.ratuscrm.com\n hide_for_client BOOL DEFAULT TRUE, -- скрывать аккаунт в списке доступных для пользователей с ролью 'client'. \n forbidden_for_client BOOL DEFAULT FALSE, -- запрет на вход через приложение app.ratuscrm.com для пользователей с ролью 'client'. \n \n -- все что ui_auth_ имеет смысл только для внешнего сервера авторизации\n ui_auth_is_client BOOL NOT NULL DEFAULT FALSE, -- использовать аккаунт как сервер авторизации и регистрации (через ui.api.ratuscrm.com / api.ratuscrm.com) \n ui_auth_is_registration_allowed BOOL NOT NULL DEFAULT FALSE, -- включить авторизацию через ui.api (может быть полезно выключать )\n ui_auth_is_registration_invite_only BOOL NOT NULL DEFAULT FALSE, -- регистрация новых пользователей только по инвайтам\n \n ui_auth_jwt_key varchar(255),\n ui_auth_aes_key varchar(32), -- AES-CFB 256\n ui_auth_use_aes BOOL DEFAULT TRUE, -- использовать ли AES-CFB 256 поверх токена (рекомендуется)\n \n ui_auth_jwt_exp_hours INT DEFAULT 4, -- время, в течение которого будет доступна авторизация\n \n  \n website varchar(255),\n type varchar(255),\n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT null\n);\n").Error
-	if err != nil {
-		log.Fatal("Cant create table accounts", err)
-	}
-	}
-
 	pool.Exec("DROP TYPE IF EXISTS AUTH_METHOD;\nCREATE TYPE AUTH_METHOD AS ENUM ('username', 'email', 'phone');\n")
 	pool.CreateTable(&models.Account{})
 	//pool.Model(&models.User{}).AddForeignKey("user_refer", "users(refer)", "CASCADE", "CASCADE")
 
 
 	// Таблица пользователей
-	if false {
-	err = pool.Exec("create table  users (\n id SERIAL PRIMARY KEY UNIQUE,\n \n parent_id INT REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE DEFAULT NULL, -- указатель на аккаунт родителя. One-to-many, каскад не предусмотрен.  \n account_id INT REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL, -- если аккаунт будет удален, пользователь также удалится. \n \n username varchar(32) NOT NULL,\n email varchar(255) NOT NULL, -- uix_email_account_id_parent_id - ограничение по уникальности\n password varchar(255) NOT NULL UNIQUE,\n \n name varchar(32) DEFAULT '',\n surname varchar(32) DEFAULT '',\n patronymic varchar(32) DEFAULT '',\n \n default_account_id INT DEFAULT NULL,\n invited_user_id INT DEFAULT NULL, -- кто пригласил\n email_verified_at TIMESTAMP DEFAULT NULL,\n password_reset BOOLEAN NOT NULL DEFAULT FALSE, -- флаг сброса пароля\n \n created_at timestamp DEFAULT NOW(),\n updated_at timestamp DEFAULT CURRENT_TIMESTAMP,\n deleted_at timestamp DEFAULT NULL,\n --constraint uix_account_id UNIQUE (account_id,shop_id,code)\n--  constraint uix_email_parent_id unique (account_id,email,parent_id)\n constraint uix_email_account_id_parent_id unique (email,account_id,parent_id) -- этот набор должен быть уникальным\n);\ncreate unique index uix_account_id_email_parent_id_not_null on users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\ncreate unique index uix_account_id_email_parent_id_when_null on users (account_id,email,parent_id) WHERE parent_id IS NULL;").Error
-	if err != nil {
-		log.Fatal("Cant create table users", err)
-	}
-	}
-
 	pool.CreateTable(&models.User{})
-	//pool.Model(&models.User{}).AddForeignKey("user_refer", "users(refer)", "CASCADE", "CASCADE")
-	pool.Exec("ALTER TABLE users \n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n    ADD CONSTRAINT users_signed_account_id_fkey FOREIGN KEY (signed_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (mobile_phone is not null));\n\ncreate unique index uix_users_signed_account_id_username_email_mobile_phone ON users (signed_account_id,username,email,mobile_phone);\n\n-- create unique index uix_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
+	pool.Exec("ALTER TABLE users \n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n    ADD CONSTRAINT users_signed_account_id_fkey FOREIGN KEY (signed_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n\ncreate unique index uix_users_signed_account_id_username_email_mobile_phone ON users (signed_account_id,username,email,phone);\n\n-- create unique index uix_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
 
 	// User <> Account
 	pool.Exec("ALTER TABLE account_users \n--     ADD CONSTRAINT uix_email_account_id_parent_id unique (email,account_id,parent_id),\n    ADD CONSTRAINT account_users_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT account_users_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT users_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n--     ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE;\n\n-- create unique index uix_user_id_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
@@ -96,19 +79,12 @@ func RefreshTables() {
 		fmt.Println("Cant create table products", err)
 	}
 
-
 	err = pool.Exec("create table product_cards (\n  id SERIAL PRIMARY KEY UNIQUE,\n  account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n  shop_id INT NOT NULL REFERENCES shops(id) ON DELETE CASCADE ON UPDATE CASCADE,\n  \n--   offers integer[][2],\n  \n  url VARCHAR(255),\n  breadcrumb VARCHAR(255),\n  short_description VARCHAR(255),\n  description text,\n  \n  -- meta group \n  meta_title VARCHAR (255),\n  meta_description VARCHAR (255),\n  meta_keywords VARCHAR (255)\n     -- constraint uix_products_article_account_id UNIQUE (article, account_id)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
 	if err != nil {
 		fmt.Println("Cant create table products", err)
 	}
 
 	// Таблица APIKey
-	if false {
-	err = pool.Exec("create table api_keys (\n  token VARCHAR(255) PRIMARY KEY UNIQUE,\n  account_id int NOT NULL REFERENCES accounts (id) ON DELETE CASCADE ON UPDATE CASCADE,\n  name VARCHAR(255) default '',\n  status BOOLEAN NOT NULL DEFAULT TRUE,\n  created_at timestamp default NOW(),\n  updated_at timestamp default CURRENT_TIMESTAMP,\n    constraint uix_api_keys_token_account_id UNIQUE (token, account_id)\n     -- foreign key (account_id) references accounts(id) on delete cascade\n);\n\n").Error
-	if err != nil {
-		fmt.Println("Cant create table api_keys", err)
-	}
-	}
 	pool.CreateTable(&models.ApiKey{})
 	pool.Exec("ALTER TABLE api_keys \n    ADD CONSTRAINT api_keys_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\ncreate unique index uix_api_keys_token_account_id ON api_keys (token,account_id);")
 
@@ -167,13 +143,6 @@ func RefreshTables() {
 	// ## ВНешние таблицы связи
 
 	// M:M User <> Account
-	//pool.CreateTable(&models.AccountUser{})
-	if false {
-	err = pool.Exec("create table user_accounts (\n    user_id INT REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE ,\n    account_id INT REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE ,\n    constraint uix_user_accounts_user_account_id UNIQUE (user_id, account_id)\n);\n\n").Error
-	if err != nil {
-		fmt.Println("Cant create table accounts", err)
-	}
-	}
 
 	// M:M Offer <> Product
 	err = pool.Exec("create table offer_compositions (\n  id SERIAL PRIMARY KEY UNIQUE,\n  account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  offer_id INT NOT NULL REFERENCES offers(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  -- product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,\n  \n  volume DECIMAL(13,3) NOT NULL DEFAULT 0.0 -- какой объем входит в оффер (шт, литры, граммы, кг и т.д.) \n\n);\n\n").Error
@@ -186,26 +155,11 @@ func RefreshTables() {
 	if err != nil {
 		fmt.Println("Cant create table products", err)
 	}
-
-	//// M:M Products <> Attributes
-	//err = pool.Exec("create table eav_product_offer_attributes (\n     account_id INT REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- обязательно, чтобы ускорить выборку\n     product_offer_id INT REFERENCES product_offers(id) ON DELETE CASCADE ON UPDATE CASCADE,\n     eav_attributes_id INT REFERENCES eav_attributes(id) ON DELETE CASCADE ON UPDATE CASCADE,\n     constraint uix_eav_product_attributes_account_product_eav_attributes_id unique (account_id, product_offer_id, eav_attributes_id)\n);\n\n").Error
-	//if err != nil {
-	//	fmt.Println("Cant create table accounts", err)
-	//}
-
-	// M:M Products <> Varchar values
-	// err = pool.Exec("create table eav_product_values_varchar (\n     product_id INT REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE ,\n     eav_varchar_value_id INT REFERENCES eav_varchar_values(id) ON DELETE CASCADE ON UPDATE CASCADE,\n     constraint uix_eav_product_values_varchar_product_value_id unique (product_id, eav_varchar_value_id)\n     \n);\n\n").Error
-	//if err != nil {
-	//	fmt.Println("Cant create table accounts", err)
-	//}
-
 	// загружаем стоковые данные для EAV таблиц
 	UploadEavData()
 
 	// аккаунты и тестовые продукты
 	UploadTestData()
-
-
 }
 
 // загрузка первоначальных данных в EAV-таблицы
@@ -238,7 +192,7 @@ func UploadTestData() {
 
 	timeNow := time.Now().UTC()
 
-	// 0. Создаем файл системных настроек (это не настройки аккаунта RatusCRM!)
+	// 0. Создаем файл системных настроек
 	_, err := models.CreateCrmSettings()
 	if err != nil {
 		log.Fatal("Неудалось создать настройки crm-системы")
@@ -250,27 +204,27 @@ func UploadTestData() {
 		log.Fatal("Неудалось создать главный аккаунт")
 	}
 
-	// 3. Создаем API-ключ в аккаунте
+	// 2. Создаем API-ключ в аккаунте
 	_, err = account.CreateApiKey(models.ApiKey{Name:"Api key for Postman"})
 	if err != nil {
 		log.Fatalf("Неудалось создать API ключ для аккаунта: %v, Error: %s", account, err)
 	}
 
-	// 2. Создаем пользователя admin в main аккаунте
+	// 3. Создаем пользователя admin в main аккаунте
 	adminUser, err := account.CreateUser(
 		models.User{
-			SignedAccountID:1,
 			Username:"admin",
 			Email:"kokorevn@gmail.com",
+			PhoneRegion: "RU",
+			Phone: "89251952295",
 			Password:"qwerty109#QW",
 			Name:"Никита",
 			Surname:"Кокорев",
 			Patronymic:"Романович",
 			EmailVerifiedAt:&timeNow},
 		)
-
 	if err != nil {
-		log.Fatal("Неудалось создать admin'a ", err)
+		log.Fatal("Неудалось создать admin'a: ", err)
 	}
 
 	fmt.Printf("Создан Админ: %v", adminUser)

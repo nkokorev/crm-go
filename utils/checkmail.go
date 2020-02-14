@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"net/smtp"
-	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -21,32 +20,7 @@ var (
 	userDotRegexp = regexp.MustCompile("(^[.]{1})|([.]{1}$)|([.]{2,})")
 )
 
-func VerifyEmail(email string, opt_deep... bool) error {
-
-	deep := false
-	if len(opt_deep) > 0 {
-		deep = opt_deep[0]
-	}
-
-	err := ValidateFormat(email)
-	if err != nil {
-		return  err
-	}
-
-	if (os.Getenv("http_dev") == "true") {
-		return nil
-	}
-
-	if deep {
-		err = ValidateEmailDeepHost(email)
-	} else {
-		err = ValidateHost(email)
-	}
-
-	return err
-}
-
-func ValidateFormat(email string) error {
+func EmailValidation(email string) error {
 
 	// todo edit!
 	if len(email) < 6 {
@@ -60,7 +34,7 @@ func ValidateFormat(email string) error {
 
 	at := strings.LastIndex(email, "@")
 	if at <= 0 || at > len(email)-3 {
-		return errors.New("Email-адрес указан не верно")
+		return errors.New("Не верный формат email-адреса")
 	}
 
 	user := email[:at]
@@ -71,7 +45,7 @@ func ValidateFormat(email string) error {
 	}
 
 	if userDotRegexp.MatchString(user) || !userRegexp.MatchString(user) || !hostRegexp.MatchString(host) {
-		return errors.New("Неверный формат")
+		return errors.New("Не верный формат email-адреса")
 	}
 
 	switch host {
@@ -83,23 +57,11 @@ func ValidateFormat(email string) error {
 	return nil
 }
 
-func ValidateHost(email string) error {
+func EmailDeepValidation(email string) error {
 
-	at := strings.LastIndex(email, "@")
-	host := email[at+1:]
-
-	if _, err := net.LookupMX(host); err != nil {
-		if _, err := net.LookupIP(host); err != nil {
-			// Only fail if both MX and A records are missing - any of the
-			// two is enough for an email to be deliverable
-			//error.AddErrors("email", t.Trans(t.EmailUnresolvableHost) )
-			return errors.New("Неверный формат")
-		}
+	if err := EmailValidation(email); err !=nil {
+		return err
 	}
-	return nil
-}
-
-func ValidateEmailDeepHost(email string) error {
 	_, host := split(email)
 
 	mx, err := net.LookupMX(host)
@@ -161,4 +123,20 @@ func split(email string) (account, host string) {
 	account = email[:i]
 	host = email[i+1:]
 	return
+}
+
+func ValidateHostEmail(email string) error {
+
+	at := strings.LastIndex(email, "@")
+	host := email[at+1:]
+
+	if _, err := net.LookupMX(host); err != nil {
+		if _, err := net.LookupIP(host); err != nil {
+			// Only fail if both MX and A records are missing - any of the
+			// two is enough for an email to be deliverable
+			//error.AddErrors("email", t.Trans(t.EmailUnresolvableHost) )
+			return errors.New("Неверный формат")
+		}
+	}
+	return nil
 }

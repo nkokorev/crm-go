@@ -12,7 +12,7 @@ import (
 var ApiRoutes = func (rApi *mux.Router) {
 
 	// загружаем базовые настройки системы
-	rApi.HandleFunc("/settings", controllers.CheckApi).Methods(http.MethodGet, http.MethodOptions)
+	rApi.HandleFunc("/", controllers.CheckApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 
 
 }

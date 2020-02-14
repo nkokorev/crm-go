@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"testing"
 	"time"
 )
@@ -20,7 +19,6 @@ func TestEmailAccessToken_Expired(t *testing.T) {
 
 	for _,v := range testList {
 
-		fmt.Printf("v.eat.Expired() : %v \n v.expected %v \n", v.eat.Expired(),  v.expected)
 		if v.eat.Expired() != v.expected {
 			t.Fatalf("Не верная работа функции для: %v \n Описание: %v", v, v.description)
 		}

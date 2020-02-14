@@ -10,5 +10,5 @@ var I18nMiddleware = func(next http.Handler) http.Handler {
 		//accept := r.Header.Get("Accept-Language")
 		//t.SetAccept(accept)
 		next.ServeHTTP(w, r) //proceed in the middleware chain!
-	});
+	})
 }

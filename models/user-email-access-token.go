@@ -286,7 +286,7 @@ func (eat *EmailAccessToken) SendMail() error {
 	}
 
 	// Проверяем существование email'а - depricated (проверем во время отправки)
-	if err := u.ValidateEmailDeepHost(eat.DestinationEmail); err != nil {
+	if err := u.EmailValidation(eat.DestinationEmail); err != nil {
 		return err
 	}
 

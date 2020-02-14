@@ -3,8 +3,11 @@ package models
 import (
 	"errors"
 	"github.com/jinzhu/gorm"
+	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
+	"reflect"
+	"strings"
 	"time"
 )
 
@@ -16,17 +19,9 @@ const (
 	phone authMethod = "phone"
 )
 
-/*func (p *authMethod) Scan(value interface{}) error {
-	*p = authMethod(value.([]byte))
-	return nil
-}
-
-func (p authMethod) Value() (driver.Value, error) {
-	return string(p), nil
-}*/
-
 type Account struct {
 	ID uint `json:"id"`
+	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 
 	// данные аккаунта
 	Name string `json:"name" gorm:"type:varchar(255)"`
@@ -42,13 +37,15 @@ type Account struct {
 	UiApiAesKey string `json:"uiApiAesKey" gorm:"type:varchar(16);default:null;"` // 128-битный ключ шифрования
 	UiApiJwtKey string `json:"uiApiJwtKey" gorm:"type:varchar(32);default:null;"` // 128-битный ключ шифрования
 
-	// Тип авторизация
+	// Регистрация новых пользователей через UI/API
+
 	//AuthMethod authMethod `json:"authBy" gorm:"enum('username', 'email', 'mobilePhone');not null;default:'email';"`
-	AuthMethod authMethod `json:"authBy" sql:"type:auth_method;not null;default:'email'"`
-	EnabledUserRegistration bool `json:"EnabledUserRegistration" gorm:"default:true;not null"` // Разрешить регистрацию новых пользователей?
-	UserRegistrationInvitationOnly bool `json:"UserRegistrationInvitationOnly" gorm:"default:false;not null"` // Регистрация новых пользователей только по приглашению (в том числе и клиентов)
-
-
+	//AuthMethod authMethod `json:"authBy" sql:"type:auth_method;not null;default:'email'"` // Дефолтный вариант авторизации todo: может массивом т.к. их может быть несколько?
+	UiApiAuthMethods pq.StringArray `json:"uiApiAuthMethods" sql:"type:varchar(32)[];default:'{email}'"` // Доступные способы авторизации (проверяется в контроллере)
+	UiApiEnabledUserRegistration bool `json:"uiApiEnabledUserRegistration" gorm:"default:true;not null"` // Разрешить регистрацию новых пользователей?
+	UiApiUserRegistrationInvitationOnly bool `json:"uiApiUserRegistrationInvitationOnly" gorm:"default:false;not null"` // Регистрация новых пользователей только по приглашению (в том числе и клиентов)
+	UiApiUserRegistrationRequiredFields pq.StringArray `json:"uiApiUserRegistrationRequiredFields" gorm:"type:varchar(32)[];default:'{email}'"` // список обязательных полей при регистрации новых пользователей через UI/API
+	UiApiUserEmailDeepValidation bool `json:"uiApiUserEmailDeepValidation" gorm:"default:false;not null"` // глубокая проверка почты пользователя на предмет существования
 
 	// настройки авторизации.
 	// Разделяется AppAuth и ApiAuth -
@@ -73,6 +70,7 @@ type Account struct {
 
 func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	account.ID = 0
+	account.HashID = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	account.CreatedAt = time.Now().UTC()
 
 	//account.UiApiJwtKey =  utils.CreateHS256Key()
@@ -110,9 +108,12 @@ func (account Account) create () (*Account, error) {
 	outAccount.UiApiEnabled = account.UiApiEnabled
 	outAccount.UiApiAesEnabled = account.UiApiAesEnabled
 
-	outAccount.AuthMethod = account.AuthMethod
-	outAccount.EnabledUserRegistration = account.EnabledUserRegistration
-	outAccount.UserRegistrationInvitationOnly = account.UserRegistrationInvitationOnly
+	// Регистрация новых пользователей через UI/API
+	outAccount.UiApiAuthMethods = account.UiApiAuthMethods
+	outAccount.UiApiEnabledUserRegistration = account.UiApiEnabledUserRegistration
+	outAccount.UiApiUserRegistrationInvitationOnly = account.UiApiUserRegistrationInvitationOnly
+	outAccount.UiApiUserRegistrationRequiredFields = account.UiApiUserRegistrationRequiredFields
+	outAccount.UiApiUserEmailDeepValidation = account.UiApiUserEmailDeepValidation
 
 	outAccount.VisibleToClients = account.VisibleToClients
 	outAccount.ClientsAreAllowedToLogin = account.ClientsAreAllowedToLogin
@@ -137,10 +138,11 @@ func CreateMainAccount() (*Account, error) {
 		Name:"RatusCRM",
 		UiApiEnabled:false,
 		UiApiAesEnabled:true,
-		EnabledUserRegistration:false,
-		UserRegistrationInvitationOnly:false,
+		UiApiEnabledUserRegistration:false,
+		UiApiUserRegistrationInvitationOnly:false,
 		ApiEnabled: false,
-		AuthMethod: username,
+		UiApiAuthMethods: pq.StringArray{"username,email,phone"},
+		UiApiUserRegistrationRequiredFields: pq.StringArray{"username,email,phone"},
 	}).create()
 }
 
@@ -151,7 +153,7 @@ func (account Account) ValidateInputs() error {
 		return utils.Error{Message:"Ошибки в заполнении формы", Errors: map[string]interface{}{"name":"Имя компании должно содержать минимум 2 символа"}}
 	}
 
-	if len(account.Name) > 42 { // 256:8 (UTF-8) - хз)
+	if len(account.Name) > 64 {
 		return utils.Error{Message:"Ошибки в заполнении формы", Errors: map[string]interface{}{"name":"Имя компании должно быть не более 42 символов"}}
 	}
 
@@ -169,6 +171,12 @@ func (account Account) ValidateInputs() error {
 func GetAccount (id uint) (*Account, error) {
 	var account Account
 	err := db.Model(&Account{}).First(&account, id).Error
+	return &account, err
+}
+
+func GetAccountByHash (hashId string) (*Account, error) {
+	var account Account
+	err := db.Model(&Account{}).First(&account, "hash_id = ?", hashId).Error
 	return &account, err
 }
 
@@ -222,14 +230,262 @@ func (account Account) UpdateApiKey(token string, input ApiKey) (*ApiKey, error)
 // #### User ####
 
 func (account Account) CreateUser(input User) (*User, error) {
+
+	var err error
+	var username, email, phone bool
+
+
 	input.SignedAccountID = account.ID
+
+	// ### !!!! Проверка входящих данных !!! ### ///
+
+	if len(input.Username) > 0 {
+		username = true
+		if err := utils.VerifyUsername(input.Username); err != nil {
+			return nil, utils.Error{Message:"Проверьте правильность заполнения формы", Errors: map[string]interface{}{"username" : err.Error()}}
+		}
+	}
+
+	if len(input.Email) > 0 {
+		email = true
+		if account.UiApiUserEmailDeepValidation {
+			if err := utils.EmailDeepValidation(input.Email); err != nil {
+				return nil, utils.Error{Message:"Проверьте правильность заполнения формы", Errors: map[string]interface{}{"email":err.Error()}}
+			}
+		} else {
+			if err := utils.EmailValidation(input.Email); err != nil {
+				return nil, utils.Error{Message:"Проверьте правильность заполнения формы", Errors: map[string]interface{}{"email":err.Error()}}
+			}
+		}
+	}
+
+	if len(input.Phone) > 0 {
+		phone = true
+
+		if input.PhoneRegion == "" {
+			input.PhoneRegion = "RU" // todo тут можно по IP определить где находиться пользователь +/-
+		}
+
+		// Устанавливаем нужный формат
+		input.Phone, err = utils.ParseE164Phone(input.Phone, input.PhoneRegion)
+		if err != nil {
+			return nil, utils.Error{Message:"Ошибка в формате телефонного номера", Errors: map[string]interface{}{"inviteToken":"Пожалуйста, укажите номер телефона в международном формате"}}
+		}
+
+	}
+
+	// 5. One of username. email and phone must be!
+	if !(username || email || phone ) {
+		return nil, utils.Error{Message:"Отсутствуют обязательные поля", Errors: map[string]interface{}{"username":"Необходимо заполнить поле", "email":"Необходимо заполнить поле", "mobilePhone":"Необходимо заполнить поле"}}
+	}
+
+
+	// Проверка дублирование полей
+	if account.existUserUsername(input.Username) {
+		return nil, utils.Error{Message:"Данные уже есть", Errors: map[string]interface{}{"username":"Данный username уже используется"}}
+	}
+	if account.existUserEmail(input.Email) {
+		return nil, utils.Error{Message:"Данные уже есть", Errors: map[string]interface{}{"username":"Данный email уже используется"}}
+	}
+	if account.existUserPhone(input.Phone) {
+		return nil, utils.Error{Message:"Данные уже есть", Errors: map[string]interface{}{"username":"Данный телефон уже используется"}}
+	}
+
 	return input.create()
+}
+
+func (account Account) GetUserById(userId uint) (*User, error) {
+	user := User{}
+
+	err := db.Model(&User{}).Where("signed_account_id = ?", account.ID).First(&user, userId).Error
+
+	return &user, err
+}
+
+func (account Account) GetUserByUsername (username string) (*User, error) {
+
+	if username == "" {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	user := User{}
+
+	err := db.Model(&User{}).Where("signed_account_id = ? AND username = ?", account.ID, username).First(&user).Error
+
+	return &user, err
+}
+
+func (account Account) GetUserByEmail (email string) (*User, error) {
+	if email == "" {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	user := User{}
+
+	err := db.Model(&User{}).Where("signed_account_id = ? AND email = ?", account.ID, email).First(&user).Error
+
+	return &user, err
+}
+
+func (account Account) GetUserByPhone (phone, region string) (*User, error) {
+	if phone == "" {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	if region == "" {
+		region = "RU"
+	}
+
+	phone, _ = utils.ParseE164Phone(phone, region)
+
+	user := User{}
+
+	err := db.Model(&User{}).Where("signed_account_id = ? AND phone = ?", account.ID, phone).First(&user).Error
+
+	return &user, err
+}
+
+func (account Account) CheckUserRequiredFields(input interface{}) error {
+	var e utils.Error
+
+	val := reflect.ValueOf(input).Elem()
+
+	for _,v := range account.UiApiUserRegistrationRequiredFields {
+
+		check := false
+
+		for i:=0; i < val.NumField();i++ {
+
+			name := utils.ToLowerCamel(val.Type().Field(i).Name)
+
+			// Проверка наличия поля
+			if name == v && !utils.IsZero(reflect.ValueOf(input).Elem().Field(i)){
+				check = true
+				continue
+			}
+		}
+
+		if check == false {
+			return utils.Error{Message:"Нехватает необходимых данных", Errors: map[string]interface{}{v:"Требуется заполнить поле"}}
+		}
+
+	}
+
+	if e.HasErrors() {
+		return utils.Error{Message:"Проверьте правильность заполнения формы", Errors: e.Errors}
+	} else {
+		return nil
+	}
+}
+
+
+// !!!!!! ### Выше функции покрытые тестами ### !!!!!!!!!!1
+
+
+// *** New functions ****
+
+// Обязательно ли поле при создании пользователя (username, email, phone)
+func (account Account) userRequiredField(field string) bool {
+	for _, v := range account.UiApiUserRegistrationRequiredFields {
+		if v == field {
+			return true
+		}
+	}
+	return false
+}
+
+// Проверяет поля в input на не нулевость в соответствие настройкам аккаунта
+func (account Account) ValidationUserRegReqFields(input User) error {
+	var e utils.Error
+	for _,v := range account.UiApiUserRegistrationRequiredFields {
+		switch v {
+		case "username":
+			if len(input.Username) == 0 {
+				e.AddErrors("username","Поле обязательно к заполнению")
+			}
+
+		case "email":
+			if len(input.Email) == 0 {
+				e.AddErrors("email","Поле обязательно к заполнению")
+			}
+
+		case "phone":
+			if len(input.Phone) == 0 {
+				e.AddErrors("phone","Поле обязательно к заполнению")
+			}
+
+		}
+	}
+
+	if e.HasErrors() {
+		return utils.Error{Message:"Проверьте правильность заполнения формы", Errors: e.Errors}
+	} else {
+		return nil
+	}
 }
 
 
 
 
-// !!! ### Выше функции покрытые тестами ###
+
+
+
+
+
+
+
+
+
+// Авторизация пользователя со всеми паралельными процессами
+func (account Account) AuthUserByEmail(email, password string) (jwt string, err error) {
+
+	// 1. Находим пользователя по email
+	//user := GetUserById
+
+	// 2. Проверяем пароль
+
+	// 3. Создаем jwt-
+
+
+	// 4. Записываем факт авторизации
+
+	// 5. Возвращаем jwt
+	return "", nil
+}
+
+// выдает пользователю JWT-токен
+func (account Account) getUserJwt(userId uint) (jwt string, err error) {
+	return "", nil
+}
+
+
+
+// Дотошно ищет схожего пользователя по username, email и телефону.
+func (account Account) existUserUsername(username string) bool {
+	if username == "" {
+		return false
+	}
+	return db.Model(&User{}).Where("account_id = ? AND username = ?", account.ID, username).RecordNotFound()
+}
+
+func (account Account) existUserEmail(email string) bool {
+	if email == "" {
+		return false
+	}
+	return db.Model(&User{}).Where("account_id = ? AND email = ?", account.ID, email).RecordNotFound()
+}
+
+func (account Account) existUserPhone(phone string) bool {
+	if phone == "" {
+		return false
+	}
+	return db.Model(&User{}).Where("account_id = ? AND phone = ?", account.ID, phone).RecordNotFound()
+}
+
+// Возвращает наиболее похожего пользователя (пользователей?) по username, email или телефону в зависимости от типа авторизации
+
+
+// !!!!!! ### Новая партия на ТЕСТЫ  ### !!!!!!!!!!1
 
 
 
@@ -254,7 +510,7 @@ func (account *Account) SoftDelete () error {
 
 // # Hard Delete
 func (account *Account) HardDelete () error {
-	return db.Unscoped().Where("id = ?", account.ID).Delete(account).Error
+	return db.Model(Account{}).Unscoped().Where("id = ?", account.ID).Delete(account).Error
 }
 
 // удаляет аккаунт с концами

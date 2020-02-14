@@ -30,6 +30,8 @@ All parameters use lowerCamelCase style:
 
 ## Account interfaces
 
+Переменные с приставкой `uiApi` применяются для работы через UI/API.
+
 DB Schema of account data:
 
 | Json name | Type | Default |Description |
@@ -43,15 +45,19 @@ DB Schema of account data:
 | `uiApiAesEnabled` | bool | true | Включение AES-128/CFB шифрования |
 | `uiApiAesKey` | string | `gen` | 16 символный UTF-8 ключ шифрования AES-128 |
 | `uiApiJwtKey` | string | `gen` | 32 символный UTF-8 Ключ подписи JWT/HS256 |
-| `EnabledUserRegistration` | bool | false | Разрешить регистрацию новых пользователей |
-| `UserRegistrationInvitationOnly` | bool | false | Регистрация только по персональным приглашеним | 
+| `uiApiEnabledUserRegistration` | bool | false | Разрешить регистрацию новых пользователей |
+| `uiApiUserRegistrationInvitationOnly` | bool | false | Регистрация только по персональным приглашеним |
+| `uiApiAuthMethods` | array | `{email}` | Доступные способы авторизации | 
+| `uiApiUserRegistrationRequiredFields` | array | `{email}` | Список полей обязательных при регистрации | 
+| `uiApiUserEmailDeepValidation` | bool | false | Запрос на сервер с проверкой email-адреса | 
 
 ## User interfaces
 
 Пользователь в системе идентифицируется по:
  - ID аккаунта, через которого пользователь был зарегистрирован
- - именю учетной записи / email'у / мобильному телефону
+ - именю учетной записи / email'у / мобильному телефону (одно из всегда есть)
 
+Вы можете настроить обязательные поля при регистрации нового пользователя через UI/API (имя, телефон и т.д.).
 Вы можете выбрать доступные варианты авторизации в настройках аккаунта.
 
 ### CreateUser
@@ -62,15 +68,16 @@ see also: *CreateOrUpdate*
 
 [POST] `/accounts/{account_id}/users`
 
-| Parameters  | Type | Required | Description |
+| Parameters  | Type | Default | Description |
 | --- | :---: | :---: | --- |
-| `username`  | string  | no | Имя учетной записи пользователя |
-| `email`  | string  | no | Контактный email для системных уведомлений | 
-| `mobilePhone`  | string  | no | Мобильный телефон для SMS-уведомлений |
-| `password`  | string  | no | Минимум одна цифра, строчная, прописная буква и спецсимвол, мин. 8 символов. |
-| `name`  | string  | no | Имя пользователя |
-| `surname`  | string  | no | Фамилия пользователя |
-| `patronymic`  | string  | no | Отчество пользователя |
+| `username`  | string  | null | Имя учетной записи пользователя |
+| `email`  | string  | null | Контактный email для системных уведомлений | 
+| `phone`  | string  | null | Мобильный телефон для SMS-уведомлений указывается в международном формат + или дополнительное поле региона|
+| `phoneRegion`  | string  | RU | Регион мобильного оператора (US,RU,KZ ...)|
+| `password`  | string  | null | Минимум одна цифра, строчная, прописная буква и спецсимвол, мин. 8 символов. |
+| `name`  | string  | null | Имя пользователя |
+| `surname`  | string  | null | Фамилия пользователя |
+| `patronymic`  | string  | null | Отчество пользователя |
 
 
 Attention: 
