@@ -35,16 +35,15 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 		models.User
 		NativePwd string `json:"password"` // потому что пароль из User{} не читается т.к. json -
 		InviteToken string `json:"inviteToken"` // может присутствовать
-		//EmailVerificated bool `json:"emailVerificated"` //default false хз хз
 	}{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	// Проверяем наличие необходимый полей согласно настройкам аккаунта и их не нулевость
-	if err := account.CheckUserRequiredFields(input.User); err!= nil {
-		u.Respond(w, u.MessageError(err))
+	// Проверим, все ли поля нужные поля на месте и не пустые
+	if err := u.CheckNotNullFields(input.User, account.UiApiUserRegistrationRequiredFields); err != nil {
+		u.Respond(w, u.MessageError(err, "Не верно заполнены поля"))
 		return
 	}
 

@@ -322,55 +322,7 @@ func TestAccount_GetUserByPhone(t *testing.T) {
 
 }
 
-func TestAccount_CheckUserInputRequiredFields(t *testing.T) {
 
-	testList := []struct {
-		account Account
-		user User
-		expected bool
-		description string
-	}{
-		{
-			Account{UiApiUserRegistrationRequiredFields: []string{"username","email","phone"}},
-			User{Username:"", Email:"", Phone:""},
-			false,
-			"Требуемые поля - пустые",
-		},
-		{
-			Account{UiApiUserRegistrationRequiredFields: []string{"email","username"}},
-			User{Username:"TestUser 1", Email:"mail@example.com"},
-			true,
-			"Формально поля есть",
-		},
-		{
-				Account{UiApiUserRegistrationRequiredFields: []string{"name","phone"}},
-				User{Email:"kokorevn@gmail.com", Name:"Никита"},
-				false,
-				"Нет поля с телефоном",
-		},
-		{
-				Account{UiApiUserRegistrationRequiredFields: []string{"name","phone","username"}},
-				User{Username:"",Phone:"+79251952295", Name:"Никита"},
-				false,
-				"Нет поля с телефоном",
-		},
-	}
-
-	for i, v := range testList {
-		err := v.account.CheckUserInputRequiredFields(&v.user)
-
-		// если прошел проверку
-		if v.expected == true && err != nil {
-			t.Fatalf("Проверка провалена, а должна была пройти:\nПользователь %v : \nОжидалось: %v \n user: %v \nТребуемые поля: %v", i, v.expected, v.user, v.account.UiApiUserRegistrationRequiredFields)
-		}
-
-		if v.expected == false && err == nil {
-			t.Fatalf("Проверка прошла успешно, но должна быть провалена:\nПользователь %v : \nОжидалось: %v \n user: %v \nТребуемые поля: %v", i, v.expected, v.user, v.account.UiApiUserRegistrationRequiredFields)
-		}
-
-	}
-
-}
 
 
 func BenchmarkGetAccountByHash(b *testing.B) {

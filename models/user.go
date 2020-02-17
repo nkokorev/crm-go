@@ -29,7 +29,9 @@ type User struct {
 	DefaultAccountID uint `json:"defaultAccountId" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
 	InvitedUserID uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
 
-	EmailVerifiedAt *time.Time `json:"emailVerifiedAt" gorm:"default:null"`
+	// Верификация, сброс пароля и т.д.
+	EmailVerifiedAt *time.Time `json:"emailVerifiedAt" gorm:"default:null"` // дата подтверждения email-а (автоматически проставляется, если методом верфикации пользователя был подтвержден email)
+	PhoneVerifiedAt *time.Time `json:"phoneVerifiedAt" gorm:"default:null"` // дата подтверждения телефона (автоматически проставляется, если методом верфикации пользователя был подтвержден телефон)
 	PasswordReset bool `json:"passwordReset" gorm:"default:FALSE"`
 	//EmailVerification bool `json:"email_verification" gorm:"default:false"`
 
@@ -93,7 +95,7 @@ func (user *User) update (input User) error {
 }
 
 func (user User) hardDelete () error {
-	return db.Model(&User{}).Unscoped().Model(User{}).Where("id = ?", user.ID).Delete(user).Error
+	return db.Model(&User{}).Unscoped().Where("id = ?", user.ID).Delete(user).Error
 }
 
 func (user User) softDelete () error {

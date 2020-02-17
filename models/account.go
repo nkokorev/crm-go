@@ -6,7 +6,6 @@ import (
 	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
-	"reflect"
 	"strings"
 	"time"
 )
@@ -20,7 +19,7 @@ const (
 )
 
 type Account struct {
-	ID uint `json:"id"`
+	ID uint `json:"id" gorm:"primary_key"`
 	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 
 	// данные аккаунта
@@ -44,8 +43,12 @@ type Account struct {
 	UiApiAuthMethods pq.StringArray `json:"uiApiAuthMethods" sql:"type:varchar(32)[];default:'{email}'"` // Доступные способы авторизации (проверяется в контроллере)
 	UiApiEnabledUserRegistration bool `json:"uiApiEnabledUserRegistration" gorm:"default:true;not null"` // Разрешить регистрацию новых пользователей?
 	UiApiUserRegistrationInvitationOnly bool `json:"uiApiUserRegistrationInvitationOnly" gorm:"default:false;not null"` // Регистрация новых пользователей только по приглашению (в том числе и клиентов)
-	UiApiUserRegistrationRequiredFields pq.StringArray `json:"uiApiUserRegistrationRequiredFields" gorm:"type:varchar(32)[];default:'{email}'"` // список обязательных полей при регистрации новых пользователей через UI/API
+	UiApiUserRegistrationRequiredFields pq.StringArray `json:"uiApiUserRegistrationRequiredFields" gorm:"type:varchar(32)[];default:'{email}'"` // список обязательных НЕ нулевых полей при регистрации новых пользователей через UI/API
 	UiApiUserEmailDeepValidation bool `json:"uiApiUserEmailDeepValidation" gorm:"default:false;not null"` // глубокая проверка почты пользователя на предмет существования
+
+	UserVerificationMethodID uint `json:"userVerificationMethodId" gorm:"type:int;default:null"` // метод
+	UiApiEnabledLoginNotVerifiedUser bool `json:"uiApiEnabledLoginNotVerifiedUser" gorm:"default:false;"` // разрешать ли пользователю входить в аккаунт без завершенной верфикации?
+
 
 	// настройки авторизации.
 	// Разделяется AppAuth и ApiAuth -
@@ -115,6 +118,9 @@ func (account Account) create () (*Account, error) {
 	outAccount.UiApiUserRegistrationRequiredFields = account.UiApiUserRegistrationRequiredFields
 	outAccount.UiApiUserEmailDeepValidation = account.UiApiUserEmailDeepValidation
 
+	outAccount.UserVerificationMethodID = account.UserVerificationMethodID
+	outAccount.UiApiEnabledLoginNotVerifiedUser = account.UiApiEnabledLoginNotVerifiedUser
+
 	outAccount.VisibleToClients = account.VisibleToClients
 	outAccount.ClientsAreAllowedToLogin = account.ClientsAreAllowedToLogin
 
@@ -134,6 +140,11 @@ func CreateMainAccount() (*Account, error) {
 		return nil, nil
 	}
 
+	doubleVerificationCode, err := GetUserVerificationTypeByCode(VerificationMethodEmailAndPhone)
+	if err != nil || doubleVerificationCode == nil{
+		return nil, errors.New("Неудалось получить код двойной верификации по телефону и почте")
+	}
+
 	return (Account{
 		Name:"RatusCRM",
 		UiApiEnabled:false,
@@ -143,6 +154,9 @@ func CreateMainAccount() (*Account, error) {
 		ApiEnabled: false,
 		UiApiAuthMethods: pq.StringArray{"username,email,phone"},
 		UiApiUserRegistrationRequiredFields: pq.StringArray{"username,email,phone"},
+
+		UserVerificationMethodID: doubleVerificationCode.ID,
+		UiApiEnabledLoginNotVerifiedUser: false,
 	}).create()
 }
 
@@ -345,38 +359,8 @@ func (account Account) GetUserByPhone (phone, region string) (*User, error) {
 	return &user, err
 }
 
-func (account Account) CheckUserRequiredFields(input interface{}) error {
-	var e utils.Error
 
-	val := reflect.ValueOf(input).Elem()
 
-	for _,v := range account.UiApiUserRegistrationRequiredFields {
-
-		check := false
-
-		for i:=0; i < val.NumField();i++ {
-
-			name := utils.ToLowerCamel(val.Type().Field(i).Name)
-
-			// Проверка наличия поля
-			if name == v && !utils.IsZero(reflect.ValueOf(input).Elem().Field(i)){
-				check = true
-				continue
-			}
-		}
-
-		if check == false {
-			return utils.Error{Message:"Нехватает необходимых данных", Errors: map[string]interface{}{v:"Требуется заполнить поле"}}
-		}
-
-	}
-
-	if e.HasErrors() {
-		return utils.Error{Message:"Проверьте правильность заполнения формы", Errors: e.Errors}
-	} else {
-		return nil
-	}
-}
 
 
 // !!!!!! ### Выше функции покрытые тестами ### !!!!!!!!!!1
