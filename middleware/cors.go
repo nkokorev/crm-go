@@ -43,7 +43,7 @@ func CorsAccessControl(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(w, r) //proceed in the middleware chain!
-	});
+	})
 }
 
 

@@ -7,8 +7,10 @@ import (
 )
 
 /**
-* [App UI-API] - группа роутов для работы основного приложения app.ratuscrm.com
+* [UI-API] - группа роутов для работы публичного UI/API через ui.api.ratuscrm.com
 *
+* В контексте issuerAccountId = accountId всегда, т.к. доступ к нескольким аккаунтам не предусматриваются.
+
 * Оба роутера монтируются в точку /accounts/{accountId} имеют в контексте account & accountId
 * rUiApi - маршруты без проверки JWT
 * rUiApiAuth - маршрут с проверкой JWT, а также на совпадение {accountId} с accountId указаном в токене

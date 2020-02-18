@@ -12,6 +12,13 @@ import (
  */
 func AccountCreate(w http.ResponseWriter, r *http.Request) {
 
+	// Аккаунт, в рамках которого происходит вызов
+	if r.Context().Value("issuerAccount") == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"account":"not load"}}))
+		return
+	}
+	issuerAccount := r.Context().Value("issuerAccount").(models.Account)
+
 	//time.Sleep(1 * time.Second)
 	userId := r.Context().Value("userId").(uint)
 
@@ -27,7 +34,8 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := models.GetUserById(userId)
+	// Ищем пользователя, только в контексте signed-аккаунта
+	user, err := issuerAccount.GetUserById(userId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Пользователь не существует"))
 		return

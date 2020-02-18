@@ -12,7 +12,7 @@ import (
 
 type User struct {
 	ID        	uint `json:"id" gorm:"primary_key"`
-	SignedAccountID uint `json:"signedAccountId" gorm:"index;not null"`
+	IssuerAccountID uint `json:"issuerAccountId" gorm:"index;not null"`
 	
 	Username 	string `json:"username" gorm:"type:varchar(255);unique_index;default:null;"`
 	Email 		string `json:"email" gorm:"type:varchar(255);unique_index;default:null;"`
@@ -32,8 +32,8 @@ type User struct {
 	// Верификация, сброс пароля и т.д.
 	EmailVerifiedAt *time.Time `json:"emailVerifiedAt" gorm:"default:null"` // дата подтверждения email-а (автоматически проставляется, если методом верфикации пользователя был подтвержден email)
 	PhoneVerifiedAt *time.Time `json:"phoneVerifiedAt" gorm:"default:null"` // дата подтверждения телефона (автоматически проставляется, если методом верфикации пользователя был подтвержден телефон)
-	PasswordReset bool `json:"passwordReset" gorm:"default:FALSE"`
-	//EmailVerification bool `json:"email_verification" gorm:"default:false"`
+	PasswordResetAt *time.Time `json:"passwordResetAt" gorm:"default:null"`
+
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -64,7 +64,7 @@ func (user User) create () (*User, error) {
 
 	// копируем разрешеныне данные
 
-	outUser.SignedAccountID = user.SignedAccountID
+	outUser.IssuerAccountID = user.IssuerAccountID
 
 	outUser.Username = user.Username
 	outUser.Email = strings.ToLower(user.Email)
@@ -117,12 +117,12 @@ func getUnscopedUserById(userId uint) (*User,error) {
 // Все что выше покрыто тестами (прямым и косвенными)
 
 // осуществляет поиск по ID
-func GetUserById (userId uint) (user *User, err error) {
+/*func GetUserById (userId uint) (user *User, err error) {
 
 	err = db.Model(&User{}).Find(user, userId).Error
 
 	return user, err
-}
+}*/
 
 func (user *User) Get () error {
 	/*return db.Preload("Accounts", func(db *gorm.DB) *gorm.DB {
@@ -286,7 +286,8 @@ func (user *User) RecoveryPasswordSendEmail() error {
 // сбрасывает пароль пользователя
 func (user *User) ResetPassword() error {
 	user.Password = ""
-	user.PasswordReset = true
+	tnow := time.Now().UTC()
+	user.PasswordResetAt = &tnow
 	return user.Save()
 }
 
@@ -294,7 +295,7 @@ func (user *User) ResetPassword() error {
 func (user *User) SetPassword(passwordNew, passwordOld string) error {
 
 	// 1. Проверяем старый пароль, при условии, что пароль не сброшен
-	if !user.PasswordReset && !user.ComparePassword(passwordOld) {
+	if user.PasswordResetAt != nil && !user.ComparePassword(passwordOld) {
 		return u.Error{Message:"Не верно указан старый пароль"}
 	}
 
@@ -307,7 +308,8 @@ func (user *User) SetPassword(passwordNew, passwordOld string) error {
 	user.Password = string(password)
 
 	// 3. Ставим флаг passwordReset = false
-	user.PasswordReset = false
+	tnow := time.Now().UTC()
+	user.PasswordResetAt = &tnow
 
 	// 4. Сохраняем данные пользователя
 	if err := user.Save();err!=nil {
@@ -412,7 +414,7 @@ func (user *User) AuthLogin(username, password string, onceLogin_opt... bool) (s
 	claims := JWT{
 		user.ID,
 		0,
-		user.SignedAccountID,
+		user.IssuerAccountID,
 		jwt.StandardClaims{
 			ExpiresAt: expiresAt,
 			Issuer:    "AuthServer",
@@ -433,7 +435,7 @@ func (user *User) CreateJWTToken() (string, error) {
 	claims := JWT{
 		user.ID,
 		0,
-		user.SignedAccountID,
+		user.IssuerAccountID,
 		jwt.StandardClaims{
 			ExpiresAt: expiresAt,
 			Issuer:    "AuthServer",
@@ -462,7 +464,7 @@ func (user *User) LoginInAccount(account_id uint) (string, error) {
 	claims := JWT{
 		user.ID,
 		account_id,
-		user.SignedAccountID,
+		user.IssuerAccountID,
 		jwt.StandardClaims{
 			ExpiresAt: expiresAt,
 			Issuer:    "GUI Server",

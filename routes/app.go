@@ -8,6 +8,9 @@ import (
 
 /**
 * [App UI-API] - группа роутов для работы основного приложения app.ratuscrm.com
+*
+* В контексте issuerAccountID = 1 (всегда!).
+
 * В контексте всегда есть {account_id}. Для базовых запросов он равен 1 (RatusCRM)
 * В контексте rApp accountId = 1 (RatusCRM)
 * В контексте rAppAuthUser, accountId = 1 (RatusCRM)

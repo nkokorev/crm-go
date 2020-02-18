@@ -83,6 +83,13 @@ func TestGetAccount(t *testing.T) {
 	}
 }
 
+func TestGetMainAccount(t *testing.T) {
+	account, err := GetMainAccount()
+	if err != nil || account.ID != 1 || account.Name != "RatusCRM" {
+		t.Fatalf("Cant find main account: %v", err)
+	}
+}
+
 func TestAccount_CreateApiKey(t *testing.T) {
 	account, _ := Account{Name:"Test account for API Key"}.create()
 	defer account.HardDelete()

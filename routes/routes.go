@@ -32,11 +32,6 @@ func Handlers() *mux.Router {
 	rApp := rBase.Host("app." + crmHost).PathPrefix("/ui-api").Subrouter() // app.ratuscrm.com/ui-api
 	rUiApi := rBase.Host("ui.api." + crmHost).Subrouter() // ui.api.ratuscrm.com
 
-	// Хелпер-функции проверки роутов API
-
-
-
-
 
 	// ### Перемещаем точку монтирования для ui/api интерфейсов + отсекаем функции проверки роутов ###
 
@@ -54,16 +49,34 @@ func Handlers() *mux.Router {
 	// #### Подключаем Middleware ####
 
 /**
+
+	## Посредники проверяющие флаги настройки системы
 	middleware.CheckApiStatus - проверяет статус API для всех аккаунтов
 	middleware.CheckAppUiApiStatus - проверяет статус App UI/API в настройках GUI RatusCRM
 	middleware.CheckUiApiStatus - проверяет статус Public UI/API для всех аккаунтов
 
-	middleware.BearerAuthentication - читает с проверкой JWT, проверяет статус API в аккаунте. Дополняет контекст account/accountId
+	## Посредники определяющие signedAccount
 	middleware.ContextMuxVarAccount - дополняет контекст account/accountId по урлу в {accountHashId}
 	middleware.ContextMainAccount - устанавливает контекст главного аккаунта account/accountId (RatusCRM)
 
+	## Посредники работающие с авторизацией пользователя
+  	middleware.BearerAuthentication - читает с проверкой JWT, проверяет статус API в аккаунте. Дополняет контекст account/accountId
 	middleware.JwtUserAuthentication - проверяет JWT и устанавливает в контекст userId
 	middleware.JwtFullAuthentication - проверяет JWT и устанавливает в контекст userId, accountId и account
+
+	--------------------------
+
+
+	Посредники добавляют в контексте следующую информацию:
+
+  	issuer			- откуда пришел запрос: "app ui/api", "ui-api", "api"
+	issuerAccountId - id root аккаунта, от имени которого происходит запрос. В App RatusCRM всегда = 1.
+	accountId 		- id аккаунта, в котором пользователь авторизован. Равен 0, если не авторизован. В UI/API совпадает с issuerAccountId.
+	userId 			- id авторизованного пользователя. Равен 0, если не авторизован.
+
+  	issuerAccount	- аккаунт откуда пришел запрос
+	account			- аккаунт, в котором авторизован пользователь
+	user			- пользователь, прошедший авторизацию
 */
 
 

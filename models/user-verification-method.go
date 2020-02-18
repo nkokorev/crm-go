@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 )
 
@@ -39,6 +40,9 @@ func (uvt UserVerificationMethod) Create () (*UserVerificationMethod, error) {
 func GetUserVerificationTypeById(id uint) (*UserVerificationMethod, error) {
 	uvt := UserVerificationMethod{}
 	err := db.First(&uvt,id).Error
+	if err == gorm.ErrRecordNotFound {
+		err = utils.Error{Message:"Метод верификации не найден"}
+	}
 	return &uvt, err
 }
 

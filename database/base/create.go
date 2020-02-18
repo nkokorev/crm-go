@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	"log"
-	"time"
 )
 
 func RefreshTables() {
@@ -36,7 +35,7 @@ func RefreshTables() {
 
 	// Таблица пользователей
 	pool.CreateTable(&models.User{})
-	pool.Exec("ALTER TABLE users \n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n    ADD CONSTRAINT users_signed_account_id_fkey FOREIGN KEY (signed_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n\ncreate unique index uix_users_signed_account_id_username_email_mobile_phone ON users (signed_account_id,username,email,phone);\n\n-- create unique index uix_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
+	pool.Exec("ALTER TABLE users \n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n    ADD CONSTRAINT users_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n\ncreate unique index uix_users_issuer_account_id_username_email_mobile_phone ON users (issuer_account_id,username,email,phone);\n\n-- create unique index uix_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
 
 	// User <> Account
 	pool.Exec("ALTER TABLE account_users \n--     ADD CONSTRAINT uix_email_account_id_parent_id unique (email,account_id,parent_id),\n    ADD CONSTRAINT account_users_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT account_users_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT users_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n--     ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE;\n\n-- create unique index uix_user_id_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
@@ -196,22 +195,19 @@ func UploadEavData() {
 
 func UploadTestData() {
 
-	timeNow := time.Now().UTC()
-
 	// 0. Создаем файл системных настроек
 	_, err := models.CreateCrmSettings()
 	if err != nil {
 		log.Fatal("Неудалось создать настройки crm-системы")
 	}
 
-	// Создаем основные типы верификации
+	// 1. Создаем основные типы верификации
 	// todo: email or phone
 	var verificationMethods = []models.UserVerificationMethod{
-		{Name:"Email-верификация", Code:models.VerificationMethodEmail, Description:"Пользователю будет необходимо перейти по ссылке в email"},
-		{Name:"SMS-верификация", Code:models.VerificationMethodPhone, Description:"Пользователю необходимо будет ввести код из SMS"},
-		{Name:"Двойная Email+SMS верификация", Code:models.VerificationMethodEmailAndPhone, Description:"Пользователю необходимо будет ввести код из SMS в специальной форме по ссылке в email"},
+		{Name:"Email-верификация", Code:models.VerificationMethodEmail, Description:"Пользователю будет необходимо перейти по ссылке в email."},
+		{Name:"SMS-верификация", Code:models.VerificationMethodPhone, Description:"Пользователю необходимо будет ввести код из SMS."},
+		{Name:"Двойная Email+SMS верификация", Code:models.VerificationMethodEmailAndPhone, Description:"Пользователю необходимо будет ввести код из SMS в специальной форме по ссылке в email."},
 	}
-
 	for _, v := range verificationMethods {
 		_, err := v.Create()
 		if err != nil {
@@ -219,19 +215,19 @@ func UploadTestData() {
 		}
 	}
 
-	// 1. Создаем главный аккаунт чит-функцией
+	// 2. Создаем главный аккаунт чит-функцией
 	account, err := models.CreateMainAccount()
 	if err != nil {
 		log.Fatal("Неудалось создать главный аккаунт: ", err)
 	}
 
-	// 2. Создаем API-ключ в аккаунте
+	// 3. Создаем API-ключ в аккаунте
 	_, err = account.CreateApiKey(models.ApiKey{Name:"Api key for Postman"})
 	if err != nil {
 		log.Fatalf("Неудалось создать API ключ для аккаунта: %v, Error: %s", account, err)
 	}
 
-	// 3. Создаем пользователя admin в main аккаунте
+	// 4. Создаем пользователя admin в main аккаунте
 	adminUser, err := account.CreateUser(
 		models.User{
 			Username:"admin",
@@ -242,11 +238,13 @@ func UploadTestData() {
 			Name:"Никита",
 			Surname:"Кокорев",
 			Patronymic:"Романович",
-			EmailVerifiedAt:&timeNow},
+			},
 		)
 	if err != nil {
 		log.Fatal("Неудалось создать admin'a: ", err)
 	}
+
+	// 5. Верифицируем пользователя admin
 
 	fmt.Printf("Создан Админ: %v", adminUser)
 

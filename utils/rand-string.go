@@ -2,6 +2,8 @@ package utils
 
 import (
 	"crypto/aes"
+	"crypto/md5"
+	"encoding/hex"
 	"math/rand"
 	"time"
 	"unicode/utf8"
@@ -90,4 +92,10 @@ func ValidationAesKey(key string) error {
 }
 func CreateHS256Key() string {
 	return RandStringBytesMaskImprSrcUnsafe(32, false)
+}
+
+func GetMD5Hash(text string) string {
+	h := md5.New()
+	h.Write([]byte(text))
+	return hex.EncodeToString(h.Sum(nil))
 }

@@ -16,7 +16,7 @@ func TestUser_getUserById(t *testing.T)  {
 	defer account.HardDelete()
 
 	user := User{
-		SignedAccountID:account.ID,
+		IssuerAccountID:account.ID,
 		Username:"TestUser_getUserById",
 	}
 	u, err := user.create()
@@ -34,7 +34,7 @@ func TestUser_hardDelete(t *testing.T)  {
 	defer account.HardDelete()
 
 	testUser := &User{
-		SignedAccountID:account.ID,
+		IssuerAccountID:account.ID,
 		Username:"TestUser_getUserById",
 	}
 	user, err := testUser.create()
@@ -60,7 +60,7 @@ func TestUser_softDelete(t *testing.T)  {
 	defer account.HardDelete()
 
 	testUser := &User{
-		SignedAccountID:account.ID,
+		IssuerAccountID:account.ID,
 		Username:"TestUser_getUserById",
 	}
 	user, err := testUser.create()

@@ -74,6 +74,7 @@ type Account struct {
 func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	account.ID = 0
 	account.HashID = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
+	//account.HashID = utils.GetMD5Hash(account.Name + "RatusCRM" + time.Now().UTC().String())
 	account.CreatedAt = time.Now().UTC()
 
 	//account.UiApiJwtKey =  utils.CreateHS256Key()
@@ -188,6 +189,12 @@ func GetAccount (id uint) (*Account, error) {
 	return &account, err
 }
 
+func GetMainAccount() (*Account, error) {
+	var account Account
+	err := db.Model(&Account{}).First(&account, "id = 1 AND name = 'RatusCRM'").Error
+	return &account, err
+}
+
 func GetAccountByHash (hashId string) (*Account, error) {
 	var account Account
 	err := db.Model(&Account{}).First(&account, "hash_id = ?", hashId).Error
@@ -249,7 +256,7 @@ func (account Account) CreateUser(input User) (*User, error) {
 	var username, email, phone bool
 
 
-	input.SignedAccountID = account.ID
+	input.IssuerAccountID = account.ID
 
 	// ### !!!! Проверка входящих данных !!! ### ///
 
@@ -308,10 +315,11 @@ func (account Account) CreateUser(input User) (*User, error) {
 	return input.create()
 }
 
+// Ищет пользователя, привязанного к аккаунту. НЕ проверяет роли и доступ к аккаунту.
 func (account Account) GetUserById(userId uint) (*User, error) {
 	user := User{}
 
-	err := db.Model(&User{}).Where("signed_account_id = ?", account.ID).First(&user, userId).Error
+	err := db.Model(&User{}).Where("issuer_account_id = ?", account.ID).First(&user, userId).Error
 
 	return &user, err
 }
@@ -324,7 +332,7 @@ func (account Account) GetUserByUsername (username string) (*User, error) {
 
 	user := User{}
 
-	err := db.Model(&User{}).Where("signed_account_id = ? AND username = ?", account.ID, username).First(&user).Error
+	err := db.Model(&User{}).Where("issuer_account_id = ? AND username = ?", account.ID, username).First(&user).Error
 
 	return &user, err
 }
@@ -336,7 +344,7 @@ func (account Account) GetUserByEmail (email string) (*User, error) {
 
 	user := User{}
 
-	err := db.Model(&User{}).Where("signed_account_id = ? AND email = ?", account.ID, email).First(&user).Error
+	err := db.Model(&User{}).Where("issuer_account_id = ? AND email = ?", account.ID, email).First(&user).Error
 
 	return &user, err
 }
@@ -354,7 +362,7 @@ func (account Account) GetUserByPhone (phone, region string) (*User, error) {
 
 	user := User{}
 
-	err := db.Model(&User{}).Where("signed_account_id = ? AND phone = ?", account.ID, phone).First(&user).Error
+	err := db.Model(&User{}).Where("issuer_account_id = ? AND phone = ?", account.ID, phone).First(&user).Error
 
 	return &user, err
 }
@@ -408,13 +416,50 @@ func (account Account) ValidationUserRegReqFields(input User) error {
 	}
 }
 
+func (account Account) IsVerifiedUser(userId uint) (bool, error) {
+	user, err := account.GetUserById(userId)
+	if err != nil {
+		return false, utils.Error{Message:"Пользователь не найден"}
+	}
+
+	methods, err := GetUserVerificationTypeById(account.UserVerificationMethodID)
+	if err != nil {
+		return false, err
+	}
+
+	status := false
+
+	switch methods.Code {
+		case VerificationMethodEmail:
+			status = user.EmailVerifiedAt != nil
+		case VerificationMethodPhone:
+			status = user.PhoneVerifiedAt != nil
+		case VerificationMethodEmailAndPhone:
+			status = user.EmailVerifiedAt != nil && user.PhoneVerifiedAt != nil
+	}
 
 
+	return status, nil
+}
 
+// Проверяет, есть ли пользователь с указанным ID в аккаунте с какой-то ролью
+func (account Account) ExistUser(userId uint) bool {
+	// todo ...
+	return false
+}
 
+// добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то ничего не произойдет.
+func (account *Account) AppendUser (user *User) error {
+	return db.Model(&user).Association("accounts").Append(account).Error
+}
+func (account *Account) RemoveUser (user *User) error {
+	return db.Model(&user).Association("accounts").Delete(account).Error
+}
 
-
-
+// загружает список обычных пользователей аккаунта
+func (account *Account) GetUsers () error {
+	return db.Preload("Users").First(&account).Error
+}
 
 
 
@@ -506,19 +551,7 @@ func (account *Account) DeleteUnscoped () error {
 // ### Account inner USER func
 // todo: пересмотреть работу функций под AccountUser
 
-// добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то ничего не произойдет.
-func (account *Account) AppendUser (user *User) error {
-	return db.Model(&user).Association("accounts").Append(account).Error
-}
 
-func (account *Account) RemoveUser (user *User) error {
-	return db.Model(&user).Association("accounts").Delete(account).Error
-}
-
-// загружает список обычных пользователей аккаунта
-func (account *Account) GetUsers () error {
-	return db.Preload("Users").First(&account).Error
-}
 
 // ### Account inner func API (+UI) KEYS
 
