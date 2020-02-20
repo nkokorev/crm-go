@@ -429,7 +429,7 @@ func (account Account) IsVerifiedUser(userId uint) (bool, error) {
 
 	status := false
 
-	switch methods.Code {
+	switch methods.Tag {
 		case VerificationMethodEmail:
 			status = user.EmailVerifiedAt != nil
 		case VerificationMethodPhone:

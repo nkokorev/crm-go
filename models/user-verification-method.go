@@ -3,12 +3,13 @@ package models
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"log"
 )
 
 type UserVerificationMethod struct {
 	ID uint	`json:"id" gorm:"primary_key"`
 	Name string `json:"name" gorm:"type:varchar(255)"` // Регистрация по email, ...
-	Code string `json:"code" gorm:"type:varchar(50);unique;not null;"`// email, phone, email-phone
+	Tag string `json:"tag" gorm:"type:varchar(50);unique;not null;"`// email, phone, email-phone
 	Description string `json:"description" gorm:"type:varchar(255);default:null;"`// краткое описание
 }
 
@@ -18,6 +19,22 @@ const (
 	VerificationMethodEmailAndPhone = "email+Phone"
 )
 
+func (UserVerificationMethod) PgSqlCreate() {
+	db.CreateTable(&UserVerificationMethod{})
+
+	var verificationMethods = []UserVerificationMethod{
+		{Name:"Email-верификация", Tag:VerificationMethodEmail, Description:"Пользователю будет необходимо перейти по ссылке в email."},
+		{Name:"SMS-верификация", Tag:VerificationMethodPhone, Description:"Пользователю необходимо будет ввести код из SMS."},
+		{Name:"Двойная Email+SMS верификация", Tag:VerificationMethodEmailAndPhone, Description:"Пользователю необходимо будет ввести код из SMS в специальной форме по ссылке в email."},
+	}
+	for _, v := range verificationMethods {
+		_, err := v.Create()
+		if err != nil {
+			log.Fatalf("Неудалось создать тип верификации: %v", v)
+		}
+	}
+}
+
 // Пользователь проходит верификацию, когда поля, указанные в методе верификации пользователя в аккаунте, - надежно подтверждены самим пользователем.
 
 func (uvt UserVerificationMethod) Create () (*UserVerificationMethod, error) {
@@ -26,7 +43,7 @@ func (uvt UserVerificationMethod) Create () (*UserVerificationMethod, error) {
 		return nil, utils.Error{Message:"Не верно указаны данные", Errors: map[string]interface{}{"name":"Введите описание типа верификации"}}
 	}
 
-	if len([]rune(uvt.Code)) < 2 {
+	if len([]rune(uvt.Tag)) < 2 {
 		return nil, utils.Error{Message:"Не верно указаны данные", Errors: map[string]interface{}{"code":"код должен быть не менее 2х символов"}}
 	}
 

@@ -19,7 +19,7 @@ import (
  */
 
 
-// проверяет валидность 32-символного api-ключа
+// проверяет валидность 32-символного api-ключа. Вставляет в контекст accountId && account
 func BearerAuthentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +86,7 @@ func BearerAuthentication(next http.Handler) http.Handler {
 	})
 }
 
-// Требует авторизации по User
+// Требует авторизации по User, а также вставляет в контекст userId && user
 func JwtUserAuthentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -144,7 +144,7 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 	})
 }
 
-// Требует User и Account авторизации, Проверяет доступ пользователя к аккаунту.
+// Полная проверка User & Account авторизация + проверка доступа. Вставляет userId && user, accountId && account
 func JwtFullAuthentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -203,6 +203,11 @@ func JwtFullAuthentication(next http.Handler) http.Handler {
 		if false {
 			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"user":"not load"}}))
 			return
+		}
+
+		// проверка на роль клиента и доступ в CRM
+		if r.Context().Value("issuer") == "app ui/api" {
+			// todo role & account.AllowClientLoginCrm
 		}
 
 		r = r.WithContext(context.WithValue(r.Context(), "userId", tk.UserID))

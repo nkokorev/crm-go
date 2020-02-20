@@ -17,21 +17,25 @@ func RefreshTables() {
 	// дропаем системные таблицы
 	//pool.DropTableIfExists(&models.UserProfile{})
 
-	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, api_keys, account_users, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, email_access_tokens, user_profiles, users, user_verification_types, crm_settings").Error
+	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, api_keys, account_users, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, roles, email_access_tokens, user_profiles, users, user_verification_methods, crm_settings").Error
 	if err != nil {
 		fmt.Println("Cant create table accounts", err)
 	}
+	//pool.DropTableIfExists(&models.UserVerificationMethod{}, models.Role{})
 
-	pool.DropTableIfExists(&models.UserVerificationMethod{})
 
 	pool.CreateTable(&models.CrmSetting{})
-	pool.CreateTable(&models.UserVerificationMethod{})
+	models.UserVerificationMethod{}.PgSqlCreate()
+
+
 
 	pool.Exec("DROP TYPE IF EXISTS AUTH_METHOD;\n--CREATE TYPE AUTH_METHOD AS ENUM ('username', 'email', 'phone');\n")
 	//pool.Exec("DROP TYPE IF EXISTS AUTH_METHOD;\nCREATE TYPE AUTH_METHOD AS ENUM ('username', 'email', 'phone');\n")
 	pool.CreateTable(&models.Account{})
 	//pool.Model(&models.User{}).AddForeignKey("user_refer", "users(refer)", "CASCADE", "CASCADE")
 	pool.Exec("ALTER TABLE accounts \n--     ADD CONSTRAINT uix_email_account_id_parent_id unique (email,account_id,parent_id),\n    ADD CONSTRAINT accounts_user_verification_method_id_fkey FOREIGN KEY (user_verification_method_id) REFERENCES user_verification_methods(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT users_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n--     ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE;\n\n-- create unique index uix_user_id_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
+
+	models.Role{}.PgSqlCreate()
 
 	// Таблица пользователей
 	pool.CreateTable(&models.User{})
@@ -201,19 +205,6 @@ func UploadTestData() {
 		log.Fatal("Неудалось создать настройки crm-системы")
 	}
 
-	// 1. Создаем основные типы верификации
-	// todo: email or phone
-	var verificationMethods = []models.UserVerificationMethod{
-		{Name:"Email-верификация", Code:models.VerificationMethodEmail, Description:"Пользователю будет необходимо перейти по ссылке в email."},
-		{Name:"SMS-верификация", Code:models.VerificationMethodPhone, Description:"Пользователю необходимо будет ввести код из SMS."},
-		{Name:"Двойная Email+SMS верификация", Code:models.VerificationMethodEmailAndPhone, Description:"Пользователю необходимо будет ввести код из SMS в специальной форме по ссылке в email."},
-	}
-	for _, v := range verificationMethods {
-		_, err := v.Create()
-		if err != nil {
-			log.Fatalf("Неудалось создать тип верификации: %v", v)
-		}
-	}
 
 	// 2. Создаем главный аккаунт чит-функцией
 	account, err := models.CreateMainAccount()

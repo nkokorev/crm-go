@@ -24,7 +24,6 @@ func Handlers() *mux.Router {
 	}
 
 	// обрабатываем все запросы со слешем и без
-	//rBase := mux.NewRouter().StrictSlash(false)
 	rBase := mux.NewRouter().StrictSlash(true)
 
 	// ### Монтируем все три точки входа для API ###
@@ -34,10 +33,6 @@ func Handlers() *mux.Router {
 
 
 	// ### Перемещаем точку монтирования для ui/api интерфейсов + отсекаем функции проверки роутов ###
-
-	rApi = rApi.PathPrefix("").Subrouter()
-	rApp = rApp.PathPrefix("").Subrouter()
-	//rUiApi = rUiApi.PathPrefix("/accounts/{accountId:[0-9]+}").Subrouter()
 	rUiApi = rUiApi.PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter()
 
 	// Дополнительные псевдо-точки для навешивания middleware
@@ -56,13 +51,13 @@ func Handlers() *mux.Router {
 	middleware.CheckUiApiStatus - проверяет статус Public UI/API для всех аккаунтов
 
 	## Посредники определяющие signedAccount
-	middleware.ContextMuxVarAccount - дополняет контекст account/accountId по урлу в {accountHashId}
-	middleware.ContextMainAccount - устанавливает контекст главного аккаунта account/accountId (RatusCRM)
+	middleware.ContextMuxVarAccount - Вставляет в контекст issuerAccountId из hashAccountId (раскрытие issuer account) && issuerAccount
+	middleware.ContextMainAccount - устанавливает в контекст issuerAccountId = 1 && issuerAccount
 
 	## Посредники работающие с авторизацией пользователя
-  	middleware.BearerAuthentication - читает с проверкой JWT, проверяет статус API в аккаунте. Дополняет контекст account/accountId
-	middleware.JwtUserAuthentication - проверяет JWT и устанавливает в контекст userId
-	middleware.JwtFullAuthentication - проверяет JWT и устанавливает в контекст userId, accountId и account
+  	middleware.BearerAuthentication - читает с проверкой JWT, проверяет статус API в аккаунте. Дополняет контекст accountId && account
+	middleware.JwtUserAuthentication - проверяет JWT и устанавливает в контекст userId & user
+	middleware.JwtFullAuthentication - проверяет JWT и устанавливает в контекст userId & user, accountId && account
 
 	--------------------------
 
