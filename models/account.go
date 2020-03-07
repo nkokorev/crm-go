@@ -139,13 +139,9 @@ func (account Account) create () (*Account, error) {
 func CreateMainAccount() (*Account, error) {
 
 	// Проверяем есть ли Главны Аккаунт
-	acc, err := GetMainAccount()
+	_, err := GetMainAccount()
 	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, errors.New("Ошибка поиска аккаунта 'RatusCRM'")
-	}
-	
-	if acc != nil {
-		return nil, errors.New("Аккаунт 'RatusCRM' account уже существует")
+		return nil, err
 	}
 
 	dvc, err := GetUserVerificationTypeByCode(VerificationMethodEmailAndPhone)
@@ -266,7 +262,6 @@ func (account Account) CreateUser(input User) (*User, error) {
 	var err error
 	var username, email, phone bool
 
-
 	input.IssuerAccountID = account.ID
 
 	// ### !!!! Проверка входящих данных !!! ### ///
@@ -310,7 +305,6 @@ func (account Account) CreateUser(input User) (*User, error) {
 	if !(username || email || phone ) {
 		return nil, utils.Error{Message:"Отсутствуют обязательные поля", Errors: map[string]interface{}{"username":"Необходимо заполнить поле", "email":"Необходимо заполнить поле", "mobilePhone":"Необходимо заполнить поле"}}
 	}
-
 
 	// Проверка дублирование полей
 	if account.existUserUsername(input.Username) {

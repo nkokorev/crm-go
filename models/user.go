@@ -71,6 +71,8 @@ func (user User) create () (*User, error) {
 	outUser.PhoneRegion = user.PhoneRegion
 	outUser.Phone = user.Phone
 
+	outUser.Password = user.Password
+
 	outUser.Name = user.Name
 	outUser.Surname = user.Surname
 	outUser.Patronymic = user.Patronymic

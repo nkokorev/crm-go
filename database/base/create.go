@@ -234,7 +234,8 @@ func UploadTestData() {
 
 	// 5. Верифицируем пользователя admin
 
-	fmt.Printf("Создан Админ: %v", adminUser)
+	// temp...
+	fmt.Printf("ADmin created: %v", adminUser)
 
 
 	return
