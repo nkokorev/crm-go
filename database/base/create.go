@@ -25,13 +25,13 @@ func RefreshTables() {
 	pool.CreateTable(&models.CrmSetting{})
 	models.UserVerificationMethod{}.PgSqlCreate()
 
-
+	// old old...
 	pool.Exec("DROP TYPE IF EXISTS AUTH_METHOD;\n--CREATE TYPE AUTH_METHOD AS ENUM ('username', 'email', 'phone');\n")
-	//pool.Exec("DROP TYPE IF EXISTS AUTH_METHOD;\nCREATE TYPE AUTH_METHOD AS ENUM ('username', 'email', 'phone');\n")
-	pool.CreateTable(&models.Account{})
-	//pool.Model(&models.User{}).AddForeignKey("user_refer", "users(refer)", "CASCADE", "CASCADE")
-	pool.Exec("ALTER TABLE accounts \n--     ADD CONSTRAINT uix_email_account_id_parent_id unique (email,account_id,parent_id),\n    ADD CONSTRAINT accounts_user_verification_method_id_fkey FOREIGN KEY (user_verification_method_id) REFERENCES user_verification_methods(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT users_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n--     ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE;\n\n-- create unique index uix_user_id_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
+	
+	//pool.CreateTable(&models.Account{})
+	//pool.Exec("ALTER TABLE accounts \n--     ADD CONSTRAINT uix_email_account_id_parent_id unique (email,account_id,parent_id),\n    ADD CONSTRAINT accounts_user_verification_method_id_fkey FOREIGN KEY (user_verification_method_id) REFERENCES user_verification_methods(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT users_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n--     ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE;\n\n-- create unique index uix_user_id_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
 
+	models.Account{}.PgSqlCreate()
 	models.Role{}.PgSqlCreate()
 
 	// Таблица пользователей
@@ -203,20 +203,13 @@ func UploadTestData() {
 	}
 
 
-	// 2. Создаем главный аккаунт чит-функцией
-	account, err := models.CreateMainAccount()
+	mAcc, err := models.GetMainAccount()
 	if err != nil {
-		log.Fatal("Неудалось создать главный аккаунт. Ошибка: ", err)
+		log.Fatalf("Неудалось найти главный аккаунт: %v", err)
 	}
-
-	// 3. Создаем API-ключ в аккаунте
-	_, err = account.CreateApiKey(models.ApiKey{Name:"Api key for Postman"})
-	if err != nil {
-		log.Fatalf("Неудалось создать API ключ для аккаунта: %v, Error: %s", account, err)
-	}
-
+	
 	// 4. Создаем пользователя admin в main аккаунте
-	adminUser, err := account.CreateUser(
+	adminUser, err := mAcc.CreateUser(
 		models.User{
 			Username:"admin",
 			Email:"kokorevn@gmail.com",
@@ -234,8 +227,14 @@ func UploadTestData() {
 
 	// 5. Верифицируем пользователя admin
 
+	// 6. Добавляем пользователя в аккаунт (?)
+	if err := mAcc.AppendUser(*adminUser);err!= nil {
+		log.Fatalf("Cannot append user %v", err)
+	}
+	
+
 	// temp...
-	fmt.Printf("ADmin created: %v", adminUser)
+	//fmt.Printf("ADmin created: %v", adminUser)
 
 
 	return

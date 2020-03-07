@@ -347,7 +347,7 @@ func (user User) CreateAccount(input Account) (*Account,error) {
 	}
 
 	// 2. Привязываем аккаунт к пользователю
-	if err := a.AppendUser(&user); err != nil {
+	if err := a.AppendUser(user); err != nil {
 		return nil, err
 	}
 

@@ -11,9 +11,9 @@ func TestUserVerificationType_Create(t *testing.T) {
 		expected bool
 		description string
 	}{
-		{UserVerificationMethod{Name:"TestCreate Type", Code:utils.RandStringBytesMaskImprSrcUnsafe(10, false)}, true, "Все есть"},
-		{UserVerificationMethod{Name:"", Code:utils.RandStringBytesMaskImprSrcUnsafe(9, false)}, false, "Нет имени"},
-		{UserVerificationMethod{Name:"TestCreate Type", Code:"Ф"}, false, "Слишком короткий код"},
+		{UserVerificationMethod{Name:"TestCreate Type", Tag:utils.RandStringBytesMaskImprSrcUnsafe(10, false)}, true, "Все есть"},
+		{UserVerificationMethod{Name:"", Tag:utils.RandStringBytesMaskImprSrcUnsafe(9, false)}, false, "Нет имени"},
+		{UserVerificationMethod{Name:"TestCreate Type", Tag:"Ф"}, false, "Слишком короткий код"},
 	}
 
 	for i,v := range listTest {
@@ -36,7 +36,7 @@ func TestUserVerificationType_Create(t *testing.T) {
 }
 
 func TestGetUserVerificationTypeById(t *testing.T) {
-	uvt, err := UserVerificationMethod{Name:"TestDelete", Code:utils.RandStringBytesMaskImprSrcUnsafe(5, false)}.Create()
+	uvt, err := UserVerificationMethod{Name:"TestDelete", Tag:utils.RandStringBytesMaskImprSrcUnsafe(5, false)}.Create()
 	if err != nil {
 		t.Fatalf("Cant create ver %v", err)
 	}
@@ -47,20 +47,20 @@ func TestGetUserVerificationTypeById(t *testing.T) {
 		t.Fatalf("Cant find ver type by id %v", err)
 	}
 
-	if uvt.Code != uvtF.Code {
+	if uvt.Tag != uvtF.Tag {
 		t.Fatalf("А коды то разные мужик!")
 	}
 }
 
 func TestGetUserVerificationTypeByCode(t *testing.T) {
-	uvt, err := UserVerificationMethod{Name:"TestDelete", Code:utils.RandStringBytesMaskImprSrcUnsafe(5, false)}.Create()
+	uvt, err := UserVerificationMethod{Name:"TestDelete", Tag:utils.RandStringBytesMaskImprSrcUnsafe(5, false)}.Create()
 	if err != nil {
 		t.Fatalf("Cant create ver %v", err)
 	}
 	defer uvt.Delete()
 
-	uvtF, err := GetUserVerificationTypeByCode(uvt.Code)
-	if err !=nil {
+	uvtF, err := GetUserVerificationTypeByCode(uvt.Tag)
+	if err != nil {
 		t.Fatalf("Cant find ver type by Code %v", err)
 	}
 
@@ -70,7 +70,7 @@ func TestGetUserVerificationTypeByCode(t *testing.T) {
 }
 
 func TestUserVerificationType_Delete(t *testing.T) {
-	uvt, err := UserVerificationMethod{Name:"TestDelete", Code:"testCode"}.Create()
+	uvt, err := UserVerificationMethod{Name:"TestDelete", Tag:"testCode"}.Create()
 	if err != nil {
 		t.Fatalf("Cant create ver %v", err)
 	}
@@ -92,10 +92,9 @@ func TestUserVerificationType_Delete(t *testing.T) {
 		t.Fatalf("Нашли код, хотя он должен был быть удален")
 	}
 
-	_, err = GetUserVerificationTypeByCode(uvt.Code)
+	_, err = GetUserVerificationTypeByCode(uvt.Tag)
 	if err ==nil {
 		t.Fatalf("Нашли код, хотя он должен был быть удален")
 	}
 }
-
 

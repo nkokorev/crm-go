@@ -5,6 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/utils"
+	"log"
 	"strings"
 	"time"
 )
@@ -82,6 +83,25 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	//scope.SetColumn("ui_api_jwt_key", "fjdsfdfsjkfskjfds")
 	//scope.SetColumn("ID", uuid.New())
 	return nil
+}
+
+func (Account) PgSqlCreate() {
+
+	// 1. Создаем таблицу и настройки в pgSql
+	db.CreateTable(&Account{})
+	db.Exec("ALTER TABLE accounts \n--     ADD CONSTRAINT uix_email_account_id_parent_id unique (email,account_id,parent_id),\n    ADD CONSTRAINT accounts_user_verification_method_id_fkey FOREIGN KEY (user_verification_method_id) REFERENCES user_verification_methods(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT users_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n--     ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE;\n\n-- create unique index uix_user_id_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
+
+	// 2. Создаем Главный аккаунт через спец. функцию
+	_, err := CreateMainAccount()
+	if err != nil {
+		log.Fatal("Неудалось создать главный аккаунт. Ошибка: ", err)
+	}
+
+	// 3. Создаем API-ключ в аккаунте
+/*	_, err = mAcc.CreateApiKey(ApiKey{Name:"Api key for Postman"})
+	if err != nil {
+		log.Fatalf("Неудалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
+	}*/
 }
 
 //Reset - обнуляет переменную account
@@ -453,9 +473,16 @@ func (account Account) ExistUser(userId uint) bool {
 	return false
 }
 
-// добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то ничего не произойдет.
-func (account *Account) AppendUser (user *User) error {
-	return db.Model(&user).Association("accounts").Append(account).Error
+// добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то роль будет обновлена
+func (account Account) AppendUser (user User, v_opt... Role) error {
+	
+
+	// Если роль не передана, то пользователь с ролью client
+	if len(v_opt) < 1 {
+
+	}
+	//
+	return db.Model(&user).Association("accounts").Append(&account).Error
 }
 func (account *Account) RemoveUser (user *User) error {
 	return db.Model(&user).Association("accounts").Delete(account).Error
