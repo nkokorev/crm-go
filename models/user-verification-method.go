@@ -6,17 +6,18 @@ import (
 	"log"
 )
 
+//UserVerificationMethod - верификация пользователя
 type UserVerificationMethod struct {
 	ID uint	`json:"id" gorm:"primary_key"`
 	Name string `json:"name" gorm:"type:varchar(255)"` // Регистрация по email, ...
-	Tag string `json:"tag" gorm:"type:varchar(50);unique;not null;"`// email, phone, email-phone
+	Tag string `json:"tag" gorm:"type:varchar(50);unique;not null;"`// email, phone, email-phone - одна из заранее определенных констант!
 	Description string `json:"description" gorm:"type:varchar(255);default:null;"`// краткое описание
 }
 
 const (
 	VerificationMethodEmail = "email"
 	VerificationMethodPhone = "phone"
-	VerificationMethodEmailAndPhone = "email+Phone"
+	VerificationMethodEmailAndPhone = "email+phone"
 )
 
 func (UserVerificationMethod) PgSqlCreate() {
@@ -36,7 +37,6 @@ func (UserVerificationMethod) PgSqlCreate() {
 }
 
 // Пользователь проходит верификацию, когда поля, указанные в методе верификации пользователя в аккаунте, - надежно подтверждены самим пользователем.
-
 func (uvt UserVerificationMethod) Create () (*UserVerificationMethod, error) {
 
 	if len([]rune(uvt.Name)) < 1 {
@@ -63,9 +63,9 @@ func GetUserVerificationTypeById(id uint) (*UserVerificationMethod, error) {
 	return &uvt, err
 }
 
-func GetUserVerificationTypeByCode(code string) (*UserVerificationMethod, error) {
+func GetUserVerificationTypeByCode(tag string) (*UserVerificationMethod, error) {
 	uvt := UserVerificationMethod{}
-	err := db.First(&uvt,"code = ?", code).Error
+	err := db.First(&uvt,"tag = ?", tag).Error
 	return &uvt, err
 }
 

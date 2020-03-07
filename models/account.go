@@ -5,7 +5,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/utils"
-	"log"
 	"strings"
 	"time"
 )
@@ -18,6 +17,7 @@ const (
 	phone authMethod = "phone"
 )
 
+//Account - таблица аккаунтов в рамках которых происходят все основные действия пользователей
 type Account struct {
 	ID uint `json:"id" gorm:"primary_key"`
 	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
@@ -71,6 +71,7 @@ type Account struct {
 	Stocks		[]Stock `json:"-"`
 }
 
+//BeforeCreate - GORM функция перед созданием аккаунта выставляет нужные значения переменных
 func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	account.ID = 0
 	account.HashID = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
@@ -83,6 +84,7 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
+//Reset - обнуляет переменную account
 func (account *Account) Reset() { account = &Account{} }
 
 func (account Account) create () (*Account, error) {
@@ -133,16 +135,21 @@ func (account Account) create () (*Account, error) {
 	return &outAccount, nil
 }
 
-// чит функция для развертывания, т.к. нельзя создать аккаунт из-под несуществующего пользователя
+// CreateMainAccount - чит функция для развертывания, т.к. нельзя создать аккаунт из-под несуществующего пользователя
 func CreateMainAccount() (*Account, error) {
 
-	if !db.Model(&Account{}).First(&Account{}, "id = 1").RecordNotFound() {
-		log.Println("RatusCRM account уже существует")
-		return nil, nil
+	// Проверяем есть ли Главны Аккаунт
+	acc, err := GetMainAccount()
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, errors.New("Ошибка поиска аккаунта 'RatusCRM'")
+	}
+	
+	if acc != nil {
+		return nil, errors.New("Аккаунт 'RatusCRM' account уже существует")
 	}
 
-	doubleVerificationCode, err := GetUserVerificationTypeByCode(VerificationMethodEmailAndPhone)
-	if err != nil || doubleVerificationCode == nil{
+	dvc, err := GetUserVerificationTypeByCode(VerificationMethodEmailAndPhone)
+	if err != nil || dvc == nil {
 		return nil, errors.New("Неудалось получить код двойной верификации по телефону и почте")
 	}
 
@@ -156,12 +163,12 @@ func CreateMainAccount() (*Account, error) {
 		UiApiAuthMethods: pq.StringArray{"username,email,phone"},
 		UiApiUserRegistrationRequiredFields: pq.StringArray{"username,email,phone"},
 
-		UserVerificationMethodID: doubleVerificationCode.ID,
+		UserVerificationMethodID: dvc.ID,
 		UiApiEnabledLoginNotVerifiedUser: false,
 	}).create()
 }
 
-// проверяем входящие данные для создания или обновления аккаунта и возвращаем описательную ошибку
+// ValidateInputs -проверяем входящие данные для создания или обновления аккаунта и возвращаем описательную ошибку
 func (account Account) ValidateInputs() error {
 
 	if len(account.Name) < 2 {
@@ -183,18 +190,22 @@ func (account Account) ValidateInputs() error {
 	return nil
 }
 
+//GetAccount - возвращает аккаунт по его ID
 func GetAccount (id uint) (*Account, error) {
 	var account Account
 	err := db.Model(&Account{}).First(&account, id).Error
 	return &account, err
 }
 
+//GetMainAccount - возвращает аккаунт RatusCRM (id == 1)
 func GetMainAccount() (*Account, error) {
 	var account Account
 	err := db.Model(&Account{}).First(&account, "id = 1 AND name = 'RatusCRM'").Error
+	//if err != nil { account.Reset() }
 	return &account, err
 }
 
+//GetAccountByHash - возвращает аккаунт по его hashId (для UI/API)
 func GetAccountByHash (hashId string) (*Account, error) {
 	var account Account
 	err := db.Model(&Account{}).First(&account, "hash_id = ?", hashId).Error
