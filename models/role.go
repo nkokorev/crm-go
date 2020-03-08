@@ -16,15 +16,16 @@ type roleAccess string
 
 // Базовая система ролей (9)
 const (
-	roleOwner  roleAccess = "owner"
-	roleAdmin roleAccess = "admin"
-	roleManager roleAccess = "manager"
-	roleMarketer roleAccess = "marketer"
-	roleAuthor roleAccess = "author"
-	roleViewer roleAccess = "viewer"
-	roleFullAccess roleAccess = "full-access"
-	roleSiteAccess roleAccess = "site-access"
-	roleReadAccess roleAccess = "read-access"
+	RoleOwner  roleAccess = "owner"
+	RoleAdmin roleAccess = "admin"
+	RoleManager roleAccess = "manager"
+	RoleMarketer roleAccess = "marketer"
+	RoleAuthor roleAccess = "author"
+	RoleViewer roleAccess = "viewer"
+	RoleClient roleAccess = "client"
+	RoleFullAccess roleAccess = "full-access"
+	RoleSiteAccess roleAccess = "site-access"
+	RoleReadAccess roleAccess = "read-access"
 )
 
 type Role struct {
@@ -38,15 +39,16 @@ type Role struct {
 }
 
 var systemRoles = []Role {
-	{ IssuerAccountId: 1, Name: "Владелец аккаунта",Tag:roleOwner, 		Type:	roleTypeGui,	Description: "Доступ ко всем данным и функционалу аккаунта."},
-	{ IssuerAccountId: 1, Name: "Администратор", 	Tag:roleAdmin, 		Type:	roleTypeGui,	Description: "Доступ ко всем данным и функционалу аккаунта. Не может удалить аккаунт или менять владельца аккаунта."},
-	{ IssuerAccountId: 1, Name: "Менеджер", 		Tag:roleManager, 	Type:	roleTypeGui,	Description: "Не может добавлять пользователей, менять биллинговую информацию и систему ролей."},
-	{ IssuerAccountId: 1, Name: "Маркетолог", 		Tag:roleMarketer, 	Type:	roleTypeGui,	Description: "Читает все клиентские данные, может изменять все что касается маркетинга, но не заказы или склады."},
-	{ IssuerAccountId: 1, Name: "Автор", 			Tag:roleAuthor, 	Type:	roleTypeGui,	Description: "Может создавать контент: писать статьи, письма, описания к товарам и т.д."},
-	{ IssuerAccountId: 1, Name: "Наблюдатель", 		Tag:roleViewer, 	Type:	roleTypeGui,	Description: "The Viewer can view reports in the account"},
-	{ IssuerAccountId: 1, Name: "Full Access", 		Tag:roleFullAccess, Type:	roleTypeApi,	Description: "Доступ ко всем функциям API"},
-	{ IssuerAccountId: 1, Name: "Site Access", 		Tag:roleSiteAccess, Type:	roleTypeApi,	Description: "Доступ к аккаунту через API, необходимый для интеграции с сайтом"},
-	{ IssuerAccountId: 1, Name: "Read Access", 		Tag:roleReadAccess, Type:	roleTypeApi,	Description: "Доступ к чтению основной информации об аккаунте."},
+	{ IssuerAccountId: 1, Name: "Владелец аккаунта",Tag:RoleOwner, 		Type:	roleTypeGui,	Description: "Доступ ко всем данным и функционалу аккаунта."},
+	{ IssuerAccountId: 1, Name: "Администратор", 	Tag:RoleAdmin, 		Type:	roleTypeGui,	Description: "Доступ ко всем данным и функционалу аккаунта. Не может удалить аккаунт или менять владельца аккаунта."},
+	{ IssuerAccountId: 1, Name: "Менеджер", 		Tag:RoleManager, 	Type:	roleTypeGui,	Description: "Не может добавлять пользователей, менять биллинговую информацию и систему ролей."},
+	{ IssuerAccountId: 1, Name: "Маркетолог", 		Tag:RoleMarketer, 	Type:	roleTypeGui,	Description: "Читает все клиентские данные, может изменять все что касается маркетинга, но не заказы или склады."},
+	{ IssuerAccountId: 1, Name: "Автор", 			Tag:RoleAuthor, 	Type:	roleTypeGui,	Description: "Может создавать контент: писать статьи, письма, описания к товарам и т.д."},
+	{ IssuerAccountId: 1, Name: "Наблюдатель", 		Tag:RoleViewer, 	Type:	roleTypeGui,	Description: "The Viewer can view reports in the account"},
+	{ IssuerAccountId: 1, Name: "Клиент", 			Tag:RoleClient, 	Type:	roleTypeGui,	Description: "Стандартная роль для всех клиентов"},
+	{ IssuerAccountId: 1, Name: "Full Access", 		Tag:RoleFullAccess, Type:	roleTypeApi,	Description: "Доступ ко всем функциям API"},
+	{ IssuerAccountId: 1, Name: "Site Access", 		Tag:RoleSiteAccess, Type:	roleTypeApi,	Description: "Доступ к аккаунту через API, необходимый для интеграции с сайтом"},
+	{ IssuerAccountId: 1, Name: "Read Access", 		Tag:RoleReadAccess, Type:	roleTypeApi,	Description: "Доступ к чтению основной информации об аккаунте."},
 }
 
 func (Role) PgSqlCreate() {
@@ -102,6 +104,12 @@ func (role *Role) create () (*Role, error) {
 	return nil, nil
 }
 
-func GetRole(tag string) (*Role, error) {
-	 return nil, nil
+// GetRole - возвращает роли только для главного аккаунта (публичные)
+func GetRole(tag roleAccess) (*Role, error) {
+	var role Role
+	if err := db.First(&role, "issuer_account_id = 1 AND tag = ?", tag).Error; err != nil {
+		return nil, err
+	}
+
+	 return &role, nil
 }

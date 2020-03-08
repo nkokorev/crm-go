@@ -277,6 +277,7 @@ func (account Account) UpdateApiKey(token string, input ApiKey) (*ApiKey, error)
 
 // #### User ####
 
+// CreateUser - создает пользователя в аккаунте с базовой ролью = client
 func (account Account) CreateUser(input User) (*User, error) {
 
 	var err error
@@ -474,15 +475,43 @@ func (account Account) ExistUser(userId uint) bool {
 }
 
 // добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то роль будет обновлена
-func (account Account) AppendUser (user User, v_opt... Role) error {
-	
+func (account Account) AppendUser (user User, v_opt... roleAccess) error {
+
+	var acs AccountUser
+	var role roleAccess
 
 	// Если роль не передана, то пользователь с ролью client
 	if len(v_opt) < 1 {
-
+		role = RoleClient
+	} else {
+		role = v_opt[0]
 	}
+
+	rSet, err := GetRole(role)
+	if err != nil {
+		return err
+	}
+	acs.Role = *rSet
+	acs.Account = account
+	acs.User = user
+
+	acs.AccountId = account.ID
+	acs.UserId = user.ID
+	acs.RoleId = rSet.ID
+
+	/*if err := db.Table("account_users").FirstOrCreate(&acs).Error; err != nil {
+		fmt.Println(err)
+		return errors.New("Неудалось добавить пользователя")
+	}*/
+
 	//
-	return db.Model(&user).Association("accounts").Append(&account).Error
+	if err := db.Model(&user).Association("accounts").Append(&account,rSet).Error; err != nil {
+		return err
+	}
+
+	return nil
+	
+
 }
 func (account *Account) RemoveUser (user *User) error {
 	return db.Model(&user).Association("accounts").Delete(account).Error
