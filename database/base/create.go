@@ -210,7 +210,7 @@ func UploadTestData() {
 
 	// 2. Создаем пользователя admin в main аккаунте
 	_, err = mAcc.CreateUser(
-		models.User{
+			models.User{
 			Username:"admin",
 			Email:"kokorevn@gmail.com",
 			PhoneRegion: "RU",
@@ -221,12 +221,13 @@ func UploadTestData() {
 			Patronymic:"Романович",
 			DefaultAccountID:1,
 			},
+			models.RoleAdmin,
 		)
 	if err != nil {
 		log.Fatal("Неудалось создать admin'a: ", err)
 	}
 
-	// 3. 
+	// 3. ллл
 
 	// fmt.Println(adminUser)
 

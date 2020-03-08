@@ -277,11 +277,23 @@ func (account Account) UpdateApiKey(token string, input ApiKey) (*ApiKey, error)
 
 // #### User ####
 
-// CreateUser - создает пользователя в аккаунте с базовой ролью = client
-func (account Account) CreateUser(input User) (*User, error) {
+// CreateUser - создает пользователя в аккаунте с базовой ролью = client, если не указана иная роль
+func (account Account) CreateUser(input User, v_opt... roleAccess) (*User, error) {
 
 	var err error
 	var username, email, phone bool
+	var tag roleAccess
+
+	// Проверяем роль
+	if len(v_opt) > 0 {
+		tag = v_opt[0]
+		// нельзя создать пользователя с ролью Owner
+		if tag == RoleOwner {
+			tag = RoleAdmin
+		}
+	} else {
+		tag = RoleClient
+	}
 
 	input.IssuerAccountID = account.ID
 
@@ -338,7 +350,16 @@ func (account Account) CreateUser(input User) (*User, error) {
 		return nil, utils.Error{Message:"Данные уже есть", Errors: map[string]interface{}{"username":"Данный телефон уже используется"}}
 	}
 
-	return input.create()
+	u, err := input.create()
+	if err != nil {
+		return u, err
+	}
+
+	if err := account.AppendUser(*u, tag);err != nil {
+		return nil, err
+	}
+
+	return u, err
 }
 
 // Ищет пользователя, привязанного к аккаунту. НЕ проверяет роли и доступ к аккаунту.
