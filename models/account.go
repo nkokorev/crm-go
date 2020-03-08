@@ -480,6 +480,10 @@ func (account Account) AppendUser (user User, v_opt... roleAccess) error {
 	var acs AccountUser
 	var role roleAccess
 
+	if db.NewRecord(&user) {
+		return errors.New("Необходимо создать сначала пользователя!")
+	}
+
 	// Если роль не передана, то пользователь с ролью client
 	if len(v_opt) < 1 {
 		role = RoleClient
@@ -499,15 +503,15 @@ func (account Account) AppendUser (user User, v_opt... roleAccess) error {
 	acs.UserId = user.ID
 	acs.RoleId = rSet.ID
 
-	/*if err := db.Table("account_users").FirstOrCreate(&acs).Error; err != nil {
-		fmt.Println(err)
+	if err := db.Table(AccountUser{}.TableName()).FirstOrCreate(&acs).Error; err != nil {
+	//if err := db.Table("account_users").FirstOrCreate(&acs).Error; err != nil {
 		return errors.New("Неудалось добавить пользователя")
-	}*/
+	}
 
 	//
-	if err := db.Model(&user).Association("accounts").Append(&account,rSet).Error; err != nil {
+	/*if err := db.Model(&user).Association("accounts").Append(&account,rSet).Error; err != nil {
 		return err
-	}
+	}*/
 
 	return nil
 	

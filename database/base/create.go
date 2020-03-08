@@ -227,7 +227,8 @@ func UploadTestData() {
 	}
 
 	// 5. Добавляем пользователя в аккаунт (?)
-	if err := mAcc.AppendUser(*adminUser, models.RoleClient);err!= nil {
+	//if err := mAcc.AppendUser(*adminUser, models.RoleClient);err!= nil {
+	if err := mAcc.AppendUser(*adminUser);err!= nil {
 		log.Fatalf("Cannot append user %v", err)
 	}
 
