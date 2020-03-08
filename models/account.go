@@ -475,20 +475,12 @@ func (account Account) ExistUser(userId uint) bool {
 }
 
 // добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то роль будет обновлена
-func (account Account) AppendUser (user User, v_opt... roleAccess) error {
-
+func (account Account) AppendUser (user User, role roleAccess) error {
+	
 	var acs AccountUser
-	var role roleAccess
 
 	if db.NewRecord(&user) {
 		return errors.New("Необходимо создать сначала пользователя!")
-	}
-
-	// Если роль не передана, то пользователь с ролью client
-	if len(v_opt) < 1 {
-		role = RoleClient
-	} else {
-		role = v_opt[0]
 	}
 
 	rSet, err := GetRole(role)
@@ -504,7 +496,6 @@ func (account Account) AppendUser (user User, v_opt... roleAccess) error {
 	acs.RoleId = rSet.ID
 
 	if err := db.Table(AccountUser{}.TableName()).FirstOrCreate(&acs).Error; err != nil {
-	//if err := db.Table("account_users").FirstOrCreate(&acs).Error; err != nil {
 		return errors.New("Неудалось добавить пользователя")
 	}
 

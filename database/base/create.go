@@ -202,14 +202,14 @@ func UploadTestData() {
 		log.Fatal("Неудалось создать настройки crm-системы")
 	}
 
-
+	// 1. Получаем главный аккаунт
 	mAcc, err := models.GetMainAccount()
 	if err != nil {
 		log.Fatalf("Неудалось найти главный аккаунт: %v", err)
 	}
-	
-	// 4. Создаем пользователя admin в main аккаунте
-	adminUser, err := mAcc.CreateUser(
+
+	// 2. Создаем пользователя admin в main аккаунте
+	_, err = mAcc.CreateUser(
 		models.User{
 			Username:"admin",
 			Email:"kokorevn@gmail.com",
@@ -226,20 +226,20 @@ func UploadTestData() {
 		log.Fatal("Неудалось создать admin'a: ", err)
 	}
 
+	// 3. 
+
+	// fmt.Println(adminUser)
+
 	// 5. Добавляем пользователя в аккаунт (?)
 	//if err := mAcc.AppendUser(*adminUser, models.RoleClient);err!= nil {
-	if err := mAcc.AppendUser(*adminUser);err!= nil {
+	/*if err := mAcc.AppendUser(*adminUser, models.RoleOwner);err!= nil {
 		log.Fatalf("Cannot append user %v", err)
-	}
+	}*/
 
 	// 6. Верифицируем пользователя admin
-
-
 	
-
 	// temp...
 	//fmt.Printf("ADmin created: %v", adminUser)
-
 
 	return
 
