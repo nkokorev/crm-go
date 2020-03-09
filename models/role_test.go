@@ -2,7 +2,7 @@ package models
 
 import "testing"
 
-func TestRole_create()  {
+func TestRole_create(t *testing.T)  {
 
 }
 

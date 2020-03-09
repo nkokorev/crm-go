@@ -205,17 +205,18 @@ func TestAccount_CreateUser(t *testing.T) {
 	testList := []struct {
 		account *Account
 		user User
+		RoleAccess roleAccess
 		expected bool
 		description string
 		}{
-			{account, User{Username:"", Email:"", Phone:""}, false, "Хотя бы один из определяющих полей должен быть"},
-			{account, User{Username:"TestUser 1", Email:"adnsls!@.ru"}, false, "Не корректный email"},
-			{account, User{Username:"TestUser 1", Phone:"5456a45355"}, false, "Не корректный телефон"},
+			{account, User{Username:"", Email:"", Phone:""}, RoleAuthor, false, "Хотя бы один из определяющих полей должен быть"},
+			{account, User{Username:"TestUser 1", Email:"adnsls!@.ru"}, RoleAdmin, false, "Не корректный email"},
+			{account, User{Username:"TestUser 1", Phone:"5456a45355"}, RoleClient, false, "Не корректный телефон"},
 		}
 
 
 	for i, v := range testList {
-		user, err := v.account.CreateUser(v.user)
+		user, err := v.account.CreateUser(v.user, v.RoleAccess)
 
 		if v.expected == false && err == nil {
 			t.Fatalf("Создан пользователь, которого быть не должно : [%v] user: %v", i, user)
@@ -224,11 +225,18 @@ func TestAccount_CreateUser(t *testing.T) {
 		if v.expected == true && err != nil {
 			t.Fatalf("Неудалось создать пользователя, который должен быть создан: [%v] user: %v", i, user)
 		}
-
-		//
-
-		// удаляем созданного пользователя
+		
+		// Проверяем роль и удаляем созданного пользователя
 		if err == nil && user != nil {
+
+			role, err := v.account.GetUserRole(*user)
+			if err != nil || role == nil {
+				t.Fatalf("Не удалось получить роль пользователя [%v] : %v", user.Name, err)
+			}
+			if  role.Tag != v.RoleAccess {
+				t.Fatalf("Роль пользователя не соответствует ожидаемой: [%v] user: %v", v.RoleAccess, user)
+			}
+
 			user.hardDelete()
 		}
 

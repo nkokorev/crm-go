@@ -4,24 +4,6 @@ import (
 	"testing"
 )
 
-func TestCrmSetting_Create(t *testing.T) {
-
-	existSettings := !db.Model(&CrmSetting{}).First(&CrmSetting{}).RecordNotFound()
-
-	// создаем системные настройки, если их не было - они создадутся
-	_, err := CreateCrmSettings()
-
-	// 1. Вариант 1-й, не должны создаться настройки (основной)
-	if existSettings && err == nil {
-		t.Errorf("Настройки crm системы создались, хоть в системе они уже есть")
-	}
-
-	// 2-й вариант, если настрок не было, то они должны были бы создаться
-	if !existSettings && err != nil {
-		t.Fatal("Неудалось создать настройки CRM-системы")
-	}
-}
-
 func TestGetCrmSettings(t *testing.T) {
 	settings, err := GetCrmSettings()
 	if err != nil || settings == nil {
