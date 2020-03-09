@@ -282,17 +282,17 @@ func (account Account) CreateUser(input User, v_opt... roleAccess) (*User, error
 
 	var err error
 	var username, email, phone bool
-	var tag roleAccess
+	var role roleAccess
 
 	// Проверяем роль
 	if len(v_opt) > 0 {
-		tag = v_opt[0]
+		role = v_opt[0]
 		// нельзя создать пользователя с ролью Owner
-		if tag == RoleOwner {
-			tag = RoleAdmin
+		if role == RoleOwner {
+			role = RoleAdmin
 		}
 	} else {
-		tag = RoleClient
+		role = RoleClient
 	}
 
 	input.IssuerAccountID = account.ID
@@ -355,7 +355,7 @@ func (account Account) CreateUser(input User, v_opt... roleAccess) (*User, error
 		return u, err
 	}
 
-	if err := account.AppendUser(*u, tag);err != nil {
+	if err := account.AppendUser(*u, role);err != nil {
 		return nil, err
 	}
 
@@ -531,6 +531,19 @@ func (account Account) AppendUser (user User, role roleAccess) error {
 }
 func (account *Account) RemoveUser (user *User) error {
 	return db.Model(&user).Association("accounts").Delete(account).Error
+}
+
+func (account Account) GetUserRole (user User) (*Role, error) {
+	if db.NewRecord(account) || db.NewRecord(user) {
+		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
+	}
+
+	aUser, err := GetAccountUser(account, user)
+	if err != nil {
+		return nil, errors.New("Неудалось найти роль пользователя")
+	}
+
+	return &aUser.Role, nil
 }
 
 // загружает список обычных пользователей аккаунта

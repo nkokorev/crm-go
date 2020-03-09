@@ -22,7 +22,8 @@ func RefreshTables() {
 	}
 	//pool.DropTableIfExists(&models.UserVerificationMethod{}, models.Role{})
 
-	pool.CreateTable(&models.CrmSetting{})
+	models.CrmSetting{}.PgSqlCreate()
+
 	models.UserVerificationMethod{}.PgSqlCreate()
 
 	// old old...
@@ -195,12 +196,6 @@ func UploadEavData() {
 }
 
 func UploadTestData() {
-
-	// 0. Создаем файл системных настроек
-	_, err := models.CreateCrmSettings()
-	if err != nil {
-		log.Fatal("Неудалось создать настройки crm-системы")
-	}
 
 	// 1. Получаем главный аккаунт
 	mAcc, err := models.GetMainAccount()

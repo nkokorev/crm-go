@@ -23,11 +23,12 @@ type CrmSetting struct {
 	//DeletedAt 	*time.Time `json:"-" db:"deleted_at"`
 }
 
-// внутренняя чит-фукнция для создания системных настроек
-func CreateCrmSettings() (*CrmSetting, error) {
+func (CrmSetting) PgSqlCreate() error {
 
+	// 1. Создаем таблицу и настройки в pgSql
+	db.CreateTable(&CrmSetting{})
 	if !db.Model(&CrmSetting{}).First(&CrmSetting{}, "id = 1").RecordNotFound() {
-		return nil, errors.New("Настройки CRM уже загружены!")
+		return errors.New("Настройки CRM уже загружены!")
 	}
 
 	settings := &CrmSetting{
@@ -39,9 +40,8 @@ func CreateCrmSettings() (*CrmSetting, error) {
 		AppUiApiDisabledMessage: "Из-за работ на сервере интерфейс временно отключен.",
 	}
 
-	err := db.Create(&settings).Error
+	return db.Create(&settings).Error
 
-	return settings, err
 }
 
 // Берет первую строку т.е. должна быть единственная запись

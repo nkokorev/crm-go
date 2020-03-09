@@ -225,6 +225,8 @@ func TestAccount_CreateUser(t *testing.T) {
 			t.Fatalf("Неудалось создать пользователя, который должен быть создан: [%v] user: %v", i, user)
 		}
 
+		//
+
 		// удаляем созданного пользователя
 		if err == nil && user != nil {
 			user.hardDelete()
@@ -330,7 +332,7 @@ func TestAccount_GetUserByPhone(t *testing.T) {
 }
 
 
-
+// #### Benchmark Go! ####
 
 func BenchmarkGetAccountByHash(b *testing.B) {
 	// создаем много аккаунтов

@@ -1,5 +1,7 @@
 package models
 
+import "errors"
+
 // M<>M
 type AccountUser struct {
 	AccountId uint	`json:"accountId" gorm:"type:int;index;not null;"`
@@ -23,6 +25,22 @@ func (AccountUser) PgSqlCreate() {
 // Установить имя таблицы AccountUser's как `account_users`
 func (AccountUser) TableName() string {
 	return "account_users"
+}
+
+// ### todo: нужны тесты к функциям ниже ...
+
+func GetAccountUser(account Account, user User) (*AccountUser, error) {
+	if db.NewRecord(account) || db.NewRecord(user) {
+		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
+	}
+
+	var aUser AccountUser
+
+	if err := db.Table(AccountUser{}.TableName()).First(&aUser, "account_id = ? AND user_id = ?", account.ID, user.ID).Error; err != nil {
+		return nil, err
+	}
+
+	return &aUser, nil
 }
 
 
