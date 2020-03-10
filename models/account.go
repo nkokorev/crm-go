@@ -278,11 +278,11 @@ func (account Account) UpdateApiKey(token string, input ApiKey) (*ApiKey, error)
 // #### User ####
 
 // CreateUser - создает пользователя в аккаунте с базовой ролью = client, если не указана иная роль
-func (account Account) CreateUser(input User, v_opt... roleAccess) (*User, error) {
+func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error) {
 
 	var err error
 	var username, email, phone bool
-	var role roleAccess
+	var role accessRole
 
 	// Проверяем роль
 	if len(v_opt) > 0 {
@@ -496,7 +496,7 @@ func (account Account) ExistUser(userId uint) bool {
 }
 
 // добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то роль будет обновлена
-func (account Account) AppendUser (user User, role roleAccess) error {
+func (account Account) AppendUser (user User, role accessRole) error {
 	
 	var acs AccountUser
 
@@ -516,17 +516,16 @@ func (account Account) AppendUser (user User, role roleAccess) error {
 	acs.UserId = user.ID
 	acs.RoleId = rSet.ID
 
-	if err := db.Table(AccountUser{}.TableName()).FirstOrCreate(&acs).Error; err != nil {
+	/*if err := db.Table(AccountUser{}.TableName()).FirstOrCreate(&acs).Error; err != nil {
 		return errors.New("Неудалось добавить пользователя")
-	}
+	}*/
 
 	//
 	/*if err := db.Model(&user).Association("accounts").Append(&account,rSet).Error; err != nil {
 		return err
 	}*/
 
-	return nil
-	
+	return db.Table(AccountUser{}.TableName()).FirstOrCreate(&acs).Error
 
 }
 func (account *Account) RemoveUser (user *User) error {
@@ -540,10 +539,20 @@ func (account Account) GetUserRole (user User) (*Role, error) {
 
 	aUser, err := GetAccountUser(account, user)
 	if err != nil {
-		return nil, errors.New("Неудалось найти роль пользователя")
+		return nil, err
 	}
 
 	return &aUser.Role, nil
+}
+
+func (account Account) GetUserAccessRole (user User) (*accessRole, error) {
+
+	role, err := account.GetUserRole(user)
+	if err != nil || role == nil {
+		return nil, err
+	}
+	return &role.Tag, err
+
 }
 
 // загружает список обычных пользователей аккаунта

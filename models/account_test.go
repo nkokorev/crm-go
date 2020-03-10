@@ -205,7 +205,7 @@ func TestAccount_CreateUser(t *testing.T) {
 	testList := []struct {
 		account *Account
 		user User
-		RoleAccess roleAccess
+		accessRole accessRole
 		expected bool
 		description string
 		}{
@@ -216,7 +216,7 @@ func TestAccount_CreateUser(t *testing.T) {
 
 
 	for i, v := range testList {
-		user, err := v.account.CreateUser(v.user, v.RoleAccess)
+		user, err := v.account.CreateUser(v.user, v.accessRole)
 
 		if v.expected == false && err == nil {
 			t.Fatalf("Создан пользователь, которого быть не должно : [%v] user: %v", i, user)
@@ -229,12 +229,12 @@ func TestAccount_CreateUser(t *testing.T) {
 		// Проверяем роль и удаляем созданного пользователя
 		if err == nil && user != nil {
 
-			role, err := v.account.GetUserRole(*user)
-			if err != nil || role == nil {
+			accessRole, err := v.account.GetUserAccessRole(*user)
+			if err != nil || accessRole == nil {
 				t.Fatalf("Не удалось получить роль пользователя [%v] : %v", user.Name, err)
 			}
-			if  role.Tag != v.RoleAccess {
-				t.Fatalf("Роль пользователя не соответствует ожидаемой: [%v] user: %v", v.RoleAccess, user)
+			if *accessRole != v.accessRole {
+				t.Fatalf("Роль пользователя не соответствует ожидаемой: [%v] user: %v", v.accessRole, user)
 			}
 
 			user.hardDelete()
@@ -339,6 +339,61 @@ func TestAccount_GetUserByPhone(t *testing.T) {
 
 }
 
+func TestAccount_AppendUser(t *testing.T) {
+	// todo: дописать тест
+}
+
+func TestAccount_GetUserRole(t *testing.T) {
+	// создаем тестовый аккаунт
+	account, err := Account{Name:"TestAccount_GetUserRole"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer account.HardDelete()
+
+	// создаем тестового пользователя с ролью Автор
+	user, err := account.CreateUser(User{Phone: "88251001212"}, RoleAuthor)
+	if err!=nil {
+		t.Fatalf("Неудалось создать пользователя %v", err)
+	}
+	defer user.hardDelete()
+
+	// Проверяем роль нашего пользователя
+	role, err := account.GetUserRole(*user)
+	if err != nil || role == nil {
+		t.Fatalf("Неудалось получить роль пользователя: %v", err)
+	}
+
+	if role.Tag != RoleAuthor {
+		t.Fatalf("Роль созданного пользователя не является Автор: %v", role.Tag)
+	}
+}
+
+func TestAccount_GetUserAccessRole(t *testing.T) {
+	// создаем тестовый аккаунт
+	account, err := Account{Name:"TestAccount_GetUserAccessRole"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer account.HardDelete()
+
+	// создаем тестового пользователя с ролью Автор
+	user, err := account.CreateUser(User{Phone: "88251001212"}, RoleAuthor)
+	if err!=nil {
+		t.Fatalf("Неудалось создать пользователя %v", err)
+	}
+	defer user.hardDelete()
+
+	// Проверяем роль нашего пользователя
+	accessRole, err := account.GetUserAccessRole(*user)
+	if err != nil || accessRole == nil {
+		t.Fatalf("Неудалось получить роль пользователя %v", err)
+	}
+
+	if *accessRole != RoleAuthor {
+		t.Fatalf("Роль созданного пользователя не является Автор: %v", *accessRole)
+	}
+}
 
 // #### Benchmark Go! ####
 

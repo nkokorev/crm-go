@@ -1,6 +1,10 @@
 package models
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"log"
+)
 
 // M<>M
 type AccountUser struct {
@@ -27,14 +31,23 @@ func (AccountUser) TableName() string {
 	return "account_users"
 }
 
-// ### todo: нужны тесты к функциям ниже ...
-
 func GetAccountUser(account Account, user User) (*AccountUser, error) {
 	if db.NewRecord(account) || db.NewRecord(user) {
 		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
 	}
 
 	var aUser AccountUser
+
+	//fmt.Printf("Поиск aUser: \naccount_id: %v \nuser_id: %v\n", account.ID, user.ID)
+
+	var aUsers []AccountUser
+
+	err := db.Find(&aUsers).Error
+	if err != nil {
+		log.Fatalf("Cant Find: %v", err)
+	}
+
+	fmt.Println("Len of aUsers - ", len(aUsers) )
 
 	if err := db.Table(AccountUser{}.TableName()).First(&aUser, "account_id = ? AND user_id = ?", account.ID, user.ID).Error; err != nil {
 		return nil, err
