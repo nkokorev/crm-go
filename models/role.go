@@ -53,7 +53,7 @@ var systemRoles = []Role {
 
 func (Role) PgSqlCreate() {
 	db.CreateTable(&Role{})
-	db.Exec("ALTER TABLE roles\n    ADD CONSTRAINT roles_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\ncreate unique index uix_roles_issuer_account_id_code ON roles (issuer_account_id,tag);")
+	db.Exec("ALTER TABLE roles\n    ADD CONSTRAINT roles_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\ncreate unique index uix_roles_issuer_account_id_tag_code ON roles (issuer_account_id, tag);")
 
 	for i, v := range systemRoles {
 		_, err := v.create();

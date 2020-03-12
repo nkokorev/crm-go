@@ -353,7 +353,7 @@ func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error
 		return nil, err
 	}
 
-	return u, err
+	return u, nil
 }
 
 // Ищет пользователя, привязанного к аккаунту. НЕ проверяет роли и доступ к аккаунту.
@@ -408,32 +408,26 @@ func (account Account) GetUserByPhone (phone, region string) (*User, error) {
 	return &user, err
 }
 
+// Проверяет существование пользователя вообще
 func (account Account) ExistUser(user User) bool {
-
-	aUser, err := account.GetAccountUser(user)
-	fmt.Println("Искали пользователя: ", user)
-
-	
-	if err == gorm.ErrRecordNotFound || aUser == nil || db.NewRecord(aUser) {
+	var userIn User
+	if db.Table("users").Find(&userIn, user.ID).RecordNotFound() {
 		return false
+	} else {
+		return true
 	}
-	if err != nil && err != gorm.ErrRecordNotFound {
+}
+
+// Проверяет существоание пользователя в контексте текущего аккаунта
+func (account Account) ExistAccountUser(user User) bool {
+
+	//fmt.Printf("Ищем пользователя: acc: %v user: %v", account.ID, user.ID)
+	if db.Table(AccountUser{}.TableName()).Where("account_id = ? AND user_id = ?", account.ID, user.ID).Find(&AccountUser{}).RecordNotFound() {
 		return false
+	} else {
+		return true
 	}
 
-	// fmt.Println("Пользователь уж есть: ", aUser)
-	return true
-
-	/*if db.Table(AccountUser{}.TableName()).Where("account_id = ? AND user_id = ?", account.ID, user.ID).First(&aUser).RecordNotFound() {
-		return false
-	}*/
-
-	/*aUser, err := GetAccountUser(account, user)
-	if err != nil || aUser == nil {
-		return false
-	}
-	
-	return true*/
 }
 
 // Если пользователь не найден - вернет gorm.ErrRecordNotFound
@@ -445,13 +439,18 @@ func (account Account) GetAccountUser(user User) (*AccountUser, error) {
 		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
 	}
 
-	err := db.Table(AccountUser{}.TableName()).Where("account_id = ? AND user_id = ?", account.ID, user.ID).First(&aUser).Error;
+	//err := db.Table(AccountUser{}.TableName()).Where("user_id = ? AND account_id = ?", account.ID, user.ID).
+	err := db.Where("user_id = ? AND account_id = ?", account.ID, user.ID).
+		Preload("Role").
+		Preload("Account").
+		Preload("User").
+		First(&aUser).Error;
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
 
 	if err == gorm.ErrRecordNotFound {
-		return nil, gorm.ErrRecordNotFound
+		return nil, err
 	}
 
 	return &aUser, nil
@@ -472,12 +471,16 @@ func (account Account) AppendUser (user User, role accessRole) error {
 		return err
 	}
 
-	// проверяем, есть ли такая запись уже в аккаунте
-	if account.ExistUser(user) {
+	if !(Account{}).ExistUser(user) {
+		return errors.New("Пользователь не создан!")
+	}
+
+	// проверяем, относится ли пользователь к аккаунту
+	if account.ExistAccountUser(user) {
 
 		return errors.New("Невозможно добавить пользователя в аккаунт, т.к. он в нем уже есть.")
 		// обновляем роль и смежные данные
-		/*aUser, err := GetAccountUser(account, user)
+		/*aUser, err := account.GetAccountUser(user)
 		if err != nil || aUser == nil {
 			return errors.New("Не удалось получить данные пользователя")
 		}
@@ -489,18 +492,21 @@ func (account Account) AppendUser (user User, role accessRole) error {
 		}*/
 		
 	} else {
+
 		// создаем
 		acs.AccountId = account.ID
 		acs.UserId = user.ID
 		acs.RoleId = rSet.ID
 
-		return db.Table(AccountUser{}.TableName()).FirstOrCreate(&acs).Error
+		if err := db.Table(AccountUser{}.TableName()).Create(&acs).Error; err != nil {
+			fmt.Println("Ошибка при создании aUser: ", err)
+			return err
+		}
+
+		return nil
+
 	}
-
-
-
-
-
+	
 	//acs.Role = *rSet
 	//acs.Account = account
 	//acs.User = user
@@ -608,26 +614,37 @@ func (account *Account) RemoveUser (user *User) error {
 
 func (account Account) GetUserRole (user User) (*Role, error) {
 
+	var role Role
 	if db.NewRecord(account) || db.NewRecord(user) {
 		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
 	}
 
 	aUser, err := account.GetAccountUser(user)
-	if err != nil {
+	if err != nil || db.NewRecord(aUser) {
 		return nil, err
 	}
 
-	return &aUser.Role, nil
+	if db.NewRecord(aUser.Role) {
+		return nil, errors.New("Не удалось загрузить роль пользователя")
+	}
+	
+	role = aUser.Role
+
+	return &role, nil
 }
 
 func (account Account) GetUserAccessRole (user User) (*accessRole, error) {
 
+	if db.NewRecord(account) || db.NewRecord(user) {
+		return nil, errors.New("Аккаунта или пользователя не существует!")
+	}
+	
 	role, err := account.GetUserRole(user)
-	if err != nil || role == nil {
+	if err != nil || role == nil || db.NewRecord(role) {
 		return nil, err
 	}
-	return &role.Tag, err
 
+	return &(role.Tag), err
 }
 
 
