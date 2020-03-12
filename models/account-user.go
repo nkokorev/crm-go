@@ -1,10 +1,5 @@
 package models
 
-import (
-	"errors"
-	"fmt"
-	"log"
-)
 
 // M<>M
 type AccountUser struct {
@@ -12,9 +7,9 @@ type AccountUser struct {
 	UserId uint	`json:"userId" gorm:"type:int;index;not null;"`
 	RoleId uint	`json:"roleId" gorm:"type:int;not null;"`
 
-	User User	`sql:"-"`
-	Account Account	`sql:"-"`
-	Role Role	`sql:"-"`
+	User User	`json:"-"  gorm:"preload:true"`
+	Account Account	`json:"-" gorm:"preload:true"`
+	Role Role	`json:"-" gorm:"preload:true"`
 }
 
 func (AccountUser) PgSqlCreate() {
@@ -31,30 +26,12 @@ func (AccountUser) TableName() string {
 	return "account_users"
 }
 
-func GetAccountUser(account Account, user User) (*AccountUser, error) {
-	if db.NewRecord(account) || db.NewRecord(user) {
-		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
-	}
+func (aUser *AccountUser) update (input interface{}) error {
 
-	var aUser AccountUser
-
-	//fmt.Printf("Поиск aUser: \naccount_id: %v \nuser_id: %v\n", account.ID, user.ID)
-
-	var aUsers []AccountUser
-
-	err := db.Find(&aUsers).Error
-	if err != nil {
-		log.Fatalf("Cant Find: %v", err)
-	}
-
-	fmt.Println("Len of aUsers - ", len(aUsers) )
-
-	if err := db.Table(AccountUser{}.TableName()).First(&aUser, "account_id = ? AND user_id = ?", account.ID, user.ID).Error; err != nil {
-		return nil, err
-	}
-
-	return &aUser, nil
+	// выбираем те поля, что можно обновить
+	return db.Model(aUser).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).
+		Select("AccountId", "UserId", "RoleId").
+		Update(input).First(aUser).Error
 }
-
 
 

@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/utils"
@@ -18,7 +19,6 @@ const (
 	phone authMethod = "phone"
 )
 
-//Account - таблица аккаунтов в рамках которых происходят все основные действия пользователей
 type Account struct {
 	ID uint `json:"id" gorm:"primary_key"`
 	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
@@ -72,7 +72,6 @@ type Account struct {
 	Stocks		[]Stock `json:"-"`
 }
 
-//BeforeCreate - GORM функция перед созданием аккаунта выставляет нужные значения переменных
 func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	account.ID = 0
 	account.HashID = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
@@ -104,7 +103,6 @@ func (Account) PgSqlCreate() {
 	}*/
 }
 
-//Reset - обнуляет переменную account
 func (account *Account) Reset() { account = &Account{} }
 
 func (account Account) create () (*Account, error) {
@@ -155,7 +153,6 @@ func (account Account) create () (*Account, error) {
 	return &outAccount, nil
 }
 
-// CreateMainAccount - чит функция для развертывания, т.к. нельзя создать аккаунт из-под несуществующего пользователя
 func CreateMainAccount() (*Account, error) {
 
 	// Проверяем есть ли Главны Аккаунт
@@ -184,7 +181,6 @@ func CreateMainAccount() (*Account, error) {
 	}).create()
 }
 
-// ValidateInputs -проверяем входящие данные для создания или обновления аккаунта и возвращаем описательную ошибку
 func (account Account) ValidateInputs() error {
 
 	if len(account.Name) < 2 {
@@ -206,14 +202,12 @@ func (account Account) ValidateInputs() error {
 	return nil
 }
 
-//GetAccount - возвращает аккаунт по его ID
 func GetAccount (id uint) (*Account, error) {
 	var account Account
 	err := db.Model(&Account{}).First(&account, id).Error
 	return &account, err
 }
 
-//GetMainAccount - возвращает аккаунт RatusCRM (id == 1)
 func GetMainAccount() (*Account, error) {
 	var account Account
 	err := db.Model(&Account{}).First(&account, "id = 1 AND name = 'RatusCRM'").Error
@@ -221,7 +215,6 @@ func GetMainAccount() (*Account, error) {
 	return &account, err
 }
 
-//GetAccountByHash - возвращает аккаунт по его hashId (для UI/API)
 func GetAccountByHash (hashId string) (*Account, error) {
 	var account Account
 	err := db.Model(&Account{}).First(&account, "hash_id = ?", hashId).Error
@@ -351,10 +344,11 @@ func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error
 	}
 
 	u, err := input.create()
-	if err != nil {
+	if err != nil || u == nil {
 		return u, err
 	}
 
+	// Автоматически добавляем пользователя в аккаунт
 	if err := account.AppendUser(*u, role);err != nil {
 		return nil, err
 	}
@@ -414,9 +408,124 @@ func (account Account) GetUserByPhone (phone, region string) (*User, error) {
 	return &user, err
 }
 
+func (account Account) ExistUser(user User) bool {
+
+	aUser, err := account.GetAccountUser(user)
+	fmt.Println("Искали пользователя: ", user)
+
+	
+	if err == gorm.ErrRecordNotFound || aUser == nil || db.NewRecord(aUser) {
+		return false
+	}
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return false
+	}
+
+	// fmt.Println("Пользователь уж есть: ", aUser)
+	return true
+
+	/*if db.Table(AccountUser{}.TableName()).Where("account_id = ? AND user_id = ?", account.ID, user.ID).First(&aUser).RecordNotFound() {
+		return false
+	}*/
+
+	/*aUser, err := GetAccountUser(account, user)
+	if err != nil || aUser == nil {
+		return false
+	}
+	
+	return true*/
+}
+
+// Если пользователь не найден - вернет gorm.ErrRecordNotFound
+func (account Account) GetAccountUser(user User) (*AccountUser, error) {
+
+	var aUser AccountUser
+
+	if db.NewRecord(account) || db.NewRecord(user) {
+		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
+	}
+
+	err := db.Table(AccountUser{}.TableName()).Where("account_id = ? AND user_id = ?", account.ID, user.ID).First(&aUser).Error;
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+
+	if err == gorm.ErrRecordNotFound {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	return &aUser, nil
+}
+
+// добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то роль будет обновлена
+func (account Account) AppendUser (user User, role accessRole) error {
+
+	acs := AccountUser{}
+
+	if db.NewRecord(&user) {
+		return errors.New("Необходимо создать сначала пользователя!")
+	}
+
+	// узнаем роль, чтобы потом получить его ID
+	rSet, err := GetRole(role)
+	if err != nil {
+		return err
+	}
+
+	// проверяем, есть ли такая запись уже в аккаунте
+	if account.ExistUser(user) {
+
+		return errors.New("Невозможно добавить пользователя в аккаунт, т.к. он в нем уже есть.")
+		// обновляем роль и смежные данные
+		/*aUser, err := GetAccountUser(account, user)
+		if err != nil || aUser == nil {
+			return errors.New("Не удалось получить данные пользователя")
+		}
+		if aUser.RoleId != rSet.ID {
+			aUser.RoleId = rSet.ID
+			if err := aUser.update(aUser); err != nil {
+				return err
+			}
+		}*/
+		
+	} else {
+		// создаем
+		acs.AccountId = account.ID
+		acs.UserId = user.ID
+		acs.RoleId = rSet.ID
+
+		return db.Table(AccountUser{}.TableName()).FirstOrCreate(&acs).Error
+	}
 
 
 
+
+
+	//acs.Role = *rSet
+	//acs.Account = account
+	//acs.User = user
+
+
+
+	//fmt.Println("Создаем: ", acs)
+
+	/*if err := db.Table(AccountUser{}.TableName()).FirstOrCreate(&acs).Error; err != nil {
+		return errors.New("Неудалось добавить пользователя")
+	}*/
+
+	//
+	/*if err := db.Model(&user).Association("accounts").Append(&account,rSet).Error; err != nil {
+		return err
+	}*/
+
+	//return db.Create(&acs).Error
+
+	//return db.Table(AccountUser{}.TableName()).Create(&acs).Error
+
+	//return db.Model(&user).Association("accounts").Append(&acs).Error
+	
+	return nil
+}
 
 // !!!!!! ### Выше функции покрытые тестами ### !!!!!!!!!!1
 
@@ -489,55 +598,21 @@ func (account Account) IsVerifiedUser(userId uint) (bool, error) {
 	return status, nil
 }
 
-// Проверяет, есть ли пользователь с указанным ID в аккаунте с какой-то ролью
-func (account Account) ExistUser(userId uint) bool {
-	// todo ...
-	return false
-}
 
-// добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то роль будет обновлена
-func (account Account) AppendUser (user User, role accessRole) error {
-	
-	var acs AccountUser
 
-	if db.NewRecord(&user) {
-		return errors.New("Необходимо создать сначала пользователя!")
-	}
 
-	rSet, err := GetRole(role)
-	if err != nil {
-		return err
-	}
-	acs.Role = *rSet
-	acs.Account = account
-	acs.User = user
 
-	acs.AccountId = account.ID
-	acs.UserId = user.ID
-	acs.RoleId = rSet.ID
-
-	/*if err := db.Table(AccountUser{}.TableName()).FirstOrCreate(&acs).Error; err != nil {
-		return errors.New("Неудалось добавить пользователя")
-	}*/
-
-	//
-	/*if err := db.Model(&user).Association("accounts").Append(&account,rSet).Error; err != nil {
-		return err
-	}*/
-
-	return db.Table(AccountUser{}.TableName()).FirstOrCreate(&acs).Error
-
-}
 func (account *Account) RemoveUser (user *User) error {
 	return db.Model(&user).Association("accounts").Delete(account).Error
 }
 
 func (account Account) GetUserRole (user User) (*Role, error) {
+
 	if db.NewRecord(account) || db.NewRecord(user) {
 		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
 	}
 
-	aUser, err := GetAccountUser(account, user)
+	aUser, err := account.GetAccountUser(user)
 	if err != nil {
 		return nil, err
 	}
@@ -554,12 +629,6 @@ func (account Account) GetUserAccessRole (user User) (*accessRole, error) {
 	return &role.Tag, err
 
 }
-
-// загружает список обычных пользователей аккаунта
-func (account *Account) GetUsers () error {
-	return db.Preload("Users").First(&account).Error
-}
-
 
 
 

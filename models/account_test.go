@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"strings"
 	"testing"
@@ -339,8 +340,122 @@ func TestAccount_GetUserByPhone(t *testing.T) {
 
 }
 
+func TestAccount_GetAccountUser(t *testing.T) {
+	account1, err := Account{Name:"TestAccount_AppendUser_1"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer func() {
+		account1.HardDelete()
+	}()
+
+	account2, err := Account{Name:"TestAccount_AppendUser_2"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer func() {
+		account2.HardDelete()
+	}()
+
+	// создаем тестового пользователя с ролью Автор
+	user, err := account1.CreateUser(User{Username: "TestUser_ExistUser", Phone: "88251001212", InvitedUserID:1, DefaultAccountID:1}, RoleClient)
+	if err!=nil {
+		t.Fatalf("Неудалось создать пользователя %v", err)
+	}
+	defer func() {
+		user.hardDelete()
+	}()
+
+	// тестируем саму функцию GetAccountUser
+	aUser, err := account1.GetAccountUser(*user)
+	if err  != nil && err != gorm.ErrRecordNotFound {
+		t.Fatalf("Ошибка при поиске aUser: %v", err)
+	}
+	if err == gorm.ErrRecordNotFound {
+		t.Fatal("Пользователь не найден, хотя должен был бы...")
+	}
+	if aUser == nil {
+		t.Fatalf("Вместо пользователя найден *nil: %v", aUser)
+	}
+}
+
+func TestAccount_ExistUser(t *testing.T) {
+
+	account1, err := Account{Name:"TestAccount_AppendUser_1"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer func() {
+		account1.HardDelete()
+	}()
+
+	account2, err := Account{Name:"TestAccount_AppendUser_2"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer func() {
+		account2.HardDelete()
+	}()
+
+	// создаем тестового пользователя с ролью Автор
+	user, err := account1.CreateUser(User{Username: "TestUser_ExistUser", Phone: "88251001212", InvitedUserID:1, DefaultAccountID:1}, RoleAuthor)
+	if err!=nil {
+		t.Fatalf("Неудалось создать пользователя %v", err)
+	}
+	defer func() {
+		user.hardDelete()
+	}()
+
+	if !account1.ExistUser(*user) {
+		t.Fatal("Не найден пользователь в аккаунте 1, который должен быть")
+	}
+
+	if account2.ExistUser(*user) {
+		t.Fatal("Найден пользователь в аккаунте 2, которого не должно было быть")
+	}
+	
+}
+
 func TestAccount_AppendUser(t *testing.T) {
-	// todo: дописать тест
+	account, err := Account{Name:"TestAccount_AppendUser_1"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer account.HardDelete()
+
+	account2, err := Account{Name:"TestAccount_AppendUser_2"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer account2.HardDelete()
+
+	// создаем тестового пользователя с ролью Автор
+	user, err := account.CreateUser(User{Phone: "88251001010"}, RoleAuthor)
+	if err!=nil {
+		t.Fatalf("Неудалось создать пользователя %v", err)
+	}
+	defer user.hardDelete()
+
+	if !account.ExistUser(*user) {
+		t.Fatal("Пользователь не был добавлен функцией account.CreateUser() в аккаунт_1.")
+	}
+
+	if account2.ExistUser(*user) {
+		t.Fatal("Пользователь был добавлен функцией account.CreateUser() в аккаунт_2.")
+	}
+
+	if err := account2.AppendUser(*user, RoleClient); err != nil {
+		t.Fatalf("Не удалось добавить пользователя в аккаунт с ролью Клиент: %v", err)
+	}
+
+	aRole, err := account2.GetUserAccessRole(*user)
+	if err != nil {
+		t.Fatalf("Неудалось получить AccessRole: %v", err)
+	}
+	if aRole == nil {
+		t.Fatalf("Роль пользователя не найдена: %v", aRole)
+	}
+
 }
 
 func TestAccount_GetUserRole(t *testing.T) {
@@ -365,7 +480,7 @@ func TestAccount_GetUserRole(t *testing.T) {
 	}
 
 	if role.Tag != RoleAuthor {
-		t.Fatalf("Роль созданного пользователя не является Автор: %v", role.Tag)
+		t.Fatalf("Роль созданного пользователя не является Автор: %v", role)
 	}
 }
 
@@ -387,7 +502,7 @@ func TestAccount_GetUserAccessRole(t *testing.T) {
 	// Проверяем роль нашего пользователя
 	accessRole, err := account.GetUserAccessRole(*user)
 	if err != nil || accessRole == nil {
-		t.Fatalf("Неудалось получить роль пользователя %v", err)
+		t.Fatalf("Неудалось получить роль пользователя: %v", err)
 	}
 
 	if *accessRole != RoleAuthor {
