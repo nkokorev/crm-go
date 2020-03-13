@@ -104,6 +104,10 @@ func (role *Role) create () (*Role, error) {
 	return nil, nil
 }
 
+func (role Role) Exist() bool {
+	return !db.Model(&Role{}).Unscoped().First(&Role{}, role.ID).RecordNotFound()
+}
+
 // GetRole - возвращает роли только для главного аккаунта (публичные)
 func GetRole(tag accessRole) (*Role, error) {
 	var role Role

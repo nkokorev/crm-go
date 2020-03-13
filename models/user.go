@@ -170,9 +170,9 @@ func (user *User) Update (input interface{}) error {
 
 // ### HELPERS FUNC ###
 
-// Существует ли пользователь с указанным ID
-func (User) Exist(id uint) bool {
-	return !db.Unscoped().First(&User{}, "id = ?", id).RecordNotFound()
+
+func (user User) Exist() bool {
+	return !db.Unscoped().First(&User{}, user.ID).RecordNotFound()
 }
 
 func (User) ExistEmail(email string) bool {

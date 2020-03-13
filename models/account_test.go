@@ -84,6 +84,27 @@ func TestGetAccount(t *testing.T) {
 	}
 }
 
+func TestAccount_Exist(t *testing.T) {
+	acc, err := GetMainAccount()
+	if err != nil || acc == nil {
+		t.Fatalf("Не удалось получить главный аккаунт: %v \n", err)
+	}
+
+	if !acc.Exist(acc.ID) {
+		t.Fatal("Main аккаунт не существует, хотя на самом деле есть")
+	}
+
+	account, err := Account{Name:"TestAccount_Exist"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer account.HardDelete()
+
+	if !account.Exist(account.ID) {
+		t.Fatal("Тестовый аккаунт не существует, хотя на самом деле есть")
+	}
+}
+
 func TestGetMainAccount(t *testing.T) {
 	account, err := GetMainAccount()
 	if err != nil || account.ID != 1 || account.Name != "RatusCRM" {
@@ -340,59 +361,6 @@ func TestAccount_GetUserByPhone(t *testing.T) {
 
 }
 
-func TestAccount_MainAppend(t *testing.T)  {
-
-	acc, err := GetMainAccount()
-	if err != nil || acc == nil {
-		t.Fatalf("Не удалось получить главный аккаунт: %v", err)
-	}
-
-	/*var aUser AccountUser
-
-	if err := db.Model(&AccountUser{}).
-		Where("user_id = ? AND account_id = ?", 45, 1).
-		Preload("Role").
-		Preload("Account").
-		Preload("User").
-		First(&aUser).Error; err != nil {
-			t.Fatalf("aUser действительно не найден! %v", err)
-	}*/
-
-
-	/*user := User{ID:45}
-	aUserTest, err := acc.GetAccountUser(user)
-	if err != nil {
-		t.Fatalf("Не найден пользователь в Main Аккаунте: %v.\n", err)
-	}
-	if aUserTest == nil {
-		t.Fatalf("Найден нулевой пользователь... %v \n", aUserTest)
-	}
-	fmt.Printf("aUserTest: %v \n", aUserTest)
-
-	return*/
-
-	user, err := acc.CreateUser(User{Username:"TestUser", Email:"mex388@gmail.com"});
-	if err != nil {
-		t.Fatalf("Cant create user: %v", err)
-	}
-
-	if user == nil {
-		t.Fatalf("Нулевой пользователь: %v", user)
-	}
-
-	defer user.hardDelete()
-
-	aUser, err := acc.GetAccountUser(*user)
-	if err != nil {
-		t.Fatalf("Не найден пользователь в гланом аккаунте: %v", err)
-	}
-	if aUser == nil {
-		t.Fatalf("Нулевой польозватель в поиске из главного аккаунта: %v", aUser)
-	}
-
-	// все хорошо!
-}
-
 func TestAccount_GetAccountUser(t *testing.T) {
 	account1, err := Account{Name:"TestAccount_GetAccountUser_1"}.create()
 	if err != nil {
@@ -463,8 +431,6 @@ func TestAccount_ExistUser(t *testing.T) {
 	if !(Account{}).ExistUser(*user) {
 		t.Fatal("Не найден пользователь, который должен быть")
 	}
-
-
 }
 
 func TestAccount_ExistAccountUser(t *testing.T) {

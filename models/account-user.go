@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/nkokorev/crm-go/utils"
 )
 
@@ -33,7 +34,7 @@ func (aUser AccountUser) create () (*AccountUser, error) {
 
 	var e utils.Error
 
-	// Validate!
+	// more Validate!
 	if aUser.AccountId < 1 {
 		e.AddErrors("accountId", "Необходимо указать принадлежность к аккаунту")
 	}
@@ -42,6 +43,17 @@ func (aUser AccountUser) create () (*AccountUser, error) {
 	}
 	if aUser.RoleId < 1 {
 		e.AddErrors("roleId", "Необходимо указать роль пользователя")
+	}
+
+	//if  !(Account{ID:aUser.AccountId}).Exist() {
+	if  !(Account{}).Exist(aUser.AccountId) {
+		return nil, errors.New("Аккаунт, в рамках которого создается пользователь, не существует!")
+	}
+	if  !(User{ID:aUser.UserId}).Exist() {
+		return nil, errors.New("Аккаунт, в рамках которого создается пользователь, не существует!")
+	}
+	if  !(Role{ID:aUser.RoleId}).Exist() {
+		return nil, errors.New("Аккаунт, в рамках которого создается пользователь, не существует!")
 	}
 
 	if e.HasErrors() {
@@ -81,6 +93,14 @@ func (aUser *AccountUser) update (input interface{}) error {
 	return db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).
 		Select("AccountId", "UserId", "RoleId").
 		Update(input).First(aUser).Error
+}
+
+func (aUser *AccountUser) delete() error {
+	
+	if aUser.AccountId < 1 || aUser.UserId < 1 || aUser.RoleId <1 {
+		return errors.New("Не возможно удалить пользователя, т.к. не верные входящие данные")
+	}
+	return db.Model(AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).Delete(aUser).Error
 }
 
 

@@ -221,6 +221,14 @@ func GetAccountByHash (hashId string) (*Account, error) {
 	return &account, err
 }
 
+//func (account Account) Exist() bool {
+func (Account) Exist(id uint) bool {
+	fmt.Printf("Поищем аккаунт с id = %v\n", id)
+	fmt.Printf("Аккаунт с id = %v, наличие: %v\n", id, !db.Model(Account{}).First(&Account{}, id).RecordNotFound())
+
+	return !db.Model(Account{}).First(&Account{}, id).RecordNotFound()
+}
+
 
 // ### API KEY ###
 
@@ -634,8 +642,6 @@ func (account Account) GetUserAccessRole (user User) (*accessRole, error) {
 	
 	return &aRole, err
 }
-
-
 
 
 // Авторизация пользователя со всеми паралельными процессами
