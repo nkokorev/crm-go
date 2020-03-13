@@ -11,7 +11,7 @@ func TestAccountUser_create(t *testing.T)  {
         account.HardDelete()
     }()
 
-    user, err := account.CreateUser(User{Username: "TestUser_ExistUser", Phone: "88251001212", InvitedUserID:1, DefaultAccountID:1}, RoleAuthor)
+    user, err := account.CreateUser(User{Username: "TestAccountUser_create", Phone: "88251001212", InvitedUserID:1, DefaultAccountID:1}, RoleAuthor)
     if err !=nil {
         t.Fatalf("Неудалось создать пользователя %v", err)
     }
@@ -79,5 +79,53 @@ func TestAccountUser_create(t *testing.T)  {
 }
 
 func TestAccountUser_update(t *testing.T)  {
+    account, err := Account{Name:"TestAccountUser_update"}.create()
+    if err != nil {
+        t.Fatalf("Неудалось создать тестовый аккаунт: %v\n", err)
+    }
+    defer func() {
+        account.HardDelete()
+    }()
 
+    user, err := account.CreateUser(User{Username: "TestAccountUser_update", Phone: "88251001248", InvitedUserID:1, DefaultAccountID:1}, RoleAdmin)
+    if err !=nil {
+        t.Fatalf("Неудалось создать пользователя %v", err)
+    }
+    defer func() {
+        user.hardDelete()
+    }()
+
+    // Проверим, что пользователь создался
+    aUser, err := account.GetAccountUser(*user)
+    if err != nil || aUser == nil {
+        t.Fatalf("Пользователь не был создан или добавлен в аккаунт: %v\n", err)
+    }
+
+    // Проверим, что это наш пользователь
+    if aUser.User.Username != user.Username {
+        t.Fatalf("Пользователь aUser получен с другими данными или вообще без них: %v\n", aUser.User)
+    }
+    if aUser.Role.Tag != RoleAdmin {
+        t.Fatalf("Пользователь aUser получен с другими данными или вообще без них: %v\n", aUser.Role)
+    }
+
+    role, err := GetRole(RoleManager)
+    if err != nil || role == nil {
+        t.Fatalf("Не удалось получить роль: %v\n", err)
+    }
+
+    aUser.RoleId = role.ID
+    if err := aUser.update(&aUser); err != nil {
+        t.Fatalf("Не удалось обновить данные в aUser: %v\n", err)
+    }
+
+    // Проверим, что пользователь обновился
+    aUser, err = account.GetAccountUser(*user)
+    if err != nil || aUser == nil {
+        t.Fatalf("Пользователь не был создан или добавлен в аккаунт: %v\n", err)
+    }
+
+    if aUser.RoleId != role.ID {
+        t.Fatal("Данные aUser с ролью НЕ обновились!")
+    }
 }

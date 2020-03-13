@@ -90,9 +90,12 @@ func (aUser AccountUser) create () (*AccountUser, error) {
 func (aUser *AccountUser) update (input interface{}) error {
 
 	// выбираем те поля, что можно обновить
-	return db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).
-		Select("AccountId", "UserId", "RoleId").
-		Update(input).First(aUser).Error
+/*	return db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).
+		Select("account_id", "user_id", "role_id").
+		Update(input).First(aUser).Error*/
+
+	return db.Model(AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).
+		Update(input).Preload("Account").Preload("User").Preload("Role").First(aUser).Error
 }
 
 func (aUser *AccountUser) delete() error {
