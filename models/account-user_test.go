@@ -129,3 +129,37 @@ func TestAccountUser_update(t *testing.T)  {
         t.Fatal("Данные aUser с ролью НЕ обновились!")
     }
 }
+
+func TestAccountUser_delete(t *testing.T) {
+    // Создаем тестовый аккаунт
+    account, err := Account{Name:"TestAccountUser_delete"}.create()
+    if err != nil {
+        t.Fatalf("Неудалось создать тестовый аккаунт: %v\n", err)
+    }
+    defer func() {
+        account.HardDelete()
+    }()
+
+    user, err := account.CreateUser(User{Username: "TestAccountUser_delete", Phone: "88251009876", InvitedUserID:1, DefaultAccountID:1}, RoleAuthor)
+    if err !=nil {
+        t.Fatalf("Неудалось создать пользователя %v", err)
+    }
+    defer func() {
+        user.hardDelete()
+    }()
+
+    aUser, err := account.GetAccountUser(*user)
+    if err != nil || aUser == nil {
+        t.Fatalf("Не удалось получить aUser или он *nil: %v\n", err)
+    }
+
+    // Удаляем через фукнцию, которую тестим
+    if err := aUser.delete(); err != nil {
+        t.Fatalf("Не удалось удалить aUser.delete(): %v\n", err)
+    }
+
+    aUser_2, err := account.GetAccountUser(*user)
+    if err == nil || aUser_2 != nil {
+        t.Fatalf("Удалось найти пользователя aUser после удаления: %v\n", aUser_2)
+    }
+}
