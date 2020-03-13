@@ -340,6 +340,59 @@ func TestAccount_GetUserByPhone(t *testing.T) {
 
 }
 
+func TestAccount_MainAppend(t *testing.T)  {
+
+	acc, err := GetMainAccount()
+	if err != nil || acc == nil {
+		t.Fatalf("Не удалось получить главный аккаунт: %v", err)
+	}
+
+	/*var aUser AccountUser
+
+	if err := db.Model(&AccountUser{}).
+		Where("user_id = ? AND account_id = ?", 45, 1).
+		Preload("Role").
+		Preload("Account").
+		Preload("User").
+		First(&aUser).Error; err != nil {
+			t.Fatalf("aUser действительно не найден! %v", err)
+	}*/
+
+
+	/*user := User{ID:45}
+	aUserTest, err := acc.GetAccountUser(user)
+	if err != nil {
+		t.Fatalf("Не найден пользователь в Main Аккаунте: %v.\n", err)
+	}
+	if aUserTest == nil {
+		t.Fatalf("Найден нулевой пользователь... %v \n", aUserTest)
+	}
+	fmt.Printf("aUserTest: %v \n", aUserTest)
+
+	return*/
+
+	user, err := acc.CreateUser(User{Username:"TestUser", Email:"mex388@gmail.com"});
+	if err != nil {
+		t.Fatalf("Cant create user: %v", err)
+	}
+
+	if user == nil {
+		t.Fatalf("Нулевой пользователь: %v", user)
+	}
+
+	defer user.hardDelete()
+
+	aUser, err := acc.GetAccountUser(*user)
+	if err != nil {
+		t.Fatalf("Не найден пользователь в гланом аккаунте: %v", err)
+	}
+	if aUser == nil {
+		t.Fatalf("Нулевой польозватель в поиске из главного аккаунта: %v", aUser)
+	}
+
+	// все хорошо!
+}
+
 func TestAccount_GetAccountUser(t *testing.T) {
 	account1, err := Account{Name:"TestAccount_GetAccountUser_1"}.create()
 	if err != nil {
@@ -450,24 +503,31 @@ func TestAccount_ExistAccountUser(t *testing.T) {
 }
 
 func TestAccount_AppendUser(t *testing.T) {
+	
 	account, err := Account{Name:"TestAccount_AppendUser_1"}.create()
 	if err != nil {
 		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
 	}
-	defer account.HardDelete()
+	defer func() {
+		account.HardDelete()
+	}()
 
 	account2, err := Account{Name:"TestAccount_AppendUser_2"}.create()
 	if err != nil {
 		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
 	}
-	defer account2.HardDelete()
+	defer func() {
+		account2.HardDelete()
+	}()
 
 	// создаем тестового пользователя с ролью Автор
 	user, err := account.CreateUser(User{Phone: "88251001018"}, RoleAuthor)
-	if err!=nil {
+	if err!=nil || user == nil {
 		t.Fatalf("Неудалось создать пользователя %v", err)
 	}
-	defer user.hardDelete()
+	defer func() {
+		user.hardDelete()
+	}()
 
 	if !account.ExistAccountUser(*user) {
 		t.Fatal("Пользователь не был добавлен функцией account.CreateUser() в аккаунт_1.")
@@ -477,7 +537,8 @@ func TestAccount_AppendUser(t *testing.T) {
 		t.Fatal("Пользователь был добавлен функцией account.CreateUser() в аккаунт_2.")
 	}
 
-	if err := account2.AppendUser(*user, RoleClient); err != nil {
+	aUser, err := account2.AppendUser(*user, RoleClient);
+	if err != nil || aUser == nil{
 		t.Fatalf("Не удалось добавить пользователя в аккаунт с ролью Клиент: %v", err)
 	}
 
@@ -486,7 +547,7 @@ func TestAccount_AppendUser(t *testing.T) {
 		t.Fatalf("Неудалось получить AccessRole: %v", err)
 	}
 	if aRole == nil {
-		t.Fatalf("Роль пользователя не найдена: %v", aRole)
+		t.Fatalf("Роль пользователя нулевая (не найдена): %v", aRole)
 	}
 }
 

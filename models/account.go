@@ -350,16 +350,12 @@ func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error
 	}
 
 	// Автоматически добавляем пользователя в аккаунт
-	if err := account.AppendUser(*u, role);err != nil {
+	aUser, err := account.AppendUser(*u, role);
+	if err != nil || aUser == nil {
 		return nil, err
 	}
 
-	aUser, err := account.GetAccountUser(*u)
-	if err != nil {
-		fmt.Println("Пользователь после создания не был добавлен!")
-	}
-
-	fmt.Printf("Добавленный aUser: %v \n", aUser)
+	//fmt.Printf("Добавленный aUser: %v \n", aUser)
 
 	return u, nil
 }
@@ -418,19 +414,14 @@ func (account Account) GetUserByPhone (phone, region string) (*User, error) {
 
 // Проверяет существование пользователя вообще
 func (account Account) ExistUser(user User) bool {
-	var userIn User
-	if db.Table("users").Find(&userIn, user.ID).RecordNotFound() {
-		return false
-	} else {
-		return true
-	}
+	return !db.Model(&User{}).First(&User{}, user.ID).RecordNotFound()
 }
 
 // Проверяет существоание пользователя в контексте текущего аккаунта
 func (account Account) ExistAccountUser(user User) bool {
 
 	//fmt.Printf("Ищем пользователя: acc: %v user: %v", account.ID, user.ID)
-	if db.Table(AccountUser{}.TableName()).Where("account_id = ? AND user_id = ?", account.ID, user.ID).Find(&AccountUser{}).RecordNotFound() {
+	if db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.ID, user.ID).Find(&AccountUser{}).RecordNotFound() {
 		return false
 	} else {
 		return true
@@ -447,12 +438,17 @@ func (account Account) GetAccountUser(user User) (*AccountUser, error) {
 		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
 	}
 
+	//fmt.Printf("\nОсуществляем поиск aUser в GetAccountUser() =>\nAccountID: %v, \nUserId: %v\n", account.ID, user.ID)
+
 	//err := db.Table(AccountUser{}.TableName()).Where("user_id = ? AND account_id = ?", account.ID, user.ID).
-	err := db.Where("user_id = ? AND account_id = ?", account.ID, user.ID).
+	err := db.Model(&AccountUser{}).
+		Where("account_id = ? AND user_id = ?", account.ID, user.ID).
 		Preload("Role").
 		Preload("Account").
 		Preload("User").
 		First(&aUser).Error;
+
+	//fmt.Println("Результаты поиска =>\naUser: ", aUser)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
@@ -469,26 +465,25 @@ func (account Account) GetAccountUser(user User) (*AccountUser, error) {
 }
 
 // добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то роль будет обновлена
-func (account Account) AppendUser (user User, tag accessRole) error {
+func (account Account) AppendUser(user User, tag accessRole) (*AccountUser, error) {
 
-	acs := AccountUser{}
+	acs := AccountUser{} // return value
 
-	fmt.Printf("Append User: %v, \nRole: %v\n", user, tag)
+	//fmt.Printf("Append User: %v, \nRole: %v\n", user, tag)
 
-	if db.NewRecord(&user) || !account.ExistUser(user) {
-		return errors.New("Необходимо создать сначала пользователя!")
+	if db.NewRecord(user) || !account.ExistUser(user) {
+		return nil, errors.New("Необходимо создать сначала пользователя!")
 	}
 
 	// узнаем роль, чтобы потом получить его ID
 	rSet, err := GetRole(tag)
 	if err != nil || rSet == nil {
-		return err
+		return nil, err
 	}
 
 	// проверяем, относится ли пользователь к аккаунту
 	if account.ExistAccountUser(user) {
-		return errors.New("Невозможно добавить пользователя в аккаунт, т.к. он в нем уже есть.")
-		
+		return nil, errors.New("Невозможно добавить пользователя в аккаунт, т.к. он в нем уже есть.")
 	} else {
 		// создаем
 		acs.AccountId = account.ID
@@ -497,9 +492,9 @@ func (account Account) AppendUser (user User, tag accessRole) error {
 
 		aUser, err := acs.create();
 		if err != nil || aUser == nil{
-			return err
+			return nil, errors.New("Ошибка при создании AccountUser.")
 		}
-		fmt.Println("Cозданый aUser: ", aUser)
+		//fmt.Println("Cозданый aUser: ", aUser)
 
 		/*
 		if err := db.Table("account_users").Create(&acs).Error; err != nil {
@@ -507,7 +502,7 @@ func (account Account) AppendUser (user User, tag accessRole) error {
 			return err
 		}*/
 
-		return nil
+		return aUser, nil
 
 	}
 
@@ -526,8 +521,7 @@ func (account Account) AppendUser (user User, tag accessRole) error {
 	//return db.Table(AccountUser{}.TableName()).Create(&acs).Error
 
 	//return db.Model(&user).Association("accounts").Append(&acs).Error
-	
-	return nil
+
 }
 
 // !!!!!! ### Выше функции покрытые тестами ### !!!!!!!!!!1
@@ -601,10 +595,6 @@ func (account Account) IsVerifiedUser(userId uint) (bool, error) {
 	return status, nil
 }
 
-
-
-
-
 func (account *Account) RemoveUser (user *User) error {
 	return db.Model(&user).Association("accounts").Delete(account).Error
 }
@@ -617,16 +607,15 @@ func (account Account) GetUserRole (user User) (*Role, error) {
 	}
 
 	aUser, err := account.GetAccountUser(user)
-	if err != nil || db.NewRecord(aUser) {
+	if err != nil || aUser == nil {
 		return nil, err
 	}
 
-	if db.NewRecord(aUser.Role) {
+	if aUser.Role.ID == 0 {
 		return nil, errors.New("Не удалось загрузить роль пользователя")
 	}
-	
 	role = aUser.Role
-
+	
 	return &role, nil
 }
 
@@ -635,13 +624,15 @@ func (account Account) GetUserAccessRole (user User) (*accessRole, error) {
 	if db.NewRecord(account) || db.NewRecord(user) {
 		return nil, errors.New("Аккаунта или пользователя не существует!")
 	}
-	
+	// Сначала получаем общую роль
 	role, err := account.GetUserRole(user)
 	if err != nil || role == nil || db.NewRecord(role) {
+		fmt.Printf("Ошибка в поиске роли пользователя %v\n", err)
 		return nil, err
 	}
-
-	return &(role.Tag), err
+	aRole := role.Tag
+	
+	return &aRole, err
 }
 
 
@@ -706,12 +697,12 @@ func (account *Account) GetToAccount () error {
 
 // сохраняет ВСЕ необходимые поля, кроме id, deleted_at и возвращает в Account обновленные данные
 func (account *Account) Save () error {
-	return db.Model(Account{}).Omit("id", "deleted_at").Save(account).Find(account, "id = ?", account.ID).Error
+	return db.Model(&Account{}).Omit("id", "deleted_at").Save(account).Find(account, "id = ?", account.ID).Error
 }
 
 // обновляет данные аккаунта кроме id, deleted_at и возвращает в Account обновленные данные
 func (account *Account) Update (input interface{}) error {
-	return db.Model(Account{}).Where("id = ?", account.ID).Omit("id", "deleted_at").Update(input).Find(account, "id = ?", account.ID).Error
+	return db.Model(&Account{}).Where("id = ?", account.ID).Omit("id", "deleted_at").Update(input).Find(account, "id = ?", account.ID).Error
 }
 
 // # Soft Delete
@@ -721,12 +712,12 @@ func (account *Account) SoftDelete () error {
 
 // # Hard Delete
 func (account *Account) HardDelete () error {
-	return db.Model(Account{}).Unscoped().Where("id = ?", account.ID).Delete(account).Error
+	return db.Model(&Account{}).Unscoped().Where("id = ?", account.ID).Delete(account).Error
 }
 
 // удаляет аккаунт с концами
 func (account *Account) DeleteUnscoped () error {
-	return db.Model(Account{}).Where("id = ?", account.ID).Unscoped().Delete(account).Error
+	return db.Model(&Account{}).Where("id = ?", account.ID).Unscoped().Delete(account).Error
 }
 
 

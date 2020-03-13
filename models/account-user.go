@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 )
 
@@ -32,11 +31,9 @@ func (AccountUser) TableName() string {
 
 func (aUser AccountUser) create () (*AccountUser, error) {
 
-
 	var e utils.Error
 
 	// Validate!
-
 	if aUser.AccountId < 1 {
 		e.AddErrors("accountId", "Необходимо указать принадлежность к аккаунту")
 	}
@@ -63,17 +60,17 @@ func (aUser AccountUser) create () (*AccountUser, error) {
 		Role:aUser.Role,
 	}
 
-	if err := db.Table(AccountUser{}.TableName()).Create(&outUser).Error; err != nil {
+	if err := db.Model(&AccountUser{}).Create(&outUser).Error; err != nil {
 		return nil, err
 	}
 
 	// получаем созданного пользователя с прелоадом данных
 	aUserOut := AccountUser{}
-	if err := db.Table(AccountUser{}.TableName()).Preload("User").Preload("Account").Preload("Role").First(&aUserOut).Error; err != nil {
+	if err := db.Model(&AccountUser{}).Preload("User").Preload("Account").Preload("Role").First(&aUserOut).Error; err != nil {
 		return nil, err
 	}
 
-	fmt.Println("### Созданный aUser методом create(): ", aUserOut)
+	//fmt.Println("### Созданный aUser методом create(): ", aUserOut)
 
 	return &aUserOut, nil
 }
@@ -81,7 +78,7 @@ func (aUser AccountUser) create () (*AccountUser, error) {
 func (aUser *AccountUser) update (input interface{}) error {
 
 	// выбираем те поля, что можно обновить
-	return db.Model(aUser).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).
+	return db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).
 		Select("AccountId", "UserId", "RoleId").
 		Update(input).First(aUser).Error
 }

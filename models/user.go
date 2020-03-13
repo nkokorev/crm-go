@@ -172,7 +172,7 @@ func (user *User) Update (input interface{}) error {
 
 // Существует ли пользователь с указанным ID
 func (User) Exist(id uint) bool {
-	return !db.Unscoped().First(&User{}, "ip = ?", id).RecordNotFound()
+	return !db.Unscoped().First(&User{}, "id = ?", id).RecordNotFound()
 }
 
 func (User) ExistEmail(email string) bool {
@@ -354,7 +354,8 @@ func (user User) CreateAccount(input Account) (*Account,error) {
 	}
 
 	// 2. Привязываем аккаунт к пользователю
-	if err := a.AppendUser(user, RoleOwner); err != nil {
+	aUser, err := a.AppendUser(user, RoleOwner);
+	if err != nil || aUser == nil {
 		return nil, err
 	}
 

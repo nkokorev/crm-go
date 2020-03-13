@@ -107,7 +107,7 @@ func (role *Role) create () (*Role, error) {
 // GetRole - возвращает роли только для главного аккаунта (публичные)
 func GetRole(tag accessRole) (*Role, error) {
 	var role Role
-	if err := db.First(&role, "issuer_account_id = 1 AND tag = ?", tag).Error; err != nil {
+	if err := db.Model(&Role{}).First(&role, "issuer_account_id = ? AND tag = ?", 1, tag).Error; err != nil {
 		return nil, err
 	}
 
