@@ -270,7 +270,7 @@ func (account Account) UpdateApiKey(token string, input ApiKey) (*ApiKey, error)
 
 // #### User ####
 
-// CreateUser - создает пользователя в аккаунте с базовой ролью = client, если не указана иная роль
+// CreateUser - создает пользователя и добавляет его в аккаунт с базовой ролью = client, если не указана иная роль
 func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error) {
 
 	var err error
@@ -343,6 +343,7 @@ func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error
 		return nil, utils.Error{Message:"Данные уже есть", Errors: map[string]interface{}{"username":"Данный телефон уже используется"}}
 	}
 
+	// создаем пользователя
 	u, err := input.create()
 	if err != nil || u == nil {
 		return u, err
@@ -352,6 +353,13 @@ func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error
 	if err := account.AppendUser(*u, role);err != nil {
 		return nil, err
 	}
+
+	aUser, err := account.GetAccountUser(*u)
+	if err != nil {
+		fmt.Println("Пользователь после создания не был добавлен!")
+	}
+
+	fmt.Printf("Добавленный aUser: %v \n", aUser)
 
 	return u, nil
 }
@@ -433,7 +441,7 @@ func (account Account) ExistAccountUser(user User) bool {
 // Если пользователь не найден - вернет gorm.ErrRecordNotFound
 func (account Account) GetAccountUser(user User) (*AccountUser, error) {
 
-	var aUser AccountUser
+	aUser := AccountUser{}
 
 	if db.NewRecord(account) || db.NewRecord(user) {
 		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
@@ -449,6 +457,10 @@ func (account Account) GetAccountUser(user User) (*AccountUser, error) {
 		return nil, err
 	}
 
+	if &aUser == nil {
+		return nil, errors.New("Не удалось создать пользователя")
+	}
+
 	if err == gorm.ErrRecordNotFound {
 		return nil, err
 	}
@@ -457,63 +469,48 @@ func (account Account) GetAccountUser(user User) (*AccountUser, error) {
 }
 
 // добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то роль будет обновлена
-func (account Account) AppendUser (user User, role accessRole) error {
+func (account Account) AppendUser (user User, tag accessRole) error {
 
 	acs := AccountUser{}
 
-	if db.NewRecord(&user) {
+	fmt.Printf("Append User: %v, \nRole: %v\n", user, tag)
+
+	if db.NewRecord(&user) || !account.ExistUser(user) {
 		return errors.New("Необходимо создать сначала пользователя!")
 	}
 
 	// узнаем роль, чтобы потом получить его ID
-	rSet, err := GetRole(role)
-	if err != nil {
+	rSet, err := GetRole(tag)
+	if err != nil || rSet == nil {
 		return err
-	}
-
-	if !(Account{}).ExistUser(user) {
-		return errors.New("Пользователь не создан!")
 	}
 
 	// проверяем, относится ли пользователь к аккаунту
 	if account.ExistAccountUser(user) {
-
 		return errors.New("Невозможно добавить пользователя в аккаунт, т.к. он в нем уже есть.")
-		// обновляем роль и смежные данные
-		/*aUser, err := account.GetAccountUser(user)
-		if err != nil || aUser == nil {
-			return errors.New("Не удалось получить данные пользователя")
-		}
-		if aUser.RoleId != rSet.ID {
-			aUser.RoleId = rSet.ID
-			if err := aUser.update(aUser); err != nil {
-				return err
-			}
-		}*/
 		
 	} else {
-
 		// создаем
 		acs.AccountId = account.ID
 		acs.UserId = user.ID
 		acs.RoleId = rSet.ID
 
-		if err := db.Table(AccountUser{}.TableName()).Create(&acs).Error; err != nil {
-			fmt.Println("Ошибка при создании aUser: ", err)
+		aUser, err := acs.create();
+		if err != nil || aUser == nil{
 			return err
 		}
+		fmt.Println("Cозданый aUser: ", aUser)
+
+		/*
+		if err := db.Table("account_users").Create(&acs).Error; err != nil {
+			fmt.Println("Ошибка при создании aUser: ", err)
+			return err
+		}*/
 
 		return nil
 
 	}
-	
-	//acs.Role = *rSet
-	//acs.Account = account
-	//acs.User = user
 
-
-
-	//fmt.Println("Создаем: ", acs)
 
 	/*if err := db.Table(AccountUser{}.TableName()).FirstOrCreate(&acs).Error; err != nil {
 		return errors.New("Неудалось добавить пользователя")

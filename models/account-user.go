@@ -1,5 +1,9 @@
 package models
 
+import (
+	"fmt"
+	"github.com/nkokorev/crm-go/utils"
+)
 
 // M<>M
 type AccountUser struct {
@@ -24,6 +28,54 @@ func (AccountUser) PgSqlCreate() {
 // Установить имя таблицы AccountUser's как `account_users`
 func (AccountUser) TableName() string {
 	return "account_users"
+}
+
+func (aUser AccountUser) create () (*AccountUser, error) {
+
+
+	var e utils.Error
+
+	// Validate!
+
+	if aUser.AccountId < 1 {
+		e.AddErrors("accountId", "Необходимо указать принадлежность к аккаунту")
+	}
+	if aUser.UserId < 1 {
+		e.AddErrors("userId", "Необходимо указать принадлежность к пользователю")
+	}
+	if aUser.RoleId < 1 {
+		e.AddErrors("roleId", "Необходимо указать роль пользователя")
+	}
+
+	if e.HasErrors() {
+		e.Message = "Не верно сформированные данные пользователя для добавления в аккаунт!"
+		return nil, e
+	}
+
+	// копируем разрешеныне данные
+	outUser := AccountUser{
+		AccountId:aUser.AccountId,
+		UserId:aUser.UserId,
+		RoleId:aUser.RoleId,
+
+		Account:aUser.Account,
+		User:aUser.User,
+		Role:aUser.Role,
+	}
+
+	if err := db.Table(AccountUser{}.TableName()).Create(&outUser).Error; err != nil {
+		return nil, err
+	}
+
+	// получаем созданного пользователя с прелоадом данных
+	aUserOut := AccountUser{}
+	if err := db.Table(AccountUser{}.TableName()).Preload("User").Preload("Account").Preload("Role").First(&aUserOut).Error; err != nil {
+		return nil, err
+	}
+
+	fmt.Println("### Созданный aUser методом create(): ", aUserOut)
+
+	return &aUserOut, nil
 }
 
 func (aUser *AccountUser) update (input interface{}) error {
