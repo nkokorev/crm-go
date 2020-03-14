@@ -47,7 +47,6 @@ func Connect() *gorm.DB {
 		}
 	}
 
-
 	db, err := gorm.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatal("Error connect to DB")

@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -35,7 +34,6 @@ func CheckAppUiApiStatus(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		fmt.Println("AppUiApiEnabled")
 		// Подгружаем настройки CRM
 		crmSettings, err := models.GetCrmSettings()
 

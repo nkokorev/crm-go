@@ -19,8 +19,8 @@ import (
 var AppRoutes = func (rApp, rAppAuthUser, rAppAuthFull *mux.Router) {
 
 	// загружаем базовые настройки системы
-	rApp.HandleFunc("/", controllers.CheckAppUiApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions) // +
-
+	rApp.HandleFunc("/", controllers.CheckAppUiApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
+	rApp.HandleFunc("/app/settings", controllers.CrmGetSettings).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 
 	// AccountId = 1
 	rApp.HandleFunc("/users", controllers.UserRegistration).Methods(http.MethodPost, http.MethodOptions)
@@ -28,9 +28,7 @@ var AppRoutes = func (rApp, rAppAuthUser, rAppAuthFull *mux.Router) {
 	rApp.HandleFunc("/users/auth/email", controllers.UserAuthByEmail).Methods(http.MethodPost, http.MethodOptions)
 	rApp.HandleFunc("/users/auth/phone", controllers.UserAuthByPhone).Methods(http.MethodPost, http.MethodOptions)
 
-
 	//rApp.HandleFunc("/auth/user", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodOptions)
 	//rApp.HandleFunc("/auth/account", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodOptions)
 	//rApp.HandleFunc("/auth", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodOptions)
-
 }

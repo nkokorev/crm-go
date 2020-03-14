@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/utils"
@@ -223,9 +222,6 @@ func GetAccountByHash (hashId string) (*Account, error) {
 
 //func (account Account) Exist() bool {
 func (Account) Exist(id uint) bool {
-	fmt.Printf("Поищем аккаунт с id = %v\n", id)
-	fmt.Printf("Аккаунт с id = %v, наличие: %v\n", id, !db.Model(Account{}).First(&Account{}, id).RecordNotFound())
-
 	return !db.Model(Account{}).First(&Account{}, id).RecordNotFound()
 }
 
@@ -362,9 +358,6 @@ func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error
 	if err != nil || aUser == nil {
 		return nil, err
 	}
-
-	//fmt.Printf("Добавленный aUser: %v \n", aUser)
-
 	return u, nil
 }
 
@@ -428,7 +421,6 @@ func (account Account) ExistUser(user User) bool {
 // Проверяет существоание пользователя в контексте текущего аккаунта
 func (account Account) ExistAccountUser(user User) bool {
 
-	//fmt.Printf("Ищем пользователя: acc: %v user: %v", account.ID, user.ID)
 	if db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.ID, user.ID).Find(&AccountUser{}).RecordNotFound() {
 		return false
 	} else {
@@ -446,9 +438,6 @@ func (account Account) GetAccountUser(user User) (*AccountUser, error) {
 		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
 	}
 
-	//fmt.Printf("\nОсуществляем поиск aUser в GetAccountUser() =>\nAccountID: %v, \nUserId: %v\n", account.ID, user.ID)
-
-	//err := db.Table(AccountUser{}.TableName()).Where("user_id = ? AND account_id = ?", account.ID, user.ID).
 	err := db.Model(&AccountUser{}).
 		Where("account_id = ? AND user_id = ?", account.ID, user.ID).
 		Preload("Role").
@@ -456,7 +445,6 @@ func (account Account) GetAccountUser(user User) (*AccountUser, error) {
 		Preload("User").
 		First(&aUser).Error;
 
-	//fmt.Println("Результаты поиска =>\naUser: ", aUser)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
@@ -476,8 +464,6 @@ func (account Account) GetAccountUser(user User) (*AccountUser, error) {
 func (account Account) AppendUser(user User, tag accessRole) (*AccountUser, error) {
 
 	acs := AccountUser{} // return value
-
-	//fmt.Printf("Append User: %v, \nRole: %v\n", user, tag)
 
 	if db.NewRecord(user) || !account.ExistUser(user) {
 		return nil, errors.New("Необходимо создать сначала пользователя!")
@@ -502,34 +488,9 @@ func (account Account) AppendUser(user User, tag accessRole) (*AccountUser, erro
 		if err != nil || aUser == nil{
 			return nil, errors.New("Ошибка при создании AccountUser.")
 		}
-		//fmt.Println("Cозданый aUser: ", aUser)
-
-		/*
-		if err := db.Table("account_users").Create(&acs).Error; err != nil {
-			fmt.Println("Ошибка при создании aUser: ", err)
-			return err
-		}*/
 
 		return aUser, nil
-
 	}
-
-
-	/*if err := db.Table(AccountUser{}.TableName()).FirstOrCreate(&acs).Error; err != nil {
-		return errors.New("Неудалось добавить пользователя")
-	}*/
-
-	//
-	/*if err := db.Model(&user).Association("accounts").Append(&account,rSet).Error; err != nil {
-		return err
-	}*/
-
-	//return db.Create(&acs).Error
-
-	//return db.Table(AccountUser{}.TableName()).Create(&acs).Error
-
-	//return db.Model(&user).Association("accounts").Append(&acs).Error
-
 }
 
 // !!!!!! ### Выше функции покрытые тестами ### !!!!!!!!!!1
@@ -635,7 +596,6 @@ func (account Account) GetUserAccessRole (user User) (*accessRole, error) {
 	// Сначала получаем общую роль
 	role, err := account.GetUserRole(user)
 	if err != nil || role == nil || db.NewRecord(role) {
-		fmt.Printf("Ошибка в поиске роли пользователя %v\n", err)
 		return nil, err
 	}
 	aRole := role.Tag

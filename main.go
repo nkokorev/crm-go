@@ -46,6 +46,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:         "127.0.0.1:8090",
+		//Addr:         "localhost:8090",
 		// Good practice to set timeouts to avoid Slowloris attacks.
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
@@ -57,7 +58,6 @@ func main() {
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
 			log.Println(err)
-			//log.Fatal(err)
 		}
 	}()
 

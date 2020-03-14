@@ -14,17 +14,21 @@ func Handlers() *mux.Router {
 
 	var crmHost string
 
+	// обрабатываем все запросы со слешем и без
+	rBase := mux.NewRouter().StrictSlash(true)
+
 	switch os.Getenv("APP_ENV") {
 	case "local":
 		crmHost = "crm-local.me"
+		rBase.Use(middleware.CorsAccessControl)
+		//crmHost = "localhost:8090"
 	case "public":
 		crmHost = "ratuscrm.com"
 	default:
 		crmHost = "ratuscrm.com"
 	}
 
-	// обрабатываем все запросы со слешем и без
-	rBase := mux.NewRouter().StrictSlash(true)
+
 
 	// ### Монтируем все три точки входа для API ###
 	rApi := rBase.Host("api." + crmHost).Subrouter() // api.ratuscrm.com
@@ -39,8 +43,6 @@ func Handlers() *mux.Router {
 	rAppAuthUser := rApp.PathPrefix("").Subrouter()
 	rAppAuthFull := rApp.PathPrefix("").Subrouter()
 	rUiApiAuthFull := rUiApi.PathPrefix("").Subrouter()
-
-
 	// #### Подключаем Middleware ####
 
 /**
@@ -73,7 +75,6 @@ func Handlers() *mux.Router {
 	account			- аккаунт, в котором авторизован пользователь
 	user			- пользователь, прошедший авторизацию
 */
-
 
 	// Все запросы API имеют в контексте accountId, account. У них нет userId.
 	rApi.Use(			middleware.CheckApiStatus, 			middleware.BearerAuthentication)
