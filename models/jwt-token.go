@@ -10,7 +10,6 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"io"
 	"log"
-	"os"
 )
 
 //Token struct declaration
@@ -21,19 +20,28 @@ type JWT struct {
 	//Username string
 	//Email string
 	jwt.StandardClaims
+
+	User User
+	Account Account
 }
 
 func (claims JWT) CreateCryptoToken() (cryptToken string, err error) {
 
+	if err := claims.UploadRelatedData();err != nil {
+		return "", err
+	}
+
 	//Create JWT token
 	token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), claims)
-	tokenString, err := token.SignedString([]byte(os.Getenv("jwt_key")))
+	//tokenString, err := token.SignedString([]byte(os.Getenv("jwt_key")))
+	tokenString, err := token.SignedString([]byte(claims.Account.UiApiJwtKey))
 	if err != nil {
 		return
 	}
 
 	// Encode jwt-token
-	cryptToken, err = JWT{}.encrypt([]byte(os.Getenv("aes_key")), tokenString)
+	//cryptToken, err = JWT{}.encrypt([]byte(os.Getenv("aes_key")), tokenString)
+	cryptToken, err = JWT{}.encrypt([]byte(claims.Account.UiApiAesKey), tokenString)
 	if err != nil {
 		return
 	}
@@ -96,12 +104,20 @@ func (JWT) decrypt(key []byte, securemess string) (decodedmess string, err error
 }
 
 // декодирует token по внутреннему ключу
-func (JWT) DecryptToken(token string) (tk string, err error) {
-	tk, err = JWT{}.decrypt( []byte(os.Getenv("aes_key")), token)
+func (claims JWT) DecryptToken(token string) (tk string, err error) {
+	if err := claims.UploadRelatedData();err != nil {
+		return "", err
+	}
+	//tk, err = JWT{}.decrypt( []byte(os.Getenv("aes_key")), token)
+	tk, err = JWT{}.decrypt( []byte(claims.Account.UiApiAesKey), token)
 	return
 }
 
 func (tk *JWT) ParseToken(decryptedToken string) (err error) {
+
+	if err := tk.UploadRelatedData();err != nil {
+		return err
+	}
 
 	// получаем библиотечный токен
 	token, err := jwt.ParseWithClaims(decryptedToken, tk, func(token *jwt.Token) (interface{}, error) {
@@ -109,10 +125,10 @@ func (tk *JWT) ParseToken(decryptedToken string) (err error) {
 			log.Printf("JWT: Unexpected signing method: %v", token.Header["alg"])
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(os.Getenv("jwt_key")), nil
+		//return []byte(os.Getenv("jwt_key")), nil
+		return []byte(tk.Account.UiApiJwtKey), nil
 	})
 	if err != nil {
-		//fmt.Println("JWT key: ", os.Getenv("jwt_key"))
 		log.Println("JWT error: ", err)
 		return
 	}
@@ -137,5 +153,27 @@ func (tk *JWT) ParseAndDecryptToken(cryptToken string) error {
 		return err
 	}
 	return err
+
+}
+
+func (tk *JWT) UploadRelatedData() error {
+	// Получаем настройки аккаунта
+	if tk.AccountID < 1 {
+		return errors.New("Не верно указан аккаунт")
+	}
+
+	if tk.UserID < 1 {
+		return errors.New("Не верно указан пользователь")
+	}
+
+	if err := db.First(&tk.Account, tk.AccountID).Error; err != nil {
+		return errors.New("Не удалось найти аккаунт для создания крипто ключа")
+	}
+
+	if err := db.First(&tk.User, tk.UserID).Error; err != nil {
+		return errors.New("Не удалось найти пользователя для создания крипто ключа")
+	}
+
+	return nil
 
 }

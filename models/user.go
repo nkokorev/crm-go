@@ -390,7 +390,7 @@ func (user *User) DeleteAccount(a *Account) error {
 /// ### Auth FUNC ###
 
 // Авторизует пользователя: загружает пользователя с предзагрузкой аккаунтов и, в случае успеха возвращает jwt-token
-func (user *User) AuthLogin(username, password string, onceLogin_opt... bool) (string, error) {
+func (user *User) AuthLogin_OLD(username, password string, onceLogin_opt... bool) (string, error) {
 
 	var e u.Error
 
@@ -416,11 +416,12 @@ func (user *User) AuthLogin(username, password string, onceLogin_opt... bool) (s
 	}*/
 
 	if e.HasErrors() {
-		e.Message = "Не верно указаны данные"
+		e.Message = "Проверьте указанные данные"
 		return "", e
 	}
 
 	expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
+
 	claims := JWT{
 		user.ID,
 		0,
@@ -429,6 +430,8 @@ func (user *User) AuthLogin(username, password string, onceLogin_opt... bool) (s
 			ExpiresAt: expiresAt,
 			Issuer:    "AuthServer",
 		},
+		*user,
+		Account{},
 	}
 	return claims.CreateCryptoToken()
 }
@@ -450,6 +453,8 @@ func (user *User) CreateJWTToken() (string, error) {
 			ExpiresAt: expiresAt,
 			Issuer:    "AuthServer",
 		},
+		*user,
+		Account{},
 	}
 	return claims.CreateCryptoToken()
 
@@ -479,6 +484,8 @@ func (user *User) LoginInAccount(account_id uint) (string, error) {
 			ExpiresAt: expiresAt,
 			Issuer:    "GUI Server",
 		},
+		*user,
+		Account{},
 	}
 
 	return claims.CreateCryptoToken()

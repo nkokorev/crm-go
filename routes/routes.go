@@ -17,10 +17,11 @@ func Handlers() *mux.Router {
 	// обрабатываем все запросы со слешем и без
 	rBase := mux.NewRouter().StrictSlash(true)
 
-	switch os.Getenv("APP_ENV") {
+	APP_ENV := os.Getenv("APP_ENV")
+	switch APP_ENV {
 	case "local":
-		crmHost = "crm-local.me"
-		rBase.Use(middleware.CorsAccessControl)
+		crmHost = "crm.local"
+		//crmHost = "127.0.0.1:8090"
 		//crmHost = "localhost:8090"
 	case "public":
 		crmHost = "ratuscrm.com"
@@ -28,7 +29,10 @@ func Handlers() *mux.Router {
 		crmHost = "ratuscrm.com"
 	}
 
-
+	if APP_ENV != "local" {
+		rBase.Use(middleware.CorsAccessControl)
+	}
+	rBase.Use(middleware.CorsAccessControl)
 
 	// ### Монтируем все три точки входа для API ###
 	rApi := rBase.Host("api." + crmHost).Subrouter() // api.ratuscrm.com
@@ -77,16 +81,16 @@ func Handlers() *mux.Router {
 */
 
 	// Все запросы API имеют в контексте accountId, account. У них нет userId.
-	rApi.Use(			middleware.CheckApiStatus, 			middleware.BearerAuthentication)
+	rApi.Use(middleware.CorsAccessControl,			middleware.CheckApiStatus, 			middleware.BearerAuthentication)
 
 	// Все запросы App UI/API имеют в контексте accountId, account. Могут иметь userId и userId + accountId + account
-	rApp.Use(			middleware.CheckAppUiApiStatus, middleware.ContextMainAccount)
-	rAppAuthUser.Use(	middleware.CheckAppUiApiStatus, middleware.ContextMainAccount, middleware.JwtUserAuthentication) // set userId
-	rAppAuthFull.Use(	middleware.CheckAppUiApiStatus,	middleware.JwtFullAuthentication) // set userId,accountId,account
+	rApp.Use(middleware.CorsAccessControl,			middleware.CheckAppUiApiStatus, middleware.ContextMainAccount)
+	rAppAuthUser.Use(middleware.CorsAccessControl,	middleware.CheckAppUiApiStatus, middleware.ContextMainAccount, middleware.JwtUserAuthentication) // set userId
+	rAppAuthFull.Use(middleware.CorsAccessControl,	middleware.CheckAppUiApiStatus,	middleware.JwtFullAuthentication) // set userId,accountId,account
 
 	// Через UI/API запросы всегда идут в контексте аккаунта
-	rUiApi.Use(			middleware.CheckUiApiStatus,	middleware.ContextMuxVarAccount)
-	rUiApiAuthFull.Use(	middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccount, middleware.JwtFullAuthentication) // set userId,accountId,account
+	rUiApi.Use(middleware.CorsAccessControl,			middleware.CheckUiApiStatus,	middleware.ContextMuxVarAccount)
+	rUiApiAuthFull.Use(	middleware.CorsAccessControl, middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccount, middleware.JwtFullAuthentication) // set userId,accountId,account
 
 
 	// ### Передаем запросы в обработку ###

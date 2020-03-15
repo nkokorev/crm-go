@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -227,12 +228,71 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 
 func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 
+	fmt.Println("UserAuthByUsername!")
+
+	// Получаем аккаунт, в который логинится пользователь
+	if r.Context().Value("issuerAccount") == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Account is not valid"}))
+		return
+	}
+
+	account := r.Context().Value("issuerAccount").(*models.Account)
+
+	//fmt.Println("issuerAccount: ", account)
+	//return
+
+	if account.ID < 1 {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	user := &models.User{}
+
+	v := &struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+		OnceLogin bool `json:"onceLogin"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	token, err := account.AuthUserByUsername(v.Username, v.Password, v.OnceLogin)
+	if err != nil {
+		fmt.Println("user.AuthLogin error: ", err)
+		u.Respond(w, u.MessageError(err, "Ошибка авторизации пользователя"))
+		return
+	}
+
+	/*token, err := user.AuthLogin(v.Username, v.Password, v.OnceLogin)
+	if err != nil {
+		fmt.Println("user.AuthLogin error: ", err)
+		u.Respond(w, u.MessageError(err, "Ошибка авторизации пользователя"))
+		return
+	}*/
+
+	// загружаем доступные аккаунты
+	if len(user.Accounts) == 0 {
+		if err := user.LoadAccounts(); err !=nil {
+			u.Respond(w, u.MessageError(err, "Неудалось загрузить аккаунты")) // вообще тут нужен релогин
+			return
+		}
+	}
+
+
+	resp := u.Message(true, "[POST] UserAuthorization - authorization was successful!")
+	resp["token"] = token
+	resp["user"] = user
+	resp["accounts"] = user.Accounts
+	u.Respond(w, resp)
+	
 }
 func UserAuthByEmail(w http.ResponseWriter, r *http.Request) {
-
+	fmt.Println("UserAuthByEmail!")
 }
 func UserAuthByPhone(w http.ResponseWriter, r *http.Request) {
-
+	fmt.Println("UserAuthByPhone!")
 }
 
 /**
@@ -503,7 +563,19 @@ func UserGetAccounts(w http.ResponseWriter, r *http.Request) {
  */
 func UserAuthorization(w http.ResponseWriter, r *http.Request)  {
 
-	time.Sleep(0 * time.Second)
+	// Получаем аккаунт, в который логинится пользователь
+	if r.Context().Value("account") == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Account is not valid"}))
+		return
+	}
+
+	account := r.Context().Value("account").(models.Account)
+
+	if account.ID < 1 {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
 	user := &models.User{}
 
 	v := &struct {
@@ -517,7 +589,7 @@ func UserAuthorization(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 
-	token, err := user.AuthLogin(v.Username, v.Password, v.OnceLogin)
+	token, err := account.AuthUserByUsername(v.Username, v.Password, v.OnceLogin)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
@@ -546,7 +618,19 @@ func UserAuthorization(w http.ResponseWriter, r *http.Request)  {
  */
 func UserTokenAuthorization(w http.ResponseWriter, r *http.Request)  {
 
-	// todo ...
+	// Получаем аккаунт, в который логинится пользователь
+	if r.Context().Value("account") == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Account is not valid"}))
+		return
+	}
+
+	account := r.Context().Value("account").(models.Account)
+
+	if account.ID < 1 {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
 	user := &models.User{}
 
 	v := &struct {
@@ -560,7 +644,7 @@ func UserTokenAuthorization(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 
-	token, err := user.AuthLogin(v.Username, v.Password, v.OnceLogin)
+	token, err := account.AuthUserByUsername(v.Username, v.Password, v.OnceLogin)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return

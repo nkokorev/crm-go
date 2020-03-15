@@ -13,7 +13,7 @@ func Message(status bool, message string) (map[string]interface{}) {
 }
 
 func Respond(w http.ResponseWriter, data map[string] interface{}) {
-	//w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Content-Type", "application/json")
 	/*w.Header().Add("Content-Type", "application/json;charset=UTF-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Max-Age", "86400") // max 600*/

@@ -16,7 +16,7 @@ func ContextMainAccount(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// тут могла быть специальная функция, берущая данные из памяти (чекая по времени)
-		issuerAccount,err := models.GetMainAccount() // RatusCRM
+		issuerAccount, err := models.GetMainAccount() // RatusCRM
 		if err != nil {
 			u.Respond(w, u.MessageError(nil, "An account with the specified hash ID was not found"))
 			return

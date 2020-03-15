@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/utils"
@@ -494,6 +495,43 @@ func (account Account) AppendUser(user User, tag accessRole) (*AccountUser, erro
 }
 
 // !!!!!! ### Выше функции покрытые тестами ### !!!!!!!!!!1
+
+// В случае успеха возвращает jwt-token
+func (account Account) AuthUserByUsername(username, password string, onceLogin_opt... bool) (string, error)  {
+
+	var e utils.Error
+
+	user, err := account.GetUserByUsername(username)
+	if err != nil || user == nil {
+		return "", errors.New("Пользователь не найден")
+	}
+	
+	// если пользователь не найден temp.Username == nil, то пароль не будет искаться, т.к. он будет равен нулю (не с чем сравнивать)
+	if !user.ComparePassword(password) {
+		e.AddErrors("password", "Неверный пароль")
+	}
+
+
+	if e.HasErrors() {
+		e.Message = "Проверьте указанные данные"
+		return "", e
+	}
+
+	expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
+
+	claims := JWT{
+		user.ID,
+		account.ID,
+		user.IssuerAccountID,
+		jwt.StandardClaims{
+			ExpiresAt: expiresAt,
+			Issuer:    "AuthServer",
+		},
+		*user,
+		account,
+	}
+	return claims.CreateCryptoToken()
+}
 
 
 // *** New functions ****
