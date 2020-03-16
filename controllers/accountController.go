@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -62,13 +63,13 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 
 func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
 
-	accountID := r.Context().Value("account_id").(uint)
-
-	account, err := models.GetAccount(accountID)
-	if err !=nil {
-		u.Respond(w, u.MessageError(err, "Неудалось найти аккаунт")) // вообще тут нужен релогин
+	fmt.Println("AccountGetProfile!")
+	// Получаем аккаунт, в который логинится пользователь
+	if r.Context().Value("issuerAccount") == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Account is not valid"}))
 		return
 	}
+	account := r.Context().Value("issuerAccount").(*models.Account)
 
 	resp := u.Message(true, "GET account profile")
 	resp["account"] = account

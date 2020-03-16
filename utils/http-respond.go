@@ -26,7 +26,6 @@ func MessageWithErrors(message string, errors map[string]interface{}) (map[strin
 	return map[string]interface{} {"status" : false, "message" : message, "errors" : errors}
 }
 
-// Возвращает сообщение с ошибкой. Если err можно привести к u.Error, если нет - смотрит, если ли запасной параметр.
 func MessageError(err error, opt_msg... string) (map[string]interface{}) {
 
 	e := Error{}
@@ -61,3 +60,4 @@ func GetFromRequestUINT(r *http.Request, val_name string) (uint, error) {
 	id, err := strconv.ParseUint(str_int_id, 10, 32)
 	return uint(id), err
 }
+

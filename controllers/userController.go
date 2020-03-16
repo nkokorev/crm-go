@@ -115,7 +115,6 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-
 /**
 * В случае успеха возвращает в теле стандартного ответа [user]
 * Контекст контроллера: UI/API
@@ -228,7 +227,7 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 
 func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Println("UserAuthByUsername!")
+	//fmt.Println("UserAuthByUsername!")
 
 	// Получаем аккаунт, в который логинится пользователь
 	if r.Context().Value("issuerAccount") == nil {
@@ -288,9 +287,11 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 	
 }
+
 func UserAuthByEmail(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("UserAuthByEmail!")
 }
+
 func UserAuthByPhone(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("UserAuthByPhone!")
 }
@@ -519,8 +520,6 @@ func UserSendEmailInviteVerification(w http.ResponseWriter, r *http.Request) {
 	resp["time"] = time.Now().UTC()
 	u.Respond(w, resp)
 }
-
-
 
 func UserGetProfile(w http.ResponseWriter, r *http.Request) {
 

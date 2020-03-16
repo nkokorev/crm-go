@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -15,10 +14,7 @@ import (
 	Любой jwt-токен имеет в своем составе информацию о пользователе и аккаунте, выдавшим ключ (issuer).
 	userId - id пользователя, на имя которого выписан ключ
 	accountId - id аккаунта, в котором пользователь авторизован
-
-
  */
-
 
 // проверяет валидность 32-символного api-ключа. Вставляет в контекст accountId && account
 func BearerAuthentication(next http.Handler) http.Handler {
@@ -149,9 +145,7 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 func JwtFullAuthentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		fmt.Println("JwtFullAuthentication - проверяем!!")
-
+		
 		tokenHeader := r.Header.Get("Authorization") //Grab the token from the header
 
 		if tokenHeader == "" { //Token is missing, returns with error code 403 Unauthorized
@@ -160,7 +154,8 @@ func JwtFullAuthentication(next http.Handler) http.Handler {
 			return
 		}
 
-		splitted := strings.Split(tokenHeader, " ") //The token normally comes in format `Bearer {token-body}`, we check if the retrieved token matched this requirement
+		//The token normally comes in format `Bearer {token-body}`, we check if the retrieved token matched this requirement
+		splitted := strings.Split(tokenHeader, " ")
 		if len(splitted) != 2 {
 			w.WriteHeader(http.StatusForbidden)
 			u.Respond(w, u.Message(false, "Некорректный ключ авторизации"))

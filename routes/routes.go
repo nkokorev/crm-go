@@ -4,9 +4,7 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 	"os"
-
 	"github.com/nkokorev/crm-go/controllers"
-	//"github.com/nkokorev/gui-server/controllers/old"
 	"github.com/nkokorev/crm-go/middleware"
 )
 
@@ -18,19 +16,20 @@ func Handlers() *mux.Router {
 	rBase := mux.NewRouter().StrictSlash(true)
 
 	APP_ENV := os.Getenv("APP_ENV")
+	
 	switch APP_ENV {
-	case "local":
-		crmHost = "crm.local"
-		//crmHost = "127.0.0.1:8090"
-		//crmHost = "localhost:8090"
-	case "public":
-		crmHost = "ratuscrm.com"
-	default:
-		crmHost = "ratuscrm.com"
+		case "local":
+			crmHost = "crm.local"
+			//crmHost = "127.0.0.1:8090"
+			//crmHost = "localhost:8090"
+		case "public":
+			crmHost = "ratuscrm.com"
+		default:
+			crmHost = "ratuscrm.com"
 	}
 
 	if APP_ENV != "local" {
-		rBase.Use(middleware.CorsAccessControl)
+		// rBase.Use(middleware.CorsAccessControl)
 	}
 	rBase.Use(middleware.CorsAccessControl)
 
@@ -39,17 +38,16 @@ func Handlers() *mux.Router {
 	rApp := rBase.Host("app." + crmHost).PathPrefix("/ui-api").Subrouter() // app.ratuscrm.com/ui-api
 	rUiApi := rBase.Host("ui.api." + crmHost).Subrouter() // ui.api.ratuscrm.com
 
-
 	// ### Перемещаем точку монтирования для ui/api интерфейсов + отсекаем функции проверки роутов ###
 	rUiApi = rUiApi.PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter()
 
-	// Дополнительные псевдо-точки для навешивания middleware
+	// Дополнительные псевдо-точки для навешивания Middleware
 	rAppAuthUser := rApp.PathPrefix("").Subrouter()
 	rAppAuthFull := rApp.PathPrefix("").Subrouter()
 	rUiApiAuthFull := rUiApi.PathPrefix("").Subrouter()
-	// #### Подключаем Middleware ####
 
-/**
+	// #### Подключаем Middleware ####
+	/**
 
 	## Посредники проверяющие флаги настройки системы
 	middleware.CheckApiStatus - проверяет статус API для всех аккаунтов
@@ -81,16 +79,16 @@ func Handlers() *mux.Router {
 */
 
 	// Все запросы API имеют в контексте accountId, account. У них нет userId.
-	rApi.Use(middleware.CorsAccessControl,			middleware.CheckApiStatus, 			middleware.BearerAuthentication)
+	rApi.Use(middleware.CorsAccessControl,			middleware.CheckApiStatus, 		middleware.BearerAuthentication)
 
 	// Все запросы App UI/API имеют в контексте accountId, account. Могут иметь userId и userId + accountId + account
 	rApp.Use(middleware.CorsAccessControl,			middleware.CheckAppUiApiStatus, middleware.ContextMainAccount)
-	rAppAuthUser.Use(middleware.CorsAccessControl,	middleware.CheckAppUiApiStatus, middleware.ContextMainAccount, middleware.JwtUserAuthentication) // set userId
+	rAppAuthUser.Use(middleware.CorsAccessControl,	middleware.CheckAppUiApiStatus, middleware.ContextMainAccount,	middleware.JwtUserAuthentication) // set userId
 	rAppAuthFull.Use(middleware.CorsAccessControl,	middleware.CheckAppUiApiStatus,	middleware.JwtFullAuthentication) // set userId,accountId,account
 
 	// Через UI/API запросы всегда идут в контексте аккаунта
-	rUiApi.Use(middleware.CorsAccessControl,			middleware.CheckUiApiStatus,	middleware.ContextMuxVarAccount)
-	rUiApiAuthFull.Use(	middleware.CorsAccessControl, middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccount, middleware.JwtFullAuthentication) // set userId,accountId,account
+	rUiApi.Use(middleware.CorsAccessControl,		middleware.CheckUiApiStatus,	middleware.ContextMuxVarAccount)
+	rUiApiAuthFull.Use(middleware.CorsAccessControl, middleware.CheckUiApiStatus,	middleware.ContextMuxVarAccount,middleware.JwtFullAuthentication) // set userId,accountId,account
 
 
 	// ### Передаем запросы в обработку ###
@@ -135,15 +133,12 @@ var UserRoutes = func (rBase, rUser, r_acc, r_full *mux.Router) {
 
 	// одноразовая авторизация по {"token":"<...>"}: сбрасывает пароль и совершает авторизацию.
 	rBase.HandleFunc("/password/reset/confirm", controllers.UserPasswordResetConfirm).Methods(http.MethodPost, http.MethodOptions)
-
-
 	// отмена сброса пароля. Важная функция для антивзлома. Можно использовать тот же токен, но лучше создавать отдельный...
 	//rBase.HandleFunc("/password/reset/report", crm.UserRecoveryPassword).Methods(http.MethodDelete, http.MethodOptions)
 
 	// почему бы функции ниже не перенести в [AccountRoutes]?
 	rUser.HandleFunc("/accounts", controllers.UserGetAccounts).Methods(http.MethodGet, http.MethodOptions)
 	rUser.HandleFunc("/accounts/{account_id:[0-9]+}/auth", controllers.UserLoginInAccount).Methods(http.MethodGet, http.MethodOptions)
-
 }
 
 /**
@@ -153,5 +148,4 @@ var AccountRoutes = func (rBase, rUser, r_acc, r_full *mux.Router) {
 
 	rUser.HandleFunc("", controllers.AccountCreate).Methods(http.MethodPost, http.MethodOptions)
 	r_acc.HandleFunc("", controllers.AccountGetProfile).Methods(http.MethodGet, http.MethodOptions)
-
 }

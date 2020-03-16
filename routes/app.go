@@ -30,7 +30,9 @@ var AppRoutes = func (rApp, rAppAuthUser, rAppAuthFull *mux.Router) {
 
 	rAppAuthFull.HandleFunc("/app/auth/check", controllers.AuthenticationJWTCheck).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
 
-	//rApp.HandleFunc("/auth/user", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodOptions)
-	//rApp.HandleFunc("/auth/account", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodOptions)
-	//rApp.HandleFunc("/auth", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodOptions)
+	rAppAuthUser.HandleFunc("/accounts/{account_id:[0-9]+}/auth/", controllers.AccountGetProfile).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
+	
+	// rApp.HandleFunc("/auth/user", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodOptions)
+	//rAppAuthUser.HandleFunc("accounts/{account_id:[0-9]+}/auth/", controllers.AccountGetProfile).Methods(http.MethodGet, http.MethodOptions)
+	// rApp.HandleFunc("/auth", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodOptions)
 }

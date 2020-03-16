@@ -75,6 +75,3 @@ func CheckUiApiStatus(next http.Handler) http.Handler {
 	})
 
 }
-
-
-

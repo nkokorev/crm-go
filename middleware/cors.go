@@ -5,19 +5,19 @@ import (
 )
 
 func CorsAccessControl(next http.Handler) http.Handler {
-	
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// 1. Проверка источника
-		//allowAuth := []string{"http://app.ratuscrm.me","http://localhost:8090","http://app.ratuscrm.com","https://app.ratuscrm.com"} //List of endpoints that doesn't require auth
+		// allowAuth := []string{"http://app.ratuscrm.me","http://localhost:8090","http://app.ratuscrm.com","https://app.ratuscrm.com"} //List of endpoints that doesn't require auth
 
 		// 2. Frontend request host
-		//requestHost := r.Header.Get("Origin") //current request path
+		// requestHost := r.Header.Get("Origin") //current request path
 
-		//w.Header().Add("Content-Type", "application/json;charset=UTF-8")
+		// w.Header().Add("Content-Type", "application/json;charset=UTF-8")
 		w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		//w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		// w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Max-Age", "86400") // max 600
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT,PATCH")

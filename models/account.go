@@ -221,7 +221,6 @@ func GetAccountByHash (hashId string) (*Account, error) {
 	return &account, err
 }
 
-//func (account Account) Exist() bool {
 func (Account) Exist(id uint) bool {
 	return !db.Model(Account{}).First(&Account{}, id).RecordNotFound()
 }
@@ -275,7 +274,6 @@ func (account Account) UpdateApiKey(token string, input ApiKey) (*ApiKey, error)
 
 // #### User ####
 
-// CreateUser - создает пользователя и добавляет его в аккаунт с базовой ролью = client, если не указана иная роль
 func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error) {
 
 	var err error
@@ -362,7 +360,6 @@ func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error
 	return u, nil
 }
 
-// Ищет пользователя, привязанного к аккаунту. НЕ проверяет роли и доступ к аккаунту.
 func (account Account) GetUserById(userId uint) (*User, error) {
 	user := User{}
 
@@ -510,8 +507,7 @@ func (account Account) AuthUserByUsername(username, password string, onceLogin_o
 	if !user.ComparePassword(password) {
 		e.AddErrors("password", "Неверный пароль")
 	}
-
-
+	
 	if e.HasErrors() {
 		e.Message = "Проверьте указанные данные"
 		return "", e
@@ -530,6 +526,7 @@ func (account Account) AuthUserByUsername(username, password string, onceLogin_o
 		*user,
 		account,
 	}
+
 	return claims.CreateCryptoToken()
 }
 
@@ -665,7 +662,6 @@ func (account Account) getUserJwt(userId uint) (jwt string, err error) {
 }
 
 
-
 // Дотошно ищет схожего пользователя по username, email и телефону.
 func (account Account) existUserUsername(username string) bool {
 	if username == "" {
@@ -691,10 +687,7 @@ func (account Account) existUserPhone(phone string) bool {
 // Возвращает наиболее похожего пользователя (пользователей?) по username, email или телефону в зависимости от типа авторизации
 
 
-// !!!!!! ### Новая партия на ТЕСТЫ  ### !!!!!!!!!!1
-
-
-
+// !!!!!! ### Новая партия на ТЕСТЫ  ### !!!!!!!!!!
 func (account *Account) GetToAccount () error {
 	return db.First(account, account.ID).Error
 }
@@ -724,42 +717,35 @@ func (account *Account) DeleteUnscoped () error {
 	return db.Model(&Account{}).Where("id = ?", account.ID).Unscoped().Delete(account).Error
 }
 
-
-// ### Account inner USER func
-// todo: пересмотреть работу функций под AccountUser
-
-
-
 // ### Account inner func API (+UI) KEYS
 
 func (account *Account) GetApiKeys() error {
 	return db.Preload("ApiKeys").First(&account).Error
 }
 
-
-
-// ### Stock functions
+// ### Stock functions ### //
 func (account Account) StockCreate(stock *Stock) error {
 	stock.AccountID = account.ID
 	return stock.Create()
 }
+
 func (account *Account) StockLoad() (err error) {
 	account.Stocks, err = (Stock{}).GetAll(account.ID)
 	return err
 }
 
 
-// ### Account inner func Products
+// ### Account inner func Products ### //
 func (account Account) ProductCreate(p *Product) error {
 	p.AccountID = account.ID
 	return p.Create()
 }
+
 func (account *Account) ProductLoad() (err error) {
 	account.Products, err = (Product{}).GetAll(account.ID)
 	return err
 	//return db.Preload("Products").Preload("Products.Offers").First(&a).Error
 }
-
 
 // EAVAttributes
 func (account Account) CreateEavAttribute(ea *EavAttribute) error {
