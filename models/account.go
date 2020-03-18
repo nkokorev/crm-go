@@ -752,3 +752,24 @@ func (account Account) CreateEavAttribute(ea *EavAttribute) error {
 	ea.AccountID = account.ID
 	return ea.create()
 }
+
+
+// ### JWT ### !!!!!!!!!!1
+
+// декодирует token по внутреннему ключу, который берется из аккаунта
+func (account Account) ParseAndDecryptToken(cryptToken string) (*JWT, error) {
+
+		tk := &JWT{AccountID:account.ID} // return value
+
+		tokenStr, err := tk.DecryptToken(cryptToken);
+		if err != nil {
+			return nil, err
+		}
+
+		err = tk.ParseToken(tokenStr)
+		if err != nil {
+			return nil, err
+		}
+		return tk, err
+
+	}

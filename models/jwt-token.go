@@ -73,7 +73,7 @@ func (JWT) encrypt(key []byte, message string) (encmess string, err error) {
 	return
 }
 
-// AES декодирование по ключу key[]
+// AES декодирование по ключу key[], который берется из аккаунта...
 func (JWT) decrypt(key []byte, securemess string) (decodedmess string, err error) {
 	cipherText, err := base64.URLEncoding.DecodeString(securemess)
 	if err != nil {
@@ -103,19 +103,29 @@ func (JWT) decrypt(key []byte, securemess string) (decodedmess string, err error
 	return
 }
 
-// декодирует token по внутреннему ключу
+// декодирует token по внутреннему ключу, который берется из аккаунта
 func (claims JWT) DecryptToken(token string) (tk string, err error) {
-	if err := claims.UploadRelatedData();err != nil {
+
+	if err := claims.UploadRelatedAccount();err != nil {
 		return "", err
 	}
-	//tk, err = JWT{}.decrypt( []byte(os.Getenv("aes_key")), token)
+
+	/*if claims.AccountID > 0 {
+		if err := db.First(&claims.Account, claims.AccountID).Error; err != nil {
+			return "", errors.New("Не удалось найти аккаунт для создания крипто ключа")
+		}
+	} else {
+		return "", errors.New("Не удалось получить данные аккаунта для дешифровки данных")
+	}*/
+
 	tk, err = JWT{}.decrypt( []byte(claims.Account.UiApiAesKey), token)
+
 	return
 }
 
 func (tk *JWT) ParseToken(decryptedToken string) (err error) {
 
-	if err := tk.UploadRelatedData();err != nil {
+	if err := tk.UploadRelatedAccount();err != nil {
 		return err
 	}
 
@@ -141,22 +151,40 @@ func (tk *JWT) ParseToken(decryptedToken string) (err error) {
 	return
 }
 
-func (tk *JWT) ParseAndDecryptToken(cryptToken string) error {
 
-	decryptedToken, err := JWT{}.DecryptToken(cryptToken);
+func (JWT) ParseAndDecryptToken(cryptToken string) (*JWT, error) {
+
+	var tk JWT // return value
+	
+	tokenStr, err := JWT{}.DecryptToken(cryptToken);
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = tk.ParseToken(decryptedToken)
+	err = tk.ParseToken(tokenStr)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return err
+	return nil, err
 
 }
 
+func (tk *JWT) UploadRelatedAccount() error {
+
+	// Получаем настройки аккаунта
+	if tk.AccountID < 1 {
+		return errors.New("Не верно указан аккаунт")
+	}
+
+	if err := db.First(&tk.Account, tk.AccountID).Error; err != nil {
+		return errors.New("Не удалось найти аккаунт для создания крипто ключа")
+	}
+
+	return nil
+}
+
 func (tk *JWT) UploadRelatedData() error {
+
 	// Получаем настройки аккаунта
 	if tk.AccountID < 1 {
 		return errors.New("Не верно указан аккаунт")

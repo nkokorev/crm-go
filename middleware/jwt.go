@@ -105,9 +105,10 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 
 		// Собираем вторую часть строки "Bearer kSDkfslfds390d2w...."
 		tokenPart := splitted[1] //Grab the token part, what we are truly interested in
-		tk := &models.JWT{}
+		
 		//tk, err := models.ParseAndDecryptToken(tokenPart)
-		if err := tk.ParseAndDecryptToken(tokenPart);err != nil {
+		tk, err := models.JWT{}.ParseAndDecryptToken(tokenPart);
+		if err != nil || tk == nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			u.Respond(w, u.Message(false, "Неудалось прочитать ключ авторизации"))
 			return
@@ -145,7 +146,14 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 func JwtFullAuthentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		
+
+		// Проверяем контекст на выпуск аккаунта, чтобы из-под него проверить подпись JWT
+		if r.Context().Value("issuerAccount") == nil {
+			u.Respond(w, u.MessageError(u.Error{Message:"Account is not valid"}))
+			return
+		}
+		issuerAccount := r.Context().Value("issuerAccount").(*models.Account)
+
 		tokenHeader := r.Header.Get("Authorization") //Grab the token from the header
 
 		if tokenHeader == "" { //Token is missing, returns with error code 403 Unauthorized
@@ -164,9 +172,14 @@ func JwtFullAuthentication(next http.Handler) http.Handler {
 
 		// Собираем вторую часть строки "Bearer kSDkfslfds390d2w...."
 		tokenPart := splitted[1] //Grab the token part, what we are truly interested in
-		tk := &models.JWT{}
-		//tk, err := models.ParseAndDecryptToken(tokenPart)
-		if err := tk.ParseAndDecryptToken(tokenPart);err != nil {
+
+		// AccountId? UserId? - собираем из токена
+		//tk := &models.JWT{}
+
+		// Парсим в tk токен со всеми данными
+		//tk, err := models.JWT{}.ParseAndDecryptToken(tokenPart);
+		tk, err := issuerAccount.ParseAndDecryptToken(tokenPart);
+		if err != nil || tk == nil {
 			w.WriteHeader(http.StatusForbidden)
 			u.Respond(w, u.Message(false, "Неудалось прочитать ключ авторизации"))
 			return
