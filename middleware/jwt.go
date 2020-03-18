@@ -88,6 +88,13 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		// Проверяем контекст на выпуск аккаунта, чтобы из-под него проверить подпись JWT
+		if r.Context().Value("issuerAccount") == nil {
+			u.Respond(w, u.MessageError(u.Error{Message:"Account is not valid"}))
+			return
+		}
+		issuerAccount := r.Context().Value("issuerAccount").(*models.Account)
+		
 		tokenHeader := r.Header.Get("Authorization") //Grab the token from the header
 
 		if tokenHeader == "" { //Token is missing, returns with error code 403 Unauthorized
@@ -107,9 +114,9 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 		tokenPart := splitted[1] //Grab the token part, what we are truly interested in
 		
 		//tk, err := models.ParseAndDecryptToken(tokenPart)
-		tk, err := models.JWT{}.ParseAndDecryptToken(tokenPart);
+		tk, err := issuerAccount.ParseAndDecryptToken(tokenPart);
 		if err != nil || tk == nil {
-			w.WriteHeader(http.StatusUnauthorized)
+			w.WriteHeader(http.StatusForbidden)
 			u.Respond(w, u.Message(false, "Неудалось прочитать ключ авторизации"))
 			return
 		}
@@ -125,10 +132,9 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"account":"not load"}}))
 			return
 		}
-		account := r.Context().Value("issuerAccount").(models.Account)
 
 		// Загружаем пользователя в рамках аккаунта
-		user, err := account.GetUserById(tk.UserID)
+		user, err := issuerAccount.GetUserById(tk.UserID)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			u.Respond(w, u.Message(false, "Пользователь не найден"))

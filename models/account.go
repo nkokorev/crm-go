@@ -34,8 +34,8 @@ type Account struct {
 	// UI-API Интерфейс (https://ui.api.ratuscrm.com / https://ratuscrm.com/ui-api)
 	UiApiEnabled bool `json:"uiApiEnabled" gorm:"default:false;not null"` // Принимать ли запросы через публичный UI-API интерфейсу (через https://ui.api.ratuscrm.com)
 	UiApiAesEnabled bool `json:"uiApiAesEnabled" gorm:"default:true;not null"` // Включение AES-128/CFB шифрования для публичного UI-API
-	UiApiAesKey string `json:"uiApiAesKey" gorm:"type:varchar(16);default:null;"` // 128-битный ключ шифрования
-	UiApiJwtKey string `json:"uiApiJwtKey" gorm:"type:varchar(32);default:null;"` // 128-битный ключ шифрования
+	UiApiAesKey string `json:"-" gorm:"type:varchar(16);default:null;"` // 128-битный ключ шифрования
+	UiApiJwtKey string `json:"-" gorm:"type:varchar(32);default:null;"` // 128-битный ключ шифрования
 
 	// Регистрация новых пользователей через UI/API
 

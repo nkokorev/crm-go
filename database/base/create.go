@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	"log"
+	"time"
 )
 
 func RefreshTables() {
@@ -204,6 +205,7 @@ func UploadTestData() {
 	}
 
 	// 2. Создаем пользователя admin в main аккаунте
+	timeNow := time.Now().UTC()
 	_, err = mAcc.CreateUser(
 			models.User{
 			Username:"admin",
@@ -215,6 +217,7 @@ func UploadTestData() {
 			Surname:"Кокорев",
 			Patronymic:"Романович",
 			DefaultAccountID:1,
+			EmailVerifiedAt:&timeNow,
 			},
 			models.RoleAdmin,
 		)

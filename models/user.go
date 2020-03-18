@@ -86,6 +86,7 @@ func (user User) create () (*User, error) {
 
 	outUser.DefaultAccountID = user.DefaultAccountID
 	outUser.InvitedUserID = user.InvitedUserID
+	outUser.EmailVerifiedAt = user.EmailVerifiedAt // todo: Убрать!!
 
 	if err := db.Create(&outUser).Error; err != nil {
 		return nil, err

@@ -77,7 +77,7 @@ func (JWT) encrypt(key []byte, message string) (encmess string, err error) {
 func (JWT) decrypt(key []byte, securemess string) (decodedmess string, err error) {
 	cipherText, err := base64.URLEncoding.DecodeString(securemess)
 	if err != nil {
-		return
+		return "", err
 	}
 
 	block, err := aes.NewCipher(key)
@@ -139,8 +139,7 @@ func (tk *JWT) ParseToken(decryptedToken string) (err error) {
 		return []byte(tk.Account.UiApiJwtKey), nil
 	})
 	if err != nil {
-		log.Println("JWT error: ", err)
-		return
+		return err
 	}
 
 	if !token.Valid {
