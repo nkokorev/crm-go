@@ -239,15 +239,16 @@ func UploadTestData() {
 		ApiEnabled:                          true,
 		UiApiEnabled:                        true,
 		UiApiAesEnabled:                     true,
-		UiApiAuthMethods:                    pq.StringArray{"email,phone"}, // !!
+		UiApiAuthMethods:                    pq.StringArray{"email, phone"}, // !!
 		UiApiEnabledUserRegistration:        true,
 		UiApiUserRegistrationInvitationOnly: false,
-		UiApiUserRegistrationRequiredFields: pq.StringArray{"email,phone"}, // !! хз хз
+		UiApiUserRegistrationRequiredFields: pq.StringArray{"email, phone, name"}, // !! хз хз
 		UiApiUserEmailDeepValidation:        true, // хз
 		UserVerificationMethodID:            dvc.ID,
 		UiApiEnabledLoginNotVerifiedUser:    true, // really?
 		VisibleToClients:                    false,
 	})
+	
 	if err != nil || acc357 == nil {
 		log.Fatal("Не удалось создать аккаунт 357 грамм")
 		return

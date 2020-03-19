@@ -92,10 +92,8 @@ func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
-
 	resp := u.Message(true, "GET account profile")
 	resp["account"] = account
-	//resp["token"] = token
+	//resp["token"] = token      // нужно ли обновлять токен?
 	u.Respond(w, resp)
 }
