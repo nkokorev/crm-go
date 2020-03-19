@@ -2,9 +2,11 @@ package controllers
 
 import (
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
+	"strconv"
 )
 
 /**
@@ -63,14 +65,37 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
 
 	// Получаем аккаунт, в который логинится пользователь
-	if r.Context().Value("issuerAccount") == nil {
+	/*if r.Context().Value("issuerAccount") == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Account is not valid"}))
 		return
 	}
-	issuerAccount := r.Context().Value("issuerAccount").(*models.Account)
+	issuerAccount := r.Context().Value("account_id").(*models.Account)*/
+
+	accountIdStr := mux.Vars(r)["accountId"]
+
+	accountIdINT, err := strconv.Atoi(accountIdStr)
+	if err != nil {
+		u.Respond(w, u.MessageError(nil, "accountId is error"))
+		return
+	}
+	// получаем UINT формат
+	var accountId uint = uint(accountIdINT)
+
+	account, err := models.GetAccount(accountId)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(nil, "Не удалось найти аккаунт"))
+		return
+	}
+	
+	if account.ID < 1 {
+		u.Respond(w, u.MessageError(nil, "The hashID length must be 12 symbols"))
+		return
+	}
+
+	
 
 	resp := u.Message(true, "GET account profile")
-	resp["account"] = issuerAccount
+	resp["account"] = account
 	//resp["token"] = token
 	u.Respond(w, resp)
 }

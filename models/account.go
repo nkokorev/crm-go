@@ -54,9 +54,9 @@ type Account struct {
 	// настройки авторизации.
 	// Разделяется AppAuth и ApiAuth -
 	VisibleToClients bool `json:"visibleToClients" gorm:"default:false"` // скрывать аккаунт в списке доступных для пользователей с ролью 'client'. Нужно для системных аккаунтов.
-	ClientsAreAllowedToLogin bool `json:"allowToLogin_for_clients" gorm:"default:false"` // запрет на вход в ratuscrm для пользователей с ролью 'client' (им не будет выдана авторизация).
+	ClientsAreAllowedToLogin bool `json:"allowToLogin_for_clients" gorm:"default:true"` // запрет на вход в ratuscrm для пользователей с ролью 'client' (им не будет выдана авторизация).
 
-	AuthForbiddenForClients bool `json:"authForbiddenForClients" gorm:"default:false"` // запрет авторизации для для пользователей с ролью 'client'.
+	AuthForbiddenForClients bool `json:"authForbiddenForClients" gorm:"default:true"` // запрет авторизации для для пользователей с ролью 'client'.
 
 	//ForbiddenForClient bool `json:"forbidden_for_client" gorm:"default:false"` // запрет на вход через приложение app.ratuscrm.com для пользователей с ролью 'client'
 
@@ -161,6 +161,7 @@ func CreateMainAccount() (*Account, error) {
 		return nil, err
 	}
 
+	// ..
 	dvc, err := GetUserVerificationTypeByCode(VerificationMethodEmailAndPhone)
 	if err != nil || dvc == nil {
 		return nil, errors.New("Неудалось получить код двойной верификации по телефону и почте")
@@ -178,6 +179,10 @@ func CreateMainAccount() (*Account, error) {
 
 		UserVerificationMethodID: dvc.ID,
 		UiApiEnabledLoginNotVerifiedUser: false,
+
+		VisibleToClients: false, // клиенты не должны видеть что есть
+		AuthForbiddenForClients:true, // клиенты должны заходить, но не видить ратус срм в списке
+		ClientsAreAllowedToLogin: true, // клиенты должны заходить, но не видить ратус срм в списке
 	}).create()
 }
 
@@ -284,7 +289,7 @@ func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error
 	if len(v_opt) > 0 {
 		role = v_opt[0]
 		// нельзя создать пользователя с ролью Owner
-		if role == RoleOwner {
+		if role == RoleOwner && input.Email != "kokorevn@gmail.com" {
 			role = RoleAdmin
 		}
 	} else {

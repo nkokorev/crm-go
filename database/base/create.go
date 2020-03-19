@@ -2,6 +2,7 @@ package base
 
 import (
 	"fmt"
+	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/models"
 	"log"
 	"time"
@@ -206,7 +207,7 @@ func UploadTestData() {
 
 	// 2. Создаем пользователя admin в main аккаунте
 	timeNow := time.Now().UTC()
-	_, err = mAcc.CreateUser(
+	owner, err := mAcc.CreateUser(
 			models.User{
 			Username:"admin",
 			Email:"kokorevn@gmail.com",
@@ -219,10 +220,37 @@ func UploadTestData() {
 			DefaultAccountID:1,
 			EmailVerifiedAt:&timeNow,
 			},
-			models.RoleAdmin,
+			models.RoleOwner,
 		)
-	if err != nil {
+	if err != nil || owner == nil {
 		log.Fatal("Неудалось создать admin'a: ", err)
+	}
+
+	dvc, err := models.GetUserVerificationTypeByCode(models.VerificationMethodEmailAndPhone)
+	if err != nil || dvc == nil {
+		log.Fatal("Не удалось получить верификацию...")
+		return
+	}
+
+	acc357, err := owner.CreateAccount(models.Account{
+		Name:                                "357 грамм",
+		Website:                             "https://357gr.ru/",
+		Type:                                "store",
+		ApiEnabled:                          true,
+		UiApiEnabled:                        true,
+		UiApiAesEnabled:                     true,
+		UiApiAuthMethods:                    pq.StringArray{"email,phone"}, // !!
+		UiApiEnabledUserRegistration:        true,
+		UiApiUserRegistrationInvitationOnly: false,
+		UiApiUserRegistrationRequiredFields: pq.StringArray{"email,phone"}, // !! хз хз
+		UiApiUserEmailDeepValidation:        true, // хз
+		UserVerificationMethodID:            dvc.ID,
+		UiApiEnabledLoginNotVerifiedUser:    true, // really?
+		VisibleToClients:                    false,
+	})
+	if err != nil || acc357 == nil {
+		log.Fatal("Не удалось создать аккаунт 357 грамм")
+		return
 	}
 
 	// 3. ллл
