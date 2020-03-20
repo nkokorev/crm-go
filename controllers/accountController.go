@@ -62,18 +62,12 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+// Возвращает профиль аккаунта, указанного в переменной .../{accountId}/...
 func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
 
-	// Получаем аккаунт, в который логинится пользователь
-	/*if r.Context().Value("issuerAccount") == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Account is not valid"}))
-		return
-	}
-	issuerAccount := r.Context().Value("account_id").(*models.Account)*/
+	accIdSTR := mux.Vars(r)["accountId"]
 
-	accountIdStr := mux.Vars(r)["accountId"]
-
-	accountIdINT, err := strconv.Atoi(accountIdStr)
+	accountIdINT, err := strconv.Atoi(accIdSTR)
 	if err != nil {
 		u.Respond(w, u.MessageError(nil, "accountId is error"))
 		return

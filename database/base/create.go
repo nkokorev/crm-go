@@ -164,10 +164,10 @@ func RefreshTables() {
 	if err != nil {
 		fmt.Println("Cant create table products", err)
 	}
-	// загружаем стоковые данные для EAV таблиц
+	// Загружаем стоковые данные для EAV таблиц
 	UploadEavData()
 
-	// аккаунты и тестовые продукты
+	// Аккаунты и тестовые продукты
 	UploadTestData()
 }
 
@@ -217,21 +217,25 @@ func UploadTestData() {
 			Name:"Никита",
 			Surname:"Кокорев",
 			Patronymic:"Романович",
-			DefaultAccountID:1,
+			//DefaultAccountID:null,
 			EmailVerifiedAt:&timeNow,
 			},
 			models.RoleOwner,
 		)
+
+	// 
 	if err != nil || owner == nil {
 		log.Fatal("Неудалось создать admin'a: ", err)
 	}
 
+	// 
 	dvc, err := models.GetUserVerificationTypeByCode(models.VerificationMethodEmailAndPhone)
 	if err != nil || dvc == nil {
 		log.Fatal("Не удалось получить верификацию...")
 		return
 	}
 
+	// создаем из-под владельца RatusCRM аккаунта клиентские аккаунты
 	acc357, err := owner.CreateAccount(models.Account{
 		Name:                                "357 грамм",
 		Website:                             "https://357gr.ru/",
@@ -248,15 +252,25 @@ func UploadTestData() {
 		UiApiEnabledLoginNotVerifiedUser:    true, // really?
 		VisibleToClients:                    false,
 	})
-	
 	if err != nil || acc357 == nil {
 		log.Fatal("Не удалось создать аккаунт 357 грамм")
 		return
 	}
 
-	// 3. ллл
+	accSyndicAd, err := owner.CreateAccount(models.Account{
+		Name:                                "SyndicAd",
+		Website:                             "syndicad.com",
+		Type:                                "internet-service",
+		ApiEnabled:                          true,
+		UiApiEnabled:                        false,
+		VisibleToClients:                    false,
+	})
+	if err != nil || accSyndicAd == nil {
+		log.Fatal("Не удалось создать аккаунт 357 грамм")
+		return
+	}
 
-	// fmt.Println(adminUser)
+	
 
 	// 5. Добавляем пользователя в аккаунт (?)
 	//if err := mAcc.AppendUser(*adminUser, models.RoleClient);err!= nil {

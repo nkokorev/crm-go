@@ -759,9 +759,9 @@ func (account Account) CreateEavAttribute(ea *EavAttribute) error {
 }
 
 
-// ### JWT ### !!!!!!!!!!1
+// ### JWT Crypto ### !!!!!!!!!!1
 
-// декодирует token по внутреннему ключу, который берется из аккаунта
+// декодирует token по внутреннему ключу, который берется из параметров аккаунта
 func (account Account) ParseAndDecryptToken(cryptToken string) (*JWT, error) {
 
 		tk := &JWT{AccountID:account.ID} // return value
@@ -778,3 +778,5 @@ func (account Account) ParseAndDecryptToken(cryptToken string) (*JWT, error) {
 		return tk, err
 
 	}
+
+	// todo : дописать другие крипто функции, сделать их в контексте аккаунта
