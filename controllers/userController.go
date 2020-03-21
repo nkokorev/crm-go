@@ -539,7 +539,12 @@ func UserGetProfile(w http.ResponseWriter, r *http.Request) {
 
 func UserGetAccounts(w http.ResponseWriter, r *http.Request) {
 
-	userID := r.Context().Value("user_id").(uint)
+	//userID := r.Context().Value("user_id").(uint)
+	if r.Context().Value("userId") == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"UserId is not valid"}))
+		return
+	}
+	userID := r.Context().Value("userId").(uint)
 
 	user := models.User{ID: userID}
 	if err := user.LoadAccounts(); err !=nil {
@@ -547,8 +552,15 @@ func UserGetAccounts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	aUsers, err := user.AccountList()
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Неудалось загрузить аккаунты")) // вообще тут нужен релогин
+		return
+	}
+
 	resp := u.Message(true, "GET users/accounts")
-	resp["accounts"] = user.Accounts
+	//resp["accounts"] = user.Accounts
+	resp["aUsers"] = aUsers
 	u.Respond(w, resp)
 }
 
