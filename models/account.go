@@ -29,11 +29,11 @@ type Account struct {
 	Type string `json:"type" gorm:"type:varchar(255)"` // спорно
 
 	// API Интерфейс
-	ApiEnabled bool `json:"apiEnabled" gorm:"default:true;not null"` // включен ли API интерфейс у аккаунта (false - все ключи отключаются, есть ли смысл в нем?)
+	ApiEnabled bool `json:"-" gorm:"default:true;not null"` // включен ли API интерфейс у аккаунта (false - все ключи отключаются, есть ли смысл в нем?)
 
 	// UI-API Интерфейс (https://ui.api.ratuscrm.com / https://ratuscrm.com/ui-api)
-	UiApiEnabled bool `json:"uiApiEnabled" gorm:"default:false;not null"` // Принимать ли запросы через публичный UI-API интерфейсу (через https://ui.api.ratuscrm.com)
-	UiApiAesEnabled bool `json:"uiApiAesEnabled" gorm:"default:true;not null"` // Включение AES-128/CFB шифрования для публичного UI-API
+	UiApiEnabled bool `json:"-" gorm:"default:false;not null"` // Принимать ли запросы через публичный UI-API интерфейсу (через https://ui.api.ratuscrm.com)
+	UiApiAesEnabled bool `json:"-" gorm:"default:true;not null"` // Включение AES-128/CFB шифрования для публичного UI-API
 	UiApiAesKey string `json:"-" gorm:"type:varchar(16);default:null;"` // 128-битный ключ шифрования
 	UiApiJwtKey string `json:"-" gorm:"type:varchar(32);default:null;"` // 128-битный ключ шифрования
 
@@ -41,26 +41,26 @@ type Account struct {
 
 	//AuthMethod authMethod `json:"authBy" gorm:"enum('username', 'email', 'mobilePhone');not null;default:'email';"`
 	//AuthMethod authMethod `json:"authBy" sql:"type:auth_method;not null;default:'email'"` // Дефолтный вариант авторизации todo: может массивом т.к. их может быть несколько?
-	UiApiAuthMethods pq.StringArray `json:"uiApiAuthMethods" sql:"type:varchar(32)[];default:'{email}'"` // Доступные способы авторизации (проверяется в контроллере)
-	UiApiEnabledUserRegistration bool `json:"uiApiEnabledUserRegistration" gorm:"default:true;not null"` // Разрешить регистрацию новых пользователей?
-	UiApiUserRegistrationInvitationOnly bool `json:"uiApiUserRegistrationInvitationOnly" gorm:"default:false;not null"` // Регистрация новых пользователей только по приглашению (в том числе и клиентов)
-	UiApiUserRegistrationRequiredFields pq.StringArray `json:"uiApiUserRegistrationRequiredFields" gorm:"type:varchar(32)[];default:'{email}'"` // список обязательных НЕ нулевых полей при регистрации новых пользователей через UI/API
-	UiApiUserEmailDeepValidation bool `json:"uiApiUserEmailDeepValidation" gorm:"default:false;not null"` // глубокая проверка почты пользователя на предмет существования
+	UiApiAuthMethods pq.StringArray `json:"-" sql:"type:varchar(32)[];default:'{email}'"` // Доступные способы авторизации (проверяется в контроллере)
+	UiApiEnabledUserRegistration bool `json:"-" gorm:"default:true;not null"` // Разрешить регистрацию новых пользователей?
+	UiApiUserRegistrationInvitationOnly bool `json:"-" gorm:"default:false;not null"` // Регистрация новых пользователей только по приглашению (в том числе и клиентов)
+	UiApiUserRegistrationRequiredFields pq.StringArray `json:"-" gorm:"type:varchar(32)[];default:'{email}'"` // список обязательных НЕ нулевых полей при регистрации новых пользователей через UI/API
+	UiApiUserEmailDeepValidation bool `json:"-" gorm:"default:false;not null"` // глубокая проверка почты пользователя на предмет существования
 
-	UserVerificationMethodID uint `json:"userVerificationMethodId" gorm:"type:int;default:null"` // метод
-	UiApiEnabledLoginNotVerifiedUser bool `json:"uiApiEnabledLoginNotVerifiedUser" gorm:"default:false;"` // разрешать ли пользователю входить в аккаунт без завершенной верфикации?
+	UserVerificationMethodID uint `json:"-" gorm:"type:int;default:null"` // метод
+	UiApiEnabledLoginNotVerifiedUser bool `json:"-" gorm:"default:false;"` // разрешать ли пользователю входить в аккаунт без завершенной верфикации?
 
 
 	// настройки авторизации.
 	// Разделяется AppAuth и ApiAuth -
-	VisibleToClients bool `json:"visibleToClients" gorm:"default:false"` // скрывать аккаунт в списке доступных для пользователей с ролью 'client'. Нужно для системных аккаунтов.
-	ClientsAreAllowedToLogin bool `json:"allowToLogin_for_clients" gorm:"default:true"` // запрет на вход в ratuscrm для пользователей с ролью 'client' (им не будет выдана авторизация).
+	VisibleToClients bool `json:"-" gorm:"default:false"` // скрывать аккаунт в списке доступных для пользователей с ролью 'client'. Нужно для системных аккаунтов.
+	ClientsAreAllowedToLogin bool `json:"-" gorm:"default:true"` // запрет на вход в ratuscrm для пользователей с ролью 'client' (им не будет выдана авторизация).
 
-	AuthForbiddenForClients bool `json:"authForbiddenForClients" gorm:"default:true"` // запрет авторизации для для пользователей с ролью 'client'.
+	AuthForbiddenForClients bool `json:"-" gorm:"default:true"` // запрет авторизации для для пользователей с ролью 'client'.
 
 	//ForbiddenForClient bool `json:"forbidden_for_client" gorm:"default:false"` // запрет на вход через приложение app.ratuscrm.com для пользователей с ролью 'client'
 
-	CreatedAt 	time.Time `json:"createdAt"`
+	CreatedAt 	time.Time `json:"-"`
 	UpdatedAt 	time.Time `json:"-"`
 	DeletedAt 	*time.Time `json:"-" sql:"index"`
 
@@ -498,8 +498,53 @@ func (account Account) AppendUser(user User, tag accessRole) (*AccountUser, erro
 
 // !!!!!! ### Выше функции покрытые тестами ### !!!!!!!!!!1
 
+// Ищет пользователя, авторизует и в случае успеха возвращает пользователя и jwt-token
+func (account Account) AuthUserByUsername(username, password string, onceLogin_opt... bool) (user *User, token string, err error)  {
+
+	var e utils.Error
+
+	// Проверяем, есть ли вообще такой пользователь в аккаунте
+	user, err = account.GetUserByUsername(username)
+	if err != nil || user == nil {
+		return nil, "", errors.New("Пользователь не найден")
+	}
+
+	// Проверяем пароль, чтобы авторизовать пользователя
+	if !user.ComparePassword(password) {
+		e.AddErrors("password", "Неверный пароль")
+	}
+
+	// Если накопились ошибки - сбрасываем автоирзацию
+	if e.HasErrors() {
+		e.Message = "Проверьте указанные данные"
+		return nil, "", e
+	}
+
+	// Готовим токен на 20 минут (чтобы выбрать аккаунт и все такое)
+	expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
+
+	claims := JWT{
+		user.ID,
+		account.ID,
+		user.IssuerAccountID,
+		jwt.StandardClaims{
+			ExpiresAt: expiresAt,
+			Issuer:    "AppServer",
+		},
+		*user,
+		account,
+	}
+
+	token, err = claims.CreateCryptoToken()
+	if err != nil || token == "" {
+		return nil, "", errors.New("Неудалось авторизовать пользователя")
+	}
+
+	return user, token, nil
+}
+
 // В случае успеха возвращает jwt-token
-func (account Account) AuthUserByUsername(username, password string, onceLogin_opt... bool) (string, error)  {
+func (account Account) AuthUserByUsername_OLD(username, password string, onceLogin_opt... bool) (token string, err error)  {
 
 	var e utils.Error
 

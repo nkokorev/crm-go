@@ -108,7 +108,7 @@ func Handlers() *mux.Router {
 var UserRoutes = func (rBase, rUser, r_acc, r_full *mux.Router) {
 
 	// hidden: code for auth: account_name: <>
-	rBase.HandleFunc("/auth", controllers.UserAuthorization).Methods(http.MethodPost, http.MethodOptions)
+	//rBase.HandleFunc("/auth", controllers.UserAuthorization).Methods(http.MethodPost, http.MethodOptions)
 
 	// Три способа регистрации
 	rBase.HandleFunc("sign-up", controllers.UserSignUp).Methods(http.MethodPost, http.MethodOptions) // проверяет UiApiUserRegistrationRequiredFields

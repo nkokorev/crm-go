@@ -3,7 +3,6 @@ package models
 import (
 	"errors"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/jinzhu/gorm"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
@@ -334,8 +333,24 @@ func (user *User) SetPassword(passwordNew, passwordOld string) error {
 
 // ### Account's FUNC ###
 
+// Загружает список аккаунтов...
 func (user *User) LoadAccounts() error {
+	if user.ID < 1 {
+		return errors.New("Внутрення ошибка из-за загрузки доступных аккаунтов")
+	}
 	return db.Preload("Accounts").First(&user).Error
+}
+
+// Возвращает массив доступных аккаунтов с ролью в аккаунте
+//func (user User) AccountList() ([]struct{Account; Role}, error) {
+func (user User) AccountList() ([]AccountUser, error) {
+	
+	aUsers := []AccountUser{}
+	if err := db.Model(&AccountUser{}).Preload("Role").Preload("Account").Preload("User").Find(&aUsers, "user_id = ?", user.ID).Error; err != nil {
+		return nil, errors.New("Неудалось загрузить данные пользователя")
+	}
+
+	return aUsers, nil
 }
 
 // проверяет доступ и возвращает данные аккаунта
@@ -389,53 +404,6 @@ func (user *User) DeleteAccount(a *Account) error {
 
 
 /// ### Auth FUNC ###
-
-// Авторизует пользователя: загружает пользователя с предзагрузкой аккаунтов и, в случае успеха возвращает jwt-token
-func (user *User) AuthLogin_OLD(username, password string, onceLogin_opt... bool) (string, error) {
-
-	var e u.Error
-
-	// Делаем предзагрузку аккаунтов, чтобы потом их еще раз не подгружать
-	if err := db.Preload("Accounts").Where("username = ?", username).First(user).Error; err != nil {
-
-		if err == gorm.ErrRecordNotFound {
-			e.AddErrors("username", "Пользователь не найден")
-			e.Message = "Не верно указаны данные"
-		} else {
-			e.Message = "Внутренняя ошибка. Попробуйте позже"
-		}
-		return "", e
-	}
-
-	// если пользователь не найден temp.Username == nil, то пароль не будет искаться, т.к. он будет равен нулю (не с чем сравнивать)
-	if !user.ComparePassword(password) {
-		e.AddErrors("password", "Неверный пароль")
-	}
-	/*err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword { //Password does not match!
-		e.AddErrors("password", "Не верный пароль")
-	}*/
-
-	if e.HasErrors() {
-		e.Message = "Проверьте указанные данные"
-		return "", e
-	}
-
-	expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
-
-	claims := JWT{
-		user.ID,
-		0,
-		user.IssuerAccountID,
-		jwt.StandardClaims{
-			ExpiresAt: expiresAt,
-			Issuer:    "AuthServer",
-		},
-		*user,
-		Account{},
-	}
-	return claims.CreateCryptoToken()
-}
 
 // создает короткий jwt-токен для пользователя. Весьма опасная фукнция
 func (user *User) CreateJWTToken() (string, error) {

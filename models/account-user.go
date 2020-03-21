@@ -11,9 +11,9 @@ type AccountUser struct {
 	UserId uint	`json:"userId" gorm:"type:int;index;not null;"`
 	RoleId uint	`json:"roleId" gorm:"type:int;not null;"`
 
-	User User	`json:"-"  gorm:"preload:true"`
-	Account Account	`json:"-" gorm:"preload:true"`
-	Role Role	`json:"-" gorm:"preload:true"`
+	User User	`json:"user"  gorm:"preload:true"`
+	Account Account	`json:"account" gorm:"preload:true"`
+	Role Role	`json:"role" gorm:"preload:true"`
 }
 
 func (AccountUser) PgSqlCreate() {

@@ -226,9 +226,7 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 }
 
 func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
-
-	//fmt.Println("UserAuthByUsername!")
-
+	
 	// Получаем аккаунт, в который логинится пользователь
 	if r.Context().Value("issuerAccount") == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Account is not valid"}))
@@ -237,9 +235,6 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 
 	account := r.Context().Value("issuerAccount").(*models.Account)
 
-	//fmt.Println("issuerAccount: ", account)
-	//return
-
 	if account.ID < 1 {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
@@ -247,6 +242,7 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 
 	user := &models.User{}
 
+	// Собираем переданные данные
 	v := &struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -257,33 +253,32 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := account.AuthUserByUsername(v.Username, v.Password, v.OnceLogin)
+	user, token, err := account.AuthUserByUsername(v.Username, v.Password, v.OnceLogin)
 	if err != nil {
-		fmt.Println("user.AuthLogin error: ", err)
 		u.Respond(w, u.MessageError(err, "Ошибка авторизации пользователя"))
 		return
 	}
+	if user == nil || token == "" {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
 
-	/*token, err := user.AuthLogin(v.Username, v.Password, v.OnceLogin)
+	aUsers, err := user.AccountList()
 	if err != nil {
-		fmt.Println("user.AuthLogin error: ", err)
-		u.Respond(w, u.MessageError(err, "Ошибка авторизации пользователя"))
+		u.Respond(w, u.MessageError(err, "Неудалось загрузить аккаунты")) // вообще тут нужен релогин
+		return
+	}
+
+	/*if err := user.LoadAccounts(); err !=nil {
+		u.Respond(w, u.MessageError(err, "Неудалось загрузить аккаунты")) // вообще тут нужен релогин
 		return
 	}*/
-
-	// загружаем доступные аккаунты
-	if len(user.Accounts) == 0 {
-		if err := user.LoadAccounts(); err !=nil {
-			u.Respond(w, u.MessageError(err, "Неудалось загрузить аккаунты")) // вообще тут нужен релогин
-			return
-		}
-	}
-
 
 	resp := u.Message(true, "[POST] UserAuthorization - authorization was successful!")
 	resp["token"] = token
 	resp["user"] = user
-	resp["accounts"] = user.Accounts
+	//resp["accounts"] = user.Accounts
+	resp["aUsers"] = aUsers
 	u.Respond(w, resp)
 	
 }
@@ -560,110 +555,6 @@ func UserGetAccounts(w http.ResponseWriter, r *http.Request) {
 /**
 * Контроллер авторизации пользователя (не аккаунта!)
  */
-func UserAuthorization(w http.ResponseWriter, r *http.Request)  {
-
-	// Получаем аккаунт, в который логинится пользователь
-	if r.Context().Value("account") == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Account is not valid"}))
-		return
-	}
-
-	account := r.Context().Value("account").(models.Account)
-
-	if account.ID < 1 {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	user := &models.User{}
-
-	v := &struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-		//StaySignedIn bool `json:"staySignedIn"`
-		OnceLogin bool `json:"onceLogin"`
-	}{}
-	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}
-
-	token, err := account.AuthUserByUsername(v.Username, v.Password, v.OnceLogin)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}
-
-	// загружаем доступные аккаунты
-	if len(user.Accounts) == 0 {
-		if err := user.LoadAccounts(); err !=nil {
-			u.Respond(w, u.MessageError(err, "Неудалось загрузить аккаунты")) // вообще тут нужен релогин
-			return
-		}
-	}
-
-
-	resp := u.Message(true, "[POST] UserAuthorization - authorization was successful!")
-	resp["token"] = token
-	resp["user"] = user
-	resp["accounts"] = user.Accounts
-	u.Respond(w, resp)
-}
-
-/**
-* NEW!!! Контроллер авторизации по токену. В зависимости от типа токена, может происходит:
-* - обычная одноразовая авторизация
-* - одноразовая авторизация со сбрасыванием пароля
- */
-func UserTokenAuthorization(w http.ResponseWriter, r *http.Request)  {
-
-	// Получаем аккаунт, в который логинится пользователь
-	if r.Context().Value("account") == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Account is not valid"}))
-		return
-	}
-
-	account := r.Context().Value("account").(models.Account)
-
-	if account.ID < 1 {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	user := &models.User{}
-
-	v := &struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-		//StaySignedIn bool `json:"staySignedIn"`
-		OnceLogin bool `json:"onceLogin"`
-	}{}
-	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}
-
-	token, err := account.AuthUserByUsername(v.Username, v.Password, v.OnceLogin)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}
-
-	// загружаем доступные аккаунты
-	if len(user.Accounts) == 0 {
-		if err := user.LoadAccounts(); err !=nil {
-			u.Respond(w, u.MessageError(err, "Неудалось загрузить аккаунты")) // вообще тут нужен релогин
-			return
-		}
-	}
-
-
-	resp := u.Message(true, "[POST] UserAuthorization - authorization was successful!")
-	resp["token"] = token
-	resp["user"] = user
-	resp["accounts"] = user.Accounts
-	u.Respond(w, resp)
-}
 
 /**
 * Контроллер авторизации пользователя (не аккаунта!)
