@@ -538,8 +538,7 @@ func UserGetProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func UserGetAccounts(w http.ResponseWriter, r *http.Request) {
-
-	//userID := r.Context().Value("user_id").(uint)
+	
 	if r.Context().Value("userId") == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"UserId is not valid"}))
 		return
@@ -552,6 +551,7 @@ func UserGetAccounts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Подгружаем список из AccountUser
 	aUsers, err := user.AccountList()
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Неудалось загрузить аккаунты")) // вообще тут нужен релогин
@@ -559,7 +559,6 @@ func UserGetAccounts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET users/accounts")
-	//resp["accounts"] = user.Accounts
 	resp["aUsers"] = aUsers
 	u.Respond(w, resp)
 }
