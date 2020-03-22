@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -123,7 +124,7 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 
 		if tk.UserID < 1 {
 			w.WriteHeader(http.StatusUnauthorized)
-			u.Respond(w, u.Message(false, "Пользователь не авторизован"))
+			u.Respond(w, u.Message(false, "Пользователь не авторизован 1"))
 			return
 		}
 
@@ -191,9 +192,12 @@ func JwtFullAuthentication(next http.Handler) http.Handler {
 			return
 		}
 
+		fmt.Println("Разбираем токен: ")
+		fmt.Println(tk)
+
 		if tk.UserID < 1 {
 			w.WriteHeader(http.StatusForbidden)
-			u.Respond(w, u.Message(false, "Пользователь не авторизован"))
+			u.Respond(w, u.Message(false, "Пользователь не авторизован 2"))
 			return
 		}
 

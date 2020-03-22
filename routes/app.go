@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gorilla/mux"
 	"github.com/nkokorev/crm-go/controllers"
+	"github.com/nkokorev/crm-go/middleware"
 	"net/http"
 )
 
@@ -32,7 +33,11 @@ var AppRoutes = func (rApp, rAppAuthUser, rAppAuthFull *mux.Router) {
 	rAppAuthFull.HandleFunc("/app/auth/check", controllers.AuthenticationJWTCheck).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
 
 	// For User auth accountS
-	rAppAuthUser.HandleFunc("/accounts/{accountId:[0-9]+}/auth/", controllers.AccountGetProfile).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
+	rAppAuthUserAccId := rAppAuthUser.PathPrefix("").Subrouter()
+	rAppAuthUserAccId.Use(middleware.ContextMuxVarIssuerAccountId) // получаем ID issuerAccountId
+
+	rAppAuthUserAccId.HandleFunc("/accounts/{accountId:[0-9]+}/auth/", controllers.AccountGetProfile).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
+	
 	rAppAuthUser.HandleFunc("/users/accounts", controllers.UserGetAccounts).Methods(http.MethodGet, http.MethodOptions)
 	
 	// rApp.HandleFunc("/auth/user", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodOptions)

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -103,7 +104,20 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 	// todo add user to account
 
 	// 2. создаем jwt-token для аутентификации пользователя
-	token, err := (models.JWT{UserID:user.ID}).CreateCryptoToken()
+	//token, err := (models.JWT{UserID:user.ID}).CreateCryptoToken()
+	expiresAt := time.Now().UTC().Add(time.Minute * 60).Unix()
+
+	claims := models.JWT{
+		user.ID,
+		account.ID,
+		user.IssuerAccountID,
+		jwt.StandardClaims{
+			ExpiresAt: expiresAt,
+			Issuer:    "AppServer",
+		},
+	}
+
+	token, err := account.GetAuthTokenWithClaims(claims)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Cant create jwt-token"))
 		return
@@ -213,15 +227,27 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 	// todo add user to account
 
 	// 2. создаем jwt-token для аутентификации пользователя
-	token, err := (models.JWT{UserID:user.ID}).CreateCryptoToken()
+	/*expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
+
+	claims := models.JWT{
+		user.ID,
+		account.ID,
+		user.IssuerAccountID,
+		jwt.StandardClaims{
+			ExpiresAt: expiresAt,
+			Issuer:    "AppServer",
+		},
+	}
+
+	token, err := account.CreateCryptoToken(claims)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Cant create jwt-token"))
 		return
-	}
+	}*/
 
 	resp := u.Message(true, "POST user / User Create")
 	resp["user"] = user
-	resp["token"] = token
+	//resp["token"] = token
 	u.Respond(w, resp)
 }
 
@@ -239,8 +265,6 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
-
-	user := &models.User{}
 
 	// Собираем переданные данные
 	v := &struct {
@@ -273,6 +297,9 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Неудалось загрузить аккаунты")) // вообще тут нужен релогин
 		return
 	}*/
+
+	//fmt.Println("Токен пользователя: ")
+	//fmt.Println(token)
 
 	resp := u.Message(true, "[POST] UserAuthorization - authorization was successful!")
 	resp["token"] = token
@@ -313,20 +340,20 @@ func UserEmailVerificationConfirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := user.CreateJWTToken()
+	/*token, err := user.CreateJWTToken()
 	if err != nil {
 		// возвращаем обычную верфикацию
 		resp := u.Message(true, "Верификация прошла успешно! ...")
 		u.Respond(w, resp)
 		return
-	}
+	}*/
 
 	// если все хорошо, возвращаем токен и пользователя для будущей авторизации
 	resp := u.Message(true, "Верификация прошла успешно!")
 	//fmt.Println(token)
 	resp["user"] = user
 	resp["accounts"] = user.Accounts
-	resp["token"] = token
+	//resp["token"] = token
 	u.Respond(w, resp)
 }
 
@@ -413,17 +440,17 @@ func UserPasswordResetConfirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := user.CreateJWTToken()
+/*	token, err := user.CreateJWTToken()
 	if err != nil {
 		// возвращаем обычную верфикацию
 		resp := u.Message(false, "Пароль сброшен, но не удалось создать токен авторизации")
 		u.Respond(w, resp)
 		return
-	}
+	}*/
 
 	// если все хорошо, возвращаем токен и пользователя для будущей авторизации
 	resp := u.Message(true, "Пароль успешно сброшен")
-	resp["token"] = token // options
+	//resp["token"] = token // options
 
 	resp["user"] = user // options for speed
 	resp["accounts"] = user.Accounts // options for speed
@@ -460,17 +487,17 @@ func UserSetPassword(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 
-	token, err := user.CreateJWTToken()
+	/*token, err := user.CreateJWTToken()
 	if err != nil {
 		// возвращаем обычную верфикацию
 		resp := u.Message(false, "Пароль сброшен, но не удалось создать токен авторизации")
 		u.Respond(w, resp)
 		return
-	}
+	}*/
 
 	// если все хорошо, возвращаем токен и пользователя для будущей авторизации
 	resp := u.Message(true, "Новый пароль установлен")
-	resp["token"] = token // options
+	//resp["token"] = token // options
 	resp["user"] = user // options for speed
 
 	u.Respond(w, resp)
@@ -589,11 +616,11 @@ func UserLoginInAccount(w http.ResponseWriter, r *http.Request)  {
 
 
 	// 2. Пробуем войти в аккаунт, возможно много ограничений (доступ, оплата и т.д.)
-	token, err := user.LoginInAccount(accountID);
+	/*token, err := user.LoginInAccount(accountID);
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Неудалось войти в аккаунт"))
 		return
-	}
+	}*/
 
 	acc := models.Account{ID:accountID}
 	if err := user.GetAccount(&acc); err != nil {
@@ -602,7 +629,7 @@ func UserLoginInAccount(w http.ResponseWriter, r *http.Request)  {
 	}
 
 	resp := u.Message(true, "[GET] LoginInAccount - authorization was successful!")
-	resp["token"] = token
+	//resp["token"] = token
 	resp["account"] = acc
 	u.Respond(w, resp)
 }

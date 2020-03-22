@@ -6,26 +6,25 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"io"
-	"log"
 )
 
 //Token struct declaration
 type JWT struct {
-	UserID uint // if found > 0
-	AccountID uint // if activated > 0
-	SignedAccountID uint // ID of main account
+	UserID uint // if found > 1
+	AccountID uint // if activated > 1
+	//SignedAccountID uint // ID of main account
+	IssuerAccountID uint // ID of main account
 	//Username string
 	//Email string
 	jwt.StandardClaims
 
-	User User
-	Account Account
+	//User User	`json:"-"`
+	//Account Account	`json:"-"`
 }
 
-func (claims JWT) CreateCryptoToken() (cryptToken string, err error) {
+/*func (claims JWT) CreateCryptoToken_OLD() (cryptToken string, err error) {
 
 	if err := claims.UploadRelatedData();err != nil {
 		return "", err
@@ -43,10 +42,11 @@ func (claims JWT) CreateCryptoToken() (cryptToken string, err error) {
 	//cryptToken, err = JWT{}.encrypt([]byte(os.Getenv("aes_key")), tokenString)
 	cryptToken, err = JWT{}.encrypt([]byte(claims.Account.UiApiAesKey), tokenString)
 	if err != nil {
-		return
+		return "", err
 	}
-	return
-}
+	
+	return cryptToken, nil
+}*/
 
 // AES кодирование по ключу key[]
 func (JWT) encrypt(key []byte, message string) (encmess string, err error) {
@@ -104,26 +104,18 @@ func (JWT) decrypt(key []byte, securemess string) (decodedmess string, err error
 }
 
 // декодирует token по внутреннему ключу, который берется из аккаунта
-func (claims JWT) DecryptToken(token string) (tk string, err error) {
+/*func (claims JWT) DecryptToken(token string) (tk string, err error) {
 
 	if err := claims.UploadRelatedAccount();err != nil {
 		return "", err
 	}
 
-	/*if claims.AccountID > 0 {
-		if err := db.First(&claims.Account, claims.AccountID).Error; err != nil {
-			return "", errors.New("Не удалось найти аккаунт для создания крипто ключа")
-		}
-	} else {
-		return "", errors.New("Не удалось получить данные аккаунта для дешифровки данных")
-	}*/
-
 	tk, err = JWT{}.decrypt( []byte(claims.Account.UiApiAesKey), token)
 
 	return
-}
+}*/
 
-func (tk *JWT) ParseToken(decryptedToken string) (err error) {
+/*func (tk *JWT) ParseToken(decryptedToken string) (err error) {
 
 	if err := tk.UploadRelatedAccount();err != nil {
 		return err
@@ -148,10 +140,10 @@ func (tk *JWT) ParseToken(decryptedToken string) (err error) {
 	}
 
 	return
-}
+}*/
 
 
-func (JWT) ParseAndDecryptToken(cryptToken string) (*JWT, error) {
+/*func (JWT) ParseAndDecryptToken(cryptToken string) (*JWT, error) {
 
 	var tk JWT // return value
 	
@@ -166,9 +158,9 @@ func (JWT) ParseAndDecryptToken(cryptToken string) (*JWT, error) {
 	}
 	return nil, err
 
-}
+}*/
 
-func (tk *JWT) UploadRelatedAccount() error {
+/*func (tk *JWT) UploadRelatedAccount() error {
 
 	// Получаем настройки аккаунта
 	if tk.AccountID < 1 {
@@ -180,9 +172,9 @@ func (tk *JWT) UploadRelatedAccount() error {
 	}
 
 	return nil
-}
+}*/
 
-func (tk *JWT) UploadRelatedData() error {
+/*func (tk *JWT) UploadRelatedData() error {
 
 	// Получаем настройки аккаунта
 	if tk.AccountID < 1 {
@@ -203,4 +195,4 @@ func (tk *JWT) UploadRelatedData() error {
 
 	return nil
 
-}
+}*/

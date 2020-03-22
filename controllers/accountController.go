@@ -2,11 +2,13 @@ package controllers
 
 import (
 	"encoding/json"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 /**
@@ -20,8 +22,7 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	issuerAccount := r.Context().Value("issuerAccount").(models.Account)
-
-	//time.Sleep(1 * time.Second)
+	
 	userId := r.Context().Value("userId").(uint)
 
 	acc := struct {
@@ -50,7 +51,20 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 1. создаем jwt-token для аутентификации пользователя
-	token, err := (models.JWT{UserID:userId, AccountID:acc.ID}).CreateCryptoToken()
+	//token, err := (models.JWT{UserID:userId, AccountID:acc.ID}).CreateCryptoToken()
+	expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
+
+	claims := models.JWT{
+		user.ID,
+		account.ID,
+		user.IssuerAccountID,
+		jwt.StandardClaims{
+			ExpiresAt: expiresAt,
+			Issuer:    "AppServer",
+		},
+	}
+
+	token, err := account.GetAuthTokenWithClaims(claims)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Cant create jwt-token"))
 		return
@@ -72,7 +86,7 @@ func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(nil, "accountId is error"))
 		return
 	}
-	// получаем UINT формат
+	// форматируем в UINT
 	var accountId uint = uint(accountIdINT)
 
 	account, err := models.GetAccount(accountId)
@@ -80,14 +94,53 @@ func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(nil, "Не удалось найти аккаунт"))
 		return
 	}
-	
+
+	// Чекаем, что ID настоящего аккаунта
 	if account.ID < 1 {
 		u.Respond(w, u.MessageError(nil, "The hashID length must be 12 symbols"))
 		return
 	}
 
+	// Получаем token
+	if r.Context().Value("userId") == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"UserId is not valid"}))
+		return
+	}
+	userID := r.Context().Value("userId").(uint)
+	user, err := account.GetUserById(userID)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка обновления ключа авторизации.."}))
+		return
+	}
+
+	/*token, err := account.CraeteJWTToken(*user)
+	if err != nil || token == "" {
+		u.Respond(w, u.MessageError(u.Error{Message:"Неудалось обновить ключ авторизации"}))
+		return
+	}*/
+	/*expiresAt := time.Now().UTC().Add(time.Minute * 120).Unix()
+
+	// создаем структуру токена
+	claims := models.JWT{
+		user.ID,
+		account.ID,
+		user.IssuerAccountID,
+		jwt.StandardClaims{
+			ExpiresAt: expiresAt,
+			Issuer:    "AppServer",
+		},
+	}
+
+	token, err := account.CreateCryptoToken(claims)*/
+
+	token, err := account.GetAuthToken(*user)
+	if err != nil || token == "" {
+		u.Respond(w, u.MessageError(u.Error{Message:"Неудалось обновить ключ авторизации"}))
+		return
+	}
+
 	resp := u.Message(true, "GET account profile")
 	resp["account"] = account
-	//resp["token"] = token      // нужно ли обновлять токен?
+	resp["token"] = token // новыйт токен, который часа на 4..
 	u.Respond(w, resp)
 }

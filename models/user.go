@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"github.com/dgrijalva/jwt-go"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
@@ -406,7 +405,7 @@ func (user *User) DeleteAccount(a *Account) error {
 /// ### Auth FUNC ###
 
 // создает короткий jwt-токен для пользователя. Весьма опасная фукнция
-func (user *User) CreateJWTToken() (string, error) {
+/*func (user *User) CreateJWTTokenOLD() (string, error) {
 
 	// Делаем предзагрузку аккаунтов, чтобы потом их еще раз не подгружать
 	if err := db.Preload("Accounts").First(user).Error; err != nil {
@@ -422,44 +421,11 @@ func (user *User) CreateJWTToken() (string, error) {
 			ExpiresAt: expiresAt,
 			Issuer:    "AuthServer",
 		},
-		*user,
-		Account{},
 	}
 	return claims.CreateCryptoToken()
 
-}
+}*/
 
-// Вход в аккаунт из-под пользователя. Делает необходимые проверки и возвращает новый токен/
-func (user *User) LoginInAccount(account_id uint) (string, error) {
-
-	var e u.Error
-
-	if user.ID < 1 || account_id < 1 {
-		e.Message = "Внутренняя ошибка во входе в аккаунт"
-		return "", e
-	}
-
-	// 1. Проверяем что такой аккаунт существует
-
-	// 2. Проверяем, что у пользователя есть к нему доступ
-
-	// 3. Создаем долгий ключ для входа
-	expiresAt := time.Now().UTC().Add(time.Hour * 2).Unix()
-	claims := JWT{
-		user.ID,
-		account_id,
-		user.IssuerAccountID,
-		jwt.StandardClaims{
-			ExpiresAt: expiresAt,
-			Issuer:    "GUI Server",
-		},
-		*user,
-		Account{},
-	}
-
-	return claims.CreateCryptoToken()
-
-}
 
 // создает Invite для пользователя
 func (user *User) CreateInviteForUser (email string, sendMail bool) error {

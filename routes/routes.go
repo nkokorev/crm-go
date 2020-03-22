@@ -83,12 +83,13 @@ func Handlers() *mux.Router {
 
 	// Все запросы App UI/API имеют в контексте accountId, account. Могут иметь userId и userId + accountId + account
 	rApp.Use(middleware.CorsAccessControl,			middleware.CheckAppUiApiStatus, middleware.ContextMainAccount)
-	rAppAuthUser.Use(middleware.CorsAccessControl,	middleware.CheckAppUiApiStatus, middleware.ContextMainAccount,	middleware.JwtUserAuthentication) // set userId
+	//rAppAuthUser.Use(middleware.CorsAccessControl,	middleware.CheckAppUiApiStatus, middleware.ContextMainAccount,	middleware.JwtUserAuthentication) // set userId
+	rAppAuthUser.Use(middleware.CorsAccessControl,	middleware.CheckAppUiApiStatus, middleware.JwtUserAuthentication) // set userId
 	rAppAuthFull.Use(middleware.CorsAccessControl,	middleware.CheckAppUiApiStatus,	middleware.ContextMainAccount, 	middleware.JwtFullAuthentication) // set userId,accountId,account
 
 	// Через UI/API запросы всегда идут в контексте аккаунта
-	rUiApi.Use(middleware.CorsAccessControl,		middleware.CheckUiApiStatus,	middleware.ContextMuxVarAccount)
-	rUiApiAuthFull.Use(middleware.CorsAccessControl, middleware.CheckUiApiStatus,	middleware.ContextMuxVarAccount,middleware.JwtFullAuthentication) // set userId,accountId,account
+	rUiApi.Use(middleware.CorsAccessControl,		middleware.CheckUiApiStatus,	middleware.ContextMuxVarAccountHashId)
+	rUiApiAuthFull.Use(middleware.CorsAccessControl, middleware.CheckUiApiStatus,	middleware.ContextMuxVarAccountHashId,middleware.JwtFullAuthentication) // set userId,accountId,account
 
 
 	// ### Передаем запросы в обработку ###

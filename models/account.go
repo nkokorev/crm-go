@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
@@ -71,6 +72,8 @@ type Account struct {
 	Products 	[]Product `json:"-"`
 	Stocks		[]Stock `json:"-"`
 }
+
+// ### 
 
 func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	account.ID = 0
@@ -368,9 +371,19 @@ func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error
 func (account Account) GetUserById(userId uint) (*User, error) {
 	user := User{}
 
-	err := db.Model(&User{}).Where("issuer_account_id = ?", account.ID).First(&user, userId).Error
+	//err := db.Model(&User{}).Where("issuer_account_id = ?", account.ID).First(&user, userId).Error // т.к. выпуск аккаунта не важен
+	
+	if err := db.First(&user, userId).Error; err != nil {
+		return nil, err
+	}
 
-	return &user, err
+	// Проверим, что пользователь имеет доступ к аккаунта
+	aUser := AccountUser{}
+	if db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.ID, userId).RecordNotFound() {
+		return nil, errors.New("Пользователь не найден")
+	}
+
+	return &user, nil
 }
 
 func (account Account) GetUserByUsername (username string) (*User, error) {
@@ -496,6 +509,7 @@ func (account Account) AppendUser(user User, tag accessRole) (*AccountUser, erro
 	}
 }
 
+
 // !!!!!! ### Выше функции покрытые тестами ### !!!!!!!!!!1
 
 // Ищет пользователя, авторизует и в случае успеха возвращает пользователя и jwt-token
@@ -521,7 +535,7 @@ func (account Account) AuthUserByUsername(username, password string, onceLogin_o
 	}
 
 	// Готовим токен на 20 минут (чтобы выбрать аккаунт и все такое)
-	expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
+	/*expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
 
 	claims := JWT{
 		user.ID,
@@ -531,53 +545,20 @@ func (account Account) AuthUserByUsername(username, password string, onceLogin_o
 			ExpiresAt: expiresAt,
 			Issuer:    "AppServer",
 		},
-		*user,
-		account,
-	}
+	}*/
 
-	token, err = claims.CreateCryptoToken()
+	//token, err = claims.CreateCryptoToken()
+	/*token, err = account.CreateCryptoToken(claims)
+	if err != nil || token == "" {
+		return nil, "", errors.New("Неудалось авторизовать пользователя")
+	}*/
+
+	token, err = account.GetAuthToken(*user)
 	if err != nil || token == "" {
 		return nil, "", errors.New("Неудалось авторизовать пользователя")
 	}
 
 	return user, token, nil
-}
-
-// В случае успеха возвращает jwt-token
-func (account Account) AuthUserByUsername_OLD(username, password string, onceLogin_opt... bool) (token string, err error)  {
-
-	var e utils.Error
-
-	user, err := account.GetUserByUsername(username)
-	if err != nil || user == nil {
-		return "", errors.New("Пользователь не найден")
-	}
-	
-	// если пользователь не найден temp.Username == nil, то пароль не будет искаться, т.к. он будет равен нулю (не с чем сравнивать)
-	if !user.ComparePassword(password) {
-		e.AddErrors("password", "Неверный пароль")
-	}
-	
-	if e.HasErrors() {
-		e.Message = "Проверьте указанные данные"
-		return "", e
-	}
-
-	expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
-
-	claims := JWT{
-		user.ID,
-		account.ID,
-		user.IssuerAccountID,
-		jwt.StandardClaims{
-			ExpiresAt: expiresAt,
-			Issuer:    "AuthServer",
-		},
-		*user,
-		account,
-	}
-
-	return claims.CreateCryptoToken()
 }
 
 
@@ -806,22 +787,132 @@ func (account Account) CreateEavAttribute(ea *EavAttribute) error {
 
 // ### JWT Crypto ### !!!!!!!!!!1
 
+func (account Account) GetAuthTokenWithClaims(claims JWT) (cryptToken string, err error) {
+
+	if claims.AccountID < 1 || claims.UserID < 1 {
+		return "", errors.New("Неудалось обновить ключ безопастности")
+	}
+
+	//Create JWT token
+	token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), claims)
+	tokenString, err := token.SignedString([]byte(account.UiApiJwtKey))
+	if err != nil {
+		return
+	}
+
+	// Encode jwt-token
+	cryptToken, err = JWT{}.encrypt([]byte(account.UiApiAesKey), tokenString)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (account Account) GetAuthToken(user User) (cryptToken string, err error) {
+	
+	if account.ID < 1 || user.ID < 1 {
+		return "", errors.New("Неудалось обновить ключ безопастности")
+	}
+
+	expiresAt := time.Now().UTC().Add(time.Minute * 120).Unix()
+
+	// создаем структуру токена
+	claims := JWT{
+		user.ID,
+		account.ID,
+		user.IssuerAccountID,
+		jwt.StandardClaims{
+			ExpiresAt: expiresAt,
+			Issuer:    "AppServer",
+		},
+	}
+
+	//Create JWT token
+	token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), claims)
+	tokenString, err := token.SignedString([]byte(account.UiApiJwtKey))
+	if err != nil {
+		return
+	}
+
+	// Encode jwt-token
+	cryptToken, err = JWT{}.encrypt([]byte(account.UiApiAesKey), tokenString)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (account Account) CreateCryptoTokenForUser(user User) (cryptToken string, err error) {
+
+	if account.ID < 1 || user.ID < 1 {
+		return "", errors.New("Неудалось обновить ключ безопастности")
+	}
+	
+	expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
+	
+	claims := JWT{
+		UserID: user.ID,
+		AccountID: account.ID,
+		IssuerAccountID: user.IssuerAccountID,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expiresAt,
+			Issuer:    "AppServer",
+		},
+	}
+
+	return account.GetAuthTokenWithClaims(claims)
+}
+
+
+func (account Account) ParseToken(decryptedToken string, claims *JWT) (err error) {
+
+	if account.ID < 1 {
+		return errors.New("Ошибка обновления ключа безопастности")
+	}
+	// получаем библиотечный токен
+	token, err := jwt.ParseWithClaims(decryptedToken, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			log.Printf("JWT: Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(account.UiApiJwtKey), nil
+	})
+	if err != nil {
+		return err
+	}
+
+	if !token.Valid {
+		return errors.New("Ошибка в обработке ключа безопастности")
+	}
+
+	return nil
+}
+
+func (account Account) DecryptToken(token string) (tk string, err error) {
+
+	tk, err = JWT{}.decrypt( []byte(account.UiApiAesKey), token)
+
+	return
+}
+
 // декодирует token по внутреннему ключу, который берется из параметров аккаунта
 func (account Account) ParseAndDecryptToken(cryptToken string) (*JWT, error) {
 
-		tk := &JWT{AccountID:account.ID} // return value
+	var claims JWT // return value
 
-		tokenStr, err := tk.DecryptToken(cryptToken);
-		if err != nil {
-			return nil, err
-		}
-
-		err = tk.ParseToken(tokenStr)
-		if err != nil {
-			return nil, err
-		}
-		return tk, err
-
+	// AES decript
+	tokenStr, err := account.DecryptToken(cryptToken);
+	if err != nil {
+		return nil, err
 	}
 
-	// todo : дописать другие крипто функции, сделать их в контексте аккаунта
+	// JWT parse
+	err = account.ParseToken(tokenStr, &claims)
+	if err != nil {
+		return nil, err
+	}
+	return &claims, err
+
+}
