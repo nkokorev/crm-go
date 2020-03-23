@@ -350,10 +350,10 @@ func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error
 	if account.existUserByUsername(input.Username) {
 		return nil, utils.Error{Message:"Проверьте правильность заполнения формы", Errors: map[string]interface{}{"username":"Данный username уже используется"}}
 	}
-	if account.existUserEmail(input.Email) {
+	if account.existUserByEmail(input.Email) {
 		return nil, utils.Error{Message:"Данные уже есть", Errors: map[string]interface{}{"username":"Данный email уже используется"}}
 	}
-	if account.existUserPhone(input.Phone) {
+	if account.existUserByPhone(input.Phone) {
 		return nil, utils.Error{Message:"Данные уже есть", Errors: map[string]interface{}{"username":"Данный телефон уже используется"}}
 	}
 
@@ -704,14 +704,14 @@ func (account Account) existUserByUsername(username string) bool {
 	return !db.Model(&User{}).Where("issuer_account_id = ? AND username = ?", account.ID, username).First(&User{}).RecordNotFound()
 }
 
-func (account Account) existUserEmail(email string) bool {
+func (account Account) existUserByEmail(email string) bool {
 	if email == "" {
 		return false
 	}
 	return !db.Model(&User{}).Where("issuer_account_id = ? AND email = ?", account.ID, email).First(&User{}).RecordNotFound()
 }
 
-func (account Account) existUserPhone(phone string) bool {
+func (account Account) existUserByPhone(phone string) bool {
 	if phone == "" {
 		return false
 	}

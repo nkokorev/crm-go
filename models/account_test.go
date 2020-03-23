@@ -468,7 +468,7 @@ func TestAccount_ExistAccountUser(t *testing.T) {
 	}
 }
 
-func TestAccount_existUserUsername(t *testing.T) {
+func TestAccount_existUserByUsername(t *testing.T) {
 	account, err := Account{Name:"TestAccount_existUserUsername"}.create()
 	if err != nil {
 		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
@@ -495,6 +495,68 @@ func TestAccount_existUserUsername(t *testing.T) {
 		t.Fatal("Не удалось найти пользователя, который должен быть")
 	}
 	if account2.existUserByUsername(user.Username) {
+		t.Fatal("Удалось найти пользователя, которого не должно быть")
+	}
+}
+
+func TestAccount_existUserByEmail(t *testing.T) {
+	account, err := Account{Name:"TestAccount_existUserByEmail"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer account.HardDelete()
+
+	account2, err := Account{Name:"TestAccount_existUserByEmail_2"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer func() {
+		account2.HardDelete()
+	}()
+
+	// создаем тестового пользователя с ролью Автор
+	user, err := account.CreateUser(User{Email:"testmail@ratus-dev.ru"}, RoleClient)
+	if err!=nil {
+		t.Fatalf("Неудалось создать пользователя: %v", err)
+	}
+	defer user.hardDelete()
+
+	// Проверим функцию
+	if !account.existUserByEmail(user.Email) {
+		t.Fatal("Не удалось найти пользователя, который должен быть")
+	}
+	if account2.existUserByEmail(user.Email) {
+		t.Fatal("Удалось найти пользователя, которого не должно быть")
+	}
+}
+
+func TestAccount_existUserByPhone(t *testing.T) {
+	account, err := Account{Name:"TestAccount_existUserUsername"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer account.HardDelete()
+
+	account2, err := Account{Name:"TestAccount_existUserUsername_2"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer func() {
+		account2.HardDelete()
+	}()
+
+	// создаем тестового пользователя с ролью Автор
+	user, err := account.CreateUser(User{Phone: "+79997775554411"}, RoleClient)
+	if err!=nil {
+		t.Fatalf("Неудалось создать пользователя: %v", err)
+	}
+	defer user.hardDelete()
+
+	// Проверим функцию
+	if !account.existUserByPhone(user.Phone) {
+		t.Fatal("Не удалось найти пользователя, который должен быть")
+	}
+	if account2.existUserByPhone(user.Phone) {
 		t.Fatal("Удалось найти пользователя, которого не должно быть")
 	}
 }
