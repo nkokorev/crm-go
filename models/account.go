@@ -278,15 +278,19 @@ func (account Account) UpdateApiKey(token string, input ApiKey) (*ApiKey, error)
 }
 
 
-// #### User ####
+// #### func(s) User ####
 
 func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error) {
 
+	if account.ID < 1 {
+		return nil, errors.New("Не верно указан контекст аккаунта")
+	}
+	
 	var err error
 	var username, email, phone bool
 	var role accessRole
 
-	// Проверяем роль
+	// Утверждаем роль пользователя аккаунта
 	if len(v_opt) > 0 {
 		role = v_opt[0]
 		// нельзя создать пользователя с ролью Owner
@@ -297,10 +301,12 @@ func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error
 		role = RoleClient
 	}
 
+	// Утверждаем main-account пользователя
 	input.IssuerAccountID = account.ID
 
 	// ### !!!! Проверка входящих данных !!! ### ///
 	if len(input.Username) > 0 {
+
 		username = true
 		if err := utils.VerifyUsername(input.Username); err != nil {
 			return nil, utils.Error{Message:"Проверьте правильность заполнения формы", Errors: map[string]interface{}{"username" : err.Error()}}
@@ -324,7 +330,7 @@ func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error
 		phone = true
 
 		if input.PhoneRegion == "" {
-			input.PhoneRegion = "RU" // todo тут можно по IP определить где находиться пользователь +/-
+			input.PhoneRegion = "RU"
 		}
 
 		// Устанавливаем нужный формат
@@ -337,12 +343,12 @@ func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error
 
 	// 5. One of username. email and phone must be!
 	if !(username || email || phone ) {
-		return nil, utils.Error{Message:"Отсутствуют обязательные поля", Errors: map[string]interface{}{"username":"Необходимо заполнить поле", "email":"Необходимо заполнить поле", "mobilePhone":"Необходимо заполнить поле"}}
+		return nil, utils.Error{Message:"Отсутствуют обязательные поля", Errors: map[string]interface{}{"username":"Необходимо заполнить поле", "email":"Необходимо заполнить поле", "phone":"Необходимо заполнить поле"}}
 	}
 
 	// Проверка дублирование полей
-	if account.existUserUsername(input.Username) {
-		return nil, utils.Error{Message:"Данные уже есть", Errors: map[string]interface{}{"username":"Данный username уже используется"}}
+	if account.existUserByUsername(input.Username) {
+		return nil, utils.Error{Message:"Проверьте правильность заполнения формы", Errors: map[string]interface{}{"username":"Данный username уже используется"}}
 	}
 	if account.existUserEmail(input.Email) {
 		return nil, utils.Error{Message:"Данные уже есть", Errors: map[string]interface{}{"username":"Данный email уже используется"}}
@@ -691,25 +697,25 @@ func (account Account) getUserJwt(userId uint) (jwt string, err error) {
 
 
 // Дотошно ищет схожего пользователя по username, email и телефону.
-func (account Account) existUserUsername(username string) bool {
+func (account Account) existUserByUsername(username string) bool {
 	if username == "" {
 		return false
 	}
-	return db.Model(&User{}).Where("account_id = ? AND username = ?", account.ID, username).RecordNotFound()
+	return !db.Model(&User{}).Where("issuer_account_id = ? AND username = ?", account.ID, username).First(&User{}).RecordNotFound()
 }
 
 func (account Account) existUserEmail(email string) bool {
 	if email == "" {
 		return false
 	}
-	return db.Model(&User{}).Where("account_id = ? AND email = ?", account.ID, email).RecordNotFound()
+	return !db.Model(&User{}).Where("issuer_account_id = ? AND email = ?", account.ID, email).First(&User{}).RecordNotFound()
 }
 
 func (account Account) existUserPhone(phone string) bool {
 	if phone == "" {
 		return false
 	}
-	return db.Model(&User{}).Where("account_id = ? AND phone = ?", account.ID, phone).RecordNotFound()
+	return !db.Model(&User{}).Where("issuer_account_id = ? AND phone = ?", account.ID, phone).First(&User{}).RecordNotFound()
 }
 
 // Возвращает наиболее похожего пользователя (пользователей?) по username, email или телефону в зависимости от типа авторизации

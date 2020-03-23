@@ -154,7 +154,7 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 // Обработка создания пользователя в рамках /{accountId}/
 // Не подходит для создания пользователя в рамках UI/API т.к. не делает проверку соотвествующих переменных
 func UserRegistration(w http.ResponseWriter, r *http.Request) {
-
+	
 	// 1. Получаем аккаунт, в рамках которого будет происходить создание нового пользователя
 	if r.Context().Value("account") == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"account":"not load"}}))
@@ -210,7 +210,7 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 	// роль = клиент
 	user, err := account.CreateUser(*input.User)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось создать пользователя"))
+		u.Respond(w, u.MessageError(err, "Ошибка при создании пользователя"))
 		return
 	}
 

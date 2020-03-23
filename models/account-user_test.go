@@ -11,7 +11,7 @@ func TestAccountUser_create(t *testing.T)  {
         account.HardDelete()
     }()
 
-    user, err := account.CreateUser(User{Username: "TestAccountUser_create", Phone: "88251001212", InvitedUserID:1, DefaultAccountID:1}, RoleAuthor)
+    user, err := account.CreateUser(User{Username: "TestAccountUser_create324", Phone: "88251001233", InvitedUserID:1, DefaultAccountID:1}, RoleAuthor)
     if err !=nil {
         t.Fatalf("Неудалось создать пользователя %v", err)
     }

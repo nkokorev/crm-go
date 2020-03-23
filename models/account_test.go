@@ -468,6 +468,37 @@ func TestAccount_ExistAccountUser(t *testing.T) {
 	}
 }
 
+func TestAccount_existUserUsername(t *testing.T) {
+	account, err := Account{Name:"TestAccount_existUserUsername"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer account.HardDelete()
+
+	account2, err := Account{Name:"TestAccount_existUserUsername_2"}.create()
+	if err != nil {
+		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+	}
+	defer func() {
+		account2.HardDelete()
+	}()
+
+	// создаем тестового пользователя с ролью Автор
+	user, err := account.CreateUser(User{Username:"TestUser1234",Phone: "+79251958873"}, RoleClient)
+	if err!=nil {
+		t.Fatalf("Неудалось создать пользователя: %v", err)
+	}
+	defer user.hardDelete()
+
+	// Проверим функцию
+	if !account.existUserByUsername(user.Username) {
+		t.Fatal("Не удалось найти пользователя, который должен быть")
+	}
+	if account2.existUserByUsername(user.Username) {
+		t.Fatal("Удалось найти пользователя, которого не должно быть")
+	}
+}
+
 func TestAccount_AppendUser(t *testing.T) {
 	
 	account, err := Account{Name:"TestAccount_AppendUser_1"}.create()
@@ -571,6 +602,8 @@ func TestAccount_GetUserAccessRole(t *testing.T) {
 		t.Fatalf("Роль созданного пользователя не является Автор: %v.", *accessRole)
 	}
 }
+
+
 
 // #### Benchmark Go! ####
 
