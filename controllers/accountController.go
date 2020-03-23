@@ -21,7 +21,7 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"account":"not load"}}))
 		return
 	}
-	issuerAccount := r.Context().Value("issuerAccount").(models.Account)
+	issuerAccount := r.Context().Value("issuerAccount").(*models.Account)
 	
 	userId := r.Context().Value("userId").(uint)
 
@@ -133,7 +133,7 @@ func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
 
 	token, err := account.CreateCryptoToken(claims)*/
 
-	token, err := account.GetAuthToken(*user)
+	token, err := account.AuthUser(*user)
 	if err != nil || token == "" {
 		u.Respond(w, u.MessageError(u.Error{Message:"Неудалось обновить ключ авторизации"}))
 		return

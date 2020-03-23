@@ -11,6 +11,27 @@ import (
 	"time"
 )
 
+// структура для создания пользователя (чтение данных)
+type InputUserData struct {
+	*models.User
+	NativePwd string `json:"password"` // потому что пароль из User{} не читается т.к. json -
+	InviteToken string `json:"inviteToken"` // если создание через инвайт токен
+}
+
+// Вспомогательная функция чтения данных в InputUserCreate структуру
+func GetDataUserRegistration(r *http.Request) (*InputUserData, error) {
+	// 2. Читаем данные со входа
+	var input InputUserData
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		return nil, errors.New("Техническая ошибка в запросе")
+	}
+
+	// Сохраняем незашифрованный пароль в User
+	input.User.Password = input.NativePwd
+
+	return &input, nil
+}
+
 /**
 * Контроллер регистрации через Ui/API
 * Учитывает настройки аккаунта
@@ -129,51 +150,28 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-/**
-* В случае успеха возвращает в теле стандартного ответа [user]
-* Контекст контроллера: UI/API
- */
+
+// Обработка создания пользователя в рамках /{accountId}/
+// Не подходит для создания пользователя в рамках UI/API т.к. не делает проверку соотвествующих переменных
 func UserRegistration(w http.ResponseWriter, r *http.Request) {
 
-	if r.Context().Value("accountId") == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"AccountId is not valid"}))
+	// 1. Получаем аккаунт, в рамках которого будет происходить создание нового пользователя
+	if r.Context().Value("account") == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"account":"not load"}}))
+		return
+	}
+	account := r.Context().Value("account").(*models.Account)
+	if &account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"account":"not load"}}))
 		return
 	}
 
-	accountId := r.Context().Value("accountId").(uint)
-
-	resp2 := u.Message(true, "POST UserRegistration")
-	resp2["accountId"] = accountId
-	u.Respond(w, resp2)
-	return
-
-	var user *models.User
-
-	account, err := models.GetAccount(accountId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Неудалось получить связанный аккаунт"))
+	// 2. Читаем данные со входа
+	input, err := GetDataUserRegistration(r)
+	if err != nil || input == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса"}))
 		return
 	}
-
-	if !account.UiApiEnabledUserRegistration {
-		u.Respond(w, u.MessageError(err, "Регистрация новых пользователей приостановлена"))
-		return
-	}
-
-	input := struct {
-		models.User
-		NativePwd string `json:"password"` // потому что пароль из User{} не читается т.к. json -
-		InviteToken string `json:"inviteToken"` //
-		EmailVerificated bool `json:"emailVerificated"` //default false
-	}{}
-
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}
-
-	// Сохраняем незашифрованный пароль в User
-	input.User.Password = input.NativePwd
 
 	// глобальная переменная для регистрации по инвайтам
 	var emailToken *models.EmailAccessToken
@@ -203,53 +201,33 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 		input.User.InvitedUserID = emailToken.OwnerID
 
 		defer func() {
-			if user != nil {
+			if input.User != nil {
 				emailToken.Delete()
 			}
 		}()
 	}
 
-	user, err = account.CreateUser(input.User)
+	// роль = клиент
+	user, err := account.CreateUser(*input.User)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось создать пользователя")) // что это?)
+		u.Respond(w, u.MessageError(err, "Не удалось создать пользователя"))
 		return
 	}
-
-	// todo: тут должна быть какая-то проверка на необходимость отправки письма приглашения
-	if ! input.EmailVerificated {
-		if err := user.SendEmailVerification(); err !=nil {
-			// ..
-		}
-	}
-
-	// 2. Добавляем пользователя в аккаунт
-
-	// todo add user to account
 
 	// 2. создаем jwt-token для аутентификации пользователя
-	/*expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
-
-	claims := models.JWT{
-		user.ID,
-		account.ID,
-		user.IssuerAccountID,
-		jwt.StandardClaims{
-			ExpiresAt: expiresAt,
-			Issuer:    "AppServer",
-		},
-	}
-
-	token, err := account.CreateCryptoToken(claims)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Cant create jwt-token"))
+	token, err := account.AuthUser(*user)
+	if err != nil || token == "" {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса"}))
 		return
-	}*/
-
+	}
+	
 	resp := u.Message(true, "POST user / User Create")
 	resp["user"] = user
-	//resp["token"] = token
+	resp["token"] = token
 	u.Respond(w, resp)
 }
+
+
 
 func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 	

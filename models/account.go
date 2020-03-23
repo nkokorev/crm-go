@@ -39,9 +39,7 @@ type Account struct {
 	UiApiJwtKey string `json:"-" gorm:"type:varchar(32);default:null;"` // 128-битный ключ шифрования
 
 	// Регистрация новых пользователей через UI/API
-
-	//AuthMethod authMethod `json:"authBy" gorm:"enum('username', 'email', 'mobilePhone');not null;default:'email';"`
-	//AuthMethod authMethod `json:"authBy" sql:"type:auth_method;not null;default:'email'"` // Дефолтный вариант авторизации todo: может массивом т.к. их может быть несколько?
+	
 	UiApiAuthMethods pq.StringArray `json:"-" sql:"type:varchar(32)[];default:'{email}'"` // Доступные способы авторизации (проверяется в контроллере)
 	UiApiEnabledUserRegistration bool `json:"-" gorm:"default:true;not null"` // Разрешить регистрацию новых пользователей?
 	UiApiUserRegistrationInvitationOnly bool `json:"-" gorm:"default:false;not null"` // Регистрация новых пользователей только по приглашению (в том числе и клиентов)
@@ -54,7 +52,7 @@ type Account struct {
 
 	// настройки авторизации.
 	// Разделяется AppAuth и ApiAuth -
-	VisibleToClients bool `json:"-" gorm:"default:false"` // скрывать аккаунт в списке доступных для пользователей с ролью 'client'. Нужно для системных аккаунтов.
+	VisibleToClients bool `json:"visibleToClients" gorm:"default:false"` // отображать аккаунт в списке доступных для пользователей с ролью 'client'. Нужно для системных аккаунтов.
 	ClientsAreAllowedToLogin bool `json:"-" gorm:"default:true"` // запрет на вход в ratuscrm для пользователей с ролью 'client' (им не будет выдана авторизация).
 
 	AuthForbiddenForClients bool `json:"-" gorm:"default:true"` // запрет авторизации для для пользователей с ролью 'client'.
@@ -302,7 +300,6 @@ func (account Account) CreateUser(input User, v_opt... accessRole) (*User, error
 	input.IssuerAccountID = account.ID
 
 	// ### !!!! Проверка входящих данных !!! ### ///
-
 	if len(input.Username) > 0 {
 		username = true
 		if err := utils.VerifyUsername(input.Username); err != nil {
@@ -553,7 +550,7 @@ func (account Account) AuthUserByUsername(username, password string, onceLogin_o
 		return nil, "", errors.New("Неудалось авторизовать пользователя")
 	}*/
 
-	token, err = account.GetAuthToken(*user)
+	token, err = account.AuthUser(*user)
 	if err != nil || token == "" {
 		return nil, "", errors.New("Неудалось авторизовать пользователя")
 	}
@@ -809,8 +806,9 @@ func (account Account) GetAuthTokenWithClaims(claims JWT) (cryptToken string, er
 	return
 }
 
-func (account Account) GetAuthToken(user User) (cryptToken string, err error) {
-	
+//func (account Account) GetAuthToken(user User) (cryptToken string, err error) {
+func (account Account) AuthUser(user User) (cryptToken string, err error) {
+
 	if account.ID < 1 || user.ID < 1 {
 		return "", errors.New("Неудалось обновить ключ безопастности")
 	}
