@@ -11,12 +11,9 @@ import (
 	"time"
 )
 
-/**
-* В случае успеха возвращает в теле стандартного ответа [user]
- */
 func AccountCreate(w http.ResponseWriter, r *http.Request) {
 
-	// Аккаунт, в рамках которого происходит вызов
+	// Аккаунт, от имени которого выступает пользователь
 	if r.Context().Value("issuerAccount") == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"account":"not load"}}))
 		return
@@ -77,7 +74,7 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 // Возвращает профиль аккаунта, указанного в переменной .../{accountId}/...
-func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
+func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 
 	accIdSTR := mux.Vars(r)["accountId"]
 
@@ -101,7 +98,16 @@ func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Получаем token
+	// Читаем косвенные данные логина в аккаунте
+	v := &struct {
+		RememberChoice bool `json:"rememberChoice"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	// Получаем token для пользователя
 	if r.Context().Value("userId") == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"UserId is not valid"}))
 		return
@@ -113,27 +119,7 @@ func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/*token, err := account.CraeteJWTToken(*user)
-	if err != nil || token == "" {
-		u.Respond(w, u.MessageError(u.Error{Message:"Неудалось обновить ключ авторизации"}))
-		return
-	}*/
-	/*expiresAt := time.Now().UTC().Add(time.Minute * 120).Unix()
-
-	// создаем структуру токена
-	claims := models.JWT{
-		user.ID,
-		account.ID,
-		user.IssuerAccountID,
-		jwt.StandardClaims{
-			ExpiresAt: expiresAt,
-			Issuer:    "AppServer",
-		},
-	}
-
-	token, err := account.CreateCryptoToken(claims)*/
-
-	token, err := account.AuthUser(*user)
+	token, err := account.AuthorizationUser(*user, v.RememberChoice)
 	if err != nil || token == "" {
 		u.Respond(w, u.MessageError(u.Error{Message:"Неудалось обновить ключ авторизации"}))
 		return

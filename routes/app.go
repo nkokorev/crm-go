@@ -43,7 +43,7 @@ var AppRoutes = func (rApp, rAppAuthUser, rAppAuthFull *mux.Router) {
 
 
 
-	rAppAuthUserAccId.HandleFunc("/accounts/{accountId:[0-9]+}/auth", controllers.AccountGetProfile).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
+	rAppAuthUserAccId.HandleFunc("/accounts/{accountId:[0-9]+}/auth", controllers.AccountAuthUser).Methods(http.MethodPost, http.MethodPost, http.MethodOptions)
 	
 	rAppAuthUser.HandleFunc("/users/accounts", controllers.UserGetAccounts).Methods(http.MethodGet, http.MethodOptions)
 	

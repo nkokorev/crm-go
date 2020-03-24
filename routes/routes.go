@@ -15,9 +15,10 @@ func Handlers() *mux.Router {
 	// обрабатываем все запросы со слешем и без
 	rBase := mux.NewRouter().StrictSlash(true)
 
-	APP_ENV := os.Getenv("APP_ENV")
-	
-	switch APP_ENV {
+	AppEnv := os.Getenv("APP_ENV")
+
+	// Определяем домен, от которого будем отталкиваться
+	switch AppEnv {
 		case "local":
 			crmHost = "crm.local"
 			//crmHost = "127.0.0.1:8090"
@@ -28,7 +29,7 @@ func Handlers() *mux.Router {
 			crmHost = "ratuscrm.com"
 	}
 
-	if APP_ENV != "local" {
+	if AppEnv != "local" {
 		// rBase.Use(middleware.CorsAccessControl)
 	}
 	rBase.Use(middleware.CorsAccessControl)
@@ -83,10 +84,11 @@ func Handlers() *mux.Router {
 
 	// Все запросы App UI/API имеют в контексте accountId, account. Могут иметь userId и userId + accountId + account
 	rApp.Use(middleware.CorsAccessControl,			middleware.CheckAppUiApiStatus, middleware.ContextMainAccount)
+
 	//rAppAuthUser.Use(middleware.CorsAccessControl,	middleware.CheckAppUiApiStatus, middleware.ContextMainAccount,	middleware.JwtUserAuthentication) // set userId
 	rAppAuthUser.Use(middleware.CorsAccessControl,	middleware.CheckAppUiApiStatus, middleware.JwtUserAuthentication) // set userId
 	rAppAuthFull.Use(middleware.CorsAccessControl,	middleware.CheckAppUiApiStatus,	middleware.ContextMainAccount, 	middleware.JwtFullAuthentication) // set userId,accountId,account
-
+	
 	// Через UI/API запросы всегда идут в контексте аккаунта
 	rUiApi.Use(middleware.CorsAccessControl,		middleware.CheckUiApiStatus,	middleware.ContextMuxVarAccountHashId)
 	rUiApiAuthFull.Use(middleware.CorsAccessControl, middleware.CheckUiApiStatus,	middleware.ContextMuxVarAccountHashId,middleware.JwtFullAuthentication) // set userId,accountId,account
@@ -148,5 +150,5 @@ var UserRoutes = func (rBase, rUser, r_acc, r_full *mux.Router) {
 var AccountRoutes = func (rBase, rUser, r_acc, r_full *mux.Router) {
 
 	rUser.HandleFunc("", controllers.AccountCreate).Methods(http.MethodPost, http.MethodOptions)
-	r_acc.HandleFunc("", controllers.AccountGetProfile).Methods(http.MethodGet, http.MethodOptions)
+	//r_acc.HandleFunc("", controllers.AccountGetProfile).Methods(http.MethodGet, http.MethodOptions)
 }

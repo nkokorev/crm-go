@@ -153,7 +153,7 @@ func (user *User) GetByUsername () error {
 }
 
 // сохраняет как новую модель... лучше вообще убрать этот метод
-func (user *User) Save () error {
+func (user *User) SaveOLD () error {
 	//return db.Model(user).Omit("id", "deleted_at", "created_at", "updated_at").Save(user).Find(user, "id = ?", user.ID).Error
 	return db.Model(user).Omit("id", "deleted_at", "created_at", "updated_at").Save(user).First(user, "id = ?", user.ID).Error
 }
@@ -296,7 +296,7 @@ func (user *User) ResetPassword() error {
 	user.Password = ""
 	tnow := time.Now().UTC()
 	user.PasswordResetAt = &tnow
-	return user.Save()
+	return user.Update(&user)
 }
 
 // устанавливает новый пароль
@@ -320,7 +320,7 @@ func (user *User) SetPassword(passwordNew, passwordOld string) error {
 	user.PasswordResetAt = &tnow
 
 	// 4. Сохраняем данные пользователя
-	if err := user.Save();err!=nil {
+	if err := user.Update(&user);err!=nil {
 		return err
 	}
 

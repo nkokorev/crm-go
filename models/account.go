@@ -516,7 +516,8 @@ func (account Account) AppendUser(user User, tag accessRole) (*AccountUser, erro
 // !!!!!! ### Выше функции покрытые тестами ### !!!!!!!!!!1
 
 // Ищет пользователя, авторизует и в случае успеха возвращает пользователя и jwt-token
-func (account Account) AuthUserByUsername(username, password string, onceLogin_opt... bool) (user *User, token string, err error)  {
+func (account Account) AuthorizationUserByUsername(username, password string, onceLogin bool, rememberChoice bool) (user *User,
+	token string, err error)  {
 
 	var e utils.Error
 
@@ -530,33 +531,24 @@ func (account Account) AuthUserByUsername(username, password string, onceLogin_o
 	if !user.ComparePassword(password) {
 		e.AddErrors("password", "Неверный пароль")
 	}
-
-	// Если накопились ошибки - сбрасываем автоирзацию
+	
+	// Если есть какие-то ошибки - сбрасываем автоирзацию
 	if e.HasErrors() {
 		e.Message = "Проверьте указанные данные"
 		return nil, "", e
 	}
 
-	// Готовим токен на 20 минут (чтобы выбрать аккаунт и все такое)
-	/*expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
+	if rememberChoice {
+		user.DefaultAccountID = account.ID
+		updateData := struct {
+			DefaultAccountID bool
+		}{rememberChoice}
+		if err := user.Update(&updateData); err != nil {
+			return nil, "", errors.New("Не удалось авторизовать пользователя")
+		}
+	}
 
-	claims := JWT{
-		user.ID,
-		account.ID,
-		user.IssuerAccountID,
-		jwt.StandardClaims{
-			ExpiresAt: expiresAt,
-			Issuer:    "AppServer",
-		},
-	}*/
-
-	//token, err = claims.CreateCryptoToken()
-	/*token, err = account.CreateCryptoToken(claims)
-	if err != nil || token == "" {
-		return nil, "", errors.New("Неудалось авторизовать пользователя")
-	}*/
-
-	token, err = account.AuthUser(*user)
+	token, err = account.AuthorizationUser(*user, false)
 	if err != nil || token == "" {
 		return nil, "", errors.New("Неудалось авторизовать пользователя")
 	}
@@ -813,12 +805,26 @@ func (account Account) GetAuthTokenWithClaims(claims JWT) (cryptToken string, er
 }
 
 //func (account Account) GetAuthToken(user User) (cryptToken string, err error) {
-func (account Account) AuthUser(user User) (cryptToken string, err error) {
+func (account Account) AuthorizationUser(user User, rememberChoice bool) (cryptToken string, err error) {
 
 	if account.ID < 1 || user.ID < 1 {
 		return "", errors.New("Неудалось обновить ключ безопастности")
 	}
 
+	// Запоминаем аккаунт для будущих входов
+	if rememberChoice {
+
+		user.DefaultAccountID = account.ID
+		
+		updateData := struct {
+			DefaultAccountID uint
+		}{account.ID}
+		if err := user.Update(&updateData); err != nil {
+			return "", errors.New("Не удалось авторизовать пользователя")
+		}
+	}
+	
+	// Создаем токен для входа
 	expiresAt := time.Now().UTC().Add(time.Minute * 120).Unix()
 
 	// создаем структуру токена
