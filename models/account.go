@@ -812,17 +812,25 @@ func (account Account) AuthorizationUser(user User, rememberChoice bool) (cryptT
 	}
 
 	// Запоминаем аккаунт для будущих входов
-	if rememberChoice {
+
 
 		user.DefaultAccountID = account.ID
-		
+
 		updateData := struct {
 			DefaultAccountID uint
-		}{account.ID}
+		}{}
+
+		if rememberChoice {
+			updateData.DefaultAccountID = account.ID
+		} else {
+			//updateData.DefaultAccountID = 0
+		}
+
+
 		if err := user.Update(&updateData); err != nil {
 			return "", errors.New("Не удалось авторизовать пользователя")
 		}
-	}
+
 	
 	// Создаем токен для входа
 	expiresAt := time.Now().UTC().Add(time.Minute * 120).Unix()
