@@ -306,8 +306,7 @@ func (user *User) SetPassword(passwordNew, passwordOld string) error {
 	if user.PasswordResetAt != nil && !user.ComparePassword(passwordOld) {
 		return u.Error{Message:"Не верно указан старый пароль"}
 	}
-
-
+	
 	// 2. Устанавливаем новый крипто пароль
 	password, err := bcrypt.GenerateFromPassword([]byte(passwordNew), bcrypt.DefaultCost)
 	if err != nil {
@@ -316,8 +315,8 @@ func (user *User) SetPassword(passwordNew, passwordOld string) error {
 	user.Password = string(password)
 
 	// 3. Ставим флаг passwordReset = false
-	tnow := time.Now().UTC()
-	user.PasswordResetAt = &tnow
+	tNow := time.Now().UTC()
+	user.PasswordResetAt = &tNow
 
 	// 4. Сохраняем данные пользователя
 	if err := user.Update(&user);err!=nil {
