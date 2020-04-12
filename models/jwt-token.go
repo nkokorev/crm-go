@@ -12,10 +12,9 @@ import (
 
 //Token struct declaration
 type JWT struct {
-	UserID uint // if found > 1
-	AccountID uint // if activated > 1
-	//SignedAccountID uint // ID of main account
-	IssuerAccountID uint // ID of main account
+	UserID uint // id of user
+	AccountID uint // id of account, when user has been auth
+	IssuerAccountID uint // ID of main account (спорная тема)
 	//Username string
 	//Email string
 	jwt.StandardClaims
@@ -75,6 +74,7 @@ func (JWT) encrypt(key []byte, message string) (encmess string, err error) {
 
 // AES декодирование по ключу key[], который берется из аккаунта...
 func (JWT) decrypt(key []byte, securemess string) (decodedmess string, err error) {
+
 	cipherText, err := base64.URLEncoding.DecodeString(securemess)
 	if err != nil {
 		return "", err

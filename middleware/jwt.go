@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -11,12 +12,12 @@ import (
 /*
 * ### Auth by JWT ###
 
-	Любой jwt-токен имеет в своем составе информацию о пользователе и аккаунте, выдавшим ключ (issuer).
+	Любой jwt имеет в своем составе информацию о пользователе и аккаунте, выдавшим ключ (issuer).
 	userId - id пользователя, на имя которого выписан ключ
 	accountId - id аккаунта, в котором пользователь авторизован
  */
 
-// проверяет валидность 32-символного api-ключа. Вставляет в контекст accountId && account
+// проверяет валидность 32-символьного api-ключа. Вставляет в контекст accountId && account
 func BearerAuthentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +114,6 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 		// Собираем вторую часть строки "Bearer kSDkfslfds390d2w...."
 		tokenPart := splitted[1] //Grab the token part, what we are truly interested in
 		
-		//tk, err := models.ParseAndDecryptToken(tokenPart)
 		tk, err := issuerAccount.ParseAndDecryptToken(tokenPart);
 		if err != nil || tk == nil {
 			w.WriteHeader(http.StatusForbidden)
@@ -183,11 +183,13 @@ func JwtFullAuthentication(next http.Handler) http.Handler {
 		//tk := &models.JWT{}
 
 		// Парсим в tk токен со всеми данными
-		//tk, err := models.JWT{}.ParseAndDecryptToken(tokenPart);
-		tk, err := issuerAccount.ParseAndDecryptToken(tokenPart);
+		tk, err := issuerAccount.ParseAndDecryptToken(tokenPart)
 		if err != nil || tk == nil {
 			w.WriteHeader(http.StatusForbidden)
-			u.Respond(w, u.Message(false, "Неудалось прочитать ключ авторизации"))
+			// fmt.Println(tokenPart)
+			// fmt.Println(tk)
+			fmt.Println(err)
+			u.Respond(w, u.Message(false, "Не удалось прочитать ключ авторизации"))
 			return
 		}
 
@@ -224,9 +226,13 @@ func JwtFullAuthentication(next http.Handler) http.Handler {
 		}
 
 		// проверка на роль клиента и доступ в CRM
-		if r.Context().Value("issuer") == "app ui/api" {
+		if r.Context().Value("issuer") == "app" {
 			// todo role & account.AllowClientLoginCrm
 		}
+
+		// fmt.Println("JwtFullAuthentication")
+		// fmt.Printf("Context Account: %v\n",  account.Name)
+		// fmt.Printf("userId: %v\n", user.Name)
 
 		r = r.WithContext(context.WithValue(r.Context(), "userId", tk.UserID))
 		r = r.WithContext(context.WithValue(r.Context(), "user", user))

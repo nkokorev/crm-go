@@ -34,17 +34,25 @@ var AppRoutes = func (rApp, rAppAuthUser, rAppAuthFull *mux.Router) {
 	rApp.HandleFunc("/users/auth/email", controllers.UserAuthByEmail).Methods(http.MethodPost, http.MethodOptions)
 	rApp.HandleFunc("/users/auth/phone", controllers.UserAuthByPhone).Methods(http.MethodPost, http.MethodOptions)
 
-
+	// Check routes...
 	rAppAuthFull.HandleFunc("/app/auth/check", controllers.AuthenticationJWTCheck).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
 
+	// Marketing: test Email...
+	rAppAuthFull.HandleFunc("/accounts/marketing/test-email", controllers.SendEmailMessage).
+		Methods(http.MethodPost, http.MethodOptions)
+	
 	// For User auth accountS
 	rAppAuthUserAccId := rAppAuthUser.PathPrefix("").Subrouter()
 	rAppAuthUserAccId.Use(middleware.ContextMuxVarIssuerAccountId) // получаем ID issuerAccountId
 
 
 
-	rAppAuthUserAccId.HandleFunc("/accounts/{accountId:[0-9]+}/auth", controllers.AccountAuthUser).Methods(http.MethodPost, http.MethodPost, http.MethodOptions)
-	
+
+	//rAppAuthUserAccId.HandleFunc("/accounts/{accountId:[0-9]+}/auth", controllers.AccountAuthUser).Methods(http.MethodPost, http.MethodOptions)
+	rAppAuthUser.HandleFunc("/accounts/{accountId:[0-9]+}/auth", controllers.AccountAuthUser).Methods(http.MethodPost, http.MethodOptions)
+
+
+
 	rAppAuthUser.HandleFunc("/users/accounts", controllers.UserGetAccounts).Methods(http.MethodGet, http.MethodOptions)
 	
 	// rApp.HandleFunc("/auth/user", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodOptions)

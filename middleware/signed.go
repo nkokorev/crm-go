@@ -25,9 +25,11 @@ func ContextMainAccount(next http.Handler) http.Handler {
 		}
 
 		// For future
-		r = r.WithContext(context.WithValue(r.Context(), "issuer", "app ui/api"))
+		r = r.WithContext(context.WithValue(r.Context(), "issuer", "app"))
 		r = r.WithContext(context.WithValue(r.Context(), "issuerAccountId", issuerAccount.ID))
 		r = r.WithContext(context.WithValue(r.Context(), "issuerAccount", issuerAccount))
+/*		r = r.WithContext(context.WithValue(r.Context(), "accountId", issuerAccount.ID))
+		r = r.WithContext(context.WithValue(r.Context(), "account", issuerAccount))*/
 
 		next.ServeHTTP(w, r)
 	})

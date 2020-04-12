@@ -214,8 +214,11 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	authApp := false
+	authApp = r.Context().Value("issuer") == "app"
+
 	// 2. создаем jwt-token для аутентификации пользователя без запоминания дефолтного аккаунта
-	token, err := account.AuthorizationUser(*user, false)
+	token, err := account.AuthorizationUser(*user, false, authApp)
 	if err != nil || token == "" {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса"}))
 		return
@@ -256,7 +259,11 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, token, err := account.AuthorizationUserByUsername(v.Username, v.Password, v.OnceLogin, v.RememberChoice)
+	// Где авторизуемся
+	authApp := false
+	authApp = r.Context().Value("issuer") == "app"
+
+	user, token, err := account.AuthorizationUserByUsername(v.Username, v.Password, v.OnceLogin, v.RememberChoice, authApp)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка авторизации пользователя!"))
 		return
@@ -268,7 +275,7 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 
 	aUsers, err := user.AccountList()
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Неудалось загрузить аккаунты")) // вообще тут нужен релогин
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить аккаунты")) // вообще тут нужен релогин
 		return
 	}
 

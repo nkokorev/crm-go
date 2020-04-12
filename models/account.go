@@ -516,8 +516,7 @@ func (account Account) AppendUser(user User, tag accessRole) (*AccountUser, erro
 // !!!!!! ### Выше функции покрытые тестами ### !!!!!!!!!!1
 
 // Ищет пользователя, авторизует и в случае успеха возвращает пользователя и jwt-token
-func (account Account) AuthorizationUserByUsername(username, password string, onceLogin bool, rememberChoice bool) (user *User,
-	token string, err error)  {
+func (account Account) AuthorizationUserByUsername(username, password string, onceLogin bool, rememberChoice bool, authApp bool) (user *User, token string, err error)  {
 
 	var e utils.Error
 
@@ -548,7 +547,7 @@ func (account Account) AuthorizationUserByUsername(username, password string, on
 		}
 	}
 
-	token, err = account.AuthorizationUser(*user, false)
+	token, err = account.AuthorizationUser(*user, false, authApp)
 	if err != nil || token == "" {
 		return nil, "", errors.New("Неудалось авторизовать пользователя")
 	}
@@ -804,38 +803,28 @@ func (account Account) GetAuthTokenWithClaims(claims JWT) (cryptToken string, er
 	return
 }
 
-//func (account Account) GetAuthToken(user User) (cryptToken string, err error) {
-func (account Account) AuthorizationUser(user User, rememberChoice bool) (cryptToken string, err error) {
-
+// Просто получает token
+func (account Account) GetAuthToken(user User, appAuth bool) (cryptToken string, err error) {
 	if account.ID < 1 || user.ID < 1 {
 		return "", errors.New("Неудалось обновить ключ безопастности")
 	}
-
-	// Запоминаем аккаунт для будущих входов
-
-
-		user.DefaultAccountID = account.ID
-
-		updateData := struct {
-			DefaultAccountID uint
-		}{}
-
-		if rememberChoice {
-			updateData.DefaultAccountID = account.ID
-		} else {
-			//updateData.DefaultAccountID = 0
-		}
-
-
-		if err := user.Update(&updateData); err != nil {
-			return "", errors.New("Не удалось авторизовать пользователя")
-		}
-
 	
-	// Создаем токен для входа
 	expiresAt := time.Now().UTC().Add(time.Minute * 120).Unix()
 
-	// создаем структуру токена
+/*	var app Account
+
+	if appAuth {
+		mAcc, err := GetMainAccount()
+		if err != nil || mAcc == nil {
+			return "", errors.New("Не удалось создать цифровую подпись")
+		}
+		app = *mAcc
+	} else {
+		app = account
+	}*/
+
+	fmt.Printf("Получаем токен на %v\n", account.Name)
+
 	claims := JWT{
 		user.ID,
 		account.ID,
@@ -846,20 +835,51 @@ func (account Account) AuthorizationUser(user User, rememberChoice bool) (cryptT
 		},
 	}
 
-	//Create JWT token
 	token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), claims)
 	tokenString, err := token.SignedString([]byte(account.UiApiJwtKey))
 	if err != nil {
-		return
+		return "", errors.New("Ошибка создания ключа безопастности")
 	}
 
 	// Encode jwt-token
 	cryptToken, err = JWT{}.encrypt([]byte(account.UiApiAesKey), tokenString)
 	if err != nil {
-		return
+		return "", errors.New("Ошибка создания ключа безопастности")
 	}
 
 	return
+}
+
+// Авторизует пользователя в аккаунте
+func (account Account) AuthorizationUser(user User, rememberChoice bool, appAuth bool) (cryptToken string, err error) {
+
+	if account.ID < 1 || user.ID < 1 {
+		return "", errors.New("Неудалось обновить ключ безопастности")
+	}
+
+	// Запоминаем аккаунт для будущих входов
+	user.DefaultAccountID = account.ID
+
+	updateData := struct {
+		DefaultAccountID uint
+	}{}
+
+	if rememberChoice {
+		updateData.DefaultAccountID = account.ID
+	} else {
+		//updateData.DefaultAccountID = 0
+	}
+	
+	if err := user.Update(&updateData); err != nil {
+		return "", errors.New("Не удалось авторизовать пользователя")
+	}
+
+	token, err := account.GetAuthToken(user, appAuth)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
 
 func (account Account) CreateCryptoTokenForUser(user User) (cryptToken string, err error) {
@@ -898,6 +918,9 @@ func (account Account) ParseToken(decryptedToken string, claims *JWT) (err error
 		return []byte(account.UiApiJwtKey), nil
 	})
 	if err != nil {
+		fmt.Println("Ошибка в парсинге")
+		fmt.Println(err)
+		fmt.Println(account.Name)
 		return err
 	}
 
@@ -911,7 +934,6 @@ func (account Account) ParseToken(decryptedToken string, claims *JWT) (err error
 func (account Account) DecryptToken(token string) (tk string, err error) {
 
 	tk, err = JWT{}.decrypt( []byte(account.UiApiAesKey), token)
-
 	return
 }
 
@@ -920,14 +942,14 @@ func (account Account) ParseAndDecryptToken(cryptToken string) (*JWT, error) {
 
 	var claims JWT // return value
 
-	// AES decript
+	// AES decrypt
 	tokenStr, err := account.DecryptToken(cryptToken);
 	if err != nil {
 		return nil, err
 	}
 
 	// JWT parse
-	err = account.ParseToken(tokenStr, &claims)
+	err = account.ParseToken(string(tokenStr), &claims)
 	if err != nil {
 		return nil, err
 	}

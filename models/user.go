@@ -163,10 +163,6 @@ func (user *User) Update (input interface{}) error {
 	return db.Model(user).Where("id = ?", user.ID).Omit("id", "username", "created_at", "updated_at", "deleted_at").Update(input).First(user).Error
 }
 
-// удаляет пользователя по ID
-
-
-
 // ### HELPERS FUNC ###
 
 
@@ -402,29 +398,6 @@ func (user *User) DeleteAccount(a *Account) error {
 
 
 /// ### Auth FUNC ###
-
-// создает короткий jwt-токен для пользователя. Весьма опасная фукнция
-/*func (user *User) CreateJWTTokenOLD() (string, error) {
-
-	// Делаем предзагрузку аккаунтов, чтобы потом их еще раз не подгружать
-	if err := db.Preload("Accounts").First(user).Error; err != nil {
-		return "", err
-	}
-
-	expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
-	claims := JWT{
-		user.ID,
-		0,
-		user.IssuerAccountID,
-		jwt.StandardClaims{
-			ExpiresAt: expiresAt,
-			Issuer:    "AuthServer",
-		},
-	}
-	return claims.CreateCryptoToken()
-
-}*/
-
 
 // создает Invite для пользователя
 func (user *User) CreateInviteForUser (email string, sendMail bool) error {
