@@ -151,6 +151,7 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			token = tk
+			
 		default:
 			fmt.Println(mux.Vars(r)["issuer"])
 			u.Respond(w, u.MessageError(u.

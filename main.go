@@ -34,7 +34,7 @@ func main() {
 	defer pool.Close()
 
 	// !!! запускаем миграции
-	//base.RefreshTables()
+	// base.RefreshTables()
 
 	//examplePhone("89251952295")
 	//examplePhone("+380(44)234-68-88")
