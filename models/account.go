@@ -516,7 +516,7 @@ func (account Account) AppendUser(user User, tag accessRole) (*AccountUser, erro
 // !!!!!! ### Выше функции покрытые тестами ### !!!!!!!!!!1
 
 // Ищет пользователя, авторизует и в случае успеха возвращает пользователя и jwt-token
-func (account Account) AuthorizationUserByUsername(username, password string, onceLogin bool, rememberChoice bool, authApp bool) (user *User, token string, err error)  {
+func (account Account) AuthorizationUserByUsername(username, password string, onceLogin bool, rememberChoice bool) (user *User, token string, err error)  {
 
 	var e utils.Error
 
@@ -547,7 +547,7 @@ func (account Account) AuthorizationUserByUsername(username, password string, on
 		}
 	}
 
-	token, err = account.AuthorizationUser(*user, false, authApp)
+	token, err = account.AuthorizationUser(*user, false)
 	if err != nil || token == "" {
 		return nil, "", errors.New("Неудалось авторизовать пользователя")
 	}
@@ -804,24 +804,12 @@ func (account Account) GetAuthTokenWithClaims(claims JWT) (cryptToken string, er
 }
 
 // Просто получает token
-func (account Account) GetAuthToken(user User, appAuth bool) (cryptToken string, err error) {
+func (account Account) GetAuthToken(user User) (cryptToken string, err error) {
 	if account.ID < 1 || user.ID < 1 {
 		return "", errors.New("Неудалось обновить ключ безопастности")
 	}
 	
 	expiresAt := time.Now().UTC().Add(time.Minute * 120).Unix()
-
-/*	var app Account
-
-	if appAuth {
-		mAcc, err := GetMainAccount()
-		if err != nil || mAcc == nil {
-			return "", errors.New("Не удалось создать цифровую подпись")
-		}
-		app = *mAcc
-	} else {
-		app = account
-	}*/
 
 	fmt.Printf("Получаем токен на %v\n", account.Name)
 
@@ -851,7 +839,7 @@ func (account Account) GetAuthToken(user User, appAuth bool) (cryptToken string,
 }
 
 // Авторизует пользователя в аккаунте
-func (account Account) AuthorizationUser(user User, rememberChoice bool, appAuth bool) (cryptToken string, err error) {
+func (account Account) AuthorizationUser(user User, rememberChoice bool) (cryptToken string, err error) {
 
 	if account.ID < 1 || user.ID < 1 {
 		return "", errors.New("Неудалось обновить ключ безопастности")
@@ -874,7 +862,7 @@ func (account Account) AuthorizationUser(user User, rememberChoice bool, appAuth
 		return "", errors.New("Не удалось авторизовать пользователя")
 	}
 
-	token, err := account.GetAuthToken(user, appAuth)
+	token, err := account.GetAuthToken(user)
 	if err != nil {
 		return "", err
 	}

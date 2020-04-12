@@ -136,7 +136,7 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 */
-			tk, err := account.AuthorizationUser(*user, v.RememberChoice, true)
+			tk, err := account.AuthorizationUser(*user, v.RememberChoice)
 			if err != nil || tk == "" {
 				u.Respond(w, u.MessageError(u.Error{Message:"Не удалось обновить ключ авторизации"}))
 				return
@@ -145,7 +145,7 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 			// fmt.Printf("Получен токен: %v, \n", token)
 
 		case "ui-api":
-			tk, err := account.AuthorizationUser(*user, v.RememberChoice, false)
+			tk, err := account.AuthorizationUser(*user, v.RememberChoice)
 			if err != nil || tk == "" {
 				u.Respond(w, u.MessageError(u.Error{Message:"Не удалось обновить ключ авторизации"}))
 				return
