@@ -12,12 +12,11 @@ import (
 
 //Тут собраны посредники определяющие issuerAccountId и добавляющие его в контекст
 
-// Вставляет в контекст issuerAccountId = 1
-func ContextMainAccount(next http.Handler) http.Handler {
+// Add to Context(r) issuerAccountId (= 1, Ratus CRM)
+func AddContextMainAccount(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		// тут могла быть специальная функция, берущая данные из памяти (чекая по времени)
 		issuerAccount, err := models.GetMainAccount() // RatusCRM
 		if err != nil {
 			u.Respond(w, u.MessageError(nil, "An account with the specified hash ID was not found"))
@@ -28,8 +27,6 @@ func ContextMainAccount(next http.Handler) http.Handler {
 		r = r.WithContext(context.WithValue(r.Context(), "issuer", "app"))
 		r = r.WithContext(context.WithValue(r.Context(), "issuerAccountId", issuerAccount.ID))
 		r = r.WithContext(context.WithValue(r.Context(), "issuerAccount", issuerAccount))
-/*		r = r.WithContext(context.WithValue(r.Context(), "accountId", issuerAccount.ID))
-		r = r.WithContext(context.WithValue(r.Context(), "account", issuerAccount))*/
 
 		next.ServeHTTP(w, r)
 	})
@@ -48,12 +45,11 @@ func ContextMuxVarAccountHashId(next http.Handler) http.Handler {
 			return
 		}
 
-		issuerAccount,err := models.GetAccountByHash(accountHashId)
+		issuerAccount, err := models.GetAccountByHash(accountHashId)
 		if err != nil {
 			u.Respond(w, u.MessageError(nil, "An account with the specified hash ID was not found"))
 			return
 		}
-
 
 		r = r.WithContext(context.WithValue(r.Context(), "auth", "ui/api"))
 		r = r.WithContext(context.WithValue(r.Context(), "issuerAccountId", issuerAccount.ID))
@@ -72,14 +68,14 @@ func ContextMuxVarIssuerAccountId(next http.Handler) http.Handler {
 		accountStr := mux.Vars(r)["accountId"]
 
 		if accountStr == "" {
-			u.Respond(w, u.MessageError(u.Error{Message:"Account id not found!"}))
+			u.Respond(w, u.MessageError(u.Error{Message: "Account id not found!"}))
 			return
 		}
 
-		accountIdParse, err :=  strconv.ParseUint(accountStr, 10, 64)
+		accountIdParse, err := strconv.ParseUint(accountStr, 10, 64)
 		if err != nil {
 			fmt.Println(err)
-			u.Respond(w, u.MessageError(u.Error{Message:"Account id не корректно"}))
+			u.Respond(w, u.MessageError(u.Error{Message: "Account id не корректно"}))
 			return
 		}
 
@@ -90,7 +86,7 @@ func ContextMuxVarIssuerAccountId(next http.Handler) http.Handler {
 
 		accountId := uint(accountIdParse)
 
-		account,err := models.GetAccount(accountId)
+		account, err := models.GetAccount(accountId)
 		if err != nil {
 			u.Respond(w, u.MessageError(nil, "An account with the specified hash ID was not found"))
 			return

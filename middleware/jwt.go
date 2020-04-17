@@ -15,7 +15,7 @@ import (
 	Любой jwt имеет в своем составе информацию о пользователе и аккаунте, выдавшим ключ (issuer).
 	userId - id пользователя, на имя которого выписан ключ
 	accountId - id аккаунта, в котором пользователь авторизован
- */
+*/
 
 // проверяет валидность 32-символьного api-ключа. Вставляет в контекст accountId && account
 func BearerAuthentication(next http.Handler) http.Handler {
@@ -91,11 +91,16 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 
 		// Проверяем контекст на выпуск аккаунта, чтобы из-под него проверить подпись JWT
 		if r.Context().Value("issuerAccount") == nil {
-			u.Respond(w, u.MessageError(u.Error{Message:"Account is not valid"}))
+			u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
 			return
 		}
 		issuerAccount := r.Context().Value("issuerAccount").(*models.Account)
-		
+		if issuerAccount.ID < 1 {
+			w.WriteHeader(http.StatusUnauthorized)
+			u.Respond(w, u.MessageError(u.Error{Message: "Error: account is not valid"}))
+			return
+		}
+
 		tokenHeader := r.Header.Get("Authorization") //Grab the token from the header
 
 		if tokenHeader == "" { //Token is missing, returns with error code 403 Unauthorized
@@ -113,11 +118,11 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 
 		// Собираем вторую часть строки "Bearer kSDkfslfds390d2w...."
 		tokenPart := splitted[1] //Grab the token part, what we are truly interested in
-		
-		tk, err := issuerAccount.ParseAndDecryptToken(tokenPart);
+
+		tk, err := issuerAccount.ParseAndDecryptToken(tokenPart)
 		if err != nil || tk == nil {
 			w.WriteHeader(http.StatusForbidden)
-			u.Respond(w, u.Message(false, "Неудалось прочитать ключ авторизации"))
+			u.Respond(w, u.Message(false, "Не удалось прочитать ключ авторизации"))
 			return
 		}
 
@@ -129,7 +134,7 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 
 		// Подружаем аккаунт, к которому привязан пользователь
 		if r.Context().Value("issuerAccount") == nil {
-			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"account":"not load"}}))
+			u.Respond(w, u.MessageError(u.Error{Message: "Ошибка в обработке запроса", Errors: map[string]interface{}{"account": "not load"}}))
 			return
 		}
 
@@ -155,10 +160,15 @@ func JwtFullAuthentication(next http.Handler) http.Handler {
 
 		// Проверяем контекст на выпуск аккаунта, чтобы из-под него проверить подпись JWT
 		if r.Context().Value("issuerAccount") == nil {
-			u.Respond(w, u.MessageError(u.Error{Message:"Account is not valid"}))
+			u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
 			return
 		}
 		issuerAccount := r.Context().Value("issuerAccount").(*models.Account)
+		if issuerAccount.ID < 1 {
+			w.WriteHeader(http.StatusUnauthorized)
+			u.Respond(w, u.MessageError(u.Error{Message: "Error: account is not valid"}))
+			return
+		}
 
 		tokenHeader := r.Header.Get("Authorization") //Grab the token from the header
 
@@ -221,7 +231,7 @@ func JwtFullAuthentication(next http.Handler) http.Handler {
 
 		// 1. todo: Проверим, есть ли связь аккаунт и пользователя m <> m
 		if false {
-			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"user":"not load"}}))
+			u.Respond(w, u.MessageError(u.Error{Message: "Ошибка в обработке запроса", Errors: map[string]interface{}{"user": "not load"}}))
 			return
 		}
 

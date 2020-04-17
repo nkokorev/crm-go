@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/nkokorev/crm-go/database/base"
 	"github.com/nkokorev/crm-go/models"
 	"github.com/nkokorev/crm-go/routes"
 	"github.com/ttacon/libphonenumber"
@@ -24,7 +25,7 @@ func init() {
 func main() {
 
 	var wait time.Duration
-	flag.DurationVar(&wait, "graceful-timeout", time.Second * 15, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
+	flag.DurationVar(&wait, "graceful-timeout", time.Second*15, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
 	flag.Parse()
 
 	// Устанавливаем соединение с БД
@@ -34,7 +35,7 @@ func main() {
 	defer pool.Close()
 
 	// !!! запускаем миграции
-	// base.RefreshTables()
+	base.RefreshTables()
 
 	//examplePhone("89251952295")
 	//examplePhone("+380(44)234-68-88")
@@ -44,13 +45,13 @@ func main() {
 	pool.DB().SetMaxOpenConns(10)
 
 	srv := &http.Server{
-		Addr:         "127.0.0.1:8090",
+		Addr: "127.0.0.1:8090",
 		//Addr:         "localhost:8090",
 		// Good practice to set timeouts to avoid Slowloris attacks.
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
-		Handler: routes.Handlers(), // Pass our instance of gorilla/mux in.
+		Handler:      routes.Handlers(), // Pass our instance of gorilla/mux in.
 	}
 
 	// Run our server in a goroutine so that it doesn't block.
@@ -91,7 +92,6 @@ func examplePhone(numToParse string) {
 	}
 	formattedNum := libphonenumber.Format(num, libphonenumber.NATIONAL)
 
-
 	//fmt.Println("Num: ", num)
 	fmt.Println("CountryCode: ", *num.CountryCode)
 	fmt.Println("National Number: ", *num.NationalNumber)
@@ -102,7 +102,4 @@ func examplePhone(numToParse string) {
 
 	// num is a *libphonenumber.PhoneNumber
 
-
 }
-
-

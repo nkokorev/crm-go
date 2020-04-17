@@ -15,19 +15,20 @@ var db *gorm.DB
 
 func GetDB() *gorm.DB {
 
-	if db == nil { return Connect()	}
+	if db == nil {
+		return Connect()
+	}
 
 	return db
 }
 
-func SetDB(p *gorm.DB)  {
+func SetDB(p *gorm.DB) {
 	db = p
 }
 
 func GetPool() *gorm.DB {
 	return db
 }
-
 
 func Connect() *gorm.DB {
 
@@ -51,16 +52,11 @@ func Connect() *gorm.DB {
 	if err != nil {
 		log.Fatal("Error connect to DB")
 	}
-	//db = db.Set("gorm:auto_preload", true)
+	// db = db.Set("gorm:auto_preload", true)
 
-	//db = db.LogMode(true)
+	// db = db.LogMode(true)
 
 	SetDB(db)
 
 	return db
 }
-
-
-
-
-
