@@ -226,23 +226,26 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-// Auth by
 func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 
-	// Получаем аккаунт, в котором авторизуется пользователь
-	if r.Context().Value("issuerAccount") == nil {
+	/*	if r.Context().Value("issuerAccount") == nil {
 		u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
 		return
 	}
-
 	account := r.Context().Value("issuerAccount").(*models.Account)
 
 	if account.ID < 1 {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
 		return
+	}*/
+
+	// Get auth account for current request
+	err, issuerAccount := GetIssuerAccount(w,r)
+	if err != nil || issuerAccount == nil {
+		return
 	}
 
-	// Собираем переданные данные
+	// Get JSON-request
 	v := &struct {
 		Username       string `json:"username"`
 		Password       string `json:"password"`
@@ -254,7 +257,9 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, token, err := account.AuthorizationUserByUsername(v.Username, v.Password, v.OnceLogin, v.RememberChoice)
+	// Есть процесс авторизации пользователя, а есть выдача token. Лучше бы связать эти данные...
+	// В каком аккаунте происходит авторизация? Где регистрируется триггер "user authorization"
+	user, token, err := issuerAccount.AuthorizationUserByUsername(v.Username, v.Password, v.OnceLogin, v.RememberChoice)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка авторизации пользователя!"))
 		return

@@ -41,6 +41,12 @@ func Handlers() *mux.Router {
 	// ### Перемещаем точку монтирования для ui/api интерфейсов + отсекаем функции проверки роутов ###
 	//rUiApi = rUiApi.PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter()
 
+	/**
+	1. В App базовая авторизация производится в RatusCRM аккаунте.
+	2. На этапе выдачи account-token issuerAccount становится равным аккаунтом, в котором авторизован пользователь.
+	3. AuthToken: RatusCRM => IssuerAccount
+	 */
+
 	/*
 		Important! Use ApiHash AES or JWT key:
 					1. API have't (clearly)
@@ -132,14 +138,14 @@ func Handlers() *mux.Router {
 	// Все запросы API имеют в контексте accountId, account. У них нет userId.
 	rApi.Use(middleware.CorsAccessControl, middleware.CheckApiStatus, middleware.BearerAuthentication)
 
-	// Все запросы App UI/API имеют в контексте accountId, account. Могут иметь userId и userId + accountId + account
-	rApp.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount)
-	rAppAuthUser.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtUserAuthentication)
-	rAppAuthFull.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtFullAuthentication)
+	// Все запросы AppUI идут в контексте контексте issuerAccountId = 1
+	rApp.Use(		 middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount)
+	rAppAuthUser.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtCheckUserAuthentication)
+	rAppAuthFull.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtCheckFullAuthentication)
 
 	// Через UI/API запросы всегда идут в контексте аккаунта
-	rUiApi.Use(middleware.CorsAccessControl, middleware.CheckUiApiStatus, middleware.ContextMuxVarAccountHashId)
-	rUiApiAuthFull.Use(middleware.CorsAccessControl, middleware.CheckUiApiStatus, middleware.ContextMuxVarAccountHashId, middleware.JwtFullAuthentication) // set userId,accountId,account
+	rUiApi.Use(			middleware.CorsAccessControl, middleware.CheckUiApiStatus, middleware.ContextMuxVarAccountHashId)
+	rUiApiAuthFull.Use( middleware.CorsAccessControl, middleware.CheckUiApiStatus, middleware.ContextMuxVarAccountHashId) // set userId,accountId,account
 
 	// ### Передаем запросы в обработку ###
 	ApiRoutes(rApi)

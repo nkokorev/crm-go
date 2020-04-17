@@ -85,7 +85,7 @@ func BearerAuthentication(next http.Handler) http.Handler {
 }
 
 // Требует авторизации по User, а также вставляет в контекст userId && user
-func JwtUserAuthentication(next http.Handler) http.Handler {
+func JwtCheckUserAuthentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -154,7 +154,7 @@ func JwtUserAuthentication(next http.Handler) http.Handler {
 }
 
 // Полная проверка User & Account авторизация + проверка доступа. Вставляет userId && user, accountId && account
-func JwtFullAuthentication(next http.Handler) http.Handler {
+func JwtCheckFullAuthentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
