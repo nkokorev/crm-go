@@ -38,13 +38,13 @@ func Handlers() *mux.Router {
 	rApp := rBase.Host("app." + crmHost).PathPrefix("/ui-api").Subrouter()                                  // APP [app.ratuscrm.com/ui-api]
 	rUiApi := rBase.Host("ui.api." + crmHost).PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter() // UI/API [ui.api.ratuscrm.com]
 
-	// ### Перемещаем точку монтирования для ui/api интерфейсов + отсекаем функции проверки роутов ###
+	// ### Перемещаем точку монтирования для ui/api интерфейсов + отсекаем функции check routes ###
 	//rUiApi = rUiApi.PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter()
 
 	/**
-	1. В App базовая авторизация производится в RatusCRM аккаунте.
-	2. На этапе выдачи account-token issuerAccount становится равным аккаунтом, в котором авторизован пользователь.
-	3. AuthToken: RatusCRM => IssuerAccount
+		1. В App базовая авторизация производится в RatusCRM аккаунте.
+		2. На этапе выдачи account-token issuerAccount становится равным аккаунтом, в котором авторизован пользователь.
+		3. AuthToken: RatusCRM => IssuerAccount
 	 */
 
 	/*
