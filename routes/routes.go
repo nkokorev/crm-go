@@ -44,10 +44,13 @@ func Handlers() *mux.Router {
 	/*
 		Target Account vs Issuer Account
 
-	 * Context(r): issuerAccount = RatusCRM (*models.Account)
-	 * Context(r): targetAccount (or account) = loaded Account (*models.Account)
+	 * Context(r): issuerAccount = RatusCRM | (*models.Account), example: issuerAccount.DecryptToken(token string) (error, token)
+	 * Context(r): account = target (load) Account | (*models.Account), example: account.LoginUser(username, password string)
 
-	 */
+	* All request decrypt with RatusCRM AES/JWT key in APP routes.
+
+
+	*/
 
 
 	/**
@@ -147,7 +150,7 @@ func Handlers() *mux.Router {
 	// Все запросы API имеют в контексте accountId, account. У них нет userId.
 	rApi.Use(middleware.CorsAccessControl, middleware.CheckApiStatus, middleware.BearerAuthentication)
 
-	// Все запросы AppUI идут в контексте контексте issuerAccountId = 1
+	// All requests has AES/JWT key of main account.
 	rApp.Use(		 middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount)
 	rAppAuthUser.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtCheckUserAuthentication)
 	rAppAuthFull.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtCheckFullAuthentication)
@@ -158,7 +161,8 @@ func Handlers() *mux.Router {
 
 	// ### Передаем запросы в обработку ###
 	ApiRoutes(rApi)
-	AppRoutes(rApp, rAppAuthUser, rAppAuthFull)
+	//AppRoutes(rApp, rAppAuthUser, rAppAuthFull)
+	AppRoutes(rApp)
 	UiApiRoutes(rUiApi, rUiApiAuthFull)
 
 	rBase.NotFoundHandler = middleware.NotFoundHandler()
