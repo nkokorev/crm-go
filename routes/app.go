@@ -20,7 +20,7 @@ import (
 //var AppRoutes = func(rApp, rAppAuthUser, rAppAuthFull *mux.Router) {
 var AppRoutes = func(rApp *mux.Router) {
 
-	// 1. Create Auth User or User & Account routes
+	// 1. Create more rotes [User] or [Full] (User & Account)
 	rApp.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount)
 
 	rAuthUser := rApp.PathPrefix("").Subrouter()
@@ -57,7 +57,7 @@ var AppRoutes = func(rApp *mux.Router) {
 	rAppAuthUserAccId := rAuthUser.PathPrefix("").Subrouter()
 	rAppAuthUserAccId.Use(middleware.ContextMuxVarIssuerAccountId) // получаем ID issuerAccountId
 
-	// 9.
+	// 9. Support HZ function
 	rAuthUser.HandleFunc("/accounts/{accountId:[0-9]+}/auth", controllers.AccountAuthUser).Methods(http.MethodPost, http.MethodOptions)
 	rAuthUser.HandleFunc("/users/accounts", controllers.UserGetAccounts).Methods(http.MethodGet, http.MethodOptions)
 

@@ -111,8 +111,8 @@ func Handlers() *mux.Router {
 	*/
 
 	// New route point for using middleware
-	rAppAuthUser := rApp.PathPrefix("").Subrouter()
-	rAppAuthFull := rApp.PathPrefix("").Subrouter()
+	//rAppAuthUser := rApp.PathPrefix("").Subrouter()
+	//rAppAuthFull := rApp.PathPrefix("").Subrouter()
 	rUiApiAuthFull := rUiApi.PathPrefix("").Subrouter()
 
 	// #### Подключаем Middleware ####
@@ -152,18 +152,19 @@ func Handlers() *mux.Router {
 
 	// All requests has AES/JWT key of main account.
 	rApp.Use(		 middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount)
-	rAppAuthUser.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtCheckUserAuthentication)
-	rAppAuthFull.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtCheckFullAuthentication)
+	//rAppAuthUser.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtCheckUserAuthentication)
+	//rAppAuthFull.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtCheckFullAuthentication)
 
 	// Через UI/API запросы всегда идут в контексте аккаунта
 	rUiApi.Use(			middleware.CorsAccessControl, middleware.CheckUiApiStatus, middleware.ContextMuxVarAccountHashId)
-	rUiApiAuthFull.Use( middleware.CorsAccessControl, middleware.CheckUiApiStatus, middleware.ContextMuxVarAccountHashId) // set userId,accountId,account
+	//rUiApiAuthFull.Use( middleware.CorsAccessControl, middleware.CheckUiApiStatus, middleware.ContextMuxVarAccountHashId) // set userId,accountId,account
 
 	// ### Передаем запросы в обработку ###
 	ApiRoutes(rApi)
 	//AppRoutes(rApp, rAppAuthUser, rAppAuthFull)
 	AppRoutes(rApp)
-	UiApiRoutes(rUiApi, rUiApiAuthFull)
+	//UiApiRoutes(rUiApi, rUiApiAuthFull)
+	UiApiRoutes(rUiApi)
 
 	rBase.NotFoundHandler = middleware.NotFoundHandler()
 

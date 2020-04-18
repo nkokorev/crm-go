@@ -15,7 +15,8 @@ import (
 * rUiApi - маршруты без проверки JWT
 * rUiApiAuth - маршрут с проверкой JWT, а также на совпадение {accountId} с accountId указаном в токене
  */
-var UiApiRoutes = func (rFree, rUiApiAuthFull *mux.Router) {
+//var UiApiRoutes = func (rFree, rUiApiAuthFull *mux.Router) {
+var UiApiRoutes = func (rFree *mux.Router) {
 
 	// загружаем базовые настройки системы
 	rFree.HandleFunc("/", controllers.CheckUiApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
