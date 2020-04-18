@@ -223,12 +223,10 @@ func UploadTestData() {
 			models.RoleOwner,
 		)
 
-	// 
 	if err != nil || owner == nil {
-		log.Fatal("Неудалось создать admin'a: ", err)
+		log.Fatal("Не удалось создать admin'a: ", err)
 	}
 
-	// 
 	dvc, err := models.GetUserVerificationTypeByCode(models.VerificationMethodEmailAndPhone)
 	if err != nil || dvc == nil {
 		log.Fatal("Не удалось получить верификацию...")

@@ -8,17 +8,22 @@ import (
 )
 
 /**
-* [App UI-API] - группа роутов для работы основного приложения app.ratuscrm.com
+* [App UI-API] - group of routes for working http://app.ratuscrm.com
 *
-* В контексте issuerAccountID = 1 (всегда!).
+* Context(r): issuerAccount = RatusCRM (*models.Account)
+* Context(r): targetAccount (or account) = loaded Account (*models.Account)
 
-* В контексте всегда есть {account_id}. Для базовых запросов он равен 1 (RatusCRM)
 * В контексте rApp accountId = 1 (RatusCRM)
 * В контексте rAppAuthUser, accountId = 1 (RatusCRM)
 * В контексте rAppAuthFull accountId/userId в зависимости от аккаунта
  */
 var AppRoutes = func(rApp, rAppAuthUser, rAppAuthFull *mux.Router) {
 
+	// 1. App req Auth routes
+
+	// 2. Auth routes
+
+	// app routes auth by all routes has used hash account
 	rAppAccId := rApp.PathPrefix("").Subrouter()
 	rAppAccId.Use(middleware.ContextMuxVarIssuerAccountId) // получаем ID /{accountId}/
 
@@ -28,6 +33,7 @@ var AppRoutes = func(rApp, rAppAuthUser, rAppAuthFull *mux.Router) {
 
 	// AccountId = 1
 	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/users", controllers.UserRegistration).Methods(http.MethodPost, http.MethodOptions)
+	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/users/auth/username", controllers.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
 
 	// Auth user in account. (auth by issuer account id)
 	rApp.HandleFunc("/users/auth/username", controllers.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)

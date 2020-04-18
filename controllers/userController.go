@@ -228,6 +228,8 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 
 func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 
+	// Аккаунт, в котором происходит авторизация: issuerAccount
+
 	/*	if r.Context().Value("issuerAccount") == nil {
 		u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
 		return

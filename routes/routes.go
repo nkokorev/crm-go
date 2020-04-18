@@ -41,6 +41,15 @@ func Handlers() *mux.Router {
 	// ### Перемещаем точку монтирования для ui/api интерфейсов + отсекаем функции check routes ###
 	//rUiApi = rUiApi.PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter()
 
+	/*
+		Target Account vs Issuer Account
+
+	 * Context(r): issuerAccount = RatusCRM (*models.Account)
+	 * Context(r): targetAccount (or account) = loaded Account (*models.Account)
+
+	 */
+
+
 	/**
 		1. В App базовая авторизация производится в RatusCRM аккаунте.
 		2. На этапе выдачи account-token issuerAccount становится равным аккаунтом, в котором авторизован пользователь.

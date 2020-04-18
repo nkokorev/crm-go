@@ -169,6 +169,7 @@ func CreateMainAccount() (*Account, error) {
 
 	return (Account{
 		Name:                                "RatusCRM",
+		HashID: "",
 		UiApiEnabled:                        false,
 		UiApiAesEnabled:                     true,
 		UiApiEnabledUserRegistration:        false,
@@ -234,7 +235,7 @@ func (Account) Exist(id uint) bool {
 
 func (account Account) CreateApiKey(input ApiKey) (*ApiKey, error) {
 	if account.ID < 1 {
-		return nil, utils.Error{Message: "Внутреняя ошибка платформы", Errors: map[string]interface{}{"apiKey": "Неудалось привязать ключ к аккаунте"}}
+		return nil, utils.Error{Message: "Внутренняя ошибка платформы", Errors: map[string]interface{}{"apiKey": "Не удалось привязать ключ к аккаунте"}}
 	}
 	input.AccountID = account.ID
 	return input.create()
