@@ -31,11 +31,11 @@ var AppRoutes = func(rApp *mux.Router) {
 	rAuthUser.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtCheckUserAuthentication)
 	rAuthFull.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtCheckFullAuthentication)
 
-	// 3. Load system routes
+	// 3. Load system settings
 	rApp.HandleFunc("/", controllers.CheckAppUiApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 	rApp.HandleFunc("/app/settings", controllers.CrmGetSettings).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 
-	// 4. Load check authentication routes
+	// 4. Load check authentications
 	rAuthUser.HandleFunc("/app/auth/check/user", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/app/auth/check/account", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/app/auth/check/full", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
@@ -53,7 +53,7 @@ var AppRoutes = func(rApp *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/marketing/test-email", controllers.SendEmailMessage).
 		Methods(http.MethodPost, http.MethodOptions)
 
-	// 8. For User auth accounts
+	// 8. For User authentication accounts
 	rAppAuthUserAccId := rAuthUser.PathPrefix("").Subrouter()
 	rAppAuthUserAccId.Use(middleware.ContextMuxVarIssuerAccountId) // получаем ID issuerAccountId
 

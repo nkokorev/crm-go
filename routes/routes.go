@@ -34,36 +34,33 @@ func Handlers() *mux.Router {
 	}
 
 	// Mount all root point of routes
-	rApi := rBase.Host("api." + crmHost).Subrouter()                                                        // API [api.ratuscrm.com]
+	rApi := rBase.Host("api." + crmHost).Subrouter()                                                        	// API [api.ratuscrm.com]
 	rApp := rBase.Host("app." + crmHost).PathPrefix("/ui-api").Subrouter()                                  // APP [app.ratuscrm.com/ui-api]
 	rUiApi := rBase.Host("ui.api." + crmHost).PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter() // UI/API [ui.api.ratuscrm.com]
 
-	// ### Перемещаем точку монтирования для ui/api интерфейсов + отсекаем функции check routes ###
-	//rUiApi = rUiApi.PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter()
+	/**
 
-	/*
-		Target Account vs Issuer Account
+		###	Authentication user ###
 
-	 * Context(r): issuerAccount = RatusCRM | (*models.Account), example: issuerAccount.DecryptToken(token string) (error, token)
-	 * Context(r): account = target (load) Account | (*models.Account), example: account.LoginUser(username, password string)
+		1. В App базовая авторизация производится в RatusCRM аккаунте.
+		2. На этапе выдачи account-token issuerAccount становится равным аккаунту, в котором авторизован пользователь.
+		3. AuthToken: RatusCRM => IssuerAccount
 
-	* All request decrypt with RatusCRM AES/JWT key in APP routes.
+		### Context(r) ###
 
+		1. issuerAccount - auth Account | (*models.Account), example: issuerAccount.DecryptToken(token string) (error, token)
+		2. account - target (load/work) Account | (*models.Account), example: account.LoginUser(username, password string)
+		3. user - auth user in work account | (*models.User). Example: user.CreateAccount(Account{...})
+
+		* All request of App decrypting with RatusCRM AES/JWT key. Add to context(r) issuerAccount
+		* All request of UI decrypting with Account AES/JWT key. Account add to context(r) issuerAccount from .../{account_hash_id}/...
+		* All request of Api check Bearer in Headers(r) and compare in api-key table
+
+		##	F
 
 	*/
 
-
-	/**
-		1. В App базовая авторизация производится в RatusCRM аккаунте.
-		2. На этапе выдачи account-token issuerAccount становится равным аккаунтом, в котором авторизован пользователь.
-		3. AuthToken: RatusCRM => IssuerAccount
-	 */
-
 	/*
-		Important! Use ApiHash AES or JWT key:
-					1. API have't (clearly)
-					2. App use only RatusCRM AES/JWT key
-					3. UI/API use special AES/JWT key for him account (by accountId)
 
 		JWT/AES key:
 					issuerAccountId - id аккаунта, который выдает авторизацию. В App UI RatusCRM всегда = 1.
@@ -111,9 +108,9 @@ func Handlers() *mux.Router {
 	*/
 
 	// New route point for using middleware
-	//rAppAuthUser := rApp.PathPrefix("").Subrouter()
-	//rAppAuthFull := rApp.PathPrefix("").Subrouter()
-	rUiApiAuthFull := rUiApi.PathPrefix("").Subrouter()
+	// rAppAuthUser := rApp.PathPrefix("").Subrouter()
+	// rAppAuthFull := rApp.PathPrefix("").Subrouter()
+	// rUiApiAuthFull := rUiApi.PathPrefix("").Subrouter()
 
 	// #### Подключаем Middleware ####
 	/**
