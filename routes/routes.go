@@ -40,7 +40,7 @@ func Handlers() *mux.Router {
 
 	/******************************************************************************************************************
 
-		###	Authentication user rules ###
+		###	Authentication rules ###
 
 		1. В App базовая авторизация производится в RatusCRM аккаунте.
 		2. На этапе выдачи account-token issuerAccount становится равным аккаунту, в котором авторизован пользователь.
@@ -53,9 +53,9 @@ func Handlers() *mux.Router {
 		3. user - auth user in work account | (*models.User). Example: user.CreateAccount(Account{...})
 		4. issuer - channel of request: 'app', 'api', 'ui-api'. Need for some logic controllers (^_^)
 
-		* All request of App decrypting with RatusCRM AES/JWT key. Add to context(r) issuerAccount
-		* All request of UI decrypting with Account AES/JWT key. Account add to context(r) issuerAccount from .../{account_hash_id}/...
-		* All request of Api check Bearer token in Headers(r) and compare in api-key table
+		* App(r): decrypting with RatusCRM AES/JWT key. Main account adding to context(r) issuerAccount
+		* UI(p): decrypting with Account AES/JWT key. Account add to context(r) issuerAccount from .../{account_hash_id}/...
+		* API(r): getting Bearer token from Headers(r) and compare in api-key table
 
 		### Middleware(r) ###
 
