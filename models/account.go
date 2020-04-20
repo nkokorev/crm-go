@@ -512,8 +512,9 @@ func (account Account) AppendUser(user User, tag accessRole) (*AccountUser, erro
 
 // !!!!!! ### Выше функции покрытые тестами ### !!!!!!!!!!1
 
-// Ищет пользователя, авторизует и в случае успеха возвращает пользователя и jwt-token
-func (account Account) AuthorizationUserByUsername(username, password string, onceLogin bool, rememberChoice bool) (user *User, token string, err error) {
+// Ищет пользователя, авторизует и в случае успеха возвращает пользователя и jwt-token. issuerAccount - место, где берутся коды
+func (account Account) AuthorizationUserByUsername(username, password string, onceLogin,rememberChoice bool, issuerAccount *Account) (user *User, token string, err error) {
+
 
 	var e utils.Error
 
@@ -544,7 +545,7 @@ func (account Account) AuthorizationUserByUsername(username, password string, on
 		}
 	}
 
-	token, err = account.AuthorizationUser(*user, false)
+	token, err = account.AuthorizationUser(*user, false, issuerAccount)
 	if err != nil || token == "" {
 		return nil, "", errors.New("Неудалось авторизовать пользователя")
 	}
@@ -826,7 +827,7 @@ func (account Account) GetAuthToken(user User) (cryptToken string, err error) {
 }
 
 // Авторизует пользователя в аккаунте
-func (account Account) AuthorizationUser(user User, rememberChoice bool) (cryptToken string, err error) {
+func (account Account) AuthorizationUser(user User, rememberChoice bool, issuerAccount *Account) (cryptToken string, err error) {
 
 	if account.ID < 1 || user.ID < 1 {
 		return "", errors.New("Неудалось обновить ключ безопастности")
@@ -849,7 +850,7 @@ func (account Account) AuthorizationUser(user User, rememberChoice bool) (cryptT
 		return "", errors.New("Не удалось авторизовать пользователя")
 	}
 
-	token, err := account.GetAuthToken(user)
+	token, err := issuerAccount.GetAuthToken(user)
 	if err != nil {
 		return "", err
 	}

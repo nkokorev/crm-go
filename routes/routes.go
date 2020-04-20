@@ -11,7 +11,7 @@ func Handlers() *mux.Router {
 	var crmHost string
 
 	// root route - handle all request
-	rBase := mux.NewRouter().StrictSlash(true)
+	r := mux.NewRouter().StrictSlash(true)
 
 	// Environment variable: local, public etc..
 	AppEnv := os.Getenv("APP_ENV")
@@ -30,13 +30,13 @@ func Handlers() *mux.Router {
 
 	// Set CORS politic for local development
 	if AppEnv == "local" {
-		rBase.Use(middleware.CorsAccessControl)
+		r.Use(middleware.CorsAccessControl)
 	}
 
 	// Mount all root point of routes
-	rApi := rBase.Host("api." + crmHost).Subrouter()                                                        	// API [api.ratuscrm.com]
-	rApp := rBase.Host("app." + crmHost).PathPrefix("/ui-api").Subrouter()                                  // APP [app.ratuscrm.com/ui-api]
-	rUiApi := rBase.Host("ui.api." + crmHost).PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter() // UI/API [ui.api.ratuscrm.com]
+	rApi := r.Host("api." + crmHost).Subrouter()                                                        	// API [api.ratuscrm.com]
+	rApp := r.Host("app." + crmHost).PathPrefix("/ui-api").Subrouter()                                  // APP [app.ratuscrm.com/ui-api]
+	rUiApi := r.Host("ui.api." + crmHost).PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter() // UI/API [ui.api.ratuscrm.com]
 
 	/******************************************************************************************************************
 
@@ -63,12 +63,8 @@ func Handlers() *mux.Router {
 		2. middleware.CheckAppUiApiStatus - проверяет статус App UI/API в настройках GUI RatusCRM
 		3. middleware.CheckUiApiStatus - проверяет статус Public UI/API для всех аккаунтов
 
-		- signedAccount
-
 		4. middleware.ContextMuxVarAccount - Вставляет в контекст issuerAccountId из hashAccountId (раскрытие issuer account) && issuerAccount
 		5. middleware.ContextMainAccount - устанавливает в контекст issuerAccountId = 1 && issuerAccount
-
-		- Authentication
 
 	  	6. middleware.BearerAuthentication - читает с проверкой JWT, проверяет статус API в аккаунте. Дополняет контекст accountId && account
 		7. middleware.JwtUserAuthentication - проверяет JWT и устанавливает в контекст userId & user
@@ -80,13 +76,13 @@ func Handlers() *mux.Router {
 	rApp.Use	(middleware.CheckAppUiApiStatus,	middleware.AddContextMainAccount)
 	rUiApi.Use	(middleware.CorsAccessControl, 		middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccountHashId)
 
-	// Route handlers
+	// RouteHandlers
 	ApiRoutes(rApi)
 	AppRoutes(rApp)
 	UiApiRoutes(rUiApi)
 
 	// ### 404 (^_^) ###
-	rBase.NotFoundHandler = middleware.NotFoundHandler()
+	r.NotFoundHandler = middleware.NotFoundHandler()
 
-	return rBase
+	return r
 }

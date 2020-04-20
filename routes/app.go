@@ -17,33 +17,37 @@ import (
 * В контексте rAppAuthUser, accountId = 1 (RatusCRM)
 * В контексте rAppAuthFull accountId/userId в зависимости от аккаунта
  */
+
 //var AppRoutes = func(rApp, rAppAuthUser, rAppAuthFull *mux.Router) {
-var AppRoutes = func(rApp *mux.Router) {
+var AppRoutes = func(r *mux.Router) {
 
 	// 1. Create more rotes [User] or [Full] (User & Account)
-	rApp.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount)
+	r.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount)
 
-	rAuthUser := rApp.PathPrefix("").Subrouter()
-	rAuthFull := rApp.PathPrefix("").Subrouter()
-	rAppAccId := rApp.PathPrefix("").Subrouter()
+	rAuthUser := r.PathPrefix("").Subrouter()
+	rAuthFull := r.PathPrefix("").Subrouter()
+	rAppAccId := r.PathPrefix("").Subrouter()
 
 	// 2. Add middleware
 	rAuthUser.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtCheckUserAuthentication)
 	rAuthFull.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtCheckFullAuthentication)
 
 	// 3. Load system settings
-	rApp.HandleFunc("/", controllers.CheckAppUiApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
-	rApp.HandleFunc("/app/settings", controllers.CrmGetSettings).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/", controllers.CheckAppUiApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/app/settings", controllers.GetCRMSettings).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 
-	// 4. Load check authentications
+	// 4. App Authentication: /app/auth...
 	rAuthUser.HandleFunc("/app/auth/check/user", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/app/auth/check/account", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/app/auth/check/full", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 
-	// 5. Load authentication routes in App (id of issuerAccount = 1 alw)
-	rApp.HandleFunc("/users/auth/username", controllers.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
-	rApp.HandleFunc("/users/auth/email", controllers.UserAuthByEmail).Methods(http.MethodPost, http.MethodOptions)
-	rApp.HandleFunc("/users/auth/phone", controllers.UserAuthByPhone).Methods(http.MethodPost, http.MethodOptions)
+	// 5. App Authentication user: Load authentication routes in App (id of issuerAccount = 1 alw)
+	//r.HandleFunc("/app/auth/users/auth/username", controllers.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/app/auth/username", controllers.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
+	//r.HandleFunc("/app/auth/users/auth/email", controllers.UserAuthByEmail).Methods(http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/app/auth/email", controllers.UserAuthByEmail).Methods(http.MethodPost, http.MethodOptions)
+	//r.HandleFunc("/app/auth/users/auth/phone", controllers.UserAuthByPhone).Methods(http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/app/auth/phone", controllers.UserAuthByPhone).Methods(http.MethodPost, http.MethodOptions)
 
 	// 6. Load sign-in routes (account get from hash id)
 	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/users", controllers.UserRegistration).Methods(http.MethodPost, http.MethodOptions)

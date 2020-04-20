@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func CrmGetSettings(w http.ResponseWriter, r *http.Request) {
+func GetCRMSettings(w http.ResponseWriter, r *http.Request) {
 	
 	crmSettings, err := models.GetCrmSettings()
 	if err != nil {

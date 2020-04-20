@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/nkokorev/crm-go/models"
@@ -77,6 +76,12 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 // Возвращает профиль аккаунта, указанного в переменной .../{accountId}/...
 func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 
+	if r.Context().Value("issuerAccount") == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"account":"not load"}}))
+		return
+	}
+	issuerAccount := r.Context().Value("issuerAccount").(*models.Account)
+
 	accIdSTR := mux.Vars(r)["accountId"]
 
 	accountIdINT, err := strconv.Atoi(accIdSTR)
@@ -119,45 +124,12 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// this is for ui/api
-	token := ""
-
-	switch r.Context().Value("issuer") {
-		case "app":
-			/*mAcc, err := models.GetMainAccount()
-			if err != nil {
-				u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-				return
-			}
-
-			token, err := mAcc.GetAuthToken(*user, true)
-			if err != nil || token == "" {
-				u.Respond(w, u.MessageError(u.Error{Message:"Не удалось обновить ключ авторизации"}))
-				return
-			}
-*/
-			tk, err := account.AuthorizationUser(*user, v.RememberChoice)
-			if err != nil || tk == "" {
-				u.Respond(w, u.MessageError(u.Error{Message:"Не удалось обновить ключ авторизации"}))
-				return
-			}
-			token = tk
-			// fmt.Printf("Получен токен: %v, \n", token)
-
-		case "ui-api":
-			tk, err := account.AuthorizationUser(*user, v.RememberChoice)
-			if err != nil || tk == "" {
-				u.Respond(w, u.MessageError(u.Error{Message:"Не удалось обновить ключ авторизации"}))
-				return
-			}
-			token = tk
-			
-		default:
-			fmt.Println(mux.Vars(r)["issuer"])
-			u.Respond(w, u.MessageError(u.
-				Error{Message:"Удостоверяющая подпись не найдена"}))
-			return
+	token, err := account.AuthorizationUser(*user, v.RememberChoice,issuerAccount)
+	if err != nil || token == "" {
+		u.Respond(w, u.MessageError(u.Error{Message:"Не удалось обновить ключ авторизации"}))
+		return
 	}
+
 
 
 	/*token, err := account.AuthorizationUser(*user, v.RememberChoice)

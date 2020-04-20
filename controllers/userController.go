@@ -154,6 +154,12 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 // Не подходит для создания пользователя в рамках UI/API т.к. не делает проверку соотвествующих переменных
 func UserRegistration(w http.ResponseWriter, r *http.Request) {
 
+	// Аккаунт, в котором происходит авторизация: issuerAccount
+	err, issuerAccount := GetIssuerAccount(w,r)
+	if err != nil || issuerAccount == nil {
+		return
+	}
+
 	// 1. Получаем аккаунт, в рамках которого будет происходить создание нового пользователя
 	if r.Context().Value("account") == nil {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка в обработке запроса", Errors: map[string]interface{}{"account": "not load"}}))
@@ -214,7 +220,7 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. создаем jwt-token для аутентификации пользователя без запоминания дефолтного аккаунта
-	token, err := account.AuthorizationUser(*user, false)
+	token, err := account.AuthorizationUser(*user, false, issuerAccount)
 	if err != nil || token == "" {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка в обработке запроса"}))
 		return
@@ -229,19 +235,6 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 
 	// Аккаунт, в котором происходит авторизация: issuerAccount
-
-	/*	if r.Context().Value("issuerAccount") == nil {
-		u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
-		return
-	}
-	account := r.Context().Value("issuerAccount").(*models.Account)
-
-	if account.ID < 1 {
-		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
-		return
-	}*/
-
-	// Get auth account for current request
 	err, issuerAccount := GetIssuerAccount(w,r)
 	if err != nil || issuerAccount == nil {
 		return
@@ -261,7 +254,7 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 
 	// Есть процесс авторизации пользователя, а есть выдача token. Лучше бы связать эти данные...
 	// В каком аккаунте происходит авторизация? Где регистрируется триггер "user authorization"
-	user, token, err := issuerAccount.AuthorizationUserByUsername(v.Username, v.Password, v.OnceLogin, v.RememberChoice)
+	user, token, err := issuerAccount.AuthorizationUserByUsername(v.Username, v.Password, v.OnceLogin, v.RememberChoice, issuerAccount)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка авторизации пользователя!"))
 		return
