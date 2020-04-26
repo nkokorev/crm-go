@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
-	"github.com/nkokorev/crm-go/database/base"
 	"github.com/nkokorev/crm-go/models"
 	"github.com/nkokorev/crm-go/routes"
 	"github.com/ttacon/libphonenumber"
@@ -35,7 +34,20 @@ func main() {
 	defer pool.Close()
 
 	// !!! запускаем миграции
-	base.RefreshTables()
+	//base.RefreshTables()
+
+	models.SendTestMail()
+	/*code, str, err := models.SendEmailNew()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(code)
+	fmt.Println(str)
+	fmt.Println("Сообщение отослано")*/
+	//err := models.SendMail("127.0.0.1:443", (&mail.Address{"Nikita", "nk@ratusmedia.com"}).String(), "Test mail", "Сообщение тут", []string{(&mail.Address{"to name", "nkokorev@rus-marketing.ru"}).String()})
+	/*if err != nil {
+		fmt.Println(err)
+	}*/
 
 	//examplePhone("89251952295")
 	//examplePhone("+380(44)234-68-88")

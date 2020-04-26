@@ -5,16 +5,12 @@ import (
 )
 
 type Offer struct {
-	ID uint	`json:"id"`
+	ID uint	`json:"id" gorm:"primary_key"`
 	AccountID uint `json:"-"`
 
-	Name string `json:"label"`
-	Price float64 `json:"price"`
+	Name string `json:"label"` // публичное название офера
+	Price float64 `json:"price"` // стоимость офера
 	Discount float64 `json:"discount"` // Скидка, amount
-
-	//EavAttributeID uint `json:"-"`
-	//Properties []EavProductOfferAttribute `json:"properties"`
-	//Properties []Property `json:"properties"`
 
 	Products []Product `json:"-" gorm:"many2many:offer_compositions"`
 	Composition []OfferComposition `json:"composition"`
@@ -25,7 +21,6 @@ type Offer struct {
 
 func (offer *Offer) Create () error {
 
-	// чекаем на всякий случай ID аккаунта
 	if offer.AccountID < 1 {
 		return errors.New("Необходимо указать Account ID")
 	}

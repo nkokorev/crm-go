@@ -10,15 +10,12 @@ import (
 
 func RefreshTables() {
 
-	// пересоздаем БД
-	//ReplaceDataBase(os.Getenv("db_name"))
-
 	var err error
 	pool := models.GetPool()
 
 	// дропаем системные таблицы
 	//pool.DropTableIfExists(&models.UserProfile{})
-	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, api_keys, account_users, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, roles, email_access_tokens, user_profiles, users, user_verification_methods, crm_settings").Error
+	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, orders, order_offers, api_keys, account_users, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, roles, email_access_tokens, user_profiles, users, user_verification_methods, crm_settings").Error
 	if err != nil {
 		fmt.Println("Cant create table accounts", err)
 	}
@@ -164,6 +161,9 @@ func RefreshTables() {
 	if err != nil {
 		fmt.Println("Cant create table products", err)
 	}
+
+	models.Order{}.PgSqlCreate()
+
 	// Загружаем стоковые данные для EAV таблиц
 	UploadEavData()
 

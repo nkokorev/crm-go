@@ -20,9 +20,8 @@ func SendEmailMessage(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    /*fmt.Println("issuer acc: ", r.Context().Value("issuerAccountId"))
-    fmt.Println("account id: ", r.Context().Value("accountId"))
-    fmt.Printf("Account is: %v \n", account.Name)*/
+    // делаем тестовую отправку письма
+    //models.SendEmailNew()
     
     resp := u.Message(true, "Message sent successful!")
     u.Respond(w, resp)

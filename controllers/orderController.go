@@ -18,7 +18,7 @@ func GetOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err, orders := account.GetOrders()
+	orders,err := account.GetOrders()
 	if err != nil || orders == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"orders":"Не удалось получить список заказов"}}))
 		return

@@ -931,6 +931,6 @@ func (account Account) ParseAndDecryptToken(cryptToken string) (*JWT, error) {
 
 // ===============================================
 
-func (account Account) GetOrders() (error, []Order) {
+func (account Account) GetOrders() ([]Order, error) {
 	return nil, nil
 }
