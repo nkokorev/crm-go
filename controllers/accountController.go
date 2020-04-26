@@ -130,18 +130,6 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
-
-	/*token, err := account.AuthorizationUser(*user, v.RememberChoice)
-	if err != nil || token == "" {
-		u.Respond(w, u.MessageError(u.Error{Message:"Неудалось обновить ключ авторизации"}))
-		return
-	}*/
-
-	// fmt.Println("Авторизация в аккаунте")
-	// fmt.Println(account.Name)
-	// fmt.Printf("Новый токен: %v\n", token)
-
 	resp := u.Message(true, "GET account profile")
 	resp["account"] = account
 	resp["token"] = token // новый токен, который часа на 4..

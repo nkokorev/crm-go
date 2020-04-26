@@ -7,7 +7,7 @@ import (
 func TestGetCrmSettings(t *testing.T) {
 	settings, err := GetCrmSettings()
 	if err != nil || settings == nil {
-		t.Fatalf("Неудалось загрузить настройки crm-системы: %v", err)
+		t.Fatalf("Не удалось загрузить настройки crm-системы: %v", err)
 	}
 
 	if settings.ID != 1 {
@@ -18,7 +18,7 @@ func TestGetCrmSettings(t *testing.T) {
 func TestCrmSetting_Save(t *testing.T) {
 	settings, err := GetCrmSettings()
 	if err != nil {
-		t.Fatal("Неудалось получить настройки CRM")
+		t.Fatal("Не удалось получить настройки CRM")
 	}
 
 	settings.ApiEnabled = !settings.ApiEnabled
@@ -36,7 +36,7 @@ func TestCrmSetting_Save(t *testing.T) {
 
 	newSettings, err := GetCrmSettings()
 	if err != nil {
-		t.Fatal("Неудалось получить настройки CRM (2)")
+		t.Fatal("Не удалось получить настройки CRM (2)")
 	}
 
 	if newSettings.ApiEnabled != settings.ApiEnabled {
@@ -51,7 +51,7 @@ func BenchmarkGetCrmSettings(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		settings, err = GetCrmSettings()
 		if err != nil || settings == nil {
-			b.Fatalf("Неудалось загрузить настройки crm-системы: %v", err)
+			b.Fatalf("Не удалось загрузить настройки crm-системы: %v", err)
 		}
 	}
 }

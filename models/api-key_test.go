@@ -12,14 +12,14 @@ func TestGetApiKey(t *testing.T) {
 
 	key, err := account.CreateApiKey(ApiKey{Name:"Api key for Postman"})
 	if err != nil {
-		t.Fatalf("Неудалось создать api-ключ для аккаунта: %v", err)
+		t.Fatalf("Не удалось создать api-ключ для аккаунта: %v", err)
 	}
 
 	defer key.delete()
 
 	sKey, err := account.GetApiKey(key.Token)
 	if err != nil {
-		t.Fatalf("Неудалось найти APiKey: %v", err)
+		t.Fatalf("Не удалось найти APiKey: %v", err)
 	}
 	if sKey == nil {
 		t.Fatalf("Поиск по ключу вернул пустой указатель *")
@@ -35,7 +35,7 @@ func TestApiKey_delete(t *testing.T) {
 
 	key, err := account.CreateApiKey(ApiKey{Name:"Api key for Postman"})
 	if err != nil {
-		t.Fatalf("Неудалось создать api-ключ для аккаунта: %v", err)
+		t.Fatalf("Не удалось создать api-ключ для аккаунта: %v", err)
 	}
 
 	// убеждаем, что сначала он его находит
@@ -47,7 +47,7 @@ func TestApiKey_delete(t *testing.T) {
 	// удаляем ключ и затем проверим, что все работает
 	err = key.delete()
 	if err != nil {
-		t.Fatalf("Неудалось удалить ApiKey")
+		t.Fatalf("Не удалось удалить ApiKey")
 	}
 
 	_, err = account.GetApiKey(key.Token)
@@ -72,12 +72,12 @@ func TestApiKey_update(t *testing.T) {
 	key.Token = utils.RandStringBytes(10) // НЕ должно сработать
 
 	if err := key.update(*key); err !=nil {
-		t.Fatalf("Неудалось обновить ApiKey")
+		t.Fatalf("Не удалось обновить ApiKey")
 	}
 
 	sKey, err := GetApiKey(token)
 	if err != nil {
-		t.Fatal("Неудалось найти ApiKey после update")
+		t.Fatal("Не удалось найти ApiKey после update")
 	}
 
 	if sKey.Token == key.Token {

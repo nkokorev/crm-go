@@ -11,7 +11,7 @@ func TestUser_create(t *testing.T) {
 func TestUser_getUserById(t *testing.T)  {
 	account, err := Account{Name:"TestAccount_getUserById"}.create()
 	if err != nil {
-		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+		t.Fatalf("Не удалось создать тестовый аккаунт: %v", err)
 	}
 	defer account.HardDelete()
 
@@ -29,7 +29,7 @@ func TestUser_getUserById(t *testing.T)  {
 func TestUser_hardDelete(t *testing.T)  {
 	account, err := Account{Name:"TestAccount_hardDelete"}.create()
 	if err != nil {
-		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+		t.Fatalf("Не удалось создать тестовый аккаунт: %v", err)
 	}
 	defer account.HardDelete()
 
@@ -55,7 +55,7 @@ func TestUser_hardDelete(t *testing.T)  {
 func TestUser_softDelete(t *testing.T)  {
 	account, err := Account{Name:"TestUser_softDelete"}.create()
 	if err != nil {
-		t.Fatalf("Неудалось создать тестовый аккаунт: %v", err)
+		t.Fatalf("Не удалось создать тестовый аккаунт: %v", err)
 	}
 	defer account.HardDelete()
 

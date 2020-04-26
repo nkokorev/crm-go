@@ -143,7 +143,7 @@ func (eat *EmailAccessToken) UserEmailVerificationConfirm (user *User) error {
 	timeNow := time.Now().UTC()
 	user.EmailVerifiedAt = &timeNow
 	if err := user.Update(&user); err != nil {
-		return u.Error{Message:"Неудалось обновить данные верификации"}
+		return u.Error{Message:"Не удалось обновить данные верификации"}
 	}
 
 	// 7. Если все хорошо, возвращаем пользователя

@@ -341,7 +341,7 @@ func (user User) AccountList() ([]AccountUser, error) {
 	
 	aUsers := []AccountUser{}
 	if err := db.Model(&AccountUser{}).Preload("Role").Preload("Account").Preload("User").Find(&aUsers, "user_id = ?", user.ID).Error; err != nil {
-		return nil, errors.New("Неудалось загрузить данные пользователя")
+		return nil, errors.New("Не удалось загрузить данные пользователя")
 	}
 
 	return aUsers, nil
@@ -406,13 +406,13 @@ func (user *User) CreateInviteForUser (email string, sendMail bool) error {
 	eat := &EmailAccessToken{DestinationEmail:email, OwnerID:user.ID, ActionType: "invite-user"}
 	err := eat.Create()
 	if err != nil {
-		return u.Error{Message:"Неудалось создать приглашение"}
+		return u.Error{Message:"Не удалось создать приглашение"}
 	}
 
 	// 2. Посылаем уведомление на почту
 	if sendMail {
 		if err := eat.SendMail(); err != nil {
-			return u.Error{Message:"Неудалось отправить приглашение"}
+			return u.Error{Message:"Не удалось отправить приглашение"}
 		}
 	}
 	// user.SendNotification()...

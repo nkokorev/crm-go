@@ -41,17 +41,17 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/app/auth/check/account", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/app/auth/check/full", controllers.AuthenticationJWTCheck).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 
-	// 5. App Authentication user: Load authentication routes in App (id of issuerAccount = 1 alw)
-	//r.HandleFunc("/app/auth/users/auth/username", controllers.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
+	// 5. App Authentication user: Load authentication routes in App (id of issuerAccount = 1)
 	r.HandleFunc("/app/auth/username", controllers.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
-	//r.HandleFunc("/app/auth/users/auth/email", controllers.UserAuthByEmail).Methods(http.MethodPost, http.MethodOptions)
 	r.HandleFunc("/app/auth/email", controllers.UserAuthByEmail).Methods(http.MethodPost, http.MethodOptions)
-	//r.HandleFunc("/app/auth/users/auth/phone", controllers.UserAuthByPhone).Methods(http.MethodPost, http.MethodOptions)
 	r.HandleFunc("/app/auth/phone", controllers.UserAuthByPhone).Methods(http.MethodPost, http.MethodOptions)
 
 	// 6. Load sign-in routes (account get from hash id)
 	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/users", controllers.UserRegistration).Methods(http.MethodPost, http.MethodOptions)
 	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/users/auth/username", controllers.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
+
+	// ### Orders ###
+	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/orders", controllers.GetOrders).Methods(http.MethodGet, http.MethodOptions)
 
 	// 7. Test marketing: test Email...
 	rAuthFull.HandleFunc("/accounts/marketing/test-email", controllers.SendEmailMessage).

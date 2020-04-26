@@ -161,13 +161,8 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 1. Получаем аккаунт, в рамках которого будет происходить создание нового пользователя
-	if r.Context().Value("account") == nil {
-		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка в обработке запроса", Errors: map[string]interface{}{"account": "not load"}}))
-		return
-	}
-	account := r.Context().Value("account").(*models.Account)
-	if &account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка в обработке запроса", Errors: map[string]interface{}{"account": "not load"}}))
+	err, account := GetWorkAccount(w,r)
+	if err != nil || account == nil {
 		return
 	}
 
@@ -443,7 +438,7 @@ func UserSetPassword(w http.ResponseWriter, r *http.Request) {
 
 	user := models.User{ID: userID}
 	if err := user.Get(); err != nil {
-		u.Respond(w, u.MessageError(err, "Неудалось найти пользователя")) // вообще тут нужен релогин
+		u.Respond(w, u.MessageError(err, "Не удалось найти пользователя")) // вообще тут нужен релогин
 		return
 	}
 
@@ -476,7 +471,7 @@ func UserSendEmailInviteVerification(w http.ResponseWriter, r *http.Request) {
 
 	user := models.User{ID: userID}
 	if err := user.Get(); err != nil {
-		u.Respond(w, u.MessageError(err, "Неудалось найти пользователя")) // вообще тут нужен релогин
+		u.Respond(w, u.MessageError(err, "Не удалось найти пользователя")) // вообще тут нужен релогин
 		return
 	}
 
@@ -499,7 +494,7 @@ func UserSendEmailInviteVerification(w http.ResponseWriter, r *http.Request) {
 	// Проверяем есть ли токен, если нет - создаем и отправляем
 	if err := user.SendEmailVerification(); err != nil {
 		/*fmt.Println(err)*/
-		u.Respond(w, u.MessageError(err, "Неудалось отправить код подтверждения")) // вообще тут нужен релогин
+		u.Respond(w, u.MessageError(err, "Не удалось отправить код подтверждения")) // вообще тут нужен релогин
 		return
 	}
 
@@ -521,7 +516,7 @@ func UserGetProfile(w http.ResponseWriter, r *http.Request) {
 
 	user := models.User{ID: userID}
 	if err := user.Get(); err != nil {
-		u.Respond(w, u.MessageError(err, "Неудалось найти пользователя")) // вообще тут нужен релогин
+		u.Respond(w, u.MessageError(err, "Не удалось найти пользователя")) // вообще тут нужен релогин
 		return
 	}
 
@@ -540,14 +535,14 @@ func UserGetAccounts(w http.ResponseWriter, r *http.Request) {
 
 	user := models.User{ID: userID}
 	if err := user.LoadAccounts(); err != nil {
-		u.Respond(w, u.MessageError(err, "Неудалось найти пользователя")) // вообще тут нужен релогин
+		u.Respond(w, u.MessageError(err, "Не удалось найти пользователя")) // вообще тут нужен релогин
 		return
 	}
 
 	// Подгружаем список из AccountUser
 	aUsers, err := user.AccountList()
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Неудалось загрузить аккаунты")) // вообще тут нужен релогин
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить аккаунты")) // вообще тут нужен релогин
 		return
 	}
 
@@ -576,20 +571,20 @@ func UserLoginInAccount(w http.ResponseWriter, r *http.Request) {
 
 	// 1. Проверяем, что пользователь действителен и существует
 	if err := user.Get(); err != nil {
-		u.Respond(w, u.MessageError(err, "Неудалось найти пользователя")) // вообще тут нужен релогин
+		u.Respond(w, u.MessageError(err, "Не удалось найти пользователя")) // вообще тут нужен релогин
 		return
 	}
 
 	// 2. Пробуем войти в аккаунт, возможно много ограничений (доступ, оплата и т.д.)
 	/*token, err := user.LoginInAccount(accountID);
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Неудалось войти в аккаунт"))
+		u.Respond(w, u.MessageError(err, "Не удалось войти в аккаунт"))
 		return
 	}*/
 
 	acc := models.Account{ID: accountID}
 	if err := user.GetAccount(&acc); err != nil {
-		u.Respond(w, u.MessageError(err, "Неудалось войти в аккаунт"))
+		u.Respond(w, u.MessageError(err, "Не удалось войти в аккаунт"))
 		return
 	}
 

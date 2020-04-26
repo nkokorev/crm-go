@@ -31,7 +31,7 @@ func (UserVerificationMethod) PgSqlCreate() {
 	for _, v := range verificationMethods {
 		_, err := v.Create()
 		if err != nil {
-			log.Fatalf("Неудалось создать тип верификации: %v", v)
+			log.Fatalf("Не удалось создать тип верификации: %v", v)
 		}
 	}
 }

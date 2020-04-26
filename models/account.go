@@ -93,13 +93,13 @@ func (Account) PgSqlCreate() {
 	// 2. Создаем Главный аккаунт через спец. функцию
 	_, err := CreateMainAccount()
 	if err != nil {
-		log.Fatal("Неудалось создать главный аккаунт. Ошибка: ", err)
+		log.Fatal("Не удалось создать главный аккаунт. Ошибка: ", err)
 	}
 
 	// 3. Создаем API-ключ в аккаунте
 	/*	_, err = mAcc.CreateApiKey(ApiKey{Name:"Api key for Postman"})
 		if err != nil {
-			log.Fatalf("Неудалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
+			log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
 		}*/
 }
 
@@ -164,7 +164,7 @@ func CreateMainAccount() (*Account, error) {
 	// ..
 	dvc, err := GetUserVerificationTypeByCode(VerificationMethodEmailAndPhone)
 	if err != nil || dvc == nil {
-		return nil, errors.New("Неудалось получить код двойной верификации по телефону и почте")
+		return nil, errors.New("Не удалось получить код двойной верификации по телефону и почте")
 	}
 
 	return (Account{
@@ -547,7 +547,7 @@ func (account Account) AuthorizationUserByUsername(username, password string, on
 
 	token, err = account.AuthorizationUser(*user, false, issuerAccount)
 	if err != nil || token == "" {
-		return nil, "", errors.New("Неудалось авторизовать пользователя")
+		return nil, "", errors.New("Не удалось авторизовать пользователя")
 	}
 
 	return user, token, nil
@@ -774,7 +774,7 @@ func (account Account) CreateEavAttribute(ea *EavAttribute) error {
 func (account Account) GetAuthTokenWithClaims(claims JWT) (cryptToken string, err error) {
 
 	if claims.AccountID < 1 || claims.UserID < 1 {
-		return "", errors.New("Неудалось обновить ключ безопастности")
+		return "", errors.New("Не удалось обновить ключ безопасности")
 	}
 
 	//Create JWT token
@@ -796,7 +796,7 @@ func (account Account) GetAuthTokenWithClaims(claims JWT) (cryptToken string, er
 // Просто получает token
 func (account Account) GetAuthToken(user User) (cryptToken string, err error) {
 	if account.ID < 1 || user.ID < 1 {
-		return "", errors.New("Неудалось обновить ключ безопастности")
+		return "", errors.New("Не удалось обновить ключ безопасности")
 	}
 
 	expiresAt := time.Now().UTC().Add(time.Minute * 120).Unix()
@@ -830,7 +830,7 @@ func (account Account) GetAuthToken(user User) (cryptToken string, err error) {
 func (account Account) AuthorizationUser(user User, rememberChoice bool, issuerAccount *Account) (cryptToken string, err error) {
 
 	if account.ID < 1 || user.ID < 1 {
-		return "", errors.New("Неудалось обновить ключ безопастности")
+		return "", errors.New("Не удалось обновить ключ безопасности")
 	}
 
 	// Запоминаем аккаунт для будущих входов
@@ -861,7 +861,7 @@ func (account Account) AuthorizationUser(user User, rememberChoice bool, issuerA
 func (account Account) CreateCryptoTokenForUser(user User) (cryptToken string, err error) {
 
 	if account.ID < 1 || user.ID < 1 {
-		return "", errors.New("Неудалось обновить ключ безопастности")
+		return "", errors.New("Не удалось обновить ключ безопасности")
 	}
 
 	expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
@@ -893,9 +893,6 @@ func (account Account) ParseToken(decryptedToken string, claims *JWT) (err error
 		return []byte(account.UiApiJwtKey), nil
 	})
 	if err != nil {
-		fmt.Println("Ошибка в парсинге")
-		fmt.Println(err)
-		fmt.Println(account.Name)
 		return err
 	}
 
@@ -930,4 +927,10 @@ func (account Account) ParseAndDecryptToken(cryptToken string) (*JWT, error) {
 	}
 	return &claims, err
 
+}
+
+// ===============================================
+
+func (account Account) GetOrders() (error, []Order) {
+	return nil, nil
 }

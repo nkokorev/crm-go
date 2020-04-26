@@ -202,7 +202,7 @@ func UploadTestData() {
 	// 1. Получаем главный аккаунт
 	mAcc, err := models.GetMainAccount()
 	if err != nil {
-		log.Fatalf("Неудалось найти главный аккаунт: %v", err)
+		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
 	// 2. Создаем пользователя admin в main аккаунте
@@ -370,7 +370,7 @@ func UploadTestData() {
 
 	/*for i, _ := range accounts {
 		if err := accounts[i].Create();err != nil {
-			log.Fatal("Неудалось создать аккаунт", err)
+			log.Fatal("Не удалось создать аккаунт", err)
 		}
 	}*/
 
@@ -383,71 +383,71 @@ func UploadTestData() {
 
 	for _, r := range shops {
 		if err := r.Create(); err != nil {
-			log.Fatalf("Неудалось создать магазин для 357 грамм %v %v", r.Name, err)
+			log.Fatalf("Не удалось создать магазин для 357 грамм %v %v", r.Name, err)
 			return
 		}
 	}
 
 	for _, r := range product_groups {
 		if err := r.Create(); err != nil {
-			log.Fatalf("Неудалось группу для магазина 357 грамм %v %v", r.Name, err)
+			log.Fatalf("Не удалось группу для магазина 357 грамм %v %v", r.Name, err)
 			return
 		}
 	}
 
 	for _, r := range products {
 		if err := r.Create(); err != nil {
-			log.Fatalf("Неудалось создать продукт для 357 грамм %v %v", r.Name, err)
+			log.Fatalf("Не удалось создать продукт для 357 грамм %v %v", r.Name, err)
 			return
 		}
 	}
 
 	for _, r := range offers {
 		if err := r.Create(); err != nil {
-			log.Fatalf("Неудалось создать offer для 357 грамм %v %v ", r.Name, err)
+			log.Fatalf("Не удалось создать offer для 357 грамм %v %v ", r.Name, err)
 			return
 		}
 
 	}
 
 	if err := offers[0].ProductAppend(*products[10], 25.0); err != nil {
-		log.Fatalf("Неудалось добавить продукт в оффер, Error: %s", err)
+		log.Fatalf("Не удалось добавить продукт в оффер, Error: %s", err)
 		return
 	}
 	if err := offers[1].ProductAppend(*products[10], 50.0); err != nil {
-		log.Fatalf("Неудалось добавить продукт в оффер, Error: %s", err)
+		log.Fatalf("Не удалось добавить продукт в оффер, Error: %s", err)
 		return
 	}
 	if err := offers[2].ProductAppend(*products[10], 100.0); err != nil {
-		log.Fatalf("Неудалось добавить продукт в оффер, Error: %s", err)
+		log.Fatalf("Не удалось добавить продукт в оффер, Error: %s", err)
 		return
 	}
 	if err := offers[3].ProductAppend(*products[10], 100.0); err != nil {
-		log.Fatalf("Неудалось добавить продукт в оффер, Error: %s", err)
+		log.Fatalf("Не удалось добавить продукт в оффер, Error: %s", err)
 		return
 	}
 	if err := offers[3].ProductAppend(*products[11], 1.0); err != nil {
-		log.Fatalf("Неудалось добавить продукт в оффер, Error: %s", err)
+		log.Fatalf("Не удалось добавить продукт в оффер, Error: %s", err)
 		return
 	}
 
 	for _, r := range pcs {
 		if err := r.Create(); err != nil {
-			log.Fatalf("Неудалось создать pcs для 357 грамм %v %v", r.URL, err)
+			log.Fatalf("Не удалось создать pcs для 357 грамм %v %v", r.URL, err)
 			return
 		}
 	}
 
 	for i,_ := range offers {
 		if err := pcs[0].OfferAppend(*offers[i], i); err != nil {
-			log.Fatalf("Неудалось добавить продукт в оффер, Error: %s", err)
+			log.Fatalf("Не удалось добавить продукт в оффер, Error: %s", err)
 			return
 		}
 	}
 
 	for _, r := range attributes {
 		if err := accounts[2].CreateEavAttribute(r); err != nil {
-			log.Fatalf("Неудалось добавить атрибут %v в аккаунт, Error: %s", r.Label, err)
+			log.Fatalf("Не удалось добавить атрибут %v в аккаунт, Error: %s", r.Label, err)
 			return
 		}
 	}
