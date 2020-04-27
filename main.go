@@ -1,18 +1,16 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/nkokorev/crm-go/database/base"
 	"github.com/nkokorev/crm-go/models"
 	"github.com/nkokorev/crm-go/routes"
 	"github.com/ttacon/libphonenumber"
-	"html/template"
 	"log"
 	"net/http"
-	"net/mail"
 	"os"
 	"os/signal"
 	"time"
@@ -37,31 +35,9 @@ func main() {
 	defer pool.Close()
 
 	// !!! запускаем миграции
-	//base.RefreshTables()
+	base.RefreshTables()
 
-	tpl, err := template.ParseFiles("smtp/mail.html")
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
 
-	buf := bytes.Buffer{}
-	if err := tpl.Execute(&buf, nil); err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	message := models.Message{
-		To: mail.Address{Name: "", Address: "nkokorev@rus-marketing.ru"},
-		From: mail.Address{Name: "Nikita", Address: "nk@ratuscrm.com"},
-		Subject: "Bounce text!",
-		Body: buf.String(),
-	}
-	if err := message.Send(); err != nil {
-		log.Fatal(err)
-	} else {
-		fmt.Println("Msg sent")
-	}
 
 	//models.SendTestMail()
 	/*

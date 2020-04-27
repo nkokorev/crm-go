@@ -1,10 +1,11 @@
 #!/bin/sh
-#GOOS=linux GOARCH=amd64 go build
 GOOS=linux GOARCH=amd64 go build -o /home/mex388/go/bin/crm-server main.go
 ssh -p 25794 root@45.84.226.178 'systemctl stop crm-server'
-scp -P 25794 /home/mex388/go/bin/crm-server root@45.84.226.178:/var/www/ratuscrm/server/
-#scp -P 25794 /home/mex388/go/src/github.com/nkokorev/go-test/.env root@193.200.74.37:/var/www/go
-#ssh -p 25794 root@193.200.74.37 'rm -rf /var/www/go/html'
+#scp -P 25794 /home/mex388/go/bin/crm-server root@45.84.226.178:/var/www/ratuscrm/server/
+
+ssh -p 25794 root@45.84.226.178 'rm -rf /var/www/ratuscrm/server/files/*'
+scp -P 25794 -r /home/mex388/go/src/github.com/nkokorev/crm-go/files/* root@45.84.226.178:/var/www/ratuscrm/server/files/
+
 ssh -p 25794 root@45.84.226.178 'systemctl daemon-reload'
 ssh -p 25794 root@45.84.226.178 'systemctl restart crm-server'
 
