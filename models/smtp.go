@@ -9,75 +9,197 @@ import (
 	"net/mail"
 	"net/smtp"
 	"strings"
+	"time"
 )
 
-//ex: SendMail("127.0.0.1:25", (&mail.Address{"from name", "from@example.com"}).String(), "Email Subject", "message body", []string{(&mail.Address{"to name", "to@example.com"}).String()})
-func SendMail(addr, from, subject, body string, to []string) error {
-	r := strings.NewReplacer("\r\n", "", "\r", "", "\n", "", "%0a", "", "%0d", "")
+var (
+	ports = []int{25, 2525, 587}
+)
 
-	c, err := smtp.Dial(addr)
+type Message struct {
+
+	To      mail.Address
+	From    mail.Address
+	Subject string
+	Body    string
+}
+
+// Send sends a message to recipient(s) listed in the 'To' field of a Message
+func (m Message) Send() error {
+	if !strings.Contains(m.To.Address, "@") {
+		return fmt.Errorf("Invalid recipient address: <%s>", m.To)
+	}
+
+	host := strings.Split(m.To.Address, "@")[1]
+	addrs, err := net.LookupMX(host)
 	if err != nil {
-		fmt.Println("Error in dial()")
 		return err
 	}
-	defer c.Close()
-	if err = c.Mail(r.Replace(from)); err != nil {
+
+	c, err := newClient(addrs, ports)
+	if err != nil {
 		return err
 	}
-	for i := range to {
-		to[i] = r.Replace(to[i])
-		if err = c.Rcpt(to[i]); err != nil {
+
+	err = send(m, c)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func newClient(mx []*net.MX, ports []int) (*smtp.Client, error) {
+	for i := range mx {
+		for j := range ports {
+			server := strings.TrimSuffix(mx[i].Host, ".")
+			hostPort := fmt.Sprintf("%s:%d", server, ports[j])
+
+			conn, err := net.DialTimeout("tcp", hostPort, 5*time.Second)
+			if err != nil {
+				if j == len(ports)-1 {
+					return nil, err
+				}
+
+				continue
+			}
+
+			client, err := smtp.NewClient(conn, server)
+
+			//client, err := smtp.Dial(hostPort)
+			if err != nil {
+				if j == len(ports)-1 {
+					return nil, err
+				}
+
+				continue
+			}
+			tlc := &tls.Config{
+				InsecureSkipVerify: true,
+				ServerName:         server,
+			}
+			if err := client.StartTLS(tlc); err != nil {
+				fmt.Println("Не удалось установить TLC")
+			}
+
+			return client, nil
+		}
+	}
+
+	return nil, fmt.Errorf("Couldn't connect to servers %v on any common port.", mx)
+}
+
+func send(m Message, c *smtp.Client) error {
+	if err := c.Mail(m.From.Address); err != nil {
+		log.Println("c.Mail")
+		return err
+	}
+
+	if err := c.Rcpt(m.To.Address); err != nil {
+		log.Println("c.Rcpt")
+		return err
+	}
+
+	header := make(map[string]string)
+	header["Return-Path"] = "<bounce@ratuscrm.com>"
+	//header["Precedence"] = "bulk"
+	header["Feedback-ID"] = "vtvent-15:nkokorev@rus-marketing.ru:campaign:RatusSMTP"
+	header["From"] = m.From.String()
+	header["To"] = m.To.String()
+	header["Subject"] = m.Subject
+	header["MIME-Version"] = "1.0"
+	header["Content-Type"] = "text/html; charset=utf-8"
+	header["Content-Transfer-Encoding"] = "base64"
+	header["Return-Path"] = "<bounce@ratuscrm.com>"
+
+	message := ""
+	for k, v := range header {
+		message += fmt.Sprintf("%s: %s\r\n", k, v)
+	}
+	message += "\r\n" + base64.StdEncoding.EncodeToString([]byte(m.Body))
+
+	msg, err := c.Data()
+	if err != nil {
+		return err
+	}
+
+	/*if m.Subject != "" {
+		_, err = msg.Write([]byte("Subject: " + m.Subject + "\r\n"))
+		if err != nil {
 			return err
 		}
 	}
 
-	w, err := c.Data()
+	if m.From != "" {
+		_, err = msg.Write([]byte("From: <" + m.From + ">\r\n"))
+		if err != nil {
+			return err
+		}
+	}
+
+	if m.To != "" {
+		_, err = msg.Write([]byte("To: <" + m.To + ">\r\n"))
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = msg.Write([]byte("Subject: " + m.Subject + "\r\n"))
 	if err != nil {
 		return err
 	}
 
-	msg := "To: " + strings.Join(to, ",") + "\r\n" +
-		"From: " + from + "\r\n" +
-		"Subject: " + subject + "\r\n" +
-		"Content-Type: text/html; charset=\"UTF-8\"\r\n" +
-		"Content-Transfer-Encoding: base64\r\n" +
-		"\r\n" + base64.StdEncoding.EncodeToString([]byte(body))
+	_, err = fmt.Fprint(msg, m.Body)
+	if err != nil {
+		return err
+	}
+	*/
 
-	_, err = w.Write([]byte(msg))
+	_, err = fmt.Fprint(msg, message)
 	if err != nil {
 		return err
 	}
-	err = w.Close()
+
+	err = msg.Close()
 	if err != nil {
 		return err
 	}
-	return c.Quit()
+
+	err = c.Quit()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func SendTestMail() {
 
-	//ns, err := net.LookupNS("rus-marketing.ru")
-	mx, err := net.LookupMX("rus-marketing.ru")
+	addr := "nkokorev@rus-marketing.ru"
+	//mx, err := net.LookupMX("rus-marketing.ru")
+	mx, err := net.LookupMX(addr)
 	if err != nil {
 		log.Fatal(err)
 	}
-	mxHost := mx[0].Host
-	fmt.Println("NS: ", mxHost)
+	mxHost := strings.ToLower(mx[0].Host)
+	fmt.Println("MX: ", mxHost)
 
-	//c, err := smtp.Dial("dns2.yandex.net:465")
-	//c, err := net.DialTimeout("tcp","dns2.yandex.net.:25", 10*time.Second)
-	//c, err := smtp.Dial("tcp","mx.yandex.net.:25", 10*time.Second)
-	//conn, err := net.DialTimeout("tcp", mxRecord + ":25", 5*time.Second)
-	/*conn, err := net.DialTimeout("tcp", mxRecord + ":25", 5*time.Second)
+
+	return
+	/* Подключаемся к SMTP получателя */
+	//c, err := smtp.Dial(mxHost + ":25")
+	conn, err := net.DialTimeout("tcp", mxHost + ":25", 5*time.Second)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer conn.Close()
-	*/
-	c, err := smtp.Dial(mxHost + ":25")
+
+	c, err := smtp.NewClient(conn,mxHost)
+
+	/*c, err := smtp.Dial(mxHost + ":25")
 	if err != nil {
 		log.Fatal(err)
-	}
+	}*/
+
 	defer c.Close()
 
 	fmt.Println("Connected!")
@@ -90,6 +212,17 @@ func SendTestMail() {
 		log.Println("Не удалось запустить tlc")
 	}
 
+	// Проверяем адрес
+	if err := c.Verify(addr);err != nil {
+		fmt.Println("Адресок то поддельный: ", err)
+	}
+
+	return
+	// Проверяем сервер
+	/*if err := c.Hello("localhost"); err != nil {
+		log.Fatal("Hello: ", err)
+	}*/
+
 	// Set the sender and recipient first
 	if err := c.Mail("nk@ratuscrm.com"); err != nil {
 		log.Fatal(err)
@@ -98,20 +231,24 @@ func SendTestMail() {
 		log.Fatal(err)
 	}
 
+
+
 	header := make(map[string]string)
 	header["From"] = "nk@ratuscrm.com"
 	header["To"] = "nkokorev@rus-marketing.ru"
-	header["Subject"] = "Test message!"
+	header["Subject"] = "Тестируем сервер v2"
 	header["MIME-Version"] = "1.0"
-	header["Content-Type"] = "text/plain; charset=\"utf-8\""
+	header["Content-Type"] = "text/html; charset=utf-8"
 	header["Content-Transfer-Encoding"] = "base64"
 
-	body := ""
+	//body := "Это тестовое сообщение. Просьба не отвечать."
+	body := "<H1>Header h1</H1><p>Это тестовое сообщение, просьба не отвечать</p>"
 	message := ""
 	for k, v := range header {
 		message += fmt.Sprintf("%s: %s\r\n", k, v)
 	}
 	message += "\r\n" + base64.StdEncoding.EncodeToString([]byte(body))
+
 
 	// Send the email body.
 	wc, err := c.Data()

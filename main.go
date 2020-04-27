@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -8,8 +9,10 @@ import (
 	"github.com/nkokorev/crm-go/models"
 	"github.com/nkokorev/crm-go/routes"
 	"github.com/ttacon/libphonenumber"
+	"html/template"
 	"log"
 	"net/http"
+	"net/mail"
 	"os"
 	"os/signal"
 	"time"
@@ -36,14 +39,40 @@ func main() {
 	// !!! запускаем миграции
 	//base.RefreshTables()
 
-	models.SendTestMail()
-	/*code, str, err := models.SendEmailNew()
+	tpl, err := template.ParseFiles("smtp/mail.html")
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	buf := bytes.Buffer{}
+	if err := tpl.Execute(&buf, nil); err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	message := models.Message{
+		To: mail.Address{Name: "", Address: "nkokorev@rus-marketing.ru"},
+		From: mail.Address{Name: "Nikita", Address: "nk@ratuscrm.com"},
+		Subject: "Bounce text!",
+		Body: buf.String(),
+	}
+	if err := message.Send(); err != nil {
+		log.Fatal(err)
+	} else {
+		fmt.Println("Msg sent")
+	}
+
+	//models.SendTestMail()
+	/*
+	code, str, err := models.SendEmailNew()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(code)
 	fmt.Println(str)
-	fmt.Println("Сообщение отослано")*/
+	fmt.Println("Сообщение отослано")
+	*/
 	//err := models.SendMail("127.0.0.1:443", (&mail.Address{"Nikita", "nk@ratusmedia.com"}).String(), "Test mail", "Сообщение тут", []string{(&mail.Address{"to name", "nkokorev@rus-marketing.ru"}).String()})
 	/*if err != nil {
 		fmt.Println(err)
