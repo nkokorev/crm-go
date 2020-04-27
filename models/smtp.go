@@ -1,9 +1,13 @@
 package models
 
 import (
+	"bytes"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
 	"fmt"
+	"github.com/emersion/go-msgauth/dkim"
 	"log"
 	"net"
 	"net/mail"
@@ -90,6 +94,7 @@ func newClient(mx []*net.MX, ports []int) (*smtp.Client, error) {
 }
 
 func send(m Message, c *smtp.Client) error {
+
 	if err := c.Mail(m.From.Address); err != nil {
 		log.Println("c.Mail")
 		return err
@@ -117,6 +122,9 @@ func send(m Message, c *smtp.Client) error {
 		message += fmt.Sprintf("%s: %s\r\n", k, v)
 	}
 	message += "\r\n" + base64.StdEncoding.EncodeToString([]byte(m.Body))
+
+	mTpl := signDKIM(message)
+	message = mTpl.String()
 
 	msg, err := c.Data()
 	if err != nil {
@@ -171,6 +179,34 @@ func send(m Message, c *smtp.Client) error {
 	}
 
 	return nil
+}
+
+func signDKIM (mailString string) bytes.Buffer {
+	r := strings.NewReader(mailString)
+
+	//rsaPrivateKey := "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDSw3hDW4hWLBZ2tLEZhl6lkXuBkxngTKoJm7Rim5pOGPuoxMekfKhj1egQA8Kh/+FnKVXJP/fsQpmoCGjxCdjC8dhUzUbZIj8OhBnMsa3uaAyOHNXnBWnZVfXSjtOQVfpJltt+SHy/CptXuX7TyvXZt65OdmKjvfHyvsByJEqdUwIDAQAB"
+	//rsaPrivateKey := "-----BEGIN RSA PRIVATE KEY-----\nMIICXAIBAAKBgQDSw3hDW4hWLBZ2tLEZhl6lkXuBkxngTKoJm7Rim5pOGPuoxMek\nfKhj1egQA8Kh/+FnKVXJP/fsQpmoCGjxCdjC8dhUzUbZIj8OhBnMsa3uaAyOHNXn\nBWnZVfXSjtOQVfpJltt+SHy/CptXuX7TyvXZt65OdmKjvfHyvsByJEqdUwIDAQAB\nAoGAIDA8OMVM8CQxlhWIiqZr5Atw+lwV8pyix27hQMIU8eJ85MyQ1P041m5/z5pT\nalxi91dnw6GiYpHVV8VZCZ8AXJaP4f8DFOC5oAI6qe7xHtilnI3p8cItRVTEi6uU\nEamyh5fwZcVzq8yFAvIWc4P1bC5xJ8ce3P2QPVhpojIaYNkCQQDrbxd+X9+/V6/w\nbqCVXt6DDsNUYs77yFLDwhISJtHfC2xGeP5hrigfeDPfYKeaRCpbs/j5+ZzgPVdn\nkaXdvrXXAkEA5SyvOxP+EmZxVBe3g+TsTBsmO5wnQLkYOyQqEMw5HLfXSprGwPEW\nIi8MCY2SDYb+UaLa43GKhoH3ekzwCfcs5QJAGgBs8dIY3gMLNVyic5zEqmjI/drj\nzT70lRYr9MFA0Idsb+QRBCy91avq3rLID+uTWgloaAM/ZiygKJoXXYQghQJBAJMB\nSdo0pdq5ueJ+YCqL0wOyuqCsNwWudZuiRBWIWu5QAxsJE4s6Wr9MvIT4OgLRYBuP\nwqb48yn6/nuGFMfftP0CQH8z7+3rOH+Imy+yedEJg0vXDMaTS5rACW/PPju8K2Ge\naXMydcPYbtqZueNPr6/fx+7xHBQMyqCX9xYdES6PFbw=\n-----END RSA PRIVATE KEY-----"
+	rsaPrivateKey := "-----BEGIN PRIVATE KEY-----\nMIIEpAIBAAKCAQEA8UjDbjOPOsnTetzwrZn0EAfPu2rJqy+EPE4Vn1UZjLiHQOq9\nT4ATYCdQlYc4sKFqrgg5JopVqJDwm9D9QBOOhht7BwxgAiuM13CyUN3c3VXfPAL6\n7c6o5hgQRZKVME1bQ74SbrxSC599q0OVbTt/RCFn/lxnq8aVO6gFneOXoiIRAv4z\nDo6buobKvnlWn8AjqufDY/tmkbliiH/YygBSr5PlZFKv/xVwmemq4/yyoWr3mxJB\nP4pD/vYzDrbOwWDsuHne4t4lJqcEhfPf6d/X4vYirWGSgadMs/rFQeNgGxSTkSlg\nEIvgvEP/D5yNg9LYItXab7EXmeJndApyNjFotQIDAQABAoIBAQCuByJWCMAk0c9D\nzbmWLPV43nl5HxOn8dS5vkQgMLwF4E5Fh0nV3nWbI6AeyXIdC7+rGGlIH/yaYTf5\n2qnennxsw8NfmRBiYFDsTu9+HhegWMBzQ18DSMxPcUnDNG+AcDsESEJ5NkEi+v0k\nGtHbAE/RrxqXvsRThB688Xpjn/UNTYhGoJyWgCeQnX7Lb2f5ZuShxeTGITZZc7zX\nmVJlAxhB7ia8QjLvb3UP8Lj1LNRUbrf9ER1vWaxGkgJ2gVBtooU49SnaT1ytRIvF\nO7bebql0C1paJyIzeFVdOM+zkd3MtGSjLNeqx02u0RlDX/arWZzzfMIZUlXS/aI1\n+OEM+y5hAoGBAP4UWlf/PVipAkywGaEmVN7zhfDQwf22WVzFJ7t3ZUIGAuHLK9sg\nmwYsvL2wceeLdLdG5PDABn7Qg16iQomKc+IsrO9rpqFBRyhOxaqdh12x7uJEyE7K\nz4cFJWsuvYM2cT1r7yYelZcBO1IEYAfBd/fKS9SOuIHgVMOdaSyri4EpAoGBAPMb\npsdxcqqWZkqnscRdB7FwyL9Bu4yIXzQAXmFzp+CfvW5R7FyCkdpIUQ+45vp/8veO\nxoku0Yx6AMRmoML5s1H7xTVEfFxwOq+VxTujrDY4ISc9ExjAs8CmDa086VxfcMXL\ncmqPPiijq9fU510xbSRqqXrw7dgyXH7uiO1tViCtAoGBAPvxfqxngpNZ89fLf36W\nne3+mMB0oQhOO0qMjZuNBzFy+IShjLlbGZ4D2pxWTHyHgpMCj55TK52wcbPzPftY\n+RQ7rLg0jSS1sDO9+K/4SPSVrgVcoyvOW/7NEY+4518nKx722kt4ZGk6ZXIsuHS4\nWZeyV4NMipTut97JRjNvX4QRAoGAFX8VcT9L11+zLdjENEvRmVQSvC6wyc1pNazu\nq4lRh+A4HOArmUaGZRnN6Sj9a5sSvecnEQxNxTEojjVQ88ymmZI8rugeYwIdflcs\n+IgRez3dWJ3i6WZovpkwTmg7bkqWKzdBJ8EAyxEl6dDOoIP1VaoE0HUrYtmZKjQn\ncW8glYUCgYACTz6uuK44P29jWe573dMj/km+VS/yjz0QNmkLj9VdDj3Chl4njWhv\n+BDSZRslCBMGwtpHAEXns+v7pLhU6SyQItcsV4pEA/iNkM8g2ngUCMKyaP3H3BxS\nzaOXBae78oku9TsbCvgCT3G62NHpUw5von91B8IiPN0vm6KcMvZaRA==\n-----END PRIVATE KEY-----"
+
+	block, _ := pem.Decode([]byte(rsaPrivateKey))
+	rsa, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	options := &dkim.SignOptions{
+		//Domain:   "rtcrm.ru",
+		Domain:   "ratuscrm.com",
+		Selector: "dk1",
+		Signer:   rsa,
+	}
+
+	var b bytes.Buffer
+	if err := dkim.Sign(&b, r, options); err != nil {
+		log.Fatal(err)
+	}
+
+	return b
 }
 
 func SendTestMail() {
