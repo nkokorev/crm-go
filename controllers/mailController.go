@@ -101,6 +101,7 @@ func savePEMKey(fileName string, key *rsa.PrivateKey) {
     var privateKey = &pem.Block{
         Type:  "PRIVATE KEY",
         Bytes: x509.MarshalPKCS1PrivateKey(key),
+        //Bytes: bytesKey,
     }
 
     err = pem.Encode(outFile, privateKey)

@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
-	"github.com/nkokorev/crm-go/database/base"
 	"github.com/nkokorev/crm-go/models"
 	"github.com/nkokorev/crm-go/routes"
 	"github.com/ttacon/libphonenumber"
@@ -35,10 +34,9 @@ func main() {
 	defer pool.Close()
 
 	// !!! запускаем миграции
-	base.RefreshTables()
+	//base.RefreshTables()
 
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
-
 
 	//examplePhone("89251952295")
 	//examplePhone("+380(44)234-68-88")
