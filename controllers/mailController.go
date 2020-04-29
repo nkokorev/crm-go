@@ -41,9 +41,37 @@ func SendEmailMessage(w http.ResponseWriter, r *http.Request) {
     if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
         u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке json-запроса"}))
     }
-    
+
+    tpl, err := template.ParseFiles("files/example.html")
+    if err != nil {
+        log.Fatal(err)
+        return
+    }
+
+    buf := bytes.Buffer{}
+    if err := tpl.Execute(&buf, struct {
+        Title string
+        Name string
+    }{"Test msg", "Nikita"}); err != nil {
+        log.Fatal(err)
+        return
+    }
+
+    message := models.Message{
+        To: mail.Address{Name: "", Address: input.To},
+        From: mail.Address{Name: input.FromName, Address: input.FromAddress},
+        Subject: input.Subject,
+        Body: buf.String(),
+    }
+    if err := message.Send(); err != nil {
+        fmt.Println("Cant sent message")
+        log.Fatal(err)
+    } else {
+        fmt.Println("Msg sent")
+    }
+
     // делаем тестовую отправку письма
-    go func() {
+    /*go func() {
         tpl, err := template.ParseFiles("files/example.html")
         if err != nil {
             log.Fatal(err)
@@ -71,7 +99,7 @@ func SendEmailMessage(w http.ResponseWriter, r *http.Request) {
         } else {
             fmt.Println("Msg sent")
         }
-    }()
+    }()*/
 
     resp := u.Message(true, "Message sent successful!")
     u.Respond(w, resp)
