@@ -38,8 +38,8 @@ func TestSend() error {
 	//body, err := email.GetBodyBase64String()
 	//fmt.Println(body)
 
-	header := email.GetHeaderBody()
-	fmt.Println(header)
+	header := email.GetHeaderByte()
+	fmt.Println(header.Bytes())
 
 	return err
 }
@@ -196,7 +196,7 @@ func (email Email) GetBodyBase64String() (string, error) {
 
 }
 
-func (email Email) GetHeaderBody() string {
+func (email Email) GetHeader() string {
 	header := ""
 		for k, v := range email.Header {
 			header += k + ": " + v + "\r\n"
@@ -204,20 +204,25 @@ func (email Email) GetHeaderBody() string {
 	return header
 }
 
+func (email Email) GetHeaderByte() bytes.Buffer {
+	buf := new(bytes.Buffer)
+	io.Copy(buf, strings.NewReader(email.GetHeader()))
+
+	return *buf
+}
+
 func (email *Email) AddHeader(k string, v string) {
 	email.Header[k] = v
 }
 
-func (email Email) GetHeaderMessage() *bytes.Buffer {
+// Возвращает список заголовоков
+func (email Email) GetHeaders() []string {
 
-	/*header := string("")
-	for k, v := range email.Header {
-		header += k + ": " + v + "\r\n"
+	var headers []string
+	for k,_ := range email.Header {
+		headers = append(headers, k)
 	}
 
-	b := new(bytes.Buffer)
-	b.Read([]byte(email.Header))
-	return email.Header*/
-
-	return nil
+	return headers
 }
+
