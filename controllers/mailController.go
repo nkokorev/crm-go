@@ -14,7 +14,6 @@ import (
     "html/template"
     "log"
     "net/http"
-    "net/mail"
     "os"
 )
 
@@ -57,7 +56,7 @@ func SendEmailMessage(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    message := models.Message{
+   /* message := models.Message{
         To: mail.Address{Name: "", Address: input.To},
         From: mail.Address{Name: input.FromName, Address: input.FromAddress},
         Subject: input.Subject,
@@ -68,7 +67,7 @@ func SendEmailMessage(w http.ResponseWriter, r *http.Request) {
         log.Fatal(err)
     } else {
         fmt.Println("Msg sent")
-    }
+    }*/
 
     // делаем тестовую отправку письма
     /*go func() {

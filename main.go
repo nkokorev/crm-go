@@ -38,6 +38,10 @@ func main() {
 
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
 
+	if err := models.TestSend(); err != nil {
+		log.Fatal(err)
+	}
+
 	//examplePhone("89251952295")
 	//examplePhone("+380(44)234-68-88")
 
