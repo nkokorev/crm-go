@@ -10,27 +10,87 @@ import (
 	"log"
 	"net/mail"
 	"strings"
+	"time"
 )
 
 type Email struct {
-	Message mail.Message // has header and body
+	//Message mail.Message // has header and body
+	Header map[string]string
+	Body   io.Reader
+	Subject string
+	To mail.Address
+	From mail.Address
 }
 
 func TestSend() error {
 
-	var email = new(Email)
+	email, err := NewEmail("example", nil)
+	if err != nil { return err }
 
-	err := email.LoadBodyFromTemplate("files/example.html", nil)
-	if err != nil {
-		return err
-	}
+	email.SetSubject("Тестовое сообщение")
+	email.SetTo("nkokorev@rus-marketing.ru")
+	email.SetFrom("Ratus CRM","info@ratuscrm.com")
+	email.SetReturnPath("abuse@mta1@ratuscrm.com")
+	email.SetMessageID("jd7dhds73h3738")
 
-	fmt.Println(email.GetBodyBase64String())
+
+	// test body64 string
+	//body, err := email.GetBodyBase64String()
+	//fmt.Println(body)
+
+	header := email.GetHeaderBody()
+	fmt.Println(header)
+
 	return err
 }
 
-func (email *Email) LoadBodyFromTemplate(addr string, T interface{}) error {
-	tpl, err := template.ParseFiles(addr)
+// возвращает новое письмо и загружает шаблон
+func NewEmail(filename string, T interface{}) (*Email, error) {
+	email := new(Email)
+
+	// Инициируем хедер
+	email.Header = make(map[string]string)
+	email.AddHeader("MIME-Version", "1.0")
+	email.AddHeader("Content-Transfer-Encoding", "base64")
+	email.AddHeader("Content-Type", "text/html; charset=utf-8")
+	email.AddHeader("Date", time.RFC1123Z)
+
+	err := email.LoadBodyFromTemplate(filename + ".html", T)
+	if err != nil {
+		return nil, err
+	}
+
+	return email, nil
+}
+
+func (email *Email) SetSubject(v string) {
+	email.Subject = v
+	email.AddHeader("Subject", email.Subject)
+}
+
+func (email *Email) SetTo(addr string) {
+	email.To = mail.Address{Address: addr}
+	email.AddHeader("To", email.To.Address)
+}
+func (email *Email) SetFrom(name, addr string) {
+	if name != "" {
+		email.From = mail.Address{Name: name, Address: addr}
+	} else {
+		email.From = mail.Address{Address: addr}
+	}
+
+	email.AddHeader("From", email.From.String())
+}
+func (email *Email) SetReturnPath(path string) {
+	email.AddHeader("Return-Path", path)
+}
+func (email *Email) SetMessageID(id string) {
+	email.AddHeader("Message-ID", id)
+}
+
+func (email *Email) LoadBodyFromTemplate(filename string, T interface{}) error {
+
+	tpl, err := template.ParseFiles("files/" + filename)
 	if err != nil {
 		return err
 	}
@@ -38,24 +98,21 @@ func (email *Email) LoadBodyFromTemplate(addr string, T interface{}) error {
 	var buf = new(bytes.Buffer)
 	err = tpl.Execute(buf, T)
 
-	msg, err := mail.ReadMessage(buf)
-	if err != nil { return err }
-
-	email.Message = *msg
+	email.Body = buf
 
 	return nil
 }
 
 func (email Email) GetBodyByte() ([]byte, error) {
-	return ioutil.ReadAll(email.Message.Body)
+	return ioutil.ReadAll(email.Body)
 }
 
 // Возвращает Body
 func (email Email) GetBodyString() (string, error) {
-	body, err := ioutil.ReadAll(email.Message.Body)
+	body, err := ioutil.ReadAll(email.Body)
 	if err != nil { return "", err}
 
-	return string(body), nil
+	return string(body[:]), nil
 }
 
 // Возвращает экранированное Body
@@ -82,24 +139,6 @@ func min(a, b int) int {
 func (ls *linesplitter) Close() (err error) {
 	return nil
 }
-// возвращает body в base64 по 76 символов в длину
-func (email Email) GetBodyBase64Byte() ([]byte, error) {
-
-	bufR := new(bytes.Buffer)
-
-	lsWriter := &linesplitter{len: 76, count: 0, sep: []byte("\r\n"), w: bufR}
-	wrt := base64.NewEncoder(base64.StdEncoding, lsWriter)
-	body, err := email.GetBodyStringEscaped()
-	if err != nil {return nil, err}
-	_, err = io.Copy(wrt, strings.NewReader(body))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return bufR.Bytes(), nil
-
-}
-
 func (ls *linesplitter) Write(in []byte) (n int, err error) {
 	writtenThisCall := 0
 	readPos := 0
@@ -129,11 +168,56 @@ func (ls *linesplitter) Write(in []byte) (n int, err error) {
 	return writtenThisCall, nil
 }
 
+// возвращает body в base64 по 76 символов в длину в виде []Byte
+func (email Email) GetBodyBase64Byte() ([]byte, error) {
+
+	bufR := new(bytes.Buffer)
+
+	lsWriter := &linesplitter{len: 76, count: 0, sep: []byte("\n"), w: bufR}
+	wrt := base64.NewEncoder(base64.StdEncoding, lsWriter)
+	body, err := email.GetBodyStringEscaped()
+	if err != nil {return nil, err}
+	_, err = io.Copy(wrt, strings.NewReader(body))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return bufR.Bytes(), nil
+
+}
+
+// возвращает body в base64 по 76 символов в длину в виде строки
 func (email Email) GetBodyBase64String() (string, error) {
 
 	bodyByte, err := email.GetBodyBase64Byte()
 	if err != nil { return "", err}
 
-	return string(bodyByte), nil
+	return string(bodyByte[:]), nil
 
+}
+
+func (email Email) GetHeaderBody() string {
+	header := ""
+		for k, v := range email.Header {
+			header += k + ": " + v + "\r\n"
+		}
+	return header
+}
+
+func (email *Email) AddHeader(k string, v string) {
+	email.Header[k] = v
+}
+
+func (email Email) GetHeaderMessage() *bytes.Buffer {
+
+	/*header := string("")
+	for k, v := range email.Header {
+		header += k + ": " + v + "\r\n"
+	}
+
+	b := new(bytes.Buffer)
+	b.Read([]byte(email.Header))
+	return email.Header*/
+
+	return nil
 }
