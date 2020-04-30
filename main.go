@@ -39,6 +39,7 @@ func main() {
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
 
 	if err := models.TestSend(); err != nil {
+		log.Println("Ошибка в отправке сообщения")
 		log.Fatal(err)
 	}
 

@@ -2,11 +2,13 @@ package models
 
 import (
 	"bytes"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/mail"
 	"strings"
@@ -16,17 +18,21 @@ import (
 type Email struct {
 	//Message mail.Message // has header and body
 	Header map[string]string
-	Body   io.Reader
+	Body   bytes.Buffer
 	Subject string
 	To mail.Address
 	From mail.Address
+
+	Tpl *template.Template // шаблон письма с которого читаются данные
 }
 
 func TestSend() error {
 
+	// создаем письмо и сразу подгружаем шаблончик
 	email, err := NewEmail("example", nil)
 	if err != nil { return err }
 
+	// ввод общих данных
 	email.SetSubject("Тестовое сообщение")
 	email.SetTo("nkokorev@rus-marketing.ru")
 	email.SetFrom("Ratus CRM","info@ratuscrm.com")
@@ -35,16 +41,22 @@ func TestSend() error {
 
 
 	// test body64 string
-	//body, err := email.GetBodyBase64String()
-	//fmt.Println(body)
+	body, err := email.GetBodyBase64()
+	fmt.Println(body)
 
-	header := email.GetHeaderByte()
-	fmt.Println(header.Bytes())
+	//header := email.GetHeaderByte()
+	//fmt.Println(header.Bytes())
+
+	//fmt.Println(email.GetBodyBase64())
+
+
+	// domainSettings of current account {}
+	//fmt.Println(email.GetRSAPrivateKey("-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQCwy7WZIg2haroLTj14GS7MVeLyR0RE7hkhdPYVjdKlUlaJeun5\nlwp7//QcQmZPu9O7e46mTD+CE6srCVyKWCSeUlAVwcV7GT7A9VKnPPiGgAs26Hqz\nAuGwhER3l+lT1arVTbRu7E6shBoWROwPAqZPPp+jctL79CEta5U2ICduHQIDAQAB\nAoGAE+aKRXd400+hK36eGrOy+ds9FYqCG8Q1Xfe9b4WsTWGsTgNg7PBchMK15qxu\nudDpr3PkBcIVb/3oyYpfOU9cp6mgXk557OxqfPNyNwRO/o/6/IiEpFFrk8jJxoc3\nmoa9Lh1hM/lsSGryp83L1vBUTs3tXIGo+uBBHnLaH33dFF0CQQDhizg/xVAhR4he\n8Q/uSP5Cgf/Viwevluxpz2R4WrGro5XRyLvEoXb+gPG9NqjT62N7jHX1lBxFpFPT\n/zh1BADLAkEAyKtTmww6/ULKTijfBOhp+w/O4TOWbq0JSZBXAGPI6jh+73gGNf/x\n+55kMYUjIaxpIkILsDTlQrO5kBIBarX3twJAHtXp2s4fJm2hN1m909Ym7PDZCVj4\ntAjuSYkRM2My50R2Nzg6c6efnSwD4NqYOmD0OO/7MJgPRXYx/8nk7hqeAQJBAJ96\n8h42cSdYjpnhh6VJ5PigTqXSLwtUwB3T9iEcLNBhCBjfhegiurlj33MvwYUAlimg\n3dMzpsUFO0PR24hoiC8CQQDP1kDw2zzA8dwGFjbBPqFfN5uVcbwzq1tRjdM1mkp8\nwJB/anwuIRNIE/PDCvi4MEmW7p7FkfbHOZOSgYXbIK3k\n-----END RSA PRIVATE KEY-----").D)
 
 	return err
 }
 
-// возвращает новое письмо и загружает шаблон
+// возвращает новое письмо и загружает шаблон при наличии имени файла
 func NewEmail(filename string, T interface{}) (*Email, error) {
 	email := new(Email)
 
@@ -55,9 +67,12 @@ func NewEmail(filename string, T interface{}) (*Email, error) {
 	email.AddHeader("Content-Type", "text/html; charset=utf-8")
 	email.AddHeader("Date", time.RFC1123Z)
 
-	err := email.LoadBodyFromTemplate(filename + ".html", T)
-	if err != nil {
-		return nil, err
+	if filename != "" {
+		err := email.LoadBodyTemplate(filename + ".html", T)
+		if err != nil {
+			return nil, err
+		}
+
 	}
 
 	return email, nil
@@ -88,40 +103,49 @@ func (email *Email) SetMessageID(id string) {
 	email.AddHeader("Message-ID", id)
 }
 
-func (email *Email) LoadBodyFromTemplate(filename string, T interface{}) error {
+// Загружает шаблон письма (html.template)
+func (email *Email) LoadBodyTemplate(filename string, T interface{}) (err error) {
 
-	tpl, err := template.ParseFiles("files/" + filename)
+	// тут можно сделать какой-то поиск среди доступных шаблонов
+	email.Tpl, err = template.ParseFiles("files/" + filename)
 	if err != nil {
 		return err
 	}
 
-	var buf = new(bytes.Buffer)
-	err = tpl.Execute(buf, T)
-
-	email.Body = buf
+	if err = email.ExecuteBodyTemplate(T); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (email Email) GetBodyByte() ([]byte, error) {
-	return ioutil.ReadAll(email.Body)
+// подгружает данные в шаблон и результат в тело письма
+func (email *Email) ExecuteBodyTemplate(T interface{}) error {
+	var buf = new(bytes.Buffer)
+
+	err := email.Tpl.Execute(buf, T)
+	if err != nil {
+		return err
+	}
+
+	email.Body = *buf
+
+	return nil
+}
+
+func (email Email) GetBodyByte() []byte {
+	return email.Body.Bytes()
 }
 
 // Возвращает Body
-func (email Email) GetBodyString() (string, error) {
-	body, err := ioutil.ReadAll(email.Body)
-	if err != nil { return "", err}
+func (email Email) GetBody() string {
 
-	return string(body[:]), nil
+	return string(email.Body.Bytes()[:])
 }
 
 // Возвращает экранированное Body
-func (email Email) GetBodyStringEscaped() (string, error) {
-	body, err := email.GetBodyString()
-	if err != nil {
-		return "",err
-	}
-	return template.HTMLEscapeString(body), nil
+func (email Email) GetBodyEscaped() string {
+	return template.HTMLEscapeString(email.GetBody())
 }
 
 type linesplitter struct {
@@ -175,19 +199,16 @@ func (email Email) GetBodyBase64Byte() ([]byte, error) {
 
 	lsWriter := &linesplitter{len: 76, count: 0, sep: []byte("\n"), w: bufR}
 	wrt := base64.NewEncoder(base64.StdEncoding, lsWriter)
-	body, err := email.GetBodyStringEscaped()
-	if err != nil {return nil, err}
-	_, err = io.Copy(wrt, strings.NewReader(body))
+	_, err := io.Copy(wrt, strings.NewReader(email.GetBodyEscaped()))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	return bufR.Bytes(), nil
-
 }
 
 // возвращает body в base64 по 76 символов в длину в виде строки
-func (email Email) GetBodyBase64String() (string, error) {
+func (email Email) GetBodyBase64() (string, error) {
 
 	bodyByte, err := email.GetBodyBase64Byte()
 	if err != nil { return "", err}
@@ -226,3 +247,29 @@ func (email Email) GetHeaders() []string {
 	return headers
 }
 
+// Возвращает все сообщение
+func (email Email) GetMessage() string {
+	return email.GetHeader() + "\r\n" + email.GetBody()
+}
+
+func (email Email) GetRSAPrivateKey(rsaPrivateKey string) *rsa.PrivateKey {
+
+	block, _ := pem.Decode([]byte(string(rsaPrivateKey)))
+
+	enc := x509.IsEncryptedPEMBlock(block)
+	b := block.Bytes
+
+	var err error
+	if enc {
+		log.Println("is encrypted pem block")
+		b, err = x509.DecryptPEMBlock(block, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	key, err := x509.ParsePKCS1PrivateKey(b)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return key
+}
