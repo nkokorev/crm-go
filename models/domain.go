@@ -4,7 +4,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"log"
 )
 
@@ -24,7 +23,7 @@ type Domain struct {
 }
 
 func (Domain) PgSqlCreate() {
-	fmt.Println("Создаем таблицу")
+
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&Domain{})
 	db.Exec("ALTER TABLE domains \n--     ADD CONSTRAINT uix_email_account_id_parent_id unique (email,account_id,parent_id),\n    ADD CONSTRAINT mta_settings_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n")

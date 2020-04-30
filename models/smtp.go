@@ -2,14 +2,17 @@ package models
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/toorop/go-dkim"
+	"github.com/emersion/go-msgauth/dkim"
 	"html/template"
 	"io"
 	"log"
+	"net"
 	"net/mail"
+	"net/smtp"
 	"strings"
 	"time"
 )
@@ -32,25 +35,6 @@ func TestSend() error {
 	email, err := NewEmail("example", nil)
 	if err != nil { return err }
 
-	// ввод общих данных
-	email.SetSubject("Тестовое сообщение")
-	email.SetTo("nkokorev@rus-marketing.ru")
-	email.SetFrom("Ratus CRM","info@ratuscrm.com")
-	email.SetReturnPath("abuse@mta1@ratuscrm.com")
-	email.SetMessageID("jd7dhds73h3738")
-
-
-	// test body64 string
-	//body, err := email.GetBodyBase64()
-	//fmt.Println(body)
-
-	//header := email.GetHeaderByte()
-	//fmt.Println(header.Bytes())
-
-	//fmt.Println(email.GetBodyBase64())
-
-	//fmt.Println(email.GetRSAPrivateKey("-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQCwy7WZIg2haroLTj14GS7MVeLyR0RE7hkhdPYVjdKlUlaJeun5\nlwp7//QcQmZPu9O7e46mTD+CE6srCVyKWCSeUlAVwcV7GT7A9VKnPPiGgAs26Hqz\nAuGwhER3l+lT1arVTbRu7E6shBoWROwPAqZPPp+jctL79CEta5U2ICduHQIDAQAB\nAoGAE+aKRXd400+hK36eGrOy+ds9FYqCG8Q1Xfe9b4WsTWGsTgNg7PBchMK15qxu\nudDpr3PkBcIVb/3oyYpfOU9cp6mgXk557OxqfPNyNwRO/o/6/IiEpFFrk8jJxoc3\nmoa9Lh1hM/lsSGryp83L1vBUTs3tXIGo+uBBHnLaH33dFF0CQQDhizg/xVAhR4he\n8Q/uSP5Cgf/Viwevluxpz2R4WrGro5XRyLvEoXb+gPG9NqjT62N7jHX1lBxFpFPT\n/zh1BADLAkEAyKtTmww6/ULKTijfBOhp+w/O4TOWbq0JSZBXAGPI6jh+73gGNf/x\n+55kMYUjIaxpIkILsDTlQrO5kBIBarX3twJAHtXp2s4fJm2hN1m909Ym7PDZCVj4\ntAjuSYkRM2My50R2Nzg6c6efnSwD4NqYOmD0OO/7MJgPRXYx/8nk7hqeAQJBAJ96\n8h42cSdYjpnhh6VJ5PigTqXSLwtUwB3T9iEcLNBhCBjfhegiurlj33MvwYUAlimg\n3dMzpsUFO0PR24hoiC8CQQDP1kDw2zzA8dwGFjbBPqFfN5uVcbwzq1tRjdM1mkp8\nwJB/anwuIRNIE/PDCvi4MEmW7p7FkfbHOZOSgYXbIK3k\n-----END RSA PRIVATE KEY-----").D)
-
 	acc, err := GetMainAccount()
 	if err != nil { return err }
 	domains, err := acc.GetDomains()
@@ -64,14 +48,35 @@ func TestSend() error {
 	// получаем рабочий домен с которого будем отсылать сообщения
 	domain := domains[0]
 
+	mailbox := domain.MailBoxes[0]
+	if &mailbox == nil {
+		return errors.New("Нет mailbox")
+	}
+
+	// ввод общих данных
+	email.SetSubject("Достало уже!!!")
+	email.SetTo("nkokorev@rus-marketing.ru")
+	//email.SetTo("mail-test@ratus-dev.ru")
+	//email.SetTo("mex388@mail.ru")
+
+	//email.SetReturnPath("abuse@mta1@ratuscrm.com")
+	//email.SetMessageID("jd7dhds73h3738")
+	//email.SetFrom("Ratus CRM","info@ratuscrm.com")
+	email.SetFrom( mailbox.FromName, mailbox.BoxName + "@" + domain.Host)
+
 	err = email.DKIMSign(domain)
 	if err != nil {
 		return err
 	}
 
 	//fmt.Println( domain.GetPrivateKeyByte() )
-	fmt.Println( email.BodySignedDKIM )
+	//fmt.Println( email.GetMessage() )
 
+	// можем отправлять письмо
+	err = email.Send()
+	if err != nil {
+		return err
+	}
 
 	return err
 }
@@ -83,8 +88,10 @@ func NewEmail(filename string, T interface{}) (*Email, error) {
 	// Инициируем хедер
 	email.Header = make(map[string]string)
 	email.AddHeader("MIME-Version", "1.0")
-	email.AddHeader("Content-Transfer-Encoding", "base64")
-	email.AddHeader("Content-Type", "text/html; charset=utf-8")
+	email.AddHeader("Content-Type", "text/html; charset=UTF-8")
+	//email.AddHeader("Content-Transfer-Encoding", "base64")
+	//email.AddHeader("Content-Transfer-Encoding", "binary")
+	email.AddHeader("Content-Transfer-Encoding", "7bit")
 	email.AddHeader("Date", time.RFC1123Z)
 
 	if filename != "" {
@@ -269,35 +276,159 @@ func (email Email) GetHeaders() []string {
 
 // Возвращает все сообщение
 func (email Email) GetMessage() string {
+
+	//body := html.EscapeString(base64.StdEncoding.EncodeToString([]byte(email.GetBody())))
+	//body := base64.StdEncoding.EncodeToString([]byte(email.GetBody()))
+	/*b64, err := email.GetBodyBase64()
+	if err != nil {
+		return ""
+	}*/
+	//return html.EscapeString(email.GetHeader() + "\r\n" + body)
 	return email.GetHeader() + "\r\n" + email.GetBody()
 }
 
-// подписывает письмо
+// подписывает письмо и записывает его в email.BodySignedDKIM
 func (email *Email) DKIMSign(domain Domain) error {
 	// email is the email to sign (byte slice)
 	// privateKey the private key (pem encoded, byte slice )
-	options := dkim.NewSigOptions()
+	/*options := dkim.NewSigOptions()
 	options.PrivateKey = domain.GetPrivateKeyByte()
 	//options.PrivateKey = []byte(string(domain.DKIMRSAPrivateKey))
 	options.Domain = domain.Host
 	options.Selector = domain.DKIMSelector
 	options.SignatureExpireIn = 3600
-	options.BodyLength = 0 //uint(len([]rune(email.Body.String()))) // ??
+	options.BodyLength = uint(len([]rune(email.Body.String()))) // ??
 	options.Headers = email.GetHeaders() //[]string{"from", "date", "mime-version", "received", "received"}
-	options.AddSignatureTimestamp = true
-	options.Canonicalization = "relaxed/relaxed"
+	options.AddSignatureTimestamp = false
+	options.Canonicalization = "relaxed/relaxed"*/
 
-	// Получаем все письма с заголовками
-	body, err := email.GetBodyBase64Byte()
+	r := strings.NewReader(email.GetMessage())
+
+	options := &dkim.SignOptions{
+		Domain: domain.Host,
+		Selector: domain.DKIMSelector,
+		Signer: domain.GetPrivateKey(),
+		//HeaderCanonicalization: dkim.CanonicalizationRelaxed,
+		//BodyCanonicalization: dkim.CanonicalizationRelaxed,
+	}
+
+	var bodyDkim bytes.Buffer
+	if err := dkim.Sign(&bodyDkim, r, options); err != nil {
+		log.Fatal(err)
+	}
+
+	email.BodySignedDKIM = bodyDkim.Bytes()
+
+	return nil
+}
+
+var (
+	ports = []int{25, 2525, 587}
+)
+
+func (email Email) Send() error {
+	if !strings.Contains(email.To.Address, "@") {
+		return fmt.Errorf("Invalid recipient address: <%s>", email.To.Address)
+	}
+
+	host := strings.Split(email.To.Address, "@")[1]
+	addrs, err := net.LookupMX(host)
 	if err != nil {
 		return err
 	}
-	err = dkim.Sign(&body, options)
+
+	c, err := newClient(addrs, ports)
 	if err != nil {
 		return err
 	}
 
-	email.BodySignedDKIM = body
+	err = email.send(c)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func newClient(mx []*net.MX, ports []int) (*smtp.Client, error) {
+	for i := range mx {
+		for j := range ports {
+			server := strings.TrimSuffix(mx[i].Host, ".")
+			hostPort := fmt.Sprintf("%s:%d", server, ports[j])
+
+			conn, err := net.DialTimeout("tcp", hostPort, 5*time.Second)
+			if err != nil {
+				if j == len(ports)-1 {
+					return nil, err
+				}
+
+				continue
+			}
+
+			client, err := smtp.NewClient(conn, server)
+
+
+			//client, err := smtp.Dial(hostPort)
+			if err != nil {
+				if j == len(ports)-1 {
+					return nil, err
+				}
+
+				continue
+			}
+			tlc := &tls.Config{
+				InsecureSkipVerify: true,
+				ServerName:         server,
+			}
+			if err := client.StartTLS(tlc); err != nil {
+				fmt.Println("Не удалось установить TLC")
+			}
+
+			return client, nil
+		}
+	}
+
+	return nil, fmt.Errorf("Couldn't connect to servers %v on any common port.", mx)
+}
+
+func (email Email) send(c *smtp.Client) error {
+
+	//fmt.Println(email.GetMessage() )
+	//return nil
+
+	if err := c.Mail(email.From.Address); err != nil {
+		log.Println("c.Mail")
+		return err
+	}
+
+	if err := c.Rcpt(email.To.Address); err != nil {
+		log.Println("c.Rcpt")
+		return err
+	}
+
+	w, err := c.Data()
+	if err != nil {
+		return err
+	}
+
+	//_, err = fmt.Fprint(w, email.GetMessage())
+	_, err = w.Write(email.BodySignedDKIM)
+	if err != nil {
+		return err
+	}
+
+	//defer w.Close()
+	err = w.Close()
+	if err != nil {
+		return err
+	}
+
+	//defer c.Quit()
+
+	err = c.Quit()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

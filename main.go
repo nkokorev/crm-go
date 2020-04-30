@@ -42,6 +42,8 @@ func main() {
 	if err := models.TestSend(); err != nil {
 		log.Println("Ошибка в отправке сообщения")
 		log.Fatal(err)
+	} else {
+		fmt.Println("Сообщение отправлено")
 	}
 
 	//examplePhone("89251952295")
