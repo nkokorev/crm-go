@@ -6,10 +6,10 @@ type MTASettings struct {
 
 	DomainName string `json:"domainName" gorm:"type:varchar(255);default:'example.com'"` // ratuscrm.com
 	FromName string `json:"mailFrom" gorm:"type:varchar(255);"` // RatusCRM
-	FromAddress string `json:"mailFrom" gorm:"type:varchar(255);"` // info@ratuscrm.com
+	FromAddress string `json:"mailFrom" gorm:"type:varchar(255);"` // default from .. info@ratuscrm.com - тут вообще может быть список []
 	
-	RSAPublicKey string `json:"rsaPublicKey" gorm:"type:varchar(255);"`
-	RSAPrivateKey string `json:"rsaPrivateKey" gorm:"type:varchar(255);"`
+	DKIMRSAPublicKey string `json:"dkimRsaPublicKey" gorm:"type:varchar(255);"`
+	DKIMRSAPrivateKey string `json:"dkimRsaPrivateKey" gorm:"type:varchar(255);"`
 	DKIMSelector string `json:"dkimSelector" gorm:"type:varchar(255);"` // dk1._domainkey.ratuscrm.com
 }
 
