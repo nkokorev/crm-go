@@ -161,13 +161,12 @@ func CreateMainAccount() (*Account, error) {
 		return nil, err
 	}
 
-	// ..
 	dvc, err := GetUserVerificationTypeByCode(VerificationMethodEmailAndPhone)
 	if err != nil || dvc == nil {
 		return nil, errors.New("Не удалось получить код двойной верификации по телефону и почте")
 	}
 
-	return (Account{
+	acc, err := (Account{
 		Name:                                "RatusCRM",
 		HashID: "",
 		UiApiEnabled:                        false,
@@ -185,6 +184,11 @@ func CreateMainAccount() (*Account, error) {
 		AuthForbiddenForClients:  true,  // клиенты должны заходить, но не видить ратус срм в списке
 		ClientsAreAllowedToLogin: true,  // клиенты должны заходить, но не видить ратус срм в списке
 	}).create()
+	if err != nil {
+		return nil, err
+	}
+
+	return acc, nil
 }
 
 func (account Account) ValidateInputs() error {

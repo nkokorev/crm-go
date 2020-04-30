@@ -202,7 +202,7 @@ func UploadEavData() {
 }
 
 func UploadTestData() {
-
+	
 	// 1. Получаем главный аккаунт
 	mAcc, err := models.GetMainAccount()
 	if err != nil {
@@ -226,9 +226,25 @@ func UploadTestData() {
 			},
 			models.RoleOwner,
 		)
-
 	if err != nil || owner == nil {
 		log.Fatal("Не удалось создать admin'a: ", err)
+	}
+
+	// Создаем домен для главного аккаунта
+	domainMain, err := mAcc.CreateDomain(models.Domain {
+		Host: "ratuscrm.com",
+		MailBoxes: nil,
+		DKIMRSAPublicKey: "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDY4xdKypVulDkwDpav5h1p/R9S\n/LUbaI4mn9ROlGSgflKeOg3CBggUlheF7D8AWU0rilRDq2Mb6ghpECL66o0CjtYB\nvKBOk58HUsgkmgxP8A+E+YHcQp10TsbmpJsXOs5CYlUvLmpKGv932JgefxC6kisV\n9VwCCmjKqiydoYi2bQIDAQAB\n-----END PUBLIC KEY-----",
+		DKIMRSAPrivateKey: "-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQDY4xdKypVulDkwDpav5h1p/R9S/LUbaI4mn9ROlGSgflKeOg3C\nBggUlheF7D8AWU0rilRDq2Mb6ghpECL66o0CjtYBvKBOk58HUsgkmgxP8A+E+YHc\nQp10TsbmpJsXOs5CYlUvLmpKGv932JgefxC6kisV9VwCCmjKqiydoYi2bQIDAQAB\nAoGBALo2X60rOhly0ZbdL6teWyrA1MAfkC80Gbg3ycSdy7ewPab0GRPYsd9a7l9h\ncsYN5h/X6HkhETrKOOZboGzmLKHMAaW8IjvztBF8RwI+pWXPFN67MsgcyINTsmN0\nKMQhq2f+PlMLmwT5BcLXCTCGUhskBTIMKMzCfDE5XolNgdvRAkEA/IezrzPufQzg\nCQgOo8z9X94dAuxcmZts1g3hUM/FY03hYRoZsolK4FaWw+iuZKJ1mbqd3YpPFQJa\n31f2eTpuFwJBANveAvBJmO6NU08ZNg6GpA3zk7+wp3ZptMtWMB5vUwgmA+Sl/rVp\n3b5VHJGHF/OL6Iet3KJe1+exN1VEx9wz9hsCQQC9lGKgtSvlVTUbkqDq94l/3w+I\nkkkySCx8xg7QzCozUtRQQXfpQIilwluM17GUeyIuNpstJhgYfZwa775pZCQhAkA6\n0vU6UJaIDGujl/0seb1etjJrcNn9Bl8Gn/KT0fkHDxSvkfHJm59mEuNn1BsGYAJA\nerWzA2kEZheFyrcmJQjNAkACYtlWojTaUA4kQ7NRlEzCbYuKo3/6NCNxpTQMByEb\njCmiywW1KmXv5/itFOzk9hCG0hM/OA+cFYEilTm5ybhK\n-----END RSA PRIVATE KEY-----",
+		DKIMSelector: "dk1",
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
+	}
+	
+	_, err = domainMain.AddMailBox(models.MailBox{Default: true, Allowed: true, FromName: "RatusCRM", BoxName: "info"})
+	if err != nil {
+		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
 	}
 
 	dvc, err := models.GetUserVerificationTypeByCode(models.VerificationMethodEmailAndPhone)
@@ -238,7 +254,7 @@ func UploadTestData() {
 	}
 
 	// создаем из-под владельца RatusCRM аккаунта клиентские аккаунты
-	acc357, err := owner.CreateAccount(models.Account{
+	acc357, err := owner.CreateAccount( models.Account{
 		Name:                                "357 грамм",
 		Website:                             "https://357gr.ru/",
 		Type:                                "store",
@@ -272,6 +288,21 @@ func UploadTestData() {
 		return
 	}
 
+	domainSynd, err := mAcc.CreateDomain(models.Domain {
+		Host: "syndicad.com",
+		MailBoxes: nil,
+		DKIMRSAPublicKey: "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDEwBDUBhnVcb+wPoyj6UrobwhKp0bIMzl9znfS127PdLqeGEyxCGy6CTT7coAturzb2dw33e3OhzzOvvBjnzSamRfpAj3vuBiSWtykS4JH17EN/4+ABtf7VOqfRWwB7F80VJ+3/Xv7TzkmNcAg+ksgDzk//BCXfcVFfx56Jxf7mQIDAQAB\n-----END PUBLIC KEY-----",
+		DKIMRSAPrivateKey: "-----BEGIN RSA PRIVATE KEY-----\nMIICWwIBAAKBgQDEwBDUBhnVcb+wPoyj6UrobwhKp0bIMzl9znfS127PdLqeGEyx\nCGy6CTT7coAturzb2dw33e3OhzzOvvBjnzSamRfpAj3vuBiSWtykS4JH17EN/4+A\nBtf7VOqfRWwB7F80VJ+3/Xv7TzkmNcAg+ksgDzk//BCXfcVFfx56Jxf7mQIDAQAB\nAoGAIR9YdelFBhrtM2WEVb/bnX+7vJ2mm+OLxTMyFuuvuvsiw6TBnHgXncYZBk/D\nZm9uhfCKU1loRIGd6gxY+dx+hVCFHh4tyQ+xvb+siTsDO3VXhHCq+XZpstDanrS0\nkEjDPx95QYgJ3taG55Agu2Ql/cgevyFevOhXUPrZ6lStdcUCQQDxpSPUywPgOas5\nCFMWB5k5+DRAz9CygH5L7i53RnitwPL3jHvwOHs5JD25lD9IfKVyGuJtYeUTPenp\nFlIxzv+TAkEA0HAuDHrCItg1x/UDO9N+IafTFN5+31Me9POiOGkghXfbWJCfxaBW\nwJWLTPI7p+PT07/sRusQpGRiGi0RagZbowJAVqXsr0UM4r5LE2xUvrWC0DKcKhFa\nuGcy4m9J4iM26rchaHrLhlv6c4b3SzBJcOihOsVBJA/SYI/27EnAt3OOWQJAXhjm\nkPeyQKy+ysBPb2iw3ly3LAqt1//cT9TU/QZoihhry3WuyzbxMwvP0TLhv49Yh5Vz\nAykHYE95AjwqSmUIZQJAaRJMuw5gVSjQaLz/qoiMVEQO7vmazsiB9/YKTPp18I+4\npBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==\n-----END RSA PRIVATE KEY-----",
+		DKIMSelector: "dk1",
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
+	}
+
+	_, err = domainSynd.AddMailBox(models.MailBox{Default: true, Allowed: true, FromName: "Syndicad", BoxName: "info"})
+	if err != nil {
+		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
+	}
 	
 
 	// 5. Добавляем пользователя в аккаунт (?)

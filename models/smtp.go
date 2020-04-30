@@ -2,11 +2,10 @@ package models
 
 import (
 	"bytes"
-	"crypto/rsa"
-	"crypto/x509"
 	"encoding/base64"
-	"encoding/pem"
+	"errors"
 	"fmt"
+	"github.com/toorop/go-dkim"
 	"html/template"
 	"io"
 	"log"
@@ -19,6 +18,7 @@ type Email struct {
 	//Message mail.Message // has header and body
 	Header map[string]string
 	Body   bytes.Buffer
+	BodySignedDKIM []byte
 	Subject string
 	To mail.Address
 	From mail.Address
@@ -49,9 +49,29 @@ func TestSend() error {
 
 	//fmt.Println(email.GetBodyBase64())
 
+	//fmt.Println(email.GetRSAPrivateKey("-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQCwy7WZIg2haroLTj14GS7MVeLyR0RE7hkhdPYVjdKlUlaJeun5\nlwp7//QcQmZPu9O7e46mTD+CE6srCVyKWCSeUlAVwcV7GT7A9VKnPPiGgAs26Hqz\nAuGwhER3l+lT1arVTbRu7E6shBoWROwPAqZPPp+jctL79CEta5U2ICduHQIDAQAB\nAoGAE+aKRXd400+hK36eGrOy+ds9FYqCG8Q1Xfe9b4WsTWGsTgNg7PBchMK15qxu\nudDpr3PkBcIVb/3oyYpfOU9cp6mgXk557OxqfPNyNwRO/o/6/IiEpFFrk8jJxoc3\nmoa9Lh1hM/lsSGryp83L1vBUTs3tXIGo+uBBHnLaH33dFF0CQQDhizg/xVAhR4he\n8Q/uSP5Cgf/Viwevluxpz2R4WrGro5XRyLvEoXb+gPG9NqjT62N7jHX1lBxFpFPT\n/zh1BADLAkEAyKtTmww6/ULKTijfBOhp+w/O4TOWbq0JSZBXAGPI6jh+73gGNf/x\n+55kMYUjIaxpIkILsDTlQrO5kBIBarX3twJAHtXp2s4fJm2hN1m909Ym7PDZCVj4\ntAjuSYkRM2My50R2Nzg6c6efnSwD4NqYOmD0OO/7MJgPRXYx/8nk7hqeAQJBAJ96\n8h42cSdYjpnhh6VJ5PigTqXSLwtUwB3T9iEcLNBhCBjfhegiurlj33MvwYUAlimg\n3dMzpsUFO0PR24hoiC8CQQDP1kDw2zzA8dwGFjbBPqFfN5uVcbwzq1tRjdM1mkp8\nwJB/anwuIRNIE/PDCvi4MEmW7p7FkfbHOZOSgYXbIK3k\n-----END RSA PRIVATE KEY-----").D)
 
+	acc, err := GetMainAccount()
+	if err != nil { return err }
+	domains, err := acc.GetDomains()
+	if err != nil || domains == nil {
+		return errors.New("Не удалось получить домены для аккаунта")
+	}
+	if len(domains) == 0 {
+		return errors.New("У аккаунта нет доступных доменов для отправки писем")
+	}
 
-	fmt.Println(email.GetRSAPrivateKey("-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQCwy7WZIg2haroLTj14GS7MVeLyR0RE7hkhdPYVjdKlUlaJeun5\nlwp7//QcQmZPu9O7e46mTD+CE6srCVyKWCSeUlAVwcV7GT7A9VKnPPiGgAs26Hqz\nAuGwhER3l+lT1arVTbRu7E6shBoWROwPAqZPPp+jctL79CEta5U2ICduHQIDAQAB\nAoGAE+aKRXd400+hK36eGrOy+ds9FYqCG8Q1Xfe9b4WsTWGsTgNg7PBchMK15qxu\nudDpr3PkBcIVb/3oyYpfOU9cp6mgXk557OxqfPNyNwRO/o/6/IiEpFFrk8jJxoc3\nmoa9Lh1hM/lsSGryp83L1vBUTs3tXIGo+uBBHnLaH33dFF0CQQDhizg/xVAhR4he\n8Q/uSP5Cgf/Viwevluxpz2R4WrGro5XRyLvEoXb+gPG9NqjT62N7jHX1lBxFpFPT\n/zh1BADLAkEAyKtTmww6/ULKTijfBOhp+w/O4TOWbq0JSZBXAGPI6jh+73gGNf/x\n+55kMYUjIaxpIkILsDTlQrO5kBIBarX3twJAHtXp2s4fJm2hN1m909Ym7PDZCVj4\ntAjuSYkRM2My50R2Nzg6c6efnSwD4NqYOmD0OO/7MJgPRXYx/8nk7hqeAQJBAJ96\n8h42cSdYjpnhh6VJ5PigTqXSLwtUwB3T9iEcLNBhCBjfhegiurlj33MvwYUAlimg\n3dMzpsUFO0PR24hoiC8CQQDP1kDw2zzA8dwGFjbBPqFfN5uVcbwzq1tRjdM1mkp8\nwJB/anwuIRNIE/PDCvi4MEmW7p7FkfbHOZOSgYXbIK3k\n-----END RSA PRIVATE KEY-----").D)
+	// получаем рабочий домен с которого будем отсылать сообщения
+	domain := domains[0]
+
+	err = email.DKIMSign(domain)
+	if err != nil {
+		return err
+	}
+
+	//fmt.Println( domain.GetPrivateKeyByte() )
+	fmt.Println( email.BodySignedDKIM )
+
 
 	return err
 }
@@ -252,24 +272,32 @@ func (email Email) GetMessage() string {
 	return email.GetHeader() + "\r\n" + email.GetBody()
 }
 
-func (email Email) GetRSAPrivateKey(rsaPrivateKey string) *rsa.PrivateKey {
+// подписывает письмо
+func (email *Email) DKIMSign(domain Domain) error {
+	// email is the email to sign (byte slice)
+	// privateKey the private key (pem encoded, byte slice )
+	options := dkim.NewSigOptions()
+	options.PrivateKey = domain.GetPrivateKeyByte()
+	//options.PrivateKey = []byte(string(domain.DKIMRSAPrivateKey))
+	options.Domain = domain.Host
+	options.Selector = domain.DKIMSelector
+	options.SignatureExpireIn = 3600
+	options.BodyLength = 0 //uint(len([]rune(email.Body.String()))) // ??
+	options.Headers = email.GetHeaders() //[]string{"from", "date", "mime-version", "received", "received"}
+	options.AddSignatureTimestamp = true
+	options.Canonicalization = "relaxed/relaxed"
 
-	block, _ := pem.Decode([]byte(string(rsaPrivateKey)))
-
-	enc := x509.IsEncryptedPEMBlock(block)
-	b := block.Bytes
-
-	var err error
-	if enc {
-		log.Println("is encrypted pem block")
-		b, err = x509.DecryptPEMBlock(block, nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	key, err := x509.ParsePKCS1PrivateKey(b)
+	// Получаем все письма с заголовками
+	body, err := email.GetBodyBase64Byte()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	return key
+	err = dkim.Sign(&body, options)
+	if err != nil {
+		return err
+	}
+
+	email.BodySignedDKIM = body
+
+	return nil
 }

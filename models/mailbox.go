@@ -3,7 +3,6 @@ package models
 // Allowed Mail Box list of domain in Account
 type MailBox struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
-
 	AccountID uint `json:"accountId" gorm:"index"` // принадлежность к аккаунту
 	DomainID uint `json:"domainId" gorm:"index"` // к какому домену принадлежит
 
@@ -51,10 +50,11 @@ func (account Account) GetMailBoxes() (*[]MailBox, error) {
 	return &mailBoxes, err
 }
 
-// Возвращает дефолтный почтовый ящик
+// return default mailbox
 func (account Account) GetMailBoxDefault() (*MailBox, error) {
 	var mailBox MailBox
 	err := db.Preload("Domain").First(&mailBox, "account_id = ? AND default = true", account.ID).Error
 
 	return &mailBox, err
 }
+
