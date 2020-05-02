@@ -18,7 +18,7 @@ import (
 )
 
 type Email struct {
-	//Message mail.Message // has header and body
+
 	Header map[string]string
 	Body   bytes.Buffer
 	BodySignedDKIM []byte
@@ -29,7 +29,7 @@ type Email struct {
 	Tpl *template.Template // шаблон письма с которого читаются данные
 }
 
-func TestSend() error {
+func SendTestMessage() error {
 
 	// создаем письмо и сразу подгружаем шаблончик
 	email, err := NewEmail("example", nil)
@@ -54,23 +54,20 @@ func TestSend() error {
 	}
 
 	// ввод общих данных
-	email.SetSubject("Достало уже!!!")
-	email.SetTo("nkokorev@rus-marketing.ru")
+	email.SetSubject("From local server PEM Certs V")
+	email.SetTo("test-d8hbwwoak@srv1.mail-tester.com")
+	//email.SetTo("nkokorev@rus-marketing.ru")
 	//email.SetTo("mail-test@ratus-dev.ru")
 	//email.SetTo("mex388@mail.ru")
+	email.SetReturnPath("abuse@mta1@ratuscrm.com")
+	email.SetMessageID("jd7dhds73h3738")
 
-	//email.SetReturnPath("abuse@mta1@ratuscrm.com")
-	//email.SetMessageID("jd7dhds73h3738")
-	//email.SetFrom("Ratus CRM","info@ratuscrm.com")
 	email.SetFrom( mailbox.FromName, mailbox.BoxName + "@" + domain.Host)
 
 	err = email.DKIMSign(domain)
 	if err != nil {
 		return err
 	}
-
-	//fmt.Println( domain.GetPrivateKeyByte() )
-	//fmt.Println( email.GetMessage() )
 
 	// можем отправлять письмо
 	err = email.Send()
@@ -81,6 +78,10 @@ func TestSend() error {
 	return err
 }
 
+func (email *Email) GetAuthSMTP() smtp.Auth {
+	return smtp.PlainAuth("", "mex388", "", "mta1.ratuscrm.com")
+}
+
 // возвращает новое письмо и загружает шаблон при наличии имени файла
 func NewEmail(filename string, T interface{}) (*Email, error) {
 	email := new(Email)
@@ -89,9 +90,9 @@ func NewEmail(filename string, T interface{}) (*Email, error) {
 	email.Header = make(map[string]string)
 	email.AddHeader("MIME-Version", "1.0")
 	email.AddHeader("Content-Type", "text/html; charset=UTF-8")
-	//email.AddHeader("Content-Transfer-Encoding", "base64")
+	email.AddHeader("Content-Transfer-Encoding", "base64")
 	//email.AddHeader("Content-Transfer-Encoding", "binary")
-	email.AddHeader("Content-Transfer-Encoding", "7bit")
+	//email.AddHeader("Content-Transfer-Encoding", "7bit")
 	email.AddHeader("Date", time.RFC1123Z)
 
 	if filename != "" {
@@ -160,19 +161,8 @@ func (email *Email) ExecuteBodyTemplate(T interface{}) error {
 	return nil
 }
 
-func (email Email) GetBodyByte() []byte {
+func (email Email) GetBody() []byte {
 	return email.Body.Bytes()
-}
-
-// Возвращает Body
-func (email Email) GetBody() string {
-
-	return string(email.Body.Bytes()[:])
-}
-
-// Возвращает экранированное Body
-func (email Email) GetBodyEscaped() string {
-	return template.HTMLEscapeString(email.GetBody())
 }
 
 type linesplitter struct {
@@ -198,14 +188,20 @@ func (ls *linesplitter) Write(in []byte) (n int, err error) {
 	chunkSize := min(len(in), ls.len-ls.count)
 	// Pass on chunk(s)
 	for {
-		ls.w.Write(in[readPos:(readPos + chunkSize)])
+		_, err := ls.w.Write(in[readPos:(readPos + chunkSize)])
+		if err != nil {
+			return 0, err
+		}
 		readPos += chunkSize // Skip forward ready for next chunk
 		ls.count += chunkSize
 		writtenThisCall += chunkSize
 
 		// if we have completed a chunk, emit a separator
 		if ls.count >= ls.len {
-			ls.w.Write(ls.sep)
+			_, err := ls.w.Write(ls.sep)
+			if err != nil {
+				return 0, err
+			}
 			writtenThisCall += len(ls.sep)
 			ls.count = 0
 		}
@@ -220,28 +216,23 @@ func (ls *linesplitter) Write(in []byte) (n int, err error) {
 }
 
 // возвращает body в base64 по 76 символов в длину в виде []Byte
-func (email Email) GetBodyBase64Byte() ([]byte, error) {
+func (email Email) GetBodyBase64() ([]byte, error) {
 
 	bufR := new(bytes.Buffer)
 
 	lsWriter := &linesplitter{len: 76, count: 0, sep: []byte("\n"), w: bufR}
 	wrt := base64.NewEncoder(base64.StdEncoding, lsWriter)
-	_, err := io.Copy(wrt, strings.NewReader(email.GetBodyEscaped()))
-	if err != nil {
+	//_, err := io.Copy(wrt, strings.NewReader(email.GetBody()))
+	/*if err != nil {
 		log.Fatal(err)
+	}*/
+
+	_, err := wrt.Write(email.GetBody())
+	if err != nil {
+		return nil, err
 	}
 
 	return bufR.Bytes(), nil
-}
-
-// возвращает body в base64 по 76 символов в длину в виде строки
-func (email Email) GetBodyBase64() (string, error) {
-
-	bodyByte, err := email.GetBodyBase64Byte()
-	if err != nil { return "", err}
-
-	return string(bodyByte[:]), nil
-
 }
 
 func (email Email) GetHeader() string {
@@ -250,13 +241,6 @@ func (email Email) GetHeader() string {
 			header += k + ": " + v + "\r\n"
 		}
 	return header
-}
-
-func (email Email) GetHeaderByte() bytes.Buffer {
-	buf := new(bytes.Buffer)
-	io.Copy(buf, strings.NewReader(email.GetHeader()))
-
-	return *buf
 }
 
 func (email *Email) AddHeader(k string, v string) {
@@ -275,7 +259,7 @@ func (email Email) GetHeaders() []string {
 }
 
 // Возвращает все сообщение
-func (email Email) GetMessage() string {
+func (email Email) GetMessage() ([]byte, error) {
 
 	//body := html.EscapeString(base64.StdEncoding.EncodeToString([]byte(email.GetBody())))
 	//body := base64.StdEncoding.EncodeToString([]byte(email.GetBody()))
@@ -284,36 +268,47 @@ func (email Email) GetMessage() string {
 		return ""
 	}*/
 	//return html.EscapeString(email.GetHeader() + "\r\n" + body)
-	return email.GetHeader() + "\r\n" + email.GetBody()
+
+	body, err := email.GetBodyBase64()
+	//body := email.GetBody()
+	if err != nil {
+		return nil, err
+	}
+
+	buf := new(bytes.Buffer)
+	_, err = buf.Write([]byte(email.GetHeader()+ "\r\n"))
+	if err != nil {
+		return nil, err
+	}
+	_, err = buf.Write(body)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 // подписывает письмо и записывает его в email.BodySignedDKIM
 func (email *Email) DKIMSign(domain Domain) error {
-	// email is the email to sign (byte slice)
-	// privateKey the private key (pem encoded, byte slice )
-	/*options := dkim.NewSigOptions()
-	options.PrivateKey = domain.GetPrivateKeyByte()
-	//options.PrivateKey = []byte(string(domain.DKIMRSAPrivateKey))
-	options.Domain = domain.Host
-	options.Selector = domain.DKIMSelector
-	options.SignatureExpireIn = 3600
-	options.BodyLength = uint(len([]rune(email.Body.String()))) // ??
-	options.Headers = email.GetHeaders() //[]string{"from", "date", "mime-version", "received", "received"}
-	options.AddSignatureTimestamp = false
-	options.Canonicalization = "relaxed/relaxed"*/
 
-	r := strings.NewReader(email.GetMessage())
+	body, err := email.GetMessage()
+	if err != nil {
+		return err
+	}
+
+	//r := strings.NewReader(body)
 
 	options := &dkim.SignOptions{
 		Domain: domain.Host,
 		Selector: domain.DKIMSelector,
 		Signer: domain.GetPrivateKey(),
-		//HeaderCanonicalization: dkim.CanonicalizationRelaxed,
-		//BodyCanonicalization: dkim.CanonicalizationRelaxed,
+		HeaderCanonicalization: dkim.CanonicalizationRelaxed,
+		BodyCanonicalization: dkim.CanonicalizationRelaxed,
 	}
 
 	var bodyDkim bytes.Buffer
-	if err := dkim.Sign(&bodyDkim, r, options); err != nil {
+	//if err := dkim.Sign(&bodyDkim, r, options); err != nil {
+	if err := dkim.Sign(&bodyDkim, bytes.NewBuffer(body), options); err != nil {
 		log.Fatal(err)
 	}
 
@@ -337,12 +332,15 @@ func (email Email) Send() error {
 		return err
 	}
 
-	c, err := newClient(addrs, ports)
+	client, err := newClient(addrs, ports)
 	if err != nil {
 		return err
 	}
+	// получаем авторизацию на SMTP-сервере
+	//auth := email.GetAuthSMTP()
 
-	err = email.send(c)
+	//err := email.send("mta1.ratuscrm.com:25", auth)
+	err = email.send(client)
 	if err != nil {
 		return err
 	}
@@ -350,6 +348,67 @@ func (email Email) Send() error {
 	return nil
 }
 
+func (email *Email) GetHostPort(mx []*net.MX, ports []int) (hostPort string, err error) {
+	for i := range mx {
+		for j := range ports {
+			server := strings.TrimSuffix(mx[i].Host, ".")
+			hostPort = fmt.Sprintf("%s:%d", server, ports[j])
+
+
+			_, err := net.DialTimeout("tcp", hostPort, 10*time.Second)
+			if err != nil {
+				if j == len(ports)-1 {
+					return "", err
+				}
+				continue
+			}
+		}
+	}
+
+
+	fmt.Println("Найден хост: ", hostPort)
+
+	return hostPort, nil
+}
+
+func (email Email) send(c *smtp.Client) error {
+
+	if err := c.Mail(email.From.Address); err != nil {
+		log.Println("c.Mail")
+		return err
+	}
+
+	if err := c.Rcpt(email.To.Address); err != nil {
+		log.Println("c.Rcpt")
+		return err
+	}
+
+	w, err := c.Data()
+	if err != nil {
+		return err
+	}
+
+	//_, err = fmt.Fprint(w, email.GetMessage())
+	//_, err = fmt.Fprint(w, email.GetMessageDKIMSign())
+	_, err = w.Write(email.BodySignedDKIM)
+	if err != nil {
+		return err
+	}
+
+	//defer w.Close()
+	err = w.Close()
+	if err != nil {
+		return err
+	}
+
+	//defer c.Quit()
+	err = c.Quit()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 func newClient(mx []*net.MX, ports []int) (*smtp.Client, error) {
 	for i := range mx {
 		for j := range ports {
@@ -384,51 +443,10 @@ func newClient(mx []*net.MX, ports []int) (*smtp.Client, error) {
 				fmt.Println("Не удалось установить TLC")
 			}
 
+
 			return client, nil
 		}
 	}
 
 	return nil, fmt.Errorf("Couldn't connect to servers %v on any common port.", mx)
-}
-
-func (email Email) send(c *smtp.Client) error {
-
-	//fmt.Println(email.GetMessage() )
-	//return nil
-
-	if err := c.Mail(email.From.Address); err != nil {
-		log.Println("c.Mail")
-		return err
-	}
-
-	if err := c.Rcpt(email.To.Address); err != nil {
-		log.Println("c.Rcpt")
-		return err
-	}
-
-	w, err := c.Data()
-	if err != nil {
-		return err
-	}
-
-	//_, err = fmt.Fprint(w, email.GetMessage())
-	_, err = w.Write(email.BodySignedDKIM)
-	if err != nil {
-		return err
-	}
-
-	//defer w.Close()
-	err = w.Close()
-	if err != nil {
-		return err
-	}
-
-	//defer c.Quit()
-
-	err = c.Quit()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

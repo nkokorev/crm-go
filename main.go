@@ -5,7 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
-	"github.com/nkokorev/crm-go/database/base"
+	//"github.com/mailgun/mailgun-go/v4"
+	"github.com/mailgun/mailgun-go"
 	"github.com/nkokorev/crm-go/models"
 	"github.com/nkokorev/crm-go/routes"
 	"github.com/ttacon/libphonenumber"
@@ -35,16 +36,36 @@ func main() {
 	defer pool.Close()
 
 	// !!! запускаем миграции
-	base.RefreshTables()
+	//base.RefreshTables()
 
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
 
-	if err := models.TestSend(); err != nil {
-		log.Println("Ошибка в отправке сообщения")
+/*	if err := models.testSMTP();err != nil {
+		fmt.Println("Start SMTP is error: ", err)
+	} else {
+		fmt.Println("SMTP-server is started")
+	}*/
+
+	err := ExampleTestSMTP()
+	if err != nil {
 		log.Fatal(err)
 	} else {
 		fmt.Println("Сообщение отправлено")
 	}
+
+
+	/*err := models.SendTestMessage()
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		fmt.Println("Сообщение отправлено")
+	}*/
+	/*if err := models.TestSend(); err != nil {
+		log.Println("Ошибка в отправке сообщения")
+		log.Fatal(err)
+	} else {
+		fmt.Println("Сообщение отправлено")
+	}*/
 
 	//examplePhone("89251952295")
 	//examplePhone("+380(44)234-68-88")
@@ -111,4 +132,40 @@ func examplePhone(numToParse string) {
 
 	// num is a *libphonenumber.PhoneNumber
 
+}
+
+func ExampleTestSMTP() error {
+
+	var yourDomain string = "ratuscrm.com" // e.g. mg.yourcompany.com
+
+	// You can find the Private API Key in your Account Menu, under "Settings":
+	// (https://app.mailgun.com/app/account/security)
+	//var privateAPIKey string = "65b08458-9049e45c"
+	//var privateAPIKey string = "cd00e0c60b26be77e32a943bd5768a19-65b08458-9049e45c"
+	var privateAPIKey string = "cd00e0c60b26be77e32a943bd5768a19-65b08458-9049e45c"
+
+	mg := mailgun.NewMailgun(yourDomain, privateAPIKey)
+
+	sender := "nk@ratuscrm.com"
+	subject := "Тестовое сообщение"
+	body := "Все будет хорошо, давай спать )"
+	recipient := "nkokorev@rus-marketing.ru"
+
+	// The message object allows you to add attachments and Bcc recipients
+	message := mg.NewMessage(sender, subject, body, recipient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	// Send the message	with a 10 second timeout
+	resp, id, err := mg.Send(ctx, message)
+
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	fmt.Printf("ID: %s Resp: %s\n", id, resp)
+
+	return nil
 }

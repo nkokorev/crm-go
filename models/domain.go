@@ -90,7 +90,7 @@ func (domain *Domain) AddMailBox (mailbox MailBox) (*MailBox,error) {
 
 func (domain Domain) GetPrivateKey () *rsa.PrivateKey {
 
-	block, _ := pem.Decode([]byte(string(domain.DKIMRSAPrivateKey)))
+	block, _ := pem.Decode([]byte(domain.DKIMRSAPrivateKey))
 
 	enc := x509.IsEncryptedPEMBlock(block)
 	b := block.Bytes

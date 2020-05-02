@@ -355,20 +355,27 @@ func PrivateKeyToBytes(priv *rsa2.PrivateKey) []byte {
 }
 
 func BytesToPrivateKey(priv []byte) *rsa2.PrivateKey {
-	block, _ := pem.Decode(priv)
+
+	/*block, _ := pem.Decode(priv)
 	enc := x509.IsEncryptedPEMBlock(block)
+
 	b := block.Bytes
 	var err error
+
 	if enc {
 		log.Println("is encrypted pem block")
 		b, err = x509.DecryptPEMBlock(block, nil)
 		if err != nil {
 			log.Fatal(err)
 		}
-	}
-	key, err := x509.ParsePKCS1PrivateKey(b)
+	}*/
+
+	//key, err := x509.ParsePKCS1PrivateKey(b)
+
+	key, err := x509.ParsePKCS1PrivateKey(priv)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	return key
 }
