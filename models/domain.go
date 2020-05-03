@@ -1,25 +1,18 @@
 package models
 
-import (
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
-	"log"
-)
-
-// Настройки домена, принадлежащего аккаунту. В основном для отправки email'ов
+// Настройки домена, принадлежащего аккаунту (DKIM & SPF ... )
 type Domain struct {
 
 	ID     uint   `json:"id" gorm:"primary_key"`
-	AccountID uint `json:"accountId" gorm:"index"`
+	AccountID uint `json:"accountId" gorm:"index;not_null;"`
+	PurposeRecord string `json:"purposeRecord" gorm:"type:varchar(15);not_null;"` //Sending, Receiving, Tracking
 
-	Host string `json:"host" gorm:"type:varchar(255);default:'example.com';index;unique;"` // ratuscrm.com
+	Type string `json:"sendingType" gorm:"type:varchar(20);default:'TXT';"` // TXT, MX, CNAME
+	Hostname string `json:"sendingHostname" gorm:"type:varchar(255);not_null;"` // ratuscrm.com, pic._domainkey.ratuscrm.com
+	Priority int `json:"priority" gorm:"type:int;default:10;"` // for MX - 10
+	Value string `json:"sendingValue" gorm:"type:varchar(255);not_null"` // v=spf1 include:mailgun.org ~all OR k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AM... <...>
 
-	MailBoxes []MailBox `json:"mailBoxes"` // доступные почтовые ящики
-
-	DKIMRSAPublicKey string `json:"dkimRsaPublicKey" gorm:"type:varchar(1024);"`
-	DKIMRSAPrivateKey string `json:"dkimRsaPrivateKey" gorm:"type:varchar(1024);"`
-	DKIMSelector string `json:"dkimSelector" gorm:"type:varchar(255);"` // {dk1}._domainkey.ratuscrm.com
+	Senders []EmailSender `json:"senders"` // доступные почтовые ящики ???
 }
 
 func (Domain) PgSqlCreate() {
@@ -31,10 +24,6 @@ func (Domain) PgSqlCreate() {
 }
 
 func (domain Domain) create() (*Domain, error)  {
-
-	// Normalize DKIM RSA keys
-	//domain.DKIMRSAPrivateKey = strings.ReplaceAll(domain.DKIMRSAPrivateKey, "\n", "")
-	//domain.DKIMRSAPublicKey = strings.ReplaceAll(domain.DKIMRSAPublicKey, "\n", "")
 
 	err := db.Create(&domain).Error
 	return &domain, err
@@ -77,41 +66,14 @@ func (account Account) CreateDomain(domain Domain) (*Domain, error) {
 	return domainNew, nil
 }
 
-func (domain *Domain) AddMailBox (mailbox MailBox) (*MailBox,error) {
+func (domain *Domain) AddMailBox (es EmailSender) (*EmailSender,error) {
 	// todo: проверка на существующий контекст
 	// info@ и т.д. один вариант
 
 	// устанавливаем владельца такого же
-	mailbox.DomainID = domain.ID
-	mailbox.AccountID = domain.AccountID
+	es.DomainID = domain.ID
+	es.AccountID = domain.AccountID
 
-	return mailbox.create()
+	return es.create()
 }
 
-func (domain Domain) GetPrivateKey () *rsa.PrivateKey {
-
-	block, _ := pem.Decode([]byte(domain.DKIMRSAPrivateKey))
-
-	enc := x509.IsEncryptedPEMBlock(block)
-	b := block.Bytes
-
-	var err error
-	if enc {
-		log.Println("is encrypted pem block")
-		b, err = x509.DecryptPEMBlock(block, nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	key, err := x509.ParsePKCS1PrivateKey(b)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return key
-}
-
-// надо бы проверить эту функцию..
-func (domain Domain) GetPrivateKeyByte () []byte {
-	//return x509.MarshalPKCS1PrivateKey(domain.GetPrivateKey())
-	return []byte(string(domain.DKIMRSAPrivateKey))
-}

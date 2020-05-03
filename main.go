@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/nkokorev/crm-go/database/base"
+
 	//"github.com/mailgun/mailgun-go/v4"
 	"github.com/mailgun/mailgun-go"
 	"github.com/nkokorev/crm-go/models"
@@ -36,7 +38,7 @@ func main() {
 	defer pool.Close()
 
 	// !!! запускаем миграции
-	//base.RefreshTables()
+	base.RefreshTables()
 
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
 
@@ -46,12 +48,12 @@ func main() {
 		fmt.Println("SMTP-server is started")
 	}*/
 
-	err := ExampleTestSMTP()
+	/*err := ExampleTestSMTP()
 	if err != nil {
 		log.Fatal(err)
 	} else {
 		fmt.Println("Сообщение отправлено")
-	}
+	}*/
 
 
 	/*err := models.SendTestMessage()
@@ -60,6 +62,8 @@ func main() {
 	} else {
 		fmt.Println("Сообщение отправлено")
 	}*/
+
+
 	/*if err := models.TestSend(); err != nil {
 		log.Println("Ошибка в отправке сообщения")
 		log.Fatal(err)
@@ -137,11 +141,6 @@ func examplePhone(numToParse string) {
 func ExampleTestSMTP() error {
 
 	var yourDomain string = "ratuscrm.com" // e.g. mg.yourcompany.com
-
-	// You can find the Private API Key in your Account Menu, under "Settings":
-	// (https://app.mailgun.com/app/account/security)
-	//var privateAPIKey string = "65b08458-9049e45c"
-	//var privateAPIKey string = "cd00e0c60b26be77e32a943bd5768a19-65b08458-9049e45c"
 	var privateAPIKey string = "cd00e0c60b26be77e32a943bd5768a19-65b08458-9049e45c"
 
 	mg := mailgun.NewMailgun(yourDomain, privateAPIKey)

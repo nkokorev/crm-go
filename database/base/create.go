@@ -15,7 +15,7 @@ func RefreshTables() {
 
 	// дропаем системные таблицы
 	//pool.DropTableIfExists(&models.UserProfile{})
-	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, orders, order_offers, api_keys, account_users, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, roles, email_access_tokens, user_profiles, users, user_verification_methods, crm_settings, domains, mail_boxes").Error
+	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, orders, order_offers, api_keys, account_users, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, roles, email_access_tokens, user_profiles, users, user_verification_methods, crm_settings, domains, mail_boxes, email_senders, envelope_publishes").Error
 	if err != nil {
 		fmt.Println("Cant create table accounts", err)
 	}
@@ -110,7 +110,8 @@ func RefreshTables() {
 
 	// SMTP Settings
 	models.Domain{}.PgSqlCreate()
-	models.MailBox{}.PgSqlCreate()
+	models.EmailSender{}.PgSqlCreate()
+	models.EnvelopePublish{}.PgSqlCreate()
 
 	// ### Создание таблиц для хранения значений атрибутов [VARCHAR, TEXT, DATE, BOOLEAN, INT, DECIMAL]
 
@@ -232,17 +233,14 @@ func UploadTestData() {
 
 	// Создаем домен для главного аккаунта
 	domainMain, err := mAcc.CreateDomain(models.Domain {
-		Host: "ratuscrm.com",
-		MailBoxes: nil,
-		DKIMRSAPublicKey: "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDY4xdKypVulDkwDpav5h1p/R9S\n/LUbaI4mn9ROlGSgflKeOg3CBggUlheF7D8AWU0rilRDq2Mb6ghpECL66o0CjtYB\nvKBOk58HUsgkmgxP8A+E+YHcQp10TsbmpJsXOs5CYlUvLmpKGv932JgefxC6kisV\n9VwCCmjKqiydoYi2bQIDAQAB\n-----END PUBLIC KEY-----",
-		DKIMRSAPrivateKey: "-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQC4dksLEYhARII4b77fe403uCJhD8x5Rddp9aUJCg1vby7d6QLO\npP7uXpXKVLXxaxQcX7Kjw2kGzlvx7N+d2tToZ8+T3SUadZxLOLYDYkwalkP3vhmA\n3cMuhpRrwOgWzDqSWsDfXgr4w+p1BmNbScpBYCwCrRQ7B12/EXioNcioCQIDAQAB\nAoGAJnnWMVrY1r7zgp4cbDUzQZoQ4boP5oPg6OMqJ3aHUuUYG4WM5lmYK1RjXi7J\nPLAfI8P6WRpbf+XvW8kS47RPkEdXa7svHYa7NT1jQKWY9FwQm1+unc65oK0rZrvE\nrVK0TzK1eQmTxI8OSgFQqShkCZgg45wg9I6iJszkD3loORkCQQDyInM8Un30+2Pq\n2jgH+0Kwa+8x5pEOR4TI5UE4JyzUXVxLuoQNTSMrO2B9Ik6G0Xq7xXFrimMOnLA5\nC/6Ck4ILAkEAwwZl+3I6aZ4rf0n789ktf8zh7UfYhrhQD3uhgSlQ53dMxj0VCBCu\nQQZnWt+MKU/bgEkiHC+aer6iUiJ/H94+uwJBAMZDvTYUmfyiaBNi8eRfMiFBkA+9\nKuOVXj4dsoSnV0bg13VO2VgG5Jg+u2hbUg+EscnVB2U2YJwTYxyjHJiQ7jcCQC2p\n5N0QLO8n8sVWHGFHO6kN3uSBCwjYRR6q8vDcLK5Vt6s/CBqgVTyydCbJ6vaNVTbf\naNYyqzgMRNN4ck2S6xsCQQCoXzfKwz+FfsSAr9WGM/twwCoO/GmDNY5BmwfQuziV\nsYqmmvt6WQ2GxNwcx2VJ/yKIqPU8ABmFPptyPgWXZ4i2\n-----END RSA PRIVATE KEY-----" ,
-		DKIMSelector: "dk1",
+		Hostname: "ratuscrm.com",
+		Senders: nil,
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
 	}
 	
-	_, err = domainMain.AddMailBox(models.MailBox{Default: true, Allowed: true, FromName: "RatusCRM", BoxName: "info"})
+	_, err = domainMain.AddMailBox(models.EmailSender{Default: true, Allowed: true, FromName: "RatusCRM", BoxName: "info"})
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
 	}
@@ -289,18 +287,14 @@ func UploadTestData() {
 	}
 
 	domainSynd, err := mAcc.CreateDomain(models.Domain {
-		Host: "syndicad.com",
-		MailBoxes: nil,
-		DKIMRSAPublicKey: "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDEwBDUBhnVcb+wPoyj6UrobwhKp0bIMzl9znfS127PdLqeGEyxCGy6CTT7coAturzb2dw33e3OhzzOvvBjnzSamRfpAj3vuBiSWtykS4JH17EN/4+ABtf7VOqfRWwB7F80VJ+3/Xv7TzkmNcAg+ksgDzk//BCXfcVFfx56Jxf7mQIDAQAB\n-----END PUBLIC KEY-----",
-		DKIMRSAPrivateKey: "-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQC4dksLEYhARII4b77fe403uCJhD8x5Rddp9aUJCg1vby7d6QLO\npP7uXpXKVLXxaxQcX7Kjw2kGzlvx7N+d2tToZ8+T3SUadZxLOLYDYkwalkP3vhmA\n3cMuhpRrwOgWzDqSWsDfXgr4w+p1BmNbScpBYCwCrRQ7B12/EXioNcioCQIDAQAB\nAoGAJnnWMVrY1r7zgp4cbDUzQZoQ4boP5oPg6OMqJ3aHUuUYG4WM5lmYK1RjXi7J\nPLAfI8P6WRpbf+XvW8kS47RPkEdXa7svHYa7NT1jQKWY9FwQm1+unc65oK0rZrvE\nrVK0TzK1eQmTxI8OSgFQqShkCZgg45wg9I6iJszkD3loORkCQQDyInM8Un30+2Pq\n2jgH+0Kwa+8x5pEOR4TI5UE4JyzUXVxLuoQNTSMrO2B9Ik6G0Xq7xXFrimMOnLA5\nC/6Ck4ILAkEAwwZl+3I6aZ4rf0n789ktf8zh7UfYhrhQD3uhgSlQ53dMxj0VCBCu\nQQZnWt+MKU/bgEkiHC+aer6iUiJ/H94+uwJBAMZDvTYUmfyiaBNi8eRfMiFBkA+9\nKuOVXj4dsoSnV0bg13VO2VgG5Jg+u2hbUg+EscnVB2U2YJwTYxyjHJiQ7jcCQC2p\n5N0QLO8n8sVWHGFHO6kN3uSBCwjYRR6q8vDcLK5Vt6s/CBqgVTyydCbJ6vaNVTbf\naNYyqzgMRNN4ck2S6xsCQQCoXzfKwz+FfsSAr9WGM/twwCoO/GmDNY5BmwfQuziV\nsYqmmvt6WQ2GxNwcx2VJ/yKIqPU8ABmFPptyPgWXZ4i2\n-----END RSA PRIVATE KEY-----",
-		//DKIMRSAPrivateKey: "-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQCwy7WZIg2haroLTj14GS7MVeLyR0RE7hkhdPYVjdKlUlaJeun5\nlwp7//QcQmZPu9O7e46mTD+CE6srCVyKWCSeUlAVwcV7GT7A9VKnPPiGgAs26Hqz\nAuGwhER3l+lT1arVTbRu7E6shBoWROwPAqZPPp+jctL79CEta5U2ICduHQIDAQAB\nAoGAE+aKRXd400+hK36eGrOy+ds9FYqCG8Q1Xfe9b4WsTWGsTgNg7PBchMK15qxu\nudDpr3PkBcIVb/3oyYpfOU9cp6mgXk557OxqfPNyNwRO/o/6/IiEpFFrk8jJxoc3\nmoa9Lh1hM/lsSGryp83L1vBUTs3tXIGo+uBBHnLaH33dFF0CQQDhizg/xVAhR4he\n8Q/uSP5Cgf/Viwevluxpz2R4WrGro5XRyLvEoXb+gPG9NqjT62N7jHX1lBxFpFPT\n/zh1BADLAkEAyKtTmww6/ULKTijfBOhp+w/O4TOWbq0JSZBXAGPI6jh+73gGNf/x\n+55kMYUjIaxpIkILsDTlQrO5kBIBarX3twJAHtXp2s4fJm2hN1m909Ym7PDZCVj4\ntAjuSYkRM2My50R2Nzg6c6efnSwD4NqYOmD0OO/7MJgPRXYx/8nk7hqeAQJBAJ96\n8h42cSdYjpnhh6VJ5PigTqXSLwtUwB3T9iEcLNBhCBjfhegiurlj33MvwYUAlimg\n3dMzpsUFO0PR24hoiC8CQQDP1kDw2zzA8dwGFjbBPqFfN5uVcbwzq1tRjdM1mkp8\nwJB/anwuIRNIE/PDCvi4MEmW7p7FkfbHOZOSgYXbIK3k\n-----END RSA PRIVATE KEY-----",
-		DKIMSelector: "dk1",
+		Hostname: "syndicad.com",
+		Senders: nil,
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
 	}
 
-	_, err = domainSynd.AddMailBox(models.MailBox{Default: true, Allowed: true, FromName: "Syndicad", BoxName: "info"})
+	_, err = domainSynd.AddMailBox(models.EmailSender{Default: true, Allowed: true, FromName: "Syndicad", BoxName: "info"})
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
 	}
@@ -496,4 +490,3 @@ func UploadTestData() {
 
 
 }
-
