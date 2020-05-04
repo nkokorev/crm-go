@@ -17,17 +17,7 @@ type EmailTemplate struct {
 	Name string `json:"name" gorm:"type:varchar(255);not_null"` // inside name of mail
 	Body string `json:"file" gorm:"type:text;"` // сам шаблон письма
 
-	// inside vars
-	// headers map[string]string	// ??
-	body   bytes.Buffer	`json:"body" sql:"-"` // inside var
-
-	tpl *template.Template `json:"tpl" sql:"-"` // Подгруженный шаблон из Body
-
-	// Блок для транзакционных писем
-	// Subject string
-	// From mail.Address	// "Name" <mail@example.com>
-	// To string // "info@ratus.media"
-
+	// GORM vars
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 	DeletedAt *time.Time `json:"deletedAt" sql:"index"`
@@ -40,6 +30,8 @@ func (EmailTemplate) PgSqlCreate() {
 	db.Exec("ALTER TABLE email_templates \n ADD CONSTRAINT email_templates_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n")
 
 }
+
+// ########### CRUD FUNCTIONAL #########
 
 func (et EmailTemplate) create() (*EmailTemplate, error)  {
 	err := db.Create(&et).Error
@@ -57,15 +49,15 @@ func (EmailTemplate) get(id uint) (*EmailTemplate, error)  {
 	return &et, nil
 }
 
-func (et EmailTemplate) delete () error {
-	return db.Model(EmailTemplate{}).Where("id = ?", et.ID).Delete(et).Error
-}
-
 func (et *EmailTemplate) update(input interface{}) error {
 	return db.Model(et).Omit("id", "created_at", "deleted_at", "updated_at").Updates(&input).Error
 }
 
-// ######## ACCOUNT FUNCTIONAL ###########
+func (et EmailTemplate) delete () error {
+	return db.Model(EmailTemplate{}).Where("id = ?", et.ID).Delete(et).Error
+}
+
+// ########### ACCOUNT FUNCTIONAL ###########
 
 func (account Account) CreateEmailTemplate(et EmailTemplate) (*EmailTemplate, error) {
 	et.AccountID = account.ID
@@ -94,47 +86,39 @@ func (account Account) GetEmailTemplate(id uint) (*EmailTemplate, error) {
 
 }
 
-// ######## END OF ACCOUNT FUNCTIONAL ###########
+// ########### END OF ACCOUNT FUNCTIONAL ###########
 
+// Возвращает тело письма в формате string в кодировке HTML, учитывая переменные в T[map]
+func (et EmailTemplate) GetHTML(T map[string](string)) (html string, err error) {
+	body := new(bytes.Buffer)
 
-
-// load template from Body (in database)
-func (env *EmailTemplate) LoadTemplate() (err error) {
-	
-	// env.tpl, err = template.ParseFiles(env.Body)
-	env.tpl, err = template.ParseGlob(env.Body)
+	// Parse template from Database
+	tpl, err := template.ParseGlob(et.Body)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
-}
-
-// execute template to body
-// func (env *Envelope) ExecuteTemplate(T interface{}) error {
-func (env *EmailTemplate) ExecuteTemplate(T map[string](string)) error {
-
-	err := env.tpl.Execute(&env.body, T)
+	// Компиляция шаблона с переменными
+	err = tpl.Execute(body, T)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return body.String(), nil
 }
 
 // publish Email after execute template
-func (account Account) PublishEmail(env EmailTemplate) (e *EnvelopePublished, err error) {
+func (account Account) PublishEmail(et EmailTemplate, T map[string](string)) (e *EnvelopePublished, err error) {
 
 	// 1. Проверка (?)
 	// todo
 
 	// 2. Результат в виде html сохраняем в аккаунт
-	html := env.body.String()
-
-
-	// 3. Публикуем скомпилированный шаблон по адресу https://ratuscrm.com/templates/publish
-	// url := publishUrl + strings.ToLower(account.Name) + "/" + utils.RandStringBytes(5)
-
+	html, err := et.GetHTML(T)
+	if err != nil {
+		return nil, err
+	}
+	
 	e, err = account.CreateEnvelopePublishes( EnvelopePublished{HashID: utils.RandStringBytes(5), Body: html} )
 	if err != nil {
 		return nil, err
