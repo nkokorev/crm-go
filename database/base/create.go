@@ -14,36 +14,27 @@ func RefreshTables() {
 	pool := models.GetPool()
 
 	// дропаем системные таблицы
-	//pool.DropTableIfExists(&models.UserProfile{})
-	err = pool.Exec("drop table if exists eav_attributes, eav_attr_type, orders, order_offers, api_keys, account_users, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, accounts, roles, email_access_tokens, user_profiles, users, user_verification_methods, crm_settings, domains, mail_boxes, email_senders, envelope_publishes").Error
+	err = pool.Exec("drop table if exists domains, mail_boxes, email_senders, envelope_publishes, eav_attributes, eav_attr_type, orders, order_offers, api_keys, account_users, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, crm_settings, envelope_published, envelopes, roles, users, accounts, user_verification_methods").Error
 	if err != nil {
-		fmt.Println("Cant create table accounts", err)
+		fmt.Println("Cant create tables: ", err)
 	}
-	//pool.DropTableIfExists(&models.UserVerificationMethod{}, models.Role{})
-
-	models.CrmSetting{}.PgSqlCreate()
+	
+	err = models.CrmSetting{}.PgSqlCreate()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	models.UserVerificationMethod{}.PgSqlCreate()
-
-	// old old...
-	pool.Exec("DROP TYPE IF EXISTS AUTH_METHOD;\n--CREATE TYPE AUTH_METHOD AS ENUM ('username', 'email', 'phone');\n")
 	
-	//pool.CreateTable(&models.Account{})
-	//pool.Exec("ALTER TABLE accounts \n--     ADD CONSTRAINT uix_email_account_id_parent_id unique (email,account_id,parent_id),\n    ADD CONSTRAINT accounts_user_verification_method_id_fkey FOREIGN KEY (user_verification_method_id) REFERENCES user_verification_methods(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT users_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n--     ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE;\n\n-- create unique index uix_user_id_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
-
 	models.Account{}.PgSqlCreate()
 	models.Role{}.PgSqlCreate()
 
 	// Таблица пользователей
 	models.User{}.PgSqlCreate()
-	//pool.CreateTable(&models.User{})
-	//pool.Exec("ALTER TABLE users \n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n    ADD CONSTRAINT users_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n\ncreate unique index uix_users_issuer_account_id_username_email_mobile_phone ON users (issuer_account_id,username,email,phone);\n\n-- create unique index uix_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
 
-	// User <> Account
-	//pool.Exec("ALTER TABLE account_users \n--     ADD CONSTRAINT uix_email_account_id_parent_id unique (email,account_id,parent_id),\n    ADD CONSTRAINT account_users_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT account_users_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT users_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n--     ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE;\n\n-- create unique index uix_user_id_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
 	models.AccountUser{}.PgSqlCreate()
 
-	// в этой таблице хранятся пользовательские email-уведомления
+	/*// в этой таблице хранятся пользовательские email-уведомления
 	err = pool.Exec("create table  email_access_tokens (\ntoken varchar(255) PRIMARY KEY UNIQUE, -- сам уникальный ключ\naction_type VARCHAR(255) NOT NULL DEFAULT 'verification', -- verification, recover (username, password, email), join to account, [invite-one], [invite-unlimited], [invite-free] - свободный инвайт...\ndestination_email varchar(255) NOT NULL, -- куда фактически был отправлен token (для безопасности) или для кого предназначается данный инвайт (например, строго по емейлу)\nowner_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE, -- ID пользователя, кто создавал этот ключ (может быть self) \nnotification_count INT DEFAULT 0, -- число уведомлений\nnotification_at TIMESTAMP DEFAULT NULL, -- время уведомления\ncreated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n--  expired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);\n").Error
 	if err != nil {
 		log.Fatal("Cant create table user_email_send", err)
@@ -88,7 +79,7 @@ func RefreshTables() {
 	err = pool.Exec("create table product_cards (\n  id SERIAL PRIMARY KEY UNIQUE,\n  account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n  shop_id INT NOT NULL REFERENCES shops(id) ON DELETE CASCADE ON UPDATE CASCADE,\n  \n--   offers integer[][2],\n  \n  url VARCHAR(255),\n  breadcrumb VARCHAR(255),\n  short_description VARCHAR(255),\n  description text,\n  \n  -- meta group \n  meta_title VARCHAR (255),\n  meta_description VARCHAR (255),\n  meta_keywords VARCHAR (255)\n     -- constraint uix_products_article_account_id UNIQUE (article, account_id)\n     -- foreign key (account_id) references accounts(id) ON DELETE CASCADE \n);\n\n").Error
 	if err != nil {
 		fmt.Println("Cant create table products", err)
-	}
+	}*/
 
 	// Таблица APIKey
 	pool.CreateTable(&models.ApiKey{})
@@ -97,7 +88,7 @@ func RefreshTables() {
 	// ##### EAV
 
 	// [EAV_ATTR_TYPE] Таблица типов атрибутов EAV-модели. В зависимости от типа атрибута и его параметров он соответствующем образом обрабатывается во фронтенде и бэкенде.
-	err = pool.Exec("create table  eav_attr_type (\n -- id int unsigned auto_increment,\n code varchar(32) primary key unique, -- json: text_field, text_area, date, Multiple Select...\n name varchar(32), -- label: Text Field, Text Area, Date, Multiple Select...\n \n    \n -- todo: добавить системные атрибуты типа, такие как: максимальная длина поля, минимальная длина поля, проверка при сохранении поля и т.д.\n -- min_len int default null,\n -- max_len int default null,\n table_name varchar(32) not null, -- имя таблицы, содержащие данные данного типа\n description varchar(255) -- описание типа.\n);\n").Error
+	/*err = pool.Exec("create table  eav_attr_type (\n -- id int unsigned auto_increment,\n code varchar(32) primary key unique, -- json: text_field, text_area, date, Multiple Select...\n name varchar(32), -- label: Text Field, Text Area, Date, Multiple Select...\n \n    \n -- todo: добавить системные атрибуты типа, такие как: максимальная длина поля, минимальная длина поля, проверка при сохранении поля и т.д.\n -- min_len int default null,\n -- max_len int default null,\n table_name varchar(32) not null, -- имя таблицы, содержащие данные данного типа\n description varchar(255) -- описание типа.\n);\n").Error
 	if err != nil {
 		log.Fatal("Cant create table eav_attr_type", err)
 	}
@@ -106,12 +97,13 @@ func RefreshTables() {
 	err = pool.Exec("create table  eav_attributes (\n id serial primary key unique,\n account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE , -- системные нафиг, все привязаны к аккаунту\n code VARCHAR(32), -- json: color, price, description. Уникальные значения только в рамках одного аккаунта!\n attr_type_code varchar(32) REFERENCES eav_attr_type(code) ON DELETE CASCADE ON UPDATE CASCADE, -- index !!!\n multiple BOOLEAN DEFAULT FALSE, -- множественный выбор (first() / findAll())\n label VARCHAR(32), -- label: Цвет, цена, описание\n required BOOLEAN DEFAULT FALSE,\n CONSTRAINT uix_eav_attributes_code_account_id UNIQUE (code, account_id) -- уникальные значения в рамках одного аккаунта\n \n);").Error
 	if err != nil {
 		log.Fatal("Cant create table eav_attributes: ", err)
-	}
+	}*/
 
 	// SMTP Settings
 	models.Domain{}.PgSqlCreate()
 	models.EmailSender{}.PgSqlCreate()
-	models.EnvelopePublish{}.PgSqlCreate()
+	models.EmailTemplate{}.PgSqlCreate()
+	models.EnvelopePublished{}.PgSqlCreate()
 
 	// ### Создание таблиц для хранения значений атрибутов [VARCHAR, TEXT, DATE, BOOLEAN, INT, DECIMAL]
 
@@ -156,7 +148,7 @@ func RefreshTables() {
 	// M:M User <> Account
 
 	// M:M Offer <> Product
-	err = pool.Exec("create table offer_compositions (\n  id SERIAL PRIMARY KEY UNIQUE,\n  account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  offer_id INT NOT NULL REFERENCES offers(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  -- product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,\n  \n  volume DECIMAL(13,3) NOT NULL DEFAULT 0.0 -- какой объем входит в оффер (шт, литры, граммы, кг и т.д.) \n\n);\n\n").Error
+	/*err = pool.Exec("create table offer_compositions (\n  id SERIAL PRIMARY KEY UNIQUE,\n  account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  offer_id INT NOT NULL REFERENCES offers(id) ON DELETE CASCADE ON UPDATE CASCADE, -- для скорост выборки\n  -- product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,\n  \n  volume DECIMAL(13,3) NOT NULL DEFAULT 0.0 -- какой объем входит в оффер (шт, литры, граммы, кг и т.д.) \n\n);\n\n").Error
 	if err != nil {
 		fmt.Println("Cant create table products", err)
 	}
@@ -167,10 +159,10 @@ func RefreshTables() {
 		fmt.Println("Cant create table products", err)
 	}
 
-	models.Order{}.PgSqlCreate()
+	models.Order{}.PgSqlCreate()*/
 
 	// Загружаем стоковые данные для EAV таблиц
-	UploadEavData()
+	// UploadEavData()
 
 	// Аккаунты и тестовые продукты
 	UploadTestData()

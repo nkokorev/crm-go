@@ -2,7 +2,7 @@ package smtp
 
 import (
 "bytes"
-rsa2 "crypto/rsa"
+"crypto/rsa"
 "crypto/tls"
 "crypto/x509"
 "encoding/base64"
@@ -343,7 +343,7 @@ func (ls *linesplitter) Close() (err error) {
 }
 
 // PrivateKeyToBytes private key to bytes
-func PrivateKeyToBytes(priv *rsa2.PrivateKey) []byte {
+func PrivateKeyToBytes(priv *rsa.PrivateKey) []byte {
 	privBytes := pem.EncodeToMemory(
 		&pem.Block{
 			Type:  "RSA PRIVATE KEY",
@@ -354,7 +354,7 @@ func PrivateKeyToBytes(priv *rsa2.PrivateKey) []byte {
 	return privBytes
 }
 
-func BytesToPrivateKey(priv []byte) *rsa2.PrivateKey {
+func BytesToPrivateKey(priv []byte) *rsa.PrivateKey {
 
 	/*block, _ := pem.Decode(priv)
 	enc := x509.IsEncryptedPEMBlock(block)
