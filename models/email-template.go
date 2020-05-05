@@ -20,7 +20,7 @@ import (
 type EmailTemplate struct {
 
 	ID     uint   `json:"id" gorm:"primary_key"`
-	AccountID uint `json:"accountId" gorm:"index;not_null;"`
+	AccountID uint `json:"accountId" gorm:"type:int;index;not_null;"`
 
 	Name string `json:"name" gorm:"type:varchar(255);not_null"` // inside name of mail
 	Body string `json:"file" gorm:"type:text;"` // сам шаблон письма
@@ -29,6 +29,16 @@ type EmailTemplate struct {
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 	DeletedAt *time.Time `json:"deletedAt" sql:"index"`
+}
+
+/*type emailData struct {
+	User
+	Json map[string](string)
+}*/
+
+type ViewData struct{
+	Title string
+	User User
 }
 
 func (EmailTemplate) PgSqlCreate() {
@@ -100,32 +110,17 @@ func (account Account) GetEmailTemplate(id uint) (*EmailTemplate, error) {
 func (et EmailTemplate) GetHTML(T interface{}) (html string, err error) {
 	body := new(bytes.Buffer)
 
-	// Parse template from Database
-	// tpl, err := template.ParseGlob(et.Body)
 
-	tmpl, err := template.New("name").Parse(et.Body)
+	tmpl, err := template.New("foo").Parse(et.Body)
 	if err != nil {
 		return "", err
 	}
-	// Error checking elided
-	// err = tmpl.Execute(out, data)
-
+	// eData := ViewData{"My title", User{Name: "Nikita"}}
+	
 	err = tmpl.Execute(body, T)
 	if err != nil {
 		return "", err
 	}
-
-
-
-	/*tpl := &template.Template{}
-	tpl, err = tpl.Parse(et.Body)
-	// tpl, err := template.Parse(et.Body)
-	if err != nil {
-		return "", err
-	}
-*/
-	// Компиляция шаблона с переменными
-
 
 	return body.String(), nil
 }
@@ -151,13 +146,20 @@ func (account Account) PublishEmail(et EmailTemplate, T interface{}) (e *Envelop
 	return e, nil
 }
 
-func (et EmailTemplate) Send(from EmailBox, toUser User, subject string) error {
+
+// user - получатель письма
+func (et EmailTemplate) Send(from EmailBox, user User, subject string, json map[string](string)) error {
 
 	// Принадлежность пользователя к аккаунту не проверяем, т.к. это пофигу
 	// user - получатель письма, письмо уйдет на user.Email
 
+	// Формируем данные для сборки шаблона
+	// eData := ViewData{"My title", user}
+
+
+
 	// 1. Получаем html из email'а
-	html, err := et.GetHTML(nil)
+	html, err := et.GetHTML(user)
 	if err != nil {
 		return err
 	}
@@ -167,7 +169,7 @@ func (et EmailTemplate) Send(from EmailBox, toUser User, subject string) error {
 
 	// fromAddress := from.GetAddress()
 	headers["From"] = from.GetAddress().String()
-	headers["To"] = toUser.Email
+	headers["To"] = user.Email
 	headers["Subject"] = subject
 
 	headers["MIME-Version"] = "1.0" // имя SMTP сервера
@@ -176,7 +178,7 @@ func (et EmailTemplate) Send(from EmailBox, toUser User, subject string) error {
 	headers["Feedback-ID"] = "1324078:20488:trust:54854"
 	// Идентификатор представляет собой 32-битное число в диапазоне от 1 до 2147483647, либо строку длиной до 40 символов, состоящую из латинских букв, цифр и символов ".-_".
 	headers["Message-ID"] = "1001" // номер сообщения (внутренний номер)
-	headers["Received"] = from.Name // имя SMTP сервера
+	headers["Received"] = "RatusCRM"
 
 	// Setup message body
 	message := ""
@@ -197,7 +199,7 @@ func (et EmailTemplate) Send(from EmailBox, toUser User, subject string) error {
 
 	message += "\r\n" + buf.String()
 
-	_, host := split(toUser.Email)
+	_, host := split(user.Email)
 
 	privRSAKey := "-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQC4dksLEYhARII4b77fe403uCJhD8x5Rddp9aUJCg1vby7d6QLO\npP7uXpXKVLXxaxQcX7Kjw2kGzlvx7N+d2tToZ8+T3SUadZxLOLYDYkwalkP3vhmA\n3cMuhpRrwOgWzDqSWsDfXgr4w+p1BmNbScpBYCwCrRQ7B12/EXioNcioCQIDAQAB\nAoGAJnnWMVrY1r7zgp4cbDUzQZoQ4boP5oPg6OMqJ3aHUuUYG4WM5lmYK1RjXi7J\nPLAfI8P6WRpbf+XvW8kS47RPkEdXa7svHYa7NT1jQKWY9FwQm1+unc65oK0rZrvE\nrVK0TzK1eQmTxI8OSgFQqShkCZgg45wg9I6iJszkD3loORkCQQDyInM8Un30+2Pq\n2jgH+0Kwa+8x5pEOR4TI5UE4JyzUXVxLuoQNTSMrO2B9Ik6G0Xq7xXFrimMOnLA5\nC/6Ck4ILAkEAwwZl+3I6aZ4rf0n789ktf8zh7UfYhrhQD3uhgSlQ53dMxj0VCBCu\nQQZnWt+MKU/bgEkiHC+aer6iUiJ/H94+uwJBAMZDvTYUmfyiaBNi8eRfMiFBkA+9\nKuOVXj4dsoSnV0bg13VO2VgG5Jg+u2hbUg+EscnVB2U2YJwTYxyjHJiQ7jcCQC2p\n5N0QLO8n8sVWHGFHO6kN3uSBCwjYRR6q8vDcLK5Vt6s/CBqgVTyydCbJ6vaNVTbf\naNYyqzgMRNN4ck2S6xsCQQCoXzfKwz+FfsSAr9WGM/twwCoO/GmDNY5BmwfQuziV\nsYqmmvt6WQ2GxNwcx2VJ/yKIqPU8ABmFPptyPgWXZ4i2\n-----END RSA PRIVATE KEY-----"
 
@@ -246,7 +248,7 @@ func (et EmailTemplate) Send(from EmailBox, toUser User, subject string) error {
 		log.Fatal("Почтовый адрес не может принять почту")
 	}
 
-	err = client.Rcpt(toUser.Email)
+	err = client.Rcpt(user.Email)
 	if err != nil {
 		log.Fatal("Похоже, почтовый адрес не сущесвует")
 	}

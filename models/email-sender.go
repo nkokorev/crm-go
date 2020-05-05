@@ -38,24 +38,3 @@ func (es *EmailSender) update(input EmailSender) error {
 }
 
 // обязательно в контексте аккаунта
-func (account Account) GetMailBox(id uint) (*EmailSender, error) {
-	var es EmailSender
-	err := db.Preload("Domain").First(&es, "id = ? AND account_id = ?", id, account.ID).Error
-	return &es, err
-}
-
-// возвращает все доступные адреса
-func (account Account) GetMailBoxes() (*[]EmailSender, error) {
-	var ess []EmailSender
-	err := db.Preload("Domain").Find(&ess, "account_id = ?", account.ID).Error
-	return &ess, err
-}
-
-// return default mailbox
-func (account Account) GetMailBoxDefault() (*EmailSender, error) {
-	var es EmailSender
-	err := db.Preload("Domain").First(&es, "account_id = ? AND default = true", account.ID).Error
-
-	return &es, err
-}
-

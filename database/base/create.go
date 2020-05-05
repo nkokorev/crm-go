@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/models"
+	"io/ioutil"
 	"log"
 	"time"
 )
@@ -114,7 +115,7 @@ func RefreshTables() {
 
 	// SMTP Settings
 	models.Domain{}.PgSqlCreate()
-	models.EmailSender{}.PgSqlCreate()
+	models.EmailBox{}.PgSqlCreate()
 	models.EmailTemplate{}.PgSqlCreate()
 	// models.EnvelopePublished{}.PgSqlCreate()
 
@@ -239,7 +240,6 @@ func UploadTestData() {
 	// Создаем домен для главного аккаунта
 	domainMain, err := mAcc.CreateDomain(models.Domain {
 		Hostname: "ratuscrm.com",
-		Senders: nil,
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
@@ -291,9 +291,10 @@ func UploadTestData() {
 		return
 	}
 
-	domainSynd, err := mAcc.CreateDomain(models.Domain {
+	
+
+	domainSynd, err := accSyndicAd.CreateDomain(models.Domain {
 		Hostname: "syndicad.com",
-		Senders: nil,
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
@@ -303,6 +304,34 @@ func UploadTestData() {
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
 	}
+
+	// EMAIL TEMPLATES
+
+	data, err := ioutil.ReadFile("/var/www/ratuscrm/files/example.html")
+	if err != nil {
+		fmt.Println("File reading error", err)
+		return
+	}
+
+	_, err = accSyndicAd.CreateEmailTemplate(models.EmailTemplate{Name: "example", Body: string(data)})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// create MailBox
+	ebox, err := accSyndicAd.CreateMailBox(models.EmailBox{
+		Default: true,
+		Allowed: true,
+		DomainID: domainSynd.ID,
+
+		Name: "Example",
+		Box: "info",
+		Domain: domainSynd,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	
 
 	// 5. Добавляем пользователя в аккаунт (?)

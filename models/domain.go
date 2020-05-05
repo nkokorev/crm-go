@@ -4,15 +4,13 @@ package models
 type Domain struct {
 
 	ID     uint   `json:"id" gorm:"primary_key"`
-	AccountID uint `json:"accountId" gorm:"index;not_null;"`
-	PurposeRecord string `json:"purposeRecord" gorm:"type:varchar(15);not_null;"` //Sending, Receiving, Tracking
+	AccountID uint `json:"accountId" gorm:"type:int;index;not_null;"`
 
-	Type string `json:"sendingType" gorm:"type:varchar(20);default:'TXT';"` // TXT, MX, CNAME
 	Hostname string `json:"sendingHostname" gorm:"type:varchar(255);not_null;"` // ratuscrm.com, pic._domainkey.ratuscrm.com
-	Priority int `json:"priority" gorm:"type:int;default:10;"` // for MX - 10
-	Value string `json:"sendingValue" gorm:"type:varchar(255);not_null"` // v=spf1 include:mailgun.org ~all OR k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AM... <...>
 
-	Senders []EmailSender `json:"senders"` // доступные почтовые ящики ???
+	// DKIM values...
+	
+	EmailBoxes []EmailBox `json:"emailBoxes"` // доступные почтовые ящики ???
 }
 
 func (Domain) PgSqlCreate() {
