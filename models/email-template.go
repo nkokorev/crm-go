@@ -167,7 +167,6 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string, json map[
 	// 2. Отправляем
 	headers := make(map[string]string)
 
-	// fromAddress := from.GetAddress()
 	headers["From"] = from.GetAddress().String()
 	headers["To"] = user.Email
 	headers["Subject"] = subject
@@ -206,7 +205,7 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string, json map[
 	options := dkim.NewSigOptions()
 	options.PrivateKey = []byte(privRSAKey)
 	//options.Domain = "rtcrm.ru"
-	options.Domain = from.Domain
+	options.Domain = from.Domain.Hostname
 	options.Selector = "dk1"
 	options.SignatureExpireIn = 0
 	options.BodyLength = 50

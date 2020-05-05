@@ -31,13 +31,8 @@ func (EmailBox) PgSqlCreate() {
 
 }
 
-func (ebox EmailBox) GetAddress() (*mail.Address, error) {
-
-	if ebox.Domain.ID < 1 {
-		return nil, errors.New("Не указан домен отправителя")
-	}
-
-	return &mail.Address{Name: ebox.Name, Address: ebox.Box + "@" + ebox.Domain.Hostname}, nil
+func (ebox EmailBox) GetAddress() *mail.Address {
+	return &mail.Address{Name: ebox.Name, Address: ebox.Box + "@" + ebox.Domain.Hostname}
 }
 
 // ########### CRUD FUNCTIONAL #########

@@ -237,25 +237,49 @@ func UploadTestData() {
 		log.Fatal("Не удалось создать admin'a: ", err)
 	}
 
-	// Создаем домен для главного аккаунта
+	// 3. Создаем домен для главного аккаунта
 	domainMain, err := mAcc.CreateDomain(models.Domain {
 		Hostname: "ratuscrm.com",
+		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4dksLEYhARII4b77fe403uCJhD8x5Rddp9aUJCg1vby7d6QLOpP7uXpXKVLXxaxQcX7Kjw2kGzlvx7N+d2tToZ8+T3SUadZxLOLYDYkwalkP3vhmA3cMuhpRrwOgWzDqSWsDfXgr4w+p1BmNbScpBYCwCrRQ7B12/EXioNcioCQIDAQAB`,
+		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
+MIICXQIBAAKBgQC4dksLEYhARII4b77fe403uCJhD8x5Rddp9aUJCg1vby7d6QLO
+pP7uXpXKVLXxaxQcX7Kjw2kGzlvx7N+d2tToZ8+T3SUadZxLOLYDYkwalkP3vhmA
+3cMuhpRrwOgWzDqSWsDfXgr4w+p1BmNbScpBYCwCrRQ7B12/EXioNcioCQIDAQAB
+AoGAJnnWMVrY1r7zgp4cbDUzQZoQ4boP5oPg6OMqJ3aHUuUYG4WM5lmYK1RjXi7J
+PLAfI8P6WRpbf+XvW8kS47RPkEdXa7svHYa7NT1jQKWY9FwQm1+unc65oK0rZrvE
+rVK0TzK1eQmTxI8OSgFQqShkCZgg45wg9I6iJszkD3loORkCQQDyInM8Un30+2Pq
+2jgH+0Kwa+8x5pEOR4TI5UE4JyzUXVxLuoQNTSMrO2B9Ik6G0Xq7xXFrimMOnLA5
+C/6Ck4ILAkEAwwZl+3I6aZ4rf0n789ktf8zh7UfYhrhQD3uhgSlQ53dMxj0VCBCu
+QQZnWt+MKU/bgEkiHC+aer6iUiJ/H94+uwJBAMZDvTYUmfyiaBNi8eRfMiFBkA+9
+KuOVXj4dsoSnV0bg13VO2VgG5Jg+u2hbUg+EscnVB2U2YJwTYxyjHJiQ7jcCQC2p
+5N0QLO8n8sVWHGFHO6kN3uSBCwjYRR6q8vDcLK5Vt6s/CBqgVTyydCbJ6vaNVTbf
+aNYyqzgMRNN4ck2S6xsCQQCoXzfKwz+FfsSAr9WGM/twwCoO/GmDNY5BmwfQuziV
+sYqmmvt6WQ2GxNwcx2VJ/yKIqPU8ABmFPptyPgWXZ4i2
+-----END RSA PRIVATE KEY-----`,
+		DKIMSelector: "dk1",
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
 	}
-	
-	_, err = domainMain.AddMailBox(models.EmailSender{Default: true, Allowed: true, FromName: "RatusCRM", BoxName: "info"})
+
+	// 4. Добавляем почтовые ящики в домен
+	_, err = domainMain.AddMailBox(models.EmailBox{Default: true, Allowed: true, Name: "RatusCRM", Box: "info"})
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
 	}
 
+
+
+	////////////////////////////////////
+
+	// 357 Грамм
+	
 	dvc, err := models.GetUserVerificationTypeByCode(models.VerificationMethodEmailAndPhone)
 	if err != nil || dvc == nil {
 		log.Fatal("Не удалось получить верификацию...")
 		return
 	}
-
+	
 	// создаем из-под владельца RatusCRM аккаунта клиентские аккаунты
 	acc357, err := owner.CreateAccount( models.Account{
 		Name:                                "357 грамм",
@@ -278,6 +302,27 @@ func UploadTestData() {
 		return
 	}
 
+	// 3. Создаем домен для главного аккаунта
+	domain357gr, err := acc357.CreateDomain(models.Domain {
+		Hostname: "357gr.ru",
+		DKIMPublicRSAKey: ``,
+		DKIMPrivateRSAKey: ``,
+		DKIMSelector: "dk1",
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
+	}
+
+	// 4. Добавляем почтовые ящики в домен
+	_, err = domain357gr.AddMailBox(models.EmailBox{Default: true, Allowed: true, Name: "357 Грамм", Box: "info"})
+	if err != nil {
+		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
+	}
+
+
+
+	// 1. Создаем синдикат из-под владельца RatusCRM
+
 	accSyndicAd, err := owner.CreateAccount(models.Account{
 		Name:                                "SyndicAd",
 		Website:                             "syndicad.com",
@@ -291,22 +336,40 @@ func UploadTestData() {
 		return
 	}
 
-	
-
+	// 2. Создаем домен для синдиката
 	domainSynd, err := accSyndicAd.CreateDomain(models.Domain {
 		Hostname: "syndicad.com",
+		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDEwBDUBhnVcb+wPoyj6UrobwhKp0bIMzl9znfS127PdLqeGEyxCGy6CTT7coAturzb2dw33e3OhzzOvvBjnzSamRfpAj3vuBiSWtykS4JH17EN/4+ABtf7VOqfRWwB7F80VJ+3/Xv7TzkmNcAg+ksgDzk//BCXfcVFfx56Jxf7mQIDAQAB`,
+		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
+MIICWwIBAAKBgQDEwBDUBhnVcb+wPoyj6UrobwhKp0bIMzl9znfS127PdLqeGEyx
+CGy6CTT7coAturzb2dw33e3OhzzOvvBjnzSamRfpAj3vuBiSWtykS4JH17EN/4+A
+Btf7VOqfRWwB7F80VJ+3/Xv7TzkmNcAg+ksgDzk//BCXfcVFfx56Jxf7mQIDAQAB
+AoGAIR9YdelFBhrtM2WEVb/bnX+7vJ2mm+OLxTMyFuuvuvsiw6TBnHgXncYZBk/D
+Zm9uhfCKU1loRIGd6gxY+dx+hVCFHh4tyQ+xvb+siTsDO3VXhHCq+XZpstDanrS0
+kEjDPx95QYgJ3taG55Agu2Ql/cgevyFevOhXUPrZ6lStdcUCQQDxpSPUywPgOas5
+CFMWB5k5+DRAz9CygH5L7i53RnitwPL3jHvwOHs5JD25lD9IfKVyGuJtYeUTPenp
+FlIxzv+TAkEA0HAuDHrCItg1x/UDO9N+IafTFN5+31Me9POiOGkghXfbWJCfxaBW
+wJWLTPI7p+PT07/sRusQpGRiGi0RagZbowJAVqXsr0UM4r5LE2xUvrWC0DKcKhFa
+uGcy4m9J4iM26rchaHrLhlv6c4b3SzBJcOihOsVBJA/SYI/27EnAt3OOWQJAXhjm
+kPeyQKy+ysBPb2iw3ly3LAqt1//cT9TU/QZoihhry3WuyzbxMwvP0TLhv49Yh5Vz
+AykHYE95AjwqSmUIZQJAaRJMuw5gVSjQaLz/qoiMVEQO7vmazsiB9/YKTPp18I+4
+pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
+-----END RSA PRIVATE KEY-----
+`,
+		DKIMSelector: "dk1",
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
 	}
 
-	_, err = domainSynd.AddMailBox(models.EmailSender{Default: true, Allowed: true, FromName: "Syndicad", BoxName: "info"})
+	// 3. Добавляем почтовые ящики
+	_, err = domainSynd.AddMailBox(models.EmailBox{Default: true, Allowed: true, Name: "SyndicAd", Box: "info"})
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
 	}
 
-	// EMAIL TEMPLATES
 
+	// Добавляем шаблоны писем
 	data, err := ioutil.ReadFile("/var/www/ratuscrm/files/example.html")
 	if err != nil {
 		fmt.Println("File reading error", err)
@@ -318,19 +381,6 @@ func UploadTestData() {
 		log.Fatal(err)
 	}
 
-	// create MailBox
-	ebox, err := accSyndicAd.CreateMailBox(models.EmailBox{
-		Default: true,
-		Allowed: true,
-		DomainID: domainSynd.ID,
-
-		Name: "Example",
-		Box: "info",
-		Domain: domainSynd,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	
 

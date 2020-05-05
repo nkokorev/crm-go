@@ -117,7 +117,7 @@ func examplePhone(numToParse string) {
 func SendMail() error {
 	from := models.EmailBox{
 		Name: "RatusCRM",
-		Domain: "ratuscrm.com",
+		Domain: &models.Domain{},
 		Box: "info",
 	}
 

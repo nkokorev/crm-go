@@ -9,8 +9,11 @@ type Domain struct {
 	Hostname string `json:"sendingHostname" gorm:"type:varchar(255);not_null;"` // ratuscrm.com, pic._domainkey.ratuscrm.com
 
 	// DKIM values...
-	
-	EmailBoxes []EmailBox `json:"emailBoxes"` // доступные почтовые ящики ???
+	DKIMPublicRSAKey string `json:"dkimPublicRsaKey" gorm:"type:text;"` // публичный ключ
+	DKIMPrivateRSAKey string `json:"dkimPublicRsaKey" gorm:"type:text;"` // приватный ключ
+	DKIMSelector string `json:"dkimSelector" gorm:"type:varchar(255);default:'dk1'"` // dk1
+
+	EmailBoxes []EmailBox `json:"emailBoxes"` // доступные почтовые ящики с которых можно отправлять
 }
 
 func (Domain) PgSqlCreate() {
@@ -64,14 +67,14 @@ func (account Account) CreateDomain(domain Domain) (*Domain, error) {
 	return domainNew, nil
 }
 
-func (domain *Domain) AddMailBox (es EmailSender) (*EmailSender,error) {
+func (domain *Domain) AddMailBox (ebox EmailBox) (*EmailBox,error) {
 	// todo: проверка на существующий контекст
 	// info@ и т.д. один вариант
 
 	// устанавливаем владельца такого же
-	es.DomainID = domain.ID
-	es.AccountID = domain.AccountID
+	ebox.AccountID = domain.AccountID
+	ebox.DomainID = domain.ID
 
-	return es.create()
+	return ebox.create()
 }
 
