@@ -9,7 +9,7 @@ type EnvelopePublished struct {
 
 	Body string `json:"body" gorm:"type:text;"` // compiled body (= html)
 
-	Envelope Envelope // связанное сообщение, которое подлежит публикации
+	Envelope EmailTemplate // связанное сообщение, которое подлежит публикации
 }
 
 
@@ -17,7 +17,7 @@ func (EnvelopePublished) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&EnvelopePublished{})
-	db.Exec("ALTER TABLE envelope_published \n    ADD CONSTRAINT envelope_published_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT envelope_published_envelope_id_fkey FOREIGN KEY (envelope_id) REFERENCES envelopes(id) ON DELETE CASCADE ON UPDATE CASCADE;\n")
+	// db.Exec("ALTER TABLE envelope_published \n    ADD CONSTRAINT envelope_published_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT envelope_published_envelope_id_fkey FOREIGN KEY (envelope_id) REFERENCES envelopes(id) ON DELETE CASCADE ON UPDATE CASCADE;\n")
 
 }
 

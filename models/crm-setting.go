@@ -18,7 +18,7 @@ type CrmSetting struct {
 	UiApiDisabledMessage string `json:"uiApiDisableMessage" gorm:"type:varchar(255);"`
 	AppUiApiDisabledMessage string `json:"appUiApiDisableMessage" gorm:"type:varchar(255);"`
 
-	SMTPPrivateAPIKey string `json:"-" gorm:"type:varchar(255);default:'cd00e0c60b26be77e32a943bd5768a19-65b08458-9049e45c'"` // MailGunKey private api key
+	// SMTPPrivateAPIKey string `json:"-" gorm:"type:varchar(255);default:'cd00e0c60b26be77e32a943bd5768a19-65b08458-9049e45c'"` // MailGunKey private api key
 
 	CreatedAt 	time.Time `json:"-"`
 	UpdatedAt 	time.Time `json:"-"`
@@ -40,7 +40,7 @@ func (CrmSetting) PgSqlCreate() error {
 		ApiDisabledMessage: "Sorry, the server is under maintenance.",
 		UiApiDisabledMessage: "Sorry, the server is under maintenance.",
 		AppUiApiDisabledMessage: "Из-за работ на сервере интерфейс временно отключен.",
-		SMTPPrivateAPIKey: "cd00e0c60b26be77e32a943bd5768a19-65b08458-9049e45c",
+		// SMTPPrivateAPIKey: "cd00e0c60b26be77e32a943bd5768a19-65b08458-9049e45c",
 	}
 
 	return db.Create(&settings).Error

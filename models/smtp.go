@@ -3,7 +3,6 @@ package models
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"github.com/mailgun/mailgun-go"
 	"html/template"
@@ -44,16 +43,8 @@ func SendTestMessage() error {
 	// ++=+++++++++++++++++++++++
 
 	yourDomain := "ratuscrm.com" // e.g. mg.yourcompany.com
-	ct, err := GetCrmSettings()
-	if err != nil {
-		return errors.New("Can't connect to SMTP server")
-	}
 
-	//fmt.Println(ct.SMTPPrivateAPIKey)
-
-	//return nil
-
-	mg := mailgun.NewMailgun(yourDomain, ct.SMTPPrivateAPIKey)
+	mg := mailgun.NewMailgun(yourDomain, "cd00e0c60b26be77e32a943bd5768a19-65b08458-9049e45c")
 
 	// The message object allows you to add attachments and Bcc recipients
 	message := mg.NewMessage(e.From.String(), e.Subject, "", e.To.Address)

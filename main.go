@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/nkokorev/crm-go/database/base"
+	"html/template"
 
 	"github.com/nkokorev/crm-go/models"
 	"github.com/nkokorev/crm-go/routes"
@@ -37,8 +39,15 @@ func main() {
 
 	// !!! запускаем миграции
 	base.RefreshTables()
+	
 
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
+
+	if err := SendMail(); err != nil {
+		log.Fatal(err)
+	} else {
+		fmt.Println("Сообщение успешно отправлено")
+	}
 	
 
 	//examplePhone("89251952295")
@@ -106,4 +115,37 @@ func examplePhone(numToParse string) {
 
 	// num is a *libphonenumber.PhoneNumber
 
+}
+
+func SendMail() error {
+	from := models.EmailBox{
+		Name: "RatusCRM",
+		Domain: "ratuscrm.com",
+		Box: "info",
+	}
+
+	user := models.User{Email: "nkokorev@rus-marketing.ru"}
+
+	subject := "Тестовое сообщение с нового smtp сервера"
+
+	tpl, err := template.ParseFiles("files/example.html")
+	if err != nil {
+		return err
+	}
+
+	buf := new(bytes.Buffer)
+	if err = tpl.Execute(buf, nil); err != nil {
+		return err
+	}
+	
+	et := models.EmailTemplate{
+		Body: buf.String(),
+	}
+
+	err = et.Send(from, user, subject)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

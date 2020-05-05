@@ -14,9 +14,22 @@ func RefreshTables() {
 	pool := models.GetPool()
 
 	// дропаем системные таблицы
-	err = pool.Exec("drop table if exists domains, mail_boxes, email_senders, envelope_publishes, eav_attributes, eav_attr_type, orders, order_offers, api_keys, account_users, product_card_offers, offers, offer_compositions, product_cards, product_groups, stock_products, stocks, shops, products, crm_settings, envelope_published, envelopes, roles, users, accounts, user_verification_methods").Error
+	err = pool.Exec("drop table if exists domains, email_boxes, email_senders, email_templates, api_keys").Error
 	if err != nil {
-		fmt.Println("Cant create tables: ", err)
+		fmt.Println("Cant create tables 1: ", err)
+		return
+	}
+
+	err = pool.Exec("drop table if exists crm_settings, roles, account_users, users").Error
+	if err != nil {
+		fmt.Println("Cant create tables 2: ", err)
+		return
+	}
+	
+	err = pool.Exec("drop table if exists user_verification_methods, accounts").Error
+	if err != nil {
+		fmt.Println("Cant create tables 3: ", err)
+		return
 	}
 	
 	err = models.CrmSetting{}.PgSqlCreate()
@@ -103,7 +116,7 @@ func RefreshTables() {
 	models.Domain{}.PgSqlCreate()
 	models.EmailSender{}.PgSqlCreate()
 	models.EmailTemplate{}.PgSqlCreate()
-	models.EnvelopePublished{}.PgSqlCreate()
+	// models.EnvelopePublished{}.PgSqlCreate()
 
 	// ### Создание таблиц для хранения значений атрибутов [VARCHAR, TEXT, DATE, BOOLEAN, INT, DECIMAL]
 
