@@ -155,13 +155,13 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 func UserRegistration(w http.ResponseWriter, r *http.Request) {
 
 	// Аккаунт, в котором происходит авторизация: issuerAccount
-	err, issuerAccount := GetIssuerAccount(w,r)
+	issuerAccount, err := GetIssuerAccount(w,r)
 	if err != nil || issuerAccount == nil {
 		return
 	}
 
 	// 1. Получаем аккаунт, в рамках которого будет происходить создание нового пользователя
-	err, account := GetWorkAccount(w,r)
+	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
@@ -230,7 +230,7 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 
 	// Аккаунт, в котором происходит авторизация: issuerAccount
-	err, issuerAccount := GetIssuerAccount(w,r)
+	issuerAccount, err := GetIssuerAccount(w,r)
 	if err != nil || issuerAccount == nil {
 		return
 	}

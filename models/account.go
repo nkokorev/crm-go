@@ -798,7 +798,7 @@ func (account Account) GetAuthTokenWithClaims(claims JWT) (cryptToken string, er
 }
 
 // Просто получает token
-func (account Account) GetAuthToken(user User) (cryptToken string, err error) {
+func (account Account) GetAuthToken(user User, workAccount Account) (cryptToken string, err error) {
 	if account.ID < 1 || user.ID < 1 {
 		return "", errors.New("Не удалось обновить ключ безопасности")
 	}
@@ -807,8 +807,8 @@ func (account Account) GetAuthToken(user User) (cryptToken string, err error) {
 
 	claims := JWT{
 		user.ID,
+		workAccount.ID,
 		account.ID,
-		user.IssuerAccountID,
 		jwt.StandardClaims{
 			ExpiresAt: expiresAt,
 			Issuer:    "AppServer",
@@ -854,7 +854,7 @@ func (account Account) AuthorizationUser(user User, rememberChoice bool, issuerA
 		return "", errors.New("Не удалось авторизовать пользователя")
 	}
 
-	token, err := issuerAccount.GetAuthToken(user)
+	token, err := issuerAccount.GetAuthToken(user, account)
 	if err != nil {
 		return "", err
 	}

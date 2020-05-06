@@ -22,15 +22,17 @@ import (
 var AppRoutes = func(r *mux.Router) {
 
 	// 1. Create more rotes [User] or [Full] (User & Account)
-	r.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount)
+	// r.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount)
 
 	rAuthUser := r.PathPrefix("").Subrouter()
 	rAuthFull := r.PathPrefix("").Subrouter()
 	rAppAccId := r.PathPrefix("").Subrouter()
 
+
 	// 2. Add middleware
 	rAuthUser.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtCheckUserAuthentication)
 	rAuthFull.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtCheckFullAuthentication)
+	rAppAccId.Use(middleware.CheckAppUiApiStatus, middleware.AddContextMainAccount, middleware.JwtCheckUserAuthentication, middleware.ContextMuxVarIssuerAccountId)
 
 	// 3. Load system settings
 	r.HandleFunc("/", controllers.CheckAppUiApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
@@ -50,6 +52,9 @@ var AppRoutes = func(r *mux.Router) {
 	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/users", controllers.UserRegistration).Methods(http.MethodPost, http.MethodOptions)
 	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/users/auth/username", controllers.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
 
+	// ### EmailMarketing ###
+	rAuthFull.HandleFunc("/accounts/domains", controllers.GetDomains).Methods(http.MethodGet, http.MethodOptions)
+
 	// ### Orders ###
 	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/orders", controllers.GetOrders).Methods(http.MethodGet, http.MethodOptions)
 
@@ -62,7 +67,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAppAuthUserAccId.Use(middleware.ContextMuxVarIssuerAccountId) // получаем ID issuerAccountId
 
 	// 9. Support HZ function
-	rAuthUser.HandleFunc("/accounts/{accountId:[0-9]+}/auth", controllers.AccountAuthUser).Methods(http.MethodPost, http.MethodOptions)
+	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/auth", controllers.AccountAuthUser).Methods(http.MethodPost, http.MethodOptions)
 	rAuthUser.HandleFunc("/users/accounts", controllers.UserGetAccounts).Methods(http.MethodGet, http.MethodOptions)
 
 }

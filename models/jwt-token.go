@@ -13,10 +13,8 @@ import (
 //Token struct declaration
 type JWT struct {
 	UserID uint // id of user
-	AccountID uint // id of account, when user has been auth
-	IssuerAccountID uint // ID of main account (спорная тема)
-	//Username string
-	//Email string
+	AccountID uint // id of work account
+	IssuerAccountID uint // ID of issuer account
 	jwt.StandardClaims
 
 	//User User	`json:"-"`

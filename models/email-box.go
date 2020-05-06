@@ -7,13 +7,14 @@ import (
 
 type EmailBox struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
+	
 	AccountID uint `json:"accountId" gorm:"type:int;index;not_null;"`
 	DomainID uint `json:"domainId" gorm:"type:int;index;not null;"` // обязательно!
 	
 	// PurposeRecord string `json:"purposeRecord" gorm:"type:varchar(15);default:'sending';"` //Sending, Receiving, Tracking
 
 	Default bool `json:"default" gorm:"type:bool;default:false"` // является ли дефолтным почтовым ящиком для домена
-	Allowed bool `json:"allowed" gorm:"type:bool;default:false"` // прошел ли проверку домен на право отправлять с него почту
+	Allowed bool `json:"allowed" gorm:"type:bool;default:true"` // прошел ли проверку домен на право отправлять с него почту
 	
 	Name string `json:"host" gorm:"type:varchar(255);not_null;"` // RatusCRM, Магазин 357 грамм..
 	

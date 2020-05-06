@@ -3,11 +3,9 @@ package controllers
 import (
 	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gorilla/mux"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -76,30 +74,16 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 // Возвращает профиль аккаунта, указанного в переменной .../{accountId}/...
 func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 
-	if r.Context().Value("issuerAccount") == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"account":"not load"}}))
-		return
-	}
-	issuerAccount := r.Context().Value("issuerAccount").(*models.Account)
-
-	accIdSTR := mux.Vars(r)["accountId"]
-
-	accountIdINT, err := strconv.Atoi(accIdSTR)
-	if err != nil {
-		u.Respond(w, u.MessageError(nil, "accountId is error"))
-		return
-	}
-	// форматируем в UINT
-	var accountId uint = uint(accountIdINT)
-
-	account, err := models.GetAccount(accountId)
-	if err != nil || account == nil {
+	// Аккаунт, в котором происходит авторизация: issuerAccount
+	issuerAccount, err := GetIssuerAccount(w,r)
+	if err != nil || issuerAccount == nil {
 		u.Respond(w, u.MessageError(nil, "Не удалось найти аккаунт"))
 		return
 	}
 
-	if account.ID < 1 {
-		u.Respond(w, u.MessageError(nil, "The hashID length must be 12 symbols"))
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(nil, "Не удалось найти аккаунт"))
 		return
 	}
 
@@ -124,7 +108,7 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := account.AuthorizationUser(*user, v.RememberChoice,issuerAccount)
+	token, err := account.AuthorizationUser(*user, v.RememberChoice, issuerAccount)
 	if err != nil || token == "" {
 		u.Respond(w, u.MessageError(u.Error{Message:"Не удалось обновить ключ авторизации"}))
 		return

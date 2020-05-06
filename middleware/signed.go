@@ -93,9 +93,7 @@ func ContextMuxVarIssuerAccountId(next http.Handler) http.Handler {
 		}
 
 		r = r.WithContext(context.WithValue(r.Context(), "auth", "ui/api"))
-		//r = r.WithContext(context.WithValue(r.Context(), "issuerAccountId", issuerAccount.ID))
 		r = r.WithContext(context.WithValue(r.Context(), "accountId", account.ID))
-		//r = r.WithContext(context.WithValue(r.Context(), "issuerAccount", issuerAccount))
 		r = r.WithContext(context.WithValue(r.Context(), "account", account)) // адрес переменной!!!
 
 		next.ServeHTTP(w, r)

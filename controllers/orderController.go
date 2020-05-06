@@ -13,7 +13,7 @@ func GetOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}*/
 
-	err, account := GetWorkAccount(w,r)
+	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
