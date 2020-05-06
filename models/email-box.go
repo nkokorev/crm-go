@@ -31,8 +31,8 @@ func (EmailBox) PgSqlCreate() {
 
 }
 
-func (ebox EmailBox) GetAddress() *mail.Address {
-	return &mail.Address{Name: ebox.Name, Address: ebox.Box + "@" + ebox.Domain.Hostname}
+func (ebox EmailBox) GetMailAddress() mail.Address {
+	return mail.Address{Name: ebox.Name, Address: ebox.Box + "@" + ebox.Domain.Hostname}
 }
 
 // ########### CRUD FUNCTIONAL #########
@@ -94,3 +94,5 @@ func (account Account) GetMailBoxDefault() (*EmailBox, error) {
 
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 
+// ########### EMAIL TEMPLATE FUNCTIONAL ###########
+// ########### EMAIL TEMPLATE FUNCTIONAL ###########

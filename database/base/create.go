@@ -320,9 +320,9 @@ sYqmmvt6WQ2GxNwcx2VJ/yKIqPU8ABmFPptyPgWXZ4i2
 	}
 
 
-
+	// SyndicAd
+	
 	// 1. Создаем синдикат из-под владельца RatusCRM
-
 	accSyndicAd, err := owner.CreateAccount(models.Account{
 		Name:                                "SyndicAd",
 		Website:                             "syndicad.com",
@@ -354,8 +354,7 @@ uGcy4m9J4iM26rchaHrLhlv6c4b3SzBJcOihOsVBJA/SYI/27EnAt3OOWQJAXhjm
 kPeyQKy+ysBPb2iw3ly3LAqt1//cT9TU/QZoihhry3WuyzbxMwvP0TLhv49Yh5Vz
 AykHYE95AjwqSmUIZQJAaRJMuw5gVSjQaLz/qoiMVEQO7vmazsiB9/YKTPp18I+4
 pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
------END RSA PRIVATE KEY-----
-`,
+-----END RSA PRIVATE KEY-----`,
 		DKIMSelector: "dk1",
 	})
 	if err != nil {
@@ -369,11 +368,16 @@ pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
 	}
 
 
-	// Добавляем шаблоны писем
+	// Добавляем шаблоны писем для синдиката и главного аккаунта
 	data, err := ioutil.ReadFile("/var/www/ratuscrm/files/example.html")
 	if err != nil {
 		fmt.Println("File reading error", err)
 		return
+	}
+
+	_, err = mAcc.CreateEmailTemplate(models.EmailTemplate{Name: "example", Body: string(data)})
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	_, err = accSyndicAd.CreateEmailTemplate(models.EmailTemplate{Name: "example", Body: string(data)})
@@ -381,20 +385,7 @@ pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
 		log.Fatal(err)
 	}
 
-
 	
-
-	// 5. Добавляем пользователя в аккаунт (?)
-	//if err := mAcc.AppendUser(*adminUser, models.RoleClient);err!= nil {
-	/*if err := mAcc.AppendUser(*adminUser, models.RoleOwner);err!= nil {
-		log.Fatalf("Cannot append user %v", err)
-	}*/
-
-	// 6. Верифицируем пользователя admin
-	
-	// temp...
-	//fmt.Printf("ADmin created: %v", adminUser)
-
 	return
 
 	// 1. Создаем пользователей

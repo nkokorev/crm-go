@@ -36,7 +36,12 @@ func main() {
 
 	// !!! запускаем миграции
 	base.RefreshTables()
-	
+
+	if err := SendMail(); err != nil {
+		log.Fatal(err)
+	} else {
+		fmt.Println("Сообщение успешно отправлено")
+	}
 
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
 
@@ -115,33 +120,40 @@ func examplePhone(numToParse string) {
 }
 
 func SendMail() error {
-	from := models.EmailBox{
-		Name: "RatusCRM",
-		Domain: &models.Domain{},
-		Box: "info",
-	}
 
-	user := models.User{Email: "nkokorev@rus-marketing.ru"}
-
-	subject := "HTMLEscape тестируем v2"
-
-	acc, err := models.GetMainAccount()
+	// 1. Получаем аккаунт
+	acc, err := models.GetAccount(3)
 	if err != nil {
 		return err
 	}
 
-	et, err := acc.GetEmailTemplate(1)
+	// 2. Загружаем шаблон из БД
+	et, err := acc.GetEmailTemplate(2)
 	if err != nil {
 		return err
 	}
 
+	// 3. Выбираем MailBox
+	mb, err := acc.GetMailBox(3)
+	if err != nil {
+		return err
+	}
+
+	user, err := acc.GetUserById(1)
+	if err != nil {
+		return err
+	}
+
+	// Test JSON
 	json := make(map[string](string))
-	json["Name"] = "Mex388"
+	json["cost"] = "1234"
 
-	err = et.Send(from, user, subject, json)
+	// 4. Отправляем шаблон из MailBox
+	err = et.Send(*mb, *user, "Супер тест нового кода", json)
 	if err != nil {
 		return err
 	}
+
 
 	return nil
 }
