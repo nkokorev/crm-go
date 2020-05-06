@@ -54,6 +54,7 @@ var AppRoutes = func(r *mux.Router) {
 
 	// ### EmailMarketing ###
 	rAuthFull.HandleFunc("/accounts/domains", controllers.GetDomains).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/email-templates", controllers.GetEmailTemplates).Methods(http.MethodGet, http.MethodOptions)
 
 	// ### Orders ###
 	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/orders", controllers.GetOrders).Methods(http.MethodGet, http.MethodOptions)

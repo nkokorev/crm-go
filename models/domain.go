@@ -3,14 +3,14 @@ package models
 // Настройки домена, принадлежащего аккаунту (DKIM & SPF ... )
 type Domain struct {
 
-	ID     uint   `json:"id" gorm:"primary_key"`
-	AccountID uint `json:"accountId" gorm:"type:int;index;not_null;"`
+	ID     uint   `json:"-" gorm:"primary_key"`
+	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
 
-	Hostname string `json:"sendingHostname" gorm:"type:varchar(255);not_null;"` // ratuscrm.com, pic._domainkey.ratuscrm.com
+	Hostname string `json:"hostname" gorm:"type:varchar(255);not_null;"` // ratuscrm.com, pic._domainkey.ratuscrm.com
 
 	// DKIM values...
 	DKIMPublicRSAKey string `json:"dkimPublicRsaKey" gorm:"type:text;"` // публичный ключ
-	DKIMPrivateRSAKey string `json:"dkimPublicRsaKey" gorm:"type:text;"` // приватный ключ
+	DKIMPrivateRSAKey string `json:"dkimPrivateRsaKey" gorm:"type:text;"` // приватный ключ
 	DKIMSelector string `json:"dkimSelector" gorm:"type:varchar(255);default:'dk1'"` // dk1
 
 	EmailBoxes []EmailBox `json:"emailBoxes"` // доступные почтовые ящики с которых можно отправлять
@@ -41,14 +41,14 @@ func (domain *Domain) update(input interface{}) error {
 // обязательно в контексте аккаунта
 func (account Account) GetDomain(id uint) (*Domain, error) {
 	var domain Domain
-	err := db.Preload("MailBoxes").First(&domain, "id = ? AND account_id = ?", id, account.ID).Error
+	err := db.Preload("EmailBoxes").First(&domain, "id = ? AND account_id = ?", id, account.ID).Error
 	return &domain, err
 }
 
 // возвращает все доступные домены с предзагрузкой mailboxes обязательно в контексте аккаунта
 func (account Account) GetDomains() ([]Domain, error) {
 	var domains []Domain
-	err := db.Preload("MailBoxes").Find(&domains, "account_id = ?", account.ID).Error
+	err := db.Preload("EmailBoxes").Find(&domains, "account_id = ?", account.ID).Error
 	return domains, err
 }
 

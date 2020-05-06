@@ -241,8 +241,8 @@ func JwtCheckFullAuthentication(next http.Handler) http.Handler {
 		}
 
 		// fmt.Println("JwtFullAuthentication")
-		fmt.Printf("Context Account: %v\n",  account.Name)
-		fmt.Printf("userId: %v\n", user.Name)
+		// fmt.Printf("Context Account: %v\n",  account.Name)
+		// fmt.Printf("userId: %v\n", user.Name)
 
 		r = r.WithContext(context.WithValue(r.Context(), "userId", tk.UserID))
 		r = r.WithContext(context.WithValue(r.Context(), "user", user))

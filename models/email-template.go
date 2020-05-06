@@ -19,8 +19,8 @@ import (
 // Template of email body message
 type EmailTemplate struct {
 
-	ID     uint   `json:"id" gorm:"primary_key"`
-	AccountID uint `json:"accountId" gorm:"type:int;index;not_null;"`
+	ID     uint   `json:"-" gorm:"primary_key"`
+	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
 
 	Name string `json:"name" gorm:"type:varchar(255);not_null"` // inside name of mail
 	Body string `json:"file" gorm:"type:text;"` // сам шаблон письма
@@ -80,6 +80,12 @@ func (et EmailTemplate) delete () error {
 func (account Account) CreateEmailTemplate(et EmailTemplate) (*EmailTemplate, error) {
 	et.AccountID = account.ID
 	return et.create()
+}
+
+func (account Account) GetEmailTemplates() ([]EmailTemplate, error) {
+	var templates []EmailTemplate
+	err := db.Find(&templates, "account_id = ?", account.ID).Error
+	return templates, err
 }
 
 func (account Account) DeleteEmailTemplate(et EmailTemplate) (error) {
