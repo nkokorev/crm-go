@@ -353,10 +353,11 @@ func (account Account) CreateUser(input User, v_opt ...accessRole) (*User, error
 		return nil, utils.Error{Message: "Проверьте правильность заполнения формы", Errors: map[string]interface{}{"username": "Данный username уже используется"}}
 	}
 	if account.existUserByEmail(input.Email) {
-		return nil, utils.Error{Message: "Данные уже есть", Errors: map[string]interface{}{"username": "Данный email уже используется"}}
+		fmt.Println("Email: ", input.Email)
+		return nil, utils.Error{Message: "Данные уже есть", Errors: map[string]interface{}{"email": "Этот почтовый адрес уже используется"}}
 	}
 	if account.existUserByPhone(input.Phone) {
-		return nil, utils.Error{Message: "Данные уже есть", Errors: map[string]interface{}{"username": "Данный телефон уже используется"}}
+		return nil, utils.Error{Message: "Данные уже есть", Errors: map[string]interface{}{"phone": "Данный телефон уже используется"}}
 	}
 
 	// создаем пользователя

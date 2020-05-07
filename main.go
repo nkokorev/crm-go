@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
-	"github.com/nkokorev/crm-go/database/base"
 	"github.com/nkokorev/crm-go/models"
 	"github.com/nkokorev/crm-go/routes"
 	"github.com/ttacon/libphonenumber"
@@ -35,13 +34,13 @@ func main() {
 	defer pool.Close()
 
 	// !!! запускаем миграции
-	base.RefreshTables()
+	// base.RefreshTables()
 
-/*	if err := SendMail(); err != nil {
+	if err := SendMail(); err != nil {
 		log.Fatal(err)
 	} else {
 		fmt.Println("Сообщение успешно отправлено")
-	}*/
+	}
 
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
 
@@ -122,24 +121,24 @@ func examplePhone(numToParse string) {
 func SendMail() error {
 
 	// 1. Получаем аккаунт
-	acc, err := models.GetAccount(3)
+	acc, err := models.GetAccount(1)
 	if err != nil {
 		return err
 	}
 
 	// 2. Загружаем шаблон из БД
-	et, err := acc.GetEmailTemplate(2)
+	et, err := acc.GetEmailTemplate(1)
 	if err != nil {
 		return err
 	}
 
 	// 3. Выбираем MailBox
-	mb, err := acc.GetMailBox(3)
+	mb, err := acc.GetMailBox(1)
 	if err != nil {
 		return err
 	}
 
-	user, err := acc.GetUserById(1)
+	user, err := acc.GetUserById(2)
 	if err != nil {
 		return err
 	}
@@ -149,7 +148,7 @@ func SendMail() error {
 	json["cost"] = "1234"
 
 	// 4. Отправляем шаблон из MailBox
-	err = et.Send(*mb, *user, "Супер тест нового кода", json)
+	err = et.Send(*mb, *user, "Тест новой подписи", json)
 	if err != nil {
 		return err
 	}

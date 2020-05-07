@@ -237,6 +237,25 @@ func UploadTestData() {
 		log.Fatal("Не удалось создать admin'a: ", err)
 	}
 
+	mex388, err := mAcc.CreateUser(
+		models.User{
+			Username:"mex388",
+			Email:"nkokorev@rus-marketing.ru",
+			PhoneRegion: "RU",
+			Phone: "79251952222",
+			Password:"qwerty109#QW",
+			Name:"Никита",
+			Surname:"Кокорев",
+			Patronymic:"Романович",
+			//DefaultAccountID:null,
+			EmailVerifiedAt:&timeNow,
+		},
+		models.RoleAdmin,
+	)
+	if err != nil || mex388 == nil {
+		log.Fatal("Не удалось создать mex388'a: ", err)
+	}
+
 	// 3. Создаем домен для главного аккаунта
 	domainMain, err := mAcc.CreateDomain(models.Domain {
 		Hostname: "ratuscrm.com",
@@ -278,7 +297,8 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	vpopov, err := mAcc.CreateUser(
 		models.User{
 			Username:"antiglot",
-			Email:"vp@357gr.ru",
+			// Email:"vp@357gr.ru",
+			Email:"mail-test@ratus-dev.ru",
 			PhoneRegion: "RU",
 			Phone: "89055294696",
 			Password:"qwerty109#QW",
@@ -352,7 +372,8 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	stas, err := mAcc.CreateUser(
 		models.User{
 			Username:"ikomastas",
-			Email:"sa-tolstov@yandex.ru",
+			// Email:"sa-tolstov@yandex.ru",
+			Email:"info@rus-marketing.ru",
 			PhoneRegion: "RU",
 			Phone: "",
 			Password:"qwerty109#QW",
@@ -485,6 +506,11 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	}
 
 	_, err = mAcc.CreateEmailTemplate(models.EmailTemplate{Name: "example", Body: string(data)})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = acc357.CreateEmailTemplate(models.EmailTemplate{Name: "example", Body: string(data)})
 	if err != nil {
 		log.Fatal(err)
 	}

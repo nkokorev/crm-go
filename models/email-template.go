@@ -128,8 +128,8 @@ func (et EmailTemplate) GetHTML(T interface{}) (html string, err error) {
 		return "", errors.New(fmt.Sprintf("Ошибка email-шаблона: %s\r", err))
 	}
 	
-	fmt.Println(body.String())
-	return "", errors.New(":")
+	// fmt.Println(body.String())
+	// return "", errors.New(":")
 
 	return body.String(), nil
 }
