@@ -11,8 +11,6 @@ type EmailBox struct {
 	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
 	DomainID uint `json:"domainId" gorm:"type:int;index;not null;"` // обязательно!
 	
-	// PurposeRecord string `json:"purposeRecord" gorm:"type:varchar(15);default:'sending';"` //Sending, Receiving, Tracking
-
 	Default bool `json:"default" gorm:"type:bool;default:false"` // является ли дефолтным почтовым ящиком для домена
 	Allowed bool `json:"allowed" gorm:"type:bool;default:true"` // прошел ли проверку домен на право отправлять с него почту
 	

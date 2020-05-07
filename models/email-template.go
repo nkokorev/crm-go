@@ -163,8 +163,6 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string, json map[
 	// user - получатель письма, письмо уйдет на user.Email
 
 	// Формируем данные для сборки шаблона
-
-
 	eData := ViewData{user, json}
 
 	// 1. Получаем html из email'а
@@ -188,6 +186,7 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string, json map[
 	// Идентификатор представляет собой 32-битное число в диапазоне от 1 до 2147483647, либо строку длиной до 40 символов, состоящую из латинских букв, цифр и символов ".-_".
 	headers["Message-ID"] = "1001" // номер сообщения (внутренний номер)
 	headers["Received"] = "RatusCRM"
+	// headers["Return-Path"] = "<smtp@rus-marketing.ru>"
 
 	// Setup message body
 	message := ""
@@ -253,7 +252,8 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string, json map[
 	}
 
 	// from
-	err = client.Mail(from.GetMailAddress().Address)
+	// err = client.Mail(from.GetMailAddress().Address)
+	err = client.Mail("huq-nana.abuse.@ratuscrm.com")
 	if err != nil {
 		log.Fatal("Почтовый адрес не может принять почту")
 	}

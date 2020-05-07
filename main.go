@@ -138,17 +138,17 @@ func SendMail() error {
 		return err
 	}
 
-	user, err := acc.GetUserById(2)
+	/*user, err := acc.GetUserById(2)
 	if err != nil {
 		return err
-	}
+	}*/
 
 	// Test JSON
 	json := make(map[string](string))
 	json["cost"] = "1234"
 
 	// 4. Отправляем шаблон из MailBox
-	err = et.Send(*mb, *user, "Тест новой подписи", json)
+	err = et.Send(*mb, models.User{Email: "aix27249@yandex.ru"}, "Тест return path", json)
 	if err != nil {
 		return err
 	}
