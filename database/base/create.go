@@ -242,19 +242,19 @@ func UploadTestData() {
 		Hostname: "ratuscrm.com",
 		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4dksLEYhARII4b77fe403uCJhD8x5Rddp9aUJCg1vby7d6QLOpP7uXpXKVLXxaxQcX7Kjw2kGzlvx7N+d2tToZ8+T3SUadZxLOLYDYkwalkP3vhmA3cMuhpRrwOgWzDqSWsDfXgr4w+p1BmNbScpBYCwCrRQ7B12/EXioNcioCQIDAQAB`,
 		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
-MIICXQIBAAKBgQC4dksLEYhARII4b77fe403uCJhD8x5Rddp9aUJCg1vby7d6QLO
-pP7uXpXKVLXxaxQcX7Kjw2kGzlvx7N+d2tToZ8+T3SUadZxLOLYDYkwalkP3vhmA
-3cMuhpRrwOgWzDqSWsDfXgr4w+p1BmNbScpBYCwCrRQ7B12/EXioNcioCQIDAQAB
-AoGAJnnWMVrY1r7zgp4cbDUzQZoQ4boP5oPg6OMqJ3aHUuUYG4WM5lmYK1RjXi7J
-PLAfI8P6WRpbf+XvW8kS47RPkEdXa7svHYa7NT1jQKWY9FwQm1+unc65oK0rZrvE
-rVK0TzK1eQmTxI8OSgFQqShkCZgg45wg9I6iJszkD3loORkCQQDyInM8Un30+2Pq
-2jgH+0Kwa+8x5pEOR4TI5UE4JyzUXVxLuoQNTSMrO2B9Ik6G0Xq7xXFrimMOnLA5
-C/6Ck4ILAkEAwwZl+3I6aZ4rf0n789ktf8zh7UfYhrhQD3uhgSlQ53dMxj0VCBCu
-QQZnWt+MKU/bgEkiHC+aer6iUiJ/H94+uwJBAMZDvTYUmfyiaBNi8eRfMiFBkA+9
-KuOVXj4dsoSnV0bg13VO2VgG5Jg+u2hbUg+EscnVB2U2YJwTYxyjHJiQ7jcCQC2p
-5N0QLO8n8sVWHGFHO6kN3uSBCwjYRR6q8vDcLK5Vt6s/CBqgVTyydCbJ6vaNVTbf
-aNYyqzgMRNN4ck2S6xsCQQCoXzfKwz+FfsSAr9WGM/twwCoO/GmDNY5BmwfQuziV
-sYqmmvt6WQ2GxNwcx2VJ/yKIqPU8ABmFPptyPgWXZ4i2
+MIICXQIBAAKBgQDB8BPdNbNwi3LA6VMp8BbOGKNrV1PxYZsxp6LvTSK9EgJcRIMw
+C+Uc1GgnvcTNksF5GviVYcy2az/e8ACLvcKI6Lb1gUhk10SHIRcb5boK/Li9aOUu
+F5ndGzzg0aBzsG2P0us+tkgFOTjc5MuBdlKOzraLegRbfL5MWUWe5SS3FQIDAQAB
+AoGANIXli1Jg34kUsgQ+3qvEMVrg31BOTqAlnMQOz4pvbw8yjnSLpvaBvVYVQzYU
+16v4M+lHC4XqIDlZmfIb47yns12ASHSoFUzPeUioRu9oWxaOlcHSqWkZBg5miEuM
+pCgRrHG9eO3hoa3etgNTKzAUzqS5NhI2F4JXacHgJaQDT30CQQDuyOJfmTFzAz8I
+d0IPNjdyuaoLB7Vtzf9b3ihALJx6pvogM7ZcEAgDRlYLfuONMfrsLm3VqNhuMnaX
+O4iMyEbnAkEAz+t6qcosS/+J5MOvNQM0yFMLOdvAaJFVg019TSxc4Bp+DWIfUQXf
+0rk5d5BmMI0/RRaqKaB5V/oDdh3EiJueowJBALkskdi/DUj64HvpOBJh4hgXAVYy
+cTEpCfmtS5uQvPyk1t34HFhCmmQnvHyHt2F8u/FChCyoFsdGXQ8kvN0oR0sCQQCG
+8DeinABVrlmq60j5acRGwoaFnVXpR3EtDwxkGoeINgla3DSg2+QgGW/vZfq8Rd8r
+EoOLEofODgdTEAyt7/lrAkAJ9HC2mnLKThsXQi8HuU8PMolXv2OA2g45+mCcxkxg
+JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 -----END RSA PRIVATE KEY-----`,
 		DKIMSelector: "dk1",
 	})
@@ -273,6 +273,25 @@ sYqmmvt6WQ2GxNwcx2VJ/yKIqPU8ABmFPptyPgWXZ4i2
 	////////////////////////////////////
 
 	// 357 Грамм
+
+	// 1. Создаем Василий
+	vpopov, err := mAcc.CreateUser(
+		models.User{
+			Username:"antiglot",
+			Email:"vp@357gr.ru",
+			PhoneRegion: "RU",
+			Phone: "89055294696",
+			Password:"qwerty109#QW",
+			Name:"Висилий",
+			Surname:"Попов",
+			Patronymic:"Николаевич",
+			EmailVerifiedAt:&timeNow,
+		},
+		models.RoleClient,
+	)
+	if err != nil || owner == nil {
+		log.Fatal("Не удалось создать admin'a: ", err)
+	}
 	
 	dvc, err := models.GetUserVerificationTypeByCode(models.VerificationMethodEmailAndPhone)
 	if err != nil || dvc == nil {
@@ -280,8 +299,8 @@ sYqmmvt6WQ2GxNwcx2VJ/yKIqPU8ABmFPptyPgWXZ4i2
 		return
 	}
 	
-	// создаем из-под владельца RatusCRM аккаунта клиентские аккаунты
-	acc357, err := owner.CreateAccount( models.Account{
+	// 2. создаем из-под Василия 357gr
+	acc357, err := vpopov.CreateAccount( models.Account{
 		Name:                                "357 грамм",
 		Website:                             "https://357gr.ru/",
 		Type:                                "store",
@@ -302,7 +321,14 @@ sYqmmvt6WQ2GxNwcx2VJ/yKIqPU8ABmFPptyPgWXZ4i2
 		return
 	}
 
-	// 3. Создаем домен для главного аккаунта
+	// 3. добавляем меня как админа
+	_, err = acc357.AppendUser(*owner,models.RoleAdmin)
+	if err != nil {
+		log.Fatal("Не удалось добавить пользователя admin in 357gr")
+		return
+	}
+
+	// 4. Создаем домен для 357gr
 	domain357gr, err := acc357.CreateDomain(models.Domain {
 		Hostname: "357gr.ru",
 		DKIMPublicRSAKey: ``,
@@ -313,17 +339,36 @@ sYqmmvt6WQ2GxNwcx2VJ/yKIqPU8ABmFPptyPgWXZ4i2
 		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
 	}
 
-	// 4. Добавляем почтовые ящики в домен
+	// 5. Добавляем почтовые ящики в домен 357gr
 	_, err = domain357gr.AddMailBox(models.EmailBox{Default: true, Allowed: true, Name: "357 Грамм", Box: "info"})
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
 	}
 
 
-	// SyndicAd
+	//////// SyndicAd
+
+	// 1. Создаем Станислава
+	stas, err := mAcc.CreateUser(
+		models.User{
+			Username:"ikomastas",
+			Email:"sa-tolstov@yandex.ru",
+			PhoneRegion: "RU",
+			Phone: "",
+			Password:"qwerty109#QW",
+			Name:"Станислав",
+			Surname:"Толстов",
+			Patronymic:"",
+			EmailVerifiedAt:&timeNow,
+		},
+		models.RoleClient,
+	)
+	if err != nil || owner == nil {
+		log.Fatal("Не удалось создать admin'a: ", err)
+	}
 	
-	// 1. Создаем синдикат из-под владельца RatusCRM
-	accSyndicAd, err := owner.CreateAccount(models.Account{
+	// 1. Создаем синдикат из-под Станислава
+	accSyndicAd, err := stas.CreateAccount(models.Account{
 		Name:                                "SyndicAd",
 		Website:                             "syndicad.com",
 		Type:                                "internet-service",
@@ -333,6 +378,13 @@ sYqmmvt6WQ2GxNwcx2VJ/yKIqPU8ABmFPptyPgWXZ4i2
 	})
 	if err != nil || accSyndicAd == nil {
 		log.Fatal("Не удалось создать аккаунт 357 грамм")
+		return
+	}
+
+	// 2. добавляем меня как админа
+	_, err = accSyndicAd.AppendUser(*owner,models.RoleAdmin)
+	if err != nil {
+		log.Fatal("Не удалось добавить пользователя admin in 357gr")
 		return
 	}
 
@@ -354,18 +406,75 @@ uGcy4m9J4iM26rchaHrLhlv6c4b3SzBJcOihOsVBJA/SYI/27EnAt3OOWQJAXhjm
 kPeyQKy+ysBPb2iw3ly3LAqt1//cT9TU/QZoihhry3WuyzbxMwvP0TLhv49Yh5Vz
 AykHYE95AjwqSmUIZQJAaRJMuw5gVSjQaLz/qoiMVEQO7vmazsiB9/YKTPp18I+4
 pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
------END RSA PRIVATE KEY-----`,
+-----END RSA PRIVATE KEY-----
+`,
 		DKIMSelector: "dk1",
 	})
 	if err != nil {
-		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
+		log.Fatal("Не удалось создать домены для Синдиката: ", err)
 	}
 
 	// 3. Добавляем почтовые ящики
 	_, err = domainSynd.AddMailBox(models.EmailBox{Default: true, Allowed: true, Name: "SyndicAd", Box: "info"})
 	if err != nil {
-		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
+		log.Fatal("Не удалось создать MailBoxes для Синдиката: ", err)
 	}
+
+
+	// Brouser.com
+	// 1. Создаем аккаунт из-под Станислава
+	brouser, err := stas.CreateAccount(models.Account{
+		Name:                                "Brouser",
+		Website:                             "www.brouser.com",
+		Type:                                "internet-service",
+		ApiEnabled:                          true,
+		UiApiEnabled:                        false,
+		VisibleToClients:                    false,
+	})
+	if err != nil || accSyndicAd == nil {
+		log.Fatal("Не удалось создать аккаунт Brouser")
+		return
+	}
+
+	// 2. добавляем меня как админа
+	_, err = brouser.AppendUser(*owner,models.RoleAdmin)
+	if err != nil {
+		log.Fatal("Не удалось добавить пользователя admin in 357gr")
+		return
+	}
+
+	// 2. Создаем домен для синдиката
+	domainBrouser, err := brouser.CreateDomain(models.Domain {
+		Hostname: "brouser.com",
+		DKIMPublicRSAKey: `v=DKIM1;t=s;p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvryklToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHcumqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB`,
+		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
+MIICXAIBAAKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvry
+klToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHc
+umqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB
+AoGAIIBS6PSEfeQJLuMb/C4V521YMEcYj4b+bN/jpdeW5uM8JurCrgJwVnJCPPaY
+wpNtf+0nB4ZFge0iJYjEJiS/KJ1YT50fEKqMPx/GVm9UULDvUsWsLFONGr1+hP2+
+XaU4ik/+ym3SQ9Ir+VAq6qyBeOwZlpRBySezCGJ+UpluIrECQQDrItv+oYR8QzzA
+4G3ZaP3PclwPOVWIJyvxM6E0zgPRR4JQO80MVEj0IcaZUl/7EsgqOkRorye0Tba1
+eJmrZbu7AkEA6m94LzePJslSqGcAiU7eyJuqBQbkKaJmK0nVFAkAf4hm1om1DSgk
+iPShiBQ79vTP5T7l2j20miqm+E00CDBpnwJAT7jF9hM1JBx34L03AVuDkm4noFHE
+GiGN2H20zn569N3V5PYhk2iQQ5WgDCPNvwajLw4KW6PnRk6DAAwfrekUOQJAcG0W
+oOYvE3W22yXSXwbg1im4poKAhurnvljBA8OxZne+gaI2nmGi678NfBngC/WpgZHh
+XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
+3/m5b5CLpflEX58hz9NeWHfoNJ2QXj3bkYDzZ1vnzJw=
+-----END RSA PRIVATE KEY-----
+`,
+		DKIMSelector: "dk1",
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать домены для Brouser: ", err)
+	}
+
+	// 3. Добавляем почтовые ящики
+	_, err = domainBrouser.AddMailBox(models.EmailBox{Default: true, Allowed: true, Name: "Brouser", Box: "info"})
+	if err != nil {
+		log.Fatal("Не удалось создать MailBoxes для Brouser: ", err)
+	}
+	
 
 
 	// Добавляем шаблоны писем для синдиката и главного аккаунта
@@ -381,6 +490,11 @@ pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
 	}
 
 	_, err = accSyndicAd.CreateEmailTemplate(models.EmailTemplate{Name: "example", Body: string(data)})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = brouser.CreateEmailTemplate(models.EmailTemplate{Name: "example", Body: string(data)})
 	if err != nil {
 		log.Fatal(err)
 	}
