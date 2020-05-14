@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/nkokorev/crm-go/database/base"
 	"github.com/nkokorev/crm-go/models"
 	"github.com/nkokorev/crm-go/routes"
 	"github.com/ttacon/libphonenumber"
@@ -34,13 +35,15 @@ func main() {
 	defer pool.Close()
 
 	// !!! запускаем миграции
-	// base.RefreshTables()
+	base.RefreshTables()
 
+	/*
 	if err := SendMail(); err != nil {
 		log.Fatal(err)
 	} else {
 		fmt.Println("Сообщение успешно отправлено")
 	}
+	*/
 
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
 
@@ -49,7 +52,6 @@ func main() {
 	} else {
 		fmt.Println("Сообщение успешно отправлено")
 	}*/
-
 
 	//examplePhone("89251952295")
 	//examplePhone("+380(44)234-68-88")
@@ -152,7 +154,6 @@ func SendMail() error {
 	if err != nil {
 		return err
 	}
-
-
+	
 	return nil
 }

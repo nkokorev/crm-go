@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"github.com/toorop/go-dkim"
 	"html/template"
@@ -20,6 +21,7 @@ import (
 type EmailTemplate struct {
 
 	ID     uint   `json:"-" gorm:"primary_key"`
+	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
 
 	Name string `json:"name" gorm:"type:varchar(255);not_null"` // inside name of mail
@@ -51,6 +53,14 @@ func (EmailTemplate) PgSqlCreate() {
 
 // ########### CRUD FUNCTIONAL #########
 
+func (et *EmailTemplate) BeforeCreate(scope *gorm.Scope) error {
+	et.ID = 0
+	et.HashID = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
+	et.CreatedAt = time.Now().UTC()
+
+	return nil
+}
+
 func (et EmailTemplate) create() (*EmailTemplate, error)  {
 	err := db.Create(&et).Error
 	return &et, err
@@ -61,6 +71,16 @@ func (EmailTemplate) get(id uint) (*EmailTemplate, error)  {
 	et := EmailTemplate{}
 
 	err := db.First(&et, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &et, nil
+}
+
+func (EmailTemplate) getByHashId(hashId string) (*EmailTemplate, error) {
+	et := EmailTemplate{}
+
+	err := db.First(&et, "hash_id = ?", hashId).Error
 	if err != nil {
 		return nil, err
 	}
@@ -108,6 +128,19 @@ func (account Account) GetEmailTemplate(id uint) (*EmailTemplate, error) {
 
 	return et, nil
 
+}
+
+func (account Account) GetEmailTemplateByHashID(hashId string) (*EmailTemplate, error) {
+	et, err := (EmailTemplate{}).getByHashId(hashId)
+	if err != nil {
+		return nil, err
+	}
+
+	if et.AccountID != account.ID {
+		return nil, errors.New("Шаблон принадлежит другому аккаунту")
+	}
+
+	return et, nil
 }
 
 // ########### END OF ACCOUNT FUNCTIONAL ###########
