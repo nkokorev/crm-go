@@ -95,24 +95,15 @@ func (et EmailTemplate) delete () error {
 	return db.Model(EmailTemplate{}).Where("id = ?", et.ID).Delete(et).Error
 }
 
+func (et EmailTemplate) deleteByHashId () error {
+	return db.Model(EmailTemplate{}).Where("hash_id = ?", et.HashID).Delete(et).Error
+}
+
 // ########### ACCOUNT FUNCTIONAL ###########
 
 func (account Account) CreateEmailTemplate(et EmailTemplate) (*EmailTemplate, error) {
 	et.AccountID = account.ID
 	return et.create()
-}
-
-func (account Account) GetEmailTemplates() ([]EmailTemplate, error) {
-	var templates []EmailTemplate
-	err := db.Find(&templates, "account_id = ?", account.ID).Error
-	return templates, err
-}
-
-func (account Account) DeleteEmailTemplate(et EmailTemplate) (error) {
-	if et.AccountID != account.ID {
-		return errors.New("Шаблон принадлежит другому аккаунту")
-	}
-	return et.delete()
 }
 
 func (account Account) GetEmailTemplate(id uint) (*EmailTemplate, error) {
@@ -141,6 +132,43 @@ func (account Account) GetEmailTemplateByHashID(hashId string) (*EmailTemplate, 
 	}
 
 	return et, nil
+}
+
+func (account Account) GetEmailTemplates() ([]EmailTemplate, error) {
+	var templates []EmailTemplate
+	err := db.Find(&templates, "account_id = ?", account.ID).Error
+	return templates, err
+}
+
+func (account Account) DeleteEmailTemplate(et EmailTemplate) (error) {
+	if et.AccountID != account.ID {
+		return errors.New("Шаблон принадлежит другому аккаунту")
+	}
+	return et.delete()
+}
+
+func (account Account) DeleteEmailTemplateById(id uint) (error) {
+	et, err := account.GetEmailTemplate(id)
+	if err != nil {
+		return err
+	}
+	
+	if et.AccountID != account.ID {
+		return errors.New("Шаблон принадлежит другому аккаунту")
+	}
+	return et.delete()
+}
+
+func (account Account) DeleteEmailTemplateByHashID(hashId string) (error) {
+	et, err := account.GetEmailTemplateByHashID(hashId)
+	if err != nil {
+		return err
+	}
+
+	if et.AccountID != account.ID {
+		return errors.New("Шаблон принадлежит другому аккаунту")
+	}
+	return et.deleteByHashId()
 }
 
 // ########### END OF ACCOUNT FUNCTIONAL ###########
