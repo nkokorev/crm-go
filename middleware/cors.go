@@ -20,7 +20,7 @@ func CorsAccessControl(next http.Handler) http.Handler {
 		// w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Max-Age", "86400") // max 600
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Set("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT,PATCH")
+		w.Header().Set("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT,PATCH,DELETE")
 		// w.Header().Set("Access-Control-Allow-Headers", "Authorization,Content-Type,User-Agent")
 		w.Header().Set("Access-Control-Allow-Headers", "Authorization,Accept-Language,Cache-Control,Content-Type,Content-Length,Accept,Origin,X-Requested-With,Access-Control-Request-Headers,Access-Control-Request-Method,Access-Control-Allow-Credentials,Host, Origin, User-Agent, Referer")
 

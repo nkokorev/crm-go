@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -198,7 +197,7 @@ func JwtCheckFullAuthentication(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusForbidden)
 			// fmt.Println(tokenPart)
 			// fmt.Println(tk)
-			fmt.Println(err)
+			// fmt.Println(err)
 			u.Respond(w, u.Message(false, "Не удалось прочитать ключ авторизации"))
 			return
 		}
