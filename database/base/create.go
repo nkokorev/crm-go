@@ -503,22 +503,22 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		return
 	}
 
-	_, err = mAcc.CreateEmailTemplate(models.EmailTemplate{Name: "example", Body: string(data)})
+	_, err = mAcc.CreateEmailTemplate(models.EmailTemplate{Name: "example", Code: string(data)})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = acc357.CreateEmailTemplate(models.EmailTemplate{Name: "example", Body: string(data)})
+	_, err = acc357.CreateEmailTemplate(models.EmailTemplate{Name: "example", Code: string(data)})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = accSyndicAd.CreateEmailTemplate(models.EmailTemplate{Name: "example", Body: string(data)})
+	_, err = accSyndicAd.CreateEmailTemplate(models.EmailTemplate{Name: "example", Code: string(data)})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = brouser.CreateEmailTemplate(models.EmailTemplate{Name: "example", Body: string(data)})
+	_, err = brouser.CreateEmailTemplate(models.EmailTemplate{Name: "example", Code: string(data)})
 	if err != nil {
 		log.Fatal(err)
 	}

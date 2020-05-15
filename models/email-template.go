@@ -25,7 +25,7 @@ type EmailTemplate struct {
 	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
 
 	Name string `json:"name" gorm:"type:varchar(255);not_null"` // inside name of mail
-	Body string `json:"file" gorm:"type:text;"` // сам шаблон письма
+	Code string `json:"code" gorm:"type:text;"` // сам шаблон письма
 
 	// GORM vars
 	CreatedAt time.Time  `json:"createdAt"`
@@ -88,7 +88,7 @@ func (EmailTemplate) getByHashId(hashId string) (*EmailTemplate, error) {
 }
 
 func (et *EmailTemplate) update(input interface{}) error {
-	return db.Model(et).Omit("id", "created_at", "deleted_at", "updated_at").Updates(&input).Error
+	return db.Model(et).Omit("id", "hashId", "created_at", "deleted_at", "updated_at").Update(input).Error
 }
 
 func (et EmailTemplate) Delete () error {
@@ -100,6 +100,16 @@ func (et EmailTemplate) Delete () error {
 func (account Account) CreateEmailTemplate(et EmailTemplate) (*EmailTemplate, error) {
 	et.AccountID = account.ID
 	return et.create()
+}
+
+func (account Account) EmailTemplateUpdate(et *EmailTemplate, input interface{}) error {
+
+	// check account ID
+	if et.AccountID != account.ID {
+		return errors.New("Шаблон принадлежит другому аккаунту")
+	}
+
+	return et.update(input)
 }
 
 func (account Account) GetEmailTemplate(id uint) (*EmailTemplate, error) {
@@ -143,7 +153,7 @@ func (et EmailTemplate) GetHTML(T interface{}) (html string, err error) {
 	body := new(bytes.Buffer)
 
 
-	tmpl, err := template.New(et.Name).Parse(et.Body)
+	tmpl, err := template.New(et.Name).Parse(et.Code)
 	if err != nil {
 		return "", err
 	}

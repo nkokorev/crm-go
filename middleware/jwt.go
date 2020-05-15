@@ -172,7 +172,7 @@ func JwtCheckFullAuthentication(next http.Handler) http.Handler {
 		tokenHeader := r.Header.Get("Authorization") //Grab the token from the header
 
 		if tokenHeader == "" { //Token is missing, returns with error code 403 Unauthorized
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			u.Respond(w, u.Message(false, "Отсутствует ключ авторизации"))
 			return
 		}
@@ -180,7 +180,7 @@ func JwtCheckFullAuthentication(next http.Handler) http.Handler {
 		//The token normally comes in format `Bearer {token-body}`, we check if the retrieved token matched this requirement
 		splitted := strings.Split(tokenHeader, " ")
 		if len(splitted) != 2 {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			u.Respond(w, u.Message(false, "Некорректный ключ авторизации"))
 			return
 		}
@@ -194,7 +194,7 @@ func JwtCheckFullAuthentication(next http.Handler) http.Handler {
 		// Парсим в tk токен со всеми данными
 		tk, err := issuerAccount.ParseAndDecryptToken(tokenPart)
 		if err != nil || tk == nil {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			// fmt.Println(tokenPart)
 			// fmt.Println(tk)
 			// fmt.Println(err)
@@ -203,13 +203,13 @@ func JwtCheckFullAuthentication(next http.Handler) http.Handler {
 		}
 
 		if tk.UserID < 1 {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			u.Respond(w, u.Message(false, "Пользователь не авторизован 2"))
 			return
 		}
 
 		if tk.AccountID < 1 {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(http.StatusUnauthorized)
 			u.Respond(w, u.Message(false, "Авторизуйтесь в аккаунте"))
 			return
 		}
