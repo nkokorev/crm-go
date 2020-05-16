@@ -25,7 +25,7 @@ type EmailTemplate struct {
 	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
 
 	Name string `json:"name" gorm:"type:varchar(255);not_null"` // inside name of mail
-	Code string `json:"code" gorm:"type:text;"` // сам шаблон письма
+	Code string `json:"code, omitempty" gorm:"type:text;"` // сам шаблон письма
 
 	// GORM vars
 	CreatedAt time.Time  `json:"createdAt"`
@@ -37,6 +37,21 @@ type EmailTemplate struct {
 	User
 	Json map[string](string)
 }*/
+
+// +1. Подгрузка шаблонов БЕЗ тела (чтобы экономить трафик и запросы к БД) +
+// 2. Для новых шаблонов сделать кнопку для заполнения базовыми данными HTML шаблона (зачем?)
+// -3. Двойной клик по шаблону - переход к редактированию (! неудобно)
+// 4. Удаление шаблона только по подтверждению
+// +5. Вывод в список шаблонов их HashID
+
+// =================== //
+
+// 6. Просмотр компилированного шаблона в отдельном окне (PreviewTemplate) с подгруженными данными какого-нибудь базового пользователя )
+// 7. Сделать базовую структуру данных для компиляции шаблона (User, Orders, JSON, Date...).
+// 8. Сделать возможность публикации шаблонов по уникальным ссылкам (использовать туже ссылку как и PreviewTemplate, только с тегом публичности)
+
+// *. Добавить JSON поле данных для шаблона, проработав его получение (подумать надо ли?)
+// **. Сделать возможность подгрузки JSON-данных из вне (для оперативных рассылок)
 
 type ViewData struct{
 	User User
@@ -144,6 +159,20 @@ func (account Account) GetEmailTemplates() ([]EmailTemplate, error) {
 	var templates []EmailTemplate
 	err := db.Find(&templates, "account_id = ?", account.ID).Error
 	return templates, err
+}
+
+// without Body (code)
+func (account Account) EmailTemplatesList() ([]EmailTemplate, error) {
+	
+	var templates []EmailTemplate
+
+	err := db.Select([]string{"hash_id", "name", "updated_at", "created_at"}).Find(&templates, "account_id = ?", account.ID).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		fmt.Println("Error email templates: ", err)
+		return nil, err
+	}
+	
+	return templates, nil
 }
 
 // ########### END OF ACCOUNT FUNCTIONAL ###########

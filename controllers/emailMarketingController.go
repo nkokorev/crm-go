@@ -27,7 +27,7 @@ func DomainsGet(w http.ResponseWriter, r *http.Request) {
 }
 
 /* Возвращает список шаблонов для текущего аккаунта */
-func EmailTemplatesGet(w http.ResponseWriter, r *http.Request) {
+func EmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -35,8 +35,35 @@ func EmailTemplatesGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	templates, err := account.GetEmailTemplates()
-	if err != nil || templates == nil {
+	hashId, err := GetSTRVarFromRequest(r, "emailTemplateHashId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		return
+	}
+
+	template, err := account.GetEmailTemplateByHashID(hashId)
+	if err != nil || template == nil {
+		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
+		return
+	}
+
+	// time.Sleep(5 * time.Second)
+
+	resp := u.Message(true, "GET account template")
+	resp["template"] = template
+	u.Respond(w, resp)
+}
+
+func EmailTemplatesGetList(w http.ResponseWriter, r *http.Request) {
+
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	templates, err := account.EmailTemplatesList()
+	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"emailTemplates":"Не удалось получить список доменов"}}))
 		return
 	}

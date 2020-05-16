@@ -46,15 +46,15 @@ func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, er
 	return account, nil
 }
 
-func GetAccountID(w http.ResponseWriter, r *http.Request) (uint, error) {
+func GetUINTVarFromRequest(r *http.Request, name string) (uint, error) {
 
-	accountStr := mux.Vars(r)["accountId"]
+	strVar := mux.Vars(r)[name]
 
-	if accountStr == "" {
+	if strVar == "" {
 		return 0, errors.New("Не верно указан account ID")
 	}
 
-	accountIdParse, err := strconv.ParseUint(accountStr, 10, 64)
+	accountIdParse, err := strconv.ParseUint(strVar, 10, 64)
 	if err != nil {
 		return 0, errors.New("Не верно указан account ID")
 	}
@@ -64,4 +64,15 @@ func GetAccountID(w http.ResponseWriter, r *http.Request) (uint, error) {
 	}
 
 	return uint(accountIdParse), nil
+}
+
+func GetSTRVarFromRequest(r *http.Request, name string) (string, error) {
+
+	strVar := mux.Vars(r)[name]
+
+	if strVar == "" {
+		return "", errors.New("Не верно указан account ID")
+	}
+
+	return string(strVar), nil
 }

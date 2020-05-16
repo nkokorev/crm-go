@@ -54,7 +54,8 @@ var AppRoutes = func(r *mux.Router) {
 
 	// ### EmailMarketing ###
 	rAuthFull.HandleFunc("/accounts/domains", controllers.DomainsGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/email-templates/{emailTemplateHashId}", controllers.EmailTemplateGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesGetList).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesDelete).Methods(http.MethodDelete, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesUpdate).Methods(http.MethodPatch, http.MethodOptions)
