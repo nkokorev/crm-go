@@ -24,6 +24,8 @@ type EmailTemplate struct {
 	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
 
+	Shared bool `json:"shared" gorm:"type:bool;default:true;"`
+
 	Name string `json:"name" gorm:"type:varchar(255);not_null"` // inside name of mail
 	Code string `json:"code, omitempty" gorm:"type:text;"` // сам шаблон письма
 
@@ -39,9 +41,9 @@ type EmailTemplate struct {
 }*/
 
 // +1. Подгрузка шаблонов БЕЗ тела (чтобы экономить трафик и запросы к БД) +
-// 2. Для новых шаблонов сделать кнопку для заполнения базовыми данными HTML шаблона (зачем?)
+// +2. Для новых шаблонов сделать кнопку для заполнения базовыми данными HTML шаблона (зачем?)
 // -3. Двойной клик по шаблону - переход к редактированию (! неудобно)
-// 4. Удаление шаблона только по подтверждению
+// +4. Удаление шаблона только по подтверждению
 // +5. Вывод в список шаблонов их HashID
 
 // =================== //
@@ -52,6 +54,7 @@ type EmailTemplate struct {
 
 // *. Добавить JSON поле данных для шаблона, проработав его получение (подумать надо ли?)
 // **. Сделать возможность подгрузки JSON-данных из вне (для оперативных рассылок)
+// *** Сделать общее диалоговое окно подтверждения действий
 
 type ViewData struct{
 	User User
@@ -142,7 +145,7 @@ func (account Account) GetEmailTemplate(id uint) (*EmailTemplate, error) {
 
 }
 
-func (account Account) GetEmailTemplateByHashID(hashId string) (*EmailTemplate, error) {
+func (account Account) EmailTemplateGetByHashID(hashId string) (*EmailTemplate, error) {
 	et, err := (EmailTemplate{}).getByHashId(hashId)
 	if err != nil {
 		return nil, err
@@ -150,6 +153,19 @@ func (account Account) GetEmailTemplateByHashID(hashId string) (*EmailTemplate, 
 
 	if et.AccountID != account.ID {
 		return nil, errors.New("Шаблон принадлежит другому аккаунту")
+	}
+
+	return et, nil
+}
+
+func (Account) EmailTemplateGetSharedByHashID(hashId string) (*EmailTemplate, error) {
+	et, err := (EmailTemplate{}).getByHashId(hashId)
+	if err != nil {
+		return nil, err
+	}
+
+	if !et.Shared {
+		return nil, errors.New("Шаблон не расшарен для просмотра через web")
 	}
 
 	return et, nil

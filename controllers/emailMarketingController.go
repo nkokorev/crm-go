@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -41,7 +42,7 @@ func EmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	template, err := account.GetEmailTemplateByHashID(hashId)
+	template, err := account.EmailTemplateGetByHashID(hashId)
 	if err != nil || template == nil {
 		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
 		return
@@ -90,7 +91,7 @@ func EmailTemplatesDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := account.GetEmailTemplateByHashID(v.HashId)
+	t, err := account.EmailTemplateGetByHashID(v.HashId)
 	if err != nil || t == nil {
 		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
 		return
@@ -113,7 +114,6 @@ func EmailTemplatesDelete(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-/* Создает новый шаблон */
 func EmailTemplatesCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := GetWorkAccount(w,r)
@@ -171,7 +171,7 @@ func EmailTemplatesUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get Email Template
-	tpl, err := account.GetEmailTemplateByHashID(input.HashId)
+	tpl, err := account.EmailTemplateGetByHashID(input.HashId)
 	if err != nil || tpl == nil {
 		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
 		return
@@ -194,4 +194,26 @@ func EmailTemplatesUpdate(w http.ResponseWriter, r *http.Request) {
 	resp["template"] = *tpl
 	resp["emailTemplates"] = templates
 	u.Respond(w, resp)
+}
+
+
+// ### Public function ###
+func EmailTemplateShareGet(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Println("EmailTemplateShareGet")
+	
+	hashId, err := GetSTRVarFromRequest(r, "emailTemplateHashId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		return
+	}
+
+	template, err := (models.Account{}).EmailTemplateGetSharedByHashID(hashId)
+	if err != nil || template == nil {
+		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html;charset=UTF-8")
+	fmt.Fprint(w, template.Code)
 }
