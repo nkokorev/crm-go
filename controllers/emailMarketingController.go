@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
+	
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -124,8 +124,9 @@ func EmailTemplatesCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Get JSON-request
 	v := &struct {
-		Name       string `json:"name"` // hashId for deleted accoint
-		Code       string `json:"code"` // hashId for deleted accoint
+		Name       string `json:"name"`
+		Code       string `json:"code"`
+		Public     bool `json:"public"`
 	}{}
 	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
@@ -161,10 +162,13 @@ func EmailTemplatesUpdate(w http.ResponseWriter, r *http.Request) {
 
 	// Get JSON-request
 	input := &struct {
-		HashId       string `json:"hashId"` // hashId for deleted accoint
-		Name       string `json:"name"` //
-		Code       string `json:"code"` // 
+		HashId string `json:"hashId"`
+		Name string `json:"name"`
+		Code string `json:"code"`
+		Public bool `json:"public"`
 	}{}
+
+
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
@@ -176,7 +180,9 @@ func EmailTemplatesUpdate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
 		return
 	}
+	
 
+	// err = account.EmailTemplateUpdate(tpl, input)
 	err = account.EmailTemplateUpdate(tpl, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении шаблона"))
@@ -197,11 +203,9 @@ func EmailTemplatesUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 
-// ### Public function ###
-func EmailTemplateShareGet(w http.ResponseWriter, r *http.Request) {
+// ### --- Public function --- ###
+func EmailTemplatePreviewGetRawHTML(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Println("EmailTemplateShareGet")
-	
 	hashId, err := GetSTRVarFromRequest(r, "emailTemplateHashId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
@@ -210,10 +214,12 @@ func EmailTemplateShareGet(w http.ResponseWriter, r *http.Request) {
 
 	template, err := (models.Account{}).EmailTemplateGetSharedByHashID(hashId)
 	if err != nil || template == nil {
-		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
+		w.Header().Set("Content-Type", "text/html;charset=UTF-8")
+		w.Write([]byte(`<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Шаблон не может быть отображен</title></head><body><h4 style="color:#5f5f5f;">Данный шаблон не может быть отображен.</h4></body></html>`))
 		return
 	}
 
+
 	w.Header().Set("Content-Type", "text/html;charset=UTF-8")
-	fmt.Fprint(w, template.Code)
+	w.Write([]byte(template.Code))
 }

@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"github.com/toorop/go-dkim"
@@ -24,7 +25,7 @@ type EmailTemplate struct {
 	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
 
-	Shared bool `json:"shared" gorm:"type:bool;default:true;"`
+	Public bool `json:"public" gorm:"type:bool;default:false;"` // показывать ли на домене public
 
 	Name string `json:"name" gorm:"type:varchar(255);not_null"` // inside name of mail
 	Code string `json:"code, omitempty" gorm:"type:text;"` // сам шаблон письма
@@ -106,7 +107,7 @@ func (EmailTemplate) getByHashId(hashId string) (*EmailTemplate, error) {
 }
 
 func (et *EmailTemplate) update(input interface{}) error {
-	return db.Model(et).Omit("id", "hashId", "created_at", "deleted_at", "updated_at").Update(input).Error
+	return db.Model(et).Omit("id", "hashId", "created_at", "deleted_at", "updated_at").Update(structs.Map(input)).Error
 }
 
 func (et EmailTemplate) Delete () error {
@@ -164,7 +165,7 @@ func (Account) EmailTemplateGetSharedByHashID(hashId string) (*EmailTemplate, er
 		return nil, err
 	}
 
-	if !et.Shared {
+	if !et.Public {
 		return nil, errors.New("Шаблон не расшарен для просмотра через web")
 	}
 
@@ -182,7 +183,7 @@ func (account Account) EmailTemplatesList() ([]EmailTemplate, error) {
 	
 	var templates []EmailTemplate
 
-	err := db.Select([]string{"hash_id", "name", "updated_at", "created_at"}).Find(&templates, "account_id = ?", account.ID).Error
+	err := db.Select([]string{"hash_id", "public", "name", "updated_at", "created_at"}).Find(&templates, "account_id = ?", account.ID).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		fmt.Println("Error email templates: ", err)
 		return nil, err
@@ -235,7 +236,6 @@ func (account Account) PublishEmail(et EmailTemplate, T interface{}) (e *Envelop
 
 	return e, nil
 }
-
 
 // user - получатель письма
 func (et EmailTemplate) Send(from EmailBox, user User, subject string, json map[string](string)) error {
