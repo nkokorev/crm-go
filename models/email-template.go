@@ -183,7 +183,7 @@ func (account Account) EmailTemplatesList() ([]EmailTemplate, error) {
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 
 // Подготавливает данные для отправки обезличивая их
-func (et EmailTemplate) ViewData(user User) (*ViewData, error) {
+func (et EmailTemplate) PrepareViewData(user User) (*ViewData, error) {
 
 	// 1. Готовим JSON
 	jsonMap := make(map[string]interface{})
@@ -248,7 +248,7 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string, json map[
 
 	// Формируем данные для сборки шаблона
 	// vData := ViewData{et, user, json}
-	vData, err := et.ViewData(user)
+	vData, err := et.PrepareViewData(user)
 
 	// 1. Получаем html из email'а
 	html, err := et.GetHTML(vData)
