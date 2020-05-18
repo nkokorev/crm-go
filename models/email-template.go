@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fatih/structs"
+	"github.com/jackc/pgtype"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"github.com/toorop/go-dkim"
@@ -25,10 +26,14 @@ type EmailTemplate struct {
 	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
 
-	Public bool `json:"public" gorm:"type:bool;default:false;"` // показывать ли на домене public
+	Public bool `json:"public" gorm:"type:bool;default:true;"` // показывать ли на домене public
 
 	Name string `json:"name" gorm:"type:varchar(255);not_null"` // inside name of mail
 	Code string `json:"code, omitempty" gorm:"type:text;"` // сам шаблон письма
+
+	// Data
+	// User *User `json:"-" sql:"-"` // Пользователь, который получит сообщение
+	Json pgtype.JSON `json:"json" gorm:"type:json;default:'{\"Example\":\"Тестовые данные в формате json\"}'"`
 
 	// GORM vars
 	CreatedAt time.Time  `json:"createdAt"`
@@ -36,30 +41,13 @@ type EmailTemplate struct {
 	// DeletedAt *time.Time `json:"deletedAt" sql:"index"`
 }
 
-/*type emailData struct {
-	User
-	Json map[string](string)
-}*/
-
-// +1. Подгрузка шаблонов БЕЗ тела (чтобы экономить трафик и запросы к БД) +
-// +2. Для новых шаблонов сделать кнопку для заполнения базовыми данными HTML шаблона (зачем?)
-// -3. Двойной клик по шаблону - переход к редактированию (! неудобно)
-// +4. Удаление шаблона только по подтверждению
-// +5. Вывод в список шаблонов их HashID
-
-// =================== //
-
-// 6. +Просмотр компилированного шаблона в отдельном окне (PreviewTemplate) с подгруженными данными какого-нибудь базового пользователя )
-// 7. Сделать базовую структуру данных для компиляции шаблона (User, Orders, JSON, Date...).
-// 8. Сделать возможность публикации шаблонов по уникальным ссылкам (использовать туже ссылку как и PreviewTemplate, только с тегом публичности)
-
-// *. Добавить JSON поле данных для шаблона, проработав его получение (подумать надо ли?)
-// **. Сделать возможность подгрузки JSON-данных из вне (для оперативных рассылок)
-// *** Сделать общее диалоговое окно подтверждения действий
-
 type ViewData struct{
-	User User
-	Json map[string](string)
+	// Template EmailTemplate
+	TemplateName string
+	// User User
+	User map[string]interface{}
+	// Json map[string](string)
+	Json map[string]interface{}
 }
 
 func (EmailTemplate) PgSqlCreate() {
@@ -178,11 +166,11 @@ func (account Account) GetEmailTemplates() ([]EmailTemplate, error) {
 	return templates, err
 }
 
-// without Body (code)
 func (account Account) EmailTemplatesList() ([]EmailTemplate, error) {
 	
 	var templates []EmailTemplate
 
+	// Without Code string
 	err := db.Select([]string{"hash_id", "public", "name", "updated_at", "created_at"}).Find(&templates, "account_id = ?", account.ID).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		fmt.Println("Error email templates: ", err)
@@ -194,36 +182,50 @@ func (account Account) EmailTemplatesList() ([]EmailTemplate, error) {
 
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 
-// Возвращает тело письма в формате string в кодировке HTML, учитывая переменные в T[map]
-func (et EmailTemplate) GetHTML(T interface{}) (html string, err error) {
-	body := new(bytes.Buffer)
+// Подготавливает данные для отправки обезличивая их
+func (et EmailTemplate) ViewData(user User) (*ViewData, error) {
 
+	// 1. Готовим JSON
+	jsonMap := make(map[string]interface{})
+	err := et.Json.AssignTo(&jsonMap)
+	if err != nil {
+		return nil, errors.New("Json data not valid")
+	}
+
+	return &ViewData{
+		TemplateName: et.Name, // ? надо ли?
+		User: *user.DepersonalizedDataMap(),
+		Json: jsonMap,
+	}, nil
+}
+
+// Возвращает тело письма в формате string в кодировке HTML, учитывая переменные в T[map]
+// func (et EmailTemplate) GetHTML(T interface{}) (html string, err error) {
+func (et EmailTemplate) GetHTML(viewData *ViewData) (html string, err error) {
+
+	body := new(bytes.Buffer)
 
 	tmpl, err := template.New(et.Name).Parse(et.Code)
 	if err != nil {
 		return "", err
 	}
-	// eData := ViewData{"My title", User{Name: "Nikita"}}
 
-	err = tmpl.Execute(body, T)
+	err = tmpl.Execute(body, viewData)
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("Ошибка email-шаблона: %s\r", err))
 	}
 	
-	// fmt.Println(body.String())
-	// return "", errors.New(":")
-
 	return body.String(), nil
 }
 
 // publish Email after execute template
-func (account Account) PublishEmail(et EmailTemplate, T interface{}) (e *EnvelopePublished, err error) {
+func (account Account) PublishEmail(et EmailTemplate, vData *ViewData) (e *EnvelopePublished, err error) {
 
 	// 1. Проверка (?)
 	// todo
 
 	// 2. Результат в виде html сохраняем в аккаунт
-	html, err := et.GetHTML(T)
+	html, err := et.GetHTML(vData)
 	if err != nil {
 		return nil, err
 	}
@@ -238,16 +240,18 @@ func (account Account) PublishEmail(et EmailTemplate, T interface{}) (e *Envelop
 }
 
 // user - получатель письма
-func (et EmailTemplate) Send(from EmailBox, user User, subject string, json map[string](string)) error {
+// func (et EmailTemplate) Send(from EmailBox, user User, subject string, json map[string](string)) error {
+func (et EmailTemplate) Send(from EmailBox, user User, subject string, json map[string]interface{}) error {
 
 	// Принадлежность пользователя к аккаунту не проверяем, т.к. это пофигу
 	// user - получатель письма, письмо уйдет на user.Email
 
 	// Формируем данные для сборки шаблона
-	eData := ViewData{user, json}
+	// vData := ViewData{et, user, json}
+	vData, err := et.ViewData(user)
 
 	// 1. Получаем html из email'а
-	html, err := et.GetHTML(eData)
+	html, err := et.GetHTML(vData)
 	if err != nil {
 		return err
 	}

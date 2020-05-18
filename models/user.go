@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"github.com/fatih/structs"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
@@ -176,6 +177,28 @@ func (User) ExistEmail(email string) bool {
 
 func (User) ExistUsername(username string) bool {
 	return !db.Unscoped().First(&User{},"username = ?", username).RecordNotFound()
+}
+
+func (user User) DepersonalizedDataMap() *map[string]interface{} {
+
+	// получаем карту
+	userMap := make(map[string]interface{})
+	structs.FillMap(user, userMap)
+
+	// 2.1 очищаем данные пользователя
+	delete(userMap, "ID")
+	delete(userMap, "IssuerAccountID")
+	delete(userMap, "Password")
+	delete(userMap, "DefaultAccountID")
+	delete(userMap, "InvitedUserID")
+	delete(userMap, "EmailVerifiedAt")
+	delete(userMap, "PhoneVerifiedAt")
+	delete(userMap, "PasswordResetAt")
+	delete(userMap, "CreatedAt")
+	delete(userMap, "UpdatedAt")
+	delete(userMap, "DeletedAt")
+
+	return &userMap
 }
 
 

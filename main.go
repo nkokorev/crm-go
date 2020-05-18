@@ -145,7 +145,8 @@ func SendMail() error {
 	}*/
 
 	// Test JSON
-	json := make(map[string](string))
+	// json := make(map[string](string))
+	json := make(map[string]interface{})
 	json["cost"] = "1234"
 
 	// 4. Отправляем шаблон из MailBox

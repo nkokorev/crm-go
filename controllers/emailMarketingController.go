@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
-	
+	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -204,6 +204,43 @@ func EmailTemplatesUpdate(w http.ResponseWriter, r *http.Request) {
 
 
 // ### --- Public function --- ###
+func EmailTemplatePreviewGetHTML(w http.ResponseWriter, r *http.Request) {
+
+	hashId, err := GetSTRVarFromRequest(r, "emailTemplateHashId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		return
+	}
+
+	template, err := (models.Account{}).EmailTemplateGetSharedByHashID(hashId)
+	if err != nil || template == nil {
+		fmt.Println("Шаблон не получен..", err)
+		w.Header().Set("Content-Type", "text/html;charset=UTF-8")
+		w.Write([]byte(`<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Шаблон не может быть отображен</title></head><body><h4 style="color:#5f5f5f;">Данный шаблон не может быть отображен.</h4></body></html>`))
+		return
+	}
+
+	// Подготавливаем данные для шаблона
+	vData, err := template.ViewData(tempUser())
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html;charset=UTF-8")
+		w.Write(errorHTMLPage("Ошибка подготовки данных для отображения HTML"))
+		return
+	}
+
+	html, err := template.GetHTML(vData)
+	if err != nil {
+		fmt.Println(err)
+		w.Header().Set("Content-Type", "text/html;charset=UTF-8")
+		w.Write(errorHTMLPage("Ошибка получения HTML из шаблона"))
+		return
+	}
+
+
+	w.Header().Set("Content-Type", "text/html;charset=UTF-8")
+	w.Write([]byte(html))
+}
+
 func EmailTemplatePreviewGetRawHTML(w http.ResponseWriter, r *http.Request) {
 
 	hashId, err := GetSTRVarFromRequest(r, "emailTemplateHashId")
@@ -215,11 +252,39 @@ func EmailTemplatePreviewGetRawHTML(w http.ResponseWriter, r *http.Request) {
 	template, err := (models.Account{}).EmailTemplateGetSharedByHashID(hashId)
 	if err != nil || template == nil {
 		w.Header().Set("Content-Type", "text/html;charset=UTF-8")
-		w.Write([]byte(`<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Шаблон не может быть отображен</title></head><body><h4 style="color:#5f5f5f;">Данный шаблон не может быть отображен.</h4></body></html>`))
+		w.Write(errorHTMLPage("Данный шаблон не может быть отображен"))
 		return
 	}
 
 
 	w.Header().Set("Content-Type", "text/html;charset=UTF-8")
 	w.Write([]byte(template.Code))
+}
+
+func errorHTMLPage(errorText string) []byte {
+	return []byte(
+		fmt.Sprintf(
+			`<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8">
+	<title>Шаблон не может быть отображен</title>
+</head>
+<body>
+	<h4 style="color:#5f5f5f;">%s</h4>
+</body>
+</html>`,
+			errorText))
+}
+
+func tempUser() models.User {
+	return models.User{
+		Username: "serName",
+		Name: "Николай",
+		Surname: "Иваньков",
+		Email: "info@example.com",
+		PhoneRegion: "RU",
+		Phone: "+79251002030",
+		Password: "kjdfhkdfsr439rrfh39f34",
+	}
 }
