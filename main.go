@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/nkokorev/crm-go/database/base"
 	"github.com/nkokorev/crm-go/models"
 	"github.com/nkokorev/crm-go/routes"
 	"github.com/ttacon/libphonenumber"
@@ -34,7 +35,7 @@ func main() {
 	defer pool.Close()
 
 	// !!! запускаем миграции
-	// base.RefreshTables()
+	base.RefreshTables()
 
 	/*
 	if err := SendMail(); err != nil {
@@ -144,13 +145,8 @@ func SendMail() error {
 		return err
 	}*/
 
-	// Test JSON
-	// json := make(map[string](string))
-	json := make(map[string]interface{})
-	json["cost"] = "1234"
-
 	// 4. Отправляем шаблон из MailBox
-	err = et.Send(*mb, models.User{Email: "aix27249@yandex.ru"}, "Тест return path", json)
+	err = et.Send(*mb, models.User{Email: "aix27249@yandex.ru"}, "Тест return path")
 	if err != nil {
 		return err
 	}

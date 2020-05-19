@@ -16,4 +16,6 @@ var PublicRoutes = func(r *mux.Router) {
 	// r.HandleFunc("/emails/preview/html/{emailTemplateHashId}", controllers.EmailTemplatePreviewHTMLGet).Methods(http.MethodGet, http.MethodOptions)
 	// r.HandleFunc("/emails/preview/raw/{emailTemplateHashId}", controllers.EmailTemplatePreviewRawGet).Methods(http.MethodGet, http.MethodOptions)
 
+
+	r.HandleFunc("/storage/{hashId}", controllers.StorageGet).Methods(http.MethodGet, http.MethodOptions)
 }

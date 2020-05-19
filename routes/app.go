@@ -60,6 +60,10 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesUpdate).Methods(http.MethodPatch, http.MethodOptions)
 
+	// ### STORAGE ####
+	rAuthFull.HandleFunc("/accounts/storage", controllers.StorageStore).Methods(http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/accounts/storage/{hashId}", controllers.StorageGet).Methods(http.MethodGet, http.MethodOptions)
+
 	// public & share functional
 	// r.HandleFunc("/email/templates/share/{emailTemplateHashId}", controllers.EmailTemplateShareGet).Methods(http.MethodGet, http.MethodOptions)
 

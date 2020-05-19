@@ -46,9 +46,9 @@ func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, er
 	return account, nil
 }
 
-func GetUINTVarFromRequest(r *http.Request, name string) (uint, error) {
+func GetUINTVarFromRequest(r *http.Request, key string) (uint, error) {
 
-	strVar := mux.Vars(r)[name]
+	strVar := mux.Vars(r)[key]
 
 	if strVar == "" {
 		return 0, errors.New("Не верно указан account ID")

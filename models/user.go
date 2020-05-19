@@ -94,7 +94,6 @@ func (user User) create () (*User, error) {
 	return &outUser, nil
 }
 
-// todo неплохо бы тест ей написать
 func (user *User) update (input User) error {
 
 	// выбираем те поля, что можно обновить
@@ -123,7 +122,8 @@ func getUnscopedUserById(userId uint) (*User,error) {
 	return &user, err
 }
 
-// Все что выше покрыто тестами (прямым и косвенными)
+// ####### Все что выше покрыто тестами (прямым и косвенными) ####### //
+
 
 // осуществляет поиск по ID
 /*func GetUserById (userId uint) (user *User, err error) {
@@ -200,7 +200,6 @@ func (user User) DepersonalizedDataMap() *map[string]interface{} {
 
 	return &userMap
 }
-
 
 // Проверка НЕ нулевых входящих полей для СОЗДАНИЯ пользователя
 func (user User) ValidateCreate() error {
@@ -359,7 +358,6 @@ func (user *User) LoadAccounts() error {
 }
 
 // Возвращает массив доступных аккаунтов с ролью в аккаунте
-//func (user User) AccountList() ([]struct{Account; Role}, error) {
 func (user User) AccountList() ([]AccountUser, error) {
 	
 	aUsers := []AccountUser{}

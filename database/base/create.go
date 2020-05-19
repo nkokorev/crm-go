@@ -15,7 +15,7 @@ func RefreshTables() {
 	pool := models.GetPool()
 
 	// дропаем системные таблицы
-	err = pool.Exec("drop table if exists domains, email_boxes, email_senders, email_templates, api_keys").Error
+	err = pool.Exec("drop table if exists storage, domains, email_boxes, email_senders, email_templates, api_keys").Error
 	if err != nil {
 		fmt.Println("Cant create tables 1: ", err)
 		return
@@ -118,6 +118,13 @@ func RefreshTables() {
 	models.EmailBox{}.PgSqlCreate()
 	models.EmailTemplate{}.PgSqlCreate()
 	// models.EnvelopePublished{}.PgSqlCreate()
+
+
+	/// ######## FILES
+
+	models.Storage{}.PgSqlCreate()
+
+	// #########3
 
 	// ### Создание таблиц для хранения значений атрибутов [VARCHAR, TEXT, DATE, BOOLEAN, INT, DECIMAL]
 
