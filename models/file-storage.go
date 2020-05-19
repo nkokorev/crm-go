@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"strings"
@@ -72,6 +73,23 @@ func (Storage) getByHashId(hashId string) (*Storage, error)  {
 }
 
 // ########### ACCOUNT FUNCTIONAL ###########
+
+func (account Account) StorageGetList(limit, offset int) ([]Storage, error) {
+
+	var files []Storage
+	
+	err := db.Limit(limit).Offset(offset).Find(&files, "account_id = ?", account.ID).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		fmt.Println("Ошибка получения списка файлов")
+		return nil, err
+	}
+
+	return files, nil
+}
+
+
+
+
 
 func (account Account) StorageCreate(fs *Storage) (*Storage, error) {
 

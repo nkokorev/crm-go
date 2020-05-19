@@ -7,7 +7,7 @@ import (
 )
 
 // subdomain: public.
-var PublicRoutes = func(r *mux.Router) {
+var CDNRoutes = func(r *mux.Router) {
 
 	// тут надо бы сделать методичку одного окна, чтобы можно было посмотреть и raw и html
 	// http://public.crm.local/email/templates/share/4fgjy6lk1kxp
@@ -16,6 +16,8 @@ var PublicRoutes = func(r *mux.Router) {
 	// r.HandleFunc("/emails/preview/html/{emailTemplateHashId}", controllers.EmailTemplatePreviewHTMLGet).Methods(http.MethodGet, http.MethodOptions)
 	// r.HandleFunc("/emails/preview/raw/{emailTemplateHashId}", controllers.EmailTemplatePreviewRawGet).Methods(http.MethodGet, http.MethodOptions)
 
-
+	
+	// r.HandleFunc("/storage", controllers.StorageGetList).Methods(http.MethodGet, http.MethodOptions)
 	r.HandleFunc("/storage/{hashId}", controllers.StorageGet).Methods(http.MethodGet, http.MethodOptions)
+
 }

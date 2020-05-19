@@ -3,12 +3,38 @@ package controllers
 import (
 	"bytes"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"io"
 	"net/http"
 )
 
+// ### NON PUBLIC Function ### //
+func StorageGetList(w http.ResponseWriter, r *http.Request) {
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	limit := mux.Vars(r)["limit"]
+	// limit := mux.Vars(r)["limit"]
+	
+	fmt.Println("Limit: ", limit)
+	
+	files, err := account.StorageGetList(-1,-1)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Получения списка"}))
+		return
+	}
+
+	resp := u.Message(true, "Storage get list")
+	resp["files"] = files
+	u.Respond(w, resp)
+}
+
+// Example function
 func StorageStore(w http.ResponseWriter, r *http.Request) {
 
 	account, err := GetWorkAccount(w,r)
@@ -72,6 +98,7 @@ func StorageGet(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}*/
+	
 
 	hashId, err := GetSTRVarFromRequest(r, "hashId")
 	if err != nil  {
@@ -87,5 +114,6 @@ func StorageGet(w http.ResponseWriter, r *http.Request) {
 	// w.Header("Content-Type", writer.FormDataContentType())
 	// w.Header().Set("Content-Type", "image/png")
 	w.Header().Set("Content-Type", fs.MIME)
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s",fs.Name))
 	w.Write(fs.Data)
 }
