@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"strings"
@@ -72,27 +73,16 @@ func (Storage) getByHashId(hashId string) (*Storage, error)  {
 	return &fs, nil
 }
 
-// ########### ACCOUNT FUNCTIONAL ###########
-
-func (account Account) StorageGetList(limit, offset int) ([]Storage, error) {
-
-	var files []Storage
-	
-	err := db.Limit(limit).Offset(offset).Find(&files, "account_id = ?", account.ID).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		fmt.Println("Ошибка получения списка файлов")
-		return nil, err
-	}
-
-	return files, nil
+func (fs *Storage) update(input interface{}) error {
+	return db.Model(fs).Omit("id", "hashId", "account_id","created_at", "updated_at").Update(structs.Map(input)).Error
 }
 
+func (fs Storage) Delete () error {
+	return db.Model(Storage{}).Where("id = ?", fs.ID).Delete(fs).Error
+}
 
-
-
-
-func (account Account) StorageCreate(fs *Storage) (*Storage, error) {
-
+// ########### ACCOUNT FUNCTIONAL ###########
+func (account Account) StorageCreateFile(fs *Storage) (*Storage, error) {
 	fs.AccountID = account.ID
 	return fs.create()
 }
@@ -124,6 +114,52 @@ func (account Account) StorageGetByHashId(hashId string) (*Storage, error) {
 
 	return fs, nil
 }
+
+func (account Account) StorageGetFiles(limit, offset int) ([]Storage, error) {
+
+	var files []Storage
+
+	err := db.Limit(limit).Offset(offset).
+		Find(&files, "account_id = ?", account.ID).Error
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		fmt.Println("Ошибка получения списка файлов")
+		return nil, err
+	}
+
+	return files, nil
+}
+
+func (account Account) StorageGetList() ([]Storage, error) {
+
+	var files []Storage
+
+	// without data
+	err := db.Select([]string{"id", "hash_id", "account_id", "name", "mime", "updated_at", "created_at"}).Find(&files, "account_id = ?", account.ID).Error
+	// err := db.Limit(limit).Offset(offset).Find(&files, "account_id = ?", account.ID).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		fmt.Println("Ошибка получения списка файлов")
+		return nil, err
+	}
+
+	return files, nil
+}
+
+func (account Account) StorageUpdateFile(fs *Storage, input interface{}) error {
+
+	if fs.AccountID != account.ID {
+		return errors.New("Файл принадлежит другому аккаунту")
+	}
+
+	return fs.update(input)
+}
+
+
+
+
+
+
+
 
 func (Account) StorageGetPublicByHashId(hashId string) (*Storage, error) {
 

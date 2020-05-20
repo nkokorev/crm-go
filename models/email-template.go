@@ -95,7 +95,7 @@ func (EmailTemplate) getByHashId(hashId string) (*EmailTemplate, error) {
 }
 
 func (et *EmailTemplate) update(input interface{}) error {
-	return db.Model(et).Omit("id", "hashId", "created_at", "deleted_at", "updated_at").Update(structs.Map(input)).Error
+	return db.Model(et).Omit("id", "hashId", "account_id", "created_at", "deleted_at", "updated_at").Update(structs.Map(input)).Error
 }
 
 func (et EmailTemplate) Delete () error {
