@@ -18,6 +18,6 @@ var CDNRoutes = func(r *mux.Router) {
 
 	
 	// r.HandleFunc("/storage", controllers.StorageGetList).Methods(http.MethodGet, http.MethodOptions)
-	r.HandleFunc("/storage/{hashId}", controllers.StorageCDNGet).Methods(http.MethodGet, http.MethodOptions)
+	r.HandleFunc("/{hashId}", controllers.StorageCDNGet).Methods(http.MethodGet, http.MethodOptions)
 
 }

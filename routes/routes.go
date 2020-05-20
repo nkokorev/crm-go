@@ -34,10 +34,10 @@ func Handlers() *mux.Router {
 	}
 
 	// Mount all root point of routes
-	rApi := r.Host("api." + crmHost).Subrouter()                                                        	// API [api.ratuscrm.com]
-	// rShare := r.Host("share." + crmHost).Subrouter()                                                        // API [share.ratuscrm.com]
-	rCDN := r.Host("cdn." + crmHost).Subrouter()                                                        // API [public.ratuscrm.com]
-	rApp := r.Host("app." + crmHost).PathPrefix("/ui-api").Subrouter()                                  // APP [app.ratuscrm.com/ui-api]
+	rApi := r.Host("api." + crmHost).Subrouter() // API [api.ratuscrm.com]
+	// rShare := r.Host("share." + crmHost).Subrouter() // API [share.ratuscrm.com]
+	rCDN := r.Host("cdn." + crmHost).Subrouter() // API [public.ratuscrm.com]
+	rApp := r.Host("app." + crmHost).PathPrefix("/ui-api").Subrouter() // APP [app.ratuscrm.com/ui-api]
 	rUiApi := r.Host("ui.api." + crmHost).PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter() // UI/API [ui.api.ratuscrm.com]
 
 	/******************************************************************************************************************

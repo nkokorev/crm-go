@@ -14,6 +14,7 @@ import (
 // todo: дописать вские мелочи
 func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 
+	fmt.Println("Сохраняем файл")
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
@@ -22,10 +23,11 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 
 	// r.ParseMultipartForm(4096)
 	// v := r.FormValue("file")
-	// r.ParseMultipartForm(32 << 20) // limit your max input length!
+	r.ParseMultipartForm(32 << 20) // limit your max input length!
 
 	file, header, err := r.FormFile("file")
 	if err != nil {
+		fmt.Println(err)
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка парсинга"}))
 		return
 	}
