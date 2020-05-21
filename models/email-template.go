@@ -29,6 +29,7 @@ type EmailTemplate struct {
 	Public bool `json:"public" gorm:"type:bool;default:true;"` // показывать ли на домене public
 
 	Name string `json:"name" gorm:"type:varchar(255);not_null"` // inside name of mail
+	PreviewText string `json:"previewText" gorm:"type:varchar(255);default:''"` // inside name of mail
 	Code string `json:"code, omitempty" gorm:"type:text;"` // сам шаблон письма
 
 	// Data
@@ -44,6 +45,7 @@ type EmailTemplate struct {
 type ViewData struct{
 	// Template EmailTemplate
 	TemplateName string
+	PreviewText string
 	// User User
 	User map[string]interface{}
 	// Json map[string](string)
@@ -194,6 +196,7 @@ func (et EmailTemplate) PrepareViewData(user User) (*ViewData, error) {
 
 	return &ViewData{
 		TemplateName: et.Name, // ? надо ли?
+		PreviewText: et.PreviewText,
 		User: *user.DepersonalizedDataMap(),
 		Json: jsonMap,
 	}, nil

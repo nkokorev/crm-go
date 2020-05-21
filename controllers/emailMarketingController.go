@@ -202,6 +202,62 @@ func EmailTemplatesUpdate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+// --
+
+// Example func..
+func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
+
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	hashId, err := GetSTRVarFromRequest(r, "emailTemplateHashId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		return
+	}
+
+	template, err := account.EmailTemplateGetByHashID(hashId)
+	if err != nil || template == nil {
+		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
+		return
+	}
+
+	// 2. Get JSON-request
+	input := &struct {
+		UserId uint `json:"userId"`
+		EmailBoxId uint `json:"emailBoxId"` // emailBoxId
+		Subject string 	`json:"subject"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	user, err := account.GetUserById(input.UserId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID пользователя"))
+		return
+	}
+
+	ebox, err := account.GetEmailBox(input.EmailBoxId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID Email box"))
+		return
+	}
+
+	err = template.Send(*ebox,*user,input.Subject)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в отправке письма"))
+		return
+	}
+
+	resp := u.Message(true, "GET Email Template send to user")
+	u.Respond(w, resp)
+}
+
 
 // ### --- Public function --- ###
 func EmailTemplatePreviewGetHTML(w http.ResponseWriter, r *http.Request) {

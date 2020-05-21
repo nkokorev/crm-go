@@ -67,24 +67,24 @@ func (et EmailBox) delete () error {
 
 // ########### ACCOUNT FUNCTIONAL ###########
 
-func (account Account) CreateMailBox(ebox EmailBox) (*EmailBox, error) {
+func (account Account) CreateEmailBox(ebox EmailBox) (*EmailBox, error) {
 	ebox.AccountID = account.ID
 	return ebox.create()
 }
 
-func (account Account) GetMailBox(id uint) (*EmailBox, error) {
+func (account Account) GetEmailBox(id uint) (*EmailBox, error) {
 	var ebox EmailBox
 	err := db.Preload("Domain").First(&ebox, "id = ? AND account_id = ?", id, account.ID).Error
 	return &ebox, err
 }
 
-func (account Account) GetMailBoxes() (*[]EmailBox, error) {
+func (account Account) GetEmailBoxes() (*[]EmailBox, error) {
 	var eboxes []EmailBox
 	err := db.Preload("Domain").Find(&eboxes, "account_id = ?", account.ID).Error
 	return &eboxes, err
 }
 
-func (account Account) GetMailBoxDefault() (*EmailBox, error) {
+func (account Account) GetEmailBoxDefault() (*EmailBox, error) {
 	var eboxes EmailBox
 	err := db.Preload("Domain").First(&eboxes, "account_id = ? AND default = true", account.ID).Error
 

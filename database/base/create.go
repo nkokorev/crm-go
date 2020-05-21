@@ -416,6 +416,13 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 		return
 	}
 
+	// 2.2 Добавляем Mex388
+	_, err = accSyndicAd.AppendUser(*mex388,models.RoleAdmin)
+	if err != nil {
+		log.Fatal("Не удалось добавить пользователя mex388 in 357gr")
+		return
+	}
+
 	// 2. Создаем домен для синдиката
 	domainSynd, err := accSyndicAd.CreateDomain(models.Domain {
 		Hostname: "syndicad.com",
@@ -468,6 +475,13 @@ pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
 	_, err = brouser.AppendUser(*owner,models.RoleAdmin)
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя admin in 357gr")
+		return
+	}
+
+	// 2.2. Добавляем mex388
+	_, err = brouser.AppendUser(*mex388,models.RoleAdmin)
+	if err != nil {
+		log.Fatal("Не удалось добавить пользователя mex388 in brouser")
 		return
 	}
 

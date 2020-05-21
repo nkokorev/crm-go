@@ -54,12 +54,15 @@ var AppRoutes = func(r *mux.Router) {
 	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/users/auth/username", controllers.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
 
 	// ### EmailMarketing ###
+	// ---CRUD---
 	rAuthFull.HandleFunc("/accounts/domains", controllers.DomainsGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/email-templates/{emailTemplateHashId}", controllers.EmailTemplateGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesGetList).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesDelete).Methods(http.MethodDelete, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	// ---ACCOUNT---
+	rAuthFull.HandleFunc("/accounts/email-templates/{emailTemplateHashId}/send/user", controllers.EmailTemplateSendToUser).Methods(http.MethodPost, http.MethodOptions)
 
 	// ### STORAGE CRUD ####
 	rAuthFull.HandleFunc("/accounts/storage", controllers.StorageCreateFile).Methods(http.MethodPost, http.MethodOptions)

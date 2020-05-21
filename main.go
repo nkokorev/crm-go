@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/nkokorev/crm-go/database/base"
 	"github.com/nkokorev/crm-go/models"
 	"github.com/nkokorev/crm-go/routes"
 	"github.com/ttacon/libphonenumber"
@@ -34,15 +35,15 @@ func main() {
 	defer pool.Close()
 
 	// !!! запускаем миграции
-	// base.RefreshTables()
+	base.RefreshTables()
 
-	/*
-	if err := SendMail(); err != nil {
+
+	/*if err := SendMail(); err != nil {
 		log.Fatal(err)
 	} else {
 		fmt.Println("Сообщение успешно отправлено")
-	}
-	*/
+	}*/
+	
 
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
 
@@ -123,19 +124,19 @@ func examplePhone(numToParse string) {
 func SendMail() error {
 
 	// 1. Получаем аккаунт
-	acc, err := models.GetAccount(1)
+	acc, err := models.GetAccount(4)
 	if err != nil {
 		return err
 	}
 
 	// 2. Загружаем шаблон из БД
-	et, err := acc.GetEmailTemplate(1)
+	et, err := acc.GetEmailTemplate(4)
 	if err != nil {
 		return err
 	}
 
 	// 3. Выбираем MailBox
-	mb, err := acc.GetMailBox(1)
+	mb, err := acc.GetEmailBox(4)
 	if err != nil {
 		return err
 	}
@@ -146,7 +147,8 @@ func SendMail() error {
 	}*/
 
 	// 4. Отправляем шаблон из MailBox
-	err = et.Send(*mb, models.User{Email: "aix27249@yandex.ru"}, "Тест return path")
+	// err = et.Send(*mb, models.User{Email: "aix27249@yandex.ru"}, "Тест return path")
+	err = et.Send(*mb, models.User{Email: "nkokorev@rus-marketing.ru"}, "Тест return path")
 	if err != nil {
 		return err
 	}
