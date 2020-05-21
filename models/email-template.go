@@ -317,7 +317,7 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string) error {
 
 	// from
 	// err = client.Mail(from.GetMailAddress().Address)
-	err = client.Mail("huq-nana.abuse.@ratuscrm.com")
+	err = client.Mail("userId.abuse.@ratuscrm.com")
 	if err != nil {
 		log.Fatal("Почтовый адрес не может принять почту")
 	}
