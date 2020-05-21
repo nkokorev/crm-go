@@ -39,7 +39,6 @@ type Account struct {
 	UiApiJwtKey     string `json:"-" gorm:"type:varchar(32);default:null;"` // 128-битный ключ шифрования
 
 	// Регистрация новых пользователей через UI/API
-
 	UiApiAuthMethods                    pq.StringArray `json:"-" sql:"type:varchar(32)[];default:'{email}'"`  // Доступные способы авторизации (проверяется в контроллере)
 	UiApiEnabledUserRegistration        bool           `json:"-" gorm:"default:true;not null"`                // Разрешить регистрацию новых пользователей?
 	UiApiUserRegistrationInvitationOnly bool           `json:"-" gorm:"default:false;not null"`               // Регистрация новых пользователей только по приглашению (в том числе и клиентов)
@@ -48,6 +47,9 @@ type Account struct {
 
 	UserVerificationMethodID         uint `json:"-" gorm:"type:int;default:null"` // метод
 	UiApiEnabledLoginNotVerifiedUser bool `json:"-" gorm:"default:false;"`        // разрешать ли пользователю входить в аккаунт без завершенной верфикации?
+
+	// Storage
+	DiskSpaceAvailable uint `json:"diskSpaceAvailable" gorm:"type:bigint;default:524288000"` // в байтах размер дискового пр-а (def: 500mb)
 
 	// настройки авторизации.
 	// Разделяется AppAuth и ApiAuth -

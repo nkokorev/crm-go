@@ -21,6 +21,7 @@ type Storage struct {
 
 	// MetaData
 	MIME 	string 	`json:"mime" gorm:"type:varchar(90);"`
+	Size 	int 	`json:"size" gorm:"type:int;"` // Kb
 
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
@@ -135,7 +136,7 @@ func (account Account) StorageGetList() ([]Storage, error) {
 	var files []Storage
 
 	// without data
-	err := db.Select([]string{"id", "hash_id", "account_id", "name", "mime", "updated_at", "created_at"}).Find(&files, "account_id = ?", account.ID).Error
+	err := db.Select([]string{"id", "hash_id", "account_id", "name", "mime", "size", "updated_at", "created_at"}).Find(&files, "account_id = ?", account.ID).Error
 	// err := db.Limit(limit).Offset(offset).Find(&files, "account_id = ?", account.ID).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		fmt.Println("Ошибка получения списка файлов")
@@ -154,8 +155,27 @@ func (account Account) StorageUpdateFile(fs *Storage, input interface{}) error {
 	return fs.update(input)
 }
 
+func (account Account) StorageDiskSpaceUsed() (int, error) {
+	var sum,count int
 
+	sum = 0
+	count = 0
+	err := db.Table("storage").Where("account_id = ?", account.ID).Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
 
+	if count == 0 {
+		return 0, nil
+	}
+
+	err = db.Table("storage").Where("account_id = ?", account.ID).Select("sum(size)").Row().Scan(&sum)
+	if err != nil {
+		return 0, err
+	}
+
+	return sum, nil
+}
 
 
 

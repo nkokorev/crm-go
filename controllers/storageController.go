@@ -8,22 +8,25 @@ import (
 	u "github.com/nkokorev/crm-go/utils"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // ### NON PUBLIC Function ### //
 // todo: дописать вские мелочи
 func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Println("Сохраняем файл")
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	// r.ParseMultipartForm(4096)
-	// v := r.FormValue("file")
-	r.ParseMultipartForm(32 << 20) // limit your max input length!
+	// r.ParseMultipartForm(32 << 20) // limit your max input length!
+	err = r.ParseMultipartForm(32 << 20) // 32Mb
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Слишком большой файл. Максимум 32 Mb."}))
+		return
+	}
 
 	file, header, err := r.FormFile("file")
 	if err != nil {
@@ -35,13 +38,14 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 	var buf bytes.Buffer
 	defer file.Close()
 
-	// 12 Kb = 12022
+
+	// 12 Kb = 12022 Байт
 	// size := float64(0)	// Mb
 	// size =  float64(header.Size)/float64(1024)
-	fmt.Printf("Size: %d bytes\n", header.Size)
-	fmt.Println("Header: ", header.Header)
-	fmt.Println("Content-Type: ", header.Header.Get("Content-Type"))
-	fmt.Println("File name: ", header.Filename)
+	// fmt.Printf("Size: %d bytes\n", header.Size)
+	// fmt.Println("Header: ", header.Header)
+	// fmt.Println("Content-Type: ", header.Header.Get("Content-Type"))
+	// fmt.Println("File name: ", header.Filename)
 
 	_, err = io.Copy(&buf, file);
 	if err != nil {
@@ -50,9 +54,10 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fs := models.Storage{
-		Name: header.Filename,
+		Name: strings.ToLower(header.Filename),
 		Data: buf.Bytes(),
 		MIME: header.Header.Get("Content-Type"),
+		Size: int(header.Size),
 	}
 	_fl, err := account.StorageCreateFile(&fs)
 	if err != nil {
@@ -60,8 +65,15 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	diskSpaceUsed, err := account.StorageDiskSpaceUsed()
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка подсчета объема файлов"}))
+		return
+	}
+
 	resp := u.Message(true, "File is save!")
 	resp["file"] = _fl
+	resp["diskSpaceUsed"] = diskSpaceUsed
 	u.Respond(w, resp)
 }
 
@@ -84,8 +96,15 @@ func StorageGetFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	diskSpaceUsed, err := account.StorageDiskSpaceUsed()
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка подсчета объема файлов"}))
+		return
+	}
+
 	resp := u.Message(true, "Storage get list")
 	resp["file"] = *fs
+	resp["diskSpaceUsed"] = diskSpaceUsed
 	u.Respond(w, resp)
 }
 
@@ -127,8 +146,15 @@ func StorageGetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	diskSpaceUsed, err := account.StorageDiskSpaceUsed()
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка подсчета объема файлов"}))
+		return
+	}
+
 	resp := u.Message(true, "Storage get file")
 	resp["files"] = files
+	resp["diskSpaceUsed"] = diskSpaceUsed
 	u.Respond(w, resp)
 }
 
@@ -201,9 +227,36 @@ func StorageDeleteFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	diskSpaceUsed, err := account.StorageDiskSpaceUsed()
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка подсчета объема файлов"}))
+		return
+	}
+
 	resp := u.Message(true, "Email templates created")
+	resp["diskSpaceUsed"] = diskSpaceUsed
 	u.Respond(w, resp)
 }
+
+func StorageDiskSpaceUsed(w http.ResponseWriter, r *http.Request) {
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	diskSpaceUsed, err := account.StorageDiskSpaceUsed()
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка подсчета объема файлов"}))
+		return
+	}
+
+	resp := u.Message(true, "Storage get file")
+	resp["diskSpaceUsed"] = diskSpaceUsed
+	u.Respond(w, resp)
+}
+
+
 
 
 // Example OLD  function
@@ -261,7 +314,7 @@ func StorageStore(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-// FOR CDN
+// ### FOR CDN ###
 func StorageCDNGet(w http.ResponseWriter, r *http.Request) {
 
 	/*account, err := GetWorkAccount(w,r)
