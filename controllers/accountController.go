@@ -120,3 +120,16 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
+
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(nil, "Не удалось найти аккаунт"))
+		return
+	}
+
+	resp := u.Message(true, "GET account profile")
+	resp["account"] = account
+	u.Respond(w, resp)
+}
+

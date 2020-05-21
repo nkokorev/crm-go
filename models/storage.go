@@ -21,7 +21,7 @@ type Storage struct {
 
 	// MetaData
 	MIME 	string 	`json:"mime" gorm:"type:varchar(90);"`
-	Size 	int 	`json:"size" gorm:"type:int;"` // Kb
+	Size 	uint 	`json:"size" gorm:"type:int;"` // Kb
 
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
@@ -84,6 +84,16 @@ func (fs Storage) Delete () error {
 
 // ########### ACCOUNT FUNCTIONAL ###########
 func (account Account) StorageCreateFile(fs *Storage) (*Storage, error) {
+	// check disk space
+	used, err := account.StorageDiskSpaceUsed()
+	if err != nil {
+		return nil, err
+	}
+
+	if (account.DiskSpaceAvailable - used) < fs.Size {
+		return nil, utils.Error{Message: "Нехватка дискового пространства"}
+	}
+	
 	fs.AccountID = account.ID
 	return fs.create()
 }
@@ -155,8 +165,8 @@ func (account Account) StorageUpdateFile(fs *Storage, input interface{}) error {
 	return fs.update(input)
 }
 
-func (account Account) StorageDiskSpaceUsed() (int, error) {
-	var sum,count int
+func (account Account) StorageDiskSpaceUsed() (uint, error) {
+	var sum,count uint
 
 	sum = 0
 	count = 0

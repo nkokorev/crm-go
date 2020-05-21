@@ -22,7 +22,7 @@ const (
 
 type Account struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
-	HashID string `json:"-" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
+	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 
 	// данные аккаунта
 	Name    string `json:"name" gorm:"type:varchar(255)"`
@@ -49,7 +49,7 @@ type Account struct {
 	UiApiEnabledLoginNotVerifiedUser bool `json:"-" gorm:"default:false;"`        // разрешать ли пользователю входить в аккаунт без завершенной верфикации?
 
 	// Storage
-	DiskSpaceAvailable uint `json:"diskSpaceAvailable" gorm:"type:bigint;default:524288000"` // в байтах размер дискового пр-а (def: 500mb)
+	DiskSpaceAvailable uint `json:"diskSpaceAvailable" gorm:"type:bigint;default:524288000"` // в байтах - общий размер дискового пр-а (def: 500mb)
 
 	// настройки авторизации.
 	// Разделяется AppAuth и ApiAuth -

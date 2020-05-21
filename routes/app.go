@@ -49,6 +49,7 @@ var AppRoutes = func(r *mux.Router) {
 	r.HandleFunc("/app/auth/phone", controllers.UserAuthByPhone).Methods(http.MethodPost, http.MethodOptions)
 
 	// 6. Load sign-in routes (account get from hash id)
+	rAuthFull.HandleFunc("/accounts", controllers.AccountGetProfile).Methods(http.MethodGet, http.MethodOptions)
 	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/users", controllers.UserRegistration).Methods(http.MethodPost, http.MethodOptions)
 	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/users/auth/username", controllers.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
 
@@ -73,7 +74,7 @@ var AppRoutes = func(r *mux.Router) {
 	// r.HandleFunc("/email/templates/share/{emailTemplateHashId}", controllers.EmailTemplateShareGet).Methods(http.MethodGet, http.MethodOptions)
 
 	// ### Orders ###
-	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/orders", controllers.GetOrders).Methods(http.MethodGet, http.MethodOptions)
+	// rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/orders", controllers.GetOrders).Methods(http.MethodGet, http.MethodOptions)
 
 	// 7. Test marketing: test Email...
 	rAuthFull.HandleFunc("/accounts/marketing/test-email", controllers.SendEmailMessage).

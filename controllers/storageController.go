@@ -21,7 +21,6 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// r.ParseMultipartForm(32 << 20) // limit your max input length!
 	err = r.ParseMultipartForm(32 << 20) // 32Mb
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Слишком большой файл. Максимум 32 Mb."}))
@@ -57,11 +56,11 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		Name: strings.ToLower(header.Filename),
 		Data: buf.Bytes(),
 		MIME: header.Header.Get("Content-Type"),
-		Size: int(header.Size),
+		Size: uint(header.Size),
 	}
 	_fl, err := account.StorageCreateFile(&fs)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка создания файла"}))
+		u.Respond(w, u.MessageError(err, "Сервер не может обработать запрос")) // что это?)
 		return
 	}
 
