@@ -1,4 +1,4 @@
-package smtp
+package smtpOld
 
 import (
 "bytes"

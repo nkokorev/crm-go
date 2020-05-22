@@ -424,7 +424,7 @@ func (user *User) DeleteAccount(a *Account) error {
 func (user *User) CreateInviteForUser (email string, sendMail bool) error {
 
 	// 1. Создаем токен для нового пользователя
-	eat := &EmailAccessToken{DestinationEmail:email, OwnerID:user.ID, ActionType: "invite-user"}
+	eat := &EmailAccessToken{DestinationEmail: email, OwnerID:user.ID, ActionType: "invite-user"}
 	err := eat.Create()
 	if err != nil {
 		return u.Error{Message:"Не удалось создать приглашение"}

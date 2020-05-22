@@ -7,13 +7,13 @@ import (
 
 func TestUserVerificationType_Create(t *testing.T) {
 	listTest := []struct {
-		uvt UserVerificationMethod
-		expected bool
+		uvt         UserVerificationMethod
+		expected    bool
 		description string
 	}{
-		{UserVerificationMethod{Name:"TestCreate Type", Tag:utils.RandStringBytesMaskImprSrcUnsafe(10, false)}, true, "Все есть"},
-		{UserVerificationMethod{Name:"", Tag:utils.RandStringBytesMaskImprSrcUnsafe(9, false)}, false, "Нет имени"},
-		{UserVerificationMethod{Name:"TestCreate Type", Tag:"Ф"}, false, "Слишком короткий код"},
+		{UserVerificationMethod{Name: "TestCreate Type", Tag:utils.RandStringBytesMaskImprSrcUnsafe(10, false)}, true, "Все есть"},
+		{UserVerificationMethod{Name: "", Tag:utils.RandStringBytesMaskImprSrcUnsafe(9, false)}, false, "Нет имени"},
+		{UserVerificationMethod{Name: "TestCreate Type", Tag:"Ф"}, false, "Слишком короткий код"},
 	}
 
 	for i,v := range listTest {
@@ -36,7 +36,7 @@ func TestUserVerificationType_Create(t *testing.T) {
 }
 
 func TestGetUserVerificationTypeById(t *testing.T) {
-	uvt, err := UserVerificationMethod{Name:"TestDelete", Tag:utils.RandStringBytesMaskImprSrcUnsafe(5, false)}.Create()
+	uvt, err := UserVerificationMethod{Name: "TestDelete", Tag:utils.RandStringBytesMaskImprSrcUnsafe(5, false)}.Create()
 	if err != nil {
 		t.Fatalf("Cant create ver %v", err)
 	}
@@ -53,7 +53,7 @@ func TestGetUserVerificationTypeById(t *testing.T) {
 }
 
 func TestGetUserVerificationTypeByCode(t *testing.T) {
-	uvt, err := UserVerificationMethod{Name:"TestDelete", Tag:utils.RandStringBytesMaskImprSrcUnsafe(5, false)}.Create()
+	uvt, err := UserVerificationMethod{Name: "TestDelete", Tag:utils.RandStringBytesMaskImprSrcUnsafe(5, false)}.Create()
 	if err != nil {
 		t.Fatalf("Cant create ver %v", err)
 	}
@@ -70,7 +70,7 @@ func TestGetUserVerificationTypeByCode(t *testing.T) {
 }
 
 func TestUserVerificationType_Delete(t *testing.T) {
-	uvt, err := UserVerificationMethod{Name:"TestDelete", Tag:"testCode"}.Create()
+	uvt, err := UserVerificationMethod{Name: "TestDelete", Tag:"testCode"}.Create()
 	if err != nil {
 		t.Fatalf("Cant create ver %v", err)
 	}

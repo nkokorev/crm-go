@@ -43,7 +43,7 @@ func (pc *ProductCard) OfferAppend (offer Offer, opt_v... int) error {
 	if len(opt_v) > 0 {
 		order = opt_v[0]
 	}
-	return db.Model(ProductCardOffers{}).Create(&ProductCardOffers{AccountID:pc.AccountID, OfferID:offer.ID, ProductCardID:pc.ID, Order:order}).Error
+	return db.Model(ProductCardOffers{}).Create(&ProductCardOffers{AccountID: pc.AccountID, OfferID:offer.ID, ProductCardID:pc.ID, Order:order}).Error
 }
 
 func (pc ProductCard) GetAll(v_opt... uint) (pcs []ProductCard, err error) {

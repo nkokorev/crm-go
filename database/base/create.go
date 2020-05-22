@@ -238,7 +238,7 @@ func UploadTestData() {
 			//DefaultAccountID:null,
 			EmailVerifiedAt:&timeNow,
 			},
-			models.RoleOwner,
+		models.RoleOwner,
 		)
 	if err != nil || owner == nil {
 		log.Fatal("Не удалось создать admin'a: ", err)
@@ -264,7 +264,7 @@ func UploadTestData() {
 	}
 
 	// 3. Создаем домен для главного аккаунта
-	domainMain, err := mAcc.CreateDomain(models.Domain {
+	domainMain, err := mAcc.CreateDomain(models.Domain{
 		Hostname: "ratuscrm.com",
 		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4dksLEYhARII4b77fe403uCJhD8x5Rddp9aUJCg1vby7d6QLOpP7uXpXKVLXxaxQcX7Kjw2kGzlvx7N+d2tToZ8+T3SUadZxLOLYDYkwalkP3vhmA3cMuhpRrwOgWzDqSWsDfXgr4w+p1BmNbScpBYCwCrRQ7B12/EXioNcioCQIDAQAB`,
 		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
@@ -349,14 +349,14 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	}
 
 	// 3. добавляем меня как админа
-	_, err = acc357.AppendUser(*owner,models.RoleAdmin)
+	_, err = acc357.AppendUser(*owner, models.RoleAdmin)
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя admin in 357gr")
 		return
 	}
 
 	// 4. Создаем домен для 357gr
-	domain357gr, err := acc357.CreateDomain(models.Domain {
+	domain357gr, err := acc357.CreateDomain(models.Domain{
 		Hostname: "357gr.ru",
 		DKIMPublicRSAKey: ``,
 		DKIMPrivateRSAKey: ``,
@@ -410,21 +410,21 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	}
 
 	// 2. добавляем меня как админа
-	_, err = accSyndicAd.AppendUser(*owner,models.RoleAdmin)
+	_, err = accSyndicAd.AppendUser(*owner, models.RoleAdmin)
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя admin in 357gr")
 		return
 	}
 
 	// 2.2 Добавляем Mex388
-	_, err = accSyndicAd.AppendUser(*mex388,models.RoleAdmin)
+	_, err = accSyndicAd.AppendUser(*mex388, models.RoleAdmin)
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя mex388 in 357gr")
 		return
 	}
 
 	// 2. Создаем домен для синдиката
-	domainSynd, err := accSyndicAd.CreateDomain(models.Domain {
+	domainSynd, err := accSyndicAd.CreateDomain(models.Domain{
 		Hostname: "syndicad.com",
 		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDEwBDUBhnVcb+wPoyj6UrobwhKp0bIMzl9znfS127PdLqeGEyxCGy6CTT7coAturzb2dw33e3OhzzOvvBjnzSamRfpAj3vuBiSWtykS4JH17EN/4+ABtf7VOqfRWwB7F80VJ+3/Xv7TzkmNcAg+ksgDzk//BCXfcVFfx56Jxf7mQIDAQAB`,
 		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
@@ -472,21 +472,21 @@ pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
 	}
 
 	// 2. добавляем меня как админа
-	_, err = brouser.AppendUser(*owner,models.RoleAdmin)
+	_, err = brouser.AppendUser(*owner, models.RoleAdmin)
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя admin in 357gr")
 		return
 	}
 
 	// 2.2. Добавляем mex388
-	_, err = brouser.AppendUser(*mex388,models.RoleAdmin)
+	_, err = brouser.AppendUser(*mex388, models.RoleAdmin)
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя mex388 in brouser")
 		return
 	}
 
 	// 2. Создаем домен для синдиката
-	domainBrouser, err := brouser.CreateDomain(models.Domain {
+	domainBrouser, err := brouser.CreateDomain(models.Domain{
 		Hostname: "brouser.com",
 		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvryklToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHcumqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB`,
 		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----

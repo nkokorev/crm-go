@@ -11,9 +11,9 @@ type AccountUser struct {
 	UserId uint	`json:"userId" gorm:"type:int;index;not null;"`
 	RoleId uint	`json:"roleId" gorm:"type:int;not null;"`
 
-	User User	`json:"-"  gorm:"preload:true"`
-	Account Account	`json:"account" gorm:"preload:true"`
-	Role Role	`json:"role" gorm:"preload:true"`
+	User    User    `json:"-"  gorm:"preload:true"`
+	Account Account `json:"account" gorm:"preload:true"`
+	Role    Role    `json:"role" gorm:"preload:true"`
 }
 
 func (AccountUser) PgSqlCreate() {
@@ -49,10 +49,10 @@ func (aUser AccountUser) create () (*AccountUser, error) {
 	if  !(Account{}).Exist(aUser.AccountId) {
 		return nil, errors.New("Аккаунт, в рамках которого создается пользователь, не существует!")
 	}
-	if  !(User{ID:aUser.UserId}).Exist() {
+	if  !(User{ID: aUser.UserId}).Exist() {
 		return nil, errors.New("Аккаунт, в рамках которого создается пользователь, не существует!")
 	}
-	if  !(Role{ID:aUser.RoleId}).Exist() {
+	if  !(Role{ID: aUser.RoleId}).Exist() {
 		return nil, errors.New("Аккаунт, в рамках которого создается пользователь, не существует!")
 	}
 

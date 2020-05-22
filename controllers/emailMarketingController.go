@@ -248,7 +248,8 @@ func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = template.Send(*ebox,*user,input.Subject)
+	// err = template.Send(*ebox,*user,input.Subject)
+	err = template.SendChannel(*ebox,*user,input.Subject)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в отправке письма"))
 		return

@@ -10,6 +10,6 @@ type OfferComposition struct {
 
 	Account Account `json:"-"`
 	Product Product `json:"-"`
-	Offer Offer `json:"-"`
+	Offer   Offer   `json:"-"`
 	//Product Product	`json:"-"`
 }

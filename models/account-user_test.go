@@ -3,7 +3,7 @@ package models
 import "testing"
 
 func TestAccountUser_create(t *testing.T)  {
-    account, err := Account{Name:"TestAccountUser_create"}.create()
+    account, err := Account{Name: "TestAccountUser_create"}.create()
     if err != nil {
         t.Fatalf("Не удалось создать тестовый аккаунт: %v\n", err)
     }
@@ -79,7 +79,7 @@ func TestAccountUser_create(t *testing.T)  {
 }
 
 func TestAccountUser_update(t *testing.T)  {
-    account, err := Account{Name:"TestAccountUser_update"}.create()
+    account, err := Account{Name: "TestAccountUser_update"}.create()
     if err != nil {
         t.Fatalf("Не удалось создать тестовый аккаунт: %v\n", err)
     }
@@ -132,7 +132,7 @@ func TestAccountUser_update(t *testing.T)  {
 
 func TestAccountUser_delete(t *testing.T) {
     // Создаем тестовый аккаунт
-    account, err := Account{Name:"TestAccountUser_delete"}.create()
+    account, err := Account{Name: "TestAccountUser_delete"}.create()
     if err != nil {
         t.Fatalf("Не удалось создать тестовый аккаунт: %v\n", err)
     }

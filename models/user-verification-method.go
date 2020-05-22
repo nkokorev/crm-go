@@ -24,9 +24,9 @@ func (UserVerificationMethod) PgSqlCreate() {
 	db.CreateTable(&UserVerificationMethod{})
 
 	var verificationMethods = []UserVerificationMethod{
-		{Name:"Email-верификация", Tag:VerificationMethodEmail, Description:"Пользователю будет необходимо перейти по ссылке в email."},
-		{Name:"SMS-верификация", Tag:VerificationMethodPhone, Description:"Пользователю необходимо будет ввести код из SMS."},
-		{Name:"Двойная Email+SMS верификация", Tag:VerificationMethodEmailAndPhone, Description:"Пользователю необходимо будет ввести код из SMS в специальной форме по ссылке в email."},
+		{Name:"Email-верификация", Tag: VerificationMethodEmail, Description:"Пользователю будет необходимо перейти по ссылке в email."},
+		{Name:"SMS-верификация", Tag: VerificationMethodPhone, Description:"Пользователю необходимо будет ввести код из SMS."},
+		{Name:"Двойная Email+SMS верификация", Tag: VerificationMethodEmailAndPhone, Description:"Пользователю необходимо будет ввести код из SMS в специальной форме по ссылке в email."},
 	}
 	for _, v := range verificationMethods {
 		_, err := v.Create()

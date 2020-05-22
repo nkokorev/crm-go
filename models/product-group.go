@@ -24,7 +24,7 @@ type ProductGroup struct {
 	MetaKeywords string `json:"meta_keywords"`
 	MetaDescription string `json:"meta_description"`
 
-	Shop Shop `json:"-"`
+	Shop        Shop          `json:"-"`
 	ParentGroup *ProductGroup `json:"-"`
 }
 

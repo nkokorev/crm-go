@@ -12,11 +12,11 @@ type Offer struct {
 	Price float64 `json:"price"` // стоимость офера
 	Discount float64 `json:"discount"` // Скидка, amount
 
-	Products []Product `json:"-" gorm:"many2many:offer_compositions"`
+	Products []Product             `json:"-" gorm:"many2many:offer_compositions"`
 	Composition []OfferComposition `json:"composition"`
 
 	Account Account `json:"-"`
-	Product Product	`json:"-"`
+	Product Product `json:"-"`
 }
 
 func (offer *Offer) Create () error {
@@ -29,7 +29,7 @@ func (offer *Offer) Create () error {
 }
 
 func (offer *Offer) ProductAppend (product Product, volume float64) error {
-	return db.Model(OfferComposition{}).Create(&OfferComposition{AccountID:offer.AccountID, OfferID:offer.ID, ProductID:product.ID, Volume:volume}).Error
+	return db.Model(OfferComposition{}).Create(&OfferComposition{AccountID: offer.AccountID, OfferID:offer.ID, ProductID:product.ID, Volume:volume}).Error
 }
 
 func (offer Offer) GetAll(v_opt... uint) (offers []Offer, err error) {

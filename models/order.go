@@ -10,7 +10,7 @@ type Order struct {
 	AccountID uint `json:"-" gorm:"index;not null;"`
 	UserID uint `json:"userId" gorm:"index;default:null;"` // по-умолчанию ни к чему не привязываем
 
-	User User	`json:"user"` // может быть нулевым
+	User   User    `json:"user"`                                 // может быть нулевым
 	Offers []Offer `json:"offers" gorm:"many2many:order_offers"` // могут быть оферы с одним товаром
 	//Products []Product `json:"products" gorm:"many2many:order_products"`
 

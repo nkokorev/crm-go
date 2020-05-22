@@ -42,6 +42,8 @@ type EmailTemplate struct {
 	// DeletedAt *time.Time `json:"deletedAt" sql:"index"`
 }
 
+
+
 type ViewData struct{
 	// Template EmailTemplate
 	TemplateName string
@@ -348,10 +350,164 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string) error {
 		log.Fatal(err)
 	}
 
-	// fmt.Println("Сообщение успешно отправлено")
+	return nil
+}
+
+func (et EmailTemplate) SendChannel(from EmailBox, user User, subject string) error {
+
+	// Для отправки в канал
+	/*type EmailPkg struct {
+		Account Account
+		EmailBox EmailBox // отправитель with *Domain
+		User User // получатель
+		EmailTemplate EmailTemplate // шаблон письма
+		Subject string // тема сообщения
+	}*/
+
+	
+	account, _ := GetAccount(et.AccountID)
+
+	pkg := EmailPkg{
+		Account:       *account,
+		EmailBox:      from,
+		User:          user,
+		EmailTemplate: et,
+		Subject:       subject,
+	}
+
+	SendEmailPkg(pkg)
+	SendEmailPkg(pkg)
+	SendEmailPkg(pkg)
+	// 1. Формируем пакет отправки
+	
+
+	// var pkg EmailPkg
+	// size := int(unsafe.Sizeof(pkg))
+	// fmt.Printf("Size: %d\n", size) // 16 байт   | 112 байт с аккаунтом | 255 с данными
+
+	 return nil
+
+	
+	vData, err := et.PrepareViewData(user)
+
+	// 1. Получаем html из email'а
+	html, err := et.GetHTML(vData)
+	if err != nil {
+		return err
+	}
+
+	// 2. Собираем хедеры
+	headers := make(map[string]string)
+
+	address := from.GetMailAddress()
+	headers["From"] = address.String()
+	headers["To"] = user.Email
+	headers["Subject"] = subject
+
+	// Статичные хедеры
+	headers["MIME-Version"] = "1.0" // имя SMTP сервера
+	headers["Content-Type"] = "text/html; charset=UTF-8"
+	headers["Content-Transfer-Encoding"] = "quoted-printable" // имя SMTP сервера
+	headers["Feedback-ID"] = "1324078:20488:trust:54854"
+	// Идентификатор представляет собой 32-битное число в диапазоне от 1 до 2147483647, либо строку длиной до 40 символов, состоящую из латинских букв, цифр и символов ".-_".
+	headers["Message-ID"] = "1001" // номер сообщения (внутренний номер)
+	headers["Received"] = "RatusCRM"
+	// headers["Return-Path"] = "<smtp@rus-marketing.ru>"
+
+	// Create message body with headers
+	message := ""
+	for k,v := range headers {
+		message += fmt.Sprintf("%s: %s\r\n", k, v)
+	}
+
+	var buf bytes.Buffer // body of message
+	w := quotedprintable.NewWriter(&buf)
+	_, err = w.Write([]byte(html))
+	if err != nil {
+		return nil
+	}
+
+	if err = w.Close(); err != nil {
+		return nil
+	}
+
+	message += "\r\n" + buf.String()
+
+	_, host := split(user.Email) // получаем хост, на который нужно совершить отправку данных
+
+	privRSAKey := from.Domain.DKIMPrivateRSAKey
+
+	options := dkim.NewSigOptions()
+	options.PrivateKey = []byte(privRSAKey)
+	options.Domain = from.Domain.Hostname
+	options.Selector = "dk1"
+	options.SignatureExpireIn = 0
+	options.BodyLength = 50
+	options.Headers = GetHeaderKeys(headers)
+	options.AddSignatureTimestamp = false
+	options.Canonicalization = "relaxed/relaxed"
+
+	//////////////////////
+
+	email := []byte(message)
+	if err := dkim.Sign(&email, options); err != nil {
+		return errors.New("Cant sign")
+	}
+
+	mx, err := net.LookupMX(host)
+	if err != nil {
+		log.Fatal("Не найдена MX-запись")
+	}
+
+	//addr := fmt.Sprintf("%s:%d", mx[0].Host, 25)
+	addr := fmt.Sprintf("%s:%d", mx[0].Host, 25)
+
+	client, err := smtp.Dial(addr)
+	if err != nil {
+		log.Fatalf("DialTimeout fail: %v", mx[0].Host)
+	}
+
+	if err = client.StartTLS(&tls.Config {
+		InsecureSkipVerify: true,
+		ServerName: host,
+	}); err != nil {
+		log.Fatalf("client.StartTLS fail: %v", err)
+	}
+
+	// from
+	// err = client.Mail(from.GetMailAddress().Address)
+	err = client.Mail("userId.abuse.@ratuscrm.com")
+	if err != nil {
+		log.Fatal("Почтовый адрес не может принять почту")
+	}
+
+	err = client.Rcpt(user.Email)
+	if err != nil {
+		log.Fatal("Похоже, почтовый адрес не сущесвует")
+	}
+
+	wc, err := client.Data()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = wc.Write(email)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = wc.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Send the QUIT command and close the connection.
+	err = client.Quit()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return nil
-		
 }
 
 func split(email string) (account, host string) {

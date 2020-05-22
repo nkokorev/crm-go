@@ -21,7 +21,7 @@ type Product struct {
 	Description string `json:"description"` // pgsql: text
 
 	Account Account `json:"-"`
-	Offers []Offer `json:"offers" gorm:"many2many:offer_compositions"`
+	Offers  []Offer `json:"offers" gorm:"many2many:offer_compositions"`
 
 }
 
