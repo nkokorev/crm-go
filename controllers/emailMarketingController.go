@@ -202,9 +202,7 @@ func EmailTemplatesUpdate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-// --
-
-// Example func..
+// -- TEST -- 
 func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
 
 	account, err := GetWorkAccount(w,r)

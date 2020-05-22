@@ -14,6 +14,7 @@ import (
 	"log"
 	"mime/quotedprintable"
 	"net"
+	"net/mail"
 	"net/smtp"
 	"strings"
 	"time"
@@ -44,15 +45,6 @@ type EmailTemplate struct {
 
 
 
-type ViewData struct{
-	// Template EmailTemplate
-	TemplateName string
-	PreviewText string
-	// User User
-	User map[string]interface{}
-	// Json map[string](string)
-	Json map[string]interface{}
-}
 
 func (EmailTemplate) PgSqlCreate() {
 
@@ -353,7 +345,7 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string) error {
 	return nil
 }
 
-func (et EmailTemplate) SendChannel(from EmailBox, user User, subject string) error {
+func (et EmailTemplate) SendChannel(emailBox EmailBox, user User, subject string) error {
 
 	// Для отправки в канал
 	/*type EmailPkg struct {
@@ -363,16 +355,21 @@ func (et EmailTemplate) SendChannel(from EmailBox, user User, subject string) er
 		EmailTemplate EmailTemplate // шаблон письма
 		Subject string // тема сообщения
 	}*/
-
 	
 	account, _ := GetAccount(et.AccountID)
+	data, err := et.PrepareViewData(user)
+	if err != nil || data == nil {
+		return errors.New("Ошибка сбора данных для шаблона")
+	}
 
 	pkg := EmailPkg{
-		Account:       *account,
-		EmailBox:      from,
-		User:          user,
+		From: 	emailBox.GetMailAddress(),
+		To: 	mail.Address{Address: user.Email},
+		Subject: 	subject,
+		Domain: 	*emailBox.Domain,
 		EmailTemplate: et,
-		Subject:       subject,
+		ViewData:  	*data,
+		Account:	*account,
 	}
 
 	SendEmailPkg(pkg)
@@ -385,7 +382,7 @@ func (et EmailTemplate) SendChannel(from EmailBox, user User, subject string) er
 	// size := int(unsafe.Sizeof(pkg))
 	// fmt.Printf("Size: %d\n", size) // 16 байт   | 112 байт с аккаунтом | 255 с данными
 
-	 return nil
+	 // return nil
 
 	
 	vData, err := et.PrepareViewData(user)
@@ -399,7 +396,7 @@ func (et EmailTemplate) SendChannel(from EmailBox, user User, subject string) er
 	// 2. Собираем хедеры
 	headers := make(map[string]string)
 
-	address := from.GetMailAddress()
+	address := emailBox.GetMailAddress()
 	headers["From"] = address.String()
 	headers["To"] = user.Email
 	headers["Subject"] = subject

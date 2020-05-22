@@ -29,21 +29,7 @@ func main() {
 
 	models.RunHttpServer(routes.Handlers())
 
-	/*if err := SendMail(); err != nil {
-		log.Fatal(err)
-	} else {
-		fmt.Println("Сообщение успешно отправлено")
-	}*/
-	
-
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
-
-	/*if err := SendMail(); err != nil {
-		log.Fatal(err)
-	} else {
-		fmt.Println("Сообщение успешно отправлено")
-	}*/
-
 }
 
 func runMigration(line string) {
