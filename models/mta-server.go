@@ -80,8 +80,12 @@ func mtaServer(c <-chan EmailPkg) {
 			 }
 
 			 err = sendMailByClient(client,body,pkg.To.Address)
+			 if err != nil {
+				 skipSend(err)
+				 break
+			 }
 
-
+			 fmt.Println("Сообщение успешно отправлено!")
 		}
 
 		/*	pkg := <- c
@@ -90,7 +94,7 @@ func mtaServer(c <-chan EmailPkg) {
 		fmt.Printf("Макс. длина: %d\n", cap(c))*/
 
 		// имитируем его отправку
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 1)
 	}
 }
 
@@ -101,7 +105,7 @@ func SendEmailPkg(pkg EmailPkg)  {
 }
 
 func skipSend(err error)  {
-	fmt.Println(err)
+	fmt.Println("Error: ", err)
 }
 
 func getHeaders(from, to mail.Address, subject string, messageId, feedbackId string) *map[string]string {
@@ -122,6 +126,8 @@ func getHeaders(from, to mail.Address, subject string, messageId, feedbackId str
 	headers["Content-Transfer-Encoding"] = "quoted-printable"
 	headers["Feedback-ID"] = feedbackId //"1324078:20488:trust:54854"
 	// Идентификатор представляет собой 32-битное число в диапазоне от 1 до 2147483647, либо строку длиной до 40 символов, состоящую из латинских букв, цифр и символов ".-_".
+	//List-Unsubscribe-Post: List-Unsubscribe=One-Click
+	//List-Unsubscribe: <https://your-company-net/unsubscribe/example>
 	headers["Message-ID"] = messageId // номер сообщения (внутренний номер)
 	headers["Received"] = "RatusCRM"  // имя SMTP сервера
 
@@ -203,10 +209,11 @@ func getClientByEmail(email string) (*smtp.Client, error) {
 	for i := range mx {
 		for j := range ports {
 			server := strings.TrimSuffix(mx[i].Host, ".")
-			hostPort := fmt.Sprintf("%s:%d", server, ports[j])
+			hostPort := fmt.Sprintf("%s:%d", mx[i].Host, ports[j])
 
 			conn, err := net.DialTimeout("tcp", hostPort, 5*time.Second)
 			if err != nil {
+				fmt.Printf("Коннект не прошел: %s\n", hostPort)
 				if j == len(ports)-1 {
 					return nil, err
 				}
@@ -214,9 +221,10 @@ func getClientByEmail(email string) (*smtp.Client, error) {
 				continue
 			}
 
-			//client, err := smtp.Dial(hostPort)
+			// _client, err := smtp.Dial(conn, server)
 			_client, err := smtp.NewClient(conn, server)
 			if err != nil {
+				fmt.Printf("Не удалось подключиться: %s\n", server)
 				if j == len(ports)-1 {
 					return nil, err
 				}
@@ -226,14 +234,15 @@ func getClientByEmail(email string) (*smtp.Client, error) {
 			// поднимаем TLS
 			tlc := &tls.Config{
 				InsecureSkipVerify: true,
-				ServerName: host,
-				// ServerName: server,
+				// ServerName: host,
+				ServerName: server,
 			}
 			if err := _client.StartTLS(tlc); err != nil {
 				fmt.Println("Не удалось установить TLC")
 			}
 
 			client = *_client
+			break
 		}
 	}
 

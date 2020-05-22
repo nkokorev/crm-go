@@ -346,15 +346,6 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string) error {
 }
 
 func (et EmailTemplate) SendChannel(emailBox EmailBox, user User, subject string) error {
-
-	// Для отправки в канал
-	/*type EmailPkg struct {
-		Account Account
-		EmailBox EmailBox // отправитель with *Domain
-		User User // получатель
-		EmailTemplate EmailTemplate // шаблон письма
-		Subject string // тема сообщения
-	}*/
 	
 	account, _ := GetAccount(et.AccountID)
 	data, err := et.PrepareViewData(user)
@@ -373,10 +364,13 @@ func (et EmailTemplate) SendChannel(emailBox EmailBox, user User, subject string
 	}
 
 	SendEmailPkg(pkg)
-	SendEmailPkg(pkg)
-	SendEmailPkg(pkg)
+	// SendEmailPkg(pkg)
+	// SendEmailPkg(pkg)
+	// SendEmailPkg(pkg)
+	// SendEmailPkg(pkg)
 	// 1. Формируем пакет отправки
-	
+
+	return nil
 
 	// var pkg EmailPkg
 	// size := int(unsafe.Sizeof(pkg))
@@ -432,11 +426,11 @@ func (et EmailTemplate) SendChannel(emailBox EmailBox, user User, subject string
 
 	_, host := split(user.Email) // получаем хост, на который нужно совершить отправку данных
 
-	privRSAKey := from.Domain.DKIMPrivateRSAKey
+	privRSAKey := emailBox.Domain.DKIMPrivateRSAKey
 
 	options := dkim.NewSigOptions()
 	options.PrivateKey = []byte(privRSAKey)
-	options.Domain = from.Domain.Hostname
+	options.Domain = emailBox.Domain.Hostname
 	options.Selector = "dk1"
 	options.SignatureExpireIn = 0
 	options.BodyLength = 50
