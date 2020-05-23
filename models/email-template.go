@@ -33,7 +33,6 @@ type EmailTemplate struct {
 	PreviewText string `json:"previewText" gorm:"type:varchar(255);default:''"` // inside name of mail
 	Code string `json:"code, omitempty" gorm:"type:text;"` // сам шаблон письма
 
-	// Data
 	// User *User `json:"-" sql:"-"` // Пользователь, который получит сообщение
 	Json pgtype.JSON `json:"json" gorm:"type:json;default:'{\"Example\":\"Тестовые данные в формате json\"}'"`
 
@@ -42,9 +41,6 @@ type EmailTemplate struct {
 	UpdatedAt time.Time  `json:"updatedAt"`
 	// DeletedAt *time.Time `json:"deletedAt" sql:"index"`
 }
-
-
-
 
 func (EmailTemplate) PgSqlCreate() {
 
@@ -353,7 +349,7 @@ func (et EmailTemplate) SendChannel(emailBox EmailBox, user User, subject string
 		return errors.New("Ошибка сбора данных для шаблона")
 	}
 
-	pkg := EmailPkg{
+	pkg := EmailPkg {
 		From: 	emailBox.GetMailAddress(),
 		To: 	mail.Address{Address: user.Email},
 		Subject: 	subject,
@@ -363,12 +359,9 @@ func (et EmailTemplate) SendChannel(emailBox EmailBox, user User, subject string
 		Account:	*account,
 	}
 
-	SendEmailPkg(pkg)
-	// SendEmailPkg(pkg)
-	// SendEmailPkg(pkg)
-	// SendEmailPkg(pkg)
-	// SendEmailPkg(pkg)
-	// 1. Формируем пакет отправки
+	for i := 0; i <= 100 ; i++ {
+		SendEmailPkg(pkg)
+	}
 
 	return nil
 
@@ -376,7 +369,7 @@ func (et EmailTemplate) SendChannel(emailBox EmailBox, user User, subject string
 	// size := int(unsafe.Sizeof(pkg))
 	// fmt.Printf("Size: %d\n", size) // 16 байт   | 112 байт с аккаунтом | 255 с данными
 
-	 // return nil
+	// return nil
 
 	
 	vData, err := et.PrepareViewData(user)

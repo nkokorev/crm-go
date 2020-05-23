@@ -10,7 +10,6 @@ import (
 	"log"
 )
 
-
 func init() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error load .env file", err)
@@ -28,7 +27,6 @@ func main() {
 	runMigration("")
 
 	models.RunHttpServer(routes.Handlers())
-
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
 }
 

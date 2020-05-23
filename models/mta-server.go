@@ -10,12 +10,17 @@ import (
 	"net/mail"
 	"net/smtp"
 	"strings"
+	"sync"
 	"time"
 	"github.com/toorop/go-dkim"
 )
 
-// Есть 2 вида писем: транзакционные, массовая-рассылка.
-// Отправка сопровождается историей
+func init() {
+	smtpCh = make(chan EmailPkg)
+	go mtaServer(smtpCh) // start MTA server
+}
+
+var smtpCh chan EmailPkg
 
 type EmailPkg struct {
 	From 		mail.Address
@@ -36,72 +41,75 @@ type ViewData struct{
 	Json map[string]interface{}
 }
 
-var SmtpCh chan EmailPkg
-
-func init() {
-	SmtpCh = make(chan EmailPkg, 50)
-	go mtaServer(SmtpCh) // start MTA server
-}
-
-// внутренняя функция, читающая канал
 func mtaServer(c <-chan EmailPkg) {
-
+	wg := new(sync.WaitGroup)
+	// target speed: 16 mail per second (62 ms / 1 mail)
 	for {
-		// time.Sleep(time.Second * 2)
-		// получаем сообщение
-		// pkg, more := <- c
 		select {
 		 case pkg := <- c:
-			 fmt.Printf("Принял сообщение: %s \n", pkg.Subject)
-			 fmt.Printf("В очереди: %d\n", len(c))
-			 fmt.Printf("Макс. длина: %d\n", cap(c))
+		 	
+			 // fmt.Printf("Принял сообщение: %s \n", pkg.Subject)
+			 // fmt.Printf("В очереди: %d\n", len(c))
+			 // fmt.Printf("Макс. длина: %d\n", cap(c))
 
-			 // 1. Получаем compile html из email'а
-			 html, err := pkg.EmailTemplate.GetHTML(&pkg.ViewData)
-			 if err != nil {
-				 skipSend(err)
-				 break
-			 }
+			 wg.Add(1)
+			 go mtaWorker(pkg, wg)
 
-			 // 2. Собираем хедеры
-			 headers := getHeaders(pkg.From, pkg.To, pkg.Subject, "1002", "1324078:20488:trust:54854")
-
-			 // 3. Создаем тело сообщения с хедерами и html
-			 body, err := getSignBody(headers, html, pkg.Domain)
-			 if err != nil {
-				 skipSend(err)
-				 break
-			 }
-
-			 client, err := getClientByEmail(pkg.To.Address)
-			 if err != nil {
-				 skipSend(err)
-				 break
-			 }
-
-			 err = sendMailByClient(client,body,pkg.To.Address)
-			 if err != nil {
-				 skipSend(err)
-				 break
-			 }
-
-			 fmt.Println("Сообщение успешно отправлено!")
+			 // fmt.Println(pkg.Subject)
+			 // fmt.Println("Сообщение успешно отправлено!")
+		default:
+			// fmt.Println("Нет сообщений")
+			time.Sleep(time.Second*1)
 		}
 
-		/*	pkg := <- c
-		fmt.Printf("Принял сообщение: %s \n", pkg.Subject)
-		fmt.Printf("В очереди: %d\n", len(c))
-		fmt.Printf("Макс. длина: %d\n", cap(c))*/
-
 		// имитируем его отправку
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Millisecond*100)
+	}
+
+	wg.Wait()
+}
+
+func mtaWorker(pkg EmailPkg, wg *sync.WaitGroup) {
+	
+	defer wg.Done()
+	
+	time.Sleep(time.Millisecond*40)
+	return
+	
+	// 1. Получаем compile html из email'а
+	html, err := pkg.EmailTemplate.GetHTML(&pkg.ViewData)
+	if err != nil {
+		skipSend(err)
+		return
+	}
+
+	// 2. Собираем хедеры
+	headers := getHeaders(pkg.From, pkg.To, pkg.Subject, "1002", "1324078:20488:trust:54854")
+
+	// 3. Создаем тело сообщения с хедерами и html
+	body, err := getSignBody(headers, html, pkg.Domain)
+	if err != nil {
+		skipSend(err)
+		return
+	}
+
+	// 4. Делаем коннект к почтовому серверу получателя
+	client, err := getClientByEmail(pkg.To.Address)
+	if err != nil {
+		skipSend(err)
+		return
+	}
+
+	// 5. Отсылаем сообщение
+	err = sendMailByClient(client,body,pkg.To.Address)
+	if err != nil {
+		skipSend(err)
+		return
 	}
 }
 
-// Асинхронная функция в одну сторону
 func SendEmailPkg(pkg EmailPkg)  {
-	// fmt.Println("Отправляем сообщение")
-	SmtpCh <- pkg
+	smtpCh <- pkg
 }
 
 func skipSend(err error)  {
@@ -134,7 +142,7 @@ func getHeaders(from, to mail.Address, subject string, messageId, feedbackId str
 	return &headers
 }
 
-func getOptionsForDKIM(domain Domain, headers map[string]string, message string) dkim.SigOptions {
+func getOptionsForDKIM(domain Domain, headers map[string]string) dkim.SigOptions {
 	options := dkim.NewSigOptions()
 	options.PrivateKey = []byte(domain.DKIMPrivateRSAKey)
 	options.Domain = domain.Hostname
@@ -170,7 +178,7 @@ func getSignBody(headers *map[string]string, html string, domain Domain) ([]byte
 	message += "\r\n" + buf.String()
 
 	// try DKIM
-	dkimOptions := getOptionsForDKIM(domain, *headers, message)
+	dkimOptions := getOptionsForDKIM(domain, *headers)
 
 	body := []byte(message)
 	if err := dkim.Sign(&body, dkimOptions); err != nil {
@@ -204,13 +212,14 @@ func getClientByEmail(email string) (*smtp.Client, error) {
 
 	// список портов, к которым пробуем подключиться
 	var ports = []int{25, 2525, 587}
-	var client = smtp.Client{}
+	var client = new(smtp.Client)
 
 	for i := range mx {
 		for j := range ports {
 			server := strings.TrimSuffix(mx[i].Host, ".")
 			hostPort := fmt.Sprintf("%s:%d", mx[i].Host, ports[j])
 
+			// Время в течении которого пытаемся установить связь
 			conn, err := net.DialTimeout("tcp", hostPort, 5*time.Second)
 			if err != nil {
 				fmt.Printf("Коннект не прошел: %s\n", hostPort)
@@ -231,7 +240,6 @@ func getClientByEmail(email string) (*smtp.Client, error) {
 				continue
 			}
 
-			// поднимаем TLS
 			tlc := &tls.Config{
 				InsecureSkipVerify: true,
 				// ServerName: host,
@@ -241,12 +249,12 @@ func getClientByEmail(email string) (*smtp.Client, error) {
 				fmt.Println("Не удалось установить TLC")
 			}
 
-			client = *_client
+			client = _client
 			break
 		}
 	}
 
-	return &client, nil
+	return client, nil
 
 }
 
