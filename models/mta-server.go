@@ -16,8 +16,12 @@ import (
 )
 
 var smtpCh chan EmailPkg
-var deepMTACh = 10000 // глубина очереди
-var workerCount = 3  // число одновременных запущенных потоков отправки для email
+const deepMTACh = 10000 // глубина очереди из пакетов сообщений
+const dialTimeout = time.Second * 5 // время для установки коннекта с smtp сервером получателя
+
+// число одновременных запущенных потоков отправки для email. Если один висит, два других ждут.
+// Очередь запинается, когда один поток подвисает, а другие потоки разобраны.
+var workerCount = 3
 
 func init() {
 	smtpCh = make(chan EmailPkg, deepMTACh)
@@ -45,8 +49,7 @@ type ViewData struct{
 
 func mtaServer(c <-chan EmailPkg) {
 
-	var wg sync.WaitGroup
-	 // супер важная настройка числа одновременных отправленый писем
+	var wg sync.WaitGroup // можно доработать синхронизацию, но после тестов по отправке
 
 	// target speed: 16 mail per second (62 ms / 1 mail)
 	for {
@@ -57,13 +60,14 @@ func mtaServer(c <-chan EmailPkg) {
 			// fmt.Printf("В очереди: %d\n", len(c))
 			// fmt.Printf("Макс. длина: %d\n", cap(c))
 
-			// Если все потоки разобраны (из пула = {workerCount}) - ожидаем завершения всех текущих отправок (макс 5с)
+			// Если все потоки разобраны (из пула = {workerCount}) - ожидаем завершения всех текущих отправок (макс 5с), чтобы не плодить овер коннектов
 			if workerCount < 1 {
 				wg.Wait()
 			}
 
 			// обновляем счетчик WaitGroup
 			wg.Add(1)
+			// -1 рабочий поток для отправки
 			workerCount--
 
 			// Без go - ожидает отправки каждого сообщения
@@ -102,12 +106,9 @@ func mtaServer(c <-chan EmailPkg) {
 
 // Функция по отправке почтового пакета, обычно, работает в отдельной горутине
 func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
-	defer wg.Done()
-	defer func() {workerCount++}()
-	time.Sleep(time.Second*2)
-	fmt.Println("msg sent successful...")
 
-	return
+	defer wg.Done() // отписываемся о закрытии текущей горутины
+	defer func() {workerCount++}() // освобождаем счетчик потоков (горутин) по отправке
 
 	// todo: сделать осознанные messageID feedbackId
 	// todo: сделать осознанный returnPath
@@ -266,8 +267,8 @@ func getClientByEmail(email string) (*smtp.Client, error) {
 			server := strings.TrimSuffix(mx[i].Host, ".")
 			hostPort := fmt.Sprintf("%s:%d", mx[i].Host, ports[j])
 
-			// Ждем 5 секунд, для установки связи..
-			conn, err := net.DialTimeout("tcp", hostPort, 5*time.Second)
+			// Ждем {dialTimeout} секунд, для установки связи..
+			conn, err := net.DialTimeout("tcp", hostPort, dialTimeout)
 			if err != nil {
 				fmt.Printf("Коннект не прошел: %s\n", hostPort)
 				if j == len(ports)-1 {
@@ -289,8 +290,9 @@ func getClientByEmail(email string) (*smtp.Client, error) {
 
 			tlc := &tls.Config{
 				InsecureSkipVerify: true,
+				ServerName: mx[i].Host, // куда реально будем коннектиться
 				// ServerName: host,
-				ServerName: server,
+				// ServerName: server,
 			}
 			if err := _client.StartTLS(tlc); err != nil {
 				fmt.Println("Не удалось установить TLC")
@@ -308,7 +310,7 @@ func getClientByEmail(email string) (*smtp.Client, error) {
 func sendMailByClient(client *smtp.Client, body []byte, to string, returnPath string) error {
 
 	defer client.Close()
-	
+
 	err := client.Mail(returnPath)
 	if err != nil {
 		return errors.New("Почтовый адрес не может принять почту")
@@ -329,11 +331,24 @@ func sendMailByClient(client *smtp.Client, body []byte, to string, returnPath st
 	if err != nil {
 		return errors.New("Не удалось отправить сообщение")
 	}
-	
+
+	// может вернуть (yandex): 250 2.0.0 Ok: queued on mxfront9q.mail.yandex.net as 1590262878-g7S0CPwaoz-fIVS8Xqq
+	// может вернуть (gmail): 250 2.0.0 OK  1590263113 j9si5638746ots.198 - gsmtp
+	// err = возвращает фактический статус, без него сообщение не отправляется
 	err = client.Quit()
 	if err != nil {
-		return errors.New("Ошибка закрытия коннекта 2")
+		fmt.Println(err)
+		// todo: тут нуежн парсер результата
+		// return errors.New("Ошибка закрытия коннекта 1")
 	}
+
+	// tls: use of closed connection
+	// позволяет закрыть коннект в случае успешной отправки письма
+	/*err = client.Close()
+	if err != nil {
+		fmt.Println(err)
+		return errors.New("Ошибка закрытия коннекта 2")
+	}*/
 
 	return nil
 }
