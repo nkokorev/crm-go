@@ -15,12 +15,14 @@ import (
 	"time"
 )
 
+var smtpCh chan EmailPkg
+var deepMTACh = 10000 // глубина очереди
+var workerCount = 3  // число одновременных запущенных потоков отправки для email
+
 func init() {
-	smtpCh = make(chan EmailPkg, 3)
+	smtpCh = make(chan EmailPkg, deepMTACh)
 	go mtaServer(smtpCh) // start MTA server
 }
-
-var smtpCh chan EmailPkg
 
 type EmailPkg struct {
 	From 		mail.Address
@@ -44,16 +46,34 @@ type ViewData struct{
 func mtaServer(c <-chan EmailPkg) {
 
 	var wg sync.WaitGroup
-	workerCount := 3
-
-	// add max gorutines
-	// wg.Add(workerCount)
+	 // супер важная настройка числа одновременных отправленый писем
 
 	// target speed: 16 mail per second (62 ms / 1 mail)
 	for {
+		select {
+		case pkg := <- c:
 
+			// fmt.Printf("Принял сообщение: %s \n", pkg.Subject)
+			// fmt.Printf("В очереди: %d\n", len(c))
+			// fmt.Printf("Макс. длина: %d\n", cap(c))
+
+			// Если все потоки разобраны (из пула = {workerCount}) - ожидаем завершения всех текущих отправок (макс 5с)
+			if workerCount < 1 {
+				wg.Wait()
+			}
+
+			// обновляем счетчик WaitGroup
+			wg.Add(1)
+			workerCount--
+
+			// Без go - ожидает отправки каждого сообщения
+			go mtaSender(pkg, &wg)
+		default:
+			time.Sleep(time.Millisecond*100)
+		}
+	}
+	/*for {
 		for i := 0; i < workerCount; i++ {
-
 			select {
 			 case pkg := <- c:
 
@@ -61,42 +81,41 @@ func mtaServer(c <-chan EmailPkg) {
 				 // fmt.Printf("В очереди: %d\n", len(c))
 				 // fmt.Printf("Макс. длина: %d\n", cap(c))
 
-				 // Без go - ожидает отправки каждого сообщения
+				 // обновляем счетчик WaitGroup
+				 if workerCount < 1 {
+				 	wg.Wait()
+				 }
 				 wg.Add(1)
+				 workerCount--
+				 
+				 // Без go - ожидает отправки каждого сообщения
 				 go mtaSender(pkg, &wg)
 			default:
-			 	time.Sleep(time.Second*1)
+			 	time.Sleep(time.Millisecond*100)
 			}
-
 		}
 
-		/*select {
-		 case pkg := <- c:
-		 	
-			 // fmt.Printf("Принял сообщение: %s \n", pkg.Subject)
-			 // fmt.Printf("В очереди: %d\n", len(c))
-			 // fmt.Printf("Макс. длина: %d\n", cap(c))
-
-			 // Без go - ожидает отправки каждого сообщения
-			 wg.Add(1)
-			 // workerCount--
-			 go mtaSender(pkg, &wg)
-		// default:
-		// 	time.Sleep(time.Second*1)
-		}*/
-		wg.Wait()
-		// имитируем его отправку
-		// time.Sleep(time.Millisecond*100)
-	}
+		// ждем завершения предыдущих отправок в {workerCount} потоков
+		// wg.Wait()
+	}*/
 }
 
 // Функция по отправке почтового пакета, обычно, работает в отдельной горутине
 func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	defer wg.Done()
+	defer func() {workerCount++}()
 	time.Sleep(time.Second*2)
-	fmt.Println("msg sent...")
+	fmt.Println("msg sent successful...")
+
 	return
-	
+
+	// todo: сделать осознанные messageID feedbackId
+	// todo: сделать осознанный returnPath
+	returnPath := "abuse@ratuscrm.com"
+	messageId := "1002"
+	feedBackId := "1324078:20488:trust:54854"
+
+
 	// 1. Получаем compile html из email'а
 	html, err := pkg.EmailTemplate.GetHTML(&pkg.ViewData)
 	if err != nil {
@@ -105,7 +124,7 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	}
 
 	// 2. Собираем хедеры
-	headers := getHeaders(pkg.From, pkg.To, pkg.Subject, "1002", "1324078:20488:trust:54854")
+	headers := getHeaders(pkg.From, pkg.To, pkg.Subject, messageId, feedBackId)
 
 	// 3. Создаем тело сообщения с хедерами и html
 	body, err := getSignBody(headers, html, pkg.Domain)
@@ -121,16 +140,20 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 		return
 	}
 
-	// 5. Отсылаем сообщение
-	err = sendMailByClient(client,body,pkg.To.Address)
+	// 5. Отсылаем сообщение | требует времени !
+	err = sendMailByClient(client, body, pkg.To.Address, returnPath)
 	if err != nil {
 		skipSend(err)
 		return
 	}
 }
 
-func SendEmailPkg(pkg EmailPkg)  {
-	smtpCh <- pkg
+func SendEmail(pkg EmailPkg)  {
+	select {
+	case smtpCh <- pkg:
+		fmt.Println("add msg to message channel")
+	}
+	// smtpCh <- pkg
 }
 
 func skipSend(err error)  {
@@ -220,27 +243,30 @@ func getHostFromEmail(email string) (account, host string, err error) {
 }
 
 func getClientByEmail(email string) (*smtp.Client, error) {
-	// 4. Получаем хост, на который нужно отправить email
+
+	// 1. Получаем хост, на который нужно отправить email
 	_, host, err := getHostFromEmail(email)
 	if err != nil {
 		return nil, err
 	}
 
+	// 2. Получаем список mx-ов, где может быть почтовый сервер
 	mx, err := net.LookupMX(host)
 	if err != nil {
 		return nil, err
 	}
-
+	
 	// список портов, к которым пробуем подключиться
 	var ports = []int{25, 2525, 587}
 	var client = new(smtp.Client)
 
+	// вообще-то надо подключаться к mx с наивысшем рейтингом.. ну да ладно =)
 	for i := range mx {
 		for j := range ports {
 			server := strings.TrimSuffix(mx[i].Host, ".")
 			hostPort := fmt.Sprintf("%s:%d", mx[i].Host, ports[j])
 
-			// Время в течении которого пытаемся установить связь
+			// Ждем 5 секунд, для установки связи..
 			conn, err := net.DialTimeout("tcp", hostPort, 5*time.Second)
 			if err != nil {
 				fmt.Printf("Коннект не прошел: %s\n", hostPort)
@@ -279,11 +305,11 @@ func getClientByEmail(email string) (*smtp.Client, error) {
 
 }
 
-func sendMailByClient(client *smtp.Client, body []byte, to string) error {
+func sendMailByClient(client *smtp.Client, body []byte, to string, returnPath string) error {
 
 	defer client.Close()
 	
-	err := client.Mail("userId.abuse.@ratuscrm.com")
+	err := client.Mail(returnPath)
 	if err != nil {
 		return errors.New("Почтовый адрес не может принять почту")
 	}
@@ -297,24 +323,17 @@ func sendMailByClient(client *smtp.Client, body []byte, to string) error {
 	if err != nil {
 		return errors.New("Клиент не готовы принять сообщение")
 	}
+	defer wc.Close()
 
 	_, err = wc.Write(body)
 	if err != nil {
 		return errors.New("Не удалось отправить сообщение")
 	}
-
-	err = wc.Close()
-	if err != nil {
-		return errors.New("Ошибка закрытия коннекта")
-
-	}
-
-	// Send the QUIT command and close the connection.
+	
 	err = client.Quit()
 	if err != nil {
 		return errors.New("Ошибка закрытия коннекта 2")
 	}
-
 
 	return nil
 }

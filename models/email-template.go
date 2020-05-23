@@ -359,9 +359,11 @@ func (et EmailTemplate) SendChannel(emailBox EmailBox, user User, subject string
 		Account:	*account,
 	}
 
-	for i := 0; i <= 12 ; i++ {
-		SendEmailPkg(pkg)
+	for i := 0; i <= 20 ; i++ {
+		SendEmail(pkg)
 	}
+
+	fmt.Println("Все сообщения в очередь отправлены")
 
 	return nil
 
