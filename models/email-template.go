@@ -359,7 +359,7 @@ func (et EmailTemplate) SendChannel(emailBox EmailBox, user User, subject string
 		Account:	*account,
 	}
 
-	for i := 0; i <= 100 ; i++ {
+	for i := 0; i <= 12 ; i++ {
 		SendEmailPkg(pkg)
 	}
 

@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/toorop/go-dkim"
 	"mime/quotedprintable"
 	"net"
 	"net/mail"
@@ -12,11 +13,10 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"github.com/toorop/go-dkim"
 )
 
 func init() {
-	smtpCh = make(chan EmailPkg)
+	smtpCh = make(chan EmailPkg, 3)
 	go mtaServer(smtpCh) // start MTA server
 }
 
@@ -42,38 +42,59 @@ type ViewData struct{
 }
 
 func mtaServer(c <-chan EmailPkg) {
-	wg := new(sync.WaitGroup)
+
+	var wg sync.WaitGroup
+	workerCount := 3
+
+	// add max gorutines
+	// wg.Add(workerCount)
+
 	// target speed: 16 mail per second (62 ms / 1 mail)
 	for {
-		select {
+
+		for i := 0; i < workerCount; i++ {
+
+			select {
+			 case pkg := <- c:
+
+				 // fmt.Printf("Принял сообщение: %s \n", pkg.Subject)
+				 // fmt.Printf("В очереди: %d\n", len(c))
+				 // fmt.Printf("Макс. длина: %d\n", cap(c))
+
+				 // Без go - ожидает отправки каждого сообщения
+				 wg.Add(1)
+				 go mtaSender(pkg, &wg)
+			default:
+			 	time.Sleep(time.Second*1)
+			}
+
+		}
+
+		/*select {
 		 case pkg := <- c:
 		 	
 			 // fmt.Printf("Принял сообщение: %s \n", pkg.Subject)
 			 // fmt.Printf("В очереди: %d\n", len(c))
 			 // fmt.Printf("Макс. длина: %d\n", cap(c))
 
+			 // Без go - ожидает отправки каждого сообщения
 			 wg.Add(1)
-			 go mtaWorker(pkg, wg)
-
-			 // fmt.Println(pkg.Subject)
-			 // fmt.Println("Сообщение успешно отправлено!")
-		default:
-			// fmt.Println("Нет сообщений")
-			time.Sleep(time.Second*1)
-		}
-
+			 // workerCount--
+			 go mtaSender(pkg, &wg)
+		// default:
+		// 	time.Sleep(time.Second*1)
+		}*/
+		wg.Wait()
 		// имитируем его отправку
-		time.Sleep(time.Millisecond*100)
+		// time.Sleep(time.Millisecond*100)
 	}
-
-	wg.Wait()
 }
 
-func mtaWorker(pkg EmailPkg, wg *sync.WaitGroup) {
-	
+// Функция по отправке почтового пакета, обычно, работает в отдельной горутине
+func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	defer wg.Done()
-	
-	time.Sleep(time.Millisecond*40)
+	time.Sleep(time.Second*2)
+	fmt.Println("msg sent...")
 	return
 	
 	// 1. Получаем compile html из email'а
@@ -297,6 +318,3 @@ func sendMailByClient(client *smtp.Client, body []byte, to string) error {
 
 	return nil
 }
-
-
-
