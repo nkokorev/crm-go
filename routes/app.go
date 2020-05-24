@@ -53,6 +53,17 @@ var AppRoutes = func(r *mux.Router) {
 	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/users", controllers.UserRegistration).Methods(http.MethodPost, http.MethodOptions)
 	rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/users/auth/username", controllers.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
 
+	// ### ApiKeys ###
+
+	// ---CRUD FUNCTIONAL ---
+	rAuthFull.HandleFunc("/api-keys", controllers.ApiKeyGetCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/api-keys", controllers.ApiKeyGetList).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/api-keys/{apiKeyHashId}", controllers.ApiKeyGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/api-keys/{apiKeyHashId}", controllers.ApiKeyGetUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/api-keys/{apiKeyHashId}", controllers.ApiKeyGetDelete).Methods(http.MethodDelete, http.MethodOptions)
+
+
+
 	// ### EmailMarketing ###
 	// ---CRUD---
 	rAuthFull.HandleFunc("/accounts/domains", controllers.DomainsGet).Methods(http.MethodGet, http.MethodOptions)
