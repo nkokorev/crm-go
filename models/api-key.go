@@ -13,8 +13,10 @@ type ApiKey struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
 	Token string `json:"token" gorm:"unique_index;not null;"` // ID
 	AccountID uint `json:"accountId" gorm:"index,not null"` // аккаунт-владелец ключа
+
 	Name string `json:"name" gorm:"type:varchar(255);default:'New api key';"` // имя ключа "Для сайта", "Для CRM"
 	Enabled bool `json:"enabled" gorm:"type:bool;default:true"` // активен ли ключ
+
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -99,9 +101,6 @@ func (apiKey *ApiKey) update(input interface{}) error {
 // ########### ACCOUNT FUNCTIONAL ###########
 
 func (account Account) ApiKeyCreate(input ApiKey) (*ApiKey, error) {
-	if account.ID < 1 {
-		return nil, utils.Error{Message: "Внутренняя ошибка платформы", Errors: map[string]interface{}{"apiKey": "Не удалось привязать ключ к аккаунте"}}
-	}
 	input.AccountID = account.ID
 	return input.create()
 }

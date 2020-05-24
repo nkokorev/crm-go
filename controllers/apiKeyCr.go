@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
 )
@@ -15,14 +16,24 @@ func ApiKeyGetCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	templates, err := account.EmailTemplatesList()
-	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"emailTemplates":"Не удалось получить список доменов"}}))
+	input := struct {
+		Name string `json:"name"`
+		Enabled bool `json:"enabled"`
+	}{}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	resp := u.Message(true, "GET account templates")
-	resp["emailTemplates"] = templates
+	apiKey, err := account.ApiKeyCreate(models.ApiKey{Name: input.Name, Enabled: input.Enabled})
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
+		return
+	}
+
+	resp := u.Message(true, "POST Api Key Created")
+	resp["apiKey"] = *apiKey
 	u.Respond(w, resp)
 }
 
