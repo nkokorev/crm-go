@@ -39,14 +39,11 @@ func RefreshTables() {
 	}
 
 	models.UserVerificationMethod{}.PgSqlCreate()
-	
 	models.Account{}.PgSqlCreate()
 	models.Role{}.PgSqlCreate()
-
-	// Таблица пользователей
 	models.User{}.PgSqlCreate()
-
 	models.AccountUser{}.PgSqlCreate()
+	models.ApiKey{}.PgSqlCreate()
 
 	/*// в этой таблице хранятся пользовательские email-уведомления
 	err = pool.Exec("create table  email_access_tokens (\ntoken varchar(255) PRIMARY KEY UNIQUE, -- сам уникальный ключ\naction_type VARCHAR(255) NOT NULL DEFAULT 'verification', -- verification, recover (username, password, email), join to account, [invite-one], [invite-unlimited], [invite-free] - свободный инвайт...\ndestination_email varchar(255) NOT NULL, -- куда фактически был отправлен token (для безопасности) или для кого предназначается данный инвайт (например, строго по емейлу)\nowner_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE, -- ID пользователя, кто создавал этот ключ (может быть self) \nnotification_count INT DEFAULT 0, -- число уведомлений\nnotification_at TIMESTAMP DEFAULT NULL, -- время уведомления\ncreated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n--  expired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);\n").Error
@@ -95,9 +92,7 @@ func RefreshTables() {
 		fmt.Println("Cant create table products", err)
 	}*/
 
-	// Таблица APIKey
-	pool.CreateTable(&models.ApiKey{})
-	pool.Exec("ALTER TABLE api_keys \n    ADD CONSTRAINT api_keys_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\ncreate unique index uix_api_keys_token_account_id ON api_keys (token,account_id);")
+
 
 	// ##### EAV
 

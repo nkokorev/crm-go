@@ -12,16 +12,16 @@ import (
 )
 
 // helper struct: for create user
-type InputUserData struct {
+type inputUserData struct {
 	*models.User
 	NativePwd   string `json:"password"`    // потому что пароль из User{} не читается т.к. json -
 	InviteToken string `json:"inviteToken"` // если создание через инвайт токен
 }
 
 // Вспомогательная функция чтения данных в InputUserCreate структуру
-func GetDataUserRegistration(r *http.Request) (*InputUserData, error) {
+func GetDataUserRegistration(r *http.Request) (*inputUserData, error) {
 	// 2. Читаем данные со входа
-	var input InputUserData
+	var input inputUserData
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		return nil, errors.New("Техническая ошибка в запросе")
 	}
@@ -550,10 +550,6 @@ func UserGetAccounts(w http.ResponseWriter, r *http.Request) {
 	resp["aUsers"] = aUsers
 	u.Respond(w, resp)
 }
-
-/**
-* Контроллер авторизации пользователя (не аккаунта!)
- */
 
 /**
 * Контроллер авторизации пользователя (не аккаунта!)
