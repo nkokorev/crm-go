@@ -12,7 +12,7 @@ import (
 
 //const letterBytes = "1234567890abcdefghijklmnopqrstuvwxyz"
 const letterBytesChar = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const letterBytesNum = "abcdefghijklmnopqrstuvwxyz1234567890"
+const letterBytesNum = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const LENGTH_HASH_ID  = 8
 
 
@@ -22,7 +22,7 @@ func RandStringBytes(n int) string {
 
 func StringWithCharset(length int, charset string) string {
 
-	var seededRand *rand.Rand = rand.New(
+	var seededRand = rand.New(
 		rand.NewSource(time.Now().UTC().UnixNano()))
 
 	b := make([]byte, length)
@@ -32,7 +32,7 @@ func StringWithCharset(length int, charset string) string {
 	return string(b)
 }
 
-
+ // Генерит случайную строку длиной {n} по-взрослому!
 func RandStringBytesMaskImprSrcUnsafe(n int, withNum bool) string {
 
 	letterBytes := letterBytesChar

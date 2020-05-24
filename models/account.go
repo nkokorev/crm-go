@@ -98,11 +98,7 @@ func (Account) PgSqlCreate() {
 		log.Fatal("Не удалось создать главный аккаунт. Ошибка: ", err)
 	}
 
-	// 3. Создаем API-ключ в аккаунте
-	/*	_, err = mAcc.CreateApiKey(ApiKey{Name:"Api key for Postman"})
-		if err != nil {
-			log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
-		}*/
+
 }
 
 func (account *Account) Reset() { account = &Account{} }
@@ -235,51 +231,6 @@ func GetAccountByHash(hashId string) (*Account, error) {
 
 func (Account) Exist(id uint) bool {
 	return !db.Model(Account{}).First(&Account{}, id).RecordNotFound()
-}
-
-// ### API KEY ###
-
-func (account Account) CreateApiKey(input ApiKey) (*ApiKey, error) {
-	if account.ID < 1 {
-		return nil, utils.Error{Message: "Внутренняя ошибка платформы", Errors: map[string]interface{}{"apiKey": "Не удалось привязать ключ к аккаунте"}}
-	}
-	input.AccountID = account.ID
-	return input.create()
-}
-
-func (account Account) GetApiKey(token string) (*ApiKey, error) {
-	apiKey, err := GetApiKey(token)
-	if err != nil {
-		return nil, err
-	}
-
-	if apiKey.AccountID != account.ID {
-		return nil, errors.New("ApiKey не принадлежит аккаунту")
-	}
-
-	return apiKey, nil
-}
-
-func (account Account) DeleteApiKey(token string) error {
-
-	apiKey, err := account.GetApiKey(token)
-	if err != nil {
-		return err
-	}
-
-	return apiKey.delete()
-}
-
-func (account Account) UpdateApiKey(token string, input ApiKey) (*ApiKey, error) {
-	apiKey, err := account.GetApiKey(token)
-	if err != nil {
-		return nil, err
-	}
-
-	err = apiKey.update(input)
-
-	return apiKey, err
-
 }
 
 // #### func(s) User ####

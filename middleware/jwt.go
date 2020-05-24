@@ -42,7 +42,7 @@ func BearerAuthentication(next http.Handler) http.Handler {
 		token := splitted[1] //Grab the token part, what we are truly interested in
 
 		// ищем ApiKey с указанным токеном
-		key, err := models.GetApiKey(token)
+		key, err := models.GetApiKeyByToken(token)
 		if err != nil {
 			resp := u.Message(false, "Invalid/Malformed auth token")
 			w.WriteHeader(http.StatusForbidden)

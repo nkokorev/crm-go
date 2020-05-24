@@ -58,20 +58,21 @@ var AppRoutes = func(r *mux.Router) {
 	// ---CRUD FUNCTIONAL ---
 	rAuthFull.HandleFunc("/api-keys", controllers.ApiKeyGetCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/api-keys", controllers.ApiKeyGetList).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/api-keys/{apiKeyHashId}", controllers.ApiKeyGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/api-keys/{apiKeyHashId}", controllers.ApiKeyGetUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/api-keys/{apiKeyHashId}", controllers.ApiKeyGetDelete).Methods(http.MethodDelete, http.MethodOptions)
-
-
+	rAuthFull.HandleFunc("/api-keys/{id}", controllers.ApiKeyGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/api-keys/{id}", controllers.ApiKeyGetUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/api-keys/{id}", controllers.ApiKeyGetDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### EmailMarketing ###
 	// ---CRUD---
 	rAuthFull.HandleFunc("/accounts/domains", controllers.DomainsGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/email-templates/{emailTemplateHashId}", controllers.EmailTemplateGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesGetList).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesDelete).Methods(http.MethodDelete, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesCreate).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/email-templates", controllers.EmailTemplatesGetList).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/email-templates/{id}", controllers.EmailTemplateGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/email-templates/{id}", controllers.EmailTemplatesUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/email-templates/{id}", controllers.EmailTemplatesDelete).Methods(http.MethodDelete, http.MethodOptions)
+
+
+
 	// ---ACCOUNT---
 	rAuthFull.HandleFunc("/accounts/email-templates/{emailTemplateHashId}/send/user", controllers.EmailTemplateSendToUser).Methods(http.MethodPost, http.MethodOptions)
 

@@ -289,7 +289,19 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
 	}
 
-
+	// 5. Создаем несколько API-ключей
+	_, err = mAcc.ApiKeyCreate(models.ApiKey{Name:"Для сайта"})
+	if err != nil {
+		log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
+	}
+	_, err = mAcc.ApiKeyCreate(models.ApiKey{Name:"Postman test"})
+	if err != nil {
+		log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
+	}
+	_, err = mAcc.ApiKeyCreate(models.ApiKey{Name:"Bitrix24 export"})
+	if err != nil {
+		log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
+	}
 
 	////////////////////////////////////
 

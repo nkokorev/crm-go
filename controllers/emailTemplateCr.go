@@ -27,6 +27,36 @@ func DomainsGet(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+func EmailTemplatesCreate(w http.ResponseWriter, r *http.Request) {
+
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	// Get JSON-request
+	v := &struct {
+		Name       string `json:"name"`
+		Code       string `json:"code"`
+		Public     bool `json:"public"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	template, err := account.CreateEmailTemplate(models.EmailTemplate{Name: v.Name, Code: string(v.Code)})
+	if err != nil || template == nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при создании шаблона"))
+		return
+	}
+
+	resp := u.Message(true, "Email templates created")
+	resp["template"] = *template
+	u.Respond(w, resp)
+}
+
 /* Возвращает список шаблонов для текущего аккаунта */
 func EmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 
@@ -36,13 +66,13 @@ func EmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashId, err := GetSTRVarFromRequest(r, "emailTemplateHashId")
+	idTemplate, err := GetUINTVarFromRequest(r, "id")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
-	template, err := account.EmailTemplateGetByHashID(hashId)
+	template, err := account.EmailTemplateGet(idTemplate)
 	if err != nil || template == nil {
 		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
 		return
@@ -50,7 +80,7 @@ func EmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 
 	// time.Sleep(5 * time.Second)
 
-	resp := u.Message(true, "GET account template")
+	resp := u.Message(true, "GET email template")
 	resp["template"] = template
 	u.Respond(w, resp)
 }
@@ -74,6 +104,51 @@ func EmailTemplatesGetList(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+func EmailTemplatesUpdate(w http.ResponseWriter, r *http.Request) {
+
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	idTemplate, err := GetUINTVarFromRequest(r, "id")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		return
+	}
+
+	template, err := account.EmailTemplateGet(idTemplate)
+	if err != nil || template == nil {
+		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
+		return
+	}
+
+	// Get JSON-request
+	input := &struct {
+		// HashId string `json:"hashId"` // url-vars
+		Name string `json:"name"`
+		Code string `json:"code"`
+		Public bool `json:"public"`
+	}{}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	// err = account.EmailTemplateUpdate(tpl, input)
+	err = account.EmailTemplateUpdate(template, input)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при обновлении шаблона"))
+		return
+	}
+
+	resp := u.Message(true, "Email template update")
+	resp["template"] = *template
+	u.Respond(w, resp)
+}
+
 func EmailTemplatesDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := GetWorkAccount(w,r)
@@ -82,22 +157,20 @@ func EmailTemplatesDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get JSON-request
-	v := &struct {
-		HashId       string `json:"hashId"` // hashId for deleted accoint
-	}{}
-	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+	idTemplate, err := GetUINTVarFromRequest(r, "id")
+	if err != nil {
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
-	t, err := account.EmailTemplateGetByHashID(v.HashId)
-	if err != nil || t == nil {
+	template, err := account.EmailTemplateGet(idTemplate)
+	if err != nil || template == nil {
 		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
 		return
 	}
 
-	err = t.Delete()
+	err = template.Delete()
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка удаления шаблона"))
 		return
@@ -110,97 +183,13 @@ func EmailTemplatesDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "Email templates delete")
-	resp["emailTemplates"] = templates
+	resp["emailTemplates"] = templates // зачем?
 	u.Respond(w, resp)
 }
 
-func EmailTemplatesCreate(w http.ResponseWriter, r *http.Request) {
-
-	account, err := GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	// Get JSON-request
-	v := &struct {
-		Name       string `json:"name"`
-		Code       string `json:"code"`
-		Public     bool `json:"public"`
-	}{}
-	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}
-
-	tpl, err := account.CreateEmailTemplate(models.EmailTemplate{Name: v.Name, Code: string(v.Code)})
-	if err != nil || tpl == nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при создании шаблона"))
-		return
-	}
-
-	// обновляем список
-	templates, err := account.GetEmailTemplates()
-	if err != nil || templates == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"emailTemplates":"Не удалось получить список доменов"}}))
-		return
-	}
-
-	resp := u.Message(true, "Email templates created")
-	resp["template"] = *tpl
-	resp["emailTemplates"] = templates
-	u.Respond(w, resp)
-}
-
-func EmailTemplatesUpdate(w http.ResponseWriter, r *http.Request) {
-
-	account, err := GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	// Get JSON-request
-	input := &struct {
-		HashId string `json:"hashId"`
-		Name string `json:"name"`
-		Code string `json:"code"`
-		Public bool `json:"public"`
-	}{}
 
 
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}
 
-	// get Email Template
-	tpl, err := account.EmailTemplateGetByHashID(input.HashId)
-	if err != nil || tpl == nil {
-		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
-		return
-	}
-	
-
-	// err = account.EmailTemplateUpdate(tpl, input)
-	err = account.EmailTemplateUpdate(tpl, input)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при обновлении шаблона"))
-		return
-	}
-
-	// обновляем список
-	templates, err := account.GetEmailTemplates()
-	if err != nil || templates == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"emailTemplates":"Не удалось получить список доменов"}}))
-		return
-	}
-
-	resp := u.Message(true, "Email templates created")
-	resp["template"] = *tpl
-	resp["emailTemplates"] = templates
-	u.Respond(w, resp)
-}
 
 // -- TEST -- 
 func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {

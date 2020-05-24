@@ -23,7 +23,7 @@ import (
 // Template of email body message
 type EmailTemplate struct {
 
-	ID     uint   `json:"-" gorm:"primary_key"`
+	ID     uint   `json:"id" gorm:"primary_key"`
 	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
 
@@ -101,17 +101,7 @@ func (account Account) CreateEmailTemplate(et EmailTemplate) (*EmailTemplate, er
 	return et.create()
 }
 
-func (account Account) EmailTemplateUpdate(et *EmailTemplate, input interface{}) error {
-
-	// check account ID
-	if et.AccountID != account.ID {
-		return errors.New("Шаблон принадлежит другому аккаунту")
-	}
-
-	return et.update(input)
-}
-
-func (account Account) GetEmailTemplate(id uint) (*EmailTemplate, error) {
+func (account Account) EmailTemplateGet(id uint) (*EmailTemplate, error) {
 
 	et, err := (EmailTemplate{}).get(id)
 	if err != nil {
@@ -123,7 +113,6 @@ func (account Account) GetEmailTemplate(id uint) (*EmailTemplate, error) {
 	}
 
 	return et, nil
-
 }
 
 func (account Account) EmailTemplateGetByHashID(hashId string) (*EmailTemplate, error) {
@@ -159,18 +148,45 @@ func (account Account) GetEmailTemplates() ([]EmailTemplate, error) {
 }
 
 func (account Account) EmailTemplatesList() ([]EmailTemplate, error) {
-	
+
 	var templates []EmailTemplate
 
 	// Without Code string
-	err := db.Select([]string{"hash_id", "public", "name", "updated_at", "created_at"}).Find(&templates, "account_id = ?", account.ID).Error
+	err := db.Select([]string{"id", "hash_id", "public", "name", "updated_at", "created_at"}).Find(&templates, "account_id = ?", account.ID).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		fmt.Println("Error email templates: ", err)
 		return nil, err
 	}
-	
+
 	return templates, nil
 }
+
+func (account Account) EmailTemplateUpdate(et *EmailTemplate, input interface{}) error {
+
+	// check account ID
+	if et.AccountID != account.ID {
+		return errors.New("Шаблон принадлежит другому аккаунту")
+	}
+
+	return et.update(input)
+}
+
+func (account Account) GetEmailTemplate(id uint) (*EmailTemplate, error) {
+
+	et, err := (EmailTemplate{}).get(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if et.AccountID != account.ID {
+		return nil, errors.New("Шаблон принадлежит другому аккаунту")
+	}
+
+	return et, nil
+
+}
+
+
 
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 

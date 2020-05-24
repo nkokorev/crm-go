@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
 )
@@ -33,14 +34,14 @@ func ApiKeyGetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	templates, err := account.EmailTemplatesList()
+	apiKeys, err := account.ApiKeysList()
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"emailTemplates":"Не удалось получить список доменов"}}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса"}))
 		return
 	}
 
-	resp := u.Message(true, "GET account templates")
-	resp["emailTemplates"] = templates
+	resp := u.Message(true, "GET list Api keys of account")
+	resp["apiKeys"] = apiKeys
 	u.Respond(w, resp)
 }
 
@@ -71,14 +72,31 @@ func ApiKeyGetUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	templates, err := account.EmailTemplatesList()
+	idApiKey, err := GetUINTVarFromRequest(r, "id")
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"emailTemplates":"Не удалось получить список доменов"}}))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
-	resp := u.Message(true, "GET account templates")
-	resp["emailTemplates"] = templates
+	// Get JSON-request
+	input := struct {
+		Name string `json:"name"`
+		Enabled bool `json:"enabled"`
+	}{}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	apiKey, err := account.ApiKeyUpdate(idApiKey, &input)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
+		return
+	}
+
+	resp := u.Message(true, "PATCH Api Key Update")
+	resp["apiKey"] = apiKey
 	u.Respond(w, resp)
 }
 
@@ -90,14 +108,19 @@ func ApiKeyGetDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	templates, err := account.EmailTemplatesList()
+	idApiKey, err := GetUINTVarFromRequest(r, "id")
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"emailTemplates":"Не удалось получить список доменов"}}))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
-	resp := u.Message(true, "GET account templates")
-	resp["emailTemplates"] = templates
+	err = account.ApiKeyDelete(idApiKey)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении Api-ключа"))
+		return
+	}
+
+	resp := u.Message(true, "DELETE Api Key Update")
 	u.Respond(w, resp)
 }
 
