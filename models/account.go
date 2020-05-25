@@ -201,6 +201,16 @@ func GetAccountByHash(hashId string) (*Account, error) {
 	return &account, err
 }
 
+/*func (account *Account) update(input interface{}) error {
+	return db.Model(account).Omit("id", "hash_id", "created_at", "updated_at", "deleted_at").Updates(structs.Map(input)).Error
+}*/
+// Нужны бы проверки на потенциально опасные элементы в обновлении
+func (account *Account) Update(input map[string]interface{}) error {
+	return db.Model(account).Where("id = ?", account.ID).
+		Omit("id", "hash_id", "disk_space_available", "created_at", "updated_at", "deleted_at").
+		Update(input).Error
+}
+
 func (Account) Exist(id uint) bool {
 	return !db.Model(Account{}).First(&Account{}, id).RecordNotFound()
 }
@@ -645,9 +655,8 @@ func (account *Account) Save() error {
 }
 
 // обновляет данные аккаунта кроме id, deleted_at и возвращает в Account обновленные данные
-func (account *Account) Update(input interface{}) error {
-	return db.Model(&Account{}).Where("id = ?", account.ID).Omit("id", "deleted_at").Update(input).Find(account, "id = ?", account.ID).Error
-}
+// func (account *Account) Update(input interface{}) error {
+
 
 // # Soft Delete
 func (account *Account) SoftDelete() error {

@@ -93,32 +93,19 @@ func AccountUpdate(w http.ResponseWriter, r *http.Request)  {
 		u.Respond(w, u.MessageError(err, "Ошибка доступа к аккаунту"))
 		return
 	}
-	
-	input := struct {
 
-		Name string `json:"name"`
-		
-		ApiEnabled bool `json:"apiEnabled"`
-		UiApiEnabled bool `json:"uiApiEnabled"`
-		UiApiAesEnabled bool `json:"uiApiAesEnabled"`
+	input := map[string]interface{}{}
 
-		// Параметры ниже могут быть обновлены
-		VisibleToClients bool `json:"visibleToClients"`
-		ClientsAreAllowedToLogin bool `json:"clientsAreAllowedToLogin"`
-		AuthForbiddenForClients bool `json:"authForbiddenForClients"`
-
-	}{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	err = account.Update(&input)
+	err = account.Update(input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении аккаунта"))
 		return
 	}
-
 
 	resp := u.Message(true, "UPDATE Account successful")
 	resp["account"] = *account
