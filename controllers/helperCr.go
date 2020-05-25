@@ -28,6 +28,7 @@ func GetIssuerAccount(w http.ResponseWriter, r *http.Request) (*models.Account, 
 }
 
 // Возвращает рабочий контроллер
+// todo ???
 func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
 
 	// Получаем аккаунт, в котором авторизуется пользователь

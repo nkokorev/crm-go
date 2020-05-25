@@ -25,7 +25,8 @@ type User struct {
 
 	//Role 		string `json:"role" gorm:"type:varchar(255);default:'client'"`
 
-	DefaultAccountID uint `json:"defaultAccountId" gorm:"default:NULL;type:int;"` // указывает какой аккаунт по дефолту загружать
+	// DefaultAccountID uint `json:"defaultAccountId" gorm:"default:NULL;type:int;"` // указывает какой аккаунт по дефолту загружать
+	DefaultAccountHashId string `json:"defaultAccountHashId" gorm:"type:varchar(12);default:null;"` // указывает какой аккаунт по дефолту загружать
 	InvitedUserID uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
 
 	// Верификация, сброс пароля и т.д.
@@ -46,7 +47,7 @@ type User struct {
 func (User) PgSqlCreate() {
 	db.CreateTable(&User{})
 
-	db.Exec("ALTER TABLE users \n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n    ADD CONSTRAINT users_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n\ncreate unique index uix_users_issuer_account_id_username_email_mobile_phone ON users (issuer_account_id,username,email,phone);\n\n-- create unique index uix_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
+	db.Exec("ALTER TABLE users \n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n    ADD CONSTRAINT users_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT users_default_account_hash_id_fkey FOREIGN KEY (default_account_hash_id) REFERENCES accounts(hash_id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n\ncreate unique index uix_users_issuer_account_id_username_email_mobile_phone ON users (issuer_account_id,username,email,phone);\n\n-- create unique index uix_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
 
 }
 
@@ -83,7 +84,7 @@ func (user User) create () (*User, error) {
 	outUser.Surname = user.Surname
 	outUser.Patronymic = user.Patronymic
 
-	outUser.DefaultAccountID = user.DefaultAccountID
+	outUser.DefaultAccountHashId = user.DefaultAccountHashId
 	outUser.InvitedUserID = user.InvitedUserID
 	outUser.EmailVerifiedAt = user.EmailVerifiedAt // todo: Убрать!!
 

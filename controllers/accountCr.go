@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// ############ CRUD Functional ############
 func AccountCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Аккаунт, от имени которого выступает пользователь
@@ -71,7 +72,61 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-// Возвращает профиль аккаунта, указанного в переменной .../{accountId}/...
+func AccountUpdate(w http.ResponseWriter, r *http.Request)  {
+
+	// 1. Получаем рабочий аккаунт, сверяем его с переданным {hashId}.
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	hashId, err := GetSTRVarFromRequest(r, "hashId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		return
+	}
+
+	// 2. Проверяем hashID изменяемого аккаунта, совпадает ли он с авторизацией.
+	// Из одного аккаунта (НЕ RatusCRM) нельзя изменить другой 
+	if !account.IsMainAccount() && account.HashID != hashId {
+		u.Respond(w, u.MessageError(err, "Ошибка доступа к аккаунту"))
+		return
+	}
+	
+	input := struct {
+
+		Name string `json:"name"`
+		
+		ApiEnabled bool `json:"apiEnabled"`
+		UiApiEnabled bool `json:"uiApiEnabled"`
+		UiApiAesEnabled bool `json:"uiApiAesEnabled"`
+
+		// Параметры ниже могут быть обновлены
+		VisibleToClients bool `json:"visibleToClients"`
+		ClientsAreAllowedToLogin bool `json:"clientsAreAllowedToLogin"`
+		AuthForbiddenForClients bool `json:"authForbiddenForClients"`
+
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	err = account.Update(&input)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при обновлении аккаунта"))
+		return
+	}
+
+
+	resp := u.Message(true, "UPDATE Account successful")
+	resp["account"] = *account
+	u.Respond(w, resp)
+}
+// ############ END OF CRUD Functional ############
+
+// Возвращает профиль аккаунта, указанного в переменной .../{hashId}/...
 func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 
 	// Аккаунт, в котором происходит авторизация: issuerAccount
@@ -81,11 +136,23 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	account, err := GetWorkAccount(w,r)
+	hashId, err := GetSTRVarFromRequest(r, "hashId")
+	if err != nil || hashId == "" {
+		u.Respond(w, u.MessageError(nil, "Не удалось получить hashId аккаунта"))
+		return
+	}
+
+	account, err := models.GetAccountByHash(hashId)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(nil, "Не удалось найти аккаунт"))
 		return
 	}
+
+	/*account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(nil, "Не удалось найти аккаунт"))
+		return
+	}*/
 
 	// Читаем косвенные данные логина в аккаунте
 	v := &struct {
@@ -132,4 +199,5 @@ func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
 	resp["account"] = account
 	u.Respond(w, resp)
 }
+
 

@@ -26,6 +26,7 @@ func MessageWithErrors(message string, errors map[string]interface{}) (map[strin
 	return map[string]interface{} {"status" : false, "message" : message, "errors" : errors}
 }
 
+// Отправляет error если она из utils.Error или opt_msg[0]
 func MessageError(err error, opt_msg... string) (map[string]interface{}) {
 
 	e := Error{}

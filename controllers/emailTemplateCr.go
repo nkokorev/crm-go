@@ -125,7 +125,7 @@ func EmailTemplatesUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get JSON-request
-	input := &struct {
+	input := struct {
 		// HashId string `json:"hashId"` // url-vars
 		Name string `json:"name"`
 		Code string `json:"code"`

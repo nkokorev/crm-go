@@ -21,20 +21,22 @@ const (
 )
 
 type Account struct {
-	ID     uint   `json:"id" gorm:"primary_key"`
+	ID     uint   `json:"-" gorm:"primary_key"`
 	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 
 	// данные аккаунта
 	Name    string `json:"name" gorm:"type:varchar(255)"`
+
+	// todo: ой бы доработать это все, брат! Ввести типы аккаунтов (первоначальные настройки). А список вебсайтов отдельным объектом.
 	Website string `json:"website" gorm:"type:varchar(255)"` // спорно
-	Type    string `json:"type" gorm:"type:varchar(255)"`    // спорно
+	Type    string `json:"type" gorm:"type:varchar(255)"`    // нужно имхо
 
 	// API Интерфейс
-	ApiEnabled bool `json:"-" gorm:"default:true;not null"` // включен ли API интерфейс у аккаунта (false - все ключи отключаются, есть ли смысл в нем?)
+	ApiEnabled bool `json:"apiEnabled" gorm:"default:true;not null"` // включен ли API интерфейс у аккаунта (false - все ключи отключаются, есть ли смысл в нем?)
 
 	// UI-API Интерфейс (https://ui.api.ratuscrm.com / https://ratuscrm.com/ui-api)
-	UiApiEnabled    bool   `json:"-" gorm:"default:false;not null"`         // Принимать ли запросы через публичный UI-API интерфейсу (через https://ui.api.ratuscrm.com)
-	UiApiAesEnabled bool   `json:"-" gorm:"default:true;not null"`          // Включение AES-128/CFB шифрования для публичного UI-API
+	UiApiEnabled    bool   `json:"uiApiEnabled" gorm:"default:false;not null"`         // Принимать ли запросы через публичный UI-API интерфейсу (через https://ui.api.ratuscrm.com)
+	UiApiAesEnabled bool   `json:"uiApiAesEnabled" gorm:"default:true;not null"`          // Включение AES-128/CFB шифрования для публичного UI-API
 	UiApiAesKey     string `json:"-" gorm:"type:varchar(16);default:null;"` // 128-битный ключ шифрования
 	UiApiJwtKey     string `json:"-" gorm:"type:varchar(32);default:null;"` // 128-битный ключ шифрования
 
@@ -54,10 +56,10 @@ type Account struct {
 	// настройки авторизации.
 	// Разделяется AppAuth и ApiAuth -
 	VisibleToClients         bool `json:"visibleToClients" gorm:"default:false"` // отображать аккаунт в списке доступных для пользователей с ролью 'client'. Нужно для системных аккаунтов.
-	ClientsAreAllowedToLogin bool `json:"-" gorm:"default:true"`                 // запрет на вход в ratuscrm для пользователей с ролью 'client' (им не будет выдана авторизация).
-
+	ClientsAreAllowedToLogin bool `json:"clientsAreAllowedToLogin" gorm:"default:true"`                 // запрет на вход в ratuscrm для пользователей с ролью 'client' (им не будет выдана авторизация).
 	AuthForbiddenForClients bool `json:"-" gorm:"default:true"` // запрет авторизации для для пользователей с ролью 'client'.
 
+	// до этого место принимаются изменения для UPDATE метода
 	//ForbiddenForClient bool `json:"forbidden_for_client" gorm:"default:false"` // запрет на вход через приложение app.ratuscrm.com для пользователей с ролью 'client'
 
 	CreatedAt time.Time  `json:"-"`
@@ -167,6 +169,7 @@ func CreateMainAccount() (*Account, error) {
 	acc, err := (Account{
 		Name:                                "RatusCRM",
 		HashID: "",
+		Type: "main",
 		UiApiEnabled:                        false,
 		UiApiAesEnabled:                     true,
 		UiApiEnabledUserRegistration:        false,
@@ -221,6 +224,10 @@ func GetMainAccount() (*Account, error) {
 	err := db.Model(&Account{}).First(&account, "id = 1 AND name = 'RatusCRM'").Error
 	//if err != nil { account.Reset() }
 	return &account, err
+}
+
+func (account Account) IsMainAccount() bool {
+	return account.ID == 1 && account.Name == "RatusCRM" && account.Type == "main"
 }
 
 func GetAccountByHash(hashId string) (*Account, error) {
@@ -494,7 +501,7 @@ func (account Account) AuthorizationUserByUsername(username, password string, on
 	}
 
 	if rememberChoice {
-		user.DefaultAccountID = account.ID
+		user.DefaultAccountHashId = account.HashID
 		updateData := struct {
 			DefaultAccountID bool
 		}{rememberChoice}
@@ -792,7 +799,7 @@ func (account Account) AuthorizationUser(user User, rememberChoice bool, issuerA
 	}
 
 	// Запоминаем аккаунт для будущих входов
-	user.DefaultAccountID = account.ID
+	user.DefaultAccountHashId = account.HashID
 
 	updateData := struct {
 		DefaultAccountID uint

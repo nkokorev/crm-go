@@ -227,13 +227,17 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+// Авторизует пользователя по issuerAccount'e (не в самом аккаунте)
 func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 
 	// Аккаунт, в котором происходит авторизация: issuerAccount
 	issuerAccount, err := GetIssuerAccount(w,r)
 	if err != nil || issuerAccount == nil {
+		u.Respond(w, u.MessageError(err, "Ошибка во время авторизации пользователя"))
 		return
 	}
+
+
 
 	// Get JSON-request
 	v := &struct {
@@ -249,6 +253,7 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 
 	// Есть процесс авторизации пользователя, а есть выдача token. Лучше бы связать эти данные...
 	// В каком аккаунте происходит авторизация? Где регистрируется триггер "user authorization"
+	// user, token, err := issuerAccount.AuthorizationUserByUsername(v.Username, v.Password, v.OnceLogin, v.RememberChoice, issuerAccount)
 	user, token, err := issuerAccount.AuthorizationUserByUsername(v.Username, v.Password, v.OnceLogin, v.RememberChoice, issuerAccount)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка авторизации пользователя!"))
