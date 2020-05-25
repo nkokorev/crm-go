@@ -75,19 +75,6 @@ type Account struct {
 }
 
 // ###
-
-func (account *Account) BeforeCreate(scope *gorm.Scope) error {
-	account.ID = 0
-	account.HashID = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
-	//account.HashID = utils.GetMD5Hash(account.Name + "RatusCRM" + time.Now().UTC().String())
-	account.CreatedAt = time.Now().UTC()
-
-	//account.UiApiJwtKey =  utils.CreateHS256Key()
-	//scope.SetColumn("ui_api_jwt_key", "fjdsfdfsjkfskjfds")
-	//scope.SetColumn("ID", uuid.New())
-	return nil
-}
-
 func (Account) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
@@ -99,58 +86,36 @@ func (Account) PgSqlCreate() {
 	if err != nil {
 		log.Fatal("Не удалось создать главный аккаунт. Ошибка: ", err)
 	}
+}
 
+func (account *Account) BeforeCreate(scope *gorm.Scope) (err error) {
 
+	account.ID = 0
+	
+	account.HashID = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
+	account.CreatedAt = time.Now().UTC()
+
+	account.UiApiAesKey, err = utils.CreateAes128Key()
+	if err != nil {
+		return err
+	}
+	
+	account.UiApiJwtKey = utils.CreateHS256Key()
+
+	//account.UiApiJwtKey =  utils.CreateHS256Key()
+	//scope.SetColumn("ui_api_jwt_key", "fjdsfdfsjkfskjfds")
+	//scope.SetColumn("ID", uuid.New())
+	return nil
 }
 
 func (account *Account) Reset() { account = &Account{} }
 
 func (account Account) create() (*Account, error) {
-
-	var err error
-	var outAccount Account // returned var
-
 	if err := account.ValidateInputs(); err != nil {
 		return nil, err
 	}
-
-	// Создаем ключи для UI API
-	outAccount.UiApiAesKey, err = utils.CreateAes128Key()
-	if err != nil {
-		return nil, err
-	}
-
-	outAccount.UiApiJwtKey = utils.CreateHS256Key()
-
-	// Копируем, то что можно использовать при создании
-	outAccount.Name = account.Name
-	outAccount.Website = account.Website
-	outAccount.Type = account.Type
-
-	outAccount.ApiEnabled = account.ApiEnabled
-
-	outAccount.UiApiEnabled = account.UiApiEnabled
-	outAccount.UiApiAesEnabled = account.UiApiAesEnabled
-
-	// Регистрация новых пользователей через UI/API
-	outAccount.UiApiAuthMethods = account.UiApiAuthMethods
-	outAccount.UiApiEnabledUserRegistration = account.UiApiEnabledUserRegistration
-	outAccount.UiApiUserRegistrationInvitationOnly = account.UiApiUserRegistrationInvitationOnly
-	outAccount.UiApiUserRegistrationRequiredFields = account.UiApiUserRegistrationRequiredFields
-	outAccount.UiApiUserEmailDeepValidation = account.UiApiUserEmailDeepValidation
-
-	outAccount.UserVerificationMethodID = account.UserVerificationMethodID
-	outAccount.UiApiEnabledLoginNotVerifiedUser = account.UiApiEnabledLoginNotVerifiedUser
-
-	outAccount.VisibleToClients = account.VisibleToClients
-	outAccount.ClientsAreAllowedToLogin = account.ClientsAreAllowedToLogin
-
-	// Создание аккаунта
-	if err := db.Omit("ID").Create(&outAccount).Error; err != nil {
-		return nil, err
-	}
-
-	return &outAccount, nil
+	err := db.Create(&account).Error
+	return &account, err
 }
 
 func CreateMainAccount() (*Account, error) {
@@ -503,8 +468,8 @@ func (account Account) AuthorizationUserByUsername(username, password string, on
 	if rememberChoice {
 		user.DefaultAccountHashId = account.HashID
 		updateData := struct {
-			DefaultAccountID bool
-		}{rememberChoice}
+			DefaultAccountHashId string
+		}{account.HashID}
 		if err := user.Update(&updateData); err != nil {
 			return nil, "", errors.New("Не удалось авторизовать пользователя")
 		}
@@ -802,11 +767,11 @@ func (account Account) AuthorizationUser(user User, rememberChoice bool, issuerA
 	user.DefaultAccountHashId = account.HashID
 
 	updateData := struct {
-		DefaultAccountID uint
+		DefaultAccountHashId string
 	}{}
 
 	if rememberChoice {
-		updateData.DefaultAccountID = account.ID
+		updateData.DefaultAccountHashId = account.HashID
 	} else {
 		//updateData.DefaultAccountID = 0
 	}

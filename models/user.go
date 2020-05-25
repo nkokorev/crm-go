@@ -99,7 +99,7 @@ func (user *User) update (input User) error {
 
 	// выбираем те поля, что можно обновить
 	return db.Model(user).Where("id = ?", user.ID).
-		Select("Username", "Email", "PhoneRegion", "Phone", "Name", "Surname", "Patronymic", "DefaultAccountID").
+		Select("Username", "Email", "PhoneRegion", "Phone", "Name", "Surname", "Patronymic", "DefaultAccountHashId").
 		Update(input).First(user).Error
 }
 
@@ -190,7 +190,7 @@ func (user User) DepersonalizedDataMap() *map[string]interface{} {
 	delete(userMap, "ID")
 	delete(userMap, "IssuerAccountID")
 	delete(userMap, "Password")
-	delete(userMap, "DefaultAccountID")
+	delete(userMap, "DefaultAccountHashId")
 	delete(userMap, "InvitedUserID")
 	delete(userMap, "EmailVerifiedAt")
 	delete(userMap, "PhoneVerifiedAt")

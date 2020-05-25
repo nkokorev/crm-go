@@ -10,14 +10,14 @@ func TestGetApiKey(t *testing.T) {
 	account, _ := Account{Name: "Test account for API Key"}.create()
 	defer account.HardDelete()
 
-	key, err := account.CreateApiKey(ApiKey{Name: "Api key for Postman"})
+	key, err := account.ApiKeyCreate(ApiKey{Name: "Api key for Postman"})
 	if err != nil {
 		t.Fatalf("Не удалось создать api-ключ для аккаунта: %v", err)
 	}
 
 	defer key.delete()
 
-	sKey, err := account.GetApiKey(key.Token)
+	sKey, err := account.ApiKeyGet(key.ID)
 	if err != nil {
 		t.Fatalf("Не удалось найти APiKey: %v", err)
 	}
@@ -33,13 +33,13 @@ func TestApiKey_delete(t *testing.T) {
 	account, _ := Account{Name: "Test account for API Key"}.create()
 	defer account.HardDelete()
 
-	key, err := account.CreateApiKey(ApiKey{Name: "Api key for Postman"})
+	key, err := account.ApiKeyCreate(ApiKey{Name: "Api key for Postman"})
 	if err != nil {
 		t.Fatalf("Не удалось создать api-ключ для аккаунта: %v", err)
 	}
 
 	// убеждаем, что сначала он его находит
-	sKey, err := account.GetApiKey(key.Token)
+	sKey, err := account.ApiKeyGet(key.ID)
 	if err != nil || sKey == nil {
 		t.Fatal("Ошибка с поиском ApiKey - он должен был найтись")
 	}
@@ -50,7 +50,7 @@ func TestApiKey_delete(t *testing.T) {
 		t.Fatalf("Не удалось удалить ApiKey")
 	}
 
-	_, err = account.GetApiKey(key.Token)
+	_, err = account.ApiKeyGet(key.ID)
 	if err == nil {
 		t.Fatal("Найден apiKey, который был удален")
 	}
@@ -61,11 +61,10 @@ func TestApiKey_update(t *testing.T) {
 	account, _ := Account{Name: "Test account for API Key"}.create()
 	defer account.HardDelete()
 
-	key, _ := account.CreateApiKey(ApiKey{Name: "Api key for Test: " + utils.RandStringBytes(5)})
+	key, _ := account.ApiKeyCreate(ApiKey{Name: "Api key for Test: " + utils.RandStringBytes(5)})
 	defer key.delete()
 
 	// Проверим, что новые данные сохраняются и не сохраняются лишние
-	token := key.Token
 	key.Name = utils.RandStringBytes(10) // должно сработать
 	key.Enabled = !key.Enabled // должно сработать
 	key.AccountID = key.AccountID + 1 // НЕ должно сработать
@@ -75,7 +74,7 @@ func TestApiKey_update(t *testing.T) {
 		t.Fatalf("Не удалось обновить ApiKey")
 	}
 
-	sKey, err := GetApiKey(token)
+	sKey, err := account.ApiKeyGet(key.ID)
 	if err != nil {
 		t.Fatal("Не удалось найти ApiKey после update")
 	}

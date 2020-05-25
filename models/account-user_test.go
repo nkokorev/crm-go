@@ -11,7 +11,7 @@ func TestAccountUser_create(t *testing.T)  {
         account.HardDelete()
     }()
 
-    user, err := account.CreateUser(User{Username: "TestAccountUser_create324", Phone: "88251001233", InvitedUserID:1, DefaultAccountID:1}, RoleAuthor)
+    user, err := account.CreateUser(User{Username: "TestAccountUser_create324", Phone: "88251001233", InvitedUserID:1}, RoleAuthor)
     if err !=nil {
         t.Fatalf("Не удалось создать пользователя %v", err)
     }
@@ -87,7 +87,7 @@ func TestAccountUser_update(t *testing.T)  {
         account.HardDelete()
     }()
 
-    user, err := account.CreateUser(User{Username: "TestAccountUser_update", Phone: "88251001248", InvitedUserID:1, DefaultAccountID:1}, RoleAdmin)
+    user, err := account.CreateUser(User{Username: "TestAccountUser_update", Phone: "88251001248", InvitedUserID:1}, RoleAdmin)
     if err !=nil {
         t.Fatalf("Не удалось создать пользователя %v", err)
     }
@@ -140,7 +140,7 @@ func TestAccountUser_delete(t *testing.T) {
         account.HardDelete()
     }()
 
-    user, err := account.CreateUser(User{Username: "TestAccountUser_delete", Phone: "88251009876", InvitedUserID:1, DefaultAccountID:1}, RoleAuthor)
+    user, err := account.CreateUser(User{Username: "TestAccountUser_delete", Phone: "88251009876", InvitedUserID:1}, RoleAuthor)
     if err !=nil {
         t.Fatalf("Не удалось создать пользователя %v", err)
     }

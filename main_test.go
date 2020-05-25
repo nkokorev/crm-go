@@ -33,6 +33,10 @@ import (
 
 func TestMain(m *testing.M) {
 	// call flag.Parse() here if TestMain uses flags
+
+	// base.RefreshTables()
+	// fmt.Println("Рефреш")
+
 	flag.Parse()
 	os.Exit(m.Run())
 }

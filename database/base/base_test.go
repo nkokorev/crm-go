@@ -11,5 +11,8 @@ func TestGetDB(t *testing.T) {
 	if reflect.TypeOf(db).String() != "*gorm.DB" {
 		t.Error("expected type: *gorm.DB, get: ", reflect.TypeOf(db).String())
 	}
+
+	// RefreshTables()
+	// fmt.Println("Рефреш")
 }
 

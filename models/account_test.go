@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"strings"
@@ -55,8 +56,10 @@ func TestAccount_createAccount(t *testing.T) {
 		t.Fatal("Created account, but name is null")
 	}
 
-	outAccount, err := Account{Name: "Test account"}.create(  )
+	// 2. А вот этот аккаунт должен создаться
+	outAccount, err := Account{Name: "Test account"}.create()
 	if err != nil || outAccount == nil {
+		fmt.Println(err)
 		t.Fatal("Cant create account without name")
 	}
 
@@ -116,7 +119,7 @@ func TestAccount_CreateApiKey(t *testing.T) {
 	account, _ := Account{Name: "Test account for API Key"}.create()
 	defer account.HardDelete()
 
-	key, err := account.CreateApiKey(ApiKey{Name: "Api key for Test"})
+	key, err := account.ApiKeyCreate(ApiKey{Name: "Api key for Test"})
 	if err != nil {
 		t.Fatalf("Не удалось создать api-ключ для аккаунта: %v", err)
 	}
@@ -128,13 +131,13 @@ func TestAccount_DeleteApiKey(t *testing.T) {
 	account, _ := Account{Name: "Test account for API Key"}.create()
 	defer account.HardDelete()
 
-	key, err := account.CreateApiKey(ApiKey{Name: "Api key for Test"})
+	key, err := account.ApiKeyCreate(ApiKey{Name: "Api key for Test"})
 	if err != nil {
 		t.Fatalf("Не удалось создать api-ключ для аккаунта: %v", err)
 	}
 
 	// убеждаем, что сначала он его находит
-	sKey, err := account.GetApiKey(key.Token)
+	sKey, err := account.ApiKeyGet(key.ID)
 	if err != nil || sKey == nil {
 		t.Fatal("Ошибка с поиском ApiKey - он должен был найтись")
 	}
@@ -143,19 +146,19 @@ func TestAccount_DeleteApiKey(t *testing.T) {
 	account2, _ := Account{Name: "Test account for API Key 2"}.create()
 	defer account2.HardDelete()
 
-	err = account2.DeleteApiKey(key.Token)
+	err = account2.ApiKeyDelete(key.ID)
 	if err == nil {
 		t.Fatal("удалось удалить ApiKey из-под несвязанного аккаунта")
 	}
 
 	// а вот теперь должно удалиться
-	err = account.DeleteApiKey(key.Token)
+	err = account.ApiKeyDelete(key.ID)
 	if err != nil {
 		t.Fatalf("Не удалось удалить ApiKey: %v", err)
 	}
 
 	// убеждаемся, что после удаления нашего ключика нет
-	_, err = account.GetApiKey(key.Token)
+	_, err = account.ApiKeyGet(key.ID)
 	if err == nil {
 		t.Fatal("Найден apiKey, который был удален")
 
@@ -170,11 +173,11 @@ func TestAccount_GetApiKey(t *testing.T) {
 	account2, _ := Account{Name: "Test account for API Key 2"}.create()
 	defer account2.HardDelete()
 
-	key, _ := account.CreateApiKey(ApiKey{Name: "Api key for Test"})
-	defer account.DeleteApiKey(key.Token)
+	key, _ := account.ApiKeyCreate(ApiKey{Name: "Api key for Test"})
+	defer account.ApiKeyDelete(key.ID)
 
 	// убеждаем, что нельзя получить ключ из-под другого аккаунта
-	_, err := account2.GetApiKey(key.Token)
+	_, err := account2.ApiKeyGet(key.ID)
 	if err == nil {
 		t.Fatal("удалось получить ApiKey из-под несвязанного аккаунта")
 	}
@@ -184,11 +187,11 @@ func TestAccount_UpdateApiKey(t *testing.T) {
 	account, _ := Account{Name: "Test account for API Key"}.create()
 	defer account.HardDelete()
 
-	key, _ := account.CreateApiKey(ApiKey{Name: "Api key for Test: " + utils.RandStringBytes(5)})
-	defer account.DeleteApiKey(key.Token)
+	key, _ := account.ApiKeyCreate(ApiKey{Name: "Api key for Test: " + utils.RandStringBytes(5)})
+	defer account.ApiKeyDelete(key.ID)
 
 	// Проверим, что новые данные сохраняются и не сохраняются лишние
-	token := key.Token
+	// token := key.Token
 	key.Name = utils.RandStringBytes(10) // должно сработать
 	key.Enabled = !key.Enabled // должно сработать
 	key.AccountID = key.AccountID + 1 // НЕ должно сработать
@@ -198,7 +201,7 @@ func TestAccount_UpdateApiKey(t *testing.T) {
 		t.Fatalf("Не удалось обновить ApiKey")
 	}
 
-	sKey, err := account.GetApiKey(token)
+	sKey, err := account.ApiKeyGet(key.ID)
 	if err != nil {
 		t.Fatal("Не удалось найти ApiKey после update")
 	}
@@ -379,7 +382,7 @@ func TestAccount_GetAccountUser(t *testing.T) {
 	}()
 
 	// создаем тестового пользователя с ролью Автор
-	user, err := account1.CreateUser(User{Username: "GetAccountUser", Phone: "89251251001534", InvitedUserID:1, DefaultAccountID:1}, RoleClient)
+	user, err := account1.CreateUser(User{Username: "GetAccountUser", Phone: "89251251001534", InvitedUserID:1}, RoleClient)
 	if err!=nil {
 		t.Fatalf("Не удалось создать пользователя %v", err)
 	}
@@ -419,7 +422,7 @@ func TestAccount_ExistUser(t *testing.T) {
 	}()
 
 	// создаем тестового пользователя с ролью Автор
-	user, err := account1.CreateUser(User{Username: "TestUser_ExistUser", Phone: "88251001212", InvitedUserID:1, DefaultAccountID:1}, RoleAuthor)
+	user, err := account1.CreateUser(User{Username: "TestUser_ExistUser", Phone: "88251001212", InvitedUserID:1}, RoleAuthor)
 	if err!=nil {
 		t.Fatalf("Не удалось создать пользователя %v", err)
 	}
@@ -451,7 +454,7 @@ func TestAccount_ExistAccountUser(t *testing.T) {
 	}()
 
 	// создаем тестового пользователя с ролью Автор
-	user, err := account1.CreateUser(User{Username: "TestUser_ExistUser", Phone: "88251001212", InvitedUserID:1, DefaultAccountID:1}, RoleAuthor)
+	user, err := account1.CreateUser(User{Username: "TestUser_ExistUser", Phone: "88251001212", InvitedUserID:1}, RoleAuthor)
 	if err!=nil {
 		t.Fatalf("Не удалось создать пользователя %v", err)
 	}
