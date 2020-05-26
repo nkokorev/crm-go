@@ -223,7 +223,7 @@ func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := account.GetUserById(input.UserId)
+	user, err := account.GetUser(input.UserId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID пользователя"))
 		return

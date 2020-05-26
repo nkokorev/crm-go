@@ -34,7 +34,7 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Ищем пользователя, только в контексте signed-аккаунта
-	user, err := issuerAccount.GetUserById(userId)
+	user, err := issuerAccount.GetUser(userId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Пользователь не существует"))
 		return
@@ -156,7 +156,7 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	userID := r.Context().Value("userId").(uint)
-	user, err := account.GetUserById(userID)
+	user, err := account.GetUser(userID)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка обновления ключа авторизации.."}))
 		return
@@ -168,7 +168,7 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := u.Message(true, "GET account profile")
+	resp := u.Message(true, "POST Account Auth User")
 	resp["account"] = account
 	resp["token"] = token // новый токен, который часа на 4..
 	u.Respond(w, resp)

@@ -101,7 +101,7 @@ func StorageGetFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := u.Message(true, "Storage get list")
+	resp := u.Message(true, "Storage get file")
 	resp["file"] = *fs
 	resp["diskSpaceUsed"] = diskSpaceUsed
 	u.Respond(w, resp)
@@ -126,7 +126,7 @@ func StorageGetFileByHashId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := u.Message(true, "Storage get list")
+	resp := u.Message(true, "Storage get file")
 	resp["file"] = *fs
 	u.Respond(w, resp)
 }

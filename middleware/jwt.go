@@ -138,7 +138,7 @@ func JwtCheckUserAuthentication(next http.Handler) http.Handler {
 		}
 
 		// Загружаем пользователя в рамках аккаунта
-		user, err := issuerAccount.GetUserById(tk.UserID)
+		user, err := issuerAccount.GetUser(tk.UserID)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			u.Respond(w, u.Message(false, "Пользователь не найден"))
@@ -221,7 +221,7 @@ func JwtCheckFullAuthentication(next http.Handler) http.Handler {
 			return
 		}
 
-		user, err := account.GetUserById(tk.UserID)
+		user, err := account.GetUser(tk.UserID)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			u.Respond(w, u.Message(false, "Пользователь не найден"))

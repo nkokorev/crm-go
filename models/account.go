@@ -309,22 +309,35 @@ func (account Account) CreateUser(input User, v_opt ...accessRole) (*User, error
 	return u, nil
 }
 
-func (account Account) GetUserById(userId uint) (*User, error) {
-	user := User{}
+func (account Account) GetUser(userId uint) (*User, error) {
 
-	//err := db.Model(&User{}).Where("issuer_account_id = ?", account.ID).First(&user, userId).Error // т.к. выпуск аккаунта не важен
-
-	if err := db.First(&user, userId).Error; err != nil {
+	user, err := User{}.get(userId)
+	if err != nil {
 		return nil, err
 	}
 
 	// Проверим, что пользователь имеет доступ к аккаунта
 	aUser := AccountUser{}
-	if db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.ID, userId).RecordNotFound() {
+	if db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.ID, user.ID).RecordNotFound() {
 		return nil, errors.New("Пользователь не найден")
 	}
 
-	return &user, nil
+	return user, nil
+}
+
+func (account Account) GetUserByHashId(hashId string) (*User, error) {
+	user, err := User{}.getByHashId(hashId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Проверим, что пользователь имеет доступ к аккаунта
+	aUser := AccountUser{}
+	if db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.ID, user.ID).RecordNotFound() {
+		return nil, errors.New("Пользователь не найден")
+	}
+
+	return user, nil
 }
 
 func (account Account) GetUserByUsername(username string) (*User, error) {
@@ -536,7 +549,7 @@ func (account Account) ValidationUserRegReqFields(input User) error {
 }
 
 func (account Account) IsVerifiedUser(userId uint) (bool, error) {
-	user, err := account.GetUserById(userId)
+	user, err := account.GetUser(userId)
 	if err != nil {
 		return false, utils.Error{Message: "Пользователь не найден"}
 	}

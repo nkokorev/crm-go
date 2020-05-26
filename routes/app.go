@@ -56,7 +56,8 @@ var AppRoutes = func(r *mux.Router) {
 	// rAppAccId.HandleFunc("/accounts/{hashId}/users/auth/username", controllers.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
 
 	rAuthUser.HandleFunc("/accounts/{hashId}/auth", controllers.AccountAuthUser).Methods(http.MethodPost, http.MethodOptions)
-	rAuthUser.HandleFunc("/users/accounts", controllers.UserGetAccounts).Methods(http.MethodGet, http.MethodOptions)
+	rAuthUser.HandleFunc("/users/{hashId}/accounts", controllers.UserAccountsGet).Methods(http.MethodGet, http.MethodOptions)
+	//rAuthUser.HandleFunc("/users/accounts", controllers.UserAccountsGet).Methods(http.MethodGet, http.MethodOptions)
 
 	// ### ApiKeys ###
 	// 1 -- CRUD --
@@ -81,24 +82,10 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/email-templates/{emailTemplateHashId}/send/user", controllers.EmailTemplateSendToUser).Methods(http.MethodPost, http.MethodOptions)
 
 	// ### STORAGE CRUD ####
-	rAuthFull.HandleFunc("/accounts/storage", controllers.StorageCreateFile).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/storage/{hashId}", controllers.StorageGetFileByHashId).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/storage", controllers.StorageGetList).Methods(http.MethodGet, http.MethodOptions)
-
-	rAuthFull.HandleFunc("/accounts/storage/{hashId}", controllers.StorageUpdateFile).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/storage/{hashId}", controllers.StorageDeleteFile).Methods(http.MethodDelete, http.MethodOptions)
-
-
-	// public & share functional
-	// r.HandleFunc("/email/templates/share/{emailTemplateHashId}", controllers.EmailTemplateShareGet).Methods(http.MethodGet, http.MethodOptions)
-
-	// ### Orders ###
-	// rAppAccId.HandleFunc("/accounts/{accountId:[0-9]+}/orders", controllers.GetOrders).Methods(http.MethodGet, http.MethodOptions)
-
-	// 7. Test marketing: test Email...
-	rAuthFull.HandleFunc("/accounts/marketing/test-email", controllers.SendEmailMessage).
-		Methods(http.MethodPost, http.MethodOptions)
-
-
+	rAuthFull.HandleFunc("/storage", controllers.StorageCreateFile).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/storage/{hashId}", controllers.StorageGetFileByHashId).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/storage", controllers.StorageGetList).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/storage/{hashId}", controllers.StorageUpdateFile).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/storage/{hashId}", controllers.StorageDeleteFile).Methods(http.MethodDelete, http.MethodOptions)
 
 }

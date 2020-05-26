@@ -530,18 +530,29 @@ func UserGetProfile(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func UserGetAccounts(w http.ResponseWriter, r *http.Request) {
+func UserAccountsGet(w http.ResponseWriter, r *http.Request) {
 
-	if r.Context().Value("userId") == nil {
+	/*if r.Context().Value("userId") == nil {
 		u.Respond(w, u.MessageError(u.Error{Message: "UserId is not valid"}))
 		return
 	}
-	userID := r.Context().Value("userId").(uint)
+	userID := r.Context().Value("userId").(uint)*/
 
-	user := models.User{ID: userID}
-	if err := user.LoadAccounts(); err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти пользователя")) // вообще тут нужен релогин
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
+	}
+
+	hashId, err := GetSTRVarFromRequest(r,"hashId")
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
+		return
+	}
+
+	user, err := account.GetUserByHashId(hashId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось найти пользователя"))
 	}
 
 	// Подгружаем список из AccountUser

@@ -95,6 +95,26 @@ func (user User) create () (*User, error) {
 	return &outUser, nil
 }
 
+func (User) get(id uint) (*User, error) {
+	user := User{}
+
+	err := db.First(&user, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (User) getByHashId(hashId string) (*User, error) {
+	user := User{}
+
+	err := db.First(&user, "hash_id = ?", hashId).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (user *User) update (input User) error {
 
 	// выбираем те поля, что можно обновить
