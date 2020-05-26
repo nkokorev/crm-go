@@ -61,6 +61,9 @@ func (et *EmailTemplate) BeforeCreate(scope *gorm.Scope) error {
 }
 
 func (et EmailTemplate) create() (*EmailTemplate, error)  {
+	if et.Name == "" {
+		return nil, utils.Error{Message: "Ошибки при создании шаблона", Errors: map[string]interface{}{"name":"Необходимо указать имя"}}
+	}
 	err := db.Create(&et).Error
 	return &et, err
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/models"
-	"io/ioutil"
 	"log"
 	"time"
 )
@@ -525,7 +524,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	}
 	
 	// Добавляем шаблоны писем для синдиката и главного аккаунта
-	data, err := ioutil.ReadFile("/var/www/ratuscrm/files/example.html")
+	/*data, err := ioutil.ReadFile("/var/www/ratuscrm/files/example.html")
 	if err != nil {
 		fmt.Println("File reading error", err)
 		return
@@ -549,7 +548,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	_, err = brouser.CreateEmailTemplate(models.EmailTemplate{Name: "example", Code: string(data)})
 	if err != nil {
 		log.Fatal(err)
-	}
+	}*/
 
 	
 	return
