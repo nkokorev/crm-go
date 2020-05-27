@@ -87,11 +87,14 @@ func EmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 
 func EmailTemplatesGetList(w http.ResponseWriter, r *http.Request) {
 
+
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
+
+	//fmt.Println(reflect.TypeOf(account).Elem()) // models.Account
 
 	templates, err := account.EmailTemplatesList()
 	if err != nil {

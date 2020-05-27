@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"github.com/fatih/structs"
+	"github.com/jinzhu/gorm"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
@@ -381,8 +382,10 @@ func (user *User) LoadAccounts() error {
 // Возвращает массив доступных аккаунтов с ролью в аккаунте
 func (user User) AccountList() ([]AccountUser, error) {
 	
-	aUsers := []AccountUser{}
-	if err := db.Model(&AccountUser{}).Preload("Role").Preload("Account").Preload("User").Find(&aUsers, "user_id = ?", user.ID).Error; err != nil {
+	aUsers := make([]AccountUser,0)
+
+	err := db.Model(&AccountUser{}).Preload("Role").Preload("Account").Preload("User").Find(&aUsers, "user_id = ?", user.ID).Error;
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, errors.New("Не удалось загрузить данные пользователя")
 	}
 

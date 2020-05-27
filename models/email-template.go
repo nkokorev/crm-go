@@ -152,7 +152,7 @@ func (account Account) GetEmailTemplates() ([]EmailTemplate, error) {
 
 func (account Account) EmailTemplatesList() ([]EmailTemplate, error) {
 
-	var templates []EmailTemplate
+	templates := make([]EmailTemplate,0)
 
 	// Without Code string
 	err := db.Select([]string{"id", "hash_id", "public", "name", "updated_at", "created_at"}).Find(&templates, "account_id = ?", account.ID).Error

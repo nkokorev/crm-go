@@ -47,7 +47,7 @@ func (account Account) GetDomain(id uint) (*Domain, error) {
 
 // возвращает все доступные домены с предзагрузкой mailboxes обязательно в контексте аккаунта
 func (account Account) GetDomains() ([]Domain, error) {
-	var domains []Domain
+	domains := make([]Domain,0)
 	err := db.Preload("EmailBoxes").Find(&domains, "account_id = ?", account.ID).Error
 	return domains, err
 }

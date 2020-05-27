@@ -6,6 +6,7 @@ import (
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
+	"reflect"
 	"strconv"
 )
 
@@ -38,6 +39,48 @@ func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, er
 	}
 
 	account := r.Context().Value("account").(*models.Account)
+
+	// получаем объект типа Аккаунт
+	//accountI := r.Context().Value("account").(*models.Account)
+	//account := r.Context().Value("account").(*models.Account)
+
+	/*if reflect.TypeOf(&models.Account{}).Implements( reflect.TypeOf(accountI).Elem() ) {
+		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
+		return nil, errors.New("Account is not typeOf")
+	}*/
+
+	//account := accountI.(*models.Account)
+
+	if account.ID < 1 {
+		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
+		return nil, errors.New("Id of issuer account is zero!")
+	}
+
+	return account, nil
+}
+
+func GetWorkAccountCheckHashId(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
+
+	// Получаем аккаунт, в котором авторизуется пользователь
+	if r.Context().Value("account") == nil {
+		u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
+		return nil, errors.New("Issuer account is null!")
+	}
+
+	// получаем объект типа Аккаунт
+	accountI := r.Context().Value("account")
+
+	if reflect.TypeOf(models.Account{}).Implements( reflect.TypeOf(accountI).Elem() ) {
+		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
+		return nil, errors.New("Account is not typeOf")
+	}
+
+	account := accountI.(*models.Account)
+
+	if account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
+		return nil, errors.New("Account is null pointer!")
+	}
 
 	if account.ID < 1 {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))

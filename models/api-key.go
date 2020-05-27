@@ -76,7 +76,7 @@ func GetApiKeyByToken(token string) (*ApiKey, error) {
 
 func (ApiKey) getList(accountId uint) ([]ApiKey, error) {
 
-	var apiKeys = []ApiKey{}
+	apiKeys := make([]ApiKey,0)
 
 	err := db.Find(&apiKeys, "account_id = ?", accountId).Error
 	if err != nil && err != gorm.ErrRecordNotFound {

@@ -79,7 +79,7 @@ func (account Account) GetEmailBox(id uint) (*EmailBox, error) {
 }
 
 func (account Account) GetEmailBoxes() (*[]EmailBox, error) {
-	var eboxes []EmailBox
+	eboxes := make([]EmailBox,0)
 	err := db.Preload("Domain").Find(&eboxes, "account_id = ?", account.ID).Error
 	return &eboxes, err
 }
