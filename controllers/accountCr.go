@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -121,7 +122,19 @@ func AccountUserList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 2. Узнаем, какой список нужен
+	limit, err := GetQueryINTVarFromGET(r, "limit")
+	if err != nil {
+		u.Respond(w, u.Message(true, "Error parse limit var"))
+		return
+	}
 
+	fmt.Printf("Limit %d\n", limit)
+
+
+
+	resp := u.Message(true, "GET Account User List")
+	u.Respond(w, resp)
 }
 
 // Возвращает профиль аккаунта, указанного в переменной .../{hashId}/...

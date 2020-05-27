@@ -128,3 +128,14 @@ func GetSTRVarFromRequest(r *http.Request, name string) (string, error) {
 
 	return string(strVar), nil
 }
+
+func GetQueryINTVarFromGET(r *http.Request, key string) (int, error) {
+	strVar := r.URL.Query().Get(key)
+
+	intVar, err := strconv.ParseInt(strVar, 10, 64)
+	if err != nil {
+		return 0, errors.New("Не верно указан account ID")
+	}
+
+	return int(intVar), nil
+}
