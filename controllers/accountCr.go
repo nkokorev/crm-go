@@ -115,23 +115,12 @@ func AccountUpdate(w http.ResponseWriter, r *http.Request)  {
 
 // ######## USERS ##########
 func AccountUserList(w http.ResponseWriter, r *http.Request) {
-	// 1. Получаем рабочий аккаунт, сверяем его с переданным {hashId}.
-	account, err := GetWorkAccount(w,r)
+	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
+	account, err := GetWorkAccountCheckHashId(w,r)
 	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	hashId, err := GetSTRVarFromRequest(r, "hashId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
-		return
-	}
-
-	if hashId != account.HashID {
-		u.Respond(w, u.MessageError(err, "Ошибка доступа к данным аккаунта"))
-		return
-	}
 
 }
 

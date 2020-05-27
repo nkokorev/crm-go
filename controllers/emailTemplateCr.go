@@ -94,7 +94,7 @@ func EmailTemplatesGetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//fmt.Println(reflect.TypeOf(account).Elem()) // models.Account
+
 
 	templates, err := account.EmailTemplatesList()
 	if err != nil {

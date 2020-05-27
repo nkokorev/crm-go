@@ -32,24 +32,23 @@ func GetIssuerAccount(w http.ResponseWriter, r *http.Request) (*models.Account, 
 // todo ???
 func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
 
-	// Получаем аккаунт, в котором авторизуется пользователь
 	if r.Context().Value("account") == nil {
 		u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
 		return nil, errors.New("Issuer account is null!")
 	}
 
-	account := r.Context().Value("account").(*models.Account)
-
 	// получаем объект типа Аккаунт
-	//accountI := r.Context().Value("account").(*models.Account)
-	//account := r.Context().Value("account").(*models.Account)
+	accountI := r.Context().Value("account")
+	if reflect.TypeOf(accountI).Elem().String() != "models.Account" {
+		u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
+		return nil, errors.New("Issuer account is null!")
+	}
+	account := accountI.(*models.Account)
 
-	/*if reflect.TypeOf(&models.Account{}).Implements( reflect.TypeOf(accountI).Elem() ) {
+	if account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
-		return nil, errors.New("Account is not typeOf")
-	}*/
-
-	//account := accountI.(*models.Account)
+		return nil, errors.New("Account nil pointer")
+	}
 
 	if account.ID < 1 {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
@@ -61,7 +60,6 @@ func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, er
 
 func GetWorkAccountCheckHashId(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
 
-	// Получаем аккаунт, в котором авторизуется пользователь
 	if r.Context().Value("account") == nil {
 		u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
 		return nil, errors.New("Issuer account is null!")
@@ -69,17 +67,27 @@ func GetWorkAccountCheckHashId(w http.ResponseWriter, r *http.Request) (*models.
 
 	// получаем объект типа Аккаунт
 	accountI := r.Context().Value("account")
-
-	if reflect.TypeOf(models.Account{}).Implements( reflect.TypeOf(accountI).Elem() ) {
-		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
-		return nil, errors.New("Account is not typeOf")
+	if reflect.TypeOf(accountI).Elem().String() != "models.Account" {
+		u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
+		return nil, errors.New("Issuer account is null!")
 	}
-
 	account := accountI.(*models.Account)
 
 	if account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
-		return nil, errors.New("Account is null pointer!")
+		return nil, errors.New("Account nil pointer")
+	}
+
+	// получаем переменную из строки запрос URL: {hashId}
+	hashId, err := GetSTRVarFromRequest(r,"hashId")
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка hash id code of account"}))
+		return nil, errors.New("Ошибка hash id code of account")
+	}
+
+	if account.HashID != hashId {
+		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
+		return nil, errors.New("Вы авторизованы в другом аккаунте")
 	}
 
 	if account.ID < 1 {
