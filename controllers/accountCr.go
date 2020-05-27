@@ -123,13 +123,22 @@ func AccountUserList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Узнаем, какой список нужен
-	limit, err := GetQueryINTVarFromGET(r, "limit")
-	if err != nil {
-		u.Respond(w, u.Message(true, "Error parse limit var"))
-		return
+	limit, ok := GetQueryINTVarFromGET(r, "limit")
+	if !ok {
+		//u.Respond(w, u.Message(false, "Error parse limit var"))
+		//return
+	}
+	offset, ok := GetQueryINTVarFromGET(r, "offset")
+	if !ok {
+		//u.Respond(w, u.Message(false, "Error parse offset var"))
+		//return
 	}
 
+	typeUsers := r.URL.Query().Get("types")
+
 	fmt.Printf("Limit %d\n", limit)
+	fmt.Printf("Offset %d\n", offset)
+	fmt.Printf("TypeUsers %d\n", typeUsers)
 
 
 
