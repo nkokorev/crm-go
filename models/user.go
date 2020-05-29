@@ -420,10 +420,6 @@ func (user User) CreateAccount(input Account) (*Account,error) {
 	return a, nil
 }
 
-// функция прокладка, обновление можно вызвать и из интерфейса аккаунта
-/*func (user *User) UpdateAccount(a *Account, input interface{}) error {
-	return a.Update(input)
-}*/
 
 // удаляет аккаунт, если пользователь имеет такие права
 func (user *User) DeleteAccount(a *Account) error {

@@ -67,6 +67,7 @@ type Account struct {
 	DeletedAt *time.Time `json:"-" sql:"index"`
 
 	//Users 		[]User `json:"-" gorm:"many2many:user_accounts"`
+	AccountUsers []AccountUser `json:"-"`
 	Users   []User   `json:"-" gorm:"many2many:account_users"`
 	ApiKeys []ApiKey `json:"-"`
 
@@ -215,7 +216,7 @@ func (Account) Exist(id uint) bool {
 	return !db.Model(Account{}).First(&Account{}, id).RecordNotFound()
 }
 
-// #### func(s) User ####
+// ########### User ###########
 
 func (account Account) CreateUser(input User, v_opt ...accessRole) (*User, error) {
 
@@ -383,12 +384,45 @@ func (account Account) GetUserByPhone(phone, region string) (*User, error) {
 	return &user, err
 }
 
-// Проверяет существование пользователя вообще
-func (account Account) ExistUser(user User) bool {
+// pagination user list
+func (account Account) GetUsers(offset, limit int, types []string) ([]User, error) {
+
+	if offset < 0 || limit < 0 {
+		return nil, errors.New("Offset or limit is wrong")
+	}
+
+	users := make([]User,0)
+
+	//err := db.Offset(offset).Limit(limit).Find(users, "account_id = ?", account.ID).Error
+	//err := db.Offset(0).Limit(100).Where("account_id = ?", account.ID).Find(users).Error
+	//err := db.Offset(offset).Limit(limit).Where("account_id = ?", account.ID).Find(&users).Error
+
+	//err	:= db.Where("account_id = id", db.Table("account_user").Where("account_id = ?", account.ID).SubQuery()).Find(&users).Error
+	//err	:= db.SetJoinTableHandler
+	//err := db.Offset(offset).Limit(limit).Where("account_id = ?", account.ID).Find(&users).Error
+	//aUser := AccountUser{AccountId: 1,UserId: 1,RoleId: 1}
+	//err := db.Model(&account).Where("account_id = 1").Association("Users").Find(&users).Error
+	//err := db.Table("account_users").Where("account_id = 1").Association("Users").Find(&users).Error
+	//err := db.Model(&AccountUser{}).Where("account_users.account_id = ?",account.ID).Find(&users).Error
+	//err := db.Table("account_users").Where("account_id = ?",account.ID).Find(&users).Error
+
+	//err := db.Model(&AccountUser{}).Where("account_id = 1").Find(&users).Error
+	//err := db.Model(&User{}).Select("account_users.user_id, account_users.account_id").Unscoped().Joins("INNER JOIN users ON account_users.user_id = users.id").Find(&users).Error
+	err := db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").Where("account_id = ?", account.ID).Find(&users).Error
+
+	//db.Where("account_id = ?", db.Table("orders").Select("AVG(amount)").Where("state = ?", "paid").QueryExpr()).Find(&orders)
+	if err != nil && err != gorm.ErrRecordNotFound{
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (Account) ExistUser(user User) bool {
 	return !db.Model(&User{}).First(&User{}, user.ID).RecordNotFound()
 }
 
-// Проверяет существоание пользователя в контексте текущего аккаунта
+// Тоже, что и ExitUser, только в контексте аккаунта
 func (account Account) ExistAccountUser(user User) bool {
 
 	if db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.ID, user.ID).Find(&AccountUser{}).RecordNotFound() {
@@ -882,7 +916,3 @@ func (account Account) ParseAndDecryptToken(cryptToken string) (*JWT, error) {
 }
 
 // ===============================================
-
-func (account Account) GetOrders() ([]Order, error) {
-	return nil, nil
-}

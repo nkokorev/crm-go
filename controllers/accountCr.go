@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -125,24 +125,31 @@ func AccountUserList(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	limit, ok := GetQueryINTVarFromGET(r, "limit")
 	if !ok {
-		//u.Respond(w, u.Message(false, "Error parse limit var"))
-		//return
+		limit = 100
 	}
 	offset, ok := GetQueryINTVarFromGET(r, "offset")
 	if !ok {
-		//u.Respond(w, u.Message(false, "Error parse offset var"))
-		//return
+		offset = 0
 	}
 
-	typeUsers := r.URL.Query().Get("types")
+	// тут должны быть только утвержденные типы
+	userTypes := strings.Split(r.URL.Query().Get("types"),",")
 
-	fmt.Printf("Limit %d\n", limit)
-	fmt.Printf("Offset %d\n", offset)
-	fmt.Printf("TypeUsers %d\n", typeUsers)
+
+	//fmt.Printf("Limit %d\n", limit)
+	//fmt.Printf("Offset %d\n", offset)
+	//fmt.Printf("Users %s\n", userTypes)
+
+	users, err := account.GetUsers(offset, limit, userTypes)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список пользователей"))
+		return
+	}
 
 
 
 	resp := u.Message(true, "GET Account User List")
+	resp["users"] = users
 	u.Respond(w, resp)
 }
 

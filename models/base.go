@@ -52,9 +52,9 @@ func Connect() *gorm.DB {
 	if err != nil {
 		log.Fatal("Error connect to DB")
 	}
-	// db = db.Set("gorm:auto_preload", true)
+	//db = db.Set("gorm:auto_preload", true)
 
-	// db = db.LogMode(true)
+	db = db.LogMode(true)
 
 	SetDB(db)
 
