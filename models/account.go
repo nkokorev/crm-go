@@ -385,18 +385,17 @@ func (account Account) GetUserByPhone(phone, region string) (*User, error) {
 }
 
 // pagination user list
-func (account Account) GetUsers(offset, limit int, types []string) ([]User, error) {
+func (account Account) GetUsers(offset, limit int, types []string) ([]AccountUser, error) {
 
 	if offset < 0 || limit < 0 {
 		return nil, errors.New("Offset or limit is wrong")
 	}
 
-	users := make([]User,0)
+	users := make([]AccountUser,0)
 
 	//err := db.Offset(offset).Limit(limit).Find(users, "account_id = ?", account.ID).Error
 	//err := db.Offset(0).Limit(100).Where("account_id = ?", account.ID).Find(users).Error
 	//err := db.Offset(offset).Limit(limit).Where("account_id = ?", account.ID).Find(&users).Error
-
 	//err	:= db.Where("account_id = id", db.Table("account_user").Where("account_id = ?", account.ID).SubQuery()).Find(&users).Error
 	//err	:= db.SetJoinTableHandler
 	//err := db.Offset(offset).Limit(limit).Where("account_id = ?", account.ID).Find(&users).Error
@@ -406,9 +405,12 @@ func (account Account) GetUsers(offset, limit int, types []string) ([]User, erro
 	//err := db.Model(&AccountUser{}).Where("account_users.account_id = ?",account.ID).Find(&users).Error
 	//err := db.Table("account_users").Where("account_id = ?",account.ID).Find(&users).Error
 
-	//err := db.Model(&AccountUser{}).Where("account_id = 1").Find(&users).Error
-	//err := db.Model(&User{}).Select("account_users.user_id, account_users.account_id").Unscoped().Joins("INNER JOIN users ON account_users.user_id = users.id").Find(&users).Error
-	err := db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").Where("account_id = ?", account.ID).Find(&users).Error
+	// WORK!!!!
+	//err := db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").Where("account_id = ?", account.ID).Find(&users).Error
+
+	//err := db.Model(&AccountUser{}).Preloads("Roles").Unscoped().Where("account_id = ?", account.ID).Find(&users).Error
+	err := db.Model(&users).Preload("User").Preload("Role").
+		Find(&users).Error
 
 	//db.Where("account_id = ?", db.Table("orders").Select("AVG(amount)").Where("state = ?", "paid").QueryExpr()).Find(&orders)
 	if err != nil && err != gorm.ErrRecordNotFound{

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
 )
@@ -31,16 +32,17 @@ const (
 type Role struct {
 	ID              uint       `json:"id" gorm:"primary_key"`
 	IssuerAccountId uint       `json:"issuerAccountId" gorm:"index;not null;default:1"` // у системных ролей = 1. Из-под RatusCRM аккаунта их можно изменять.
-	Tag             accessRole `json:"tag" gorm:"type:varchar(32);not null;"`           // client, admin, manager, ...
-	Type            roleType   `json:"type" gorm:"type:varchar(3);not null;"`
+
+	Tag             accessRole `json:"tag" gorm:"type:varchar(32);not null;"`	// client, admin, manager, ...
+	Type            roleType   `json:"type" gorm:"type:varchar(3);not null;"`	//
 	Name            string     `json:"name" gorm:"type:varchar(255);not null;"` // "Владелец аккаунта", "Администратор", "Менеджер" ...
 
 	Description string `json:"description" gorm:"type:varchar(255);default:null;"` // Краткое описание роли
 }
 
 var systemRoles = []Role{
-	{ IssuerAccountId: 1, Name: "Владелец аккаунта",Tag: RoleOwner, 		Type: roleTypeGui,	Description: "Доступ ко всем данным и функционалу аккаунта."},
-	{ IssuerAccountId: 1, Name: "Администратор", 	Tag: RoleAdmin, 		Type: roleTypeGui,	Description: "Доступ ко всем данным и функционалу аккаунта. Не может удалить аккаунт или менять владельца аккаунта."},
+	{ IssuerAccountId: 1, Name: "Владелец аккаунта",Tag: RoleOwner, 	Type: roleTypeGui,	Description: "Доступ ко всем данным и функционалу аккаунта."},
+	{ IssuerAccountId: 1, Name: "Администратор", 	Tag: RoleAdmin, 	Type: roleTypeGui,	Description: "Доступ ко всем данным и функционалу аккаунта. Не может удалить аккаунт или менять владельца аккаунта."},
 	{ IssuerAccountId: 1, Name: "Менеджер", 		Tag: RoleManager, 	Type: roleTypeGui,	Description: "Не может добавлять пользователей, менять биллинговую информацию и систему ролей."},
 	{ IssuerAccountId: 1, Name: "Маркетолог", 		Tag: RoleMarketer, 	Type: roleTypeGui,	Description: "Читает все клиентские данные, может изменять все что касается маркетинга, но не заказы или склады."},
 	{ IssuerAccountId: 1, Name: "Автор", 			Tag: RoleAuthor, 	Type: roleTypeGui,	Description: "Может создавать контент: писать статьи, письма, описания к товарам и т.д."},
@@ -62,8 +64,6 @@ func (Role) PgSqlCreate() {
 		}
 	}
 }
-
-
 
 // create - inner func, need use (a *Account) CreateRole (*Role, error) { <...> }
 func (role *Role) create () (*Role, error) {
@@ -116,4 +116,15 @@ func GetRole(tag accessRole) (*Role, error) {
 	}
 
 	 return &role, nil
+}
+
+func (account Account) GetRoleList() ([]Role, error) {
+	roles := make([]Role, 0)
+
+	err := db.Find(&roles, "issuer_account_id IN (?)", []uint{1, account.ID}).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+
+	return roles, nil
 }
