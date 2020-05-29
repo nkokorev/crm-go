@@ -393,28 +393,9 @@ func (account Account) GetUserList(offset, limit int, types []string) ([]Account
 
 	aUsers := make([]AccountUser,0)
 
-	//err := db.Offset(offset).Limit(limit).Find(users, "account_id = ?", account.ID).Error
-	//err := db.Offset(0).Limit(100).Where("account_id = ?", account.ID).Find(users).Error
-	//err := db.Offset(offset).Limit(limit).Where("account_id = ?", account.ID).Find(&users).Error
-	//err	:= db.Where("account_id = id", db.Table("account_user").Where("account_id = ?", account.ID).SubQuery()).Find(&users).Error
-	//err	:= db.SetJoinTableHandler
-	//err := db.Offset(offset).Limit(limit).Where("account_id = ?", account.ID).Find(&users).Error
-	//aUser := AccountUser{AccountId: 1,UserId: 1,RoleId: 1}
-	//err := db.Model(&account).Where("account_id = 1").Association("Users").Find(&users).Error
-	//err := db.Table("account_users").Where("account_id = 1").Association("Users").Find(&users).Error
-	//err := db.Model(&AccountUser{}).Where("account_users.account_id = ?",account.ID).Find(&users).Error
-	//err := db.Table("account_users").Where("account_id = ?",account.ID).Find(&users).Error
-
 	// WORK!!!!
 	//err := db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").Where("account_id = ?", account.ID).Find(&users).Error
 	//err := db.Model(&AccountUser{}).Preload("User").Joins("LEFT JOIN users ON account_users.user_id = users.id").Where("account_id = ?", account.ID).Find(&users).Error
-
-	//err := db.Model(&AccountUser{}).Preloads("Roles").Unscoped().Where("account_id = ?", account.ID).Find(&users).Error
-	//err := db.Model(&users).Preload("User").Preload("Role").
-	//err := db.Model(&users).Find(&users).Error
-
-	//db.Where("account_id = ?", db.Table("orders").Select("AVG(amount)").Where("state = ?", "paid").QueryExpr()).Find(&orders)
-
 	err := db.Model(&AccountUser{}).Preload("User").Find(&aUsers, "account_id = ?", account.ID).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, err
