@@ -32,7 +32,7 @@ func UserList(w http.ResponseWriter, r *http.Request) {
 	//fmt.Printf("Offset %d\n", offset)
 	//fmt.Printf("Users %s\n", userTypes)
 
-	users, err := account.GetUsers(offset, limit, userTypes)
+	users, err := account.GetUserList(offset, limit, userTypes)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список пользователей"))
 		return

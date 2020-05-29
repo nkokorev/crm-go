@@ -532,12 +532,6 @@ func UserGetProfile(w http.ResponseWriter, r *http.Request) {
 
 func UserAccountsGet(w http.ResponseWriter, r *http.Request) {
 
-	/*if r.Context().Value("userId") == nil {
-		u.Respond(w, u.MessageError(u.Error{Message: "UserId is not valid"}))
-		return
-	}
-	userID := r.Context().Value("userId").(uint)*/
-
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))

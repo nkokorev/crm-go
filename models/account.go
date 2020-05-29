@@ -385,13 +385,13 @@ func (account Account) GetUserByPhone(phone, region string) (*User, error) {
 }
 
 // pagination user list
-func (account Account) GetUsers(offset, limit int, types []string) ([]AccountUser, error) {
+func (account Account) GetUserList(offset, limit int, types []string) ([]AccountUser, error) {
 
 	if offset < 0 || limit < 0 {
 		return nil, errors.New("Offset or limit is wrong")
 	}
 
-	users := make([]AccountUser,0)
+	aUsers := make([]AccountUser,0)
 
 	//err := db.Offset(offset).Limit(limit).Find(users, "account_id = ?", account.ID).Error
 	//err := db.Offset(0).Limit(100).Where("account_id = ?", account.ID).Find(users).Error
@@ -407,17 +407,20 @@ func (account Account) GetUsers(offset, limit int, types []string) ([]AccountUse
 
 	// WORK!!!!
 	//err := db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").Where("account_id = ?", account.ID).Find(&users).Error
+	//err := db.Model(&AccountUser{}).Preload("User").Joins("LEFT JOIN users ON account_users.user_id = users.id").Where("account_id = ?", account.ID).Find(&users).Error
 
 	//err := db.Model(&AccountUser{}).Preloads("Roles").Unscoped().Where("account_id = ?", account.ID).Find(&users).Error
-	err := db.Model(&users).Preload("User").Preload("Role").
-		Find(&users).Error
+	//err := db.Model(&users).Preload("User").Preload("Role").
+	//err := db.Model(&users).Find(&users).Error
 
 	//db.Where("account_id = ?", db.Table("orders").Select("AVG(amount)").Where("state = ?", "paid").QueryExpr()).Find(&orders)
+
+	err := db.Model(&AccountUser{}).Preload("User").Find(&aUsers, "account_id = ?", account.ID).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, err
 	}
 
-	return users, nil
+	return aUsers, nil
 }
 
 func (Account) ExistUser(user User) bool {

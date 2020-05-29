@@ -66,7 +66,7 @@ var AppRoutes = func(r *mux.Router) {
 
 	// ######## Uses #########
 	// -- CRUD --
-	rAuthUser.HandleFunc("/users/{hashId}/accounts", controllers.UserAccountsGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthUser.HandleFunc("/users/{hashId}//app/auth/username", controllers.UserAccountsGet).Methods(http.MethodGet, http.MethodOptions)
 	//rAuthUser.HandleFunc("/users/accounts", controllers.UserAccountsGet).Methods(http.MethodGet, http.MethodOptions)
 
 	// ### ApiKeys ###

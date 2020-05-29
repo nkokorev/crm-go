@@ -384,7 +384,7 @@ func (user User) AccountList() ([]AccountUser, error) {
 	
 	aUsers := make([]AccountUser,0)
 
-	err := db.Model(&AccountUser{}).Preload("Role").Preload("Account").Preload("User").Find(&aUsers, "user_id = ?", user.ID).Error;
+	err := db.Model(&AccountUser{}).Preload("Role").Preload("Account").Find(&aUsers, "user_id = ?", user.ID).Error;
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, errors.New("Не удалось загрузить данные пользователя")
 	}
