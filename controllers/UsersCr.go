@@ -68,3 +68,26 @@ func RoleList(w http.ResponseWriter, r *http.Request) {
 	resp["roles"] = roles
 	u.Respond(w, resp)
 }
+
+func RemoveUserFromAccount(w http.ResponseWriter, r *http.Request) {
+	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
+	account, err := GetWorkAccountCheckHashId(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	userId, ok := GetSTRVarFromRequest(r, "userHashId")
+	if !ok {
+		u.Respond(w, u.MessageError(nil, "Не удалось ID пользователя"))
+		return
+	}
+
+	err = account.RemoveUserByHashId(userId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось удалить пользователя"))
+		return
+	}
+
+	resp := u.Message(true, "DELETE User from Account")
+	u.Respond(w, resp)
+}

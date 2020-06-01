@@ -364,7 +364,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	// 3.2. добавляем кучу других клиентов
 	var clients []models.User
 
-	for i:=0; i < 10000 ;i++ {
+	for i:=0; i < 1000 ;i++ {
 		clients = append(clients, models.User{
 			Name: fmt.Sprintf("Client %d", i),
 			Email: fmt.Sprintf("email%d@mail.ru", i),

@@ -622,7 +622,19 @@ func (account Account) IsVerifiedUser(userId uint) (bool, error) {
 	return status, nil
 }
 
-func (account *Account) RemoveUser(user *User) error {
+func (account *Account) RemoveUser(id uint) error {
+	user, err := account.GetUser(id)
+	if err != nil {
+		return err
+	}
+	return db.Model(&user).Association("accounts").Delete(account).Error
+}
+
+func (account *Account) RemoveUserByHashId(hashId string) error {
+	user, err := account.GetUserByHashId(hashId)
+	if err != nil {
+		return err
+	}
 	return db.Model(&user).Association("accounts").Delete(account).Error
 }
 

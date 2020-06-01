@@ -53,7 +53,9 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{hashId}", controllers.AccountUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	// -- USERS --
 	// Запрос ниже может иметь много параметров (диапазон выборки, число пользователей)
+	// rAuthFull.HandleFunc("/accounts/{hashId}/users", controllers.CreateUser).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{hashId}/users", controllers.GetUserList).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{hashId}/users/{userHashId}", controllers.RemoveUserFromAccount).Methods(http.MethodDelete, http.MethodOptions)
 
 	// -- ROLES --
 	// Запрос ниже может иметь много параметров (диапазон выборки, число пользователей)
@@ -66,7 +68,7 @@ var AppRoutes = func(r *mux.Router) {
 
 	// ######## Uses #########
 	// -- CRUD --
-	rAuthUser.HandleFunc("/users/{hashId}//app/auth/username", controllers.UserAccountsGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthUser.HandleFunc("/users/{hashId}/app/auth/username", controllers.UserAccountsGet).Methods(http.MethodGet, http.MethodOptions)
 	//rAuthUser.HandleFunc("/users/accounts", controllers.UserAccountsGet).Methods(http.MethodGet, http.MethodOptions)
 
 	// ### ApiKeys ###
