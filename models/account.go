@@ -389,6 +389,7 @@ func (account Account) GetUserList(offset, limit int, search string) ([]AccountU
 
 	aUsers := make([]AccountUser,0)
 
+	// if need to search
 	if len(search) > 0 {
 
 		// string pattern
