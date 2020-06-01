@@ -31,7 +31,6 @@ func EmailValidation(email string) error {
 		return errors.New("Email-адрес слишком длинный")
 	}
 
-
 	at := strings.LastIndex(email, "@")
 	if at <= 0 || at > len(email)-3 {
 		return errors.New("Не верный формат email-адреса")

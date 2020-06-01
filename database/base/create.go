@@ -306,7 +306,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 
 	// 357 Грамм
 
-	// 1. Создаем Василий
+	// 1. Создаем Василия (^_^)
 	vpopov, err := mAcc.CreateUser(
 		models.User{
 			Username:"antiglot",
@@ -359,6 +359,25 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя admin in 357gr")
 		return
+	}
+
+	// 3.2. добавляем кучу других клиентов
+	var clients []models.User
+
+	for i:=0; i < 10 ;i++ {
+		clients = append(clients, models.User{
+			Name: fmt.Sprintf("Client %d", i),
+			Email: fmt.Sprintf("email%d@mail.ru", i),
+			Phone: fmt.Sprintf("+7925195221%d", i),
+		})
+	}
+	for i,_ := range clients {
+		_, err := acc357.CreateUser(clients[i])
+		if err != nil {
+			fmt.Println(err)
+			log.Fatal("Не удалось добавить клиента id: ", i)
+			return
+		}
 	}
 
 	// 4. Создаем домен для 357gr
