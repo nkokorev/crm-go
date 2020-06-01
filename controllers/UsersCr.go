@@ -7,7 +7,7 @@ import (
 )
 
 // limit & offset
-func UserList(w http.ResponseWriter, r *http.Request) {
+func GetUserList(w http.ResponseWriter, r *http.Request) {
 	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
 	account, err := GetWorkAccountCheckHashId(w,r)
 	if err != nil || account == nil {
@@ -20,7 +20,7 @@ func UserList(w http.ResponseWriter, r *http.Request) {
 		limit = 100
 	}
 	offset, ok := GetQueryINTVarFromGET(r, "offset")
-	if !ok {
+	if !ok || offset < 0 {
 		offset = 0
 	}
 
@@ -28,11 +28,11 @@ func UserList(w http.ResponseWriter, r *http.Request) {
 	userTypes := strings.Split(r.URL.Query().Get("types"),",")
 
 
-	//fmt.Printf("Limit %d\n", limit)
-	//fmt.Printf("Offset %d\n", offset)
-	//fmt.Printf("Users %s\n", userTypes)
+	// fmt.Printf("Limit %d\n", limit)
+	// fmt.Printf("Offset %d\n", offset)
+	// fmt.Printf("Users %s\n", userTypes)
 
-	users, err := account.GetUserList(offset, limit, userTypes)
+	users, total, err := account.GetUserList(offset, limit, userTypes)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список пользователей"))
 		return
@@ -41,6 +41,7 @@ func UserList(w http.ResponseWriter, r *http.Request) {
 
 
 	resp := u.Message(true, "GET Account User List")
+	resp["total"] = total
 	resp["users"] = users
 	u.Respond(w, resp)
 }

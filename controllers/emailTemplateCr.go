@@ -203,9 +203,9 @@ func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashId, err := GetSTRVarFromRequest(r, "emailTemplateHashId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+	hashId, ok := GetSTRVarFromRequest(r, "emailTemplateHashId")
+	if !ok {
+		u.Respond(w, u.MessageError(nil, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
@@ -253,9 +253,9 @@ func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
 // ### --- Public function --- ###
 func EmailTemplatePreviewGetHTML(w http.ResponseWriter, r *http.Request) {
 
-	hashId, err := GetSTRVarFromRequest(r, "emailTemplateHashId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+	hashId, ok := GetSTRVarFromRequest(r, "emailTemplateHashId")
+	if !ok {
+		u.Respond(w, u.MessageError(nil, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
@@ -290,9 +290,9 @@ func EmailTemplatePreviewGetHTML(w http.ResponseWriter, r *http.Request) {
 
 func EmailTemplatePreviewGetRawHTML(w http.ResponseWriter, r *http.Request) {
 
-	hashId, err := GetSTRVarFromRequest(r, "emailTemplateHashId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+	hashId, ok := GetSTRVarFromRequest(r, "emailTemplateHashId")
+	if !ok {
+		u.Respond(w, u.MessageError(nil, "Ошибка в обработке ID шаблона"))
 		return
 	}
 

@@ -538,8 +538,8 @@ func UserAccountsGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashId, err := GetSTRVarFromRequest(r,"hashId")
-	if err != nil {
+	hashId, ok := GetSTRVarFromRequest(r,"hashId")
+	if !ok {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}

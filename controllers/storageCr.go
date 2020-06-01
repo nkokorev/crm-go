@@ -114,8 +114,8 @@ func StorageGetFileByHashId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashId, err := GetSTRVarFromRequest(r,"hashId")
-	if err != nil {
+	hashId, ok := GetSTRVarFromRequest(r,"hashId")
+	if !ok {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
@@ -166,8 +166,8 @@ func StorageUpdateFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get file in Data base
-	hashId, err := GetSTRVarFromRequest(r,"hashId")
-	if err != nil {
+	hashId, ok := GetSTRVarFromRequest(r,"hashId")
+	if !ok {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
@@ -208,8 +208,8 @@ func StorageDeleteFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get file in Data base
-	hashId, err := GetSTRVarFromRequest(r,"hashId")
-	if err != nil {
+	hashId, ok := GetSTRVarFromRequest(r,"hashId")
+	if !ok {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
@@ -323,8 +323,8 @@ func StorageCDNGet(w http.ResponseWriter, r *http.Request) {
 	}*/
 	
 
-	hashId, err := GetSTRVarFromRequest(r, "hashId")
-	if err != nil  {
+	hashId, ok := GetSTRVarFromRequest(r, "hashId")
+	if !ok  {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка id file"}))
 		return
 	}

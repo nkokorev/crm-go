@@ -253,7 +253,7 @@ func (account Account) CreateUser(input User, v_opt ...accessRole) (*User, error
 
 	if len(input.Email) > 0 {
 		email = true
-		if account.UiApiUserEmailDeepValidation {
+		/*if account.UiApiUserEmailDeepValidation {
 			if err := utils.EmailDeepValidation(input.Email); err != nil {
 				return nil, utils.Error{Message: "Проверьте правильность заполнения формы", Errors: map[string]interface{}{"email": err.Error()}}
 			}
@@ -261,7 +261,7 @@ func (account Account) CreateUser(input User, v_opt ...accessRole) (*User, error
 			if err := utils.EmailValidation(input.Email); err != nil {
 				return nil, utils.Error{Message: "Проверьте правильность заполнения формы", Errors: map[string]interface{}{"email": err.Error()}}
 			}
-		}
+		}*/
 	}
 
 	if len(input.Phone) > 0 {
@@ -385,10 +385,10 @@ func (account Account) GetUserByPhone(phone, region string) (*User, error) {
 }
 
 // pagination user list
-func (account Account) GetUserList(offset, limit int, types []string) ([]AccountUser, error) {
+func (account Account) GetUserList(offset, limit int, types []string) ([]AccountUser, uint, error) {
 
 	if offset < 0 || limit < 0 {
-		return nil, errors.New("Offset or limit is wrong")
+		return nil, 0, errors.New("Offset or limit is wrong")
 	}
 
 	aUsers := make([]AccountUser,0)
@@ -396,12 +396,20 @@ func (account Account) GetUserList(offset, limit int, types []string) ([]Account
 	// WORK!!!!
 	//err := db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").Where("account_id = ?", account.ID).Find(&users).Error
 	//err := db.Model(&AccountUser{}).Preload("User").Joins("LEFT JOIN users ON account_users.user_id = users.id").Where("account_id = ?", account.ID).Find(&users).Error
-	err := db.Model(&AccountUser{}).Preload("User").Find(&aUsers, "account_id = ?", account.ID).Error
+	
+	err := db.Model(&AccountUser{}).Preload("User").
+		Limit(limit).
+		Offset(offset).
+		Joins("LEFT JOIN users ON account_users.user_id = users.id").
+		Find(&aUsers, "account_id = ?", account.ID).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, err
+		return nil, 0, err
 	}
 
-	return aUsers, nil
+	var count uint
+	err = db.Model(&AccountUser{}).Count(&count).Error
+
+	return aUsers, count, nil
 }
 
 func (Account) ExistUser(user User) bool {

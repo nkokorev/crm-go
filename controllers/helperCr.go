@@ -79,8 +79,8 @@ func GetWorkAccountCheckHashId(w http.ResponseWriter, r *http.Request) (*models.
 	}
 
 	// получаем переменную из строки запрос URL: {hashId}
-	hashId, err := GetSTRVarFromRequest(r,"hashId")
-	if err != nil {
+	hashId, ok := GetSTRVarFromRequest(r,"hashId")
+	if !ok {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка hash id code of account"}))
 		return nil, errors.New("Ошибка hash id code of account")
 	}
@@ -118,17 +118,18 @@ func GetUINTVarFromRequest(r *http.Request, key string) (uint, error) {
 	return uint(accountIdParse), nil
 }
 
-func GetSTRVarFromRequest(r *http.Request, name string) (string, error) {
+func GetSTRVarFromRequest(r *http.Request, name string) (string, bool) {
 
 	strVar := mux.Vars(r)[name]
 
 	if strVar == "" {
-		return "", errors.New("Не верно указан account ID")
+		return "", false
 	}
 
-	return string(strVar), nil
+	return string(strVar), true
 }
 
+// FOR GET Requests!!!!
 func GetQueryINTVarFromGET(r *http.Request, key string) (int, bool) {
 
 	strVar := r.URL.Query().Get(key)
@@ -143,4 +144,16 @@ func GetQueryINTVarFromGET(r *http.Request, key string) (int, bool) {
 	}
 
 	return int(intVar), true
+}
+
+// FOR GET Requests!!!!
+func GetQuerySTRVarFromGET(r *http.Request, key string) (string, bool) {
+
+	strVar := r.URL.Query().Get(key)
+
+	if strVar == "" {
+		return "", false
+	}
+
+	return string(strVar), true
 }

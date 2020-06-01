@@ -81,9 +81,9 @@ func AccountUpdate(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 
-	hashId, err := GetSTRVarFromRequest(r, "hashId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+	hashId, ok := GetSTRVarFromRequest(r, "hashId")
+	if !ok {
+		u.Respond(w, u.MessageError(nil, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
@@ -111,10 +111,6 @@ func AccountUpdate(w http.ResponseWriter, r *http.Request)  {
 	resp["account"] = *account
 	u.Respond(w, resp)
 }
-// ############ END OF CRUD Functional ############
-
-// ######## USERS ##########
-
 
 // Возвращает профиль аккаунта, указанного в переменной .../{hashId}/...
 func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
@@ -126,8 +122,8 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashId, err := GetSTRVarFromRequest(r, "hashId")
-	if err != nil || hashId == "" {
+	hashId, ok := GetSTRVarFromRequest(r, "hashId")
+	if !ok || hashId == "" {
 		u.Respond(w, u.MessageError(nil, "Не удалось получить hashId аккаунта"))
 		return
 	}
