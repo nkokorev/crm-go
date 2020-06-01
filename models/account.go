@@ -622,12 +622,33 @@ func (account Account) IsVerifiedUser(userId uint) (bool, error) {
 	return status, nil
 }
 
-func (account *Account) RemoveUser(id uint) error {
+// !!! Если Issuer аккаунт удаляет пользователя - то он совсем soft delete()
+func (account *Account) RemoveUser(user *User) error {
+
+
+	if user.IssuerAccountID == account.ID {
+
+		if err := user.softDelete(); err != nil {
+			return err
+		}
+	} else {
+	 	if err := db.Model(&user).Association("accounts").Delete(account).Error; err != nil {
+	 		return err
+		}
+	}
+	return db.Model(&user).Association("accounts").Delete(account).Error
+}
+
+func (account *Account) RemoveUserById(id uint) error {
 	user, err := account.GetUser(id)
 	if err != nil {
 		return err
 	}
-	return db.Model(&user).Association("accounts").Delete(account).Error
+	if user == nil {
+		return utils.Error{Message: "Не удалось найти пользователя"}
+	}
+
+	return account.RemoveUser(user)
 }
 
 func (account *Account) RemoveUserByHashId(hashId string) error {
@@ -635,7 +656,10 @@ func (account *Account) RemoveUserByHashId(hashId string) error {
 	if err != nil {
 		return err
 	}
-	return db.Model(&user).Association("accounts").Delete(account).Error
+	if user == nil {
+		return utils.Error{Message: "Не удалось найти пользователя"}
+	}
+	return account.RemoveUser(user)
 }
 
 func (account Account) GetUserRole(user User) (*Role, error) {
