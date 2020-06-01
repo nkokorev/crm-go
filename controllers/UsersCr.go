@@ -3,10 +3,9 @@ package controllers
 import (
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
-	"strings"
 )
 
-// limit & offset
+// limit & offset OR search
 func GetUserList(w http.ResponseWriter, r *http.Request) {
 	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
 	account, err := GetWorkAccountCheckHashId(w,r)
@@ -23,16 +22,20 @@ func GetUserList(w http.ResponseWriter, r *http.Request) {
 	if !ok || offset < 0 {
 		offset = 0
 	}
+	search, ok := GetQuerySTRVarFromGET(r, "search")
+	if !ok {
+		search = ""
+	}
 
 	// тут должны быть только утвержденные типы
-	userTypes := strings.Split(r.URL.Query().Get("types"),",")
+	// userTypes := strings.Split(r.URL.Query().Get("types"),",")
 
 
 	// fmt.Printf("Limit %d\n", limit)
 	// fmt.Printf("Offset %d\n", offset)
 	// fmt.Printf("Users %s\n", userTypes)
 
-	users, total, err := account.GetUserList(offset, limit, userTypes)
+	users, total, err := account.GetUserList(offset, limit, search)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список пользователей"))
 		return
@@ -45,7 +48,6 @@ func GetUserList(w http.ResponseWriter, r *http.Request) {
 	resp["users"] = users
 	u.Respond(w, resp)
 }
-
 
 func RoleList(w http.ResponseWriter, r *http.Request) {
 	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)

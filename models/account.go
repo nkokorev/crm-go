@@ -385,29 +385,49 @@ func (account Account) GetUserByPhone(phone, region string) (*User, error) {
 }
 
 // pagination user list
-func (account Account) GetUserList(offset, limit int, types []string) ([]AccountUser, uint, error) {
-
-	if offset < 0 || limit < 0 {
-		return nil, 0, errors.New("Offset or limit is wrong")
-	}
+func (account Account) GetUserList(offset, limit int, search string) ([]AccountUser, uint, error) {
 
 	aUsers := make([]AccountUser,0)
 
-	// WORK!!!!
-	//err := db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").Where("account_id = ?", account.ID).Find(&users).Error
-	//err := db.Model(&AccountUser{}).Preload("User").Joins("LEFT JOIN users ON account_users.user_id = users.id").Where("account_id = ?", account.ID).Find(&users).Error
-	
-	err := db.Model(&AccountUser{}).Preload("User").
-		Limit(limit).
-		Offset(offset).
-		Joins("LEFT JOIN users ON account_users.user_id = users.id").
-		Find(&aUsers, "account_id = ?", account.ID).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
+	if len(search) > 0 {
+
+		// string pattern
+		search = "%"+search+"%"
+		
+		err := db.Model(&AccountUser{}).Preload("User").
+			Limit(limit).
+			Offset(offset).
+			Joins("LEFT JOIN users ON account_users.user_id = users.id").
+			Where("account_id = ?", account.ID).
+			Find(&aUsers, "users.username LIKE ? OR users.email LIKE ? OR users.phone LIKE ? OR users.name LIKE ? OR users.surname LIKE ?", search,search,search,search,search).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+	} else {
+		if offset < 0 || limit < 0 {
+			return nil, 0, errors.New("Offset or limit is wrong")
+		}
+
+		// WORK!!!!
+		//err := db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").Where("account_id = ?", account.ID).Find(&users).Error
+		//err := db.Model(&AccountUser{}).Preload("User").Joins("LEFT JOIN users ON account_users.user_id = users.id").Where("account_id = ?", account.ID).Find(&users).Error
+
+		err := db.Model(&AccountUser{}).Preload("User").
+			Limit(limit).
+			Offset(offset).
+			Joins("LEFT JOIN users ON account_users.user_id = users.id").
+			Find(&aUsers, "account_id = ?", account.ID).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
 	}
 
 	var count uint
-	err = db.Model(&AccountUser{}).Count(&count).Error
+	err := db.Model(&AccountUser{}).Count(&count).Error
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема клиентской базы"}
+	}
 
 	return aUsers, count, nil
 }
