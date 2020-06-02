@@ -128,13 +128,21 @@ func (User) getByHashId(hashId string) (*User, error) {
 	return &user, nil
 }
 
-func (user *User) update (input interface{}) error {
+func (user *User) update (input interface{}, safe bool) error {
 
-	// fmt.Println(structs.Map(input))
-	// fmt.Println(input)
-	return db.Model(user).Where("id = ?", user.ID).
-		Select("Username", "Email", "PhoneRegion", "Phone", "Name", "Surname", "Patronymic", "DefaultAccountHashId").
-		Updates(input).Error
+	// safe == issuer account take change
+	// todo: продумать кто может менять личные данные пользователя
+	if safe {
+		return db.Model(user).Where("id = ?", user.ID).
+			Select("Name", "Surname", "Patronymic", "DefaultAccountHashId").
+			Updates(input).Error
+	} else {
+		return db.Model(user).Where("id = ?", user.ID).
+			Updates(input).Error
+
+		//Select("Username", "Email", "PhoneRegion", "Phone", "Name", "Surname", "Patronymic", "DefaultAccountHashId", "Password", "EmailVerifiedAt").
+	}
+
 }
 
 func (user User) hardDelete () error {
@@ -168,8 +176,8 @@ func (account Account) UserUpdateByHashId(hashId string, input interface{}) (*Us
 	if err != nil {
 		return nil, err
 	}
-
-	err = user.update(input)
+	
+	err = user.update(input,account.ID != user.IssuerAccountID )
 
 	return user, err
 }
@@ -372,7 +380,7 @@ func (user *User) ResetPassword() error {
 	user.Password = ""
 	tnow := time.Now().UTC()
 	user.PasswordResetAt = &tnow
-	return user.update(&user)
+	return user.update(&user, true)
 }
 
 // устанавливает новый пароль
@@ -395,7 +403,7 @@ func (user *User) SetPassword(passwordNew, passwordOld string) error {
 	user.PasswordResetAt = &tNow
 
 	// 4. Сохраняем данные пользователя
-	if err := user.update(&user);err!=nil {
+	if err := user.update(&user, false);err!=nil {
 		return err
 	}
 

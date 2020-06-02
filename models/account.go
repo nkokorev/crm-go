@@ -543,7 +543,7 @@ func (account Account) AuthorizationUserByUsername(username, password string, on
 		updateData := struct {
 			DefaultAccountHashId string
 		}{account.HashID}
-		if err := user.update(&updateData); err != nil {
+		if err := user.update(&updateData, false); err != nil {
 			return nil, "", errors.New("Не удалось авторизовать пользователя")
 		}
 	}
@@ -884,7 +884,7 @@ func (account Account) AuthorizationUser(user User, rememberChoice bool, issuerA
 		//updateData.DefaultAccountID = 0
 	}
 
-	if err := user.update(&updateData); err != nil {
+	if err := user.update(&updateData, false); err != nil {
 		return "", errors.New("Не удалось авторизовать пользователя")
 	}
 
