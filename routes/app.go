@@ -56,6 +56,7 @@ var AppRoutes = func(r *mux.Router) {
 	// rAuthFull.HandleFunc("/accounts/{hashId}/users", controllers.CreateUser).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{hashId}/users", controllers.GetUserList).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{hashId}/users/{userHashId}", controllers.RemoveUserFromAccount).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{hashId}/users/{userHashId}", controllers.UpdateUserData).Methods(http.MethodPatch, http.MethodOptions)
 
 	// -- ROLES --
 	// Запрос ниже может иметь много параметров (диапазон выборки, число пользователей)

@@ -26,6 +26,7 @@ type User struct {
 	Patronymic 	string `json:"patronymic" gorm:"type:varchar(64)"`
 
 	//Role 		string `json:"role" gorm:"type:varchar(255);default:'client'"`
+	// Role Role `json:"role"`
 
 	// DefaultAccountID uint `json:"defaultAccountId" gorm:"default:NULL;type:int;"` // указывает какой аккаунт по дефолту загружать
 	DefaultAccountHashId string `json:"defaultAccountHashId" gorm:"type:varchar(12);default:null;"` // указывает какой аккаунт по дефолту загружать
@@ -127,12 +128,13 @@ func (User) getByHashId(hashId string) (*User, error) {
 	return &user, nil
 }
 
-func (user *User) update (input User) error {
+func (user *User) update (input interface{}) error {
 
-	// выбираем те поля, что можно обновить
+	// fmt.Println(structs.Map(input))
+	// fmt.Println(input)
 	return db.Model(user).Where("id = ?", user.ID).
 		Select("Username", "Email", "PhoneRegion", "Phone", "Name", "Surname", "Patronymic", "DefaultAccountHashId").
-		Update(input).First(user).Error
+		Updates(input).Error
 }
 
 func (user User) hardDelete () error {
@@ -157,14 +159,36 @@ func getUnscopedUserById(userId uint) (*User,error) {
 
 // ####### Все что выше покрыто тестами (прямым и косвенными) ####### //
 
+// ######### ACCOUNT @@
 
-// осуществляет поиск по ID
-/*func GetUserById (userId uint) (user *User, err error) {
+func (account Account) UserUpdateByHashId(hashId string, input interface{}) (*User, error) {
 
-	err = db.Model(&User{}).Find(user, userId).Error
+	// Проверка не нужна, т.к. поиск пользователя ее уже имеет
+	user, err := account.GetUserByHashId(hashId)
+	if err != nil {
+		return nil, err
+	}
+
+	err = user.update(input)
 
 	return user, err
-}*/
+}
+// осуществляет поиск по ID
+func (account Account) GetUserById (userId uint) (*User, error) {
+
+	user, err := User{}.get(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Проверим, что пользователь имеет доступ к аккаунта
+	aUser := AccountUser{}
+	if db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.ID, user.ID).RecordNotFound() {
+		return nil, errors.New("Пользователь не найден")
+	}
+
+	return user, err
+}
 
 func (user *User) Get () error {
 	/*return db.Preload("Accounts", func(db *gorm.DB) *gorm.DB {
@@ -193,9 +217,10 @@ func (user *User) SaveOLD () error {
 }
 
 // обновляет указанные данные и сохраняет в текущую модель в БД
-func (user *User) Update (input interface{}) error {
-	return db.Model(user).Where("id = ?", user.ID).Omit("id", "username", "created_at", "updated_at", "deleted_at").Update(input).First(user).Error
-}
+/*func (user *User) Update (input interface{}) error {
+
+	return db.Model(user).Where("id = ?", user.ID).Omit("id", "username", "created_at", "updated_at", "deleted_at").Update(structs.Map(input)).First(user).Error
+}*/
 
 // ### HELPERS FUNC ###
 
@@ -347,7 +372,7 @@ func (user *User) ResetPassword() error {
 	user.Password = ""
 	tnow := time.Now().UTC()
 	user.PasswordResetAt = &tnow
-	return user.Update(&user)
+	return user.update(&user)
 }
 
 // устанавливает новый пароль
@@ -370,7 +395,7 @@ func (user *User) SetPassword(passwordNew, passwordOld string) error {
 	user.PasswordResetAt = &tNow
 
 	// 4. Сохраняем данные пользователя
-	if err := user.Update(&user);err!=nil {
+	if err := user.update(&user);err!=nil {
 		return err
 	}
 
@@ -394,6 +419,8 @@ func (user *User) LoadAccounts() error {
 func (user User) AccountList() ([]AccountUser, error) {
 	
 	aUsers := make([]AccountUser,0)
+
+	// err := db.Model(&AccountUser{}).Preload("Role").Preload("Account").Find(&aUsers, "user_id = ?", user.ID).Error;
 
 	err := db.Model(&AccountUser{}).Preload("Role").Preload("Account").Find(&aUsers, "user_id = ?", user.ID).Error;
 	if err != nil && err != gorm.ErrRecordNotFound {

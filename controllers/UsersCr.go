@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
 )
@@ -89,5 +90,42 @@ func RemoveUserFromAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "DELETE User from Account")
+	u.Respond(w, resp)
+}
+
+func UpdateUserData(w http.ResponseWriter, r *http.Request) {
+	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
+	account, err := GetWorkAccountCheckHashId(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	userHashId, ok := GetSTRVarFromRequest(r, "userHashId")
+	if !ok {
+		u.Respond(w, u.MessageError(nil, "Не удалось ID пользователя"))
+		return
+	}
+
+	/*input := struct {
+		models.User
+		// NativePwd   string `json:"password"`    // потому что пароль из User{} не читается т.к. json -
+		// InviteToken string `json:"inviteToken"` // может присутствовать
+	}{}*/
+
+	input := map[string]interface{}{}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	user, err := account.UserUpdateByHashId(userHashId, input)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
+		return
+	}
+
+	resp := u.Message(true, "PATCH USER Update")
+	resp["user"] = user
 	u.Respond(w, resp)
 }

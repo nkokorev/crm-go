@@ -237,8 +237,6 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
-
 	// Get JSON-request
 	v := &struct {
 		Username       string `json:"username"`
