@@ -400,7 +400,8 @@ func (account Account) GetUserList(offset, limit int, search string) ([]AccountU
 			Offset(offset).
 			Joins("LEFT JOIN users ON account_users.user_id = users.id").
 			Where("account_id = ?", account.ID).
-			Find(&aUsers, "users.username LIKE ? OR users.email LIKE ? OR users.phone LIKE ? OR users.name LIKE ? OR users.surname LIKE ?", search,search,search,search,search).Error
+			Joins("LEFT JOIN roles ON account_users.role_id = roles.id").
+			Find(&aUsers, "users.username ILIKE ? OR users.email ILIKE ? OR users.phone ILIKE ? OR users.name ILIKE ? OR users.surname ILIKE ? OR roles.tag ILIKE ? OR roles.name ILIKE ?", search,search,search,search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}

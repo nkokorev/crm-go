@@ -315,7 +315,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 			PhoneRegion: "RU",
 			Phone: "89055294696",
 			Password:"qwerty109#QW",
-			Name:"Висилий",
+			Name:"Василий",
 			Surname:"Попов",
 			Patronymic:"Николаевич",
 			EmailVerifiedAt:&timeNow,
@@ -364,9 +364,9 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	// 3.2. добавляем кучу других клиентов
 	var clients []models.User
 
-	for i:=0; i < 20 ;i++ {
+	for i:=0; i < 100 ;i++ {
 		clients = append(clients, models.User{
-			Name: fmt.Sprintf("Client %d", i),
+			Name: fmt.Sprintf("Name #%d", i),
 			Email: fmt.Sprintf("email%d@mail.ru", i),
 			Phone: fmt.Sprintf("+7925195221%d", i),
 		})
