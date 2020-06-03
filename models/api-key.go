@@ -41,7 +41,8 @@ func (apiKey *ApiKey) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
-func (apiKey ApiKey) create() (*ApiKey, error)  {
+func (ApiKey) create(input ApiKey) (*ApiKey, error)  {
+	var apiKey = input
 	err := db.Create(&apiKey).Error
 	return &apiKey, err
 }
@@ -102,7 +103,7 @@ func (apiKey *ApiKey) update(input interface{}) error {
 
 func (account Account) ApiKeyCreate(input ApiKey) (*ApiKey, error) {
 	input.AccountID = account.ID
-	return input.create()
+	return ApiKey{}.create(input)
 }
 
 func (account Account) ApiKeyGet(id uint) (*ApiKey, error) {
@@ -141,6 +142,22 @@ func (account Account) ApiKeysList() ([]ApiKey, error) {
 	return keyList, nil
 }
 
+func (account Account) ApiKeyUpdate(id uint, input interface{}) (*ApiKey, error) {
+	apiKey, err := account.ApiKeyGet(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if account.ID != apiKey.AccountID {
+		return nil, utils.Error{Message: "Ключ принадлежит другому аккаунту"}
+	}
+
+	err = apiKey.update(input)
+
+	return apiKey, err
+
+}
+
 func (account Account) ApiKeyDelete(id uint) error {
 
 	apiKey, err := account.ApiKeyGet(id)
@@ -151,20 +168,6 @@ func (account Account) ApiKeyDelete(id uint) error {
 	return apiKey.delete()
 }
 
-func (account Account) ApiKeyUpdate(id uint, input interface{}) (*ApiKey, error) {
-	apiKey, err := account.ApiKeyGet(id)
-	if err != nil {
-		return nil, err
-	}
-	
-	if account.ID != apiKey.AccountID {
-		return nil, utils.Error{Message: "Ключ принадлежит другому аккаунту"}
-	}
 
-	err = apiKey.update(input)
-
-	return apiKey, err
-
-}
 
 // ########### END OF ACCOUNT FUNCTIONAL ###########

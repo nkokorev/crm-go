@@ -789,23 +789,6 @@ func (account *Account) StockLoad() (err error) {
 	return err
 }
 
-// ### Account inner func Products ### //
-func (account Account) ProductCreate(p *Product) error {
-	p.AccountID = account.ID
-	return p.Create()
-}
-
-func (account *Account) ProductLoad() (err error) {
-	account.Products, err = (Product{}).GetAll(account.ID)
-	return err
-	//return db.Preload("Products").Preload("Products.Offers").First(&a).Error
-}
-
-// EAVAttributes
-func (account Account) CreateEavAttribute(ea *EavAttribute) error {
-	ea.AccountID = account.ID
-	return ea.create()
-}
 
 // ### JWT Crypto ### !!!!!!!!!!1
 

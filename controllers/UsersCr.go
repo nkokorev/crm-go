@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-// limit & offset OR search
-
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	
 	account, err := GetWorkAccount(w,r)
@@ -26,25 +24,14 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/*fmt.Println(input["role"])
-	if input["fdsfsd"] == nil {
-		fmt.Println("Nil!")
-	}*/
-
-	// role := input.Role.(models.AccessRole)
-
 	user, err := account.CreateUser(input.User, input.Role)
 	if err != nil {
 		fmt.Println("Error: ", err)
 		u.Respond(w, u.MessageError(err, "Не удалось создать пользователя"))
 		return
 	}
-	// user := input.UserData
-	                              
-
+	
 	resp := u.Message(true, "CREATE User IN Account")
-	resp["account"] = account
-	// resp["input"] = input
 	resp["user"] = user
 	u.Respond(w, resp)
 }

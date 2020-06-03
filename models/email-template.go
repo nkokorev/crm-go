@@ -46,7 +46,7 @@ func (EmailTemplate) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&EmailTemplate{})
-	db.Exec("ALTER TABLE email_templates \n ADD CONSTRAINT email_templates_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n")
+	db.Exec("ALTER TABLE email_templates \n ADD CONSTRAINT email_templates_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n")
 
 }
 
