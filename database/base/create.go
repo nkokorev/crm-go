@@ -541,21 +541,23 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	// 6. Добавляем созданные в категории новые товары
 	products1 := []models.Product{
-		{SKU:"1017", URL:"er-e-i-ya-dyan-hun", Name:"Эр Е И Я Дянь Хун", },
+		{SKU:"1001", Model: "AIRO-DEZ", URL:"recirkulyator-vozduha-baktericidnyy-airo-dez", Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ", ShortDescription: "", Description: "Устройство закрытого типа, предназначенное для очистки воздуха от вредных бактерий и вирусов в помещении с людьми, называется бактерицидный рециркулятор."},
+		{SKU:"1002", Model: "AIRO-DEZ COMPACT", URL:"mobilnyy-airodezinfektor-airo-dez-compact", Name:"Мобильный аиродезинфектор AIRO-DEZ COMPACT", ShortDescription: "", Description: "Мобильный аиродезинфектор AIRO-DEZ COMPACT – переносной прибор, предназначенный для быстрой дезинфекции воздуха и поверхностей во всех типах помещений."},
 	}
 	// создаем продукты в группе 1
 	for i,_ := range products1 {
-		_, err = grAiro1.CreateProduct(products1[i])
+		_, err = airoClimat.CreateProduct(products1[i], grAiro1)
 		if err != nil {
 			log.Fatal("Не удалось создать Product для airoClimat: ", err)
 		}
 	}
 	products2 := []models.Product{
-		{SKU:"1017", URL:"er-e-i-ya-dyan-hun", Name:"Эр Е И Я Дянь Хун", },
+		{SKU:"1003", Model: "AIRO-DEZPUF", URL:"baktericidnaya-kamera-airo-dezpuf", Name:"Бактерицидная камера пуф AIRO-DEZPUF", ShortDescription: "", Description: "Устройство закрытого типа, предназначенное для очистки воздуха от вредных бактерий и вирусов в помещении с людьми, называется бактерицидный рециркулятор."},
+		{SKU:"1004", Model: "AIRO-DEZBOX", URL:"baktericidnaya-kamera-airo-dezbox", Name:"Бактерицидная камера AIRO-DEZBOX", ShortDescription: "", Description: "Мобильный аиродезинфектор AIRO-DEZ COMPACT – переносной прибор, предназначенный для быстрой дезинфекции воздуха и поверхностей во всех типах помещений."},
 	}
 	// создаем продукты в группе 1
 	for i,_ := range products2 {
-		_, err = grAiro2.CreateProduct(products1[i])
+		_, err = airoClimat.CreateProduct(products2[i], grAiro2)
 		if err != nil {
 			log.Fatal("Не удалось создать Product для airoClimat: ", err)
 		}
@@ -564,7 +566,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	return
 
-	shops := [] *models.Shop{
+/*	shops := [] *models.Shop{
 		{AccountID:3, Name:"Магазин на Маяковке", Address:"Москва, ул. Долгоруковская, дом 9, стр. 3"},
 	}
 
@@ -617,7 +619,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		{AccountID:3, Name:"100гр + типод", Price:2200.00, Discount:400},
 	}
 
-	fmt.Println(offers, products, shops, product_groups)
+	fmt.Println(offers, products, shops, product_groups)*/
 
 
 }

@@ -31,7 +31,7 @@ func (shop *Shop) BeforeCreate(scope *gorm.Scope) error {
 // ######### CRUD Functions ############
 func (input Shop) create() (*Shop, error)  {
 	var shop = input
-	err := db.Create(shop).Error
+	err := db.Create(&shop).Error
 	return &shop, err
 }
 
@@ -84,7 +84,7 @@ func (account Account) GetShop(productId uint) (*Shop, error) {
 		return nil, utils.Error{Message: "Магазин принадлежит другому аккаунту"}
 	}
 
-	return nil, nil
+	return shop, nil
 }
 
 func (account Account) GetShops() ([]Shop, error) {

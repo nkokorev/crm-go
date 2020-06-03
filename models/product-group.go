@@ -49,7 +49,7 @@ func (ProductGroup) TableName() string {
 // ######### CRUD Functions ############
 func (input ProductGroup) create() (*ProductGroup, error)  {
 	var group = input
-	err := db.Create(group).Error
+	err := db.Create(&group).Error
 	return &group, err
 }
 
@@ -77,7 +77,7 @@ func (ProductGroup) getList(shopId uint) ([]ProductGroup, error) {
 }
 
 func (group *ProductGroup) update(input interface{}) error {
-	return db.Model(group).Select("Name", "Address").Updates(structs.Map(input)).Error
+	return db.Model(group).Select("name", "address").Updates(structs.Map(input)).Error
 
 }
 
@@ -144,14 +144,10 @@ func (shop Shop) DeleteProductGroup(groupId uint) error {
 
 
 // ######### ProductGroup Functions ############
-
-// Создает и добавляет продукт в продуктовую группу
-
-func (group ProductGroup) CreateProduct(product Product) (*Product, error) {
-	// add account id
-	// add group id
-	return nil, nil
+func (group ProductGroup) AppendProduct(product *Product) error {
+	return db.Model(&group).Association("Products").Append(product).Error
 }
+
 
 func (group ProductGroup) GetProductList() ([]Product, error) {
 
