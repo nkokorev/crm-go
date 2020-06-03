@@ -13,6 +13,8 @@ type Shop struct {
 
 	Name string `json:"name" gorm:"type:varchar(255);default:'Новый магазин';not_null;"`
 	Address string `json:"address" gorm:"type:varchar(255);default:null;"`
+	
+	ProductGroups []ProductGroup `json:"productGroups"`
 }
 
 func (Shop) PgSqlCreate() {
@@ -27,7 +29,7 @@ func (shop *Shop) BeforeCreate(scope *gorm.Scope) error {
 }
 
 // ######### CRUD Functions ############
-func (Shop) create(input Shop) (*Shop, error)  {
+func (input Shop) create() (*Shop, error)  {
 	var shop = input
 	err := db.Create(shop).Error
 	return &shop, err
@@ -37,7 +39,7 @@ func (Shop) get(id uint) (*Shop, error) {
 
 	shop := Shop{}
 
-	if err := db.First(&shop, id).Error; err != nil {
+	if err := db.Table("shops").Preload("ProductGroups").First(&shop, id).Error; err != nil {
 		return nil, err
 	}
 
@@ -48,7 +50,7 @@ func (Shop) getList(accountId uint) ([]Shop, error) {
 
 	shops := make([]Shop,0)
 
-	err := db.Find(&shops, "account_id = ?", accountId).Error
+	err := db.Table("shops").Preload("ProductGroups").Find(&shops, "account_id = ?", accountId).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
@@ -64,15 +66,12 @@ func (shop *Shop) update(input interface{}) error {
 func (shop Shop) delete () error {
 	return db.Model(Shop{}).Where("id = ?", shop.ID).Delete(shop).Error
 }
-
-
 // ######### END CRUD Functions ############
 
 // ######### ACCOUNT Functions ############
-
 func (account Account) CreateShop(input Shop) (*Shop, error) {
 	input.AccountID = account.ID
-	return Shop{}.create(input)
+	return input.create()
 }
 
 func (account Account) GetShop(productId uint) (*Shop, error) {
@@ -118,10 +117,5 @@ func (account Account) DeleteShop(productId uint) error {
 
 	return shop.delete()
 }
-
-
 // ######### END OF ACCOUNT Functions ############
 
-func (shop Shop) CreateProductGroup(group ProductGroup) (*ProductGroup, error) {
-	return nil, nil
-}
