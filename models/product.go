@@ -14,7 +14,7 @@ type Product struct {
 	// ProductGroupID uint `json:"productGroupId" gorm:"type:int;index;default:null;"` // группа товаров, категория товаров
 
 	// Article string `json:"article"` // артикул товара из иных соображений (часто публичный)
-	SKU string `json:"sku" gorm:"default:NULL"` // складской идентификатор
+	SKU string `json:"sku" gorm:"default:NULL"` // складской идентификатор. 1 SKU = 1 товар (одна модель)
 	Model string `json:"model" gorm:"type:varchar(255);"`
 	URL string `json:"url"` // идентификатор страницы (products/syao-chzhun )
 
@@ -22,13 +22,15 @@ type Product struct {
 	ShortDescription string `json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar
 	Description string `json:"description" gorm:"type:text;"` // pgsql: text
 
+	// Images ... 
 	// Specifications Specifications // характеристики товара... (производитель, бренд и т.д. и т.п.)
 	// Reviews []Review // Product reviews (отзывы на товар - с рейтингом(?))
 	// Questions []question // вопросы по товару
 	// Video []Video // видеообзоры по товару на ютубе
 
 	Account Account `json:"-" sql:"-"`
-	ProductGroups []ProductGroup `json:"-" gorm:"many2many:product_group_products"`
+	// ProductGroups []ProductGroup `json:"-" gorm:"many2many:product_group_products"`
+	OfferProduct []OfferProduct `json:"-" gorm:"many2many:offer_products"`
 	// Offers  []Offer `json:"offers" gorm:"many2many:offer_compositions"`
 }
 
@@ -85,7 +87,7 @@ func (product Product) delete () error {
 // ######### END CRUD Functions ############
 
 // ######### ACCOUNT Functions ############
-func (account Account) CreateProduct(input Product, group *ProductGroup) (*Product, error) {
+func (account Account) CreateProduct(input Product, offer *Offer) (*Product, error) {
 	input.AccountID = account.ID
 	
 	if input.ExistSKU() {
@@ -100,12 +102,13 @@ func (account Account) CreateProduct(input Product, group *ProductGroup) (*Produ
 		return nil, err
 	}
 
-	if group != nil {
+	// тут что-то про дефолтный оффер
+	/*if group != nil {
 		err = group.AppendProduct(product)
 		if err != nil {
 			return nil, err
 		}
-	}
+	}*/
 
 	return product, nil
 }

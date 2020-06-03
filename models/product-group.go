@@ -12,22 +12,22 @@ type ProductGroup struct {
 	// AccountID uint `json:"-" gorm:"type:int;index;not_null;"` // хз хз
 	ParentID uint `json:"parentId" gorm:"default:NULL"`
 	
-	Code string `json:"code" gorm:"default:NULL"` // tea, coffe, china
-	URL string `json:"url" gorm:"default:NULL"`
+	Code string `json:"code" gorm:"type:varchar(255);default:null;"` // tea, coffe, china
+	URL string `json:"url"gorm:"type:varchar(255);default:null;"`
 
-	Name string `json:"name" gorm:"default:NULL"` // Чай, кофе, ..
+	Name string `json:"name" gorm:"type:varchar(255);default:null;"` // Чай, кофе, ..
 
-	Breadcrumb string `json:"breadcrumb" gorm:"default:NULL"`
-	ShortDescription string `json:"shortDescription" gorm:"default:NULL"`
-	Description string `json:"description" gorm:"default:NULL"`
+	Breadcrumb string `json:"breadcrumb" gorm:"type:varchar(255);default:null;"`
+	ShortDescription string `json:"shortDescription" gorm:"type:varchar(255);default:null;"`
+	Description string `json:"description" gorm:"type:text;default:null;"`
 
-	MetaTitle string `json:"metaTitle"`
-	MetaKeywords string `json:"metaKeywords"`
-	MetaDescription string `json:"metaDescription"`
+	MetaTitle string `json:"metaTitle" gorm:"type:varchar(255);default:null;"`
+	MetaKeywords string `json:"metaKeywords" gorm:"type:varchar(255);default:null;"`
+	MetaDescription string `json:"metaDescription" gorm:"type:varchar(255);default:null;"`
 
 	Shop Shop `json:"shop" `
-	ParentGroup *ProductGroup `json:"-"`
-	Products []Product `json:"products" gorm:"many2many:product_group_products"`
+	ParentGroup *ProductGroup `json:"-"` // parentId
+	ProductCards []ProductCard `json:"productCards"`
 
 }
 
@@ -144,7 +144,7 @@ func (shop Shop) DeleteProductGroup(groupId uint) error {
 
 
 // ######### ProductGroup Functions ############
-func (group ProductGroup) AppendProduct(product *Product) error {
+/*func (group ProductGroup) AppendProduct(product *Product) error {
 	return db.Model(&group).Association("Products").Append(product).Error
 }
 
@@ -159,7 +159,7 @@ func (group ProductGroup) GetProductList() ([]Product, error) {
 	}
 
 	return products, nil
-}
+}*/
 
 // ######### END OF ProductGroup Functions ############
 

@@ -14,13 +14,7 @@ func RefreshTables() {
 	pool := models.GetPool()
 
 	// дропаем системные таблицы
-	err = pool.Exec("drop table if exists offer_compositions").Error
-	if err != nil {
-		fmt.Println("Cant create tables 1: ", err)
-		return
-	}
-	
-	err = pool.Exec("drop table if exists product_group_products, product_groups, products, shops").Error
+	err = pool.Exec("drop table if exists products, offer_products, offers, product_cards, product_groups, shops").Error
 	if err != nil {
 		fmt.Println("Cant create tables 1: ", err)
 		return
@@ -58,7 +52,10 @@ func RefreshTables() {
 
 	models.Shop{}.PgSqlCreate()
 	models.ProductGroup{}.PgSqlCreate()
+	models.ProductCard{}.PgSqlCreate()
+	models.Offer{}.PgSqlCreate()
 	models.Product{}.PgSqlCreate()
+	models.OfferProduct{}.PgSqlCreate() // M<>M Offer<>Product
 
 	models.Domain{}.PgSqlCreate()
 	models.EmailBox{}.PgSqlCreate()
@@ -539,6 +536,8 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
 	}
 
+	fmt.Println(grAiro1, grAiro2)
+
 	// 6. Добавляем созданные в категории новые товары
 	products1 := []models.Product{
 		{SKU:"1001", Model: "AIRO-DEZ", URL:"recirkulyator-vozduha-baktericidnyy-airo-dez", Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ", ShortDescription: "", Description: "Устройство закрытого типа, предназначенное для очистки воздуха от вредных бактерий и вирусов в помещении с людьми, называется бактерицидный рециркулятор."},
@@ -546,7 +545,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	}
 	// создаем продукты в группе 1
 	for i,_ := range products1 {
-		_, err = airoClimat.CreateProduct(products1[i], grAiro1)
+		_, err = airoClimat.CreateProduct(products1[i], nil)
 		if err != nil {
 			log.Fatal("Не удалось создать Product для airoClimat: ", err)
 		}
@@ -557,7 +556,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	}
 	// создаем продукты в группе 1
 	for i,_ := range products2 {
-		_, err = airoClimat.CreateProduct(products2[i], grAiro2)
+		_, err = airoClimat.CreateProduct(products2[i], nil)
 		if err != nil {
 			log.Fatal("Не удалось создать Product для airoClimat: ", err)
 		}
