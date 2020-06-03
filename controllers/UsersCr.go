@@ -7,6 +7,26 @@ import (
 )
 
 // limit & offset OR search
+
+func CreateUser(w http.ResponseWriter, r *http.Request) {
+	
+	account, err := GetWorkAccount(w,r)
+	if err != nil {
+		return
+	}
+
+	input, err := GetMapStringInterface(w,r)
+	if err != nil {
+		return
+	}
+	                              
+
+	resp := u.Message(true, "CREATE User IN Account")
+	resp["account"] = account
+	resp["input"] = input
+	u.Respond(w, resp)
+}
+
 func GetUserList(w http.ResponseWriter, r *http.Request) {
 	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
 	account, err := GetWorkAccountCheckHashId(w,r)

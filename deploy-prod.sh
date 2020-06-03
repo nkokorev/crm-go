@@ -12,7 +12,7 @@ ssh -p 25794 root@45.84.226.178 'systemctl restart crm-server'
 ssh -p 25794 root@45.84.226.178 'chown -R nginx:nginx /var/www/ratuscrm/server'
 ssh -p 25794 root@45.84.226.178 'nginx -s reload'
 
-echo "Start web: http://app.ratuscrm.com/"
+echo "Start web: https://app.ratuscrm.com/"
 echo "=== The end deploy crm-server ==="
 
 #systemctl daemon-reload

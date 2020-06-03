@@ -221,7 +221,7 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := u.Message(true, "POST user / User Create")
+	resp := u.Message(true, "POST User Create")
 	resp["user"] = user
 	resp["token"] = token
 	u.Respond(w, resp)

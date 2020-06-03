@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/gorilla/mux"
 	"github.com/nkokorev/crm-go/models"
@@ -28,8 +29,7 @@ func GetIssuerAccount(w http.ResponseWriter, r *http.Request) (*models.Account, 
 	return issuerAccount,nil
 }
 
-// Возвращает рабочий контроллер
-// todo ???
+// Возвращает рабочий аккаунт, в том числе, и для API
 func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
 
 	if r.Context().Value("account") == nil {
@@ -156,4 +156,16 @@ func GetQuerySTRVarFromGET(r *http.Request, key string) (string, bool) {
 	}
 
 	return string(strVar), true
+}
+
+// INPUTS
+
+func GetMapStringInterface(w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
+	input := map[string]interface{}{}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message: "Техническая ошибка в запросе"}))
+		return nil, u.Error{Message: "Техническая ошибка в запросе"}
+	}
+
+	return input, nil
 }

@@ -13,4 +13,8 @@ var ApiRoutes = func (rApi *mux.Router) {
 
 	// загружаем базовые настройки системы
 	rApi.HandleFunc("/", controllers.CheckApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
+
+	rApi.HandleFunc("/users", controllers.CreateUser).Methods(http.MethodPost)
+
+
 }
