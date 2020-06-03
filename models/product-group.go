@@ -27,6 +27,7 @@ type ProductGroup struct {
 
 	Shop Shop `json:"shop" `
 	ParentGroup *ProductGroup `json:"-"`
+	Products []Product `json:"products" gorm:"many2many:product_group_products"`
 
 }
 
@@ -142,11 +143,30 @@ func (shop Shop) DeleteProductGroup(groupId uint) error {
 // ######### END OF SHOP Functions ############
 
 
-
+// ######### ProductGroup Functions ############
 
 // Создает и добавляет продукт в продуктовую группу
+
 func (group ProductGroup) CreateProduct(product Product) (*Product, error) {
 	// add account id
 	// add group id
 	return nil, nil
 }
+
+func (group ProductGroup) GetProductList() ([]Product, error) {
+
+	products := make([]Product,0)
+
+	err := db.Model(&group).Association("Products").Find(&products).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+
+	return products, nil
+}
+
+// ######### END OF ProductGroup Functions ############
+
+
+
+

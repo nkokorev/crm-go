@@ -20,7 +20,7 @@ func RefreshTables() {
 		return
 	}
 	
-	err = pool.Exec("drop table if exists product_groups, products, shops").Error
+	err = pool.Exec("drop table if exists product_group_products, product_groups, products, shops").Error
 	if err != nil {
 		fmt.Println("Cant create tables 1: ", err)
 		return

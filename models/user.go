@@ -266,21 +266,6 @@ func (user *User) GetByUsername () error {
 	return db.First(user,"username = ?", user.Username).Error
 }
 
-// сохраняет как новую модель... лучше вообще убрать этот метод
-func (user *User) SaveOLD () error {
-	//return db.Model(user).Omit("id", "deleted_at", "created_at", "updated_at").Save(user).Find(user, "id = ?", user.ID).Error
-	return db.Model(user).Omit("id", "deleted_at", "created_at", "updated_at").Save(user).First(user, "id = ?", user.ID).Error
-}
-
-// обновляет указанные данные и сохраняет в текущую модель в БД
-/*func (user *User) Update (input interface{}) error {
-
-	return db.Model(user).Where("id = ?", user.ID).Omit("id", "username", "created_at", "updated_at", "deleted_at").Update(structs.Map(input)).First(user).Error
-}*/
-
-// ### HELPERS FUNC ###
-
-
 func (user User) Exist() bool {
 	return !db.Unscoped().First(&User{}, user.ID).RecordNotFound()
 }
