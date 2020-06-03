@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
 )
@@ -15,15 +17,35 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input, err := GetMapStringInterface(w,r)
-	if err != nil {
+	var input struct{
+		models.User
+		Role string `json:"role"`
+	}
+
+	if err := GetInputInterface(w,r, &input); err != nil {
 		return
 	}
+
+	/*fmt.Println(input["role"])
+	if input["fdsfsd"] == nil {
+		fmt.Println("Nil!")
+	}*/
+
+	// role := input.Role.(models.AccessRole)
+
+	user, err := account.CreateUser(input.User, input.Role)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		u.Respond(w, u.MessageError(err, "Не удалось создать пользователя"))
+		return
+	}
+	// user := input.UserData
 	                              
 
 	resp := u.Message(true, "CREATE User IN Account")
 	resp["account"] = account
-	resp["input"] = input
+	// resp["input"] = input
+	resp["user"] = user
 	u.Respond(w, resp)
 }
 

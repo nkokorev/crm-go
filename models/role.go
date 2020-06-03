@@ -13,27 +13,27 @@ const (
 	roleTypeApi roleType = "api"
 )
 
-type accessRole string
+type AccessRole = string
 
 // Базовая система ролей (9)
 const (
-	RoleOwner      accessRole = "owner"
-	RoleAdmin      accessRole = "admin"
-	RoleManager    accessRole = "manager"
-	RoleMarketer   accessRole = "marketer"
-	RoleAuthor     accessRole = "author"
-	RoleViewer     accessRole = "viewer"
-	RoleClient     accessRole = "client"
-	RoleFullAccess accessRole = "full-access"
-	RoleSiteAccess accessRole = "site-access"
-	RoleReadAccess accessRole = "read-access"
+	RoleOwner      AccessRole = "owner"
+	RoleAdmin      AccessRole = "admin"
+	RoleManager    AccessRole = "manager"
+	RoleMarketer   AccessRole = "marketer"
+	RoleAuthor     AccessRole = "author"
+	RoleViewer     AccessRole = "viewer"
+	RoleClient     AccessRole = "client"
+	RoleFullAccess AccessRole = "full-access"
+	RoleSiteAccess AccessRole = "site-access"
+	RoleReadAccess AccessRole = "read-access"
 )
 
 type Role struct {
 	ID              uint       `json:"id" gorm:"primary_key"`
 	IssuerAccountId uint       `json:"issuerAccountId" gorm:"index;not null;default:1"` // у системных ролей = 1. Из-под RatusCRM аккаунта их можно изменять.
 
-	Tag             accessRole `json:"tag" gorm:"type:varchar(32);not null;"`	// client, admin, manager, ...
+	Tag             AccessRole `json:"tag" gorm:"type:varchar(32);not null;"`	// client, admin, manager, ...
 	Type            roleType   `json:"type" gorm:"type:varchar(3);not null;"`	//
 	Name            string     `json:"name" gorm:"type:varchar(255);not null;"` // "Владелец аккаунта", "Администратор", "Менеджер" ...
 
@@ -109,7 +109,7 @@ func (role Role) Exist() bool {
 }
 
 // GetRole - возвращает роли только для главного аккаунта (публичные)
-func GetRole(tag accessRole) (*Role, error) {
+func GetRole(tag AccessRole) (*Role, error) {
 	var role Role
 	if err := db.Model(&Role{}).First(&role, "issuer_account_id = ? AND tag = ?", 1, tag).Error; err != nil {
 		return nil, err

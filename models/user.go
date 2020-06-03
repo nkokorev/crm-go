@@ -108,6 +108,58 @@ func (user User) create () (*User, error) {
 	return &outUser, nil
 }
 
+func (User) createFromMap (input interface{}, issuerAccountId uint) (*User, error) {
+
+	var outUser User
+	var err error
+	
+	user, ok := input.(User)
+	if !ok {
+		return nil, u.Error{Message: "Ошибка в данных пользователя"}
+	}
+
+	// Устанавливаем исходник пользователя
+	user.IssuerAccountID = issuerAccountId
+
+	// !!! Проверка существования такого же пользователя для склейки - на строне аккаунта / контроллера !!!
+	// !!! Проверка обязательных полей для конкретных настроек аккаунта на стороне аккаунта / контроллера !!!
+	if err := user.ValidateCreate(); err != nil {
+		return nil, err
+	}
+
+	// Теперь создаем крипто пароль
+	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	user.Password = string(password)
+
+	// копируем разрешеныне данные
+
+	outUser.IssuerAccountID = user.IssuerAccountID
+
+	outUser.Username = user.Username
+	outUser.Email = strings.ToLower(user.Email)
+	outUser.PhoneRegion = user.PhoneRegion
+	outUser.Phone = user.Phone
+
+	outUser.Password = user.Password
+
+	outUser.Name = user.Name
+	outUser.Surname = user.Surname
+	outUser.Patronymic = user.Patronymic
+
+	outUser.DefaultAccountHashId = user.DefaultAccountHashId
+	outUser.InvitedUserID = user.InvitedUserID
+	outUser.EmailVerifiedAt = user.EmailVerifiedAt // todo: Убрать!!
+
+	if err := db.Create(&outUser).Error; err != nil {
+		return nil, err
+	}
+
+	return &outUser, nil
+}
+
 func (User) get(id uint) (*User, error) {
 	user := User{}
 

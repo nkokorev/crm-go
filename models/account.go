@@ -218,7 +218,7 @@ func (Account) Exist(id uint) bool {
 
 // ########### User ###########
 
-func (account Account) CreateUser(input User, v_opt ...accessRole) (*User, error) {
+func (account Account) CreateUser(input User, v_opt ...AccessRole) (*User, error) {
 
 	if account.ID < 1 {
 		return nil, errors.New("Не верно указан контекст аккаунта")
@@ -226,7 +226,7 @@ func (account Account) CreateUser(input User, v_opt ...accessRole) (*User, error
 
 	var err error
 	var username, email, phone bool
-	var role accessRole
+	var role AccessRole
 
 	// Утверждаем роль пользователя аккаунта
 	if len(v_opt) > 0 {
@@ -481,7 +481,7 @@ func (account Account) GetAccountUser(user User) (*AccountUser, error) {
 }
 
 // добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то роль будет обновлена
-func (account Account) AppendUser(user User, tag accessRole) (*AccountUser, error) {
+func (account Account) AppendUser(user User, tag AccessRole) (*AccountUser, error) {
 
 	acs := AccountUser{} // return value
 
@@ -683,7 +683,7 @@ func (account Account) GetUserRole(user User) (*Role, error) {
 	return &role, nil
 }
 
-func (account Account) GetUserAccessRole(user User) (*accessRole, error) {
+func (account Account) GetUserAccessRole(user User) (*AccessRole, error) {
 
 	if db.NewRecord(account) || db.NewRecord(user) {
 		return nil, errors.New("Аккаунта или пользователя не существует!")
