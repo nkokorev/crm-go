@@ -34,11 +34,15 @@ func Handlers() *mux.Router {
 	}
 
 	// Mount all root point of routes
-	rApi := r.Host("api." + crmHost).Subrouter() // API [api.ratuscrm.com]
-	// rShare := r.Host("share." + crmHost).Subrouter() // API [share.ratuscrm.com]
-	rCDN := r.Host("cdn." + crmHost).Subrouter() // API [public.ratuscrm.com]
 	rApp := r.Host("app." + crmHost).PathPrefix("/ui-api").Subrouter() // APP [app.ratuscrm.com/ui-api]
+	rApi := r.Host("api." + crmHost).Subrouter() // API [api.ratuscrm.com]
 	rUiApi := r.Host("ui.api." + crmHost).PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter() // UI/API [ui.api.ratuscrm.com]
+	rCDN := r.Host("cdn." + crmHost).Subrouter() // API [cdn.ratuscrm.com]
+	rTracking := r.Host("tracking." + crmHost).Subrouter() // API [tracking.ratuscrm.com]
+	rMTA1 := r.Host("mta1." + crmHost).Subrouter() // API [mta1.ratuscrm.com]
+
+	// rShare := r.Host("share." + crmHost).Subrouter() // API [share.ratuscrm.com]
+
 
 	/******************************************************************************************************************
 
@@ -73,15 +77,17 @@ func Handlers() *mux.Router {
 		8. middleware.JwtFullAuthentication - проверяет JWT и устанавливает в контекст userId & user, accountId && account
 
 	******************************************************************************************************************/
-	rApi.Use	(middleware.CorsAccessControl, 		middleware.CheckApiStatus, 		middleware.BearerAuthentication)
+	rApi.Use	(middleware.CorsAPIAccessControl, 		middleware.CheckApiStatus, 		middleware.BearerAuthentication)
 	rApp.Use	(middleware.CheckAppUiApiStatus,	middleware.AddContextMainAccount)
 	rUiApi.Use	(middleware.CorsAccessControl, 		middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccountHashId)
 
 	// RouteHandlers
-	ApiRoutes(rApi)
 	AppRoutes(rApp)
-	CDNRoutes(rCDN)
+	ApiRoutes(rApi)
 	UiApiRoutes(rUiApi)
+	CDNRoutes(rCDN)
+	TrackingRoutes(rTracking)
+	MTA_1_Routes(rMTA1)
 
 
 	// ### 404 (^_^) ###
