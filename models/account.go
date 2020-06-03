@@ -425,13 +425,13 @@ func (account Account) GetUserList(offset, limit int, search string) ([]AccountU
 		}
 	}
 
-	var count uint
-	err := db.Model(&AccountUser{}).Count(&count).Error
+	var total uint
+	err := db.Model(&AccountUser{}).Where("account_id = ?", account.ID).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема клиентской базы"}
 	}
 
-	return aUsers, count, nil
+	return aUsers, total, nil
 }
 
 func (Account) ExistUser(user User) bool {
@@ -629,7 +629,7 @@ func (account *Account) RemoveUser(user *User) error {
 
 	if user.IssuerAccountID == account.ID {
 
-		if err := user.softDelete(); err != nil {
+		if err := user.delete(); err != nil {
 			return err
 		}
 	} else {

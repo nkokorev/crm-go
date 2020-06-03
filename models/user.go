@@ -40,7 +40,7 @@ type User struct {
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
-	DeletedAt *time.Time `json:"-" sql:"index"`
+	// DeletedAt *time.Time `json:"-" sql:"index"`
 
 	//Profile UserProfile `json:"profile" gorm:"preload"`
 
@@ -197,11 +197,7 @@ func (user *User) update (input interface{}, safe bool) error {
 
 }
 
-func (user User) hardDelete () error {
-	return db.Model(&User{}).Unscoped().Where("id = ?", user.ID).Delete(user).Error
-}
-
-func (user User) softDelete () error {
+func (user User) delete () error {
 	return db.Model(&User{}).Where("id = ?", user.ID).Delete(user).Error
 }
 
