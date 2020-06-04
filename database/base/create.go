@@ -14,7 +14,7 @@ func RefreshTables() {
 	pool := models.GetPool()
 
 	// дропаем системные таблицы
-	err = pool.Exec("drop table if exists products, offer_products, offers, product_cards, product_groups, shops").Error
+	err = pool.Exec("drop table if exists product_group_product_cards, product_card_products, unit_measurements, product_cards, products, product_groups, shops").Error
 	if err != nil {
 		fmt.Println("Cant create tables 1: ", err)
 		return
@@ -50,12 +50,12 @@ func RefreshTables() {
 	models.AccountUser{}.PgSqlCreate()
 	models.ApiKey{}.PgSqlCreate()
 
+	models.UnitMeasurement{}.PgSqlCreate()
+	
 	models.Shop{}.PgSqlCreate()
 	models.ProductGroup{}.PgSqlCreate()
 	models.ProductCard{}.PgSqlCreate()
-	models.Offer{}.PgSqlCreate()
 	models.Product{}.PgSqlCreate()
-	models.OfferProduct{}.PgSqlCreate() // M<>M Offer<>Product
 
 	models.Domain{}.PgSqlCreate()
 	models.EmailBox{}.PgSqlCreate()
@@ -526,37 +526,96 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		log.Fatal("Не удалось создать Shop для airoClimat: ", err)
 	}
 
-	// 5. Создаем 2 категории товаров
-	grAiro1, err := airoShop.CreateProductGroup(models.ProductGroup{Name: "Рециркуляторы бактерицидные"});
+	// 5. Создаем 3 категории товаров
+	groupAiroRoot, err := airoShop.CreateProductGroup(models.ProductGroup{Name: "Бактерицидные облучатели", URL: ""});
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
 	}
-	grAiro2, err := airoShop.CreateProductGroup(models.ProductGroup{Name: "Бактерицидные камеры"});
+	groupAiro1, err := groupAiroRoot.CreateChild(models.ProductGroup{Name: "Бактерицидные рециркуляторы", URL: "bactericidal-recirculators"})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+	}
+	groupAiro2, err := groupAiroRoot.CreateChild(models.ProductGroup{Name: "Бактерицидные камеры", URL: "bactericidal-chambers"})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
 	}
 
-	fmt.Println(grAiro1, grAiro2)
-
-	// 6. Добавляем созданные в категории новые товары
-	products1 := []models.Product{
-		{SKU:"1001", Model: "AIRO-DEZ", URL:"recirkulyator-vozduha-baktericidnyy-airo-dez", Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ", ShortDescription: "", Description: "Устройство закрытого типа, предназначенное для очистки воздуха от вредных бактерий и вирусов в помещении с людьми, называется бактерицидный рециркулятор."},
-		{SKU:"1002", Model: "AIRO-DEZ COMPACT", URL:"mobilnyy-airodezinfektor-airo-dez-compact", Name:"Мобильный аиродезинфектор AIRO-DEZ COMPACT", ShortDescription: "", Description: "Мобильный аиродезинфектор AIRO-DEZ COMPACT – переносной прибор, предназначенный для быстрой дезинфекции воздуха и поверхностей во всех типах помещений."},
+	// 6. Создаем карточки товара
+	cards := []models.ProductCard{
+		{ID: 0, URL: "airo-dez", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ", SwitchProducts: pq.StringArray{"color"}},
+		{ID: 0, URL: "airo-dez-compact", MetaTitle: "Мобильный аиродезинфектор AIRO-DEZ COMPACT"},
+		{ID: 0, URL: "airo-dez-puf", MetaTitle: "Бактерицидная камера пуф AIRO-DEZPUF"},
+		{ID: 0, URL: "airo-dez-box", MetaTitle: "Бактерицидная камера AIRO-DEZBOX", },
 	}
-	// создаем продукты в группе 1
-	for i,_ := range products1 {
-		_, err = airoClimat.CreateProduct(products1[i], nil)
-		if err != nil {
-			log.Fatal("Не удалось создать Product для airoClimat: ", err)
+	for i, _ := range cards {
+		gr := &models.ProductGroup{}
+		if i < 2 {
+			gr = groupAiro1
+		} else {
+			gr = groupAiro2
 		}
+
+		card, err := airoShop.CreateProductCard(cards[i], gr)
+		if err != nil {
+			log.Fatal("Не удалось создать ProductCards airoClimat: ", err)
+		}
+		cards[i] = *card
+	}
+
+	// 7. Создаем список товаров
+	products1 := []models.Product{
+		{
+			SKU:"1001", Model: "AIRO-DEZ", Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ",
+			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			RetailPrice: 17500.00, RetailDiscount: 1000,
+			Description: "Устройство закрытого типа, предназначенное для очистки воздуха от вредных бактерий и вирусов в помещении с людьми, называется бактерицидный рециркулятор.",
+		},
+		{
+			SKU:"1002", Model: "AIRO-DEZ white", Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ",
+			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			RetailPrice: 17500.00, RetailDiscount: 1000,
+			Description: "Устройство закрытого типа, предназначенное для очистки воздуха от вредных бактерий и вирусов в помещении с людьми, называется бактерицидный рециркулятор.",
+		},
+		{
+			SKU:"1003", Model: "AIRO-DEZ COMPACT", Name:"Мобильный аиродезинфектор AIRO-DEZ COMPACT",
+			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			RetailPrice: 17500.00, RetailDiscount: 1000,
+			Description: "Мобильный аиродезинфектор AIRO-DEZ COMPACT – переносной прибор, предназначенный для быстрой дезинфекции воздуха и поверхностей во всех типах помещений.",
+		},
 	}
 	products2 := []models.Product{
-		{SKU:"1003", Model: "AIRO-DEZPUF", URL:"baktericidnaya-kamera-airo-dezpuf", Name:"Бактерицидная камера пуф AIRO-DEZPUF", ShortDescription: "", Description: "Устройство закрытого типа, предназначенное для очистки воздуха от вредных бактерий и вирусов в помещении с людьми, называется бактерицидный рециркулятор."},
-		{SKU:"1004", Model: "AIRO-DEZBOX", URL:"baktericidnaya-kamera-airo-dezbox", Name:"Бактерицидная камера AIRO-DEZBOX", ShortDescription: "", Description: "Мобильный аиродезинфектор AIRO-DEZ COMPACT – переносной прибор, предназначенный для быстрой дезинфекции воздуха и поверхностей во всех типах помещений."},
+		{
+			SKU:"1004", Model: "AIRO-DEZPUF", Name:"Бактерицидная камера пуф AIRO-DEZPUF",
+			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			RetailPrice: 17500.00, RetailDiscount: 1000,
+			Description: "Устройство закрытого типа, предназначенное для очистки воздуха от вредных бактерий и вирусов в помещении с людьми, называется бактерицидный рециркулятор.",
+		},
+		{
+			SKU:"1005", Model: "AIRO-DEZBOX", Name:"Бактерицидная камера AIRO-DEZBOX",
+			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			RetailPrice: 17500.00, RetailDiscount: 1000,
+			Description: "Мобильный аиродезинфектор AIRO-DEZ COMPACT – переносной прибор, предназначенный для быстрой дезинфекции воздуха и поверхностей во всех типах помещений.",
+		},
 	}
-	// создаем продукты в группе 1
+	
+	// 7. Добавляем продукты в категории с созданием карточки товара
+	// создаем продукты через shop
+	_, err = airoShop.CreateProduct(products1[0], &cards[0])
+	if err != nil {
+		log.Fatal("Не удалось создать Product для airoClimat: ", err)
+	}
+	_, err = airoShop.CreateProduct(products1[1], &cards[0])
+	if err != nil {
+		log.Fatal("Не удалось создать Product для airoClimat: ", err)
+	}
+	_, err = airoShop.CreateProduct(products1[2], &cards[1])
+	if err != nil {
+		log.Fatal("Не удалось создать Product для airoClimat: ", err)
+	}
+
+	// создаем продукты через shop
 	for i,_ := range products2 {
-		_, err = airoClimat.CreateProduct(products2[i], nil)
+		_, err = airoShop.CreateProduct(products2[i], &cards[i+2])
 		if err != nil {
 			log.Fatal("Не удалось создать Product для airoClimat: ", err)
 		}

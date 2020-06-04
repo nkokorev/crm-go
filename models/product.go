@@ -6,19 +6,36 @@ import (
 	"github.com/nkokorev/crm-go/utils"
 )
 
+type ProductType = string
+
+const (
+	ProductTypeCommodity    ProductType = "commodity"
+	ProductTypeService      ProductType = "service"
+)
+
 type Product struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
 	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
 
-	// todo many2many . Один и тот же продукт может быть в разных группах для одного и нескольких магазинов
-	// ProductGroupID uint `json:"productGroupId" gorm:"type:int;index;default:null;"` // группа товаров, категория товаров
+	ShotName string `json:"name" gorm:"type:varchar(128);"` // Имя товара, не более 128 символов
+	Name 	string `json:"name" gorm:"type:varchar(128);"` // Имя товара, не более 128 символов
+	
+	Article string `json:"article" gorm:"type:varchar(128);index;default:NULL"` // артикул товара из иных соображений (часто публичный)
+	SKU 	string `json:"sku" gorm:"type:varchar(128);index;default:NULL"` // уникальный складской идентификатор. 1 SKU = 1 товар (одна модель)
+	Model 	string `json:"model" gorm:"type:varchar(255);"` // может повторяться для вывода в web-интерфейсе как "одного" товара
 
-	// Article string `json:"article"` // артикул товара из иных соображений (часто публичный)
-	SKU string `json:"sku" gorm:"default:NULL"` // складской идентификатор. 1 SKU = 1 товар (одна модель)
-	Model string `json:"model" gorm:"type:varchar(255);"`
-	URL string `json:"url"` // идентификатор страницы (products/syao-chzhun )
+	RetailPrice 			float64 `json:"retailPrice"` // розничная цена
+	WholesalePrice 			float64 `json:"wholesalePrice"` // оптовая цена
+	PurchasePrice 			float64 `json:"purchasePrice"` // закупочная цена
+	RetailDiscount 			float64 `json:"retailDiscount"` // розничная фактическая скидка
 
-	Name string `json:"name"` // Имя товара
+	ProductType ProductType `json:"productType" gorm:"type:varchar(12);not_null;"`// товар или услуга ? [вид номенклатуры]
+	UnitMeasurementID uint	`json:"unitMeasurementId" gorm:"type:int;default:1;"`
+	UnitMeasurement UnitMeasurement // Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
+	
+	// ProductGroupsId uint `json:"productGroupsId"` // группа товара
+	// ProductGroups []ProductGroup `json:"productGroups" gorm:"many2many:product_group_products"`
+
 	ShortDescription string `json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar
 	Description string `json:"description" gorm:"type:text;"` // pgsql: text
 
@@ -30,15 +47,14 @@ type Product struct {
 
 	Account Account `json:"-" sql:"-"`
 	// ProductGroups []ProductGroup `json:"-" gorm:"many2many:product_group_products"`
-	OfferProduct []OfferProduct `json:"-" gorm:"many2many:offer_products"`
-	// Offers  []Offer `json:"offers" gorm:"many2many:offer_compositions"`
+	ProductCards 			[]ProductCard `json:"productCards" gorm:"many2many:product_card_products"`
 }
 
 func (Product) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&Product{})
-	db.Exec("ALTER TABLE products\n    ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT products_product_group_id_fkey FOREIGN KEY (product_group_id) REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE;\ncreate unique index uix_products_account_id_sku ON products (account_id,sku);\ncreate unique index uix_products_account_id_model ON products (account_id,model);\n")
+	db.Exec("ALTER TABLE products\n    ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT products_product_group_id_fkey FOREIGN KEY (product_group_id) REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE;\ncreate unique index uix_products_account_id_sku ON products (account_id,sku);\n-- create unique index uix_products_account_id_model ON products (account_id,model);\n")
 }
 
 func (product *Product) BeforeCreate(scope *gorm.Scope) error {
@@ -87,7 +103,7 @@ func (product Product) delete () error {
 // ######### END CRUD Functions ############
 
 // ######### ACCOUNT Functions ############
-func (account Account) CreateProduct(input Product, offer *Offer) (*Product, error) {
+func (account Account) CreateProduct(input Product, pg ProductGroup, createCard bool) (*Product, error) {
 	input.AccountID = account.ID
 	
 	if input.ExistSKU() {

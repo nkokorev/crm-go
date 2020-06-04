@@ -11,7 +11,7 @@ type Order struct {
 	UserID uint `json:"userId" gorm:"index;default:null;"` // по-умолчанию ни к чему не привязываем
 
 	User   User    `json:"user"`                                 // может быть нулевым
-	Offers []Offer `json:"offers" gorm:"many2many:order_offers"` // могут быть оферы с одним товаром
+	// Offers []Offer `json:"offers" gorm:"many2many:order_offers"` // могут быть оферы с одним товаром
 	//Products []Product `json:"products" gorm:"many2many:order_products"`
 
 	CreatedAt time.Time `json:"createdAt"`
@@ -43,12 +43,4 @@ func (order Order) create() (*Order,error)  {
 
 func (order Order) delete () error {
 	return db.Model(&Order{}).Unscoped().Where("id = ?", order.ID).Delete(order).Error
-}
-
-func (order Order) AddOffer(offer Offer)  {
-	// ...
-}
-
-func (order Order) RemoveOffer(offer Offer)  {
-	// ...
 }

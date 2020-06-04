@@ -27,7 +27,8 @@ type ProductGroup struct {
 
 	Shop Shop `json:"shop" `
 	ParentGroup *ProductGroup `json:"-"` // parentId
-	ProductCards []ProductCard `json:"productCards"`
+	ProductCards []ProductCard `json:"productCards" gorm:"many2many:product_group_product_cards"`
+	// Products []Product `json:"products" gorm:"many2many:product_group_products"`
 
 }
 
@@ -64,25 +65,13 @@ func (ProductGroup) get(id uint) (*ProductGroup, error) {
 	return &group, nil
 }
 
-func (ProductGroup) getList(shopId uint) ([]ProductGroup, error) {
-
-	groups := make([]ProductGroup,0)
-
-	err := db.Find(&groups, "shop_id = ?", shopId).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, err
-	}
-
-	return groups, nil
-}
-
 func (group *ProductGroup) update(input interface{}) error {
 	return db.Model(group).Select("name", "address").Updates(structs.Map(input)).Error
 
 }
 
 func (group ProductGroup) delete () error {
-	return db.Model(Shop{}).Where("id = ?", group.ID).Delete(group).Error
+	return db.Model(ProductGroup{}).Where("id = ?", group.ID).Delete(group).Error
 }
 // ######### END CRUD Functions ############
 
@@ -105,10 +94,6 @@ func (shop Shop) GetProductGroup(groupId uint) (*ProductGroup, error) {
 	}
 
 	return group, nil
-}
-
-func (shop Shop) GetProductGroups() ([]ProductGroup, error) {
-	return ProductGroup{}.getList(shop.ID)
 }
 
 func (shop Shop) UpdateProductGroup(groupId uint, input interface{}) (*ProductGroup, error) {
@@ -144,11 +129,30 @@ func (shop Shop) DeleteProductGroup(groupId uint) error {
 
 
 // ######### ProductGroup Functions ############
-/*func (group ProductGroup) AppendProduct(product *Product) error {
-	return db.Model(&group).Association("Products").Append(product).Error
+// Создает и добавляет потомка в группу
+func (pg ProductGroup) CreateChild(input ProductGroup) (*ProductGroup, error) {
+	input.ParentID = pg.ID
+	input.ShopID = pg.ShopID
+	return input.create()
 }
 
+// Создает и добавляет продукт в категорию товаров
+func (group ProductGroup) AppendProductCard(card *ProductCard) error {
+	return db.Model(&group).Association("ProductCards").Append(card).Error
+}
 
+func (group ProductGroup) GetProductCards() ([]ProductCard, error) {
+
+	cards := make([]ProductCard,0)
+
+	if err := db.Model(&group).Association("ProductCards").Find(&cards).Error; err != nil {
+		return nil, err
+	}
+
+	return cards, nil
+}
+
+/*
 func (group ProductGroup) GetProductList() ([]Product, error) {
 
 	products := make([]Product,0)

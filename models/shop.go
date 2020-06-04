@@ -119,3 +119,40 @@ func (account Account) DeleteShop(productId uint) error {
 }
 // ######### END OF ACCOUNT Functions ############
 
+// ######### SHOP PRODUCT Functions ############
+func (shop Shop) CreateProduct(input Product, card *ProductCard) (*Product, error) {
+	input.AccountID = shop.AccountID
+
+	if input.ExistSKU() {
+		return nil, utils.Error{Message: "Повторение данных", Errors: map[string]interface{}{"sku":"Товар с таким SKU уже есть"}}
+	}
+	if input.ExistModel() {
+		return nil, utils.Error{Message: "Повторение данных", Errors: map[string]interface{}{"model":"Товар с такой моделью уже есть"}}
+	}
+
+	// Создаем продукт
+	product, err := input.create()
+	if err != nil {
+		return nil, err
+	}
+
+	// Добавляем новый продукт в карточку товара
+	if card != nil {
+		if err = card.AppendProduct(product); err != nil {
+			return nil, err
+		}
+	}
+	
+	return product, nil
+}
+
+func (shop Shop) GetProductGroups() ([]ProductGroup, error) {
+
+	groups := make([]ProductGroup,0)
+
+	if err := db.Model(&shop).Association("ProductGroups").Find(&groups).Error; err != nil {
+		return nil, err
+	}
+
+	return groups, nil
+}
