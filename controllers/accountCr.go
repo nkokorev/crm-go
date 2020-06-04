@@ -122,11 +122,13 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashId, ok := GetSTRVarFromRequest(r, "hashId")
+	hashId, ok := GetSTRVarFromRequest(r, "accountHashId")
 	if !ok || hashId == "" {
 		u.Respond(w, u.MessageError(nil, "Не удалось получить hashId аккаунта"))
 		return
 	}
+
+
 
 	account, err := models.GetAccountByHash(hashId)
 	if err != nil || account == nil {

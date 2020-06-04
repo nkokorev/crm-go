@@ -49,23 +49,20 @@ var AppRoutes = func(r *mux.Router) {
 
 	// 6. Load sign-in routes (account get from hash id)
 	// rAuthFull.HandleFunc("/accounts", controllers.AccountGetProfile).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{hashId}", controllers.AccountGetProfile).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{hashId}", controllers.AccountUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}", controllers.AccountGetProfile).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}", controllers.AccountUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	// -- USERS --
 	// Запрос ниже может иметь много параметров (диапазон выборки, число пользователей)
-	// rAuthFull.HandleFunc("/accounts/{hashId}/users", controllers.CreateUser).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{hashId}/users", controllers.GetUserList).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{hashId}/users/{userHashId}", controllers.RemoveUserFromAccount).Methods(http.MethodDelete, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{hashId}/users/{userHashId}", controllers.UpdateUserData).Methods(http.MethodPatch, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/users", controllers.CreateUser).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/users", controllers.GetUserList).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userHashId}", controllers.RemoveUserFromAccount).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userHashId}", controllers.UpdateUserData).Methods(http.MethodPatch, http.MethodOptions)
 
 	// -- ROLES --
 	// Запрос ниже может иметь много параметров (диапазон выборки, число пользователей)
-	rAuthFull.HandleFunc("/accounts/{hashId}/roles", controllers.RoleList).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/roles", controllers.RoleList).Methods(http.MethodGet, http.MethodOptions)
 
-	// rAppAccId.HandleFunc("/accounts/{hashId}/users", controllers.UserRegistration).Methods(http.MethodPost, http.MethodOptions)
-	// rAppAccId.HandleFunc("/accounts/{hashId}/users/auth/username", controllers.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
-
-	rAuthUser.HandleFunc("/accounts/{hashId}/auth", controllers.AccountAuthUser).Methods(http.MethodPost, http.MethodOptions)
+	rAuthUser.HandleFunc("/accounts/{accountHashId}/auth", controllers.AccountAuthUser).Methods(http.MethodPost, http.MethodOptions)
 
 	// ######## Uses #########
 	// -- CRUD --
@@ -77,8 +74,8 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/api-keys", controllers.ApiKeyGetCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/api-keys", controllers.ApiKeyGetList).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/api-keys/{id}", controllers.ApiKeyGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/api-keys/{id}", controllers.ApiKeyGetUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/api-keys/{id}", controllers.ApiKeyGetDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/api-keys/{id}", controllers.ApiKeyUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/api-keys/{id}", controllers.ApiKeyDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### EmailMarketing ###
 	// ---CRUD---
@@ -101,4 +98,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/storage/{hashId}", controllers.StorageUpdateFile).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/storage/{hashId}", controllers.StorageDeleteFile).Methods(http.MethodDelete, http.MethodOptions)
 
+	// ### SHOP ####
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops", controllers.ShopListGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{id}", controllers.ShopUpdate).Methods(http.MethodPatch, http.MethodOptions)
 }

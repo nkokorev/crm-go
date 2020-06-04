@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
@@ -50,7 +51,7 @@ func (Shop) getList(accountId uint) ([]Shop, error) {
 
 	shops := make([]Shop,0)
 
-	err := db.Table("shops").Preload("ProductGroups").Find(&shops, "account_id = ?", accountId).Error
+	err := db.Find(&shops, "account_id = ?", accountId).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
@@ -59,8 +60,9 @@ func (Shop) getList(accountId uint) ([]Shop, error) {
 }
 
 func (shop *Shop) update(input interface{}) error {
-	return db.Model(shop).Select("Name", "Address").Updates(structs.Map(input)).Error
-
+	fmt.Println(input)
+	return db.Model(shop).Select("name", "address").Where("id = ?", shop.ID).
+		Updates(structs.Map(input)).Error
 }
 
 func (shop Shop) delete () error {
@@ -91,8 +93,8 @@ func (account Account) GetShops() ([]Shop, error) {
 	return Shop{}.getList(account.ID)
 }
 
-func (account Account) UpdateShop(productId uint, input interface{}) (*Shop, error) {
-	shop, err := account.GetShop(productId)
+func (account Account) UpdateShop(id uint, input interface{}) (*Shop, error) {
+	shop, err := account.GetShop(id)
 	if err != nil {
 		return nil, err
 	}

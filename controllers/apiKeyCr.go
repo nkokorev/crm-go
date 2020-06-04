@@ -75,7 +75,7 @@ func ApiKeyGet(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func ApiKeyGetUpdate(w http.ResponseWriter, r *http.Request) {
+func ApiKeyUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -111,7 +111,7 @@ func ApiKeyGetUpdate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func ApiKeyGetDelete(w http.ResponseWriter, r *http.Request) {
+func ApiKeyDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {

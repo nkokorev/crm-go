@@ -79,13 +79,9 @@ func (shop Shop) CreateProductCard(input ProductCard, group *ProductGroup) (*Pro
 		return nil, err
 	}
 
-	if err = group.AppendProductCard(card); err != nil {
+	if err = group.CreateAndAppendProductCard(card); err != nil {
 		return nil, err
 	}
-
-	/*if err = db.Model(&shop).Association("ProductCards").Append(card).Error; err != nil {
-		return nil, err
-	}*/
 
 	return card, nil
 }

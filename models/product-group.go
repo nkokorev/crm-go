@@ -129,7 +129,6 @@ func (shop Shop) DeleteProductGroup(groupId uint) error {
 
 
 // ######### ProductGroup Functions ############
-// Создает и добавляет потомка в группу
 func (pg ProductGroup) CreateChild(input ProductGroup) (*ProductGroup, error) {
 	input.ParentID = pg.ID
 	input.ShopID = pg.ShopID
@@ -137,7 +136,7 @@ func (pg ProductGroup) CreateChild(input ProductGroup) (*ProductGroup, error) {
 }
 
 // Создает и добавляет продукт в категорию товаров
-func (group ProductGroup) AppendProductCard(card *ProductCard) error {
+func (group ProductGroup) CreateAndAppendProductCard(card *ProductCard) error {
 	return db.Model(&group).Association("ProductCards").Append(card).Error
 }
 
@@ -151,19 +150,6 @@ func (group ProductGroup) GetProductCards() ([]ProductCard, error) {
 
 	return cards, nil
 }
-
-/*
-func (group ProductGroup) GetProductList() ([]Product, error) {
-
-	products := make([]Product,0)
-
-	err := db.Model(&group).Association("Products").Find(&products).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, err
-	}
-
-	return products, nil
-}*/
 
 // ######### END OF ProductGroup Functions ############
 

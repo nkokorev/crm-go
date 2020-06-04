@@ -79,7 +79,7 @@ func GetWorkAccountCheckHashId(w http.ResponseWriter, r *http.Request) (*models.
 	}
 
 	// получаем переменную из строки запрос URL: {hashId}
-	hashId, ok := GetSTRVarFromRequest(r,"hashId")
+	hashId, ok := GetSTRVarFromRequest(r,"accountHashId")
 	if !ok {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка hash id code of account"}))
 		return nil, errors.New("Ошибка hash id code of account")
