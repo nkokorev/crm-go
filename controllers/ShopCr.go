@@ -236,7 +236,7 @@ func ProductGroupUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func ProductGroupDelete(w http.ResponseWriter, r *http.Request) {
-
+	
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
