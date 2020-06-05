@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -214,17 +215,17 @@ func ProductGroupUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get JSON-request
-	var input struct{
-		models.ProductGroup
-	}
+	// var input interface{}
+	var input map[string]interface{}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	group, err := shop.UpdateProductGroup(groupId, &input.ProductGroup)
+	// group, err := shop.UpdateProductGroup(groupId, &input.ProductGroup)
+	group, err := shop.UpdateProductGroup(groupId, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return

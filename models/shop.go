@@ -119,6 +119,21 @@ func (account Account) DeleteShop(id uint) error {
 
 	return shop.delete()
 }
+
+func (account Account) ExistShop(id uint) bool {
+	if id < 1 {
+		return false
+	}
+	return !db.Model(&Shop{}).Where("account_id = ? AND id = ?", account.ID, id).First(&Shop{}).RecordNotFound()
+}
+
+func (account Account) ExistProductGroups(groupId uint) bool {
+	if groupId < 1 {
+		return false
+	}
+
+	return !db.Model(&ProductGroup{}).Where("account_id = ? AND id = ?", account.ID, groupId).First(&ProductGroup{}).RecordNotFound()
+}
 // ######### END OF ACCOUNT Functions ############
 
 // ######### SHOP PRODUCT Functions ############
@@ -158,3 +173,4 @@ func (shop Shop) GetProductGroups() ([]ProductGroup, error) {
 
 	return groups, nil
 }
+

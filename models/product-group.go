@@ -1,17 +1,16 @@
 package models
 
 import (
-	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
-	"github.com/nkokorev/crm-go/utils"
 )
 
 type ProductGroup struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
 	ShopID uint `json:"shopId" gorm:"type:int;index;not_null;"` // магазин, к которому относится данная группа
 	// AccountID uint `json:"-" gorm:"type:int;index;not_null;"` // хз хз
-	ParentID uint `json:"parentId" gorm:"default:NULL"`
-	
+	// ParentID uint `json:"parentId,omitempty" gorm:"default:NULL"`
+	ParentID *uint `json:"parentId" gorm:"default:NULL"`
+
 	Code string `json:"code" gorm:"type:varchar(255);default:null;"` // tea, coffe, china
 	URL string `json:"url"gorm:"type:varchar(255);default:null;"`
 
@@ -35,7 +34,7 @@ type ProductGroup struct {
 func (ProductGroup) PgSqlCreate() {
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&ProductGroup{})
-	db.Exec("ALTER TABLE product_groups\n--     ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT products_shop_id_fkey FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT products_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE;\n")
+	db.Exec("ALTER TABLE product_groups\n--     ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT products_shop_id_fkey FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    alter column parent_id SET DEFAULT NULL;\n--     ADD CONSTRAINT products_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\n\n-- create unique index uix_products_account_id_sku ON products (account_id,sku);\n-- alter table product_groups alter column parent_id set default NULL;\n")
 }
 
 func (group *ProductGroup) BeforeCreate(scope *gorm.Scope) error {
@@ -58,7 +57,7 @@ func (ProductGroup) get(id uint) (*ProductGroup, error) {
 
 	group := ProductGroup{}
 
-	if err := db.Table(ProductGroup{}.TableName()).Preload("Shop").First(&group, id).Error; err != nil {
+	if err := db.First(&group, id).Error; err != nil {
 		return nil, err
 	}
 
@@ -66,7 +65,8 @@ func (ProductGroup) get(id uint) (*ProductGroup, error) {
 }
 
 func (group *ProductGroup) update(input interface{}) error {
-	return db.Model(group).Select("name", "address").Updates(structs.Map(input)).Error
+	// return db.Model(group).Omit("id").Updates(structs.Map(input)).Error
+	return db.Model(group).Omit("id").Updates(input).Error
 
 }
 
@@ -89,9 +89,18 @@ func (shop Shop) GetProductGroup(groupId uint) (*ProductGroup, error) {
 	}
 
 	// Делаем проверку на всякий пожарный
-	if group.ShopID != shop.ID {
+	/*if group.ShopID != shop.ID {
 		return nil, utils.Error{Message: "Группа принадлежит другому магазину"}
-	}
+	}*/
+	/*if group.ShopID != shop.ID {
+		acc, err := GetAccount(shop.AccountID)
+		if err != nil {
+			return nil, utils.Error{Message: "Не удалось получить аккаунт"}
+		}
+		if !acc.ExistShop(group.ShopID) {
+			return nil, utils.Error{Message: "Указанный магазин принадлежит другому аккаунту"}
+		}
+	}*/
 
 	return group, nil
 }
@@ -102,9 +111,24 @@ func (shop Shop) UpdateProductGroup(groupId uint, input interface{}) (*ProductGr
 		return nil, err
 	}
 
-	if group.ShopID != shop.ID {
-		return nil, utils.Error{Message: "Группа принадлежит другому магазину"}
+	// Проверим, что новый Shop принадлежит этому аккаунту
+	/*m := structs.Map(input)
+
+	// todo: 
+	if m["ShopID"] != shop.ID {
+	   acc, err := GetAccount(shop.AccountID)
+	   if err != nil {
+		   return nil, utils.Error{Message: "Не удалось получить аккаунт"}
+	   }
+		if !acc.ExistShop(group.ShopID) {
+			return nil, utils.Error{Message: "Указанный магазин принадлежит другому аккаунту"}
+		}
 	}
+
+	// если меняется родитель
+	if m["ParentID"] != group.ParentID {
+		// todo: 
+	}*/
 
 	err = group.update(input)
 	if err != nil {
@@ -130,7 +154,7 @@ func (shop Shop) DeleteProductGroup(groupId uint) error {
 
 // ######### ProductGroup Functions ############
 func (pg ProductGroup) CreateChild(input ProductGroup) (*ProductGroup, error) {
-	input.ParentID = pg.ID
+	input.ParentID = &pg.ID
 	input.ShopID = pg.ShopID
 	return input.create()
 }
