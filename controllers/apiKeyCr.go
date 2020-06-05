@@ -8,7 +8,7 @@ import (
 )
 // CRUD functional <* love
 
-func ApiKeyGetCreate(w http.ResponseWriter, r *http.Request) {
+func ApiKeyCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {

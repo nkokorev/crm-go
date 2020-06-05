@@ -71,7 +71,7 @@ var AppRoutes = func(r *mux.Router) {
 
 	// ### ApiKeys ###
 	// -- CRUD --
-	rAuthFull.HandleFunc("/api-keys", controllers.ApiKeyGetCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/api-keys", controllers.ApiKeyCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/api-keys", controllers.ApiKeyGetList).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/api-keys/{id}", controllers.ApiKeyGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/api-keys/{id}", controllers.ApiKeyUpdate).Methods(http.MethodPatch, http.MethodOptions)
@@ -99,6 +99,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/storage/{hashId}", controllers.StorageDeleteFile).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### SHOP ####
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops", controllers.ShopCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops", controllers.ShopListGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{id}", controllers.ShopUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{id}", controllers.ShopDelete).Methods(http.MethodDelete, http.MethodOptions)

@@ -7,6 +7,35 @@ import (
 	"net/http"
 )
 
+func ShopCreate(w http.ResponseWriter, r *http.Request) {
+
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	// Get JSON-request
+	var input struct{
+		models.Shop
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	shop, err := account.CreateShop(input.Shop)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
+		return
+	}
+
+	resp := u.Message(true, "POST Shop Created")
+	resp["shop"] = *shop
+	u.Respond(w, resp)
+}
+
 func ShopListGet(w http.ResponseWriter, r *http.Request) {
 	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
 	account, err := GetWorkAccountCheckHashId(w,r)
