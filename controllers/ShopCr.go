@@ -61,3 +61,26 @@ func ShopUpdate(w http.ResponseWriter, r *http.Request) {
 	resp["shop"] = shop
 	u.Respond(w, resp)
 }
+
+func ShopDelete(w http.ResponseWriter, r *http.Request) {
+
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	shopId, err := GetUINTVarFromRequest(r, "id")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		return
+	}
+
+	if err = account.DeleteShop(shopId); err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
+		return
+	}
+
+	resp := u.Message(true, "DELETE Shop Successful")
+	u.Respond(w, resp)
+}

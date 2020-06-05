@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
@@ -14,7 +13,9 @@ type Shop struct {
 
 	Name string `json:"name" gorm:"type:varchar(255);default:'Новый магазин';not_null;"`
 	Address string `json:"address" gorm:"type:varchar(255);default:null;"`
-	
+	Email string `json:"email" gorm:"type:varchar(255);default:null;"`
+	Phone string `json:"phone" gorm:"type:varchar(255);default:null;"`
+
 	ProductGroups []ProductGroup `json:"productGroups"`
 }
 
@@ -60,7 +61,6 @@ func (Shop) getList(accountId uint) ([]Shop, error) {
 }
 
 func (shop *Shop) update(input interface{}) error {
-	fmt.Println(input)
 	return db.Model(shop).Select("name", "address").Where("id = ?", shop.ID).
 		Updates(structs.Map(input)).Error
 }
@@ -76,8 +76,8 @@ func (account Account) CreateShop(input Shop) (*Shop, error) {
 	return input.create()
 }
 
-func (account Account) GetShop(productId uint) (*Shop, error) {
-	shop, err := Shop{}.get(productId)
+func (account Account) GetShop(id uint) (*Shop, error) {
+	shop, err := Shop{}.get(id)
 	if err != nil {
 		return nil, err
 	}
@@ -109,10 +109,10 @@ func (account Account) UpdateShop(id uint, input interface{}) (*Shop, error) {
 
 }
 
-func (account Account) DeleteShop(productId uint) error {
+func (account Account) DeleteShop(id uint) error {
 
 	// включает в себя проверку принадлежности к аккаунту
-	shop, err := account.GetShop(productId)
+	shop, err := account.GetShop(id)
 	if err != nil {
 		return err
 	}

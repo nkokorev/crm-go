@@ -245,23 +245,26 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	}
 
 	// 3.2. добавляем кучу других клиентов
-	var clients []models.User
+	if false {
+		var clients []models.User
 
-	for i:=0; i < 4 ;i++ {
-		clients = append(clients, models.User{
-			Name: fmt.Sprintf("Name #%d", i),
-			Email: fmt.Sprintf("email%d@mail.ru", i),
-			Phone: fmt.Sprintf("+7925195221%d", i),
-		})
-	}
-	for i,_ := range clients {
-		_, err := acc357.CreateUser(clients[i])
-		if err != nil {
-			fmt.Println(err)
-			log.Fatal("Не удалось добавить клиента id: ", i)
-			return
+		for i:=0; i < 4 ;i++ {
+			clients = append(clients, models.User{
+				Name: fmt.Sprintf("Name #%d", i),
+				Email: fmt.Sprintf("email%d@mail.ru", i),
+				Phone: fmt.Sprintf("+7925195221%d", i),
+			})
+		}
+		for i,_ := range clients {
+			_, err := acc357.CreateUser(clients[i])
+			if err != nil {
+				fmt.Println(err)
+				log.Fatal("Не удалось добавить клиента id: ", i)
+				return
+			}
 		}
 	}
+
 
 	// 4. Создаем домен для 357gr
 	domain357gr, err := acc357.CreateDomain(models.Domain{
@@ -461,7 +464,27 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	// AiroClimate
 
 	// 1. Создаем аккаунт из-под Станислава
-	airoClimat, err := stas.CreateAccount(models.Account{
+	// 1. Создаем Коротаева
+	korotaev, err := mAcc.CreateUser(
+		models.User{
+			Username:"korotaev",
+			// Email:"sa-tolstov@yandex.ru",
+			Email:"mailtest@ratus-dev.ru",
+			PhoneRegion: "RU",
+			Phone: "",
+			Password:"qwerty109#QW",
+			Name:"Максим",
+			Surname:"Коротаев",
+			Patronymic:"Валерьевич",
+			EmailVerifiedAt:&timeNow,
+		},
+		models.RoleClient,
+	)
+	if err != nil || owner == nil {
+		log.Fatal("Не удалось создать korotaev'a: ", err)
+	}
+
+	airoClimat, err := korotaev.CreateAccount(models.Account{
 		Name:                                "AIRO Climate",
 		Website:                             "http://airoclimate.ru",
 		Type:                                "internet-shop",
@@ -481,14 +504,14 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		return
 	}
 
-	// 2.2. Добавляем mex388
+	// 2.2. Добавляем mex388 как админа
 	_, err = airoClimat.AppendUser(*mex388, models.RoleAdmin)
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя mex388 in brouser")
 		return
 	}
 
-	// 2. Создаем домен для синдиката
+	// 2. Создаем домен для airoClimat
 	domainAiroClimate, err := airoClimat.CreateDomain(models.Domain{
 		Hostname: "airoclimate.ru",
 		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvryklToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHcumqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB`,
@@ -521,7 +544,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	}
 
 	// 4. !!! Создаем магазин
-	airoShop, err := airoClimat.CreateShop(models.Shop{Name: "airoclimate.ru", Address: "г. Москва, р-н Текстильщики"})
+	airoShop, err := airoClimat.CreateShop(models.Shop{Name: "airoclimate.ru", Address: "г. Москва, р-н Текстильщики", Email: "info@airoclimate.ru", Phone: "+7 (4832) 77-03-73"})
 	if err != nil {
 		log.Fatal("Не удалось создать Shop для airoClimat: ", err)
 	}

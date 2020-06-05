@@ -101,4 +101,5 @@ var AppRoutes = func(r *mux.Router) {
 	// ### SHOP ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops", controllers.ShopListGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{id}", controllers.ShopUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{id}", controllers.ShopDelete).Methods(http.MethodDelete, http.MethodOptions)
 }
