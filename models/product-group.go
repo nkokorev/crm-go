@@ -106,6 +106,17 @@ func (shop Shop) GetProductGroup(groupId uint) (*ProductGroup, error) {
 	return group, nil
 }
 
+func (shop Shop) GetProductGroups() ([]ProductGroup, error) {
+
+	groups := make([]ProductGroup,0)
+
+	if err := db.Model(&shop).Association("ProductGroups").Find(&groups).Error; err != nil {
+		return nil, err
+	}
+
+	return groups, nil
+}
+
 func (shop Shop) UpdateProductGroup(groupId uint, input interface{}) (*ProductGroup, error) {
 	group, err := shop.GetProductGroup(groupId)
 	if err != nil {
@@ -150,6 +161,7 @@ func (shop Shop) DeleteProductGroup(groupId uint) error {
 
 	return group.delete()
 }
+
 // ######### END OF SHOP Functions ############
 
 

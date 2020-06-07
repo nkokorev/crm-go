@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -276,7 +277,6 @@ func ProductGroupDelete(w http.ResponseWriter, r *http.Request) {
 /////////////////////////////////////
 
 func ProductCardByShopCreate(w http.ResponseWriter, r *http.Request) {
-
 	
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -304,8 +304,40 @@ func ProductCardByShopCreate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
+	
+	// special fix!
+	input.ProductCard.ShopID = shopId
 
 	card, err := shop.CreateProductCard(input.ProductCard, nil)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания группы"}))
+		return
+	}
+
+	resp := u.Message(true, "POST ProductCard Created")
+	resp["card"] = *card
+	u.Respond(w, resp)
+}
+
+func ProductCardCreate(w http.ResponseWriter, r *http.Request) {
+
+
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	// Get JSON-request
+	var input struct{
+		models.ProductCard
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	card, err := account.CreateProductCard(input.ProductCard)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания группы"}))
 		return
@@ -356,8 +388,6 @@ func ProductCardListByShopGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
-
 	resp := u.Message(true, "GET Product Card List")
 	resp["total"] = total
 	resp["cards"] = cards
@@ -372,26 +402,17 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
-		return
-	}
-
-	shop, err := account.GetShop(shopId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
-		return
-	}
-
-	groupId, err := GetUINTVarFromRequest(r, "groupId")
+	cardId, err := GetUINTVarFromRequest(r, "cardId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
 		return
 	}
 
 	// var input interface{}
-	var input map[string]interface{}
+	// var input map[string]interface{}
+	var input = struct {
+		models.ProductCard
+	}{}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		fmt.Println(err)
@@ -399,15 +420,19 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// group, err := shop.UpdateProductGroup(groupId, &input.ProductGroup)
-	group, err := shop.UpdateProductGroup(groupId, input)
+	if input.SwitchProducts == nil {
+		val := pq.StringArray{}
+		input.SwitchProducts = val
+	}
+
+	card, err := account.UpdateProductCard(cardId, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH ProductGroup Update")
-	resp["group"] = group
+	resp := u.Message(true, "PATCH Product Card Update")
+	resp["card"] = card
 	u.Respond(w, resp)
 }
 

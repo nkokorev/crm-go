@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/utils"
@@ -25,6 +24,7 @@ type ProductCard struct {
 	ShortDescription 	string `json:"shortDescription" gorm:"type:varchar(255);default:null;"` // для превью карточки товара
 
 	// Хелперы карточки: переключение по цветам, размерам и т.д.
+	// SwitchProducts	 	*pq.StringArray `json:"switchProducts" sql:"type:varchar(255)[];default:null"` // {color, size} Параметры переключения среди предложений
 	SwitchProducts	 	pq.StringArray `json:"switchProducts" sql:"type:varchar(255)[];default:'{}'"` // {color, size} Параметры переключения среди предложений
 
 	// ProductGroups 		[]ProductGroup `json:"productGroups" gorm:"many2many:product_group_product_cards"` // для разделов new и т.д.
@@ -103,7 +103,8 @@ func (ProductCard) getListByAccount(accountId uint) ([]ProductCard, error) {
 }
 
 func (card *ProductCard) update(input interface{}) error {
-	return db.Model(card).Omit("id", "account_id").Updates(structs.Map(input)).Error
+	return db.Model(card).Omit("id", "account_id").Update(input).Error
+	// return db.Model(card).Omit("id", "account_id").Update(structs.Map(input)).Error
 
 }
 
@@ -143,13 +144,13 @@ func (shop Shop) GetProductCardList(offset, limit int, search string) ([]Product
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&AccountUser{}).Preload("User").
+		err := db.Model(&ProductCard{}).Preload("Products").
 			Limit(limit).
 			Offset(offset).
-			Joins("LEFT JOIN users ON account_users.user_id = users.id").
-			Where("account_id = ?", shop.AccountID).
-			Joins("LEFT JOIN roles ON account_users.role_id = roles.id").
-			Find(&cards, "users.username ILIKE ? OR users.email ILIKE ? OR users.phone ILIKE ? OR users.name ILIKE ? OR users.surname ILIKE ? OR roles.tag ILIKE ? OR roles.name ILIKE ?", search,search,search,search,search,search,search).Error
+			// Joins("LEFT JOIN users ON account_users.user_id = users.id").
+			// Where("account_id = ?", shop.AccountID).
+			// Joins("LEFT JOIN roles ON account_users.role_id = roles.id").
+			Find(&cards, "url ILIKE ? OR breadcrumb ILIKE ? OR meta_title ILIKE ? OR meta_keywords ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ?" , search,search,search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -191,6 +192,17 @@ func (shop Shop) DeleteProductCard(cardId uint) error {
 	return card.delete()
 }
 
+func (account Account) CreateProductCard(input ProductCard) (*ProductCard, error) {
+
+	if account.ID < 1 {
+		return nil, utils.Error{Message: "Не верно указан id аккаунта"}
+	}
+
+	input.AccountID = account.ID
+
+	return input.create()
+}
+
 func (account Account) GetProductCard(cardId uint) (*ProductCard, error) {
 	return ProductCard{}.getByAccount(cardId, account.ID)
 }
@@ -200,22 +212,21 @@ func (account Account) GetProductCards() ([]ProductCard, error) {
 }
 
 func (account Account) UpdateProductCard(cardId uint, input interface{}) (*ProductCard, error) {
-	group, err := account.GetProductCard(cardId)
+	card, err := account.GetProductCard(cardId)
 	if err != nil {
 		return nil, err
 	}
 
-	if group.AccountID != account.ID {
+	if card.AccountID != account.ID {
 		return nil, utils.Error{Message: "Карточка товара принадлежит другому аккаунту"}
 	}
 	
-	err = group.update(input)
+	err = card.update(input)
 	if err != nil {
 		return nil, err
 	}
 
-	return group, nil
-
+	return card, nil
 }
 
 func (account Account) DeleteProductCard(cardId uint) error {

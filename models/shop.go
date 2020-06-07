@@ -163,14 +163,5 @@ func (shop Shop) CreateProduct(input Product, card *ProductCard) (*Product, erro
 	return product, nil
 }
 
-func (shop Shop) GetProductGroups() ([]ProductGroup, error) {
 
-	groups := make([]ProductGroup,0)
-
-	if err := db.Model(&shop).Association("ProductGroups").Find(&groups).Error; err != nil {
-		return nil, err
-	}
-
-	return groups, nil
-}
 
