@@ -158,7 +158,7 @@ func ProductGroupCreate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func ProductGroupListGet(w http.ResponseWriter, r *http.Request) {
+func ProductGroupByShopListGet(w http.ResponseWriter, r *http.Request) {
 	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
 	account, err := GetWorkAccountCheckHashId(w,r)
 	if err != nil || account == nil {
@@ -178,6 +178,27 @@ func ProductGroupListGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	groups, err := shop.GetProductGroups()
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		return
+	}
+
+
+
+	resp := u.Message(true, "GET Product Group List")
+	resp["groups"] = groups
+	u.Respond(w, resp)
+}
+
+func ProductGroupListGet(w http.ResponseWriter, r *http.Request) {
+	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
+	account, err := GetWorkAccountCheckHashId(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+
+	groups, err := account.GetProductGroups()
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -425,7 +446,7 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 		input.SwitchProducts = val
 	}
 
-	card, err := account.UpdateProductCard(cardId, input)
+	card, err := account.UpdateProductCard(cardId, input.ProductCard)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return

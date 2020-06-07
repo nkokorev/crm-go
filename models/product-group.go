@@ -116,6 +116,20 @@ func (shop Shop) GetProductGroups() ([]ProductGroup, error) {
 
 	return groups, nil
 }
+func (account Account) GetProductGroups() ([]ProductGroup, error) {
+
+	groups := make([]ProductGroup,0)
+
+	err := db.Model(&ProductGroup{}).
+		Joins("LEFT JOIN shops ON product_groups.shop_id = shops.id").
+		Where("account_id = ?", account.ID).
+		Find(&groups).Error;
+	if err != nil {
+		return nil, err
+	}
+
+	return groups, nil
+}
 
 func (shop Shop) UpdateProductGroup(groupId uint, input interface{}) (*ProductGroup, error) {
 	group, err := shop.GetProductGroup(groupId)

@@ -103,6 +103,7 @@ func (ProductCard) getListByAccount(accountId uint) ([]ProductCard, error) {
 }
 
 func (card *ProductCard) update(input interface{}) error {
+	// fmt.Println(input)
 	return db.Model(card).Omit("id", "account_id").Update(input).Error
 	// return db.Model(card).Omit("id", "account_id").Update(structs.Map(input)).Error
 
