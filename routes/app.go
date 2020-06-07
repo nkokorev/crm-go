@@ -104,6 +104,11 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId}", controllers.ShopUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId}", controllers.ShopDelete).Methods(http.MethodDelete, http.MethodOptions)
 
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/product-cards", controllers.ProductCardCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/product-cards", controllers.ProductCardListGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/product-cards/{cardId}", controllers.ProductCardUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/product-cards/{cardId}", controllers.ProductCardDelete).Methods(http.MethodDelete, http.MethodOptions)
+
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId}/product-groups", controllers.ProductGroupCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId}/product-groups", controllers.ProductGroupListGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId}/product-groups/{groupId}", controllers.ProductGroupUpdate).Methods(http.MethodPatch, http.MethodOptions)

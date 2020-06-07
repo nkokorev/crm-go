@@ -25,8 +25,9 @@ type ProductGroup struct {
 	MetaDescription string `json:"metaDescription" gorm:"type:varchar(255);default:null;"`
 
 	Shop Shop `json:"shop" `
-	ParentGroup *ProductGroup `json:"-"` // parentId
-	ProductCards []ProductCard `json:"productCards" gorm:"many2many:product_group_product_cards"`
+	ParentGroup *ProductGroup `json:"-"` // if has parentId
+	// ProductCards ProductCard `json:"productCards" gorm:"many2many:product_group_product_cards"`
+	ProductCards []ProductCard `json:"productCards"`
 	// Products []Product `json:"products" gorm:"many2many:product_group_products"`
 
 }
@@ -160,9 +161,13 @@ func (pg ProductGroup) CreateChild(input ProductGroup) (*ProductGroup, error) {
 }
 
 // Создает и добавляет продукт в категорию товаров
-func (group ProductGroup) CreateAndAppendProductCard(card *ProductCard) error {
-	return db.Model(&group).Association("ProductCards").Append(card).Error
+func (group ProductGroup) CreateProductCard(_c *ProductCard) (*ProductCard, error) {
+ 	_c.ProductGroupID = group.ID
+	return _c.create()
 }
+/*func (group ProductGroup) CreateAndAppendProductCard(card *ProductCard) error {
+	return db.Model(&group).Association("ProductCards").Append(card).Error
+}*/
 
 func (group ProductGroup) GetProductCards() ([]ProductCard, error) {
 

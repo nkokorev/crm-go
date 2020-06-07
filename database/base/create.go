@@ -14,7 +14,7 @@ func RefreshTables() {
 	pool := models.GetPool()
 
 	// дропаем системные таблицы
-	err = pool.Exec("drop table if exists product_group_product_cards, product_card_products, unit_measurements, product_cards, products, product_groups, shops").Error
+	err = pool.Exec("drop table if exists product_card_products, unit_measurements, product_cards, products, product_groups, shops").Error
 	if err != nil {
 		fmt.Println("Cant create tables 1: ", err)
 		return
