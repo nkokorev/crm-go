@@ -425,6 +425,8 @@ func (account Account) GetUserList(offset, limit int, search string) ([]AccountU
 		}
 	}
 
+	// total := uint(len(aUsers))
+	// len(aUsers) != всему списку!
 	var total uint
 	err := db.Model(&AccountUser{}).Where("account_id = ?", account.ID).Count(&total).Error
 	if err != nil {

@@ -101,16 +101,20 @@ var AppRoutes = func(r *mux.Router) {
 	// ### SHOP ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops", controllers.ShopCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops", controllers.ShopListGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId}", controllers.ShopUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId}", controllers.ShopDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}", controllers.ShopUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}", controllers.ShopDelete).Methods(http.MethodDelete, http.MethodOptions)
 
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/product-cards", controllers.ProductCardCreate).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/product-cards", controllers.ProductCardListGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/product-cards/{cardId}", controllers.ProductCardUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/product-cards/{cardId}", controllers.ProductCardDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/product-cards", controllers.ProductCardByShopCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/product-cards", controllers.ProductCardListByShopGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/product-cards/{cardId:[0-9]+}", controllers.ProductCardUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/product-cards/{cardId:[0-9]+}", controllers.ProductCardDelete).Methods(http.MethodDelete, http.MethodOptions)
 
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId}/product-groups", controllers.ProductGroupCreate).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId}/product-groups", controllers.ProductGroupListGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId}/product-groups/{groupId}", controllers.ProductGroupUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId}/product-groups/{groupId}", controllers.ProductGroupDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/product-groups", controllers.ProductGroupCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/product-groups", controllers.ProductGroupListGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/product-groups/{groupId:[0-9]+}", controllers.ProductGroupUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/product-groups/{groupId:[0-9]+}", controllers.ProductGroupDelete).Methods(http.MethodDelete, http.MethodOptions)
+
+
+
+	
 }

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
@@ -9,19 +10,19 @@ import (
 
 // Карточка "товара" в магазине в котором могут быть разные торговые предложения
 type ProductCard struct {
-	ID     				uint   `json:"id" gorm:"primary_key"`
+	ID     				uint `json:"id" gorm:"primary_key"`
 	AccountID 			uint `json:"-" gorm:"type:int;index;not_null;"` // потребуется, если productGroupId == null
-	ShopID 				uint `json:"productShopId" gorm:"type:int;index;default:null;"` // магазин, к которому относится
+	ShopID 				uint `json:"shopId" gorm:"type:int;index;default:null;"` // магазин, к которому относится
 	ProductGroupID 		uint `json:"productGroupId" gorm:"type:int;index;default:null;"` // группа товаров, категория товаров
 
 	URL 				string `json:"url" gorm:"type:varchar(255);"` // идентификатор страницы (products/syao-chzhun )
 	Breadcrumb 			string `json:"breadcrumb" gorm:"type:varchar(255);default:null;"`
-	MetaTitle 			string `json:"meta_title" gorm:"type:varchar(255);default:null;"`
-	MetaKeywords 		string `json:"meta_keywords" gorm:"type:varchar(255);default:null;"`
-	MetaDescription 	string `json:"meta_description" gorm:"type:varchar(255);default:null;"`
+	MetaTitle 			string `json:"metaTitle" gorm:"type:varchar(255);default:null;"`
+	MetaKeywords 		string `json:"metaKeywords" gorm:"type:varchar(255);default:null;"`
+	MetaDescription 	string `json:"metaDescription" gorm:"type:varchar(255);default:null;"`
 
 	// Full description нет т.к. в карточке описание берется от офера
-	ShortDescription 	string `json:"short_description" gorm:"type:varchar(255);default:null;"` // для превью карточки товара
+	ShortDescription 	string `json:"shortDescription" gorm:"type:varchar(255);default:null;"` // для превью карточки товара
 
 	// Хелперы карточки: переключение по цветам, размерам и т.д.
 	SwitchProducts	 	pq.StringArray `json:"switchProducts" sql:"type:varchar(255)[];default:'{}'"` // {color, size} Параметры переключения среди предложений
@@ -69,7 +70,7 @@ func (ProductCard) getByAccount(id, accountId uint) (*ProductCard, error) {
 
 	card := ProductCard{}
 
-	if err := db.First(&card, "id = ? AND accountId = ?", id, accountId).Error; err != nil {
+	if err := db.First(&card, "id = ? AND account_id = ?", id, accountId).Error; err != nil {
 		return nil, err
 	}
 
@@ -129,8 +130,65 @@ func (shop Shop) CreateProductCard(input ProductCard, group *ProductGroup) (*Pro
 
 }
 
-func (shop Shop) GetProductCards() ([]ProductCard, error) {
-	return ProductCard{}.getListByShop(shop.ID)
+func (shop Shop) GetProductCard(cardId uint) (*ProductCard, error) {
+	return ProductCard{}.get(cardId)
+}
+
+func (shop Shop) GetProductCardList(offset, limit int, search string) ([]ProductCard, uint, error) {
+	cards := make([]ProductCard,0)
+
+	// if need to search
+	if len(search) > 0 {
+
+		// string pattern
+		search = "%"+search+"%"
+
+		err := db.Model(&AccountUser{}).Preload("User").
+			Limit(limit).
+			Offset(offset).
+			Joins("LEFT JOIN users ON account_users.user_id = users.id").
+			Where("account_id = ?", shop.AccountID).
+			Joins("LEFT JOIN roles ON account_users.role_id = roles.id").
+			Find(&cards, "users.username ILIKE ? OR users.email ILIKE ? OR users.phone ILIKE ? OR users.name ILIKE ? OR users.surname ILIKE ? OR roles.tag ILIKE ? OR roles.name ILIKE ?", search,search,search,search,search,search,search).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+	} else {
+		if offset < 0 || limit < 0 {
+			return nil, 0, errors.New("Offset or limit is wrong")
+		}
+
+		err := db.Model(&ProductCard{}).Preload("Products").
+			Limit(limit).
+			Offset(offset).
+			// Joins("LEFT JOIN users ON account_users.user_id = users.id").
+			Find(&cards, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+	}
+
+	// len(cards) != всему списку!
+	var total uint
+	err := db.Model(&ProductCard{}).Where("account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Count(&total).Error
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема клиентской базы"}
+	}
+
+	return cards, total, nil
+
+}
+
+func (shop Shop) DeleteProductCard(cardId uint) error {
+
+	// включает в себя проверку принадлежности к аккаунту
+	card, err := shop.GetProductCard(cardId)
+	if err != nil {
+		return err
+	}
+
+	return card.delete()
 }
 
 func (account Account) GetProductCard(cardId uint) (*ProductCard, error) {
@@ -160,7 +218,7 @@ func (account Account) UpdateProductCard(cardId uint, input interface{}) (*Produ
 
 }
 
-func (account Account) DeleteProductGroup(cardId uint) error {
+func (account Account) DeleteProductCard(cardId uint) error {
 
 	// включает в себя проверку принадлежности к аккаунту
 	card, err := account.GetProductCard(cardId)
@@ -171,6 +229,7 @@ func (account Account) DeleteProductGroup(cardId uint) error {
 	return card.delete()
 }
 // ######### END IF SHOP PRODUCT Functions ############
+
 ////// ########
 
 func (card ProductCard) AppendProduct(product *Product) error {

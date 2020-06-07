@@ -275,8 +275,9 @@ func ProductGroupDelete(w http.ResponseWriter, r *http.Request) {
 
 /////////////////////////////////////
 
-func ProductCardCreate(w http.ResponseWriter, r *http.Request) {
+func ProductCardByShopCreate(w http.ResponseWriter, r *http.Request) {
 
+	
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
@@ -297,26 +298,27 @@ func ProductCardCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Get JSON-request
 	var input struct{
-		models.ProductGroup
+		models.ProductCard
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	group, err := shop.CreateProductGroup(input.ProductGroup)
+	card, err := shop.CreateProductCard(input.ProductCard, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания группы"}))
 		return
 	}
 
-	resp := u.Message(true, "POST ProductGroup Created")
-	resp["group"] = *group
+	resp := u.Message(true, "POST ProductCard Created")
+	resp["card"] = *card
 	u.Respond(w, resp)
 }
 
-func ProductCardListGet(w http.ResponseWriter, r *http.Request) {
-	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
+// Собираем все картоки товаров для конкретного магазина
+func ProductCardListByShopGet(w http.ResponseWriter, r *http.Request) {
+
 	account, err := GetWorkAccountCheckHashId(w,r)
 	if err != nil || account == nil {
 		return
@@ -334,7 +336,21 @@ func ProductCardListGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groups, err := shop.GetProductGroups()
+	// 2. Узнаем, какой список нужен
+	limit, ok := GetQueryINTVarFromGET(r, "limit")
+	if !ok {
+		limit = 100
+	}
+	offset, ok := GetQueryINTVarFromGET(r, "offset")
+	if !ok || offset < 0 {
+		offset = 0
+	}
+	search, ok := GetQuerySTRVarFromGET(r, "search")
+	if !ok {
+		search = ""
+	}
+
+	cards, total, err := shop.GetProductCardList(offset, limit, search)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -342,8 +358,9 @@ func ProductCardListGet(w http.ResponseWriter, r *http.Request) {
 
 
 
-	resp := u.Message(true, "GET Product Group List")
-	resp["groups"] = groups
+	resp := u.Message(true, "GET Product Card List")
+	resp["total"] = total
+	resp["cards"] = cards
 	u.Respond(w, resp)
 }
 
@@ -402,30 +419,18 @@ func ProductCardDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
-		return
-	}
-
-	shop, err := account.GetShop(shopId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
-		return
-	}
-
-	groupId, err := GetUINTVarFromRequest(r, "groupId")
+	cardId, err := GetUINTVarFromRequest(r, "cardId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 
-	if err = shop.DeleteProductGroup(groupId); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении товарной группы"))
+	if err = account.DeleteProductCard(cardId); err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении карточки товара"))
 		return
 	}
 
-	resp := u.Message(true, "DELETE ProductGroup Successful")
+	resp := u.Message(true, "DELETE Product Card Successful")
 	u.Respond(w, resp)
 }

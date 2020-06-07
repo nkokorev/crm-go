@@ -57,9 +57,6 @@ func GetUserList(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 
-	// тут должны быть только утвержденные типы
-	// userTypes := strings.Split(r.URL.Query().Get("types"),",")
-
 
 	// fmt.Printf("Limit %d\n", limit)
 	// fmt.Printf("Offset %d\n", offset)
