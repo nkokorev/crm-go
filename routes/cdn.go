@@ -16,8 +16,9 @@ var CDNRoutes = func(r *mux.Router) {
 	// r.HandleFunc("/emails/preview/html/{emailTemplateHashId}", controllers.EmailTemplatePreviewHTMLGet).Methods(http.MethodGet, http.MethodOptions)
 	// r.HandleFunc("/emails/preview/raw/{emailTemplateHashId}", controllers.EmailTemplatePreviewRawGet).Methods(http.MethodGet, http.MethodOptions)
 
-	
 	// r.HandleFunc("/storage", controllers.StorageGetList).Methods(http.MethodGet, http.MethodOptions)
-	r.HandleFunc("/{hashId}", controllers.StorageCDNGet).Methods(http.MethodGet, http.MethodOptions)
+	r.HandleFunc("/public/{hashId}", controllers.StorageCDNGet).Methods(http.MethodGet, http.MethodOptions)
+	r.HandleFunc("/products/images/{hashId}", controllers.StorageCDNGet).Methods(http.MethodGet, http.MethodOptions)
+	r.HandleFunc("/emails/images/{hashId}", controllers.StorageCDNGet).Methods(http.MethodGet, http.MethodOptions)
 
 }

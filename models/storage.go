@@ -6,8 +6,17 @@ import (
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"os"
 	"strings"
 	"time"
+)
+
+type StoragePurpose = uint
+
+const (
+	StoragePurposePublic    StoragePurpose = 1
+	StoragePurposeProduct   StoragePurpose = 2
+	StoragePurposeEmail     StoragePurpose = 3
 )
 
 type Storage struct {
@@ -23,12 +32,16 @@ type Storage struct {
 	MIME 	string 	`json:"mime" gorm:"type:varchar(90);"` // мета тип файла
 	Size 	uint 	`json:"size" gorm:"type:int;"` // Kb
 
+	URL 	string 	`json:"url" sql:"-"`
+
 	// Назначение файла
-	Purpose	uint 	`json:"purpose"` // 1 - free, 2 - products, 3 - emails,
+	Purpose	uint 	`json:"purpose" gorm:"not null;default:1;"` // 1 - free, 2 - products, 3 - emails,
 
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 }
+
+
 
 func (Storage) PgSqlCreate() {
 
@@ -46,6 +59,34 @@ func (fs *Storage) BeforeCreate(scope *gorm.Scope) error {
 	fs.ID = 0
 	fs.HashID = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	fs.CreatedAt = time.Now().UTC()
+	return nil
+}
+
+func (fs *Storage) AfterFind() (err error) {
+
+	// 1. Добавлям URL в зависимости от типа файла:''
+	AppEnv := os.Getenv("APP_ENV")
+	crmHost := ""
+	// Set AppEnv variable
+	switch AppEnv {
+		case "local":
+			crmHost = "http://cdn.crm.local"
+		case "public":
+			crmHost = "https://cdn.ratuscrm.com"
+		default:
+			crmHost = "https://cdn.ratuscrm.com"
+	}
+
+	switch fs.Purpose {
+		case StoragePurposePublic:
+			fs.URL = crmHost + "/public/" + fs.HashID
+		case StoragePurposeProduct:
+			fs.URL = crmHost + "/products/images/" + fs.HashID
+		case StoragePurposeEmail:
+			fs.URL = crmHost + "/emails/images/" + fs.HashID
+		default:
+		   	fs.URL = crmHost + "/public/" + fs.HashID
+	}
 	return nil
 }
 
@@ -143,12 +184,17 @@ func (account Account) StorageGetFiles(limit, offset int) ([]Storage, error) {
 	return files, nil
 }
 
+
+
 func (account Account) StorageGetList() ([]Storage, error) {
 
-	var files []Storage
+	files := make([]Storage,0)
 
-	// without data
-	err := db.Select([]string{"id", "hash_id", "account_id", "name", "mime", "size", "updated_at", "created_at"}).Find(&files, "account_id = ?", account.ID).Error
+	fields := structs.Names(&Storage{}) //.(map[string]string)
+	fields = utils.RemoveKey(fields, "Data")
+	fields = utils.RemoveKey(fields, "URL")
+
+	err := db.Model(&Storage{}).Select(utils.ToLowerSnakeCaseArr(fields)).Find(&files, "account_id = ?", account.ID).Error
 	// err := db.Limit(limit).Offset(offset).Find(&files, "account_id = ?", account.ID).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		fmt.Println("Ошибка получения списка файлов")

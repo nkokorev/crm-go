@@ -326,13 +326,6 @@ func StorageStore(w http.ResponseWriter, r *http.Request) {
 // ### FOR CDN ###
 func StorageCDNGet(w http.ResponseWriter, r *http.Request) {
 
-	/*account, err := GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}*/
-	
-
 	hashId, ok := GetSTRVarFromRequest(r, "hashId")
 	if !ok  {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка id file"}))
