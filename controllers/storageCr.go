@@ -47,13 +47,29 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println("Content-Type: ", header.Header.Get("Content-Type"))
 	// fmt.Println("File name: ", header.Filename)
 
-
-
-	purpose, err := strconv.ParseUint(r.FormValue("purpose"), 10, 64)
-	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка чтения данных о файле"}))
-		return
+	// Собираем всякие мета данные загружаемого файла для его предназначения
+	var productId uint64
+	productSTR := r.FormValue("productId")
+	if productSTR != "" {
+		productId, err = strconv.ParseUint(productSTR, 10, 64)
+		if err != nil {
+			fmt.Println(err)
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка чтения данных о файле productId"}))
+			return
+		}
 	}
+
+	var emailId uint64
+	emailSTR := r.FormValue("emailId")
+	if emailSTR != "" {
+		emailId, err = strconv.ParseUint(emailSTR, 10, 64)
+		if err != nil {
+			fmt.Println(err)
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка чтения данных о файле emailId"}))
+			return
+		}
+	}
+
 
 	_, err = io.Copy(&buf, file);
 	if err != nil {
@@ -66,7 +82,8 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		Data: buf.Bytes(),
 		MIME: header.Header.Get("Content-Type"),
 		Size: uint(header.Size),
-		Purpose: uint(purpose),
+		ProductId: uint(productId),
+		EmailId: uint(emailId),
 	}
 	_fl, err := account.StorageCreateFile(&fs)
 	if err != nil {

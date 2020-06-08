@@ -6,7 +6,6 @@ import (
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
-	"os"
 	"strings"
 	"time"
 )
@@ -21,24 +20,27 @@ const (
 
 type Storage struct {
 
-	ID     uint   `json:"-" gorm:"primary_key"`
-	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
-	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
-	
-	Name string `json:"name" gorm:"type:varchar(255);"` // имя файла
-	Data []byte `json:"data" gorm:"type:bytea;"` // тело файла
+	ID     		uint   `json:"-" gorm:"primary_key"`
+	HashID 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
+	AccountID 	uint `json:"-" gorm:"type:int;index;not_null;"`
+	ProductId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of products
+	EmailId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of email template
+
+	Name 		string `json:"name" gorm:"type:varchar(255);"` // имя файла
+	Data 		[]byte `json:"data" gorm:"type:bytea;"` // тело файла
 
 	// MetaData
-	MIME 	string 	`json:"mime" gorm:"type:varchar(90);"` // мета тип файла
-	Size 	uint 	`json:"size" gorm:"type:int;"` // Kb
+	MIME 		string 	`json:"mime" gorm:"type:varchar(90);"` // мета тип файла
+	Size 		uint 	`json:"size" gorm:"type:int;"` // Kb
 
-	URL 	string 	`json:"url" sql:"-"`
+	URL 		string 	`json:"url" sql:"-"` // see AfterFind
 
 	// Назначение файла
-	Purpose	uint 	`json:"purpose" gorm:"not null;default:1;"` // 1 - free, 2 - products, 3 - emails,
+	// Purpose		uint 	`json:"purpose" gorm:"not null;default:1;"` // 1 - free, 2 - products, 3 - emails,
 
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
+
+	CreatedAt 	time.Time  `json:"createdAt"`
+	UpdatedAt 	time.Time  `json:"updatedAt"`
 }
 
 
@@ -65,9 +67,8 @@ func (fs *Storage) BeforeCreate(scope *gorm.Scope) error {
 func (fs *Storage) AfterFind() (err error) {
 
 	// 1. Добавлям URL в зависимости от типа файла:''
-	AppEnv := os.Getenv("APP_ENV")
+	/*AppEnv := os.Getenv("APP_ENV")
 	crmHost := ""
-	// Set AppEnv variable
 	switch AppEnv {
 		case "local":
 			crmHost = "http://cdn.crm.local"
@@ -76,8 +77,13 @@ func (fs *Storage) AfterFind() (err error) {
 		default:
 			crmHost = "https://cdn.ratuscrm.com"
 	}
+	*/
 
-	switch fs.Purpose {
+	if fs.ProductId < 1 {
+		fmt.Println(fs.Name)
+	}
+
+	/*switch fs.Purpose {
 		case StoragePurposePublic:
 			fs.URL = crmHost + "/public/" + fs.HashID
 		case StoragePurposeProduct:
@@ -86,7 +92,7 @@ func (fs *Storage) AfterFind() (err error) {
 			fs.URL = crmHost + "/emails/images/" + fs.HashID
 		default:
 		   	fs.URL = crmHost + "/public/" + fs.HashID
-	}
+	}*/
 	return nil
 }
 
