@@ -6,16 +6,9 @@ import (
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"os"
 	"strings"
 	"time"
-)
-
-type StoragePurpose = uint
-
-const (
-	StoragePurposePublic    StoragePurpose = 1
-	StoragePurposeProduct   StoragePurpose = 2
-	StoragePurposeEmail     StoragePurpose = 3
 )
 
 type Storage struct {
@@ -25,6 +18,8 @@ type Storage struct {
 	AccountID 	uint `json:"-" gorm:"type:int;index;not_null;"`
 	ProductId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of products
 	EmailId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of email template
+
+	Priority 		uint		`json:"priority" gorm:"type:int;default:null;"` // Порядок отображения (часто нужно файлам)
 
 	Name 				string `json:"name" gorm:"type:varchar(255);"` // имя файла (оно же при отдаче)
 	ShortDescription 	string `json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
@@ -66,7 +61,7 @@ func (fs *Storage) AfterFind() (err error) {
 
 	// todo: дописать формирование url
 	// 1. Добавлям URL в зависимости от типа файла:''
-	/*AppEnv := os.Getenv("APP_ENV")
+	AppEnv := os.Getenv("APP_ENV")
 	crmHost := ""
 	switch AppEnv {
 		case "local":
@@ -76,22 +71,18 @@ func (fs *Storage) AfterFind() (err error) {
 		default:
 			crmHost = "https://cdn.ratuscrm.com"
 	}
-	*/
+	
 
-	if fs.ProductId < 1 {
-		fmt.Println(fs.Name)
+	if fs.ProductId > 0 {
+		fs.URL = crmHost + "/products/images/" + fs.HashID
+	} else {
+		if fs.EmailId > 0 {
+			fs.URL = crmHost + "/emails/images/" + fs.HashID
+		} else {
+			fs.URL = crmHost + "/public/" + fs.HashID
+		}
 	}
 
-	/*switch fs.Purpose {
-		case StoragePurposePublic:
-			fs.URL = crmHost + "/public/" + fs.HashID
-		case StoragePurposeProduct:
-			fs.URL = crmHost + "/products/images/" + fs.HashID
-		case StoragePurposeEmail:
-			fs.URL = crmHost + "/emails/images/" + fs.HashID
-		default:
-		   	fs.URL = crmHost + "/public/" + fs.HashID
-	}*/
 	return nil
 }
 
