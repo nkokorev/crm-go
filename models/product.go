@@ -154,6 +154,7 @@ func (account Account) GetProduct(productId uint) (*Product, error) {
 }
 
 func (account Account) GetProductListPagination(offset, limit int, search string) ([]Product, uint, error) {
+
 	products := make([]Product,0)
 
 	// if need to search
@@ -162,14 +163,11 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 		// string pattern
 		search = "%"+search+"%"
 
-		// err := db.Model(&Product{}).Preload("Products").
 		err := db.Model(&Product{}).
 			Preload("ProductCards").
 			Limit(limit).
 			Offset(offset).
-			// Joins("LEFT JOIN users ON account_users.user_id = users.id").
-			// Where("account_id = ?", shop.AccountID).
-			// Joins("LEFT JOIN roles ON account_users.role_id = roles.id").
+			Where("account_id = ?", account.ID).
 			Find(&products, "name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?" , search,search,search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err

@@ -146,6 +146,22 @@ func GetQueryINTVarFromGET(r *http.Request, key string) (int, bool) {
 	return int(intVar), true
 }
 
+func GetQueryUINTVarFromGET(r *http.Request, key string) (uint, bool) {
+
+	strVar := r.URL.Query().Get(key)
+
+	if strVar == "" {
+		return 0, false
+	}
+
+	intVar, err := strconv.ParseUint(strVar, 10, 64)
+	if err != nil {
+		return 0, false
+	}
+
+	return uint(intVar), true
+}
+
 // FOR GET Requests!!!!
 func GetQuerySTRVarFromGET(r *http.Request, key string) (string, bool) {
 

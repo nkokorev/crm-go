@@ -613,15 +613,14 @@ func ProductDelete(w http.ResponseWriter, r *http.Request) {
 
 ////////////////////////////////////
 
-func ProductImageCreate(w http.ResponseWriter, r *http.Request) {
+/*func ProductImageCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
-
-	// Get JSON-request
+	
 	var input struct{
 		models.Product
 	}
@@ -688,9 +687,7 @@ func ProductImageUpdate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID товара"))
 		return
 	}
-
-	// var input interface{}
-	// var input map[string]interface{}
+	
 	var input = struct {
 		models.Product
 	}{}
@@ -700,11 +697,6 @@ func ProductImageUpdate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
-
-	/*if input.SwitchProducts == nil {
-		val := pq.StringArray{}
-		input.SwitchProducts = val
-	}*/
 
 	card, err := account.UpdateProduct(productId, input.Product)
 	if err != nil {
@@ -739,4 +731,4 @@ func ProductImageDelete(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "DELETE Product Successful")
 	u.Respond(w, resp)
-}
+}*/

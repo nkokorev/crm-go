@@ -26,18 +26,16 @@ type Storage struct {
 	ProductId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of products
 	EmailId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of email template
 
-	Name 		string `json:"name" gorm:"type:varchar(255);"` // имя файла
-	Data 		[]byte `json:"data" gorm:"type:bytea;"` // тело файла
+	Name 				string `json:"name" gorm:"type:varchar(255);"` // имя файла (оно же при отдаче)
+	ShortDescription 	string `json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
+	Description 		string `json:"description" gorm:"type:text;"` // pgsql: text // большое описание изображения (не, ну мало ли фанаты фото)
 
 	// MetaData
 	MIME 		string 	`json:"mime" gorm:"type:varchar(90);"` // мета тип файла
 	Size 		uint 	`json:"size" gorm:"type:int;"` // Kb
 
+	Data 		[]byte `json:"data" gorm:"type:bytea;"` // тело файла
 	URL 		string 	`json:"url" sql:"-"` // see AfterFind
-
-	// Назначение файла
-	// Purpose		uint 	`json:"purpose" gorm:"not null;default:1;"` // 1 - free, 2 - products, 3 - emails,
-
 
 	CreatedAt 	time.Time  `json:"createdAt"`
 	UpdatedAt 	time.Time  `json:"updatedAt"`
@@ -49,7 +47,7 @@ func (Storage) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&Storage{})
-	db.Exec("ALTER TABLE storage \n ADD CONSTRAINT file_storage_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n")
+	db.Exec("ALTER TABLE storage \n ADD CONSTRAINT storage_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n ADD CONSTRAINT storage_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,\n ADD CONSTRAINT storage_email_template_id_fkey FOREIGN KEY (email_id) REFERENCES email_templates(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\ncreate unique index uix_storage_product_id ON storage (account_id,product_id) WHERE product_id IS NOT NULL;\ncreate unique index uix_storage_email_template_id ON storage (account_id,email_id) WHERE email_id IS NOT NULL;\n")
 
 }
 
@@ -66,6 +64,7 @@ func (fs *Storage) BeforeCreate(scope *gorm.Scope) error {
 
 func (fs *Storage) AfterFind() (err error) {
 
+	// todo: дописать формирование url
 	// 1. Добавлям URL в зависимости от типа файла:''
 	/*AppEnv := os.Getenv("APP_ENV")
 	crmHost := ""
@@ -192,22 +191,88 @@ func (account Account) StorageGetFiles(limit, offset int) ([]Storage, error) {
 
 
 
-func (account Account) StorageGetList() ([]Storage, error) {
+func (account Account) StorageGetList(offset, limit uint, search string, productId, emailId *uint) ([]Storage, uint, error) {
 
 	files := make([]Storage,0)
 
 	fields := structs.Names(&Storage{}) //.(map[string]string)
 	fields = utils.RemoveKey(fields, "Data")
 	fields = utils.RemoveKey(fields, "URL")
+	selectColumn := utils.ToLowerSnakeCaseArr(fields)
 
-	err := db.Model(&Storage{}).Select(utils.ToLowerSnakeCaseArr(fields)).Find(&files, "account_id = ?", account.ID).Error
-	// err := db.Limit(limit).Offset(offset).Find(&files, "account_id = ?", account.ID).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		fmt.Println("Ошибка получения списка файлов")
-		return nil, err
+	// err := db.Model(&Storage{}).Select(utils.ToLowerSnakeCaseArr(fields)).Find(&files, "account_id = ?", account.ID).Error
+
+	// if need to search
+	var err error
+	
+	if len(search) > 0 {
+
+		// string pattern
+		search = "%"+search+"%"
+
+
+		// Выборку по файлам
+		if *productId > 0 {
+			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(selectColumn).
+				Where("account_id = ? AND product_id = ?", account.ID, productId).
+				Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
+		} else {
+			if *emailId > 0 {
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(selectColumn).
+					Where("account_id = ? AND email_id = ?", account.ID, emailId).
+					Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
+			} else {
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(selectColumn).
+					Where("account_id = ?", account.ID).
+					Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
+			}
+		}
+
+		// correction not found res
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+	} else {
+		if offset < 0 || limit < 0 {
+			return nil, 0, errors.New("Offset or limit is wrong")
+		}
+
+		// Выборку по файлам
+		if *productId > 0 {
+			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(selectColumn).
+				Find(&files, "account_id = ? AND product_id = ?", account.ID, productId).Error
+		} else {
+			if *emailId > 0 {
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(selectColumn).
+					Find(&files, "account_id = ? AND email_id = ?", account.ID, emailId).Error
+			} else {
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(selectColumn).
+					Find(&files, "account_id = ?", account.ID).Error
+			}
+		}
+
+		// correction not found res
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+	}
+	
+	var total uint
+	if *productId > 0 {
+		err = db.Model(&Storage{}).Select(selectColumn).Where("account_id = ? AND product_id = ?", account.ID, productId).Count(&total).Error
+	} else {
+		if *emailId > 0 {
+			err = db.Model(&Storage{}).Select(selectColumn).Where("account_id = ? AND email_id = ?", account.ID, emailId).Count(&total).Error
+		} else {
+			err = db.Model(&Storage{}).Select(selectColumn).Where("account_id = ?", account.ID).Count(&total).Error
+		}
+	}
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема"}
 	}
 
-	return files, nil
+	return files, total, nil
 }
 
 func (account Account) StorageUpdateFile(fs *Storage, input interface{}) error {

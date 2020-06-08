@@ -158,17 +158,43 @@ func StorageGetFileByHashId(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func StorageGetList(w http.ResponseWriter, r *http.Request) {
+func StorageGetListPagination(w http.ResponseWriter, r *http.Request) {
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
+
+	// 2. Узнаем, какой список нужен
+	limit, ok := GetQueryUINTVarFromGET(r, "limit")
+	if !ok || limit < 1 {
+		limit = 100
+	}
+	offset, ok := GetQueryUINTVarFromGET(r, "offset")
+	if !ok || offset < 0 {
+		offset = 0
+	}
+	search, ok := GetQuerySTRVarFromGET(r, "search")
+	if !ok {
+		search = ""
+	}
+
+	///
+	
+	productId, ok := GetQueryUINTVarFromGET(r, "productId")
+	if !ok || productId < 1 {
+		productId = 0
+	}
+	shopId, ok := GetQueryUINTVarFromGET(r, "shopId")
+	if !ok || shopId < 1 {
+		limit = 0
+	}
 	
 	// without Data (body of file)
-	files, err := account.StorageGetList()
+	// todo тут надо тип файлов допистаь
+	files, total, err := account.StorageGetList(offset, limit, search, &productId, &shopId)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Получения списка"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка получения списка файлов"}))
 		return
 	}
 
@@ -180,6 +206,7 @@ func StorageGetList(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "Storage get file")
 	resp["files"] = files
+	resp["total"] = total
 	resp["diskSpaceUsed"] = diskSpaceUsed
 	u.Respond(w, resp)
 }
