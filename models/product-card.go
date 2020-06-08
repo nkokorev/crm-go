@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/utils"
@@ -14,6 +15,7 @@ type ProductCard struct {
 	ShopID 				uint `json:"shopId" gorm:"type:int;index;default:null;"` // магазин, к которому относится
 	ProductGroupID 		uint `json:"productGroupId" gorm:"type:int;index;default:null;"` // группа товаров, категория товаров
 
+	Enabled 			bool 	`json:"enabled" gorm:"type:bool;default:true"` // активна ли карточка товара
 	URL 				string `json:"url" gorm:"type:varchar(255);"` // идентификатор страницы (products/syao-chzhun )
 	Breadcrumb 			string `json:"breadcrumb" gorm:"type:varchar(255);default:null;"`
 	MetaTitle 			string `json:"metaTitle" gorm:"type:varchar(255);default:null;"`
@@ -22,6 +24,7 @@ type ProductCard struct {
 
 	// Full description нет т.к. в карточке описание берется от офера
 	ShortDescription 	string `json:"shortDescription" gorm:"type:varchar(255);default:null;"` // для превью карточки товара
+	Description 		string `json:"description" gorm:"type:text;default:null;"` // фулл описание товара
 
 	// Хелперы карточки: переключение по цветам, размерам и т.д.
 	// SwitchProducts	 	*pq.StringArray `json:"switchProducts" sql:"type:varchar(255)[];default:null"` // {color, size} Параметры переключения среди предложений
@@ -104,8 +107,8 @@ func (ProductCard) getListByAccount(accountId uint) ([]ProductCard, error) {
 
 func (card *ProductCard) update(input interface{}) error {
 	// fmt.Println(input)
-	return db.Model(card).Omit("id", "account_id").Update(input).Error
-	// return db.Model(card).Omit("id", "account_id").Update(structs.Map(input)).Error
+	// return db.Model(card).Omit("id", "account_id").Update(input).Error
+	return db.Model(card).Omit("id", "account_id").Update(structs.Map(input)).Error
 
 }
 

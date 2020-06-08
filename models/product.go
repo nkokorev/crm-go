@@ -40,7 +40,7 @@ type Product struct {
 	Description string `json:"description" gorm:"type:text;"` // pgsql: text
 
 	// Images ... 
-	// Specifications Specifications // характеристики товара... (производитель, бренд и т.д. и т.п.)
+	// Specifications Specifications // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	// Reviews []Review // Product reviews (отзывы на товар - с рейтингом(?))
 	// Questions []question // вопросы по товару
 	// Video []Video // видеообзоры по товару на ютубе

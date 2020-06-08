@@ -31,6 +31,8 @@ func (UnitMeasurement) PgSqlCreate() {
 		{Name:"грамм", ShotName: "гр.", Weight: true, Tag: "gram"},
 		{Name:"погонный метр", ShotName: "пог.м.", Weight: false, Tag: "linearMeter"},
 		{Name:"метр квадратный", ShotName: "м2.", Weight: false, Tag: "squareMeter"},
+		{Name:"литр", ShotName: "л.", Weight: false, Tag: "liter"},
+		{Name:"миллилитр", ShotName: "мл.", Weight: false, Tag: "milliliter"},
 	}
 
 	for i, _ := range units {
