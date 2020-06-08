@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
@@ -12,35 +13,45 @@ const (
 	ProductTypeCommodity    ProductType = "commodity"
 	ProductTypeService      ProductType = "service"
 )
+/*
+Продукт - как единица товара или услуги. То что потом в чеке у пользователя.
+Продукт может быть как шт., упак., так и сборным из других товаров.
+Продукт может входить во множество web-карточек (витрин)
+Список характеристик продукта не регламентируются, но удобно, когда он принадлежит какой-то группе с фикс. списком параметров.
 
+*/
 type Product struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
 	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
 
-	ShotName string `json:"name" gorm:"type:varchar(128);"` // Имя товара, не более 128 символов
-	Name 	string `json:"name" gorm:"type:varchar(128);"` // Имя товара, не более 128 символов
+	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // можно ли продавать товар и выводить в карточки
+	Name 		string `json:"name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
+	ShortName 	string `json:"shortName" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
+
 	
-	Article string `json:"article" gorm:"type:varchar(128);index;default:NULL"` // артикул товара из иных соображений (часто публичный)
-	SKU 	string `json:"sku" gorm:"type:varchar(128);index;default:NULL"` // уникальный складской идентификатор. 1 SKU = 1 товар (одна модель)
-	Model 	string `json:"model" gorm:"type:varchar(255);"` // может повторяться для вывода в web-интерфейсе как "одного" товара
+	Article string `json:"article" gorm:"type:varchar(128);index;default:null"` // артикул товара из иных соображений (часто публичный)
+	SKU 	string `json:"sku" gorm:"type:varchar(128);index;default:null;"` // уникальный складской идентификатор. 1 SKU = 1 товар (одна модель)
+	Model 	string `json:"model" gorm:"type:varchar(255);default:null"` // может повторяться для вывода в web-интерфейсе как "одного" товара
 
-	RetailPrice 			float64 `json:"retailPrice"` // розничная цена
-	WholesalePrice 			float64 `json:"wholesalePrice"` // оптовая цена
-	PurchasePrice 			float64 `json:"purchasePrice"` // закупочная цена
-	RetailDiscount 			float64 `json:"retailDiscount"` // розничная фактическая скидка
+	// Base properties
+	RetailPrice 			float64 `json:"retailPrice" gorm:"type:numeric;default:0"` // розничная цена
+	WholesalePrice 			float64 `json:"wholesalePrice" gorm:"type:numeric;default:0"` // оптовая цена
+	PurchasePrice 			float64 `json:"purchasePrice" gorm:"type:numeric;default:0"` // закупочная цена
+	RetailDiscount 			float64 `json:"retailDiscount" gorm:"type:numeric;default:0"` // розничная фактическая скидка
 
-	ProductType ProductType `json:"productType" gorm:"type:varchar(12);not_null;"`// товар или услуга ? [вид номенклатуры]
+	ProductType ProductType `json:"productType" gorm:"type:varchar(12);default:'commodity';"`// товар или услуга ? [вид номенклатуры]
 	UnitMeasurementID uint	`json:"unitMeasurementId" gorm:"type:int;default:1;"`
 	UnitMeasurement UnitMeasurement // Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 	
 	// ProductGroupsId uint `json:"productGroupsId"` // группа товара
 	// ProductGroups []ProductGroup `json:"productGroups" gorm:"many2many:product_group_products"`
 
-	ShortDescription string `json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar
+	ShortDescription string `json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 	Description string `json:"description" gorm:"type:text;"` // pgsql: text
 
 	// Images ... 
-	// Specifications Specifications // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
+	// Attributes []ProductAttribute // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
+	// []ProductAttribute // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	// Reviews []Review // Product reviews (отзывы на товар - с рейтингом(?))
 	// Questions []question // вопросы по товару
 	// Video []Video // видеообзоры по товару на ютубе
@@ -54,7 +65,7 @@ func (Product) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&Product{})
-	db.Exec("ALTER TABLE products\n    ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT products_product_group_id_fkey FOREIGN KEY (product_group_id) REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE;\ncreate unique index uix_products_account_id_sku ON products (account_id,sku);\n-- create unique index uix_products_account_id_model ON products (account_id,model);\n")
+	db.Exec("ALTER TABLE products\n    ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD constraint uc_products_sku UNIQUE (sku) WHERE sku IS NOT NULL;\n-- ALTER TABLE products ADD CONSTRAINT uc_products_sku UNIQUE (sku);\n--     ADD CONSTRAINT products_product_group_id_fkey FOREIGN KEY (product_group_id) REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE;\ncreate unique index uix_products_account_id_sku ON products (account_id,sku) WHERE sku IS NOT NULL;\ncreate unique index uix_products_account_id_model ON products (account_id,model) WHERE model IS NOT NULL;\ncreate unique index uix_products_account_id_article ON products (account_id,article) WHERE article IS NOT NULL;\n-- CREATE UNIQUE uix_products_uni_idx ON products (user_id, menu_id, recipe_id) WHERE menu_id IS NOT NULL;\n-- create unique index uix_products_account_id_model ON products (account_id,model);\n")
 }
 
 func (product *Product) BeforeCreate(scope *gorm.Scope) error {
@@ -73,7 +84,7 @@ func (Product) get(id uint) (*Product, error) {
 
 	product := Product{}
 
-	if err := db.Table("products").Preload("ProductGroups").First(&product, id).Error; err != nil {
+	if err := db.Model(&product).Preload("ProductCards").First(&product, id).Error; err != nil {
 		return nil, err
 	}
 
@@ -84,7 +95,7 @@ func (Product) getList(accountId uint) ([]Product, error) {
 
 	products := make([]Product,0)
 
-	err := db.Find(&products, "account_id = ?", accountId).Error
+	err := db.Model(&Product{}).Preload("ProductCards").Find(&products, "account_id = ?", accountId).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
@@ -103,7 +114,7 @@ func (product Product) delete () error {
 // ######### END CRUD Functions ############
 
 // ######### ACCOUNT Functions ############
-func (account Account) CreateProduct(input Product, pg ProductGroup, createCard bool) (*Product, error) {
+func (account Account) CreateProduct(input Product) (*Product, error) {
 	input.AccountID = account.ID
 	
 	if input.ExistSKU() {
@@ -142,8 +153,52 @@ func (account Account) GetProduct(productId uint) (*Product, error) {
 	return product, nil
 }
 
-func (account Account) GetProductList() ([]Product, error) {
-	return Product{}.getList(account.ID)
+func (account Account) GetProductListPagination(offset, limit int, search string) ([]Product, uint, error) {
+	products := make([]Product,0)
+
+	// if need to search
+	if len(search) > 0 {
+
+		// string pattern
+		search = "%"+search+"%"
+
+		// err := db.Model(&Product{}).Preload("Products").
+		err := db.Model(&Product{}).
+			Preload("ProductCards").
+			Limit(limit).
+			Offset(offset).
+			// Joins("LEFT JOIN users ON account_users.user_id = users.id").
+			// Where("account_id = ?", shop.AccountID).
+			// Joins("LEFT JOIN roles ON account_users.role_id = roles.id").
+			Find(&products, "name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?" , search,search,search,search,search,search).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+	} else {
+		if offset < 0 || limit < 0 {
+			return nil, 0, errors.New("Offset or limit is wrong")
+		}
+
+		err := db.Model(&Product{}).
+			Preload("ProductCards").
+			Limit(limit).
+			Offset(offset).
+			// Joins("LEFT JOIN users ON account_users.user_id = users.id").
+			Find(&products, "account_id = ?", account.ID).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+	}
+
+	// len(cards) != всему списку!
+	var total uint
+	err := db.Model(&Product{}).Where("account_id = ?", account.ID).Count(&total).Error
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема"}
+	}
+
+	return products, total, nil
 }
 
 func (account Account) UpdateProduct(productId uint, input interface{}) (*Product, error) {

@@ -18,6 +18,9 @@ type ProductCard struct {
 	Enabled 			bool 	`json:"enabled" gorm:"type:bool;default:true"` // активна ли карточка товара
 	URL 				string `json:"url" gorm:"type:varchar(255);"` // идентификатор страницы (products/syao-chzhun )
 	Breadcrumb 			string `json:"breadcrumb" gorm:"type:varchar(255);default:null;"`
+	Name	 			string `json:"name" gorm:"type:varchar(255);default:'';"` // что выводить в список товаров
+
+	
 	MetaTitle 			string `json:"metaTitle" gorm:"type:varchar(255);default:null;"`
 	MetaKeywords 		string `json:"metaKeywords" gorm:"type:varchar(255);default:null;"`
 	MetaDescription 	string `json:"metaDescription" gorm:"type:varchar(255);default:null;"`
@@ -152,7 +155,7 @@ func (shop Shop) GetProductCardList(offset, limit int, search string) ([]Product
 			Limit(limit).
 			Offset(offset).
 			// Joins("LEFT JOIN users ON account_users.user_id = users.id").
-			// Where("account_id = ?", shop.AccountID).
+			Where("account_id = ?", shop.AccountID).
 			// Joins("LEFT JOIN roles ON account_users.role_id = roles.id").
 			Find(&cards, "url ILIKE ? OR breadcrumb ILIKE ? OR meta_title ILIKE ? OR meta_keywords ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ?" , search,search,search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -178,11 +181,10 @@ func (shop Shop) GetProductCardList(offset, limit int, search string) ([]Product
 	var total uint
 	err := db.Model(&ProductCard{}).Where("account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Count(&total).Error
 	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема клиентской базы"}
+		return nil, 0, utils.Error{Message: "Ошибка определения объема"}
 	}
 
 	return cards, total, nil
-
 }
 
 func (shop Shop) DeleteProductCard(cardId uint) error {

@@ -22,7 +22,7 @@ func TestAccount_ValidateInputs(t *testing.T) {
 
 	account.Name = utils.RandStringBytes(10)
 	if err := account.ValidateInputs(); err != nil {
-		t.Fatal("No validate account with shot name")
+		t.Fatal("No validate account with short name")
 	}
 
 	account.Website = utils.RandStringBytes(256)

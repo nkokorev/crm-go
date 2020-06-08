@@ -565,10 +565,10 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	// 6. Создаем карточки товара
 	cards := []models.ProductCard{
-		{ID: 0, URL: "airo-dez", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ", SwitchProducts: pq.StringArray{"color"}},
-		{ID: 0, URL: "airo-dez-compact", MetaTitle: "Мобильный аиродезинфектор AIRO-DEZ COMPACT"},
-		{ID: 0, URL: "airo-dez-puf", MetaTitle: "Бактерицидная камера пуф AIRO-DEZPUF"},
-		{ID: 0, URL: "airo-dez-box", MetaTitle: "Бактерицидная камера AIRO-DEZBOX", },
+		{ID: 0, URL: "airo-dez", Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ", SwitchProducts: pq.StringArray{"color"}},
+		{ID: 0, URL: "airo-dez-compact", Name: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", MetaTitle: "Мобильный аиродезинфектор AIRO-DEZ COMPACT"},
+		{ID: 0, URL: "airo-dez-puf", Name: "Бактерицидная камера пуф AIRO-DEZPUF", MetaTitle: "Бактерицидная камера пуф AIRO-DEZPUF"},
+		{ID: 0, URL: "airo-dez-box", Name: "Бактерицидная камера AIRO-DEZBOX", MetaTitle: "Бактерицидная камера AIRO-DEZBOX", },
 	}
 	for i, _ := range cards {
 		gr := &models.ProductGroup{}
@@ -588,19 +588,19 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	// 7. Создаем список товаров
 	products1 := []models.Product{
 		{
-			SKU:"1001", Model: "AIRO-DEZ", Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ",
+			SKU:"1001", Model: "AIRO-DEZ", Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ", ShortName: "Рециркулятор AIRO-DEZ",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			Description: "Устройство закрытого типа, предназначенное для очистки воздуха от вредных бактерий и вирусов в помещении с людьми, называется бактерицидный рециркулятор.",
 		},
 		{
-			SKU:"1002", Model: "AIRO-DEZ white", Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ",
+			SKU:"1002", Model: "AIRO-DEZ white", Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ",  ShortName: "Рециркулятор AIRO-DEZ",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			Description: "Устройство закрытого типа, предназначенное для очистки воздуха от вредных бактерий и вирусов в помещении с людьми, называется бактерицидный рециркулятор.",
 		},
 		{
-			SKU:"1003", Model: "AIRO-DEZ COMPACT", Name:"Мобильный аиродезинфектор AIRO-DEZ COMPACT",
+			SKU:"1003", Model: "AIRO-DEZ COMPACT", Name:"Мобильный аиродезинфектор AIRO-DEZ COMPACT",  ShortName: "Аиродезинфектор AIRO-DEZ COMPACT",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			Description: "Мобильный аиродезинфектор AIRO-DEZ COMPACT – переносной прибор, предназначенный для быстрой дезинфекции воздуха и поверхностей во всех типах помещений.",
@@ -608,13 +608,13 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	}
 	products2 := []models.Product{
 		{
-			SKU:"1004", Model: "AIRO-DEZPUF", Name:"Бактерицидная камера пуф AIRO-DEZPUF",
+			SKU:"1004", Model: "AIRO-DEZPUF", Name:"Бактерицидная камера пуф AIRO-DEZPUF", ShortName: "Бактерицидная камера AIRO-DEZPUF",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			Description: "Устройство закрытого типа, предназначенное для очистки воздуха от вредных бактерий и вирусов в помещении с людьми, называется бактерицидный рециркулятор.",
 		},
 		{
-			SKU:"1005", Model: "AIRO-DEZBOX", Name:"Бактерицидная камера AIRO-DEZBOX",
+			SKU:"1005", Model: "AIRO-DEZBOX", Name:"Бактерицидная камера AIRO-DEZBOX", ShortName: "Бактерицидная камера AIRO-DEZBOX",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			Description: "Мобильный аиродезинфектор AIRO-DEZ COMPACT – переносной прибор, предназначенный для быстрой дезинфекции воздуха и поверхностей во всех типах помещений.",
