@@ -8,6 +8,7 @@ import (
 	u "github.com/nkokorev/crm-go/utils"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -29,7 +30,6 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 
 	file, header, err := r.FormFile("file")
 	if err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка парсинга"}))
 		return
 	}
@@ -43,8 +43,17 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 	// size =  float64(header.Size)/float64(1024)
 	// fmt.Printf("Size: %d bytes\n", header.Size)
 	// fmt.Println("Header: ", header.Header)
+	// fmt.Println("purpose: ", r.Body)
 	// fmt.Println("Content-Type: ", header.Header.Get("Content-Type"))
 	// fmt.Println("File name: ", header.Filename)
+
+
+
+	purpose, err := strconv.ParseUint(r.FormValue("purpose"), 10, 64)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка чтения данных о файле"}))
+		return
+	}
 
 	_, err = io.Copy(&buf, file);
 	if err != nil {
@@ -57,6 +66,7 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		Data: buf.Bytes(),
 		MIME: header.Header.Get("Content-Type"),
 		Size: uint(header.Size),
+		Purpose: uint(purpose),
 	}
 	_fl, err := account.StorageCreateFile(&fs)
 	if err != nil {
@@ -181,7 +191,7 @@ func StorageUpdateFile(w http.ResponseWriter, r *http.Request) {
 	// 2. Get JSON-request
 	input := &struct {
 		Name string `json:"name"`
-		MIME string `json:"name"`
+		MIME string `json:"mime"` // name ?
 	}{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
@@ -194,7 +204,7 @@ func StorageUpdateFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := u.Message(true, "Email templates created")
+	resp := u.Message(true, "Storage file saved")
 	resp["file"] = *fs
 	u.Respond(w, resp)
 }

@@ -16,12 +16,15 @@ type Storage struct {
 	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
 	
-	Name string `json:"name" gorm:"type:varchar(255);"`
-	Data []byte `json:"data" gorm:"type:bytea;"`
+	Name string `json:"name" gorm:"type:varchar(255);"` // имя файла
+	Data []byte `json:"data" gorm:"type:bytea;"` // тело файла
 
 	// MetaData
-	MIME 	string 	`json:"mime" gorm:"type:varchar(90);"`
+	MIME 	string 	`json:"mime" gorm:"type:varchar(90);"` // мета тип файла
 	Size 	uint 	`json:"size" gorm:"type:int;"` // Kb
+
+	// Назначение файла
+	Purpose	uint 	`json:"purpose"` // 1 - free, 2 - products, 3 - emails,
 
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
@@ -43,7 +46,6 @@ func (fs *Storage) BeforeCreate(scope *gorm.Scope) error {
 	fs.ID = 0
 	fs.HashID = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	fs.CreatedAt = time.Now().UTC()
-
 	return nil
 }
 
@@ -186,10 +188,6 @@ func (account Account) StorageDiskSpaceUsed() (uint, error) {
 
 	return sum, nil
 }
-
-
-
-
 
 func (Account) StorageGetPublicByHashId(hashId string) (*Storage, error) {
 

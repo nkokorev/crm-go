@@ -121,5 +121,10 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/products", controllers.ProductListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/products/{productId:[0-9]+}", controllers.ProductUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/products/{productId:[0-9]+}", controllers.ProductDelete).Methods(http.MethodDelete, http.MethodOptions)
-	
+
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/products/{productId:[0-9]+}/images", controllers.ProductImageCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/products/{productId:[0-9]+}/images", controllers.ProductImagesGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/products/{productId:[0-9]+}/images/{imageId}", controllers.ProductImageUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/products/{productId:[0-9]+}/images/{imageId}", controllers.ProductImageDelete).Methods(http.MethodDelete, http.MethodOptions)
+
 }
