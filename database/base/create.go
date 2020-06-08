@@ -14,13 +14,20 @@ func RefreshTables() {
 	pool := models.GetPool()
 
 	// дропаем системные таблицы
-	err = pool.Exec("drop table if exists product_card_products, unit_measurements, product_cards, products, product_groups, shops").Error
+	// err = pool.Exec("drop table if exists product_card_products, unit_measurements, product_cards, products, product_groups, shops").Error
+	err = pool.Exec("drop table if exists  unit_measurements, product_card_products, product_cards").Error
+	if err != nil {
+		fmt.Println("Cant create tables 0: ", err)
+		return
+	}
+
+	err = pool.Exec("drop table if exists  storage, products, shops, product_groups").Error
 	if err != nil {
 		fmt.Println("Cant create tables 1: ", err)
 		return
 	}
 
-	err = pool.Exec("drop table if exists storage, domains, email_boxes, email_senders, email_templates, api_keys").Error
+	err = pool.Exec("drop table if exists domains, email_boxes, email_senders, email_templates, api_keys").Error
 	if err != nil {
 		fmt.Println("Cant create tables 1: ", err)
 		return

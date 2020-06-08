@@ -187,7 +187,7 @@ func StorageGetListPagination(w http.ResponseWriter, r *http.Request) {
 	}
 	shopId, ok := GetQueryUINTVarFromGET(r, "shopId")
 	if !ok || shopId < 1 {
-		limit = 0
+		shopId = 0
 	}
 	
 	// without Data (body of file)

@@ -47,7 +47,7 @@ func (Storage) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&Storage{})
-	db.Exec("ALTER TABLE storage \n ADD CONSTRAINT storage_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n ADD CONSTRAINT storage_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,\n ADD CONSTRAINT storage_email_template_id_fkey FOREIGN KEY (email_id) REFERENCES email_templates(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\ncreate unique index uix_storage_product_id ON storage (account_id,product_id) WHERE product_id IS NOT NULL;\ncreate unique index uix_storage_email_template_id ON storage (account_id,email_id) WHERE email_id IS NOT NULL;\n")
+	db.Exec("ALTER TABLE storage \n ADD CONSTRAINT storage_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n ADD CONSTRAINT storage_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,\n ADD CONSTRAINT storage_email_template_id_fkey FOREIGN KEY (email_id) REFERENCES email_templates(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\n-- create unique index uix_storage_product_id ON storage (account_id,product_id) WHERE product_id IS NOT NULL;\n-- create unique index uix_storage_email_template_id ON storage (account_id,email_id) WHERE email_id IS NOT NULL;\n")
 
 }
 
@@ -200,9 +200,10 @@ func (account Account) StorageGetList(offset, limit uint, search string, product
 	fields = utils.RemoveKey(fields, "URL")
 	selectColumn := utils.ToLowerSnakeCaseArr(fields)
 
-	// err := db.Model(&Storage{}).Select(utils.ToLowerSnakeCaseArr(fields)).Find(&files, "account_id = ?", account.ID).Error
-
 	// if need to search
+	// fmt.Println("limit: ", limit)
+	// fmt.Println("offset: ", offset)
+	// fmt.Println(*productId, *emailId)
 	var err error
 	
 	if len(search) > 0 {
