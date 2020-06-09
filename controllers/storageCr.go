@@ -134,20 +134,20 @@ func StorageGetFile(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func StorageGetFileByHashId(w http.ResponseWriter, r *http.Request) {
+func StorageGet(w http.ResponseWriter, r *http.Request) {
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	hashId, ok := GetSTRVarFromRequest(r,"hashId")
-	if !ok {
+	id, err := GetUINTVarFromRequest(r,"id")
+	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
 
-	fs, err := account.StorageGetByHashId(hashId)
+	fs, err := account.StorageGet(id)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Получения списка"}))
 		return
