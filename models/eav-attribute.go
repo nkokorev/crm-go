@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
+	"github.com/nkokorev/crm-go/utils"
 )
 
 // EAV-Атрибуты, предусмотренные в аккаунте: Размер одежды, Тип упаковки, Состав, Цвет и т.д.
@@ -85,5 +86,91 @@ func (eat EavAttribute) delete () error {
 // ######### END CRUD Functions ############
 
 // ######### ACCOUNT Functions ############
+func (account Account) CreateEavAttribute(input EavAttribute) (*EavAttribute, error) {
+	input.AccountID = account.ID
 
+	if input.ExistCode() {
+		return nil, utils.Error{Message: "Повторение данных", Errors: map[string]interface{}{"code":"Атрибут с таким code уже есть"}}
+	}
+	
+	eat, err := input.create()
+	if err != nil {
+		return nil, err
+	}
+
+	return eat, nil
+}
+
+func (account Account) GetEavAttribute(eatId uint) (*EavAttribute, error) {
+	eat, err := EavAttribute{}.get(eatId)
+	if err != nil {
+		return nil, err
+	}
+
+	if account.ID != eat.AccountID {
+		return nil, utils.Error{Message: "Атрибут принадлежит другому аккаунту"}
+	}
+
+	return eat, nil
+}
+
+func (account Account) GetEavAttributeByCode(code string) (*EavAttribute, error) {
+	eat, err := EavAttribute{}.getByCode(code)
+	if err != nil {
+		return nil, err
+	}
+
+	if account.ID != eat.AccountID {
+		return nil, utils.Error{Message: "Атрибут принадлежит другому аккаунту"}
+	}
+
+	return eat, nil
+}
+
+func (account Account) GetEavAttributes() ([]EavAttribute, error) {
+
+	eats := make([]EavAttribute,0)
+
+	err := db.Model(&EavAttribute{}).
+		// Preload("ProductCards").
+		// Joins("LEFT JOIN users ON account_users.user_id = users.id").
+		Find(&eats, "account_id = ?", account.ID).Error
+	if err != nil && err != gorm.ErrRecordNotFound{
+		return nil, err
+	}
+
+	return eats, nil
+}
+
+func (account Account) UpdateEavAttribute(eatId uint, input interface{}) (*EavAttribute, error) {
+	eat, err := account.GetEavAttribute(eatId)
+	if err != nil {
+		return nil, err
+	}
+
+	if account.ID != eat.AccountID {
+		return nil, utils.Error{Message: "Атрибут принадлежит другому аккаунту"}
+	}
+
+	err = eat.update(input)
+
+	return eat, err
+
+}
+
+func (account Account) DeleteEavAttribute(eatId uint) error {
+
+	// включает в себя проверку принадлежности к аккаунту
+	eat, err := account.GetEavAttribute(eatId)
+	if err != nil {
+		return err
+	}
+
+	return eat.delete()
+}
 // ######### END ACCOUNT Functions ############
+
+// ########## SELF FUNCTIONAL ############
+func (eat EavAttribute) ExistCode() bool {
+	return !db.Unscoped().First(&EavAttribute{},"account_id = ? AND code = ?", eat.AccountID, eat.Code).RecordNotFound()
+}
