@@ -220,23 +220,26 @@ func StorageUpdateFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get file in Data base
-	hashId, ok := GetSTRVarFromRequest(r,"hashId")
-	if !ok {
-		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
+	id, err := GetUINTVarFromRequest(r,"id")
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"ID файла не найден"}))
 		return
 	}
 
-	fs, err := account.StorageGetByHashId(hashId)
+	fs, err := account.StorageGet(id)
 	if err != nil || fs == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
 
 	// 2. Get JSON-request
-	input := &struct {
+	/*input := &struct {
 		Name string `json:"name"`
 		MIME string `json:"mime"` // name ?
-	}{}
+	}{}*/
+
+	var input map[string]interface{}
+
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return

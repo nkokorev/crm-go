@@ -19,7 +19,8 @@ type Storage struct {
 	ProductId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of products
 	EmailId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of email template
 
-	Priority 		uint		`json:"priority" gorm:"type:int;default:null;"` // Порядок отображения (часто нужно файлам)
+	Priority 	uint		`json:"priority" gorm:"type:int;default:null;"` // Порядок отображения (часто нужно файлам)
+	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // выводить ли где-то это изображение или нет
 
 	Name 				string `json:"name" gorm:"type:varchar(255);"` // имя файла (оно же при отдаче)
 	ShortDescription 	string `json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
@@ -87,7 +88,7 @@ func (fs *Storage) AfterFind() (err error) {
 }
 
 func (fs Storage) create() (*Storage, error)  {
-	err := db.Create(&fs).Error
+	err := db.Create(&fs).First(&fs).Error
 	return &fs, err
 }
 
@@ -114,7 +115,8 @@ func (Storage) getByHashId(hashId string) (*Storage, error)  {
 }
 
 func (fs *Storage) update(input interface{}) error {
-	return db.Model(fs).Omit("id", "hashId", "account_id","created_at", "updated_at").Update(structs.Map(input)).Error
+	// return db.Model(fs).Omit("id", "hashId", "account_id","created_at", "updated_at").Update(structs.Map(input)).Error
+	return db.Model(fs).Omit("id", "hashId", "account_id","created_at", "updated_at").Update(input).Error
 }
 
 func (fs Storage) Delete () error {
