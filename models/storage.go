@@ -17,7 +17,7 @@ type Storage struct {
 	HashID 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 	AccountID 	uint `json:"-" gorm:"type:int;index;not_null;"`
 	ProductId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of products
-	EmailId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of email template
+	EmailId 	uint	`json:"emailId" gorm:"type:int;default:null;"` // id of email template
 
 	Priority 	uint		`json:"priority" gorm:"type:int;default:null;"` // Порядок отображения (часто нужно файлам)
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // выводить ли где-то это изображение или нет
