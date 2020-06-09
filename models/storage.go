@@ -15,7 +15,7 @@ type Storage struct {
 
 	ID     		uint   `json:"id" gorm:"primary_key"`
 	HashID 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
-	AccountID 	uint `json:"-" gorm:"type:int;index;not_null;"`
+	AccountID 	uint `json:"-" gorm:"type:int;index;not null;"`
 	ProductId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of products
 	EmailId 	uint	`json:"emailId" gorm:"type:int;default:null;"` // id of email template
 

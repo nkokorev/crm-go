@@ -7,13 +7,13 @@ import (
 
 // EAV-Атрибуты, предусмотренные в аккаунте: Размер одежды, Тип упаковки, Состав, Цвет и т.д.
 type EavAttribute struct {
-	ID     		uint   	`json:"id" gorm:"primary_key"`
-	AccountID 	uint 	`json:"-" gorm:"type:int;index;not_null;"`
+	ID     		uint   `json:"id" gorm:"primary_key"`
+	AccountID 	uint `json:"-" gorm:"type:int;index;not null;"`
 
-	Code 		string	`json:"code"` // color
-	Name 		string 	`json:"name"` // Цвет, килограмм
-	ShortName 	string 	`json:"shortName"` // Цвет, кг.,
-	Description string 	`json:"description" gorm:"type:varchar(255);"` // Описание параметра (может быть нужно для отображения)
+	Code 		string	`json:"code" gorm:"type:varchar(50);index;not null, default:null;"` // color, size, etc.
+	Name 		string 	`json:"name" gorm:"type:varchar(50);default:null;"` // Цвет, килограмм
+	ShortName 	string 	`json:"shortName" gorm:"type:varchar(50);default:null;"` // Цвет, кг.,
+	Description string 	`json:"description" gorm:"type:varchar(255);default:null;"` // Описание параметра (может быть нужно для отображения)
 
 	// Multiple 	bool 	`json:"multiple"`
 	// Required 	bool 	`json:"required"`  // обязате
@@ -34,6 +34,4 @@ func (ea *EavAttribute) create() error {
 
 
 	return db.Create(ea).Error
-
-	//return nil
 }

@@ -8,16 +8,16 @@ import (
 type EmailBox struct {
 	ID     uint   `json:"-" gorm:"primary_key"`
 	
-	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
+	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
 	DomainID uint `json:"domainId" gorm:"type:int;index;not null;"` // обязательно!
 	
 	Default bool `json:"default" gorm:"type:bool;default:false"` // является ли дефолтным почтовым ящиком для домена
 	Allowed bool `json:"allowed" gorm:"type:bool;default:true"` // прошел ли проверку домен на право отправлять с него почту
 	
-	Name string `json:"name" gorm:"type:varchar(255);not_null;"` // RatusCRM, Магазин 357 грамм..
+	Name string `json:"name" gorm:"type:varchar(255);not null;"` // RatusCRM, Магазин 357 грамм..
 	
-	// Domain string `json:"host" gorm:"type:varchar(255);not_null;"` // ratuscrm.com, 357gr.ru
-	Box string `json:"box" gorm:"type:varchar(255);not_null;"` // info, news, mail ...
+	// Domain string `json:"host" gorm:"type:varchar(255);not null;"` // ratuscrm.com, 357gr.ru
+	Box string `json:"box" gorm:"type:varchar(255);not null;"` // info, news, mail ...
 
 	Domain *Domain
 }

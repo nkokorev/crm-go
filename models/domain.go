@@ -4,7 +4,7 @@ package models
 type Domain struct {
 
 	ID     uint   `json:"-" gorm:"primary_key"`
-	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
+	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
 
 	Hostname string `json:"hostname" gorm:"type:varchar(255);not_null;"` // ratuscrm.com, pic._domainkey.ratuscrm.com
 

@@ -25,11 +25,11 @@ type EmailTemplate struct {
 
 	ID     uint   `json:"id" gorm:"primary_key"`
 	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
-	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
+	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
 
 	Public bool `json:"public" gorm:"type:bool;default:true;"` // показывать ли на домене public
 
-	Name string `json:"name" gorm:"type:varchar(255);not_null"` // inside name of mail
+	Name string `json:"name" gorm:"type:varchar(255);not null"` // inside name of mail
 	PreviewText string `json:"previewText" gorm:"type:varchar(255);default:''"` // inside name of mail
 	Code string `json:"code, omitempty" gorm:"type:text;"` // сам шаблон письма
 

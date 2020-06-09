@@ -22,7 +22,7 @@ const (
 */
 type Product struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
-	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
+	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // можно ли продавать товар и выводить в карточки
 	Name 		string `json:"name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов

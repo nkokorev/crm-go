@@ -11,7 +11,7 @@ import (
 // Карточка "товара" в магазине в котором могут быть разные торговые предложения
 type ProductCard struct {
 	ID     				uint `json:"id" gorm:"primary_key"`
-	AccountID 			uint `json:"-" gorm:"type:int;index;not_null;"` // потребуется, если productGroupId == null
+	AccountID 			uint `json:"-" gorm:"type:int;index;not null;"` // потребуется, если productGroupId == null
 	ShopID 				uint `json:"shopId" gorm:"type:int;index;default:null;"` // магазин, к которому относится
 	ProductGroupID 		uint `json:"productGroupId" gorm:"type:int;index;default:null;"` // группа товаров, категория товаров
 

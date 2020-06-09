@@ -9,9 +9,9 @@ import (
 // Прообраз торговой точки
 type Shop struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
-	AccountID uint `json:"-" gorm:"type:int;index;not_null;"`
+	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
 
-	Name string `json:"name" gorm:"type:varchar(255);default:'Новый магазин';not_null;"`
+	Name string `json:"name" gorm:"type:varchar(255);default:'Новый магазин';not null;"`
 	Address string `json:"address" gorm:"type:varchar(255);default:null;"`
 	Email string `json:"email" gorm:"type:varchar(255);default:null;"`
 	Phone string `json:"phone" gorm:"type:varchar(255);default:null;"`

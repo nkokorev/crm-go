@@ -6,8 +6,8 @@ import (
 
 type ProductGroup struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
-	ShopID uint `json:"shopId" gorm:"type:int;index;not_null;"` // магазин, к которому относится данная группа
-	// AccountID uint `json:"-" gorm:"type:int;index;not_null;"` // хз хз
+	ShopID uint `json:"shopId" gorm:"type:int;index;not null;"` // магазин, к которому относится данная группа
+	// AccountID uint `json:"-" gorm:"type:int;index;not null;"` // хз хз
 	// ParentID uint `json:"parentId,omitempty" gorm:"default:NULL"`
 	ParentID *uint `json:"parentId" gorm:"default:NULL"`
 
