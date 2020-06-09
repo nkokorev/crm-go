@@ -233,9 +233,8 @@ func StorageUpdateFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Get JSON-request
-	/*input := &struct {
-		Name string `json:"name"`
-		MIME string `json:"mime"` // name ?
+	/*input := struct {
+		models.Storage
 	}{}*/
 
 	var input map[string]interface{}
