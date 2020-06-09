@@ -54,9 +54,9 @@ func (ProductCard) TableName() string {
 }
 
 // ######### CRUD Functions ############
-func (input ProductCard) create() (*ProductCard, error)  {
+func (input ProductCard) create() (*ProductCard, error) {
 	var card = input
-	err := db.Create(&card).Error
+	err := db.Create(&card).First(&card).Error
 	return &card, err
 }
 

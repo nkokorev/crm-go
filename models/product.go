@@ -76,7 +76,7 @@ func (product *Product) BeforeCreate(scope *gorm.Scope) error {
 // ######### CRUD Functions ############
 func (input Product) create() (*Product, error)  {
 	var product = input
-	err := db.Create(&product).Error
+	err := db.Create(&product).First(&product).Error
 	return &product, err
 }
 

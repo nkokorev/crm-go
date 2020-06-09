@@ -181,6 +181,7 @@ func (shop Shop) CreateProductWithCardAndGroup(input Product, newCard ProductCar
 
 	// Создаем карточку товара
 	newCard.AccountID = shop.AccountID
+	newCard.ShopID = shop.ID
 	if groupId != nil {
 		newCard.ProductGroupID = *groupId
 	}

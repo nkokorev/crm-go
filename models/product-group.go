@@ -50,7 +50,7 @@ func (ProductGroup) TableName() string {
 // ######### CRUD Functions ############
 func (input ProductGroup) create() (*ProductGroup, error)  {
 	var group = input
-	err := db.Create(&group).Error
+	err := db.Create(&group).First(&group).Error
 	return &group, err
 }
 
