@@ -262,13 +262,13 @@ func StorageDeleteFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get file in Data base
-	hashId, ok := GetSTRVarFromRequest(r,"hashId")
-	if !ok {
+	id, err := GetUINTVarFromRequest(r,"id")
+	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
 
-	fs, err := account.StorageGetByHashId(hashId)
+	fs, err := account.StorageGet(id)
 	if err != nil || fs == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return

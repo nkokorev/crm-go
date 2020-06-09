@@ -13,7 +13,7 @@ import (
 
 type Storage struct {
 
-	ID     		uint   `json:"-" gorm:"primary_key"`
+	ID     		uint   `json:"id" gorm:"primary_key"`
 	HashID 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 	AccountID 	uint `json:"-" gorm:"type:int;index;not_null;"`
 	ProductId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of products
