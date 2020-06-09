@@ -153,13 +153,47 @@ func (shop Shop) CreateProduct(input Product, card *ProductCard) (*Product, erro
 		return nil, err
 	}
 
-	// Добавляем новый продукт в карточку товара
+	// Добавляем продукт в карточку товара
 	if card != nil {
 		if err = card.AppendProduct(product); err != nil {
 			return nil, err
 		}
 	}
 	
+	return product, nil
+}
+
+func (shop Shop) CreateProductWithCardAndGroup(input Product, newCard ProductCard, groupId *uint) (*Product, error) {
+	input.AccountID = shop.AccountID
+
+	if input.ExistSKU() {
+		return nil, utils.Error{Message: "Повторение данных", Errors: map[string]interface{}{"sku":"Товар с таким SKU уже есть"}}
+	}
+	if input.ExistModel() {
+		return nil, utils.Error{Message: "Повторение данных", Errors: map[string]interface{}{"model":"Товар с такой моделью уже есть"}}
+	}
+
+	// Создаем продукт
+	product, err := input.create()
+	if err != nil {
+		return nil, err
+	}
+
+	// Создаем карточку товара
+	newCard.AccountID = shop.AccountID
+	if groupId != nil {
+		newCard.ProductGroupID = *groupId
+	}
+	card, err := newCard.create()
+	if err != nil {
+		return product, err
+	}
+
+	// Добавляем товар в новую карточку
+	if err = card.AppendProduct(product); err != nil {
+		return nil, err
+	}
+
 	return product, nil
 }
 

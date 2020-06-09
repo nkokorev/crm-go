@@ -572,86 +572,133 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	// 6. Создаем карточки товара
 	cards := []models.ProductCard{
-		{ID: 0, URL: "airo-dez", Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ", SwitchProducts: pq.StringArray{"color"}},
-		{ID: 0, URL: "airo-dez-compact", Name: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", MetaTitle: "Мобильный аиродезинфектор AIRO-DEZ COMPACT"},
-		{ID: 0, URL: "airo-dez-puf", Name: "Бактерицидная камера пуф AIRO-DEZPUF", MetaTitle: "Бактерицидная камера пуф AIRO-DEZPUF"},
-		{ID: 0, URL: "airo-dez-box", Name: "Бактерицидная камера AIRO-DEZBOX", MetaTitle: "Бактерицидная камера AIRO-DEZBOX", },
-	}
-	for i, _ := range cards {
-		gr := &models.ProductGroup{}
-		if i < 2 {
-			gr = groupAiro1
-		} else {
-			gr = groupAiro2
-		}
+		{ID: 0, URL: "airo-dez-adjustable-black", 	Name:"Рециркулятор AIRO-DEZ черный с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ черный с регулировкой"},
+		{ID: 0, URL: "airo-dez-black", 				Name:"Рециркулятор AIRO-DEZ черный", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ черный"},
+		{ID: 0, URL: "airo-dez-white", 				Name:"Рециркулятор AIRO-DEZ белый", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ белый"},
+		{ID: 0, URL: "airo-dez-compact", 			Name: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", MetaTitle: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", },
 
-		card, err := airoShop.CreateProductCard(cards[i], gr)
-		if err != nil {
-			log.Fatal("Не удалось создать ProductCards airoClimat: ", err)
-		}
-		cards[i] = *card
+		{ID: 0, URL: "airo-dezpuf", Name: "Бактерицидная камера пуф AIRO-DEZPUF", MetaTitle: "Бактерицидная камера пуф AIRO-DEZPUF"},
+		{ID: 0, URL: "airo-dezpuf-wenge", Name: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге", MetaTitle: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"},
+		
+		{ID: 0, URL: "airo-dezbox", Name: "Бактерицидная камера AIRO-DEZBOX", MetaTitle: "Бактерицидная камера AIRO-DEZBOX", },
+		{ID: 0, URL: "airo-dezbox-white", Name: "Бактерицидная камера AIRO-DEZBOX белая", MetaTitle: "Бактерицидная камера AIRO-DEZBOX белая", },
+		{ID: 0, URL: "airo-deztumb", Name: "Тумба облучатель бактерицидный AIRO-DEZTUMB", MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB", },
+		{ID: 0, URL: "airo-deztumb-big", Name: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", },
+
+		{ID: 0, URL: "airo-deztumb-pine", Name: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", MetaTitle: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", },
+
 	}
 
 	// 7. Создаем список товаров
-	products1 := []models.Product{
+	products := []models.Product{
 		{
-			SKU:"1001", Model: "AIRO-DEZ", Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ", ShortName: "Рециркулятор AIRO-DEZ",
+			SKU:"", Model: "AIRO-DEZ с регулировкой черный",
+			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой черный", ShortName: "Рециркулятор AIRO-DEZ",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
-			RetailPrice: 17500.00, RetailDiscount: 1000,
-			Description: "Устройство закрытого типа, предназначенное для очистки воздуха от вредных бактерий и вирусов в помещении с людьми, называется бактерицидный рециркулятор.",
+			RetailPrice: 19500.00, RetailDiscount: 1000,
+			ShortDescription: "",
+			Description: "",
 		},
 		{
-			SKU:"1002", Model: "AIRO-DEZ white", Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ",  ShortName: "Рециркулятор AIRO-DEZ",
+			SKU:"", Model: "AIRO-DEZ черный",
+			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ черный", ShortName: "Рециркулятор AIRO-DEZ",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
-			Description: "Устройство закрытого типа, предназначенное для очистки воздуха от вредных бактерий и вирусов в помещении с людьми, называется бактерицидный рециркулятор.",
+			ShortDescription: "",
+			Description: "",
 		},
 		{
-			SKU:"1003", Model: "AIRO-DEZ COMPACT", Name:"Мобильный аиродезинфектор AIRO-DEZ COMPACT",  ShortName: "Аиродезинфектор AIRO-DEZ COMPACT",
+			SKU:"", Model: "AIRO-DEZ белый",
+			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ",  ShortName: "Рециркулятор AIRO-DEZ",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
-			Description: "Мобильный аиродезинфектор AIRO-DEZ COMPACT – переносной прибор, предназначенный для быстрой дезинфекции воздуха и поверхностей во всех типах помещений.",
-		},
-	}
-	products2 := []models.Product{
-		{
-			SKU:"1004", Model: "AIRO-DEZPUF", Name:"Бактерицидная камера пуф AIRO-DEZPUF", ShortName: "Бактерицидная камера AIRO-DEZPUF",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
-			RetailPrice: 17500.00, RetailDiscount: 1000,
-			Description: "Устройство закрытого типа, предназначенное для очистки воздуха от вредных бактерий и вирусов в помещении с людьми, называется бактерицидный рециркулятор.",
+			ShortDescription: "",
+			Description: "",
 		},
 		{
-			SKU:"1005", Model: "AIRO-DEZBOX", Name:"Бактерицидная камера AIRO-DEZBOX", ShortName: "Бактерицидная камера AIRO-DEZBOX",
+			SKU:"", Model: "AIRO-DEZ COMPACT",
+			Name:"Мобильный аиродезинфектор AIRO-DEZ COMPACT",  ShortName: "Аиродезинфектор AIRO-DEZ COMPACT",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
-			RetailPrice: 17500.00, RetailDiscount: 1000,
-			Description: "Мобильный аиродезинфектор AIRO-DEZ COMPACT – переносной прибор, предназначенный для быстрой дезинфекции воздуха и поверхностей во всех типах помещений.",
+			RetailPrice: 39000.00, RetailDiscount: 3000,
+			ShortDescription: "",
+			Description: "",
+		},
+		
+		{
+			SKU:"", Model: "AIRO-DEZPUF",
+			Name:"Бактерицидная камера пуф AIRO-DEZPUF",  ShortName: "Камера пуф AIRO-DEZPUF",
+			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			RetailPrice: 11000.00, RetailDiscount: 1000,
+			ShortDescription: "",
+			Description: "",
+		},
+		{
+			SKU:"", Model: "AIRO-DEZPUF венге",
+			Name:"Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге",  ShortName: "Камера AIRO-DEZBOX",
+			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			RetailPrice: 12000.00, RetailDiscount: 1000,
+			ShortDescription: "",
+			Description: "",
+		},
+
+		{
+			SKU:"", Model: "AIRO-DEZBOX",
+			Name:"Бактерицидная камера AIRO-DEZBOX",  ShortName: "Камера AIRO-DEZBOX",
+			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			RetailPrice: 7800.00, RetailDiscount: 800,
+			ShortDescription: "",
+			Description: "",
+		},
+		{
+			SKU:"", Model: "AIRO-DEZBOX белая",
+			Name:"Бактерицидная камера AIRO-DEZBOX белая",  ShortName: "Камера AIRO-DEZBOX белая",
+			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			RetailPrice: 7800.00, RetailDiscount: 800,
+			ShortDescription: "",
+			Description: "",
+		},
+		{
+			SKU:"", Model: "AIRO-DEZTUMB",
+			Name:"Тумба облучатель бактерицидный AIRO-DEZTUMB",  ShortName: "Бактерицидная тумба AIRO-DEZTUMB",
+			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			RetailPrice: 11500.00, RetailDiscount: 1000,
+			ShortDescription: "",
+			Description: "",
+		},
+		{
+			SKU:"", Model: "AIROTUMB big",
+			Name:"Тумба облучатель бактерицидный AIRO-DEZTUMB big",  ShortName: "Облучатель AIROTUMB big",
+			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			RetailPrice: 11500.00, RetailDiscount: 1000,
+			ShortDescription: "",
+			Description: "",
+		},
+		
+		{
+			SKU:"", Model: "AIRO-DEZTUMB касцина",
+			Name:"Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина",  ShortName: "Бактерицидная тумба AIRO-DEZTUMB",
+			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			RetailPrice: 11500.00, RetailDiscount: 1000,
+			ShortDescription: "",
+			Description: "",
 		},
 	}
 	
+	
 	// 7. Добавляем продукты в категории с созданием карточки товара
-	// создаем продукты через shop
-	_, err = airoShop.CreateProduct(products1[0], &cards[0])
-	if err != nil {
-		log.Fatal("Не удалось создать Product для airoClimat: ", err)
-	}
-	_, err = airoShop.CreateProduct(products1[1], &cards[0])
-	if err != nil {
-		log.Fatal("Не удалось создать Product для airoClimat: ", err)
-	}
-	_, err = airoShop.CreateProduct(products1[2], &cards[1])
-	if err != nil {
-		log.Fatal("Не удалось создать Product для airoClimat: ", err)
-	}
-
-	// создаем продукты через shop
-	for i,_ := range products2 {
-		_, err = airoShop.CreateProduct(products2[i], &cards[i+2])
+	for i,_ := range products {
+		var group *models.ProductGroup
+		if i < 4 {
+			group = groupAiro1
+		} else {
+			group = groupAiro2
+		}
+		_, err = airoShop.CreateProductWithCardAndGroup(products[i], cards[i], &group.ID)
 		if err != nil {
 			log.Fatal("Не удалось создать Product для airoClimat: ", err)
 		}
 	}
-
-
+	
 	return
 
 /*	shops := [] *models.Shop{

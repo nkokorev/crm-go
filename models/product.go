@@ -39,9 +39,9 @@ type Product struct {
 	PurchasePrice 			float64 `json:"purchasePrice" gorm:"type:numeric;default:0"` // закупочная цена
 	RetailDiscount 			float64 `json:"retailDiscount" gorm:"type:numeric;default:0"` // розничная фактическая скидка
 
-	ProductType ProductType `json:"productType" gorm:"type:varchar(12);default:'commodity';"`// товар или услуга ? [вид номенклатуры]
-	UnitMeasurementID uint	`json:"unitMeasurementId" gorm:"type:int;default:1;"`
-	UnitMeasurement UnitMeasurement // Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
+	ProductType 			ProductType `json:"productType" gorm:"type:varchar(12);default:'commodity';"`// товар или услуга ? [вид номенклатуры]
+	UnitMeasurementID 		uint	`json:"unitMeasurementId" gorm:"type:int;default:1;"`
+	UnitMeasurement 		UnitMeasurement // Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 	
 	// ProductGroupsId uint `json:"productGroupsId"` // группа товара
 	// ProductGroups []ProductGroup `json:"productGroups" gorm:"many2many:product_group_products"`
@@ -49,16 +49,16 @@ type Product struct {
 	ShortDescription string `json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 	Description string `json:"description" gorm:"type:text;"` // pgsql: text
 
-	// Images ... 
+	Images []Storage 	`json:"images" gorm:"PRELOAD:true"`  // ?
 	// Attributes []ProductAttribute // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	// []ProductAttribute // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	// Reviews []Review // Product reviews (отзывы на товар - с рейтингом(?))
 	// Questions []question // вопросы по товару
 	// Video []Video // видеообзоры по товару на ютубе
 
-	Account Account `json:"-" sql:"-"`
+	Account Account `json:"-"`
 	// ProductGroups []ProductGroup `json:"-" gorm:"many2many:product_group_products"`
-	ProductCards 			[]ProductCard `json:"productCards" gorm:"many2many:product_card_products"`
+	ProductCards []ProductCard `json:"productCards" gorm:"many2many:product_card_products"`
 }
 
 func (Product) PgSqlCreate() {
