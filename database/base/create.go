@@ -15,6 +15,12 @@ func RefreshTables() {
 
 	// дропаем системные таблицы
 	// err = pool.Exec("drop table if exists product_card_products, unit_measurements, product_cards, products, product_groups, shops").Error
+	err = pool.Exec("drop table if exists eav_attributes").Error
+	if err != nil {
+		fmt.Println("Cant create tables 0: ", err)
+		return
+	}
+
 	err = pool.Exec("drop table if exists  unit_measurements, product_card_products, product_cards").Error
 	if err != nil {
 		fmt.Println("Cant create tables 0: ", err)
@@ -63,6 +69,8 @@ func RefreshTables() {
 	models.ProductGroup{}.PgSqlCreate()
 	models.ProductCard{}.PgSqlCreate()
 	models.Product{}.PgSqlCreate()
+
+	models.EavAttribute{}.PgSqlCreate()
 
 	models.Domain{}.PgSqlCreate()
 	models.EmailBox{}.PgSqlCreate()
@@ -554,6 +562,11 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	airoShop, err := airoClimat.CreateShop(models.Shop{Name: "airoclimate.ru", Address: "г. Москва, р-н Текстильщики", Email: "info@airoclimate.ru", Phone: "+7 (4832) 77-03-73"})
 	if err != nil {
 		log.Fatal("Не удалось создать Shop для airoClimat: ", err)
+	}
+
+	err = airoClimat.CreateBaseEavAttributes()
+	if err != nil {
+		log.Fatal("Не удалось создать Атрибуты для airoClimat: ", err)
 	}
 
 	// 5. Создаем 3 категории товаров

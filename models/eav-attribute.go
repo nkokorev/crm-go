@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
@@ -27,7 +28,8 @@ func (EavAttribute) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&EavAttribute{})
-	db.Exec("ALTER TABLE eav_attributes\n    ADD CONSTRAINT eav_attributes_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\ncreate unique index uix_eav_attributes_account_id_code ON products (account_id,code);\n")
+	db.Exec("ALTER TABLE eav_attributes\n    ADD CONSTRAINT eav_attributes_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\ncreate unique index uix_eav_attributes_account_id_code ON eav_attributes (account_id,code);\n")
+
 }
 
 func (eat *EavAttribute) BeforeCreate(scope *gorm.Scope) error {
@@ -167,6 +169,27 @@ func (account Account) DeleteEavAttribute(eatId uint) error {
 	}
 
 	return eat.delete()
+}
+
+func (account Account) CreateBaseEavAttributes() error {
+
+	// 2.
+	attrs := []EavAttribute{
+		{Code: 	"color", Name:"Цвет", AttrTypeCode: "varchar"},
+		{Name:	"size",  Code: "Размер", AttrTypeCode: "decimal"},
+		{Name:	"bodyMaterial",  Code: "Материал корпуса", AttrTypeCode: "varchar"},
+		{Name:	"filterType",  Code: "Тип фильтра", AttrTypeCode: "varchar"},
+	}
+
+	for i, _ := range attrs {
+		_, err := account.CreateEavAttribute(attrs[i])
+		if err != nil {
+			fmt.Println("Cannot create EavAttribute: ", err)
+			return err
+		}
+	}
+
+	return nil
 }
 // ######### END ACCOUNT Functions ############
 
