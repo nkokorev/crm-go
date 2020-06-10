@@ -15,7 +15,7 @@ func RefreshTables() {
 
 	// дропаем системные таблицы
 	// err = pool.Exec("drop table if exists product_card_products, unit_measurements, product_cards, products, product_groups, shops").Error
-	err = pool.Exec("drop table if exists eav_attributes").Error
+	err = pool.Exec("drop table if exists eav_attribute_types, eav_attributes_varchar, eav_attributes_int, eav_attributes").Error
 	if err != nil {
 		fmt.Println("Cant create tables 0: ", err)
 		return
@@ -70,7 +70,11 @@ func RefreshTables() {
 	models.ProductCard{}.PgSqlCreate()
 	models.Product{}.PgSqlCreate()
 
+	models.EavAttrType{}.PgSqlCreate()
 	models.EavAttribute{}.PgSqlCreate()
+	models.EavAttrVarchar{}.PgSqlCreate()
+	models.EavAttrInt{}.PgSqlCreate()
+	models.EavAttrDecimal{}.PgSqlCreate()
 
 	models.Domain{}.PgSqlCreate()
 	models.EmailBox{}.PgSqlCreate()

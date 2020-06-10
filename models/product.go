@@ -50,7 +50,8 @@ type Product struct {
 	Description string `json:"description" gorm:"type:text;"` // pgsql: text
 
 	Images []Storage 	`json:"images" gorm:"PRELOAD:true"`  // ?
-	// Attributes []ProductAttribute // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
+	// Attributes []EavAttribute `json:"attributes" gorm:"many2many:product_eav_attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
+	Attributes []EavAttribute `json:"attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	// []ProductAttribute // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	// Reviews []Review // Product reviews (отзывы на товар - с рейтингом(?))
 	// Questions []question // вопросы по товару

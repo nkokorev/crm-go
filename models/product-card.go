@@ -20,7 +20,6 @@ type ProductCard struct {
 	Breadcrumb 			string `json:"breadcrumb" gorm:"type:varchar(255);default:null;"`
 	Name	 			string `json:"name" gorm:"type:varchar(255);default:'';"` // что выводить в список товаров
 
-	
 	MetaTitle 			string `json:"metaTitle" gorm:"type:varchar(255);default:null;"`
 	MetaKeywords 		string `json:"metaKeywords" gorm:"type:varchar(255);default:null;"`
 	MetaDescription 	string `json:"metaDescription" gorm:"type:varchar(255);default:null;"`

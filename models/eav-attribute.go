@@ -10,25 +10,22 @@ import (
 // EAV-Атрибуты, предусмотренные в аккаунте: Размер одежды, Тип упаковки, Состав, Цвет и т.д.
 type EavAttribute struct {
 	ID     		uint   `json:"id" gorm:"primary_key"`
-	AccountID 	uint `json:"-" gorm:"type:int;index;not null;"`
 
-	Code 		string	`json:"code" gorm:"type:varchar(50);index;not null;"` // color, size, etc.
-	Name 		string 	`json:"name" gorm:"type:varchar(50);default:null;"` // Цвет, килограмм
-	ShortName 	string 	`json:"shortName" gorm:"type:varchar(50);default:null;"` // Цвет, кг.,
-	Description string 	`json:"description" gorm:"type:varchar(255);default:null;"` // Описание параметра (может быть нужно для отображения)
-
-	// Multiple 	bool 	`json:"multiple"`
-	// Required 	bool 	`json:"required"`  // обязате
-
-	// это данные о хранении и отображении атрибута
-	AttrTypeCode string `json:"attr_type_code"` // varchar, text, int, decimal, bool, date 
+	ProductId 	uint `json:"productId" gorm:"type:int;index;not null;"`
+	EavAttrTypeId uint `json:"eavAttrTypeId" gorm:"type:int;index;not null;"`
+	ValueID   	uint	`json:"ownerId" gorm:"type:int;"` // id in attributes table
+	
+	Value interface{} `json:"value" sql:"-"`
 }
 
 func (EavAttribute) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&EavAttribute{})
-	db.Exec("ALTER TABLE eav_attributes\n    ADD CONSTRAINT eav_attributes_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\ncreate unique index uix_eav_attributes_account_id_code ON eav_attributes (account_id,code);\n")
+	db.Model(&EavAttributeType{}).AddForeignKey("product_id", "products(id)", "CASCADE", "CASCADE")
+	db.Model(&EavAttributeType{}).AddForeignKey("eav_attribute_type_id", "eav_attr_types(id)", "CASCADE", "CASCADE")
+
+	// db.Exec("ALTER TABLE eav_attributes\n    ADD CONSTRAINT eav_attributes_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\ncreate unique index uix_eav_attributes_account_id_code ON eav_attributes (account_id,code);\n")
 
 }
 
@@ -40,6 +37,7 @@ func (eat *EavAttribute) BeforeCreate(scope *gorm.Scope) error {
 // ######### CRUD Functions ############
 func (input EavAttribute) create() (*EavAttribute, error)  {
 	var eat = input
+	// eat.OwnerType = "eav_attribute_" +  eat.AttrTypeCode
 	err := db.Create(&eat).Error
 	return &eat, err
 }
@@ -88,22 +86,9 @@ func (eat EavAttribute) delete () error {
 // ######### END CRUD Functions ############
 
 // ######### ACCOUNT Functions ############
-func (account Account) CreateEavAttribute(input EavAttribute) (*EavAttribute, error) {
-	input.AccountID = account.ID
 
-	if input.ExistCode() {
-		return nil, utils.Error{Message: "Повторение данных", Errors: map[string]interface{}{"code":"Атрибут с таким code уже есть"}}
-	}
-	
-	eat, err := input.create()
-	if err != nil {
-		return nil, err
-	}
 
-	return eat, nil
-}
-
-func (account Account) GetEavAttribute(eatId uint) (*EavAttribute, error) {
+/*func (account Account) GetEavAttribute(eatId uint) (*EavAttribute, error) {
 	eat, err := EavAttribute{}.get(eatId)
 	if err != nil {
 		return nil, err
@@ -173,12 +158,24 @@ func (account Account) DeleteEavAttribute(eatId uint) error {
 
 func (account Account) CreateBaseEavAttributes() error {
 
-	// 2.
+	// 2. // varchar, text, int, decimal, bool, date
 	attrs := []EavAttribute{
-		{Code: 	"color", Name:"Цвет", AttrTypeCode: "varchar"},
-		{Name:	"size",  Code: "Размер", AttrTypeCode: "decimal"},
-		{Name:	"bodyMaterial",  Code: "Материал корпуса", AttrTypeCode: "varchar"},
-		{Name:	"filterType",  Code: "Тип фильтра", AttrTypeCode: "varchar"},
+		{Code: 	"color",		Name:	"Цвет", AttrTypeCode: "varchar"}, // белый, черный, венге и т.д.
+		{Code:	"bodyMaterial", Name: "Материал корпуса", 	AttrTypeCode: "varchar"}, // металл
+		{Code:	"filterType",  	Name: "Тип фильтра", 		AttrTypeCode: "varchar"}, // угольно-фотокаталитический
+		{Code:	"performance",  Name: "Производительность", AttrTypeCode: "int", ShortName: "м³/ч"}, // 150 (м³/ч)
+		{Code:	"rangeUVRadiation", Name: "Диапазон бактерицидного УФ излучения",  	AttrTypeCode: "varchar"}, // 250-260Нм
+		{Code:	"powerLamp",  		Name: "Мощность излучения лампы рециркулятора",	AttrTypeCode: "varchar", ShortName: "Вт/м²"}, // 10,8 Вт/м²
+		{Code:	"powerConsumption", Name: "Потребляемая мощность", 	AttrTypeCode: "int", ShortName: "Вт"}, // 60 (Вт)
+		{Code:	"lifeTimeDevice",  	Name: "Срок службы устройства", AttrTypeCode: "int", ShortName: "ч"}, // 100000 (ч)
+		{Code:	"lifeTimeLamp",  	Name: "Срок службы УФ лампы", 	AttrTypeCode: "int", ShortName: "ч"}, // 9000 (ч)
+		{Code:	"baseTypeLamp",  	Name: "Тип цоколя лампы", 	AttrTypeCode: "varchar"}, // G13
+		{Code:	"degreeProtection", Name: "Степень защиты", 	AttrTypeCode: "varchar"}, // IP20
+		{Code:	"supplyVoltage",  	Name: "Напряжение питания", AttrTypeCode: "varchar"}, // 175-265В
+		{Code:	"temperatureMode",  Name: "Температурный режим работы",AttrTypeCode: "varchar"}, // +2 +50С
+		{Code:	"overallDimensions",Name: "Габаритные размеры(ВхШхГ)", AttrTypeCode: "varchar"}, //  690х250х250мм
+		{Code:	"noiseLevel",  		Name: "Уровень шума", AttrTypeCode: "int", 	ShortName: "дБ"}, //  35 (дБ)
+		{Code:	"grossWeight",  	Name: "Вес брутто", AttrTypeCode: "decimal",ShortName: "кг"}, // 5.5 (кг)
 	}
 
 	for i, _ := range attrs {
@@ -190,10 +187,14 @@ func (account Account) CreateBaseEavAttributes() error {
 	}
 
 	return nil
-}
+}*/
 // ######### END ACCOUNT Functions ############
 
 // ########## SELF FUNCTIONAL ############
-func (eat EavAttribute) ExistCode() bool {
-	return !db.Unscoped().First(&EavAttribute{},"account_id = ? AND code = ?", eat.AccountID, eat.Code).RecordNotFound()
+
+type Attribute interface {
+	create()
+	getId()
+	get(id uint)
+	// getByProduct(productId uint)
 }

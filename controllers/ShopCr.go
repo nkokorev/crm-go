@@ -613,3 +613,21 @@ func ProductDelete(w http.ResponseWriter, r *http.Request) {
 
 ////////////////////////////////////
 
+func ProductAttributeList(w http.ResponseWriter, r *http.Request) {
+
+	account, err := GetWorkAccountCheckHashId(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	/*attrs, err := account.GetProductListPagination(offset, limit, search)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		return
+	}*/
+
+	resp := u.Message(true, "GET Product List Pagination")
+	// resp["total"] = total
+	// resp["products"] = products
+	u.Respond(w, resp)
+}
