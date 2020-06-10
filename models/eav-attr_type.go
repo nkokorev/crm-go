@@ -222,9 +222,9 @@ func (eatType EavAttrType) ExistCode() bool {
 // func (product Product) CreateAttrValue(eatType EavAttrType, value Eav) (*EavAttribute, error) {
 func (product Product) CreateAttrValue(eat EavAttribute, value Eav) (*EavAttribute, error) {
 
-	var eat EavAttribute // return value
+	// var eat EavAttribute // return value
 
-	switch eatType.AttrTypeCode {
+	/*switch eatType.AttrTypeCode {
 	case "varchar":
 		var input EavAttrVarchar
 
@@ -278,7 +278,7 @@ func (product Product) CreateAttrValue(eat EavAttribute, value Eav) (*EavAttribu
 	}
 
 	eat.ProductId = product.ID
-	eat.EavAttrTypeId = val.getId()
+	eat.EavAttrTypeId = val.getId()*/
 
 	return eat.create()
 	
