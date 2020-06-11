@@ -1,10 +1,8 @@
 package models
 
 import (
-	"fmt"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
-	"github.com/nkokorev/crm-go/utils"
 )
 
 // EAV-Атрибуты, предусмотренные в аккаунте: Размер одежды, Тип упаковки, Состав, Цвет и т.д.
@@ -22,8 +20,8 @@ func (EavAttribute) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&EavAttribute{})
-	db.Model(&EavAttributeType{}).AddForeignKey("product_id", "products(id)", "CASCADE", "CASCADE")
-	db.Model(&EavAttributeType{}).AddForeignKey("eav_attribute_type_id", "eav_attr_types(id)", "CASCADE", "CASCADE")
+	db.Model(&EavAttrType{}).AddForeignKey("product_id", "products(id)", "CASCADE", "CASCADE")
+	db.Model(&EavAttrType{}).AddForeignKey("eav_attribute_type_id", "eav_attr_types(id)", "CASCADE", "CASCADE")
 
 	// db.Exec("ALTER TABLE eav_attributes\n    ADD CONSTRAINT eav_attributes_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\ncreate unique index uix_eav_attributes_account_id_code ON eav_attributes (account_id,code);\n")
 

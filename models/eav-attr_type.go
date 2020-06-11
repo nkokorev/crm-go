@@ -5,7 +5,7 @@ import (
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
-	"reflect"
+
 )
 
 // EAV-Атрибуты, предусмотренные в аккаунте: Размер одежды, Тип упаковки, Состав, Цвет и т.д.
@@ -220,7 +220,7 @@ func (eatType EavAttrType) ExistCode() bool {
 }
 
 // func (product Product) CreateAttrValue(eatType EavAttrType, value Eav) (*EavAttribute, error) {
-func (product Product) CreateAttrValue(eat EavAttribute, value Eav) (*EavAttribute, error) {
+func (product Product) CreateAttrValue(eat EavAttribute) (*EavAttribute, error) {
 
 	// var eat EavAttribute // return value
 

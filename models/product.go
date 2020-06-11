@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
 )
 
@@ -47,11 +48,12 @@ type Product struct {
 	// ProductGroups []ProductGroup `json:"productGroups" gorm:"many2many:product_group_products"`
 
 	ShortDescription string `json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
-	Description string `json:"description" gorm:"type:text;"` // pgsql: text
+	Description 	string `json:"description" gorm:"type:text;"` // pgsql: text
 
-	Images []Storage 	`json:"images" gorm:"PRELOAD:true"`  // ?
+	Images 			[]Storage 	`json:"images" gorm:"PRELOAD:true"`  // ?
 	// Attributes []EavAttribute `json:"attributes" gorm:"many2many:product_eav_attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
-	Attributes []EavAttribute `json:"attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
+	//Attributes []EavAttribute `json:"attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
+	Attributes 		postgres.Jsonb `json:"attributes"`
 	// []ProductAttribute // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	// Reviews []Review // Product reviews (отзывы на товар - с рейтингом(?))
 	// Questions []question // вопросы по товару
@@ -66,7 +68,7 @@ func (Product) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&Product{})
-	db.Exec("ALTER TABLE products\n    ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD constraint uc_products_sku UNIQUE (sku) WHERE sku IS NOT NULL;\n-- ALTER TABLE products ADD CONSTRAINT uc_products_sku UNIQUE (sku);\n--     ADD CONSTRAINT products_product_group_id_fkey FOREIGN KEY (product_group_id) REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE;\ncreate unique index uix_products_account_id_sku ON products (account_id,sku) WHERE sku IS NOT NULL;\ncreate unique index uix_products_account_id_model ON products (account_id,model) WHERE model IS NOT NULL;\ncreate unique index uix_products_account_id_article ON products (account_id,article) WHERE article IS NOT NULL;\n-- CREATE UNIQUE uix_products_uni_idx ON products (user_id, menu_id, recipe_id) WHERE menu_id IS NOT NULL;\n-- create unique index uix_products_account_id_model ON products (account_id,model);\n")
+	db.Exec("ALTER TABLE products\n    ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT uix_products_account_id_sku UNIQUE (account_id,sku),\n    ADD CONSTRAINT uix_products_account_id_model UNIQUE (account_id,model),\n    ADD CONSTRAINT uix_products_account_id_article UNIQUE (account_id,article);\n--     ADD CONSTRAINT uix_products_account_id_sku CHECK (account_id AND sku CREATE UNIQUE INDEX ) WHERE sku IS NOT NULL;\n--     ADD constraint uc_products_sku UNIQUE (sku) WHERE sku IS NOT NULL;\n-- ALTER TABLE products ADD CONSTRAINT uc_products_sku UNIQUE (sku);\n\n-- create unique index uix_products_account_id_sku ON products (account_id,sku) WHERE sku IS NOT NULL;\n-- create unique index uix_products_account_id_model ON products (account_id,model) WHERE model IS NOT NULL;\n-- create unique index uix_products_account_id_article ON products (account_id,article) WHERE article IS NOT NULL;\n")
 }
 
 func (product *Product) BeforeCreate(scope *gorm.Scope) error {
@@ -236,4 +238,8 @@ func (product Product) ExistSKU() bool {
 
 func (product Product) ExistModel() bool {
 	return !db.Unscoped().First(&Product{},"account_id = ? AND model = ?", product.AccountID, product.Model).RecordNotFound()
+}
+
+func (product Product) AddAttr() error {
+	return nil
 }

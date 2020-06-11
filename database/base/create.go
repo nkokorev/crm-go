@@ -1,7 +1,9 @@
 package base
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/models"
 	"log"
@@ -15,11 +17,11 @@ func RefreshTables() {
 
 	// дропаем системные таблицы
 	// err = pool.Exec("drop table if exists product_card_products, unit_measurements, product_cards, products, product_groups, shops").Error
-	err = pool.Exec("drop table if exists eav_attribute_types, eav_attributes_varchar, eav_attributes_int, eav_attributes").Error
+	/*err = pool.Exec("drop table if exists eav_attribute_types, eav_attributes_varchar, eav_attributes_int, eav_attributes").Error
 	if err != nil {
 		fmt.Println("Cant create tables 0: ", err)
 		return
-	}
+	}*/
 
 	err = pool.Exec("drop table if exists  unit_measurements, product_card_products, product_cards").Error
 	if err != nil {
@@ -70,11 +72,11 @@ func RefreshTables() {
 	models.ProductCard{}.PgSqlCreate()
 	models.Product{}.PgSqlCreate()
 
-	models.EavAttrType{}.PgSqlCreate()
-	models.EavAttribute{}.PgSqlCreate()
-	models.EavAttrVarchar{}.PgSqlCreate()
-	models.EavAttrInt{}.PgSqlCreate()
-	models.EavAttrDecimal{}.PgSqlCreate()
+	//models.EavAttrType{}.PgSqlCreate()
+	//models.EavAttribute{}.PgSqlCreate()
+	//models.EavAttrVarchar{}.PgSqlCreate()
+	//models.EavAttrInt{}.PgSqlCreate()
+	//models.EavAttrDecimal{}.PgSqlCreate()
 
 	models.Domain{}.PgSqlCreate()
 	models.EmailBox{}.PgSqlCreate()
@@ -568,10 +570,10 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		log.Fatal("Не удалось создать Shop для airoClimat: ", err)
 	}
 
-	err = airoClimat.CreateBaseEavAttributes()
+	/*err = airoClimat.CreateBaseEavAttributes()
 	if err != nil {
 		log.Fatal("Не удалось создать Атрибуты для airoClimat: ", err)
-	}
+	}*/
 
 	// 5. Создаем 3 категории товаров
 	groupAiroRoot, err := airoShop.CreateProductGroup(models.ProductGroup{Name: "Бактерицидные облучатели", URL: ""});
@@ -606,6 +608,8 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	}
 
+	metadata := json.RawMessage(`{"color": "white"}`)
+
 	// 7. Создаем список товаров
 	products := []models.Product{
 		{
@@ -615,6 +619,8 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			RetailPrice: 19500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
+			Attributes: postgres.Jsonb{RawMessage:metadata},
+			//Attributes: pgtype.JSONB{RawMessage:metadata}
 		},
 		{
 			SKU:"", Model: "AIRO-DEZ черный",
