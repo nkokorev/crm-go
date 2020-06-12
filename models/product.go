@@ -1,12 +1,12 @@
 package models
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
-	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
+	"log"
 )
 
 type ProductType = string
@@ -54,7 +54,8 @@ type Product struct {
 	Images 			[]Storage 	`json:"images" gorm:"PRELOAD:true"`  // ?
 	// Attributes []EavAttribute `json:"attributes" gorm:"many2many:product_eav_attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	//Attributes []EavAttribute `json:"attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
-	Attributes 		postgres.Jsonb `json:"attributes" sql:"type:JSONB;DEFAULT '{}'::JSONB"`
+	Attributes 		postgres.Jsonb `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	//Attributes 		pgtype.JSONB `json:"attributes" sql:"type:JSONB;DEFAULT '{}'::JSONB"`
 	// []ProductAttribute // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	// Reviews []Review // Product reviews (отзывы на товар - с рейтингом(?))
 	// Questions []question // вопросы по товару
@@ -108,9 +109,10 @@ func (Product) getList(accountId uint) ([]Product, error) {
 }
 
 func (product *Product) update(input interface{}) error {
-	fmt.Println("Input: ", input)
-	return db.Model(product).Omit("id", "account_id").Updates(structs.Map(input)).Error
+	//return db.Model(product).Omit("id", "account_id").Updates(structs.Map(input)).Error
+	return db.Model(product).Omit("id", "account_id").Updates(input).Error
 }
+
 
 func (product Product) delete () error {
 	return db.Model(Product{}).Where("id = ?", product.ID).Delete(product).Error
@@ -203,7 +205,8 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 	return products, total, nil
 }
 
-func (account Account) UpdateProduct(productId uint, input interface{}) (*Product, error) {
+func (account Account) UpdateProduct(productId uint, input map[string]interface{}) (*Product, error) {
+
 	product, err := account.GetProduct(productId)
 	if err != nil {
 		return nil, err
@@ -213,11 +216,18 @@ func (account Account) UpdateProduct(productId uint, input interface{}) (*Produc
 		return nil, utils.Error{Message: "Товар принадлежит другому аккаунту"}
 	}
 
+	// parse attrs
+	jsonInput, err := json.Marshal(input["attributes"])
+	if err != nil {
+		log.Fatal("Eroror json: ", err)
+	}
+	product.Attributes = postgres.Jsonb{RawMessage: jsonInput}
 	err = product.update(input)
 
 	return product, err
 
 }
+
 
 func (account Account) DeleteProduct(productId uint) error {
 

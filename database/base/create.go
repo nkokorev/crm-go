@@ -608,7 +608,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	}
 
-	metadata := json.RawMessage(`{"color": "white", "bodyMaterial": "металл", "filterType": "угольно-фотокаталитический"}`)
+	//metadata := json.RawMessage(`{"color": "white", "bodyMaterial": "металл", "filterType": "угольно-фотокаталитический"}`)
 
 	// 7. Создаем список товаров
 	products := []models.Product{
@@ -619,7 +619,9 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			RetailPrice: 19500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
-			Attributes: postgres.Jsonb{RawMessage:metadata},
+			Attributes: postgres.Jsonb{RawMessage: json.RawMessage(`{"color": "white", "bodyMaterial": "металл", "filterType": "угольно-фотокаталитический"}`)},
+			//Attributes: postgres.Jsonb{RawMessage:metadata},
+			//Attributes: pgtype.JSONB{Bytes: []byte(`{"color": "white", "bodyMaterial": "металл", "filterType": "угольно-фотокаталитический"}`)},
 			//Attributes: pgtype.JSONB{RawMessage:metadata}
 		},
 		{

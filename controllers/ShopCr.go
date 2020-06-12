@@ -559,10 +559,48 @@ func ProductUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var input map[string]interface{}
+	/*var input = struct {
+		models.Product	`json:"product"`
+		Attributes map[string]interface{} `json:"attributes"`
+	}{}*/
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	//card, err := account.UpdateProduct(productId, input.Product)
+	card, err := account.UpdateProduct(productId, input)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
+		return
+	}
+
+	resp := u.Message(true, "PATCH Product Update")
+	resp["product"] = card
+	u.Respond(w, resp)
+}
+
+func ProductUpdateAttribute(w http.ResponseWriter, r *http.Request) {
+
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	productId, err := GetUINTVarFromRequest(r, "productId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID товара"))
+		return
+	}
+
 	// var input interface{}
-	// var input map[string]interface{}
+	//var input map[string]interface{}
 	var input = struct {
-		models.Product
+		Attributes map[string]interface{} `json:"attributes"`
 	}{}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -572,7 +610,8 @@ func ProductUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 
-	card, err := account.UpdateProduct(productId, input.Product)
+	//card, err := account.UpdateProduct(productId, input.Product)
+	card, err := account.UpdateProductAttribute(productId, input.Attributes)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
