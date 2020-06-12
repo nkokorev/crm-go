@@ -608,7 +608,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	}
 
-	metadata := json.RawMessage(`{"color": "white"}`)
+	metadata := json.RawMessage(`{"color": "white", "bodyMaterial": "металл", "filterType": "угольно-фотокаталитический"}`)
 
 	// 7. Создаем список товаров
 	products := []models.Product{

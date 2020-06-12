@@ -571,10 +571,6 @@ func ProductUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/*if input.SwitchProducts == nil {
-		val := pq.StringArray{}
-		input.SwitchProducts = val
-	}*/
 
 	card, err := account.UpdateProduct(productId, input.Product)
 	if err != nil {

@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
@@ -53,7 +54,7 @@ type Product struct {
 	Images 			[]Storage 	`json:"images" gorm:"PRELOAD:true"`  // ?
 	// Attributes []EavAttribute `json:"attributes" gorm:"many2many:product_eav_attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	//Attributes []EavAttribute `json:"attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
-	Attributes 		postgres.Jsonb `json:"attributes"`
+	Attributes 		postgres.Jsonb `json:"attributes" sql:"type:JSONB;DEFAULT '{}'::JSONB"`
 	// []ProductAttribute // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	// Reviews []Review // Product reviews (отзывы на товар - с рейтингом(?))
 	// Questions []question // вопросы по товару
@@ -107,8 +108,8 @@ func (Product) getList(accountId uint) ([]Product, error) {
 }
 
 func (product *Product) update(input interface{}) error {
+	fmt.Println("Input: ", input)
 	return db.Model(product).Omit("id", "account_id").Updates(structs.Map(input)).Error
-
 }
 
 func (product Product) delete () error {
