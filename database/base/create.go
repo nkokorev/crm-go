@@ -593,6 +593,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	cards := []models.ProductCard{
 		{ID: 0, URL: "airo-dez-adjustable-black", 	Name:"Рециркулятор AIRO-DEZ черный с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ черный с регулировкой"},
 		{ID: 0, URL: "airo-dez-black", 				Name:"Рециркулятор AIRO-DEZ черный", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ черный"},
+		{ID: 0, URL: "airo-dez-adjustable-white", 	Name:"Рециркулятор AIRO-DEZ белый с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ белый с регулировкой"},
 		{ID: 0, URL: "airo-dez-white", 				Name:"Рециркулятор AIRO-DEZ белый", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ белый"},
 		{ID: 0, URL: "airo-dez-compact", 			Name: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", MetaTitle: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", },
 
@@ -610,35 +611,120 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	//metadata := json.RawMessage(`{"color": "white", "bodyMaterial": "металл", "filterType": "угольно-фотокаталитический"}`)
 
+
 	// 7. Создаем список товаров
 	products := []models.Product{
 		{
 			SKU:"", Model: "AIRO-DEZ с регулировкой черный",
-			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой черный", ShortName: "Рециркулятор AIRO-DEZ",
+			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности черный", ShortName: "Рециркулятор AIRO-DEZ черный",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 19500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
-			Attributes: postgres.Jsonb{RawMessage: json.RawMessage(`{"color": "white", "bodyMaterial": "металл", "filterType": "угольно-фотокаталитический"}`)},
-			//Attributes: postgres.Jsonb{RawMessage:metadata},
-			//Attributes: pgtype.JSONB{Bytes: []byte(`{"color": "white", "bodyMaterial": "металл", "filterType": "угольно-фотокаталитический"}`)},
-			//Attributes: pgtype.JSONB{RawMessage:metadata}
+			Attributes: postgres.Jsonb{
+				RawMessage: MapToRawJson(map[string]interface{}{
+					"color":"черный",
+					"bodyMaterial":"металл",
+					"filterType":"угольно-фотокаталитический",
+					"performance":150, // m3/час
+					"rangeUVRadiation":"250-260Hm",
+					"powerLampRecirculator":10.8, // Вт/m2
+					"powerConsumption":60, // Вт
+					"lifeTimeDevice":100000, // часов
+					"lifeTimeLamp":9000, // часов
+					"baseTypeLamp":"", //Тип цоколя лампы
+					"degreeProtection":"IP20",
+					"supplyVoltage":"175-265В",
+					"temperatureMode":"+2...+50C",
+					"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
+					"noiseLevel":35, //дБ
+					"grossWeight": 5.5, // Брутто, кг
+				}),
+			},
 		},
 		{
 			SKU:"", Model: "AIRO-DEZ черный",
-			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ черный", ShortName: "Рециркулятор AIRO-DEZ",
+			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ черный", ShortName: "Рециркулятор AIRO-DEZ черный",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
+			Attributes: postgres.Jsonb{
+				RawMessage: MapToRawJson(map[string]interface{}{
+					"color":"черный",
+					"bodyMaterial":"металл",
+					"filterType":"угольно-фотокаталитический",
+					"performance":150, // m3/час
+					"rangeUVRadiation":"250-260Hm",
+					"powerLampRecirculator":10.8, // Вт/m2
+					"powerConsumption":60, // Вт
+					"lifeTimeDevice":100000, // часов
+					"lifeTimeLamp":9000, // часов
+					"baseTypeLamp":"", //Тип цоколя лампы
+					"degreeProtection":"IP20",
+					"supplyVoltage":"175-265В",
+					"temperatureMode":"+2...+50C",
+					"noiseLevel":35, //дБ
+					"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
+					"grossWeight": 5.5, // Брутто, кг
+				}),
+			},
+		},
+		{
+			SKU:"", Model: "AIRO-DEZ с регулировкой белый",
+			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности белый",  ShortName: "Рециркулятор AIRO-DEZ белый",
+			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			RetailPrice: 19500.00, RetailDiscount: 1000,
+			ShortDescription: "",
+			Description: "",
+			Attributes: postgres.Jsonb{
+				RawMessage: MapToRawJson(map[string]interface{}{
+					"color":"белый",
+					"bodyMaterial":"металл",
+					"filterType":"угольно-фотокаталитический",
+					"performance":150, // m3/час
+					"rangeUVRadiation":"250-260Hm",
+					"powerLampRecirculator":10.8, // Вт/m2
+					"powerConsumption":60, // Вт
+					"lifeTimeDevice":100000, // часов
+					"lifeTimeLamp":9000, // часов
+					"baseTypeLamp":"", //Тип цоколя лампы
+					"degreeProtection":"IP20",
+					"supplyVoltage":"175-265В",
+					"temperatureMode":"+2...+50C",
+					"noiseLevel":35, //дБ
+					"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
+					"grossWeight": 5.5, // Брутто, кг
+				}),
+			},
 		},
 		{
 			SKU:"", Model: "AIRO-DEZ белый",
-			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ",  ShortName: "Рециркулятор AIRO-DEZ",
+			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ",  ShortName: "Рециркулятор AIRO-DEZ белый",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
+			Attributes: postgres.Jsonb{
+				RawMessage: MapToRawJson(map[string]interface{}{
+					"color":"белый",
+					"bodyMaterial":"металл",
+					"filterType":"угольно-фотокаталитический",
+					"performance":150, // m3/час
+					"rangeUVRadiation":"250-260Hm",
+					"powerLampRecirculator":10.8, // Вт/m2
+					"powerConsumption":60, // Вт
+					"lifeTimeDevice":100000, // часов
+					"lifeTimeLamp":9000, // часов
+					"baseTypeLamp":"", //Тип цоколя лампы
+					"degreeProtection":"IP20",
+					"supplyVoltage":"175-265В",
+					"temperatureMode":"+2...+50C",
+					"noiseLevel":35, //дБ
+					"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
+					"grossWeight": 5.5, // Брутто, кг
+				}),
+			},
 		},
 		{
 			SKU:"", Model: "AIRO-DEZ COMPACT",
@@ -647,6 +733,27 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			RetailPrice: 39000.00, RetailDiscount: 3000,
 			ShortDescription: "",
 			Description: "",
+			Attributes: postgres.Jsonb{
+				RawMessage: MapToRawJson(map[string]interface{}{
+					"color":"черный",
+					"bodyMaterial":"металл",
+					"filterType":"угольно-фотокаталитический",
+					"performance":220, // m3/час
+					"rangeUVRadiation":"250-260Hm",
+					"powerLampRecirculator":19, // Вт/m2
+					"powerLampIrradiator":10.8, // Вт/m2
+					"powerConsumption":135, // Вт
+					"lifeTimeDevice":100000, // часов
+					"lifeTimeLamp":9000, // часов
+					"baseTypeLamp":"", //Тип цоколя лампы
+					"degreeProtection":"IP20",
+					"supplyVoltage":"175-265В",
+					"temperatureMode":"+2...+50C",
+					"noiseLevel":45, //дБ
+					"overallDimensions":"300х610х150мм", //Габаритные размеры(ВхШхГ)
+					"grossWeight": 6.8, // Брутто, кг
+				}),
+			},
 		},
 		
 		{
@@ -656,6 +763,27 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			RetailPrice: 11000.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
+			Attributes: postgres.Jsonb{
+				RawMessage: MapToRawJson(map[string]interface{}{
+					"color":"черный",
+					"bodyMaterial":"металл",
+					//"filterType":"угольно-фотокаталитический",
+					//"performance":220, // m3/час
+					"rangeUVRadiation":"250-260Hm",
+					//"powerLampRecirculator":19, // Вт/m2
+					//"powerLampIrradiator":10.8, // Вт/m2
+					"powerConsumption":10, // Вт
+					"lifeTimeDevice":100000, // часов
+					"lifeTimeLamp":9000, // часов
+					"baseTypeLamp":"G13", //Тип цоколя лампы
+					"degreeProtection":"IP20",
+					"supplyVoltage":"175-265В",
+					"temperatureMode":"+2...+50C",
+					"noiseLevel":25, //дБ
+					"overallDimensions":"480х500х320мм", //Габаритные размеры(ВхШхГ)
+					"grossWeight": 5, // Брутто, кг
+				}),
+			},
 		},
 		{
 			SKU:"", Model: "AIRO-DEZPUF венге",
@@ -664,6 +792,27 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			RetailPrice: 12000.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
+			Attributes: postgres.Jsonb{
+				RawMessage: MapToRawJson(map[string]interface{}{
+					"color":"венге",
+					"bodyMaterial":"металл",
+					//"filterType":"угольно-фотокаталитический",
+					//"performance":220, // m3/час
+					"rangeUVRadiation":"250-260Hm",
+					//"powerLampRecirculator":19, // Вт/m2
+					//"powerLampIrradiator":10.8, // Вт/m2
+					"powerConsumption":10, // Вт
+					"lifeTimeDevice":100000, // часов
+					"lifeTimeLamp":9000, // часов
+					"baseTypeLamp":"G13", //Тип цоколя лампы
+					"degreeProtection":"IP20",
+					"supplyVoltage":"175-265В",
+					"temperatureMode":"+2...+50C",
+					"noiseLevel":25, //дБ
+					"overallDimensions":"500х500х320мм", //Габаритные размеры(ВхШхГ)
+					"grossWeight": 5, // Брутто, кг
+				}),
+			},
 		},
 
 		{
@@ -673,6 +822,27 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			RetailPrice: 7800.00, RetailDiscount: 800,
 			ShortDescription: "",
 			Description: "",
+			Attributes: postgres.Jsonb{
+				RawMessage: MapToRawJson(map[string]interface{}{
+					"color":"черный",
+					"bodyMaterial":"металл",
+					//"filterType":"угольно-фотокаталитический",
+					//"performance":220, // m3/час
+					"rangeUVRadiation":"250-260Hm",
+					//"powerLampRecirculator":19, // Вт/m2
+					//"powerLampIrradiator":10.8, // Вт/m2
+					"powerConsumption":10, // Вт
+					"lifeTimeDevice":100000, // часов
+					"lifeTimeLamp":9000, // часов
+					"baseTypeLamp":"G13", //Тип цоколя лампы
+					"degreeProtection":"IP20",
+					"supplyVoltage":"175-265В",
+					"temperatureMode":"+2...+50C",
+					"noiseLevel":25, //дБ
+					"overallDimensions":"400х500х320мм", //Габаритные размеры(ВхШхГ)
+					"grossWeight": 5, // Брутто, кг
+				}),
+			},
 		},
 		{
 			SKU:"", Model: "AIRO-DEZBOX белая",
@@ -681,6 +851,27 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			RetailPrice: 7800.00, RetailDiscount: 800,
 			ShortDescription: "",
 			Description: "",
+			Attributes: postgres.Jsonb{
+				RawMessage: MapToRawJson(map[string]interface{}{
+					"color":"белый",
+					"bodyMaterial":"металл",
+					//"filterType":"угольно-фотокаталитический",
+					//"performance":220, // m3/час
+					"rangeUVRadiation":"250-260Hm",
+					//"powerLampRecirculator":19, // Вт/m2
+					//"powerLampIrradiator":10.8, // Вт/m2
+					"powerConsumption":10, // Вт
+					"lifeTimeDevice":100000, // часов
+					"lifeTimeLamp":9000, // часов
+					"baseTypeLamp":"G13", //Тип цоколя лампы
+					"degreeProtection":"IP20",
+					"supplyVoltage":"175-265В",
+					"temperatureMode":"+2...+50C",
+					"noiseLevel":25, //дБ
+					"overallDimensions":"400х500х320мм", //Габаритные размеры(ВхШхГ)
+					"grossWeight": 5, // Брутто, кг
+				}),
+			},
 		},
 		{
 			SKU:"", Model: "AIRO-DEZTUMB",
@@ -689,6 +880,27 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
+			Attributes: postgres.Jsonb{
+				RawMessage: MapToRawJson(map[string]interface{}{
+					"color":"черный",
+					//"bodyMaterial":"металл",
+					//"filterType":"угольно-фотокаталитический",
+					//"performance":220, // m3/час
+					"rangeUVRadiation":"250-260Hm",
+					//"powerLampRecirculator":19, // Вт/m2
+					//"powerLampIrradiator":10.8, // Вт/m2
+					"powerConsumption":10, // Вт мощность устр-ва
+					"lifeTimeDevice":100000, // часов
+					"lifeTimeLamp":9000, // часов
+					"baseTypeLamp":"G13", //Тип цоколя лампы
+					"degreeProtection":"IP20",
+					"supplyVoltage":"175-265В",
+					"temperatureMode":"+2...+50C",
+					"noiseLevel":5, //дБ
+					"overallDimensions":"560х450х400мм", //Габаритные размеры(ВхШхГ)
+					"grossWeight": 5, // Брутто, кг
+				}),
+			},
 		},
 		{
 			SKU:"", Model: "AIROTUMB big",
@@ -697,6 +909,27 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
+			Attributes: postgres.Jsonb{
+				RawMessage: MapToRawJson(map[string]interface{}{
+					"color":"белый",
+					//"bodyMaterial":"металл",
+					//"filterType":"угольно-фотокаталитический",
+					//"performance":220, // m3/час
+					"rangeUVRadiation":"250-260Hm",
+					//"powerLampRecirculator":19, // Вт/m2
+					//"powerLampIrradiator":10.8, // Вт/m2
+					"powerConsumption":10, // Вт мощность устр-ва
+					"lifeTimeDevice":100000, // часов
+					"lifeTimeLamp":9000, // часов
+					"baseTypeLamp":"G13", //Тип цоколя лампы
+					"degreeProtection":"IP20",
+					"supplyVoltage":"175-265В",
+					"temperatureMode":"+2...+50C",
+					"noiseLevel":5, //дБ
+					"overallDimensions":"670х450х400мм", //Габаритные размеры(ВхШхГ)
+					"grossWeight": 5, // Брутто, кг
+				}),
+			},
 		},
 		
 		{
@@ -706,6 +939,27 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
+			Attributes: postgres.Jsonb{
+				RawMessage: MapToRawJson(map[string]interface{}{
+					"color":"светлая сосна",
+					"bodyMaterial":"металл",
+					//"filterType":"угольно-фотокаталитический",
+					//"performance":220, // m3/час
+					"rangeUVRadiation":"250-260Hm",
+					//"powerLampRecirculator":19, // Вт/m2
+					//"powerLampIrradiator":10.8, // Вт/m2
+					"powerConsumption":10, // Вт мощность устр-ва
+					"lifeTimeDevice":100000, // часов
+					"lifeTimeLamp":9000, // часов
+					"baseTypeLamp":"G13", //Тип цоколя лампы
+					"degreeProtection":"IP20",
+					"supplyVoltage":"175-265В",
+					"temperatureMode":"+2...+50C",
+					"noiseLevel":25, //дБ
+					"overallDimensions":"460х500х320мм", //Габаритные размеры(ВхШхГ)
+					"grossWeight": 5, // Брутто, кг
+				}),
+			},
 		},
 	}
 	
@@ -784,6 +1038,11 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 }
 
-func CreateBaseAccounts()  {
+func MapToRawJson(input map[string]interface{}) json.RawMessage {
 
+	b, err := json.Marshal(input)
+	if err != nil {
+		return json.RawMessage(`{}`)
+	}
+	return b
 }

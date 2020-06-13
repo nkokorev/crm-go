@@ -189,7 +189,8 @@ func (account Account) CreateBaseEavAttrTypes() error {
 		{Code:	"filterType",  	Name: "Тип фильтра", 		AttrTypeCode: "varchar"}, // угольно-фотокаталитический
 		{Code:	"performance",  Name: "Производительность", AttrTypeCode: "int", ShortName: "м³/ч"}, // 150 (м³/ч)
 		{Code:	"rangeUVRadiation", Name: "Диапазон бактерицидного УФ излучения",  	AttrTypeCode: "varchar"}, // 250-260Нм
-		{Code:	"powerLamp",  		Name: "Мощность излучения лампы рециркулятора",	AttrTypeCode: "varchar", ShortName: "Вт/м²"}, // 10,8 Вт/м²
+		{Code:	"powerLampRecirculator",  		Name: "Мощность излучения лампы рециркулятора",	AttrTypeCode: "varchar", ShortName: "Вт/м²"}, // 10,8 Вт/м²
+		{Code:	"powerLampIrradiator",  		Name: "Мощность излучения лампы облучателя",	AttrTypeCode: "varchar", ShortName: "Вт/м²"}, // 10,8 Вт/м²
 		{Code:	"powerConsumption", Name: "Потребляемая мощность", 	AttrTypeCode: "int", ShortName: "Вт"}, // 60 (Вт)
 		{Code:	"lifeTimeDevice",  	Name: "Срок службы устройства", AttrTypeCode: "int", ShortName: "ч"}, // 100000 (ч)
 		{Code:	"lifeTimeLamp",  	Name: "Срок службы УФ лампы", 	AttrTypeCode: "int", ShortName: "ч"}, // 9000 (ч)
