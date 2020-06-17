@@ -159,6 +159,7 @@ func ProductGroupCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request) {
+
 	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
 	account, err := GetWorkAccountCheckHashId(w,r)
 	if err != nil || account == nil {
@@ -218,23 +219,21 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 }
 
 func ProductGroupListGet(w http.ResponseWriter, r *http.Request) {
+
 	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
 	account, err := GetWorkAccountCheckHashId(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-
-	groups, err := account.GetProductGroups()
+	productGroups, err := account.GetProductGroups()
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
 	}
 
-
-
 	resp := u.Message(true, "GET Product Group List")
-	resp["groups"] = groups
+	resp["productGroups"] = productGroups
 	u.Respond(w, resp)
 }
 
