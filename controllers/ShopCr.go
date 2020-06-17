@@ -177,16 +177,43 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	groups, err := shop.GetProductGroups()
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
-		return
+	// 2. Узнаем, какой список нужен
+	all, ok := GetQuerySTRVarFromGET(r, "all")
+
+	limit, allOk := GetQueryINTVarFromGET(r, "limit")
+	if !ok {
+		limit = 100
+	}
+	offset, ok := GetQueryINTVarFromGET(r, "offset")
+	if !ok || offset < 0 {
+		offset = 0
+	}
+	search, ok := GetQuerySTRVarFromGET(r, "search")
+	if !ok {
+		search = ""
+	}
+
+	productGroups := make([]models.ProductGroup,0)
+	total := 0
+
+	if all != "" && allOk {
+		productGroups, err = shop.GetProductGroups()
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+			return
+		}
+	} else {
+		productGroups, total, err = shop.GetProductGroupsPaginationList(offset, limit, search)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+			return
+		}
 	}
 
 
-
 	resp := u.Message(true, "GET Product Group List")
-	resp["groups"] = groups
+	resp["productGroups"] = productGroups
+	resp["total"] = total
 	u.Respond(w, resp)
 }
 

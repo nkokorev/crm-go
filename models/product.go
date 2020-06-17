@@ -37,12 +37,13 @@ type Product struct {
 
 	// Base properties
 	RetailPrice 			float64 `json:"retailPrice" gorm:"type:numeric;default:0"` // розничная цена
+	//RetailPrice 			decimal.Decimal `json:"retailPrice" gorm:"type:decimal(20,8);default:0"` // розничная цена
 	WholesalePrice 			float64 `json:"wholesalePrice" gorm:"type:numeric;default:0"` // оптовая цена
 	PurchasePrice 			float64 `json:"purchasePrice" gorm:"type:numeric;default:0"` // закупочная цена
 	RetailDiscount 			float64 `json:"retailDiscount" gorm:"type:numeric;default:0"` // розничная фактическая скидка
 
 	ProductType 			ProductType `json:"productType" gorm:"type:varchar(12);default:'commodity';"`// товар или услуга ? [вид номенклатуры]
-	UnitMeasurementID 		uint	`json:"unitMeasurementId" gorm:"type:int;default:1;"`
+	UnitMeasurementID 		uint	`json:"unitMeasurementId" gorm:"type:int;default:1;"` // тип измерения
 	UnitMeasurement 		UnitMeasurement // Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 	
 	// ProductGroupsId uint `json:"productGroupsId"` // группа товара
@@ -55,8 +56,6 @@ type Product struct {
 	// Attributes []EavAttribute `json:"attributes" gorm:"many2many:product_eav_attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	//Attributes []EavAttribute `json:"attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	Attributes 		postgres.Jsonb `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
-	//Attributes 		pgtype.JSONB `json:"attributes" sql:"type:JSONB;DEFAULT '{}'::JSONB"`
-	// []ProductAttribute // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	// Reviews []Review // Product reviews (отзывы на товар - с рейтингом(?))
 	// Questions []question // вопросы по товару
 	// Video []Video // видеообзоры по товару на ютубе

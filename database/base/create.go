@@ -258,6 +258,11 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 		return
 	}
 
+	_, err = acc357.ApiKeyCreate(models.ApiKey{Name:"Для сайта"})
+	if err != nil {
+		log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
+	}
+
 	// 3. добавляем меня как админа
 	_, err = acc357.AppendUser(*owner, models.RoleAdmin)
 	if err != nil {
@@ -564,6 +569,11 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		log.Fatal("Не удалось создать MailBoxes для Brouser: ", err)
 	}
 
+	_, err = airoClimat.ApiKeyCreate(models.ApiKey{Name:"Для сайта"})
+	if err != nil {
+		log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
+	}
+
 	// 4. !!! Создаем магазин
 	airoShop, err := airoClimat.CreateShop(models.Shop{Name: "airoclimate.ru", Address: "г. Москва, р-н Текстильщики", Email: "info@airoclimate.ru", Phone: "+7 (4832) 77-03-73"})
 	if err != nil {
@@ -591,21 +601,21 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	// 6. Создаем карточки товара
 	cards := []models.ProductCard{
-		{ID: 0, URL: "airo-dez-adjustable-black", 	Name:"Рециркулятор AIRO-DEZ черный с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ черный с регулировкой"},
-		{ID: 0, URL: "airo-dez-black", 				Name:"Рециркулятор AIRO-DEZ черный", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ черный"},
-		{ID: 0, URL: "airo-dez-adjustable-white", 	Name:"Рециркулятор AIRO-DEZ белый с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ белый с регулировкой"},
-		{ID: 0, URL: "airo-dez-white", 				Name:"Рециркулятор AIRO-DEZ белый", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ белый"},
-		{ID: 0, URL: "airo-dez-compact", 			Name: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", MetaTitle: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", },
+		{ID: 0, URL: "airo-dez-adjustable-black", 	Label:"Рециркулятор AIRO-DEZ черный с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ черный с регулировкой"},
+		{ID: 0, URL: "airo-dez-black", 				Label:"Рециркулятор AIRO-DEZ черный", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ черный"},
+		{ID: 0, URL: "airo-dez-adjustable-white", 	Label:"Рециркулятор AIRO-DEZ белый с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ белый с регулировкой"},
+		{ID: 0, URL: "airo-dez-white", 				Label:"Рециркулятор AIRO-DEZ белый", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ белый"},
+		{ID: 0, URL: "airo-dez-compact", 			Label: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", MetaTitle: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", },
 
-		{ID: 0, URL: "airo-dezpuf", Name: "Бактерицидная камера пуф AIRO-DEZPUF", MetaTitle: "Бактерицидная камера пуф AIRO-DEZPUF"},
-		{ID: 0, URL: "airo-dezpuf-wenge", Name: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге", MetaTitle: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"},
+		{ID: 0, URL: "airo-dezpuf", Label: "Бактерицидная камера пуф AIRO-DEZPUF", MetaTitle: "Бактерицидная камера пуф AIRO-DEZPUF"},
+		{ID: 0, URL: "airo-dezpuf-wenge", Label: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге", MetaTitle: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"},
 		
-		{ID: 0, URL: "airo-dezbox", Name: "Бактерицидная камера AIRO-DEZBOX", MetaTitle: "Бактерицидная камера AIRO-DEZBOX", },
-		{ID: 0, URL: "airo-dezbox-white", Name: "Бактерицидная камера AIRO-DEZBOX белая", MetaTitle: "Бактерицидная камера AIRO-DEZBOX белая", },
-		{ID: 0, URL: "airo-deztumb", Name: "Тумба облучатель бактерицидный AIRO-DEZTUMB", MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB", },
-		{ID: 0, URL: "airo-deztumb-big", Name: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", },
+		{ID: 0, URL: "airo-dezbox", Label: "Бактерицидная камера AIRO-DEZBOX", MetaTitle: "Бактерицидная камера AIRO-DEZBOX", },
+		{ID: 0, URL: "airo-dezbox-white", Label: "Бактерицидная камера AIRO-DEZBOX белая", MetaTitle: "Бактерицидная камера AIRO-DEZBOX белая", },
+		{ID: 0, URL: "airo-deztumb", Label: "Тумба облучатель бактерицидный AIRO-DEZTUMB", MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB", },
+		{ID: 0, URL: "airo-deztumb-big", Label: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", },
 
-		{ID: 0, URL: "airo-deztumb-pine", Name: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", MetaTitle: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", },
+		{ID: 0, URL: "airo-deztumb-pine", Label: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", MetaTitle: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", },
 
 	}
 

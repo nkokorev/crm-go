@@ -18,7 +18,7 @@ type ProductCard struct {
 	Enabled 			bool 	`json:"enabled" gorm:"type:bool;default:true"` // активна ли карточка товара
 	URL 				string `json:"url" gorm:"type:varchar(255);"` // идентификатор страницы (products/syao-chzhun )
 	Breadcrumb 			string `json:"breadcrumb" gorm:"type:varchar(255);default:null;"`
-	Name	 			string `json:"name" gorm:"type:varchar(255);default:'';"` // что выводить в список товаров
+	Label	 			string `json:"label" gorm:"type:varchar(255);default:'';"` // что выводить в список товаров
 
 	MetaTitle 			string `json:"metaTitle" gorm:"type:varchar(255);default:null;"`
 	MetaKeywords 		string `json:"metaKeywords" gorm:"type:varchar(255);default:null;"`

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 )
 
@@ -89,20 +90,6 @@ func (shop Shop) GetProductGroup(groupId uint) (*ProductGroup, error) {
 		return nil, err
 	}
 
-	// Делаем проверку на всякий пожарный
-	/*if group.ShopID != shop.ID {
-		return nil, utils.Error{Message: "Группа принадлежит другому магазину"}
-	}*/
-	/*if group.ShopID != shop.ID {
-		acc, err := GetAccount(shop.AccountID)
-		if err != nil {
-			return nil, utils.Error{Message: "Не удалось получить аккаунт"}
-		}
-		if !acc.ExistShop(group.ShopID) {
-			return nil, utils.Error{Message: "Указанный магазин принадлежит другому аккаунту"}
-		}
-	}*/
-
 	return group, nil
 }
 
@@ -110,12 +97,70 @@ func (shop Shop) GetProductGroups() ([]ProductGroup, error) {
 
 	groups := make([]ProductGroup,0)
 
-	if err := db.Model(&shop).Association("ProductGroups").Find(&groups).Error; err != nil {
+	err := db.Model(&shop).Where("shop_id = ?", shop.ID).Association("ProductGroups").Find(&groups).Error
+	if err != nil && err != gorm.ErrRecordNotFound{
+		return nil, err
+	}
+	if err != nil {
 		return nil, err
 	}
 
 	return groups, nil
 }
+func (shop Shop) GetProductGroupsPaginationList(offset, limit int, search string) ([]ProductGroup, int, error) {
+
+	groups := make([]ProductGroup,0)
+	//groups := []ProductGroup{}
+
+	if len(search) > 0 {
+
+		// string pattern
+		search = "%"+search+"%"
+
+		err := db.Model(&Shop{}).
+			Limit(limit).
+			Offset(offset).
+			Where("shop_id = ?", shop.ID).
+			Where("code ILIKE ? OR url ILIKE ? OR name ILIKE ? OR short_description ILIKE ? OR description ILIKE ? OR meta_title ILIKE ? OR meta_keywords ILIKE ? OR meta_description ILIKE ?" , search,search,search,search,search,search,search,search,search).
+			Association("ProductGroups").
+			Find(&groups).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+	} else {
+		if offset < 0 || limit < 0 {
+			return nil, 0, errors.New("Offset or limit is wrong")
+		}
+
+		/*if err := db.Model(&shop).Association("ProductGroups").Find(&groups).Error; err != nil {
+			return nil, 0, err
+		}
+
+		fmt.Println(groups)*/
+
+		//err := db.Model(&shop).Association("ProductGroups").Find(&groups).Error
+
+		err := db.Model(&shop).
+			Limit(limit).
+			Offset(offset).
+			Where("shop_id = ?", shop.ID).
+			Association("ProductGroups").
+			Find(&groups).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+	}
+
+	total := db.Model(&shop).Where("shop_id = ?", shop.ID).Association("ProductGroups").Count()
+
+	/*if err := db.Model(&shop).Association("ProductGroups").Find(&groups).Error; err != nil {
+		return nil, err
+	}*/
+
+	return groups, total, nil
+}
+
 func (account Account) GetProductGroups() ([]ProductGroup, error) {
 
 	groups := make([]ProductGroup,0)

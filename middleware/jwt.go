@@ -32,7 +32,7 @@ func BearerAuthentication(next http.Handler) http.Handler {
 
 		splitted := strings.Split(tokenHeader, " ") //The token normally comes in format `Bearer {token-body}`, we check if the retrieved token matched this requirement
 		if len(splitted) != 2 {
-			resp := u.Message(false, "Invalid/Malformed auth token")
+			resp := u.Message(false, "Invalid/Malformed auth token: wrong format")
 			w.WriteHeader(http.StatusForbidden)
 			u.Respond(w, resp)
 			return
@@ -44,7 +44,8 @@ func BearerAuthentication(next http.Handler) http.Handler {
 		// ищем ApiKey с указанным токеном
 		key, err := models.GetApiKeyByToken(token)
 		if err != nil {
-			resp := u.Message(false, "Invalid/Malformed auth token")
+
+			resp := u.Message(false, "Invalid/Malformed auth token: key not found")
 			w.WriteHeader(http.StatusForbidden)
 			u.Respond(w, resp)
 			return
