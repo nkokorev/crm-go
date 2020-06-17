@@ -194,3 +194,15 @@ func GetInputInterface(w http.ResponseWriter, r *http.Request, input interface{}
 
 	return nil
 }
+
+func isApiRequest(r *http.Request) bool {
+	return r.Context().Value("issuer") == "api"
+}
+
+func isAppRequest(r *http.Request) bool {
+	return r.Context().Value("issuer") == "app"
+}
+
+func isUIApiRequest(r *http.Request) bool {
+	return r.Context().Value("issuer") == "ui-api"
+}

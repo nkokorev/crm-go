@@ -244,6 +244,7 @@ func JwtCheckFullAuthentication(next http.Handler) http.Handler {
 		// fmt.Printf("Context Account: %v\n",  account.Name)
 		// fmt.Printf("userId: %v\n", user.Name)
 
+		r = r.WithContext(context.WithValue(r.Context(), "issuer", "ui-api"))
 		r = r.WithContext(context.WithValue(r.Context(), "userId", tk.UserID))
 		r = r.WithContext(context.WithValue(r.Context(), "user", user))
 		r = r.WithContext(context.WithValue(r.Context(), "accountId", tk.AccountID))

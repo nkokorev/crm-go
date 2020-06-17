@@ -16,5 +16,5 @@ var ApiRoutes = func (rApi *mux.Router) {
 
 	rApi.HandleFunc("/users", controllers.CreateUser).Methods(http.MethodPost)
 
-	rApi.HandleFunc("/shops/{shopId:[0-9]+}/products", controllers.ProductGroupListPaginationByShopGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/shops/{shopId:[0-9]+}/product-cards", controllers.ProductGroupListPaginationByShopGet).Methods(http.MethodGet)
 }
