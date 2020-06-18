@@ -162,7 +162,7 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 
 	var account *models.Account
 	var err error
-	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
+	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
 	if isApiRequest(r) {
 		account, err = GetWorkAccount(w,r)
 		if err != nil || account == nil {
@@ -174,7 +174,6 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 			return
 		}
 	}
-
 
 	shopId, err := GetUINTVarFromRequest(r, "shopId")
 	if err != nil {
@@ -189,9 +188,9 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 	}
 
 	// 2. Узнаем, какой список нужен
-	all, ok := GetQuerySTRVarFromGET(r, "all")
+	all, allOk := GetQuerySTRVarFromGET(r, "all")
 
-	limit, allOk := GetQueryINTVarFromGET(r, "limit")
+	limit, ok := GetQueryINTVarFromGET(r, "limit")
 	if !ok {
 		limit = 100
 	}
@@ -207,7 +206,7 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 	productGroups := make([]models.ProductGroup,0)
 	total := 0
 
-	if all != "" && allOk {
+	if all == "true" && allOk {
 		productGroups, err = shop.GetProductGroups()
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
@@ -408,9 +407,23 @@ func ProductCardCreate(w http.ResponseWriter, r *http.Request) {
 // Собираем все картоки товаров для конкретного магазина
 func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccountCheckHashId(w,r)
+	/*account, err := GetWorkAccountCheckHashId(w,r)
 	if err != nil || account == nil {
 		return
+	}*/
+	var account *models.Account
+	var err error
+
+	if isApiRequest(r) {
+		account, err = GetWorkAccount(w,r)
+		if err != nil || account == nil {
+			return
+		}
+	} else {
+		account, err = GetWorkAccountCheckHashId(w,r)
+		if err != nil || account == nil {
+			return
+		}
 	}
 
 	shopId, err := GetUINTVarFromRequest(r, "shopId")
@@ -438,8 +451,9 @@ func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) 
 	if !ok {
 		search = ""
 	}
+	products, _ := GetQuerySTRVarFromGET(r, "products")
 
-	cards, total, err := shop.GetProductCardList(offset, limit, search)
+	productCards, total, err := shop.GetProductCardList(offset, limit, search, products == "true")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -447,7 +461,7 @@ func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) 
 
 	resp := u.Message(true, "GET Product Card List")
 	resp["total"] = total
-	resp["cards"] = cards
+	resp["productCards"] = productCards
 	u.Respond(w, resp)
 }
 

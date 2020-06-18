@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
@@ -33,8 +34,8 @@ type ProductCard struct {
 	SwitchProducts	 	pq.StringArray `json:"switchProducts" sql:"type:varchar(255)[];default:'{}'"` // {color, size} Параметры переключения среди предложений
 
 	// ProductGroups 		[]ProductGroup `json:"productGroups" gorm:"many2many:product_group_product_cards"` // для разделов new и т.д.
-	ProductGroup 		ProductGroup `json:"productGroups"` // для разделов new и т.д.
-	Shop		 		Shop `json:"shop"` // к какому магазину относится
+	ProductGroup 		ProductGroup `json:"-"` // для разделов new и т.д.
+	Shop		 		Shop `json:"-"` // к какому магазину относится
 	Products 			[]Product `json:"products" gorm:"many2many:product_card_products"` // можно заводить два схожих продукта, разных по цвету
 }
 
@@ -141,7 +142,7 @@ func (shop Shop) GetProductCard(cardId uint) (*ProductCard, error) {
 	return ProductCard{}.get(cardId)
 }
 
-func (shop Shop) GetProductCardList(offset, limit int, search string) ([]ProductCard, uint, error) {
+func (shop Shop) GetProductCardList(offset, limit int, search string, products bool) ([]ProductCard, uint, error) {
 	cards := make([]ProductCard,0)
 
 	// if need to search
@@ -150,12 +151,7 @@ func (shop Shop) GetProductCardList(offset, limit int, search string) ([]Product
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&ProductCard{}).Preload("Products").
-			Limit(limit).
-			Offset(offset).
-			// Joins("LEFT JOIN users ON account_users.user_id = users.id").
-			Where("account_id = ?", shop.AccountID).
-			// Joins("LEFT JOIN roles ON account_users.role_id = roles.id").
+		err := db.Model(&ProductCard{}).Preload("Products").Limit(limit).Offset(offset).Where("account_id = ?", shop.AccountID).
 			Find(&cards, "url ILIKE ? OR breadcrumb ILIKE ? OR meta_title ILIKE ? OR meta_keywords ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ?" , search,search,search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -166,14 +162,22 @@ func (shop Shop) GetProductCardList(offset, limit int, search string) ([]Product
 			return nil, 0, errors.New("Offset or limit is wrong")
 		}
 
-		err := db.Model(&ProductCard{}).Preload("Products").
-			Limit(limit).
-			Offset(offset).
-			// Joins("LEFT JOIN users ON account_users.user_id = users.id").
-			Find(&cards, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error
-		if err != nil && err != gorm.ErrRecordNotFound{
-			return nil, 0, err
+		if products {
+			fmt.Println("Preload products")
+			err := db.Model(&ProductCard{}).Preload("Products").Limit(limit).Offset(offset).Find(&cards, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error
+			if err != nil && err != gorm.ErrRecordNotFound{
+				return nil, 0, err
+			}
+		} else {
+			fmt.Println("NOT Preload products")
+			err := db.Model(&ProductCard{}).Limit(limit).Offset(offset).Find(&cards, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error
+			if err != nil && err != gorm.ErrRecordNotFound{
+				return nil, 0, err
+			}
 		}
+
+
+
 	}
 
 	// len(cards) != всему списку!
