@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
@@ -163,13 +162,11 @@ func (shop Shop) GetProductCardList(offset, limit int, search string, products b
 		}
 
 		if products {
-			fmt.Println("Preload products")
 			err := db.Model(&ProductCard{}).Preload("Products").Limit(limit).Offset(offset).Find(&cards, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error
 			if err != nil && err != gorm.ErrRecordNotFound{
 				return nil, 0, err
 			}
 		} else {
-			fmt.Println("NOT Preload products")
 			err := db.Model(&ProductCard{}).Limit(limit).Offset(offset).Find(&cards, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error
 			if err != nil && err != gorm.ErrRecordNotFound{
 				return nil, 0, err

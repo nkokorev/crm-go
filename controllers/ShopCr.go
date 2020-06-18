@@ -564,9 +564,19 @@ func ProductCreate(w http.ResponseWriter, r *http.Request) {
 
 func ProductListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccountCheckHashId(w,r)
-	if err != nil || account == nil {
-		return
+	var account *models.Account
+	var err error
+
+	if isApiRequest(r) {
+		account, err = GetWorkAccount(w,r)
+		if err != nil || account == nil {
+			return
+		}
+	} else {
+		account, err = GetWorkAccountCheckHashId(w,r)
+		if err != nil || account == nil {
+			return
+		}
 	}
 
 	// 2. Узнаем, какой список нужен
