@@ -158,6 +158,51 @@ func ProductGroupCreate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
+
+	var account *models.Account
+	var err error
+	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
+	if isApiRequest(r) {
+		account, err = GetWorkAccount(w,r)
+		if err != nil || account == nil {
+			return
+		}
+	} else {
+		account, err = GetWorkAccountCheckHashId(w,r)
+		if err != nil || account == nil {
+			return
+		}
+	}
+
+	shopId, err := GetUINTVarFromRequest(r, "shopId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
+		return
+	}
+
+	productCardId, err := GetUINTVarFromRequest(r, "productCardId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID product card"))
+		return
+	}
+
+	shop, err := account.GetShop(shopId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
+		return
+	}
+
+	productCard, err := shop.GetProductCard(productCardId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		return
+	}
+
+	resp := u.Message(true, "GET Product Card")
+	resp["productCard"] = productCard
+	u.Respond(w, resp)
+}
 func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
@@ -405,6 +450,56 @@ func ProductCardCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 // Собираем все картоки товаров для конкретного магазина
+func ProductCardByShopGet(w http.ResponseWriter, r *http.Request) {
+
+	/*account, err := GetWorkAccountCheckHashId(w,r)
+	if err != nil || account == nil {
+		return
+	}*/
+	var account *models.Account
+	var err error
+
+	if isApiRequest(r) {
+		account, err = GetWorkAccount(w,r)
+		if err != nil || account == nil {
+			return
+		}
+	} else {
+		account, err = GetWorkAccountCheckHashId(w,r)
+		if err != nil || account == nil {
+			return
+		}
+	}
+
+	productCardId, err := GetUINTVarFromRequest(r, "productCardId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке product Card Id"))
+		return
+	}
+
+	shopId, err := GetUINTVarFromRequest(r, "shopId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
+		return
+	}
+
+	shop, err := account.GetShop(shopId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
+		return
+	}
+
+	productCard, err := shop.GetProductCard(productCardId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить карточку товара"))
+		return
+	}
+
+	resp := u.Message(true, "GET Product Card")
+	resp["productCard"] = productCard
+	u.Respond(w, resp)
+}
+
 func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) {
 
 	/*account, err := GetWorkAccountCheckHashId(w,r)
@@ -561,6 +656,41 @@ func ProductCreate(w http.ResponseWriter, r *http.Request) {
 	resp["product"] = *product
 	u.Respond(w, resp)
 }
+
+func ProductGet(w http.ResponseWriter, r *http.Request) {
+
+	var account *models.Account
+	var err error
+
+	if isApiRequest(r) {
+		account, err = GetWorkAccount(w,r)
+		if err != nil || account == nil {
+			return
+		}
+	} else {
+		account, err = GetWorkAccountCheckHashId(w,r)
+		if err != nil || account == nil {
+			return
+		}
+	}
+
+	productId, err := GetUINTVarFromRequest(r, "productId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID товара"))
+		return
+	}
+
+	product, err := account.GetProduct(productId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		return
+	}
+
+	resp := u.Message(true, "GET Product")
+	resp["product"] = product
+	u.Respond(w, resp)
+}
+
 
 func ProductListPaginationGet(w http.ResponseWriter, r *http.Request) {
 

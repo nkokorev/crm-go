@@ -18,5 +18,10 @@ var ApiRoutes = func (rApi *mux.Router) {
 
 	rApi.HandleFunc("/shops/{shopId:[0-9]+}/product-groups", controllers.ProductGroupListPaginationByShopGet).Methods(http.MethodGet)
 	rApi.HandleFunc("/shops/{shopId:[0-9]+}/product-cards", controllers.ProductCardListPaginationByShopGet).Methods(http.MethodGet)
+
+	// todo: byShop - сейчас косвенная принадлежность товаров к магазину не отслеживается
 	rApi.HandleFunc("/shops/{shopId:[0-9]+}/products", controllers.ProductListPaginationGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/shops/{shopId:[0-9]+}/products/{productId:[0-9]+}", controllers.ProductGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/shops/{shopId:[0-9]+}/product-groups/{productGroupId:[0-9]+}", controllers.ProductGroupByShopGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/shops/{shopId:[0-9]+}/product-cards/{productCardId:[0-9]+}", controllers.ProductCardByShopGet).Methods(http.MethodGet)
 }

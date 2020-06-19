@@ -88,7 +88,10 @@ func (Product) get(id uint) (*Product, error) {
 
 	product := Product{}
 
-	if err := db.Model(&product).Preload("ProductCards").First(&product, id).Error; err != nil {
+	//if err := db.Model(&product).Preload("ProductCards").First(&product, id).Error; err != nil {
+	//	return nil, err
+	//}
+	if err := db.Model(&product).First(&product, id).Error; err != nil {
 		return nil, err
 	}
 
@@ -226,7 +229,6 @@ func (account Account) UpdateProduct(productId uint, input map[string]interface{
 	return product, err
 
 }
-
 
 func (account Account) DeleteProduct(productId uint) error {
 

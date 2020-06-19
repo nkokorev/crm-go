@@ -64,7 +64,7 @@ func (ProductCard) get(id uint) (*ProductCard, error) {
 	card := ProductCard{}
 
 	// if err := db.Table(ProductGroup{}.TableName()).Preload("Shop").First(&card, id).Error; err != nil {
-	if err := db.First(&card, id).Error; err != nil {
+	if err := db.Preload("Products").First(&card, id).Error; err != nil {
 		return nil, err
 	}
 
