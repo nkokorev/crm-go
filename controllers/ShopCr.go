@@ -38,13 +38,49 @@ func ShopCreate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+func ShopGet(w http.ResponseWriter, r *http.Request) {
+	var account *models.Account
+	var err error
+
+	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
+	if isApiRequest(r) {
+		account, err = GetWorkAccount(w,r)
+		if err != nil || account == nil {
+			return
+		}
+	} else {
+		account, err = GetWorkAccountCheckHashId(w,r)
+		if err != nil || account == nil {
+			return
+		}
+	}
+
+	shopId, err := GetUINTVarFromRequest(r, "shopId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке shop Id"))
+		return
+	}
+
+	shop, err := account.GetShop(shopId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		return
+	}
+
+
+
+	resp := u.Message(true, "GET Shop List")
+	resp["shop"] = shop
+	u.Respond(w, resp)
+}
+
 func ShopListGet(w http.ResponseWriter, r *http.Request) {
 	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
 	account, err := GetWorkAccountCheckHashId(w,r)
 	if err != nil || account == nil {
 		return
 	}
-	
+
 	shops, err := account.GetShops()
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
@@ -162,6 +198,7 @@ func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
+
 	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
 	if isApiRequest(r) {
 		account, err = GetWorkAccount(w,r)
