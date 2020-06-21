@@ -23,6 +23,7 @@ type Storage struct {
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // выводить ли где-то это изображение или нет
 
 	Name 				string `json:"name" gorm:"type:varchar(255);"` // имя файла (оно же при отдаче)
+	Alt 				string `json:"alt" gorm:"type:varchar(255);"` // alt для изображений
 	ShortDescription 	string `json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 	Description 		string `json:"description" gorm:"type:text;"` // pgsql: text // большое описание изображения (не, ну мало ли фанаты фото)
 
@@ -36,8 +37,6 @@ type Storage struct {
 	CreatedAt 	time.Time  `json:"createdAt"`
 	UpdatedAt 	time.Time  `json:"updatedAt"`
 }
-
-
 
 func (Storage) PgSqlCreate() {
 

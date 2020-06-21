@@ -22,6 +22,7 @@ const (
 Список характеристик продукта не регламентируются, но удобно, когда он принадлежит какой-то группе с фикс. списком параметров.
 
 */
+
 type Product struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
 	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
@@ -78,10 +79,10 @@ func (product *Product) BeforeCreate(scope *gorm.Scope) error {
 }
 
 // ######### CRUD Functions ############
-func (input Product) create() (*Product, error)  {
-	var product = input
-	err := db.Create(&product).First(&product).Error
-	return &product, err
+func (product Product) create() (*Product, error)  {
+	var newProduct = product
+	err := db.Create(&newProduct).First(&newProduct).Error
+	return &newProduct, err
 }
 
 func (Product) get(id uint) (*Product, error) {
@@ -112,7 +113,17 @@ func (Product) getList(accountId uint) ([]Product, error) {
 
 func (product *Product) update(input interface{}) error {
 	//return db.Model(product).Omit("id", "account_id").Updates(structs.Map(input)).Error
-	return db.Model(product).Omit("id", "account_id").Updates(input).Error
+	err := db.Model(product).Omit("id", "account_id").Updates(input).Error
+	if err != nil {
+		return err
+	}
+
+	//ProductCreate{}.emit(*product)
+	//emit("CreateProduct", product)
+
+	emit(CreateProductEvent, product)
+
+	return nil
 }
 
 
