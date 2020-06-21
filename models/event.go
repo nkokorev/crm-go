@@ -2,16 +2,14 @@ package models
 
 import (
 	"fmt"
-	"sync"
-	"time"
 )
 
 type Event interface {
 	emit(data interface{})
-	addListener(listener Listener)
+	//addListener(listener Listener)
 }
 
-type Listener struct {
+/*type Listener struct {
 	// Channel for receiving notifications from the database.  In some cases a
 	// nil value will be sent.  See section "Notifications" above.
 	Notify chan *Notification
@@ -28,21 +26,17 @@ type Listener struct {
 	cn                   *ListenerConn
 	connNotificationChan <-chan *Notification
 	channels             map[string]struct{}
-}
+}*/
 
 
 type ProductCreate struct {
 	AccountId uint
 	ProductId uint
 }
-//func (ProductCreate) emit(data interface{}) {}
 func (ProductCreate) emit(product Product) {}
 
 type ListenerEventType = int
-/*const (
-	CreateProductEvent    ListenerEventType = "CreateProduct"
-	CreateProductCardEvent      ListenerEventType = "CreateProductCard"
-)*/
+
 const (
 	// ListenerEventConnected is emitted only when the database connection
 	// has been initially initialized. The err argument of the callback
@@ -69,5 +63,5 @@ const (
 )
 
 func emit(event ListenerEventType, data interface{}) {
-	fmt.Println("name event: ", name)
+	fmt.Println("name event: ", event)
 }

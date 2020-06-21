@@ -121,7 +121,7 @@ func (product *Product) update(input interface{}) error {
 	//ProductCreate{}.emit(*product)
 	//emit("CreateProduct", product)
 
-	emit(CreateProductEvent, product)
+	//emit(CreateProductEvent, product)
 
 	return nil
 }

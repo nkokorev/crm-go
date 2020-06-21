@@ -23,6 +23,12 @@ func RefreshTables() {
 		return
 	}*/
 
+	err = pool.Exec("drop table if exists web_hooks").Error
+	if err != nil {
+		fmt.Println("Cant create tables -1: ", err)
+		return
+	}
+
 	err = pool.Exec("drop table if exists  unit_measurements, product_card_products, product_cards").Error
 	if err != nil {
 		fmt.Println("Cant create tables 0: ", err)
@@ -83,6 +89,8 @@ func RefreshTables() {
 	models.EmailTemplate{}.PgSqlCreate()
 
 	models.Storage{}.PgSqlCreate()
+
+	models.WebHook{}.PgSqlCreate()
 
 	UploadTestData()
 }

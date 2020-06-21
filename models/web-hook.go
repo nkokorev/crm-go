@@ -84,3 +84,6 @@ func (account Account) GetWebHook(id uint) (*WebHook, error) {
 
 	return wh, nil
 }
+func (account Account) GetWebHooks() ([]WebHook, error) {
+	return WebHook{}.getListByAccount(account.ID)
+}
