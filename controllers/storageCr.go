@@ -191,7 +191,7 @@ func StorageGetListPagination(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	// without Data (body of file)
-	// todo тут надо тип файлов допистаь
+	// todo тут надо тип файлов дописать
 	files, total, err := account.StorageGetList(offset, limit, search, &productId, &shopId)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка получения списка файлов"}))

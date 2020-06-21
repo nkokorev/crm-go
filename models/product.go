@@ -173,6 +173,9 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 
 		err := db.Model(&Product{}).
 			Preload("ProductCards").
+			Preload("Images", func(db *gorm.DB) *gorm.DB {
+				return db.Select(Storage{}.SelectArrayWithoutData())
+			}).
 			Limit(limit).
 			Offset(offset).
 			Where("account_id = ?", account.ID).
@@ -187,11 +190,11 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 		}
 
 		err := db.Model(&Product{}).
-			Preload("ProductCards").
-			Limit(limit).
-			Offset(offset).
-			// Joins("LEFT JOIN users ON account_users.user_id = users.id").
-			Find(&products, "account_id = ?", account.ID).Error
+			Preload("ProductCards").Preload("Images", func(db *gorm.DB) *gorm.DB {
+			return db.Select(Storage{}.SelectArrayWithoutData())
+		}).Limit(limit).Offset(offset).Find(&products, "account_id = ?", account.ID).Error
+
+
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}

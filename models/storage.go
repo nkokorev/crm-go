@@ -190,15 +190,6 @@ func (account Account) StorageGetList(offset, limit uint, search string, product
 
 	files := make([]Storage,0)
 
-	fields := structs.Names(&Storage{}) //.(map[string]string)
-	fields = utils.RemoveKey(fields, "Data")
-	fields = utils.RemoveKey(fields, "URL")
-	selectColumn := utils.ToLowerSnakeCaseArr(fields)
-
-	// if need to search
-	// fmt.Println("limit: ", limit)
-	// fmt.Println("offset: ", offset)
-	// fmt.Println(*productId, *emailId)
 	var err error
 	
 	if len(search) > 0 {
@@ -209,16 +200,16 @@ func (account Account) StorageGetList(offset, limit uint, search string, product
 
 		// Выборку по файлам
 		if *productId > 0 {
-			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(selectColumn).
+			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutData()).
 				Where("account_id = ? AND product_id = ?", account.ID, productId).
 				Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
 		} else {
 			if *emailId > 0 {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(selectColumn).
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutData()).
 					Where("account_id = ? AND email_id = ?", account.ID, emailId).
 					Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
 			} else {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(selectColumn).
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutData()).
 					Where("account_id = ?", account.ID).
 					Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
 			}
@@ -236,14 +227,14 @@ func (account Account) StorageGetList(offset, limit uint, search string, product
 
 		// Выборку по файлам
 		if *productId > 0 {
-			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(selectColumn).
+			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutData()).
 				Find(&files, "account_id = ? AND product_id = ?", account.ID, productId).Error
 		} else {
 			if *emailId > 0 {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(selectColumn).
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutData()).
 					Find(&files, "account_id = ? AND email_id = ?", account.ID, emailId).Error
 			} else {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(selectColumn).
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutData()).
 					Find(&files, "account_id = ?", account.ID).Error
 			}
 		}
@@ -256,12 +247,12 @@ func (account Account) StorageGetList(offset, limit uint, search string, product
 	
 	var total uint
 	if *productId > 0 {
-		err = db.Model(&Storage{}).Select(selectColumn).Where("account_id = ? AND product_id = ?", account.ID, productId).Count(&total).Error
+		err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutData()).Where("account_id = ? AND product_id = ?", account.ID, productId).Count(&total).Error
 	} else {
 		if *emailId > 0 {
-			err = db.Model(&Storage{}).Select(selectColumn).Where("account_id = ? AND email_id = ?", account.ID, emailId).Count(&total).Error
+			err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutData()).Where("account_id = ? AND email_id = ?", account.ID, emailId).Count(&total).Error
 		} else {
-			err = db.Model(&Storage{}).Select(selectColumn).Where("account_id = ?", account.ID).Count(&total).Error
+			err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutData()).Where("account_id = ?", account.ID).Count(&total).Error
 		}
 	}
 	if err != nil {
@@ -313,3 +304,10 @@ func (Account) StorageGetPublicByHashId(hashId string) (*Storage, error) {
 }
 
 // ########### END OF ACCOUNT FUNCTIONAL ###########
+
+func (Storage) SelectArrayWithoutData() []string {
+	fields := structs.Names(&Storage{}) //.(map[string]string)
+	fields = utils.RemoveKey(fields, "Data")
+	fields = utils.RemoveKey(fields, "URL")
+	return utils.ToLowerSnakeCaseArr(fields)
+}
