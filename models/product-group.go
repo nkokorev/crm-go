@@ -39,8 +39,8 @@ func (ProductGroup) PgSqlCreate() {
 	db.Exec("ALTER TABLE product_groups\n--     ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT products_shop_id_fkey FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    alter column parent_id SET DEFAULT NULL;\n--     ADD CONSTRAINT products_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\n\n-- create unique index uix_products_account_id_sku ON products (account_id,sku);\n-- alter table product_groups alter column parent_id set default NULL;\n")
 }
 
-func (group *ProductGroup) BeforeCreate(scope *gorm.Scope) error {
-	group.ID = 0
+func (productGroup *ProductGroup) BeforeCreate(scope *gorm.Scope) error {
+	productGroup.ID = 0
 	return nil
 }
 
@@ -48,11 +48,15 @@ func (ProductGroup) TableName() string {
 	return "product_groups"
 }
 
+func (productGroup ProductGroup) GetId() uint {
+	return productGroup.ID
+}
+
 // ######### CRUD Functions ############
-func (input ProductGroup) create() (*ProductGroup, error)  {
-	var group = input
-	err := db.Create(&group).First(&group).Error
-	return &group, err
+func (productGroup ProductGroup) create() (*ProductGroup, error)  {
+	var productGroupNew = productGroup
+	err := db.Create(&productGroupNew).First(&productGroupNew).Error
+	return &productGroupNew, err
 }
 
 func (ProductGroup) get(id uint) (*ProductGroup, error) {
@@ -66,14 +70,14 @@ func (ProductGroup) get(id uint) (*ProductGroup, error) {
 	return &group, nil
 }
 
-func (group *ProductGroup) update(input interface{}) error {
+func (productGroup *ProductGroup) update(input interface{}) error {
 	// return db.Model(group).Omit("id").Updates(structs.Map(input)).Error
-	return db.Model(group).Omit("id").Updates(input).Error
+	return db.Model(productGroup).Omit("id").Updates(input).Error
 
 }
 
-func (group ProductGroup) delete () error {
-	return db.Model(ProductGroup{}).Where("id = ?", group.ID).Delete(group).Error
+func (productGroup ProductGroup) delete () error {
+	return db.Model(ProductGroup{}).Where("id = ?", productGroup.ID).Delete(productGroup).Error
 }
 // ######### END CRUD Functions ############
 
@@ -81,7 +85,17 @@ func (group ProductGroup) delete () error {
 // ######### SHOP Functions ############
 func (shop Shop) CreateProductGroup(input ProductGroup) (*ProductGroup, error) {
 	input.ShopID = shop.ID
-	return input.create()
+	productGroup, err := input.create()
+	if err != nil {
+		return nil, err
+	}
+
+	account, err := GetAccount(shop.AccountID)
+	if err == nil && account != nil {
+		go account.CallWebHookIfExist(EventProductGroupCreated, productGroup)
+	}
+
+	return productGroup, nil
 }
 
 func (shop Shop) GetProductGroup(groupId uint) (*ProductGroup, error) {
@@ -177,7 +191,7 @@ func (account Account) GetProductGroups() ([]ProductGroup, error) {
 }
 
 func (shop Shop) UpdateProductGroup(groupId uint, input interface{}) (*ProductGroup, error) {
-	group, err := shop.GetProductGroup(groupId)
+	productGroup, err := shop.GetProductGroup(groupId)
 	if err != nil {
 		return nil, err
 	}
@@ -201,50 +215,63 @@ func (shop Shop) UpdateProductGroup(groupId uint, input interface{}) (*ProductGr
 		// todo: 
 	}*/
 
-	err = group.update(input)
+	err = productGroup.update(input)
 	if err != nil {
 		return nil, err
 	}
 
-	return group, nil
+	account, err := GetAccount(shop.AccountID)
+	if err == nil && account != nil {
+		go account.CallWebHookIfExist(EventProductGroupUpdated, productGroup)
+	}
 
+	return productGroup, nil
 }
 
 func (shop Shop) DeleteProductGroup(groupId uint) error {
 
 	// включает в себя проверку принадлежности к аккаунту
-	group, err := shop.GetProductGroup(groupId)
+	productGroup, err := shop.GetProductGroup(groupId)
 	if err != nil {
 		return err
 	}
 
-	return group.delete()
+	if err = productGroup.delete(); err != nil {
+		return err
+	}
+
+	account, err := GetAccount(shop.AccountID)
+	if err == nil && account != nil {
+		go account.CallWebHookIfExist(EventProductGroupDeleted, productGroup)
+	}
+
+	return nil
 }
 
 // ######### END OF SHOP Functions ############
 
 
 // ######### ProductGroup Functions ############
-func (pg ProductGroup) CreateChild(input ProductGroup) (*ProductGroup, error) {
-	input.ParentID = &pg.ID
-	input.ShopID = pg.ShopID
+func (productGroup ProductGroup) CreateChild(input ProductGroup) (*ProductGroup, error) {
+	input.ParentID = &productGroup.ID
+	input.ShopID = productGroup.ShopID
 	return input.create()
 }
 
 // Создает и добавляет продукт в категорию товаров
-func (group ProductGroup) CreateProductCard(_c *ProductCard) (*ProductCard, error) {
- 	_c.ProductGroupID = group.ID
+func (productGroup ProductGroup) CreateProductCard(_c *ProductCard) (*ProductCard, error) {
+ 	_c.ProductGroupID = &productGroup.ID
 	return _c.create()
 }
 /*func (group ProductGroup) CreateAndAppendProductCard(card *ProductCard) error {
 	return db.Model(&group).Association("ProductCards").Append(card).Error
 }*/
 
-func (group ProductGroup) GetProductCards() ([]ProductCard, error) {
+func (productGroup ProductGroup) GetProductCards() ([]ProductCard, error) {
 
 	cards := make([]ProductCard,0)
 
-	if err := db.Model(&group).Association("ProductCards").Find(&cards).Error; err != nil {
+	if err := db.Model(&productGroup).Association("ProductCards").Find(&cards).Error; err != nil {
 		return nil, err
 	}
 

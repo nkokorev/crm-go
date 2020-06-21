@@ -12,8 +12,8 @@ import (
 type ProductCard struct {
 	ID     				uint `json:"id" gorm:"primary_key"`
 	AccountID 			uint `json:"-" gorm:"type:int;index;not null;"` // потребуется, если productGroupId == null
-	ShopID 				uint `json:"shopId" gorm:"type:int;index;default:null;"` // магазин, к которому относится
-	ProductGroupID 		uint `json:"productGroupId" gorm:"type:int;index;default:null;"` // группа товаров, категория товаров
+	ShopID 				uint `json:"shopId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	ProductGroupID 		*uint `json:"productGroupId" gorm:"type:int;index;default:NULL;"` // группа товаров, категория товаров
 
 	Enabled 			bool 	`json:"enabled" gorm:"type:bool;default:true"` // активна ли карточка товара
 	URL 				string `json:"url" gorm:"type:varchar(255);"` // идентификатор страницы (products/syao-chzhun )
@@ -43,8 +43,8 @@ func (ProductCard) PgSqlCreate() {
 	db.Exec("ALTER TABLE product_cards\n    ADD CONSTRAINT product_cards_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT product_cards_product_group_id_fkey FOREIGN KEY (product_group_id) REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE;\n")
 }
 
-func (card *ProductCard) BeforeCreate(scope *gorm.Scope) error {
-	card.ID = 0
+func (productCard *ProductCard) BeforeCreate(scope *gorm.Scope) error {
+	productCard.ID = 0
 	return nil
 }
 
@@ -52,11 +52,15 @@ func (ProductCard) TableName() string {
 	return "product_cards"
 }
 
+func (productCard ProductCard) GetId() uint {
+	return productCard.ID
+}
+
 // ######### CRUD Functions ############
-func (input ProductCard) create() (*ProductCard, error) {
-	var card = input
-	err := db.Create(&card).First(&card).Error
-	return &card, err
+func (productCard ProductCard) create() (*ProductCard, error) {
+	var productCardNew = productCard
+	err := db.Create(&productCardNew).First(&productCardNew).Error
+	return &productCardNew, err
 }
 
 func (ProductCard) get(id uint) (*ProductCard, error) {
@@ -106,15 +110,15 @@ func (ProductCard) getListByAccount(accountId uint) ([]ProductCard, error) {
 	return cards, nil
 }
 
-func (card *ProductCard) update(input interface{}) error {
+func (productCard *ProductCard) update(input interface{}) error {
 	// fmt.Println(input)
 	// return db.Model(card).Omit("id", "account_id").Update(input).Error
-	return db.Model(card).Omit("id", "account_id").Update(structs.Map(input)).Error
+	return db.Model(productCard).Omit("id", "account_id").Update(structs.Map(input)).Error
 
 }
 
-func (card ProductCard) delete () error {
-	return db.Model(ProductCard{}).Where("id = ?", card.ID).Delete(card).Error
+func (productCard ProductCard) delete () error {
+	return db.Model(ProductCard{}).Where("id = ?", productCard.ID).Delete(productCard).Error
 }
 // ######### END CRUD Functions ############
 
@@ -197,6 +201,8 @@ func (shop Shop) DeleteProductCard(cardId uint) error {
 	return card.delete()
 }
 
+// #####################
+
 func (account Account) CreateProductCard(input ProductCard) (*ProductCard, error) {
 
 	if account.ID < 1 {
@@ -205,7 +211,15 @@ func (account Account) CreateProductCard(input ProductCard) (*ProductCard, error
 
 	input.AccountID = account.ID
 
-	return input.create()
+	productCard, err := input.create()
+	if err != nil {
+		return nil, err
+	}
+
+	// todo: костыль вместо евента
+	go account.CallWebHookIfExist(EventProductCardCreated, productCard)
+
+	return productCard, nil
 }
 
 func (account Account) GetProductCard(cardId uint) (*ProductCard, error) {
@@ -217,37 +231,56 @@ func (account Account) GetProductCards() ([]ProductCard, error) {
 }
 
 func (account Account) UpdateProductCard(cardId uint, input interface{}) (*ProductCard, error) {
-	card, err := account.GetProductCard(cardId)
+	productCard, err := account.GetProductCard(cardId)
 	if err != nil {
 		return nil, err
 	}
 
-	if card.AccountID != account.ID {
+	if productCard.AccountID != account.ID {
 		return nil, utils.Error{Message: "Карточка товара принадлежит другому аккаунту"}
 	}
 	
-	err = card.update(input)
+	err = productCard.update(input)
 	if err != nil {
 		return nil, err
 	}
 
-	return card, nil
+	// todo: костыль вместо евента
+	go account.CallWebHookIfExist(EventProductCardUpdated, productCard)
+
+	return productCard, nil
 }
 
 func (account Account) DeleteProductCard(cardId uint) error {
 
 	// включает в себя проверку принадлежности к аккаунту
-	card, err := account.GetProductCard(cardId)
+	productCard, err := account.GetProductCard(cardId)
 	if err != nil {
 		return err
 	}
 
-	return card.delete()
+	if err = productCard.delete(); err != nil {
+		return err
+	}
+
+
+	go account.CallWebHookIfExist(EventProductCardDeleted, productCard)
+
+	return nil
 }
 // ######### END IF SHOP PRODUCT Functions ############
 
 ////// ########
 
-func (card ProductCard) AppendProduct(product *Product) error {
-	return db.Model(&card).Association("Products").Append(product).Error
+func (productCard ProductCard) AppendProduct(product *Product) error {
+	if err := db.Model(&productCard).Association("Products").Append(product).Error; err != nil {
+		return err
+	}
+
+	account, err := GetAccount(productCard.AccountID)
+	if err == nil && account != nil {
+		go account.CallWebHookIfExist(EventProductCardUpdated, productCard)
+	}
+
+	return nil
 }

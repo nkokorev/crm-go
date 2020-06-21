@@ -137,7 +137,16 @@ func (account Account) StorageCreateFile(fs *Storage) (*Storage, error) {
 	}
 	
 	fs.AccountID = account.ID
-	return fs.create()
+	file, err := fs.create()
+	if err != nil {
+		return nil, err
+	}
+
+	if file.ProductId > 0 {
+		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: file.ProductId})
+	}
+
+	return file, nil
 }
 
 func (account Account) StorageGet(id uint) (*Storage, error) {
@@ -182,8 +191,6 @@ func (account Account) StorageGetFiles(limit, offset int) ([]Storage, error) {
 
 	return files, nil
 }
-
-
 
 func (account Account) StorageGetList(offset, limit uint, search string, productId, emailId *uint) ([]Storage, uint, error) {
 
@@ -261,13 +268,39 @@ func (account Account) StorageGetList(offset, limit uint, search string, product
 	return files, total, nil
 }
 
-func (account Account) StorageUpdateFile(fs *Storage, input interface{}) error {
+func (account Account) StorageUpdateFile(file *Storage, input interface{}) error {
 
-	if fs.AccountID != account.ID {
+	if file.AccountID != account.ID {
 		return errors.New("Файл принадлежит другому аккаунту")
 	}
 
-	return fs.update(input)
+	if err := file.update(input); err != nil {
+		return err
+	}
+
+	if file.ProductId > 0 {
+		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: file.ProductId})
+	}
+
+	return nil
+}
+
+func (account Account) StorageDeleteFile(fileId uint) error {
+
+	file, err := account.StorageGet(fileId)
+	if err != nil {
+		return err
+	}
+
+	if err := file.Delete(); err != nil {
+		return err
+	}
+
+	if file.ProductId > 0 {
+		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: file.ProductId})
+	}
+
+	return nil
 }
 
 func (account Account) StorageDiskSpaceUsed() (uint, error) {

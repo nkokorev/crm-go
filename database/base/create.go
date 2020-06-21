@@ -995,6 +995,34 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			log.Fatal("Не удалось создать Product для airoClimat: ", err)
 		}
 	}
+
+	// 9. Создаем вебхкуи
+	domainAiroSite := "http://airoclimate.me"
+	webHooks := []models.WebHook{
+		{Name: "Upload shop", EventType: models.EventShopUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/upload/shop"},
+		{Name: "Upload products", EventType: models.EventProductCreated, URL: domainAiroSite + "/ratuscrm/webhooks/upload/products"},
+		{Name: "Upload product cards", EventType: models.EventProductCardCreated, URL: domainAiroSite + "/ratuscrm/webhooks/upload/product-cards"},
+		{Name: "Upload product groups", EventType: models.EventProductGroupCreated, URL: domainAiroSite + "/ratuscrm/webhooks/upload/product-groups"},
+
+		{Name: "Upload shop", EventType: models.EventShopDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/upload/shop"},
+		{Name: "Upload products", EventType: models.EventProductDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/upload/products"},
+		{Name: "Upload product cards", EventType: models.EventProductCardDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/upload/product-cards"},
+		{Name: "Upload product groups", EventType: models.EventProductGroupDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/upload/product-groups"},
+
+		{Name: "Update shop", EventType: models.EventShopUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/update/shop"},
+		{Name: "Update product data", EventType: models.EventProductUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/update/products/{{.ID}}"},
+		{Name: "Update product card data", EventType: models.EventProductCardUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/update/product-cards/{{.ID}}"},
+		{Name: "Update product group data", EventType: models.EventProductGroupUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/update/product-groups/{{.ID}}"},
+
+		{Name: "Upload all shop data", EventType: models.EventUpdateSomeShopData, URL: domainAiroSite + "/ratuscrm/webhooks/upload/all"},
+	}
+	for i,_ := range webHooks {
+		 _, err = airoClimat.CreateWebHook(webHooks[i])
+		if err != nil {
+			log.Fatal("Не удалось создать webHook: ", err)
+		}
+
+	}
 	
 	return
 

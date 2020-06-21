@@ -183,7 +183,7 @@ func (shop Shop) CreateProductWithCardAndGroup(input Product, newCard ProductCar
 	newCard.AccountID = shop.AccountID
 	newCard.ShopID = shop.ID
 	if groupId != nil {
-		newCard.ProductGroupID = *groupId
+		newCard.ProductGroupID = groupId
 	}
 	card, err := newCard.create()
 	if err != nil {

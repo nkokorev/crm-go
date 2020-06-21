@@ -4,8 +4,9 @@ import (
 	"fmt"
 )
 
-type Event interface {
-	emit(data interface{})
+type EventObject interface {
+	//emit(data interface{})
+	GetId() uint
 	//addListener(listener Listener)
 }
 

@@ -94,9 +94,9 @@ var AppRoutes = func(r *mux.Router) {
 	// ### STORAGE CRUD ####
 	rAuthFull.HandleFunc("/storage", controllers.StorageCreateFile).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/storage", controllers.StorageGetListPagination).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/storage/{id}", controllers.StorageGetFile).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/storage/{id}", controllers.StorageUpdateFile).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/storage/{id}", controllers.StorageDeleteFile).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/storage/{fileId}", controllers.StorageGetFile).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/storage/{fileId}", controllers.StorageUpdateFile).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/storage/{fileId}", controllers.StorageDeleteFile).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### SHOP ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops", controllers.ShopCreate).Methods(http.MethodPost, http.MethodOptions)
@@ -125,5 +125,13 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/products", controllers.ProductListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/products/{productId:[0-9]+}", controllers.ProductUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/products/{productId:[0-9]+}", controllers.ProductDelete).Methods(http.MethodDelete, http.MethodOptions)
+
+	// ### WebHooks ####
+	rAuthFull.HandleFunc("/web-hooks", controllers.WebHookCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/web-hooks", controllers.WebHookListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/web-hooks/{webHookId}", controllers.WebHookGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/web-hooks/{webHookId}", controllers.WebHookUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/web-hooks/{webHookId}", controllers.WebHookDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/web-hooks/{webHookId}/call", controllers.WebHookCall).Methods(http.MethodGet, http.MethodOptions)
 
 }

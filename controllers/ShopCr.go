@@ -218,9 +218,9 @@ func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productCardId, err := GetUINTVarFromRequest(r, "productCardId")
+	productGroupId, err := GetUINTVarFromRequest(r, "productGroupId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID product card"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID product group"))
 		return
 	}
 
@@ -230,14 +230,14 @@ func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productCard, err := shop.GetProductCard(productCardId)
+	productGroup, err := shop.GetProductGroup(productGroupId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
 	}
 
-	resp := u.Message(true, "GET Product Card")
-	resp["productCard"] = productCard
+	resp := u.Message(true, "GET Product Group")
+	resp["productGroup"] = productGroup
 	u.Respond(w, resp)
 }
 func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request) {
@@ -685,7 +685,7 @@ func ProductCreate(w http.ResponseWriter, r *http.Request) {
 	product, err := account.CreateProduct(input.Product)
 	if err != nil {
 		fmt.Println(err)
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания продукта"}))
+		u.Respond(w, u.MessageError(err, "Ошибка во время создания продукта"))
 		return
 	}
 

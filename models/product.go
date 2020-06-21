@@ -70,13 +70,19 @@ func (Product) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&Product{})
-	db.Exec("ALTER TABLE products\n    ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT uix_products_account_id_sku UNIQUE (account_id,sku),\n    ADD CONSTRAINT uix_products_account_id_model UNIQUE (account_id,model),\n    ADD CONSTRAINT uix_products_account_id_article UNIQUE (account_id,article);\n--     ADD CONSTRAINT uix_products_account_id_sku CHECK (account_id AND sku CREATE UNIQUE INDEX ) WHERE sku IS NOT NULL;\n--     ADD constraint uc_products_sku UNIQUE (sku) WHERE sku IS NOT NULL;\n-- ALTER TABLE products ADD CONSTRAINT uc_products_sku UNIQUE (sku);\n\n-- create unique index uix_products_account_id_sku ON products (account_id,sku) WHERE sku IS NOT NULL;\n-- create unique index uix_products_account_id_model ON products (account_id,model) WHERE model IS NOT NULL;\n-- create unique index uix_products_account_id_article ON products (account_id,article) WHERE article IS NOT NULL;\n")
+	db.Exec("ALTER TABLE products\n    ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT uix_products_account_id_sku UNIQUE (account_id,sku),\n--     ADD CONSTRAINT uix_products_account_id_model UNIQUE (account_id,model),\n--     ADD CONSTRAINT uix_products_account_id_article UNIQUE (account_id,article);\n--     ADD CONSTRAINT uix_products_account_id_sku CHECK (account_id AND sku CREATE UNIQUE INDEX ) WHERE sku IS NOT NULL;\n--     ADD constraint uc_products_sku UNIQUE (sku) WHERE sku IS NOT NULL;\n-- ALTER TABLE products ADD CONSTRAINT uc_products_sku UNIQUE (sku);\n\ncreate unique index uix_products_account_id_sku ON products (account_id,sku) WHERE sku IS NOT NULL;\ncreate unique index uix_products_account_id_model ON products (account_id,model) WHERE model IS NOT NULL;\ncreate unique index uix_products_account_id_article ON products (account_id,article) WHERE article IS NOT NULL;\n")
 }
 
 func (product *Product) BeforeCreate(scope *gorm.Scope) error {
 	product.ID = 0
 	return nil
 }
+
+// ######### INTERFACE EVENT Functions ############
+func (product Product) GetId() uint {
+	return product.ID
+}
+// ######### END OF INTERFAe Functions ############
 
 // ######### CRUD Functions ############
 func (product Product) create() (*Product, error)  {
@@ -92,7 +98,9 @@ func (Product) get(id uint) (*Product, error) {
 	//if err := db.Model(&product).Preload("ProductCards").First(&product, id).Error; err != nil {
 	//	return nil, err
 	//}
-	if err := db.Model(&product).First(&product, id).Error; err != nil {
+	if err := db.Model(&product).Preload("Images", func(db *gorm.DB) *gorm.DB {
+		return db.Select(Storage{}.SelectArrayWithoutData())
+	}).First(&product, id).Error; err != nil {
 		return nil, err
 	}
 
@@ -137,7 +145,7 @@ func (account Account) CreateProduct(input Product) (*Product, error) {
 	input.AccountID = account.ID
 	
 	if input.ExistSKU() {
-		return nil, utils.Error{Message: "Повторение данных", Errors: map[string]interface{}{"sku":"Товар с таким SKU уже есть"}}
+		return nil, utils.Error{Message: "Повторение данных SKU", Errors: map[string]interface{}{"sku":"Товар с таким SKU уже есть"}}
 	}
 	if input.ExistModel() {
 		return nil, utils.Error{Message: "Повторение данных", Errors: map[string]interface{}{"model":"Товар с такой моделью уже есть"}}
@@ -155,6 +163,9 @@ func (account Account) CreateProduct(input Product) (*Product, error) {
 			return nil, err
 		}
 	}*/
+
+	// todo: костыль вместо евента
+	go account.CallWebHookIfExist(EventProductCreated, product)
 
 	return product, nil
 }
@@ -190,7 +201,7 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 			Limit(limit).
 			Offset(offset).
 			Where("account_id = ?", account.ID).
-			Find(&products, "name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?" , search,search,search,search,search,search).Error
+			Find(&products, "id ILIKE ? OR name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?" , search, search,search,search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -239,6 +250,12 @@ func (account Account) UpdateProduct(productId uint, input map[string]interface{
 	}
 	product.Attributes = postgres.Jsonb{RawMessage: jsonInput}
 	err = product.update(input)
+	if err != nil {
+		return nil, err
+	}
+
+	// todo: костыль вместо евента
+	go account.CallWebHookIfExist(EventProductUpdated, product)
 
 	return product, err
 
@@ -252,7 +269,13 @@ func (account Account) DeleteProduct(productId uint) error {
 		return err
 	}
 
-	return product.delete()
+	err = product.delete()
+	if err !=nil { return err }
+
+	// todo: костыль вместо евента
+	go account.CallWebHookIfExist(EventProductDeleted, product)
+
+	return nil
 }
 // ######### END OF ACCOUNT Functions ############
 

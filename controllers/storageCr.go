@@ -110,13 +110,13 @@ func StorageGetFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := GetUINTVarFromRequest(r,"id")
+	fileId, err := GetUINTVarFromRequest(r,"fileId")
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
 
-	fs, err := account.StorageGet(id)
+	fs, err := account.StorageGet(fileId)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Получения списка"}))
 		return
@@ -141,13 +141,13 @@ func StorageGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := GetUINTVarFromRequest(r,"id")
+	fileId, err := GetUINTVarFromRequest(r,"fileId")
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
 
-	fs, err := account.StorageGet(id)
+	fs, err := account.StorageGet(fileId)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Получения списка"}))
 		return
@@ -220,13 +220,13 @@ func StorageUpdateFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get file in Data base
-	id, err := GetUINTVarFromRequest(r,"id")
+	fileId, err := GetUINTVarFromRequest(r,"fileId")
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"ID файла не найден"}))
 		return
 	}
 
-	fs, err := account.StorageGet(id)
+	fs, err := account.StorageGet(fileId)
 	if err != nil || fs == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
@@ -264,19 +264,13 @@ func StorageDeleteFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get file in Data base
-	id, err := GetUINTVarFromRequest(r,"id")
+	fileId, err := GetUINTVarFromRequest(r,"fileId")
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
 
-	fs, err := account.StorageGet(id)
-	if err != nil || fs == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
-		return
-	}
-
-	err = fs.Delete()
+	err = account.StorageDeleteFile(fileId)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Произошла ошибка во время удаления"}))
 		return

@@ -6,45 +6,34 @@ import (
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
+
 )
 
 func WebHookCreate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	var account *models.Account
+	var err error
+	account, err = GetWorkAccount(w,r)
 	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
-		return
-	}
-
-	shop, err := account.GetShop(shopId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
-		return
-	}
-
-	// Get JSON-request
 	var input struct{
-		models.ProductGroup
+		models.WebHook
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	group, err := shop.CreateProductGroup(input.ProductGroup)
+	wh, err := account.CreateWebHook(input.WebHook)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания группы"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания WebHook"}))
 		return
 	}
 
-	resp := u.Message(true, "POST ProductGroup Created")
-	resp["group"] = *group
+	resp := u.Message(true, "POST WebHook Create")
+	resp["webHook"] = *wh
 	u.Respond(w, resp)
 }
 
@@ -53,45 +42,54 @@ func WebHookGet(w http.ResponseWriter, r *http.Request) {
 	var account *models.Account
 	var err error
 
-	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
-	if isApiRequest(r) {
-		account, err = GetWorkAccount(w,r)
-		if err != nil || account == nil {
-			return
-		}
-	} else {
-		account, err = GetWorkAccountCheckHashId(w,r)
-		if err != nil || account == nil {
-			return
-		}
-	}
-
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
+	account, err = GetWorkAccount(w,r)
+	if err != nil || account == nil {
 		return
 	}
 
-	productCardId, err := GetUINTVarFromRequest(r, "productCardId")
+
+	webHookId, err := GetUINTVarFromRequest(r, "webHookId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID product card"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID webHook"))
 		return
 	}
 
-	shop, err := account.GetShop(shopId)
+	webHook, err := account.GetWebHook(webHookId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
 	}
 
-	productCard, err := shop.GetProductCard(productCardId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+	resp := u.Message(true, "GET Web Hook")
+	resp["webHook"] = webHook
+	u.Respond(w, resp)
+}
+
+func WebHookCall(w http.ResponseWriter, r *http.Request) {
+
+	var account *models.Account
+	var err error
+
+	account, err = GetWorkAccount(w,r)
+	if err != nil || account == nil {
 		return
 	}
 
-	resp := u.Message(true, "GET Product Card")
-	resp["productCard"] = productCard
+	webHookId, err := GetUINTVarFromRequest(r, "webHookId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID webHook"))
+		return
+	}
+
+	webHook, err := account.GetWebHook(webHookId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось найти вебхук"))
+		return
+	}
+
+	go webHook.Call(nil)
+
+	resp := u.Message(true, "GET Web Hook Call")
 	u.Respond(w, resp)
 }
 
@@ -100,27 +98,9 @@ func WebHookListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	var account *models.Account
 	var err error
 	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
-	if isApiRequest(r) {
-		account, err = GetWorkAccount(w,r)
-		if err != nil || account == nil {
-			return
-		}
-	} else {
-		account, err = GetWorkAccountCheckHashId(w,r)
-		if err != nil || account == nil {
-			return
-		}
-	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
-		return
-	}
-
-	shop, err := account.GetShop(shopId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
+	account, err = GetWorkAccount(w,r)
+	if err != nil || account == nil {
 		return
 	}
 
@@ -140,51 +120,40 @@ func WebHookListPaginationGet(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 
-	productGroups := make([]models.ProductGroup,0)
+	webHooks := make([]models.WebHook,0)
 	total := 0
 
 	if all == "true" && allOk {
-		productGroups, err = shop.GetProductGroups()
+		webHooks, err = account.GetWebHooks()
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
 			return
 		}
 	} else {
-		productGroups, total, err = shop.GetProductGroupsPaginationList(offset, limit, search)
+		webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
 			return
 		}
 	}
 
 
-	resp := u.Message(true, "GET Product Group List")
-	resp["productGroups"] = productGroups
+	resp := u.Message(true, "GET WebHooks PaginationList")
+	resp["webHooks"] = webHooks
 	resp["total"] = total
 	u.Respond(w, resp)
 }
 
 func WebHookUpdate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	var account *models.Account
+	var err error
+	account, err = GetWorkAccount(w,r)
 	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
-		return
-	}
-
-	shop, err := account.GetShop(shopId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
-		return
-	}
-
-	groupId, err := GetUINTVarFromRequest(r, "groupId")
+	webHookId, err := GetUINTVarFromRequest(r, "webHookId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
 		return
@@ -199,50 +168,38 @@ func WebHookUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// group, err := shop.UpdateProductGroup(groupId, &input.ProductGroup)
-	group, err := shop.UpdateProductGroup(groupId, input)
+	webHook, err := account.UpdateWebHook(webHookId, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH ProductGroup Update")
-	resp["group"] = group
+	resp := u.Message(true, "PATCH WebHook Update")
+	resp["webHook"] = webHook
 	u.Respond(w, resp)
 }
 
 func WebHookDelete(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	var account *models.Account
+	var err error
+	account, err = GetWorkAccount(w,r)
 	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
+	webHookId, err := GetUINTVarFromRequest(r, "webHookId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
-		return
-	}
-
-	shop, err := account.GetShop(shopId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
-		return
-	}
-
-	groupId, err := GetUINTVarFromRequest(r, "groupId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
 		return
 	}
 
 
-	if err = shop.DeleteProductGroup(groupId); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении товарной группы"))
+	if err = account.DeleteWebHook(webHookId); err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении webHook"))
 		return
 	}
 
-	resp := u.Message(true, "DELETE ProductGroup Successful")
+	resp := u.Message(true, "DELETE WebHook Successful")
 	u.Respond(w, resp)
 }
