@@ -594,15 +594,16 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	}*/
 
 	// 5. Создаем 3 категории товаров
-	groupAiroRoot, err := airoShop.CreateProductGroup(models.ProductGroup{Name: "Бактерицидные облучатели", URL: ""});
+	//groupAiroRoot, err := airoShop.CreateProductGroup(models.ProductGroup{Name: "Бактерицидные облучатели", URL: "", IconName: "far fa-th-large", RouteName: "catalog.index"})
+	groupAiroRoot, err := airoShop.CreateProductGroup(models.ProductGroup{Name: "Весь каталог", URL: "", IconName: "far fa-th-large", RouteName: "catalog.index"})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
 	}
-	groupAiro1, err := groupAiroRoot.CreateChild(models.ProductGroup{Name: "Бактерицидные рециркуляторы", URL: "bactericidal-recirculators"})
+	groupAiro1, err := groupAiroRoot.CreateChild(models.ProductGroup{Name: "Бактерицидные рециркуляторы", URL: "bactericidal-recirculators", IconName: "far fa-fan-table", RouteName: "catalog.recirculators"})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
 	}
-	groupAiro2, err := groupAiroRoot.CreateChild(models.ProductGroup{Name: "Бактерицидные камеры", URL: "bactericidal-chambers"})
+	groupAiro2, err := groupAiroRoot.CreateChild(models.ProductGroup{Name: "Бактерицидные камеры", URL: "bactericidal-chambers", IconName: "far fa-box-full", RouteName: "catalog.chambers"})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
 	}

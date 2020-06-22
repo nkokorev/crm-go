@@ -16,6 +16,8 @@ type ProductGroup struct {
 	URL string `json:"url"gorm:"type:varchar(255);default:null;"`
 
 	Name string `json:"name" gorm:"type:varchar(255);default:null;"` // Чай, кофе, ..
+	IconName string `json:"iconName" gorm:"type:varchar(255);default:null;"` // icon name
+	RouteName string `json:"routeName" gorm:"type:varchar(255);default:null;"` // Чай, кофе, ..
 
 	Breadcrumb string `json:"breadcrumb" gorm:"type:varchar(255);default:null;"`
 	ShortDescription string `json:"shortDescription" gorm:"type:varchar(255);default:null;"`
