@@ -30,11 +30,15 @@ func (shop *Shop) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
+func (shop Shop) GetId() uint {
+	return shop.ID
+}
+
 // ######### CRUD Functions ############
-func (input Shop) create() (*Shop, error)  {
-	var shop = input
-	err := db.Create(&shop).Error
-	return &shop, err
+func (shop Shop) create() (*Shop, error)  {
+	var shopNew = shop
+	err := db.Create(&shopNew).Error
+	return &shopNew, err
 }
 
 func (Shop) get(id uint) (*Shop, error) {
@@ -73,7 +77,14 @@ func (shop Shop) delete () error {
 // ######### ACCOUNT Functions ############
 func (account Account) CreateShop(input Shop) (*Shop, error) {
 	input.AccountID = account.ID
-	return input.create()
+	shop, err := input.create()
+	if err != nil {
+		return nil, err
+	}
+
+	go account.CallWebHookIfExist(EventShopCreated, shop)
+
+	return shop, nil
 }
 
 func (account Account) GetShop(id uint) (*Shop, error) {
@@ -117,7 +128,14 @@ func (account Account) DeleteShop(id uint) error {
 		return err
 	}
 
-	return shop.delete()
+	err = shop.delete()
+	if err != nil {
+		return err;
+	}
+
+	go account.CallWebHookIfExist(EventShopDeleted, shop)
+
+	return nil
 }
 
 func (account Account) ExistShop(id uint) bool {

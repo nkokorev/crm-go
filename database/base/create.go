@@ -7,6 +7,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/models"
 	"log"
+	"net/http"
 	"time"
 )
 
@@ -595,7 +596,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	// 5. Создаем 3 категории товаров
 	//groupAiroRoot, err := airoShop.CreateProductGroup(models.ProductGroup{Name: "Бактерицидные облучатели", URL: "", IconName: "far fa-th-large", RouteName: "catalog.index"})
-	groupAiroRoot, err := airoShop.CreateProductGroup(models.ProductGroup{Name: "Весь каталог", URL: "", IconName: "far fa-th-large", RouteName: "catalog.index"})
+	groupAiroRoot, err := airoShop.CreateProductGroup(models.ProductGroup{Name: "Весь каталог", URL: "catalog", IconName: "far fa-th-large", RouteName: "catalog.index"})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
 	}
@@ -999,23 +1000,32 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	// 9. Создаем вебхкуи
 	domainAiroSite := "http://airoclimate.me"
-	webHooks := []models.WebHook{
-		{Name: "Upload shop", EventType: models.EventShopUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/upload/shop"},
-		{Name: "Upload products", EventType: models.EventProductCreated, URL: domainAiroSite + "/ratuscrm/webhooks/upload/products"},
-		{Name: "Upload product cards", EventType: models.EventProductCardCreated, URL: domainAiroSite + "/ratuscrm/webhooks/upload/product-cards"},
-		{Name: "Upload product groups", EventType: models.EventProductGroupCreated, URL: domainAiroSite + "/ratuscrm/webhooks/upload/product-groups"},
+	webHooks := []models.WebHook {
+		{Name: "Upload all shop data", EventType: models.EventUpdateAllShopData, URL: domainAiroSite + "/ratuscrm/webhooks/upload/all", HttpMethod: http.MethodGet},
 
-		{Name: "Upload shop", EventType: models.EventShopDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/upload/shop"},
-		{Name: "Upload products", EventType: models.EventProductDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/upload/products"},
-		{Name: "Upload product cards", EventType: models.EventProductCardDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/upload/product-cards"},
-		{Name: "Upload product groups", EventType: models.EventProductGroupDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/upload/product-groups"},
+		// Upload all
+		{Name: "Upload all shop", EventType: models.EventShopsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/shops", HttpMethod: http.MethodGet},
+		{Name: "Upload all products", EventType: models.EventProductsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/products", HttpMethod: http.MethodGet},
+		{Name: "Upload all product cards", EventType: models.EventProductCardsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards", HttpMethod: http.MethodGet},
+		{Name: "Upload all product groups", EventType: models.EventProductGroupsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups", HttpMethod: http.MethodGet},
 
-		{Name: "Update shop", EventType: models.EventShopUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/update/shop"},
-		{Name: "Update product data", EventType: models.EventProductUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/update/products/{{.ID}}"},
-		{Name: "Update product card data", EventType: models.EventProductCardUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/update/product-cards/{{.ID}}"},
-		{Name: "Update product group data", EventType: models.EventProductGroupUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/update/product-groups/{{.ID}}"},
+		// Create entity
+		{Name: "Create shop", EventType: models.EventShopCreated, URL: domainAiroSite + "/ratuscrm/webhooks/shops/{{.ID}}", HttpMethod: http.MethodPost},
+		{Name: "create product", EventType: models.EventProductCreated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.ID}}", HttpMethod: http.MethodPost},
+		{Name: "Create product card", EventType: models.EventProductCardCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.ID}}", HttpMethod: http.MethodPost},
+		{Name: "Create product group", EventType: models.EventProductGroupCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.ID}}", HttpMethod: http.MethodPost},
 
-		{Name: "Upload all shop data", EventType: models.EventUpdateSomeShopData, URL: domainAiroSite + "/ratuscrm/webhooks/upload/all"},
+		// Update entity
+		{Name: "Update shop", EventType: models.EventShopUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/shops", HttpMethod: http.MethodPatch},
+		{Name: "Update product", EventType: models.EventProductUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.ID}}", HttpMethod: http.MethodPatch},
+		{Name: "Update product card", EventType: models.EventProductCardUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.ID}}", HttpMethod: http.MethodPatch},
+		{Name: "Update product group", EventType: models.EventProductGroupUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.ID}}", HttpMethod: http.MethodPatch},
+
+		// Delete
+		{Name: "Delete shop", EventType: models.EventShopDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/shops", HttpMethod: http.MethodDelete},
+		{Name: "Delete product", EventType: models.EventProductDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.ID}}", HttpMethod: http.MethodDelete},
+		{Name: "Delete product card", EventType: models.EventProductCardDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.ID}}", HttpMethod: http.MethodDelete},
+		{Name: "Delete product group", EventType: models.EventProductGroupDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.ID}}", HttpMethod: http.MethodDelete},
 	}
 	for i,_ := range webHooks {
 		 _, err = airoClimat.CreateWebHook(webHooks[i])

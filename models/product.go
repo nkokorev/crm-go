@@ -272,7 +272,6 @@ func (account Account) DeleteProduct(productId uint) error {
 	err = product.delete()
 	if err !=nil { return err }
 
-	// todo: костыль вместо евента
 	go account.CallWebHookIfExist(EventProductDeleted, product)
 
 	return nil

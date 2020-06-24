@@ -3,9 +3,11 @@ package models
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"net/http"
+	"strings"
 	"text/template"
 )
 
@@ -15,20 +17,24 @@ const (
 	EventShopCreated 	EventType = "ShopCreated"
 	EventShopUpdated 	EventType = "ShopUpdated"
 	EventShopDeleted 	EventType = "ShopDeleted"
+	EventShopsUpdate 	EventType = "ShopsUpdate"
 
 	EventProductCreated 	EventType = "ProductCreated"
 	EventProductUpdated 	EventType = "ProductUpdated"
 	EventProductDeleted 	EventType = "ProductDeleted"
+	EventProductsUpdate 		EventType = "ProductsUpdate"
 
 	EventProductCardCreated 	EventType = "ProductCardCreated"
 	EventProductCardUpdated 	EventType = "ProductCardUpdated"
 	EventProductCardDeleted 	EventType = "ProductCardDeleted"
+	EventProductCardsUpdate 	EventType = "ProductCardsUpdate"
 
 	EventProductGroupCreated 	EventType = "ProductGroupCreated"
 	EventProductGroupUpdated 	EventType = "ProductGroupUpdated"
 	EventProductGroupDeleted 	EventType = "ProductGroupDeleted"
+	EventProductGroupsUpdate 	EventType = "ProductGroupsUpdate"
 
-	EventUpdateSomeShopData 	EventType = "UpdateSomeShopData"
+	EventUpdateAllShopData 	EventType = "UpdateAllShopData"
 )
 
 type WebHook struct {
@@ -41,6 +47,7 @@ type WebHook struct {
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя вебхука
 	Description 		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
 	URL 		string 	`json:"url" gorm:"type:varchar(255);"` // вызов, который совершается
+	HttpMethod		string `json:"httpMethod" gorm:"type:varchar(15);default:'get';"` // Тип вызова (GET, POST, PUT, puth и т.д.)
 	//URLTemplate 		template.Template 	`json:"url" gorm:"type:varchar(255);"` // вызов, который совершается
 }
 
@@ -245,14 +252,38 @@ func (webHook WebHook) Call(object EventObject) bool {
 
 	url := urlB.String()
 
-	//fmt.Println("URL: ", url)
+	var response *http.Response
+	var request *http.Request
 
-	resp, err := http.Get(url)
+	switch webHook.HttpMethod {
+
+		case http.MethodPost:
+			response, err = http.Post(url, "application/json", nil)
+
+		case http.MethodGet:
+			response, err = http.Get(url)
+
+		case http.MethodPatch, http.MethodPut:
+			client := &http.Client{}
+			request, err = http.NewRequest("PATCH", url, strings.NewReader(""))
+			if err != nil {
+				break
+			}
+			response, err = client.Do(request)
+			fmt.Println("url:", url)
+			fmt.Println("Response:", response)
+
+		case http.MethodDelete:
+			client := &http.Client{}
+			request, err = http.NewRequest("DELETE", url, nil)
+			response, err = client.Do(request)
+	}
+
 	if err != nil {
 		//fmt.Println(err)
 		return false
 	}
-	defer resp.Body.Close()
+	defer response.Body.Close()
 
 	//fmt.Println(resp.Status)
 
