@@ -32,9 +32,9 @@ type Product struct {
 	ShortName 	string `json:"shortName" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
 
 	
-	Article string `json:"article" gorm:"type:varchar(128);index;default:null"` // артикул товара из иных соображений (часто публичный)
-	SKU 	string `json:"sku" gorm:"type:varchar(128);index;default:null;"` // уникальный складской идентификатор. 1 SKU = 1 товар (одна модель)
-	Model 	string `json:"model" gorm:"type:varchar(255);default:null"` // может повторяться для вывода в web-интерфейсе как "одного" товара
+	Article *string `json:"article" gorm:"type:varchar(128);index;default:NULL"` // артикул товара из иных соображений (часто публичный)
+	SKU 	*string `json:"sku" gorm:"type:varchar(128);index;default:NULL;"` // уникальный складской идентификатор. 1 SKU = 1 товар (одна модель)
+	Model 	*string `json:"model" gorm:"type:varchar(255);default:NULL"` // может повторяться для вывода в web-интерфейсе как "одного" товара
 
 	// Base properties
 	RetailPrice 			float64 `json:"retailPrice" gorm:"type:numeric;default:0"` // розничная цена
@@ -99,7 +99,7 @@ func (Product) get(id uint) (*Product, error) {
 	//	return nil, err
 	//}
 	if err := db.Model(&product).Preload("Images", func(db *gorm.DB) *gorm.DB {
-		return db.Select(Storage{}.SelectArrayWithoutData())
+		return db.Select(Storage{}.SelectArrayWithoutURL())
 	}).First(&product, id).Error; err != nil {
 		return nil, err
 	}
@@ -119,17 +119,14 @@ func (Product) getList(accountId uint) ([]Product, error) {
 	return products, nil
 }
 
-func (product *Product) update(input interface{}) error {
-	//return db.Model(product).Omit("id", "account_id").Updates(structs.Map(input)).Error
+func (product *Product) update(input map[string]interface{}) error {
+	//err := db.Model(product).Omit("id", "account_id").Updates(structs.Map(input)).Error
+	//fmt.Println("Product: ", input)
+
 	err := db.Model(product).Omit("id", "account_id").Updates(input).Error
 	if err != nil {
 		return err
 	}
-
-	//ProductCreate{}.emit(*product)
-	//emit("CreateProduct", product)
-
-	//emit(CreateProductEvent, product)
 
 	return nil
 }
@@ -155,14 +152,6 @@ func (account Account) CreateProduct(input Product) (*Product, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// тут что-то про дефолтный оффер
-	/*if group != nil {
-		err = group.AppendProduct(product)
-		if err != nil {
-			return nil, err
-		}
-	}*/
 
 	// todo: костыль вместо евента
 	go account.CallWebHookIfExist(EventProductCreated, product)
@@ -196,7 +185,7 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 		err := db.Model(&Product{}).
 			Preload("ProductCards").
 			Preload("Images", func(db *gorm.DB) *gorm.DB {
-				return db.Select(Storage{}.SelectArrayWithoutData())
+				return db.Select(Storage{}.SelectArrayWithoutURL())
 			}).
 			Limit(limit).
 			Offset(offset).
@@ -213,7 +202,7 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 
 		err := db.Model(&Product{}).
 			Preload("ProductCards").Preload("Images", func(db *gorm.DB) *gorm.DB {
-			return db.Select(Storage{}.SelectArrayWithoutData())
+			return db.Select(Storage{}.SelectArrayWithoutURL())
 		}).Limit(limit).Offset(offset).Find(&products, "account_id = ?", account.ID).Error
 
 
@@ -249,6 +238,7 @@ func (account Account) UpdateProduct(productId uint, input map[string]interface{
 		log.Fatal("Eroror json: ", err)
 	}
 	product.Attributes = postgres.Jsonb{RawMessage: jsonInput}
+
 	err = product.update(input)
 	if err != nil {
 		return nil, err

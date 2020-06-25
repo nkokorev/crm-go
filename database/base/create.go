@@ -611,31 +611,50 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	// 6. Создаем карточки товара
 	cards := []models.ProductCard{
-		{ID: 0, URL: "airo-dez-adjustable-black", 	Label:"Рециркулятор AIRO-DEZ черный с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ черный с регулировкой"},
-		{ID: 0, URL: "airo-dez-black", 				Label:"Рециркулятор AIRO-DEZ черный", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ черный"},
-		{ID: 0, URL: "airo-dez-adjustable-white", 	Label:"Рециркулятор AIRO-DEZ белый с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ белый с регулировкой"},
-		{ID: 0, URL: "airo-dez-white", 				Label:"Рециркулятор AIRO-DEZ белый", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ белый"},
-		{ID: 0, URL: "airo-dez-compact", 			Label: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", MetaTitle: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", },
+		{ID: 0, URL: "airo-dez-adjustable-black", 	Label:"Рециркулятор AIRO-DEZ черный с регулировкой", Breadcrumb: "Рециркулятор AIRO-DEZ черный с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ черный с регулировкой",
+			SwitchProducts: postgres.Jsonb{
+				RawMessage: MapToRawJson(map[string]interface{}{
+					"color":"черный",
+					"bodyMaterial":"металл",
+					"filterType":"угольно-фотокаталитический",
+					"performance":150, // m3/час
+					"rangeUVRadiation":"250-260Hm",
+					"powerLampRecirculator":10.8, // Вт/m2
+					"powerConsumption":60, // Вт
+					"lifeTimeDevice":100000, // часов
+					"lifeTimeLamp":9000, // часов
+					"baseTypeLamp":"", //Тип цоколя лампы
+					"degreeProtection":"IP20",
+					"supplyVoltage":"175-265В",
+					"temperatureMode":"+2...+50C",
+					"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
+					"noiseLevel":35, //дБ
+					"grossWeight": 5.5, // Брутто, кг
+				}),
+			}},
+		{ID: 0, URL: "airo-dez-black", 				Label:"Рециркулятор AIRO-DEZ черный", Breadcrumb: "Рециркулятор AIRO-DEZ черный", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ черный"},
+		{ID: 0, URL: "airo-dez-adjustable-white", 	Label:"Рециркулятор AIRO-DEZ белый с регулировкой", Breadcrumb: "Рециркулятор AIRO-DEZ белый с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ белый с регулировкой"},
+		{ID: 0, URL: "airo-dez-white", 				Label:"Рециркулятор AIRO-DEZ белый", Breadcrumb: "Рециркулятор AIRO-DEZ белый",MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ белый"},
+		{ID: 0, URL: "airo-dez-compact", 			Label: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", Breadcrumb: "Мобильный аиродезинфектор AIRO-DEZ COMPACT",MetaTitle: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", },
 
-		{ID: 0, URL: "airo-dezpuf", Label: "Бактерицидная камера пуф AIRO-DEZPUF", MetaTitle: "Бактерицидная камера пуф AIRO-DEZPUF"},
-		{ID: 0, URL: "airo-dezpuf-wenge", Label: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге", MetaTitle: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"},
+		{ID: 0, URL: "airo-dezpuf",			Label: "Бактерицидная камера пуф AIRO-DEZPUF", Breadcrumb: "Бактерицидная камера пуф AIRO-DEZPUF",MetaTitle: "Бактерицидная камера пуф AIRO-DEZPUF"},
+		{ID: 0, URL: "airo-dezpuf-wenge", 	Label: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге", Breadcrumb: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге",MetaTitle: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"},
 		
-		{ID: 0, URL: "airo-dezbox", Label: "Бактерицидная камера AIRO-DEZBOX", MetaTitle: "Бактерицидная камера AIRO-DEZBOX", },
-		{ID: 0, URL: "airo-dezbox-white", Label: "Бактерицидная камера AIRO-DEZBOX белая", MetaTitle: "Бактерицидная камера AIRO-DEZBOX белая", },
-		{ID: 0, URL: "airo-deztumb", Label: "Тумба облучатель бактерицидный AIRO-DEZTUMB", MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB", },
-		{ID: 0, URL: "airo-deztumb-big", Label: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", },
+		{ID: 0, URL: "airo-dezbox", 		Label: "Бактерицидная камера AIRO-DEZBOX", Breadcrumb: "Бактерицидная камера AIRO-DEZBOX",MetaTitle: "Бактерицидная камера AIRO-DEZBOX", },
+		{ID: 0, URL: "airo-dezbox-white", 	Label: "Бактерицидная камера AIRO-DEZBOX белая",Breadcrumb: "Бактерицидная камера AIRO-DEZBOX белая", MetaTitle: "Бактерицидная камера AIRO-DEZBOX белая", },
+		{ID: 0, URL: "airo-deztumb", 		Label: "Тумба облучатель бактерицидный AIRO-DEZTUMB", Breadcrumb: "Тумба облучатель бактерицидный AIRO-DEZTUMB",MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB", },
+		{ID: 0, URL: "airo-deztumb-big", 	Label: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", Breadcrumb: "Тумба облучатель бактерицидный AIRO-DEZTUMB big",MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", },
 
-		{ID: 0, URL: "airo-deztumb-pine", Label: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", MetaTitle: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", },
+		{ID: 0, URL: "airo-deztumb-pine", 	Label: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина",Breadcrumb: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", MetaTitle: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", },
 
 	}
 
 	//metadata := json.RawMessage(`{"color": "white", "bodyMaterial": "металл", "filterType": "угольно-фотокаталитический"}`)
 
-
 	// 7. Создаем список товаров
 	products := []models.Product{
 		{
-			SKU:"", Model: "AIRO-DEZ с регулировкой черный",
+			Model: ToStringPointer("AIRO-DEZ с регулировкой черный"), //,
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности черный", ShortName: "Рециркулятор AIRO-DEZ черный",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 19500.00, RetailDiscount: 1000,
@@ -663,7 +682,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			},
 		},
 		{
-			SKU:"", Model: "AIRO-DEZ черный",
+			Model: ToStringPointer("AIRO-DEZ черный"),
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ черный", ShortName: "Рециркулятор AIRO-DEZ черный",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
@@ -691,7 +710,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			},
 		},
 		{
-			SKU:"", Model: "AIRO-DEZ с регулировкой белый",
+			Model: ToStringPointer("AIRO-DEZ с регулировкой белый"),
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности белый",  ShortName: "Рециркулятор AIRO-DEZ белый",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 19500.00, RetailDiscount: 1000,
@@ -719,7 +738,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			},
 		},
 		{
-			SKU:"", Model: "AIRO-DEZ белый",
+			Model: ToStringPointer("AIRO-DEZ белый"),
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ",  ShortName: "Рециркулятор AIRO-DEZ белый",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
@@ -747,7 +766,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			},
 		},
 		{
-			SKU:"", Model: "AIRO-DEZ COMPACT",
+			Model: ToStringPointer("AIRO-DEZ COMPACT"),
 			Name:"Мобильный аиродезинфектор AIRO-DEZ COMPACT",  ShortName: "Аиродезинфектор AIRO-DEZ COMPACT",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 39000.00, RetailDiscount: 3000,
@@ -777,7 +796,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		},
 		
 		{
-			SKU:"", Model: "AIRO-DEZPUF",
+			Model: ToStringPointer("AIRO-DEZPUF"),
 			Name:"Бактерицидная камера пуф AIRO-DEZPUF",  ShortName: "Камера пуф AIRO-DEZPUF",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 11000.00, RetailDiscount: 1000,
@@ -806,7 +825,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			},
 		},
 		{
-			SKU:"", Model: "AIRO-DEZPUF венге",
+			Model: ToStringPointer("AIRO-DEZPUF венге"),
 			Name:"Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге",  ShortName: "Камера AIRO-DEZBOX",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 12000.00, RetailDiscount: 1000,
@@ -836,7 +855,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		},
 
 		{
-			SKU:"", Model: "AIRO-DEZBOX",
+			Model: ToStringPointer("AIRO-DEZBOX"),
 			Name:"Бактерицидная камера AIRO-DEZBOX",  ShortName: "Камера AIRO-DEZBOX",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 7800.00, RetailDiscount: 800,
@@ -865,7 +884,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			},
 		},
 		{
-			SKU:"", Model: "AIRO-DEZBOX белая",
+			Model: ToStringPointer("AIRO-DEZBOX белая"),
 			Name:"Бактерицидная камера AIRO-DEZBOX белая",  ShortName: "Камера AIRO-DEZBOX белая",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 7800.00, RetailDiscount: 800,
@@ -894,7 +913,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			},
 		},
 		{
-			SKU:"", Model: "AIRO-DEZTUMB",
+			Model: ToStringPointer("AIRO-DEZTUMB"),
 			Name:"Тумба облучатель бактерицидный AIRO-DEZTUMB",  ShortName: "Бактерицидная тумба AIRO-DEZTUMB",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
@@ -923,7 +942,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			},
 		},
 		{
-			SKU:"", Model: "AIROTUMB big",
+			Model: ToStringPointer("AIROTUMB big"),
 			Name:"Тумба облучатель бактерицидный AIRO-DEZTUMB big",  ShortName: "Облучатель AIROTUMB big",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
@@ -953,7 +972,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		},
 		
 		{
-			SKU:"", Model: "AIRO-DEZTUMB касцина",
+			Model: ToStringPointer("AIRO-DEZTUMB касцина"),
 			Name:"Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина",  ShortName: "Бактерицидная тумба AIRO-DEZTUMB",
 			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
@@ -1037,62 +1056,6 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	
 	return
 
-/*	shops := [] *models.Shop{
-		{AccountID:3, Name:"Магазин на Маяковке", Address:"Москва, ул. Долгоруковская, дом 9, стр. 3"},
-	}
-
-	product_groups := [] *models.ProductGroup{
-		{ ShopID:1, Code:"root", URL:"/", Name:"Главная", Breadcrumb: "Главная", Description:""},
-
-		{ParentID:1, ShopID:1, Code:"tea", URL:"tea", Name:"Чай", Breadcrumb: "Чай", Description:""},
-		{ParentID:1, ShopID:1, Code:"coffee", URL:"coffee", Name:"Кофе", Breadcrumb: "Кофе", Description:""},
-		{ParentID:1, ShopID:1, Code:"gift", URL:"gift", Name:"Подарки", Breadcrumb: "Подарки", Description:""},
-		{ParentID:1, ShopID:1, Code:"accessories", URL:"accessories", Name:"Посуда и аксессуары", Breadcrumb: "Посуда и аксессуары", Description:""},
-
-		{ParentID:2, ShopID:1, Code:"tea.puer", 	URL:"puer", 	Name:"Пуэр", Breadcrumb: "Пуэр", Description:""},
-		{ParentID:2, ShopID:1, Code:"tea.oolong",	URL:"oolong", 	Name:"Улунский чай", Breadcrumb: "Улунский чай", Description:""},
-		{ParentID:2, ShopID:1, Code:"tea.red", 	URL:"red", 		Name:"Красный чай", Breadcrumb: "Красный чай", Description:""},
-		{ParentID:2, ShopID:1, Code:"tea.green", 	URL:"green", 	Name:"Зеленый чай", Breadcrumb: "Зеленый чай", Description:""},
-		{ParentID:2, ShopID:1, Code:"tea.white", 	URL:"white", 	Name:"Белый чай", Breadcrumb: "Белый чай", Description:""},
-		{ParentID:2, ShopID:1, Code:"tea.yellow",	URL:"yellow", 	Name:"Желтый чай", Breadcrumb: "Желтый чай", Description:""},
-		{ParentID:2, ShopID:1, Code:"tea.herbal", 	URL:"herbal", 	Name:"Травяной чай", Breadcrumb: "Травяной чай", Description:""},
-		{ParentID:2, ShopID:1, Code:"tea.additives",URL:"additives",Name:"Чайные добавки", Breadcrumb: "Чайные добавки", Description:""},
-
-		{ParentID:2, ShopID:1, Code:"tea.china", URL:"china", Name:"Китайский чай", Breadcrumb: "Китайский чай", Description:""}, // country = china & type = tea
-		{ParentID:2, ShopID:1, Code:"tea.taiwan", URL:"taiwan", Name:"Тайваньский чай", Breadcrumb: "Тайваньский чай", Description:""}, // country = taiwan & type = tea
-
-		{ParentID:5, ShopID:1, Code:"accessories.tableware.brewing", URL:"tableware-for-brewing", Name:"Посуда для заварки китайского чая", Breadcrumb: "Посуда для заварки китайского чая", Description:""}, // country = taiwan & type = tea
-
-		{ParentID:16, ShopID:1, Code:"accessories.tableware.brewing.gunfu", URL:"gunfu", Name:"Типоды (Гунфу)", Breadcrumb: "Типоды (Гунфу чайники)", Description:""}, // country = taiwan & type = tea
-
-	}
-
-	products := [] *models.Product{
-		{AccountID:3, ProductGroupID: 8, SKU:"1017", URL:"er-e-i-ya-dyan-hun", Name:"Эр Е И Я Дянь Хун", },
-		{AccountID:3, ProductGroupID: 8, SKU:"1133", URL:"hun-ta", 			Name:"Хун Та", },
-		{AccountID:3, ProductGroupID: 8, SKU:"579", URL:"dyan-hun-mao-fen", Name:"Дянь Хун Мао Фэн", },
-		{AccountID:3, ProductGroupID: 8, SKU:"910", URL:"syao-chzhun", Name:"Сяо Чжун", },
-		{AccountID:3, ProductGroupID: 8, SKU:"587", URL:"dyan-hun-tszin-hao", Name:"Дянь Хун Цзинь Хао", },
-		{AccountID:3, ProductGroupID: 8, SKU:"865", URL:"hun-sun-chjen", Name:"Хун Сун Чжень", },
-		{AccountID:3, ProductGroupID: 8, SKU:"300", URL:"tszin-tszyun-mey", Name:"Цзинь Цзюнь Мэй", },
-		{AccountID:3, ProductGroupID: 8, SKU:"940", URL:"e-shen-hun-cha", Name:"Е Шен Хун Ча", ShortDescription:"Дикорастущий красный чай"},
-		{AccountID:3, ProductGroupID: 8, SKU:"1018", URL:"chzhun-go-hun", Name:"Чжун Го Хун"},
-		{AccountID:3, ProductGroupID: 8, SKU:"859", URL:"dyan-hun-sosnovye-igly", Name:"Дянь Хун \"Сосновые иглы\""},
-		{AccountID:3, ProductGroupID: 8, SKU:"965", URL:"li-chzhi-hun-cha", Name:"Ли Чжи Хун Ча"},
-
-		{AccountID:3, ProductGroupID: 17, SKU:"80", URL:"samadoyo-b-06", Name:"SAMADOYO B-06 (600 мл)", ShortDescription:"Чайник с кнопкой (типод)"}, // 12
-	}
-
-	offers := [] *models.Offer{
-		{AccountID:3, Name:"25гр (пробник)", Price:350.00, Discount:0},
-		{AccountID:3, Name:"50гр", Price:550.00, Discount:0},
-		{AccountID:3, Name:"100гр", Price:1100.00, Discount:150},
-		{AccountID:3, Name:"100гр + типод", Price:2200.00, Discount:400},
-	}
-
-	fmt.Println(offers, products, shops, product_groups)*/
-
-
 }
 
 func MapToRawJson(input map[string]interface{}) json.RawMessage {
@@ -1102,4 +1065,8 @@ func MapToRawJson(input map[string]interface{}) json.RawMessage {
 		return json.RawMessage(`{}`)
 	}
 	return b
+}
+
+func ToStringPointer(s string) *string {
+	return &s
 }

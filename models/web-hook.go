@@ -3,7 +3,6 @@ package models
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -270,8 +269,6 @@ func (webHook WebHook) Call(object EventObject) bool {
 				break
 			}
 			response, err = client.Do(request)
-			fmt.Println("url:", url)
-			fmt.Println("Response:", response)
 
 		case http.MethodDelete:
 			client := &http.Client{}
@@ -284,8 +281,6 @@ func (webHook WebHook) Call(object EventObject) bool {
 		return false
 	}
 	defer response.Body.Close()
-
-	//fmt.Println(resp.Status)
 
 	return true
 }

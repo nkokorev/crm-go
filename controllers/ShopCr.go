@@ -612,10 +612,10 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// var input interface{}
-	// var input map[string]interface{}
-	var input = struct {
+	var input map[string]interface{}
+	/*var input = struct {
 		models.ProductCard
-	}{}
+	}{}*/
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		fmt.Println(err)
@@ -623,12 +623,19 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if input.SwitchProducts == nil {
-		val := pq.StringArray{}
-		input.SwitchProducts = val
+	if input["switchProducts"] == nil {
+		input["switchProducts"] = pq.StringArray{"color"}
 	}
 
-	card, err := account.UpdateProductCard(cardId, input.ProductCard)
+	//fmt.Println(pq.StringArray{"color"})
+	//fmt.Println(input["switchProducts"])
+	/*if input.SwitchProducts == nil {
+		val := pq.StringArray{}
+		input.SwitchProducts = val
+	}*/
+
+	card, err := account.UpdateProductCard(cardId, input)
+	//card, err := account.UpdateProductCard(cardId, input.ProductCard)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return

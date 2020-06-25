@@ -115,7 +115,7 @@ func (Storage) getByHashId(hashId string) (*Storage, error)  {
 
 func (fs *Storage) update(input interface{}) error {
 	// fmt.Println(input)
-	// fmt.Println("Input: ", input)
+	fmt.Println("Update STORAGE 1: ", input)
 	// return db.Model(fs).Omit("id", "hashId", "account_id","created_at", "updated_at").Updates(structs.Map(input)).Error
 	return db.Model(fs).Omit("id", "hashId", "account_id","created_at", "updated_at").Updates(input).Error
 }
@@ -206,16 +206,16 @@ func (account Account) StorageGetList(offset, limit uint, search string, product
 
 		// Выборку по файлам
 		if *productId > 0 {
-			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutData()).
+			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutURL()).
 				Where("account_id = ? AND product_id = ?", account.ID, productId).
 				Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
 		} else {
 			if *emailId > 0 {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutData()).
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutURL()).
 					Where("account_id = ? AND email_id = ?", account.ID, emailId).
 					Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
 			} else {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutData()).
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutURL()).
 					Where("account_id = ?", account.ID).
 					Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
 			}
@@ -233,14 +233,14 @@ func (account Account) StorageGetList(offset, limit uint, search string, product
 
 		// Выборку по файлам
 		if *productId > 0 {
-			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutData()).
+			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutURL()).
 				Find(&files, "account_id = ? AND product_id = ?", account.ID, productId).Error
 		} else {
 			if *emailId > 0 {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutData()).
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutURL()).
 					Find(&files, "account_id = ? AND email_id = ?", account.ID, emailId).Error
 			} else {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutData()).
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutURL()).
 					Find(&files, "account_id = ?", account.ID).Error
 			}
 		}
@@ -253,12 +253,12 @@ func (account Account) StorageGetList(offset, limit uint, search string, product
 	
 	var total uint
 	if *productId > 0 {
-		err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutData()).Where("account_id = ? AND product_id = ?", account.ID, productId).Count(&total).Error
+		err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutURL()).Where("account_id = ? AND product_id = ?", account.ID, productId).Count(&total).Error
 	} else {
 		if *emailId > 0 {
-			err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutData()).Where("account_id = ? AND email_id = ?", account.ID, emailId).Count(&total).Error
+			err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutURL()).Where("account_id = ? AND email_id = ?", account.ID, emailId).Count(&total).Error
 		} else {
-			err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutData()).Where("account_id = ?", account.ID).Count(&total).Error
+			err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutURL()).Where("account_id = ?", account.ID).Count(&total).Error
 		}
 	}
 	if err != nil {
@@ -337,9 +337,22 @@ func (Account) StorageGetPublicByHashId(hashId string) (*Storage, error) {
 
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 
+func (Storage) SelectArrayWithoutURL() []string {
+	fields := structs.Names(&Storage{}) //.(map[string]string)
+	fields = utils.RemoveKey(fields, "URL")
+	return utils.ToLowerSnakeCaseArr(fields)
+}
+/*
 func (Storage) SelectArrayWithoutData() []string {
+	fields := structs.Names(&Storage{}) //.(map[string]string)
+	fields = utils.RemoveKey(fields, "Data")
+	//fields = utils.RemoveKey(fields, "URL")
+	return utils.ToLowerSnakeCaseArr(fields)
+}
+
+func (Storage) SelectArrayWithoutDataURL() []string {
 	fields := structs.Names(&Storage{}) //.(map[string]string)
 	fields = utils.RemoveKey(fields, "Data")
 	fields = utils.RemoveKey(fields, "URL")
 	return utils.ToLowerSnakeCaseArr(fields)
-}
+}*/

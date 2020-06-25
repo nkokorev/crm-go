@@ -2,9 +2,8 @@ package models
 
 import (
 	"errors"
-	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
-	"github.com/lib/pq"
+	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
 )
 
@@ -30,7 +29,9 @@ type ProductCard struct {
 
 	// Хелперы карточки: переключение по цветам, размерам и т.д.
 	// SwitchProducts	 	*pq.StringArray `json:"switchProducts" sql:"type:varchar(255)[];default:null"` // {color, size} Параметры переключения среди предложений
-	SwitchProducts	 	pq.StringArray `json:"switchProducts" sql:"type:varchar(255)[];default:'{}'"` // {color, size} Параметры переключения среди предложений
+	//SwitchProducts	 	pq.StringArray `json:"switchProducts" sql:"type:varchar(255)[];default:'{}'"` // {color, size} Параметры переключения среди предложений
+	//SwitchProducts	 	[]string `json:"switchProducts" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // {color, size} Параметры переключения среди предложений
+	SwitchProducts	 	postgres.Jsonb `json:"switchProducts" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // {color, size} Параметры переключения среди предложений
 
 	// ProductGroups 		[]ProductGroup `json:"productGroups" gorm:"many2many:product_group_product_cards"` // для разделов new и т.д.
 	ProductGroup 		ProductGroup `json:"-"` // для разделов new и т.д.
@@ -110,10 +111,11 @@ func (ProductCard) getListByAccount(accountId uint) ([]ProductCard, error) {
 	return cards, nil
 }
 
-func (productCard *ProductCard) update(input interface{}) error {
+func (productCard *ProductCard) update(input map[string]interface{}) error {
 	// fmt.Println(input)
 	// return db.Model(card).Omit("id", "account_id").Update(input).Error
-	return db.Model(productCard).Omit("id", "account_id").Update(structs.Map(input)).Error
+	//return db.Model(productCard).Omit("id", "account_id").Updates(structs.Map(input)).Error
+	return db.Model(productCard).Omit("id", "account_id").Updates(input).Error
 
 }
 
@@ -230,7 +232,7 @@ func (account Account) GetProductCards() ([]ProductCard, error) {
 	return ProductCard{}.getListByAccount(account.ID)
 }
 
-func (account Account) UpdateProductCard(cardId uint, input interface{}) (*ProductCard, error) {
+func (account Account) UpdateProductCard(cardId uint, input map[string]interface{}) (*ProductCard, error) {
 	productCard, err := account.GetProductCard(cardId)
 	if err != nil {
 		return nil, err
@@ -239,7 +241,7 @@ func (account Account) UpdateProductCard(cardId uint, input interface{}) (*Produ
 	if productCard.AccountID != account.ID {
 		return nil, utils.Error{Message: "Карточка товара принадлежит другому аккаунту"}
 	}
-	
+
 	err = productCard.update(input)
 	if err != nil {
 		return nil, err

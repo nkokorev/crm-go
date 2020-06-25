@@ -72,7 +72,7 @@ func (ProductGroup) get(id uint) (*ProductGroup, error) {
 	return &group, nil
 }
 
-func (productGroup *ProductGroup) update(input interface{}) error {
+func (productGroup *ProductGroup) update(input map[string]interface{}) error {
 	// return db.Model(group).Omit("id").Updates(structs.Map(input)).Error
 	return db.Model(productGroup).Omit("id").Updates(input).Error
 
@@ -192,7 +192,7 @@ func (account Account) GetProductGroups() ([]ProductGroup, error) {
 	return groups, nil
 }
 
-func (shop Shop) UpdateProductGroup(groupId uint, input interface{}) (*ProductGroup, error) {
+func (shop Shop) UpdateProductGroup(groupId uint, input map[string]interface{}) (*ProductGroup, error) {
 	productGroup, err := shop.GetProductGroup(groupId)
 	if err != nil {
 		return nil, err
