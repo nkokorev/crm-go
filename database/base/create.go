@@ -6,8 +6,12 @@ import (
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/models"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -1069,4 +1073,92 @@ func MapToRawJson(input map[string]interface{}) json.RawMessage {
 
 func ToStringPointer(s string) *string {
 	return &s
+}
+
+func LoadImagesAiroClimate()  {
+
+	account, err := models.GetAccount(5)
+	if err != nil {
+		fmt.Println("Не удалось загрузить изображения для аккаунта", err)
+	}
+
+	fmt.Println(account.Name)
+
+	// Добавляем шаблоны писем для синдиката и главного аккаунта
+	/*data, err := ioutil.ReadFile("/var/www/ratuscrm/files/airoclimate/images/AIRO-DEZ0.jpg")
+	if err != nil || data == nil{
+		fmt.Println("File reading error", err)
+		return
+	}*/
+
+
+
+	for  index := 1; index < 5; index++ {
+		fmt.Println("Index: ", index)
+
+		url := "/var/www/ratuscrm/files/airoclimate/images/" + strconv.Itoa(index) + "/"
+		files, err := ioutil.ReadDir(url)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// идем по файлам
+		for _, file := range files {
+
+			fmt.Println("Open: ", url + file.Name())
+			f, err := os.Open(url + file.Name())
+			if err != nil {
+				panic(err)
+			}
+			defer f.Close()
+
+
+			body, err := ioutil.ReadFile(url + file.Name())
+			if err != nil {
+				log.Fatalf("unable to read file: %v", err)
+			}
+
+			mimeType, err := GetFileContentType(f)
+			if err != nil {
+				log.Fatalf("unable to mimeType file: %v", err)
+			}
+
+			fs := models.Storage{
+				Name: strings.ToLower(file.Name()),
+				Data: body,
+				MIME: mimeType,
+				Size: uint(file.Size()),
+				Priority: 0,
+				ProductId: uint(index),
+				//EmailId: uint(emailId),
+			}
+
+			_, err = account.StorageCreateFile(&fs)
+			if err != nil {
+				log.Fatalf("unable to create file: %v", err)
+			}
+		}
+	}
+
+
+
+
+	fmt.Println("Данные загружены!")
+}
+
+func GetFileContentType(out *os.File) (string, error) {
+
+	// Only the first 512 bytes are used to sniff the content type.
+	buffer := make([]byte, 512)
+
+	_, err := out.Read(buffer)
+	if err != nil {
+		return "", err
+	}
+
+	// Use the net/http package's handy DectectContentType function. Always returns a valid
+	// content-type by returning "application/octet-stream" if no others seemed to match.
+	contentType := http.DetectContentType(buffer)
+
+	return contentType, nil
 }

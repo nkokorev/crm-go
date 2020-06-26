@@ -71,7 +71,7 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 
-	_, err = io.Copy(&buf, file);
+	_, err = io.Copy(&buf, file)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка сохранения файла"}))
 		return
