@@ -340,6 +340,7 @@ func (Account) StorageGetPublicByHashId(hashId string) (*Storage, error) {
 func (Storage) SelectArrayWithoutURL() []string {
 	fields := structs.Names(&Storage{}) //.(map[string]string)
 	fields = utils.RemoveKey(fields, "URL")
+	fields = utils.RemoveKey(fields, "Data")
 	return utils.ToLowerSnakeCaseArr(fields)
 }
 /*
