@@ -1082,20 +1082,7 @@ func LoadImagesAiroClimate()  {
 		fmt.Println("Не удалось загрузить изображения для аккаунта", err)
 	}
 
-	fmt.Println(account.Name)
-
-	// Добавляем шаблоны писем для синдиката и главного аккаунта
-	/*data, err := ioutil.ReadFile("/var/www/ratuscrm/files/airoclimate/images/AIRO-DEZ0.jpg")
-	if err != nil || data == nil{
-		fmt.Println("File reading error", err)
-		return
-	}*/
-
-
-
-	for  index := 1; index < 5; index++ {
-		fmt.Println("Index: ", index)
-
+	for  index := 1; index < 13; index++ {
 		url := "/var/www/ratuscrm/files/airoclimate/images/" + strconv.Itoa(index) + "/"
 		files, err := ioutil.ReadDir(url)
 		if err != nil {
@@ -1105,7 +1092,7 @@ func LoadImagesAiroClimate()  {
 		// идем по файлам
 		for _, file := range files {
 
-			fmt.Println("Open: ", url + file.Name())
+			//fmt.Println("Open: ", url + file.Name())
 			f, err := os.Open(url + file.Name())
 			if err != nil {
 				panic(err)

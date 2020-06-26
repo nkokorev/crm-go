@@ -19,7 +19,7 @@ type Storage struct {
 	ProductId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of products
 	EmailId 	uint	`json:"emailId" gorm:"type:int;default:null;"` // id of email template
 
-	Priority 	uint		`json:"priority" gorm:"type:int;default:null;"` // Порядок отображения (часто нужно файлам)
+	Priority 	int		`json:"priority" gorm:"type:int;default:null;"` // Порядок отображения (часто нужно файлам)
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // выводить ли где-то это изображение или нет
 
 	Name 				string `json:"name" gorm:"type:varchar(255);"` // имя файла (оно же при отдаче)
@@ -115,7 +115,6 @@ func (Storage) getByHashId(hashId string) (*Storage, error)  {
 
 func (fs *Storage) update(input interface{}) error {
 	// fmt.Println(input)
-	fmt.Println("Update STORAGE 1: ", input)
 	// return db.Model(fs).Omit("id", "hashId", "account_id","created_at", "updated_at").Updates(structs.Map(input)).Error
 	return db.Model(fs).Omit("id", "hashId", "account_id","created_at", "updated_at").Updates(input).Error
 }
