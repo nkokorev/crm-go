@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
@@ -53,7 +54,7 @@ type Product struct {
 	ShortDescription string `json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 	Description 	string `json:"description" gorm:"type:text;"` // pgsql: text
 
-	Images 			[]Storage 	`json:"images" gorm:"PRELOAD:true"`  // ?
+	Images 			[]Storage 	`json:"images" gorm:"PRELOAD:true;association_autoupdate:false;"`  // ?gorm:""
 	// Attributes []EavAttribute `json:"attributes" gorm:"many2many:product_eav_attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	//Attributes []EavAttribute `json:"attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	Attributes 		postgres.Jsonb `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
@@ -120,10 +121,7 @@ func (Product) getList(accountId uint) ([]Product, error) {
 }
 
 func (product *Product) update(input map[string]interface{}) error {
-	//err := db.Model(product).Omit("id", "account_id").Updates(structs.Map(input)).Error
-	//fmt.Println("Product: ", input)
-
-	err := db.Model(product).Omit("id", "account_id").Updates(input).Error
+	err := db.Model(product).Omit("id", "account_id").Update(input).Error
 	if err != nil {
 		return err
 	}
