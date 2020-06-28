@@ -8,7 +8,6 @@ import (
 	u "github.com/nkokorev/crm-go/utils"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -48,7 +47,7 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println("File name: ", header.Filename)
 
 	// Собираем всякие мета данные загружаемого файла для его предназначения
-	var productId uint64
+	/*var productId uint64
 	productSTR := r.FormValue("productId")
 	if productSTR != "" {
 		productId, err = strconv.ParseUint(productSTR, 10, 64)
@@ -68,7 +67,7 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка чтения данных о файле emailId"}))
 			return
 		}
-	}
+	}*/
 
 
 	_, err = io.Copy(&buf, file)
@@ -82,9 +81,11 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		Data: buf.Bytes(),
 		MIME: header.Header.Get("Content-Type"),
 		Size: uint(header.Size),
-		ProductId: uint(productId),
-		EmailId: uint(emailId),
+		//OwnerID: uint(productId),
+		//EmailId: uint(emailId),
 	}
+	// todo associate neet to entity
+
 	_fl, err := account.StorageCreateFile(&fs)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Сервер не может обработать запрос")) // что это?)

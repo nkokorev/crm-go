@@ -24,7 +24,7 @@ func main() {
 	pool.DB().SetMaxIdleConns(10)
 	pool.DB().SetMaxOpenConns(10)
 
-	//runMigration("full")
+	runMigration("full")
 	base.LoadImagesAiroClimate()
 
 	models.RunHttpServer(routes.Handlers())

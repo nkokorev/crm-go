@@ -28,7 +28,7 @@ func RefreshTables() {
 		return
 	}*/
 
-	err = pool.Exec("drop table if exists web_hooks").Error
+	err = pool.Exec("drop table if exists web_hooks, articles").Error
 	if err != nil {
 		fmt.Println("Cant create tables -1: ", err)
 		return
@@ -96,6 +96,7 @@ func RefreshTables() {
 	models.Storage{}.PgSqlCreate()
 
 	models.WebHook{}.PgSqlCreate()
+	models.Article{}.PgSqlCreate()
 
 	UploadTestData()
 }
@@ -1116,13 +1117,17 @@ func LoadImagesAiroClimate()  {
 				MIME: mimeType,
 				Size: uint(file.Size()),
 				Priority: 0,
-				ProductId: uint(index),
+				//OwnerID: uint(index),
 				//EmailId: uint(emailId),
 			}
-
-			_, err = account.StorageCreateFile(&fs)
+			file, err := account.StorageCreateFile(&fs)
 			if err != nil {
 				log.Fatalf("unable to create file: %v", err)
+			}
+
+			err = (models.Product{ID: uint(index)}).AppendAssociationImage(*file)
+			if err != nil {
+				log.Fatalf("Error: %v", err)
 			}
 		}
 	}

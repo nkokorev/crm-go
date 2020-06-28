@@ -7,13 +7,18 @@ import (
 
 type Entity interface {
 
-	getID() uint
+	getId() uint
+	getAccountId() uint
+
+	setAccountId(id uint)
+
+	getEntityName() string
 
 	// CRUD model
-	create() error
-	get () error
-	save() error
-	delete() error
+	create() (*Entity, error)
+	//get () error
+	//update(input map[string]interface{}) error
+	//delete() error
 
 
 }
@@ -30,3 +35,22 @@ func Get(v Entity) error {
 
 	return nil
 }
+
+func getEventNameCreated(entity Entity) string {
+	return "Create" + entity.getEntityName() + "Created"
+}
+
+/*func (account Account) CreateEntity(input Entity) (*Entity, error) {
+
+	input.setAccountId(account.ID)
+
+	entity, err := input.create()
+	if err != nil {
+		return nil, err
+	}
+
+	// todo: костыль вместо евента
+	go account.CallWebHookIfExist(getEventNameCreated(*entity), *entity)
+
+	return entity, nil
+}*/

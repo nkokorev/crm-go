@@ -30,7 +30,7 @@ func (shop *Shop) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
-func (shop Shop) GetId() uint {
+func (shop Shop) getId() uint {
 	return shop.ID
 }
 

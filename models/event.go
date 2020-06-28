@@ -6,7 +6,7 @@ import (
 
 type EventObject interface {
 	//emit(data interface{})
-	GetId() uint
+	getId() uint
 	//addListener(listener Listener)
 }
 

@@ -33,6 +33,11 @@ const (
 	EventProductGroupDeleted 	EventType = "ProductGroupDeleted"
 	EventProductGroupsUpdate 	EventType = "ProductGroupsUpdate"
 
+	EventArticleCreated 	EventType = "ArticleCreated"
+	EventArticleUpdated 	EventType = "ArticleUpdated"
+	EventArticleDeleted 	EventType = "ArticleDeleted"
+	EventArticlesUpdate 		EventType = "ArticlesUpdate"
+
 	EventUpdateAllShopData 	EventType = "UpdateAllShopData"
 )
 
@@ -234,7 +239,7 @@ func (account Account) DeleteWebHook(webHookId uint) error {
 
 // ##################
 
-func (webHook WebHook) Call(object EventObject) bool {
+func (webHook WebHook) Call(entity EventObject) bool {
 
 	tplUrl, err := template.New("url").Parse(webHook.URL)
 	if err != nil {
@@ -243,7 +248,7 @@ func (webHook WebHook) Call(object EventObject) bool {
 	}
 
 	urlB := new(bytes.Buffer)
-	err = tplUrl.Execute(urlB, object)
+	err = tplUrl.Execute(urlB, entity)
 	if err != nil {
 		//fmt.Println("Error Execute URL: ", err)
 		return false

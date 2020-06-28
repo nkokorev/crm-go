@@ -53,7 +53,8 @@ type Product struct {
 	ShortDescription string `json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 	Description 	string `json:"description" gorm:"type:text;"` // pgsql: text
 
-	Images 			[]Storage 	`json:"images" gorm:"PRELOAD:true;association_autoupdate:false;"`  // ?gorm:""
+	Images 			[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`  // gorm:"polymorphic:Owner;"
+	//Image 			Storage 	`json:"images" gorm:"polymorphic:Storage;" sql:"-"`  // gorm:"polymorphic:Owner;"
 	// Attributes []EavAttribute `json:"attributes" gorm:"many2many:product_eav_attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	//Attributes []EavAttribute `json:"attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	Attributes 		postgres.Jsonb `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
@@ -79,7 +80,7 @@ func (product *Product) BeforeCreate(scope *gorm.Scope) error {
 }
 
 // ######### INTERFACE EVENT Functions ############
-func (product Product) GetId() uint {
+func (product Product) getId() uint {
 	return product.ID
 }
 // ######### END OF INTERFAe Functions ############
@@ -99,7 +100,7 @@ func (Product) get(id uint) (*Product, error) {
 	//	return nil, err
 	//}
 	if err := db.Model(&product).Preload("Images", func(db *gorm.DB) *gorm.DB {
-		return db.Select(Storage{}.SelectArrayWithoutURL())
+		return db.Select(Storage{}.SelectArrayWithoutDataURL())
 	}).First(&product, id).Error; err != nil {
 		return nil, err
 	}
@@ -182,7 +183,7 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 		err := db.Model(&Product{}).
 			Preload("ProductCards").
 			Preload("Images", func(db *gorm.DB) *gorm.DB {
-				return db.Select(Storage{}.SelectArrayWithoutURL())
+				return db.Select(Storage{}.SelectArrayWithoutDataURL())
 			}).
 			Limit(limit).
 			Offset(offset).
@@ -199,7 +200,7 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 
 		err := db.Model(&Product{}).
 			Preload("ProductCards").Preload("Images", func(db *gorm.DB) *gorm.DB {
-			return db.Select(Storage{}.SelectArrayWithoutURL())
+			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		}).Limit(limit).Offset(offset).Find(&products, "account_id = ?", account.ID).Error
 
 

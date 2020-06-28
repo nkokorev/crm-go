@@ -13,11 +13,17 @@ import (
 
 type Storage struct {
 
-	ID     		uint   `json:"id" gorm:"primary_key"`
-	HashID 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
-	AccountID 	uint `json:"-" gorm:"type:int;index;not null;"`
-	ProductId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of products
-	EmailId 	uint	`json:"emailId" gorm:"type:int;default:null;"` // id of email template
+	ID     		uint   	`json:"id" gorm:"primary_key"`
+	HashID 		string 	`json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
+	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
+
+	OwnerID   	uint	`json:"-" gorm:"association_foreignkey:ID"`
+	OwnerType	string	`json:"-" `
+
+	//Product		Product	`json:"-" gorm:"polymorphic:Owner;"`
+
+	//ProductId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of products
+	//EmailId 	uint	`json:"emailId" gorm:"type:int;default:null;"` // id of email template
 
 	Priority 	int		`json:"priority" gorm:"type:int;default:null;"` // Порядок отображения (часто нужно файлам)
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // выводить ли где-то это изображение или нет
@@ -71,9 +77,20 @@ func (fs *Storage) AfterFind() (err error) {
 		default:
 			crmHost = "https://cdn.ratuscrm.com"
 	}
-	
 
-	if fs.ProductId > 0 {
+	switch fs.OwnerType {
+	case "Product":
+		fs.URL = crmHost + "/products/images/" + fs.HashID
+	case "EmailTemplate":
+		fs.URL = crmHost + "/emails/images/" + fs.HashID
+		//...
+	case "Article":
+		//..
+	default:
+		fs.URL = crmHost + "/public/" + fs.HashID
+	}
+
+	/*if fs.ProductId > 0 {
 		fs.URL = crmHost + "/products/images/" + fs.HashID
 	} else {
 		if fs.EmailId > 0 {
@@ -81,7 +98,7 @@ func (fs *Storage) AfterFind() (err error) {
 		} else {
 			fs.URL = crmHost + "/public/" + fs.HashID
 		}
-	}
+	}*/
 
 	return nil
 }
@@ -141,8 +158,11 @@ func (account Account) StorageCreateFile(fs *Storage) (*Storage, error) {
 		return nil, err
 	}
 
-	if file.ProductId > 0 {
+	/*if file.ProductId > 0 {
 		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: file.ProductId})
+	}*/
+	if file.OwnerType == "products" {
+		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: file.OwnerID})
 	}
 
 	return file, nil
@@ -205,16 +225,16 @@ func (account Account) StorageGetList(offset, limit uint, search string, product
 
 		// Выборку по файлам
 		if *productId > 0 {
-			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutURL()).
+			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
 				Where("account_id = ? AND product_id = ?", account.ID, productId).
 				Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
 		} else {
 			if *emailId > 0 {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutURL()).
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
 					Where("account_id = ? AND email_id = ?", account.ID, emailId).
 					Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
 			} else {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutURL()).
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
 					Where("account_id = ?", account.ID).
 					Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
 			}
@@ -232,14 +252,14 @@ func (account Account) StorageGetList(offset, limit uint, search string, product
 
 		// Выборку по файлам
 		if *productId > 0 {
-			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutURL()).
+			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
 				Find(&files, "account_id = ? AND product_id = ?", account.ID, productId).Error
 		} else {
 			if *emailId > 0 {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutURL()).
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
 					Find(&files, "account_id = ? AND email_id = ?", account.ID, emailId).Error
 			} else {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutURL()).
+				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
 					Find(&files, "account_id = ?", account.ID).Error
 			}
 		}
@@ -252,12 +272,12 @@ func (account Account) StorageGetList(offset, limit uint, search string, product
 	
 	var total uint
 	if *productId > 0 {
-		err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutURL()).Where("account_id = ? AND product_id = ?", account.ID, productId).Count(&total).Error
+		err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutDataURL()).Where("account_id = ? AND product_id = ?", account.ID, productId).Count(&total).Error
 	} else {
 		if *emailId > 0 {
-			err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutURL()).Where("account_id = ? AND email_id = ?", account.ID, emailId).Count(&total).Error
+			err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutDataURL()).Where("account_id = ? AND email_id = ?", account.ID, emailId).Count(&total).Error
 		} else {
-			err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutURL()).Where("account_id = ?", account.ID).Count(&total).Error
+			err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutDataURL()).Where("account_id = ?", account.ID).Count(&total).Error
 		}
 	}
 	if err != nil {
@@ -277,8 +297,8 @@ func (account Account) StorageUpdateFile(file *Storage, input interface{}) error
 		return err
 	}
 
-	if file.ProductId > 0 {
-		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: file.ProductId})
+	if file.OwnerType == "products" {
+		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: file.OwnerID})
 	}
 
 	return nil
@@ -295,8 +315,9 @@ func (account Account) StorageDeleteFile(fileId uint) error {
 		return err
 	}
 
-	if file.ProductId > 0 {
-		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: file.ProductId})
+	//if file.ProductId > 0 {
+		if file.OwnerType == "products"  {
+		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: file.OwnerID})
 	}
 
 	return nil
@@ -336,7 +357,7 @@ func (Account) StorageGetPublicByHashId(hashId string) (*Storage, error) {
 
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 
-func (Storage) SelectArrayWithoutURL() []string {
+func (Storage) SelectArrayWithoutDataURL() []string {
 	fields := structs.Names(&Storage{}) //.(map[string]string)
 	fields = utils.RemoveKey(fields, "URL")
 	fields = utils.RemoveKey(fields, "Data")
@@ -356,3 +377,8 @@ func (Storage) SelectArrayWithoutDataURL() []string {
 	fields = utils.RemoveKey(fields, "URL")
 	return utils.ToLowerSnakeCaseArr(fields)
 }*/
+
+
+func (product Product) AppendAssociationImage(fs Storage) error {
+	return db.Model(&product).Association("Images").Append(fs).Error
+}

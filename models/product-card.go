@@ -53,7 +53,7 @@ func (ProductCard) TableName() string {
 	return "product_cards"
 }
 
-func (productCard ProductCard) GetId() uint {
+func (productCard ProductCard) getId() uint {
 	return productCard.ID
 }
 

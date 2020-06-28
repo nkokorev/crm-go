@@ -50,7 +50,7 @@ func (ProductGroup) TableName() string {
 	return "product_groups"
 }
 
-func (productGroup ProductGroup) GetId() uint {
+func (productGroup ProductGroup) getId() uint {
 	return productGroup.ID
 }
 
