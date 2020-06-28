@@ -50,10 +50,10 @@ type Product struct {
 	// ProductGroupsId uint `json:"productGroupsId"` // группа товара
 	// ProductGroups []ProductGroup `json:"productGroups" gorm:"many2many:product_group_products"`
 
-	ShortDescription string `json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
-	Description 	string `json:"description" gorm:"type:text;"` // pgsql: text
+	ShortDescription string 	`json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
+	Description 	string 		`json:"description" gorm:"type:text;"` // pgsql: text
 
-	Images 			[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`  // gorm:"polymorphic:Owner;"
+	Images 			[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`  // association_autoupdate:false;
 	//Image 			Storage 	`json:"images" gorm:"polymorphic:Storage;" sql:"-"`  // gorm:"polymorphic:Owner;"
 	// Attributes []EavAttribute `json:"attributes" gorm:"many2many:product_eav_attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	//Attributes []EavAttribute `json:"attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
@@ -121,7 +121,7 @@ func (Product) getList(accountId uint) ([]Product, error) {
 }
 
 func (product *Product) update(input map[string]interface{}) error {
-	err := db.Model(product).Omit("id", "account_id").Update(input).Error
+	err := db.Set("gorm:association_autoupdate", false).Model(product).Omit("id", "account_id").Update(input).Error
 	if err != nil {
 		return err
 	}
@@ -187,6 +187,7 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 			}).
 			Limit(limit).
 			Offset(offset).
+			Order("id").
 			Where("account_id = ?", account.ID).
 			Find(&products, "id ILIKE ? OR name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?" , search, search,search,search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -199,9 +200,12 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 		}
 
 		err := db.Model(&Product{}).
-			Preload("ProductCards").Preload("Images", func(db *gorm.DB) *gorm.DB {
+			Preload("ProductCards").
+			Preload("Images").
+			/*Preload("Images", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
-		}).Limit(limit).Offset(offset).Find(&products, "account_id = ?", account.ID).Error
+		}).*/
+			Limit(limit).Offset(offset).Order("id").Find(&products, "account_id = ?", account.ID).Error
 
 
 		if err != nil && err != gorm.ErrRecordNotFound{

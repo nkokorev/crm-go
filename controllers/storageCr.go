@@ -69,6 +69,25 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}*/
 
+	// нужна отдельная привязка к файлам
+	ownerId, ok := GetQueryUINTVarFromGET(r, "ownerId")
+	if !ok || ownerId < 1 {
+		ownerId = 0
+	}
+
+	ownerType, ok := GetQuerySTRVarFromGET(r, "ownerType")
+	if !ok {
+		ownerType = ""
+	}
+
+	// check accoount entity
+	if ownerType == "products" {
+		_, err = account.GetProduct(ownerId)
+		if err != nil {
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска товара для загрузки изображения"}))
+			return
+		}
+	}
 
 	_, err = io.Copy(&buf, file)
 	if err != nil {
@@ -81,10 +100,9 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		Data: buf.Bytes(),
 		MIME: header.Header.Get("Content-Type"),
 		Size: uint(header.Size),
-		//OwnerID: uint(productId),
-		//EmailId: uint(emailId),
+		OwnerID: ownerId,
+		OwnerType: ownerType,
 	}
-	// todo associate neet to entity
 
 	_fl, err := account.StorageCreateFile(&fs)
 	if err != nil {
@@ -181,19 +199,18 @@ func StorageGetListPagination(w http.ResponseWriter, r *http.Request) {
 	}
 
 	///
-	
-	productId, ok := GetQueryUINTVarFromGET(r, "productId")
-	if !ok || productId < 1 {
-		productId = 0
+	ownerId, ok := GetQueryUINTVarFromGET(r, "ownerId")
+	if !ok || ownerId < 1 {
+		ownerId = 0
 	}
-	shopId, ok := GetQueryUINTVarFromGET(r, "shopId")
-	if !ok || shopId < 1 {
-		shopId = 0
+	ownerType, ok := GetQuerySTRVarFromGET(r, "ownerType")
+	if !ok {
+		ownerType = ""
 	}
 	
 	// without Data (body of file)
 	// todo тут надо тип файлов дописать
-	files, total, err := account.StorageGetList(offset, limit, search, &productId, &shopId)
+	files, total, err := account.StorageGetList(offset, limit, search, &ownerId, &ownerType)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка получения списка файлов"}))
 		return

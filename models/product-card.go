@@ -155,7 +155,7 @@ func (shop Shop) GetProductCardList(offset, limit int, search string, products b
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&ProductCard{}).Preload("Products").Limit(limit).Offset(offset).Where("account_id = ?", shop.AccountID).
+		err := db.Model(&ProductCard{}).Preload("Products").Limit(limit).Offset(offset).Where("account_id = ?", shop.AccountID).Order("id").
 			Find(&cards, "url ILIKE ? OR breadcrumb ILIKE ? OR meta_title ILIKE ? OR meta_keywords ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ?" , search,search,search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -167,7 +167,7 @@ func (shop Shop) GetProductCardList(offset, limit int, search string, products b
 		}
 
 		if products {
-			err := db.Model(&ProductCard{}).Preload("Products").Limit(limit).Offset(offset).Find(&cards, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error
+			err := db.Model(&ProductCard{}).Preload("Products").Limit(limit).Offset(offset).Order("id").Find(&cards, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error
 			if err != nil && err != gorm.ErrRecordNotFound{
 				return nil, 0, err
 			}

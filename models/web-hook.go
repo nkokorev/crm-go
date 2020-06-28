@@ -55,7 +55,6 @@ type WebHook struct {
 	//URLTemplate 		template.Template 	`json:"url" gorm:"type:varchar(255);"` // вызов, который совершается
 }
 
-
 func (WebHook) PgSqlCreate() {
 	db.CreateTable(&WebHook{})
 	db.Model(&WebHook{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
@@ -183,6 +182,7 @@ func (account Account) GetWebHooksPaginationList(offset, limit int, search strin
 			Offset(offset).
 			Where("account_id = ?", account.ID).
 			Where("url ILIKE ? OR name ILIKE ? OR description ILIKE ?" , search,search,search).
+			Order("id").
 			Find(&webHooks).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -197,6 +197,7 @@ func (account Account) GetWebHooksPaginationList(offset, limit int, search strin
 			Limit(limit).
 			Offset(offset).
 			Where("account_id = ?", account.ID).
+			Order("id").
 			Find(&webHooks).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err

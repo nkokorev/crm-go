@@ -141,6 +141,7 @@ func (fs Storage) Delete () error {
 }
 
 // ########### ACCOUNT FUNCTIONAL ###########
+// func (account Account) StorageCreateFile(fs *Storage, ownerId *uint, ownerType *string) (*Storage, error) {
 func (account Account) StorageCreateFile(fs *Storage) (*Storage, error) {
 	// check disk space
 	used, err := account.StorageDiskSpaceUsed()
@@ -157,11 +158,9 @@ func (account Account) StorageCreateFile(fs *Storage) (*Storage, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	/*if file.ProductId > 0 {
-		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: file.ProductId})
-	}*/
+	
 	if file.OwnerType == "products" {
+		fmt.Println("file.OwnerType == products!")
 		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: file.OwnerID})
 	}
 
@@ -211,7 +210,7 @@ func (account Account) StorageGetFiles(limit, offset int) ([]Storage, error) {
 	return files, nil
 }
 
-func (account Account) StorageGetList(offset, limit uint, search string, productId, emailId *uint) ([]Storage, uint, error) {
+func (account Account) StorageGetList(offset, limit uint, search string, ownerId *uint, ownerType *string) ([]Storage, uint, error) {
 
 	files := make([]Storage,0)
 
@@ -222,22 +221,15 @@ func (account Account) StorageGetList(offset, limit uint, search string, product
 		// string pattern
 		search = "%"+search+"%"
 
-
 		// Выборку по файлам
-		if *productId > 0 {
+		if *ownerId > 0 {
 			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
-				Where("account_id = ? AND product_id = ?", account.ID, productId).
+				Where("account_id = ? AND owner_id = ? AND owner_type = ?", account.ID, ownerId, ownerType).
 				Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
 		} else {
-			if *emailId > 0 {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
-					Where("account_id = ? AND email_id = ?", account.ID, emailId).
-					Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
-			} else {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
-					Where("account_id = ?", account.ID).
-					Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
-			}
+			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
+				Where("account_id = ?", account.ID).
+				Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
 		}
 
 		// correction not found res
@@ -251,17 +243,12 @@ func (account Account) StorageGetList(offset, limit uint, search string, product
 		}
 
 		// Выборку по файлам
-		if *productId > 0 {
-			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
-				Find(&files, "account_id = ? AND product_id = ?", account.ID, productId).Error
+		if *ownerId > 0 {
+			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).Order("id").
+				Find(&files, "account_id = ? AND owner_id = ? AND owner_type = ?", account.ID, ownerId, ownerType).Error
 		} else {
-			if *emailId > 0 {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
-					Find(&files, "account_id = ? AND email_id = ?", account.ID, emailId).Error
-			} else {
-				err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
-					Find(&files, "account_id = ?", account.ID).Error
-			}
+			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
+				Find(&files, "account_id = ?", account.ID).Error
 		}
 
 		// correction not found res
@@ -271,14 +258,10 @@ func (account Account) StorageGetList(offset, limit uint, search string, product
 	}
 	
 	var total uint
-	if *productId > 0 {
-		err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutDataURL()).Where("account_id = ? AND product_id = ?", account.ID, productId).Count(&total).Error
+	if *ownerId > 0 {
+		err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutDataURL()).Where("account_id = ? AND owner_id = ?", account.ID, ownerId).Count(&total).Error
 	} else {
-		if *emailId > 0 {
-			err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutDataURL()).Where("account_id = ? AND email_id = ?", account.ID, emailId).Count(&total).Error
-		} else {
-			err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutDataURL()).Where("account_id = ?", account.ID).Count(&total).Error
-		}
+		err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutDataURL()).Where("account_id = ?", account.ID).Count(&total).Error
 	}
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема"}
