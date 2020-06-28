@@ -1154,3 +1154,22 @@ func GetFileContentType(out *os.File) (string, error) {
 
 	return contentType, nil
 }
+
+func LoadArticlesAiroClimate()  {
+	account, err := models.GetAccount(5)
+	if err != nil {
+		fmt.Println("Не удалось загрузить изображения для аккаунта", err)
+	}
+
+	articles := []models.Article{
+		{Name: "New article about my life in Africa, when...", ShortName: "New article"},
+	}
+
+	for _, v := range articles {
+		_, err = account.CreateArticle(v)
+		if err != nil {
+			fmt.Println("Не удалось загрузить статью для ariroClimate", err)
+		}
+	}
+
+}

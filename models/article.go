@@ -1,33 +1,32 @@
 package models
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/jinzhu/gorm"
-	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
-	"log"
+	"time"
 )
 
 type Article struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
 	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
 
-	Public	 	bool 	`json:"public" gorm:"type:bool;default:true"` // Опубликована ли статья
-	Name 		string `json:"name" gorm:"type:varchar(128);default:''"` // Имя статьи
-
+	Public	 	bool 	`json:"public" gorm:"type:bool;default:false"` // Опубликована ли статья
+	Name 		string `json:"name" gorm:"type:varchar(255);"` // Полное имя Имя статьи
+	ShortName 		string `json:"shortName" gorm:"type:varchar(255);default:NULL"` // Короткое имя статьи
 
 	Body 	string `json:"body" gorm:"type:text;"` // pgsql: text
 	Description string `json:"description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 
-	Images 			[]Storage 	`json:"images" gorm:"PRELOAD:true;association_autoupdate:false;polymorphic:Owner;"`  // ?gorm:""
+	Images 			[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`
 
-	Attributes 		postgres.Jsonb `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	//Attributes 		postgres.Jsonb `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 	// Reviews []Review // Product reviews (отзывы на статью)
 	// Questions []question // вопросы по товару
 	// Video []Video // видеообзоры по товару на ютубе
 
-	Account Account `json:"-"`
+	CreatedAt time.Time  `json:"-"`
+	UpdatedAt time.Time  `json:"-"`
 }
 
 func (Article) PgSqlCreate() {
@@ -113,7 +112,6 @@ func (account Account) CreateArticle(input Article) (*Article, error) {
 		return nil, err
 	}
 
-	// todo: костыль вместо евента
 	go account.CallWebHookIfExist(EventArticleCreated, article)
 
 	return article, nil
@@ -190,13 +188,6 @@ func (account Account) UpdateArticle(articleId uint, input map[string]interface{
 	if account.ID != article.AccountID {
 		return nil, utils.Error{Message: "Товар принадлежит другому аккаунту"}
 	}
-
-	// parse attrs
-	jsonInput, err := json.Marshal(input["attributes"])
-	if err != nil {
-		log.Fatal("Eroror json: ", err)
-	}
-	article.Attributes = postgres.Jsonb{RawMessage: jsonInput}
 
 	err = article.update(input)
 	if err != nil {
