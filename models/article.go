@@ -4,14 +4,17 @@ import (
 	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"strings"
 	"time"
 )
 
 type Article struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
 	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
+	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 
 	Public	 	bool 	`json:"public" gorm:"type:bool;default:false"` // Опубликована ли статья
+	Shared	 	bool 	`json:"shared" gorm:"type:bool;default:false"` // Расшарена ли статья
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // Полное имя Имя статьи
 	ShortName 		string `json:"shortName" gorm:"type:varchar(255);default:NULL"` // Короткое имя статьи
 
@@ -25,8 +28,8 @@ type Article struct {
 	// Questions []question // вопросы по товару
 	// Video []Video // видеообзоры по товару на ютубе
 
-	CreatedAt time.Time  `json:"-"`
-	UpdatedAt time.Time  `json:"-"`
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
 }
 
 func (Article) PgSqlCreate() {
@@ -38,6 +41,7 @@ func (Article) PgSqlCreate() {
 
 func (article *Article) BeforeCreate(scope *gorm.Scope) error {
 	article.ID = 0
+	article.HashID = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	return nil
 }
 
@@ -51,7 +55,6 @@ func (article Article) getAccountId() uint {
 func (article Article) setAccountId(id uint) {
 	article.AccountID = id
 }
-
 func (article Article) getEntityName() string {
 	return "Article"
 }
@@ -71,6 +74,19 @@ func (Article) get(id uint) (*Article, error) {
 	if err := db.Model(&article).Preload("Images", func(db *gorm.DB) *gorm.DB {
 		return db.Select(Storage{}.SelectArrayWithoutDataURL())
 	}).First(&article, id).Error; err != nil {
+		return nil, err
+	}
+
+	return &article, nil
+}
+
+func (Article) getByHashId(hashId string) (*Article, error) {
+
+	article := Article{}
+
+	if err := db.Model(&article).Preload("Images", func(db *gorm.DB) *gorm.DB {
+		return db.Select(Storage{}.SelectArrayWithoutDataURL())
+	}).First(&article, "hash_id = ?", hashId).Error; err != nil {
 		return nil, err
 	}
 
@@ -131,6 +147,34 @@ func (account Account) GetArticle(articleId uint) (*Article, error) {
 	return article, nil
 }
 
+func (account Account) GetArticleByHashId(hashId string) (*Article, error) {
+
+	article, err := Article{}.getByHashId(hashId)
+	if err != nil {
+		return nil, err
+	}
+
+	if account.ID != article.AccountID {
+		return nil, utils.Error{Message: "С принадлежит другому аккаунту"}
+	}
+
+	return article, nil
+}
+
+func (account Account) GetArticleSharedByHashId(hashId string) (*Article, error) {
+
+	article, err := Article{}.getByHashId(hashId)
+	if err != nil {
+		return nil, err
+	}
+
+	if !article.Shared {
+		return nil, utils.Error{Message: "Article not shared"}
+	}
+
+	return article, nil
+}
+
 func (account Account) GetArticleListPagination(offset, limit int, search string) ([]Article, uint, error) {
 
 	articles := make([]Article,0)
@@ -147,8 +191,9 @@ func (account Account) GetArticleListPagination(offset, limit int, search string
 			}).
 			Limit(limit).
 			Offset(offset).
+			Order("id").
 			Where("account_id = ?", account.ID).
-			Find(&articles, "id ILIKE ? OR name ILIKE ? OR description ILIKE ? OR short_description ILIKE ?" , search, search,search,search).Error
+			Find(&articles, "name ILIKE ? OR short_name ILIKE ? OR body ILIKE ? OR description ILIKE ?" , search, search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -160,7 +205,7 @@ func (account Account) GetArticleListPagination(offset, limit int, search string
 
 		err := db.Model(&Article{}).Preload("Images", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
-		}).Limit(limit).Offset(offset).Find(&articles, "account_id = ?", account.ID).Error
+		}).Limit(limit).Offset(offset).Order("id").Find(&articles, "account_id = ?", account.ID).Error
 
 
 		if err != nil && err != gorm.ErrRecordNotFound{

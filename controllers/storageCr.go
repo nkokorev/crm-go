@@ -402,3 +402,39 @@ func StorageCDNGet(w http.ResponseWriter, r *http.Request) {
 	// w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s",fs.Name))
 	w.Write(fs.Data)
 }
+
+func ArticleRawPreviewCDNGet(w http.ResponseWriter, r *http.Request) {
+
+
+	hashId, ok := GetSTRVarFromRequest(r, "hashId")
+	if !ok  {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка id file"}))
+		return
+	}
+
+	article, err := (models.Account{}).GetArticleSharedByHashId(hashId)
+	if err != nil {
+		fmt.Println("fdsfds", err)
+		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(article.Body))
+}
+
+func ArticleCompilePreviewCDNGet(w http.ResponseWriter, r *http.Request) {
+
+	hashId, ok := GetSTRVarFromRequest(r, "hashId")
+	if !ok  {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка id file"}))
+		return
+	}
+
+	article, err := (models.Account{}).GetArticleSharedByHashId(hashId)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(article.Body))
+}

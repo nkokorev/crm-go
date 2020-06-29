@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 func GetIssuerAccount(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
@@ -68,7 +69,11 @@ func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, er
 			return nil, errors.New("Ошибка hash id code of account")
 		}
 
-		if account.HashID != hashId {
+		// fmt.Println("account.HashID", account.HashID)
+		// fmt.Println("hashId", hashId)
+
+		// if account.HashID != hashId {
+		if !strings.Contains(account.HashID, hashId) {
 			u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
 			return nil, errors.New("Вы авторизованы в другом аккаунте")
 		}
@@ -145,7 +150,7 @@ func GetSTRVarFromRequest(r *http.Request, name string) (string, bool) {
 		return "", false
 	}
 
-	return string(strVar), true
+	return strVar, true
 }
 
 // FOR GET Requests!!!!
