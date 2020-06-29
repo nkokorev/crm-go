@@ -1136,9 +1136,6 @@ func LoadImagesAiroClimate()  {
 		}
 	}
 
-
-
-
 	fmt.Println("Данные загружены!")
 }
 
@@ -1165,15 +1162,40 @@ func LoadArticlesAiroClimate()  {
 		fmt.Println("Не удалось найти аккаунт для загрузки статей", err)
 	}
 
-	articles := []models.Article{
-		{Name: "New article about my life in Africa, when...", ShortName: "New article"},
+	url := "/var/www/ratuscrm/files/airoclimate/articles/"
+	files, err := ioutil.ReadDir(url)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	for _, v := range articles {
-		_, err = account.CreateArticle(v)
+	// идем по файлам
+	for _, file := range files {
+
+		//fmt.Println("Open: ", url + file.Name())
+		f, err := os.Open(url + file.Name())
 		if err != nil {
-			fmt.Println("Не удалось загрузить статью для ariroClimate", err)
+			panic(err)
 		}
+		defer f.Close()
+
+		body, err := ioutil.ReadFile(url + file.Name())
+		if err != nil {
+			log.Fatalf("unable to read file: %v", err)
+		}
+
+		articleNew := models.Article{
+			Name: strings.ToLower(file.Name()),
+			Public: true,
+			Shared: true,
+			Body: string(body),
+		}
+		article, err := account.CreateArticle(articleNew)
+		if err != nil {
+			log.Fatalf("unable to create file: %v", err)
+		}
+
+		fmt.Println("article:", article.Name)
+		
 	}
 
 }

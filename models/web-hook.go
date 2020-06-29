@@ -3,7 +3,6 @@ package models
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -256,6 +255,8 @@ func (webHook WebHook) Call(entity EventObject) bool {
 	}
 
 	url := urlB.String()
+
+	// fmt.Println(url)
 
 	var response *http.Response
 	var request *http.Request
