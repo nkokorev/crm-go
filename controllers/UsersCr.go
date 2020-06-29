@@ -56,18 +56,11 @@ func GetUserList(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 
-
-	// fmt.Printf("Limit %d\n", limit)
-	// fmt.Printf("Offset %d\n", offset)
-	// fmt.Printf("Users %s\n", userTypes)
-
 	users, total, err := account.GetUserList(offset, limit, search)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список пользователей"))
 		return
 	}
-
-
 
 	resp := u.Message(true, "GET Account User List")
 	resp["total"] = total

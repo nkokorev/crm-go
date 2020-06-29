@@ -51,6 +51,7 @@ var AppRoutes = func(r *mux.Router) {
 	// rAuthFull.HandleFunc("/accounts", controllers.AccountGetProfile).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}", controllers.AccountGetProfile).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}", controllers.AccountUpdate).Methods(http.MethodPatch, http.MethodOptions)
+
 	// -- USERS --
 	// Запрос ниже может иметь много параметров (диапазон выборки, число пользователей)
 	// rAuthFull.HandleFunc("/accounts/{accountHashId}/users", controllers.CreateUser).Methods(http.MethodPost, http.MethodOptions)
@@ -71,32 +72,30 @@ var AppRoutes = func(r *mux.Router) {
 
 	// ### ApiKeys ###
 	// -- CRUD --
-	rAuthFull.HandleFunc("/api-keys", controllers.ApiKeyCreate).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/api-keys", controllers.ApiKeyGetList).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/api-keys/{id}", controllers.ApiKeyGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/api-keys/{id}", controllers.ApiKeyUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/api-keys/{id}", controllers.ApiKeyDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/api-keys", controllers.ApiKeyCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/api-keys", controllers.ApiKeyGetList).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/api-keys/{id}", controllers.ApiKeyGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/api-keys/{id}", controllers.ApiKeyUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/api-keys/{id}", controllers.ApiKeyDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### EmailMarketing ###
 	// ---CRUD---
-	rAuthFull.HandleFunc("/domains", controllers.DomainsGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/email-templates", controllers.EmailTemplatesCreate).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/email-templates", controllers.EmailTemplatesGetList).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/email-templates/{id}", controllers.EmailTemplateGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/email-templates/{id}", controllers.EmailTemplatesUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/email-templates/{id}", controllers.EmailTemplatesDelete).Methods(http.MethodDelete, http.MethodOptions)
-
-
-
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/domains", controllers.DomainsGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates", controllers.EmailTemplatesCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates", controllers.EmailTemplatesGetList).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{id}", controllers.EmailTemplateGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{id}", controllers.EmailTemplatesUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{id}", controllers.EmailTemplatesDelete).Methods(http.MethodDelete, http.MethodOptions)
+	
 	// ---ACCOUNT---
-	rAuthFull.HandleFunc("/email-templates/{emailTemplateHashId}/send/user", controllers.EmailTemplateSendToUser).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{emailTemplateHashId}/send/user", controllers.EmailTemplateSendToUser).Methods(http.MethodPost, http.MethodOptions)
 
 	// ### STORAGE CRUD ####
-	rAuthFull.HandleFunc("/storage", controllers.StorageCreateFile).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/storage", controllers.StorageGetListPagination).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/storage/{fileId}", controllers.StorageGetFile).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/storage/{fileId}", controllers.StorageUpdateFile).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/storage/{fileId}", controllers.StorageDeleteFile).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/storage", controllers.StorageCreateFile).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/storage", controllers.StorageGetListPagination).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/storage/{fileId}", controllers.StorageGetFile).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/storage/{fileId}", controllers.StorageUpdateFile).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/storage/{fileId}", controllers.StorageDeleteFile).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### SHOP ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops", controllers.ShopCreate).Methods(http.MethodPost, http.MethodOptions)
@@ -127,12 +126,12 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/products/{productId:[0-9]+}", controllers.ProductDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### WebHooks ####
-	rAuthFull.HandleFunc("/web-hooks", controllers.WebHookCreate).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/web-hooks", controllers.WebHookListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/web-hooks/{webHookId}", controllers.WebHookGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/web-hooks/{webHookId}", controllers.WebHookUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/web-hooks/{webHookId}", controllers.WebHookDelete).Methods(http.MethodDelete, http.MethodOptions)
-	rAuthFull.HandleFunc("/web-hooks/{webHookId}/call", controllers.WebHookCall).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks", controllers.WebHookCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks", controllers.WebHookListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks/{webHookId}", controllers.WebHookGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks/{webHookId}", controllers.WebHookUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks/{webHookId}", controllers.WebHookDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks/{webHookId}/call", controllers.WebHookCall).Methods(http.MethodGet, http.MethodOptions)
 
 	// ### Article ###
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles", controllers.ArticleCreate).Methods(http.MethodPost, http.MethodOptions)
