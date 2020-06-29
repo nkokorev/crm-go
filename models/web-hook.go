@@ -3,6 +3,7 @@ package models
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -251,7 +252,6 @@ func (webHook WebHook) Call(entity EventObject) bool {
 	urlB := new(bytes.Buffer)
 	err = tplUrl.Execute(urlB, entity)
 	if err != nil {
-		//fmt.Println("Error Execute URL: ", err)
 		return false
 	}
 

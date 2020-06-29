@@ -15,11 +15,20 @@ type Article struct {
 
 	Public	 	bool 	`json:"public" gorm:"type:bool;default:false"` // Опубликована ли статья
 	Shared	 	bool 	`json:"shared" gorm:"type:bool;default:false"` // Расшарена ли статья
+
+	URL 		string `json:"url" gorm:"type:varchar(255);"` // идентификатор страницы url
+	Breadcrumb 	string `json:"breadcrumb" gorm:"type:varchar(255);default:null;"`
+	
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // Полное имя Имя статьи
-	ShortName 		string `json:"shortName" gorm:"type:varchar(255);default:NULL"` // Короткое имя статьи
+	ShortName 	string `json:"shortName" gorm:"type:varchar(255);default:NULL"` // Короткое имя статьи
+
 
 	Body 	string `json:"body" gorm:"type:text;"` // pgsql: text
 	Description string `json:"description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
+
+	MetaTitle 			string `json:"metaTitle" gorm:"type:varchar(255);default:null;"`
+	MetaKeywords 		string `json:"metaKeywords" gorm:"type:varchar(255);default:null;"`
+	MetaDescription 	string `json:"metaDescription" gorm:"type:varchar(255);default:null;"`
 
 	Images 			[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`
 
