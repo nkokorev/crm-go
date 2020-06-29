@@ -39,20 +39,10 @@ func ShopCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func ShopGet(w http.ResponseWriter, r *http.Request) {
-	var account *models.Account
-	var err error
 
-	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
-	if isApiRequest(r) {
-		account, err = GetWorkAccount(w,r)
-		if err != nil || account == nil {
-			return
-		}
-	} else {
-		account, err = GetWorkAccountCheckHashId(w,r)
-		if err != nil || account == nil {
-			return
-		}
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
 	}
 
 	shopId, err := GetUINTVarFromRequest(r, "shopId")
@@ -76,7 +66,7 @@ func ShopGet(w http.ResponseWriter, r *http.Request) {
 
 func ShopListGet(w http.ResponseWriter, r *http.Request) {
 	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
-	account, err := GetWorkAccountCheckHashId(w,r)
+	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
@@ -86,8 +76,6 @@ func ShopListGet(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
 	}
-
-
 
 	resp := u.Message(true, "GET Shop List")
 	resp["shops"] = shops
@@ -196,20 +184,9 @@ func ProductGroupCreate(w http.ResponseWriter, r *http.Request) {
 
 func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-
-	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
-	if isApiRequest(r) {
-		account, err = GetWorkAccount(w,r)
-		if err != nil || account == nil {
-			return
-		}
-	} else {
-		account, err = GetWorkAccountCheckHashId(w,r)
-		if err != nil || account == nil {
-			return
-		}
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
 	}
 
 	shopId, err := GetUINTVarFromRequest(r, "shopId")
@@ -242,19 +219,9 @@ func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
 }
 func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
-	if isApiRequest(r) {
-		account, err = GetWorkAccount(w,r)
-		if err != nil || account == nil {
-			return
-		}
-	} else {
-		account, err = GetWorkAccountCheckHashId(w,r)
-		if err != nil || account == nil {
-			return
-		}
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
 	}
 
 	shopId, err := GetUINTVarFromRequest(r, "shopId")
@@ -311,8 +278,7 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 
 func ProductGroupListGet(w http.ResponseWriter, r *http.Request) {
 
-	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
-	account, err := GetWorkAccountCheckHashId(w,r)
+	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
@@ -332,7 +298,6 @@ func ProductGroupUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
@@ -489,23 +454,9 @@ func ProductCardCreate(w http.ResponseWriter, r *http.Request) {
 // Собираем все картоки товаров для конкретного магазина
 func ProductCardByShopGet(w http.ResponseWriter, r *http.Request) {
 
-	/*account, err := GetWorkAccountCheckHashId(w,r)
+	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
-	}*/
-	var account *models.Account
-	var err error
-
-	if isApiRequest(r) {
-		account, err = GetWorkAccount(w,r)
-		if err != nil || account == nil {
-			return
-		}
-	} else {
-		account, err = GetWorkAccountCheckHashId(w,r)
-		if err != nil || account == nil {
-			return
-		}
 	}
 
 	productCardId, err := GetUINTVarFromRequest(r, "productCardId")
@@ -539,23 +490,9 @@ func ProductCardByShopGet(w http.ResponseWriter, r *http.Request) {
 
 func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) {
 
-	/*account, err := GetWorkAccountCheckHashId(w,r)
+	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
-	}*/
-	var account *models.Account
-	var err error
-
-	if isApiRequest(r) {
-		account, err = GetWorkAccount(w,r)
-		if err != nil || account == nil {
-			return
-		}
-	} else {
-		account, err = GetWorkAccountCheckHashId(w,r)
-		if err != nil || account == nil {
-			return
-		}
 	}
 
 	shopId, err := GetUINTVarFromRequest(r, "shopId")
@@ -601,7 +538,6 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
@@ -703,19 +639,9 @@ func ProductCreate(w http.ResponseWriter, r *http.Request) {
 
 func ProductGet(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-
-	if isApiRequest(r) {
-		account, err = GetWorkAccount(w,r)
-		if err != nil || account == nil {
-			return
-		}
-	} else {
-		account, err = GetWorkAccountCheckHashId(w,r)
-		if err != nil || account == nil {
-			return
-		}
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
 	}
 
 	productId, err := GetUINTVarFromRequest(r, "productId")
@@ -738,19 +664,9 @@ func ProductGet(w http.ResponseWriter, r *http.Request) {
 
 func ProductListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-
-	if isApiRequest(r) {
-		account, err = GetWorkAccount(w,r)
-		if err != nil || account == nil {
-			return
-		}
-	} else {
-		account, err = GetWorkAccountCheckHashId(w,r)
-		if err != nil || account == nil {
-			return
-		}
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
 	}
 
 	// 2. Узнаем, какой список нужен
@@ -783,7 +699,6 @@ func ProductUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
@@ -845,7 +760,7 @@ func ProductDelete(w http.ResponseWriter, r *http.Request) {
 
 func ProductAttributeList(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccountCheckHashId(w,r)
+	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}

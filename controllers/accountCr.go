@@ -74,20 +74,9 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 
 func AccountUpdate(w http.ResponseWriter, r *http.Request)  {
 
-	// 1. Получаем рабочий аккаунт, сверяем его с переданным {hashId}.
-	var account *models.Account
-	var err error
-
-	if isApiRequest(r) {
-		account, err = GetWorkAccount(w,r)
-		if err != nil || account == nil {
-			return
-		}
-	} else {
-		account, err = GetWorkAccountCheckHashId(w,r)
-		if err != nil || account == nil {
-			return
-		}
+	account, err := GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
 	}
 
 	hashId, ok := GetSTRVarFromRequest(r, "accountHashId")
@@ -186,27 +175,10 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 
 func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
 
-	//account, err := GetWorkAccount(w,r)
-	var account *models.Account
-	var err error
-
-	if isApiRequest(r) {
-		account, err = GetWorkAccount(w,r)
-		if err != nil || account == nil {
-			return
-		}
-	} else {
-		account, err = GetWorkAccountCheckHashId(w,r)
-		if err != nil || account == nil {
-			return
-		}
-	}
-
-	/*account, err := GetWorkAccount(w,r)
+	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(nil, "Не удалось найти аккаунт"))
 		return
-	}*/
+	}
 
 	resp := u.Message(true, "GET account profile")
 	resp["account"] = account

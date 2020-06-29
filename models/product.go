@@ -201,10 +201,9 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 
 		err := db.Model(&Product{}).
 			Preload("ProductCards").
-			Preload("Images").
-			/*Preload("Images", func(db *gorm.DB) *gorm.DB {
-			return db.Select(Storage{}.SelectArrayWithoutDataURL())
-		}).*/
+			Preload("Images", func(db *gorm.DB) *gorm.DB {
+				return db.Select(Storage{}.SelectArrayWithoutDataURL())
+			}).
 			Limit(limit).Offset(offset).Order("id").Find(&products, "account_id = ?", account.ID).Error
 
 

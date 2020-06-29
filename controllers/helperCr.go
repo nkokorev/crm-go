@@ -43,7 +43,11 @@ func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, er
 		u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
 		return nil, errors.New("Issuer account is null!")
 	}
-	account := accountI.(*models.Account)
+	account, ok := accountI.(*models.Account)
+	if !ok {
+		u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
+		return nil, errors.New("Account is not of type!")
+	}
 
 	if account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
@@ -55,10 +59,25 @@ func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, er
 		return nil, errors.New("Id of issuer account is zero!")
 	}
 
+	// Если не API проверяем в строке рабочий accountHashId
+	if r.Context().Value("issuer") == "app" ||  r.Context().Value("issuer") == "ui-api" {
+
+		hashId, ok := GetSTRVarFromRequest(r,"accountHashId")
+		if !ok {
+			u.Respond(w, u.MessageError(u.Error{Message: "Ошибка hash id code of account"}))
+			return nil, errors.New("Ошибка hash id code of account")
+		}
+
+		if account.HashID != hashId {
+			u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
+			return nil, errors.New("Вы авторизованы в другом аккаунте")
+		}
+	}
+
 	return account, nil
 }
 
-func GetWorkAccountCheckHashId(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
+func GetWorkAccountCheckHashIdOLD(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
 
 	if r.Context().Value("account") == nil {
 		u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))

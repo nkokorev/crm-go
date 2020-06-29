@@ -26,7 +26,7 @@ func main() {
 
 	// runMigration("full")
 	// base.LoadImagesAiroClimate()
-	base.LoadArticlesAiroClimate()
+	// base.LoadArticlesAiroClimate()
 
 	models.RunHttpServer(routes.Handlers())
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")

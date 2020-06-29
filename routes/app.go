@@ -134,4 +134,11 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/web-hooks/{webHookId}", controllers.WebHookDelete).Methods(http.MethodDelete, http.MethodOptions)
 	rAuthFull.HandleFunc("/web-hooks/{webHookId}/call", controllers.WebHookCall).Methods(http.MethodGet, http.MethodOptions)
 
+	// ### Article ###
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles", controllers.ArticleCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles/{articleId:[0-9]+}", controllers.ArticleGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles", controllers.ArticleListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles/{articleId:[0-9]+}", controllers.ArticleUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles/{articleId:[0-9]+}", controllers.ArticleDelete).Methods(http.MethodDelete, http.MethodOptions)
+
 }

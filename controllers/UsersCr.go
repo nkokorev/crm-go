@@ -37,8 +37,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUserList(w http.ResponseWriter, r *http.Request) {
-	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
-	account, err := GetWorkAccountCheckHashId(w,r)
+	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
@@ -77,8 +76,7 @@ func GetUserList(w http.ResponseWriter, r *http.Request) {
 }
 
 func RoleList(w http.ResponseWriter, r *http.Request) {
-	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
-	account, err := GetWorkAccountCheckHashId(w,r)
+	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
@@ -97,8 +95,7 @@ func RoleList(w http.ResponseWriter, r *http.Request) {
 }
 
 func RemoveUserFromAccount(w http.ResponseWriter, r *http.Request) {
-	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
-	account, err := GetWorkAccountCheckHashId(w,r)
+	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
@@ -120,8 +117,7 @@ func RemoveUserFromAccount(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateUserData(w http.ResponseWriter, r *http.Request) {
-	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
-	account, err := GetWorkAccountCheckHashId(w,r)
+	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
