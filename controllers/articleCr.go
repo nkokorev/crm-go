@@ -98,6 +98,7 @@ func ArticleUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := GetWorkAccount(w,r)
 	if err != nil || account == nil {
+		// fmt.Println(err)
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}

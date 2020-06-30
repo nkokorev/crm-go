@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
-	"strings"
 )
 
 func GetIssuerAccount(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
@@ -72,8 +71,8 @@ func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, er
 		// fmt.Println("account.HashID", account.HashID)
 		// fmt.Println("hashId", hashId)
 
-		// if account.HashID != hashId {
-		if !strings.Contains(account.HashID, hashId) {
+		if account.HashID != hashId {
+		// if !strings.Contains(account.HashID, hashId) {
 			u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
 			return nil, errors.New("Вы авторизованы в другом аккаунте")
 		}

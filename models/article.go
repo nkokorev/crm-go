@@ -10,7 +10,7 @@ import (
 
 type Article struct {
 	ID     		uint   `json:"id" gorm:"primary_key"`
-	AccountID 	uint `json:"-" gorm:"type:int;index;not null;"`
+	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 	HashID 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 
 	Public	 	bool 	`json:"public" gorm:"type:bool;default:false"` // Опубликована ли статья
@@ -117,8 +117,9 @@ func (Article) getList(accountId uint) ([]Article, error) {
 
 func (article *Article) update(input map[string]interface{}) error {
 	// err := db.Set("gorm:association_autoupdate", false).Model(article).Omit("id", "account_id").Update(input).Error
-	// db.Set("gorm:association_autoupdate", true)
-	err := db.Model(article).Omit("id", "account_id").Update(input).Error
+	err := db.Model(article).Omit("id", "account_id").Updates(input).Error
+
+	// err := db.Debug().Model(&Article{}).Omit("accountHashId").Select("name", "shortName").Where("id = ?", article.ID).Update(input).Error
 	if err != nil {
 		return err
 	}
