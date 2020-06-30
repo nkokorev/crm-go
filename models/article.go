@@ -116,7 +116,9 @@ func (Article) getList(accountId uint) ([]Article, error) {
 }
 
 func (article *Article) update(input map[string]interface{}) error {
-	err := db.Set("gorm:association_autoupdate", false).Model(article).Omit("id", "account_id").Update(input).Error
+	// err := db.Set("gorm:association_autoupdate", false).Model(article).Omit("id", "account_id").Update(input).Error
+	// db.Set("gorm:association_autoupdate", true)
+	err := db.Model(article).Omit("id", "account_id").Update(input).Error
 	if err != nil {
 		return err
 	}

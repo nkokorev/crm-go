@@ -17,8 +17,8 @@ type Storage struct {
 	HashID 		string 	`json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	OwnerID   	uint	`json:"-"`   // ?? gorm:"association_foreignkey:ID"
-	OwnerType	string	`json:"-" `
+	OwnerID   	uint	//`json:"-"`   // ?? gorm:"association_foreignkey:ID"
+	OwnerType	string	//`json:"ownerType" gorm:"type:varchar(80);column:owner_type"`
 
 	//Product		Product	`json:"-" gorm:"polymorphic:Owner;"`
 
@@ -63,6 +63,26 @@ func (fs *Storage) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
+func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
+	if len(fs.OwnerType) > 0 {
+		account, err := GetAccount(fs.AccountID)
+		if err == nil {
+			account.CallWebHookUpdated(*fs)
+		}
+	}
+	return
+}
+
+func (fs *Storage) AfterCreate(tx *gorm.DB) (err error) {
+	if len(fs.OwnerType) > 0 {
+		account, err := GetAccount(fs.AccountID)
+		if err == nil {
+			account.CallWebHookCreated(*fs)
+		}
+	}
+	return
+}
+
 func (fs *Storage) AfterFind() (err error) {
 
 	// todo: дописать формирование url
@@ -103,9 +123,9 @@ func (fs *Storage) AfterFind() (err error) {
 	return nil
 }
 
-func (fs Storage) create() (*Storage, error)  {
-	err := db.Create(&fs).First(&fs).Error
-	return &fs, err
+func (fs *Storage) create() (*Storage, error)  {
+	err := db.Create(fs).First(fs).Error
+	return fs, err
 }
 
 func (Storage) get(id uint) (*Storage, error)  {
@@ -159,10 +179,7 @@ func (account Account) StorageCreateFile(fs *Storage) (*Storage, error) {
 		return nil, err
 	}
 
-	account.CallWebHook(*file)
-	/*if file.OwnerType == "products" {
-		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: file.OwnerID})
-	}*/
+	// account.CallWebHookCreated(*fs)
 
 	return file, nil
 }
@@ -280,7 +297,7 @@ func (account Account) StorageUpdateFile(file *Storage, input interface{}) error
 		return err
 	}
 
-	account.CallWebHook(*file)
+	account.CallWebHookUpdated(*file)
 
 	return nil
 }
@@ -296,7 +313,7 @@ func (account Account) StorageDeleteFile(fileId uint) error {
 		return err
 	}
 
-	account.CallWebHook(*file)
+	account.CallWebHookDeleted(*file)
 
 	return nil
 }
@@ -335,10 +352,29 @@ func (Account) StorageGetPublicByHashId(hashId string) (*Storage, error) {
 
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 
-func (account Account) CallWebHook(fs Storage) {
+func (account Account) CallWebHookCreated(fs Storage) {
+	// fmt.Println("Id: ", fs.ID)
+	// fmt.Println("Name: ", fs.Name)
+	// fmt.Println("OwnerType: ", fs.OwnerType)
+	switch fs.OwnerType {
+	case "products":
+		go account.CallWebHookIfExist(EventArticleUpdated, Product{ID: fs.OwnerID})
+	case "articles":
+		go account.CallWebHookIfExist(EventArticleUpdated, Article{ID: fs.OwnerID})
+	}
+}
+func (account Account) CallWebHookUpdated(fs Storage) {
 	switch fs.OwnerType {
 	case "products":
 		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: fs.OwnerID})
+	case "articles":
+		go account.CallWebHookIfExist(EventArticleUpdated, Article{ID: fs.OwnerID})
+	}
+}
+func (account Account) CallWebHookDeleted(fs Storage) {
+	switch fs.OwnerType {
+	case "products":
+		go account.CallWebHookIfExist(EventArticleUpdated, Product{ID: fs.OwnerID})
 	case "articles":
 		go account.CallWebHookIfExist(EventArticleUpdated, Article{ID: fs.OwnerID})
 	}
@@ -371,5 +407,8 @@ func (product Product) AppendAssociationImage(fs Storage) error {
 }
 
 func (article Article) AppendAssociationImage(fs Storage) error {
-	return db.Model(&article).Association("Image").Append(fs).Error
+	if err := db.Model(&article).Association("Image").Append(fs).Error; err != nil {
+		return err
+	}
+	return nil
 }
