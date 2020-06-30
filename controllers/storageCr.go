@@ -81,13 +81,21 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check accoount entity
-	if ownerType == "products" {
+	/*switch ownerType {
+	case "products":
 		_, err = account.GetProduct(ownerId)
 		if err != nil {
 			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска товара для загрузки изображения"}))
 			return
 		}
-	}
+	case "articles":
+		_, err = account.GetArticle(ownerId)
+		if err != nil {
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска статьи для загрузки изображения"}))
+			return
+		}
+	}*/
+
 
 	_, err = io.Copy(&buf, file)
 	if err != nil {
@@ -100,8 +108,8 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		Data: buf.Bytes(),
 		MIME: header.Header.Get("Content-Type"),
 		Size: uint(header.Size),
-		OwnerID: ownerId,
-		OwnerType: ownerType,
+		// OwnerID: ownerId, // нуу хз
+		// OwnerType: ownerType,
 	}
 
 	_fl, err := account.StorageCreateFile(&fs)
@@ -109,6 +117,23 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Сервер не может обработать запрос")) // что это?)
 		return
 	}
+
+	switch ownerType {
+	case "products":
+		err = (models.Product{ID: ownerId}).AppendAssociationImage(*_fl)
+		if err != nil {
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска продуктадля загрузки изображения"}))
+			return
+		}
+	case "articles":
+		err = (models.Article{ID: ownerId}).AppendAssociationImage(*_fl)
+		if err != nil {
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска статьи для загрузки изображения"}))
+			return
+		}
+	}
+
+
 
 	diskSpaceUsed, err := account.StorageDiskSpaceUsed()
 	if err != nil {

@@ -53,6 +53,7 @@ type Product struct {
 	ShortDescription string 	`json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 	Description 	string 		`json:"description" gorm:"type:text;"` // pgsql: text
 
+	// Обновлять только через AppendImage
 	Images 			[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`  // association_autoupdate:false;
 	//Image 			Storage 	`json:"images" gorm:"polymorphic:Storage;" sql:"-"`  // gorm:"polymorphic:Owner;"
 	// Attributes []EavAttribute `json:"attributes" gorm:"many2many:product_eav_attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)

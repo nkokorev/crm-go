@@ -30,7 +30,8 @@ type Article struct {
 	MetaKeywords 		string `json:"metaKeywords" gorm:"type:varchar(255);default:null;"`
 	MetaDescription 	string `json:"metaDescription" gorm:"type:varchar(255);default:null;"`
 
-	Image 				*Storage	`json:"image" gorm:"polymorphic:Owner;"`
+	// Обновлять только через AppendImage
+	Image 				*Storage	`json:"image" gorm:"polymorphic:Owner;"` //association_autoupdate:false;
 
 	//Attributes 		postgres.Jsonb `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 	// Reviews []Review // Product reviews (отзывы на статью)
@@ -115,7 +116,7 @@ func (Article) getList(accountId uint) ([]Article, error) {
 }
 
 func (article *Article) update(input map[string]interface{}) error {
-	err := db.Model(article).Omit("id", "account_id").Update(input).Error
+	err := db.Set("gorm:association_autoupdate", false).Model(article).Omit("id", "account_id").Update(input).Error
 	if err != nil {
 		return err
 	}
