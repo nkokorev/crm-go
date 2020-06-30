@@ -9,9 +9,9 @@ import (
 )
 
 type Article struct {
-	ID     uint   `json:"id" gorm:"primary_key"`
-	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
-	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
+	ID     		uint   `json:"id" gorm:"primary_key"`
+	AccountID 	uint `json:"-" gorm:"type:int;index;not null;"`
+	HashID 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 
 	Public	 	bool 	`json:"public" gorm:"type:bool;default:false"` // Опубликована ли статья
 	Shared	 	bool 	`json:"shared" gorm:"type:bool;default:false"` // Расшарена ли статья
@@ -23,14 +23,14 @@ type Article struct {
 	ShortName 	string `json:"shortName" gorm:"type:varchar(255);default:NULL"` // Короткое имя статьи
 
 
-	Body 	string `json:"body" gorm:"type:text;"` // pgsql: text
+	Body 		string `json:"body" gorm:"type:text;"` // pgsql: text
 	Description string `json:"description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 
 	MetaTitle 			string `json:"metaTitle" gorm:"type:varchar(255);default:null;"`
 	MetaKeywords 		string `json:"metaKeywords" gorm:"type:varchar(255);default:null;"`
 	MetaDescription 	string `json:"metaDescription" gorm:"type:varchar(255);default:null;"`
 
-	Images 			[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`
+	Image 				*Storage	`json:"image" gorm:"polymorphic:Owner;"`
 
 	//Attributes 		postgres.Jsonb `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 	// Reviews []Review // Product reviews (отзывы на статью)
@@ -80,7 +80,7 @@ func (Article) get(id uint) (*Article, error) {
 
 	article := Article{}
 
-	if err := db.Model(&article).Preload("Images", func(db *gorm.DB) *gorm.DB {
+	if err := db.Model(&article).Preload("Image", func(db *gorm.DB) *gorm.DB {
 		return db.Select(Storage{}.SelectArrayWithoutDataURL())
 	}).First(&article, id).Error; err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (Article) getByHashId(hashId string) (*Article, error) {
 
 	article := Article{}
 
-	if err := db.Model(&article).Preload("Images", func(db *gorm.DB) *gorm.DB {
+	if err := db.Model(&article).Preload("Image", func(db *gorm.DB) *gorm.DB {
 		return db.Select(Storage{}.SelectArrayWithoutDataURL())
 	}).First(&article, "hash_id = ?", hashId).Error; err != nil {
 		return nil, err
@@ -195,7 +195,7 @@ func (account Account) GetArticleListPagination(offset, limit int, search string
 		search = "%"+search+"%"
 
 		err := db.Model(&Article{}).
-			Preload("Images", func(db *gorm.DB) *gorm.DB {
+			Preload("Image", func(db *gorm.DB) *gorm.DB {
 				return db.Select(Storage{}.SelectArrayWithoutDataURL())
 			}).
 			Limit(limit).
@@ -212,7 +212,7 @@ func (account Account) GetArticleListPagination(offset, limit int, search string
 			return nil, 0, errors.New("Offset or limit is wrong")
 		}
 
-		err := db.Model(&Article{}).Preload("Images", func(db *gorm.DB) *gorm.DB {
+		err := db.Model(&Article{}).Preload("Image", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		}).Limit(limit).Offset(offset).Order("id").Find(&articles, "account_id = ?", account.ID).Error
 

@@ -17,7 +17,7 @@ type Storage struct {
 	HashID 		string 	`json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	OwnerID   	uint	`json:"-" gorm:"association_foreignkey:ID"`
+	OwnerID   	uint	`json:"-"`   // ?? gorm:"association_foreignkey:ID"
 	OwnerType	string	`json:"-" `
 
 	//Product		Product	`json:"-" gorm:"polymorphic:Owner;"`
@@ -158,11 +158,11 @@ func (account Account) StorageCreateFile(fs *Storage) (*Storage, error) {
 	if err != nil {
 		return nil, err
 	}
-	
-	if file.OwnerType == "products" {
-		fmt.Println("file.OwnerType == products!")
+
+	account.CallWebHook(*file)
+	/*if file.OwnerType == "products" {
 		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: file.OwnerID})
-	}
+	}*/
 
 	return file, nil
 }
@@ -280,9 +280,7 @@ func (account Account) StorageUpdateFile(file *Storage, input interface{}) error
 		return err
 	}
 
-	if file.OwnerType == "products" {
-		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: file.OwnerID})
-	}
+	account.CallWebHook(*file)
 
 	return nil
 }
@@ -298,10 +296,7 @@ func (account Account) StorageDeleteFile(fileId uint) error {
 		return err
 	}
 
-	//if file.ProductId > 0 {
-		if file.OwnerType == "products"  {
-		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: file.OwnerID})
-	}
+	account.CallWebHook(*file)
 
 	return nil
 }
@@ -339,6 +334,15 @@ func (Account) StorageGetPublicByHashId(hashId string) (*Storage, error) {
 }
 
 // ########### END OF ACCOUNT FUNCTIONAL ###########
+
+func (account Account) CallWebHook(fs Storage) {
+	switch fs.OwnerType {
+	case "products":
+		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: fs.OwnerID})
+	case "articles":
+		go account.CallWebHookIfExist(EventArticleUpdated, Article{ID: fs.OwnerID})
+	}
+}
 
 func (Storage) SelectArrayWithoutDataURL() []string {
 	fields := structs.Names(&Storage{}) //.(map[string]string)
