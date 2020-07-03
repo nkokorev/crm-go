@@ -593,23 +593,89 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	if err != nil {
 		log.Fatal("Не удалось создать Shop для airoClimat: ", err)
 	}
-
-	/*err = airoClimat.CreateBaseEavAttributes()
-	if err != nil {
-		log.Fatal("Не удалось создать Атрибуты для airoClimat: ", err)
-	}*/
-
-	// 5. Создаем 3 категории товаров
-	//groupAiroRoot, err := airoShop.CreateProductGroup(models.ProductGroup{Name: "Бактерицидные облучатели", URL: "", IconName: "far fa-th-large", RouteName: "catalog.index"})
-	groupAiroRoot, err := airoShop.CreateProductGroup(models.ProductGroup{Name: "Весь каталог", URL: "catalog", IconName: "far fa-th-large", RouteName: "catalog.index"})
+	
+	groupAiroRoot, err := airoShop.CreateProductGroup(
+		models.ProductGroup{
+			Code: "root", Name: "", URL: "/", IconName: "far fa-home", RouteName: "info.index",
+		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
 	}
-	groupAiro1, err := groupAiroRoot.CreateChild(models.ProductGroup{Name: "Бактерицидные рециркуляторы", URL: "bactericidal-recirculators", IconName: "far fa-fan-table", RouteName: "catalog.recirculators"})
+
+	groupAiroCatalogRoot, err := groupAiroRoot.CreateChild(
+		models.ProductGroup{
+			Code: "catalog", Name: "Весь каталог", URL: "catalog", IconName: "far fa-th-large", RouteName: "catalog",
+		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
 	}
-	groupAiro2, err := groupAiroRoot.CreateChild(models.ProductGroup{Name: "Бактерицидные камеры", URL: "bactericidal-chambers", IconName: "far fa-box-full", RouteName: "catalog.chambers"})
+	groupAiro1, err := groupAiroCatalogRoot.CreateChild(
+		models.ProductGroup{
+			Code: "catalog",Name: "Бактерицидные рециркуляторы", URL: "bactericidal-recirculators", IconName: "far fa-fan-table", RouteName: "catalog.recirculators",
+		})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+	}
+	groupAiro2, err := groupAiroCatalogRoot.CreateChild(
+		models.ProductGroup{
+			Code: "catalog",Name: "Бактерицидные камеры", URL: "bactericidal-chambers", IconName: "far fa-box-full", RouteName: "catalog.chambers",
+			})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+	}
+
+	//////////////
+
+	_, err = groupAiroRoot.CreateChild(
+
+		models.ProductGroup{
+			Code: "info", Name: "Статьи", URL: "articles", IconName: "far fa-books", RouteName: "info.articles", Order: 1,
+		})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+	}
+	deliveryGroupRoute, err := groupAiroRoot.CreateChild(
+		models.ProductGroup{
+			Code: "delivery", Name: "Доставка товара", URL: "delivery", IconName: "far fa-shipping-fast", RouteName: "delivery", Order: 1,
+		})
+	_, err = deliveryGroupRoute.CreateChild(
+		models.ProductGroup{
+			Code: "delivery", Name: "Способы оплаты", URL: "payment", IconName: "far fa-hand-holding-usd", RouteName: "delivery.payment", Order: 2,
+		})
+	_, err = deliveryGroupRoute.CreateChild(
+		models.ProductGroup{
+			Code: "delivery", Name: "Возврат товара", URL: "moneyback", IconName: "far fa-exchange-alt", RouteName: "delivery.moneyback", Order: 3,
+		})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+	}
+	_, err = groupAiroRoot.CreateChild(
+		models.ProductGroup{
+			Code: "info", Name: "О компании", URL: "about", IconName: "far fa-home-heart", RouteName: "info.about",      Order: 5,
+		})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+	}
+	_, err = groupAiroRoot.CreateChild(
+		models.ProductGroup{
+			Code: "info", Name: "Политика конфиденциальности", URL: "privacy-policy", IconName: "far fa-home-heart", RouteName: "info.privacy-policy",      Order: 6,
+		})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+	}
+	_, err = groupAiroRoot.CreateChild(
+		models.ProductGroup{
+			Code: "info", Name: "Контакты", URL: "contacts", IconName: "far fa-address-book", RouteName: "info.contacts",  Order: 10,
+		})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+	}
+
+	////////
+	_, err = groupAiroRoot.CreateChild(
+		models.ProductGroup{
+			Code: "cart", Name: "Корзина", URL: "cart", IconName: "far fa-cart-arrow-down", RouteName: "cart", Order: 1,
+		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
 	}
@@ -1023,7 +1089,18 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	}
 
 	// 9. Создаем вебхкуи
-	domainAiroSite := "http://airoclimate.me"
+	domainAiroSite := ""
+	AppEnv := os.Getenv("APP_ENV")
+
+	switch AppEnv {
+	case "local":
+		domainAiroSite = "http://airoclimate.me"
+	case "public":
+		domainAiroSite = "http://airoclimate.ratus-dev.ru"
+	default:
+		domainAiroSite = "http://airoclimate.ratus-dev.ru"
+	}
+
 	webHooks := []models.WebHook {
 		{Name: "Upload all shop data", EventType: models.EventUpdateAllShopData, URL: domainAiroSite + "/ratuscrm/webhooks/upload/all", HttpMethod: http.MethodGet},
 
@@ -1080,14 +1157,14 @@ func ToStringPointer(s string) *string {
 	return &s
 }
 
-func LoadImagesAiroClimate()  {
+func LoadImagesAiroClimate(count int)  {
 
 	account, err := models.GetAccount(5)
 	if err != nil {
 		fmt.Println("Не удалось загрузить изображения для аккаунта", err)
 	}
 
-	for  index := 1; index < 13; index++ {
+	for  index := 1; index < count; index++ {
 		url := "/var/www/ratuscrm/files/airoclimate/images/" + strconv.Itoa(index) + "/"
 		files, err := ioutil.ReadDir(url)
 		if err != nil {
@@ -1197,5 +1274,94 @@ func LoadArticlesAiroClimate()  {
 		fmt.Println("article:", article.Name)
 		
 	}
+}
 
+func LoadProductDescriptionAiroClimate()  {
+	account, err := models.GetAccount(5)
+	if err != nil {
+		fmt.Println("Не удалось найти аккаунт для загрузки статей", err)
+	}
+
+	url := "/var/www/ratuscrm/files/airoclimate/products/"
+	files, err := ioutil.ReadDir(url)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// идем по файлам
+	for _, file := range files {
+
+		//fmt.Println("Open: ", url + file.Name())
+		f, err := os.Open(url + file.Name())
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		body, err := ioutil.ReadFile(url + file.Name())
+		if err != nil {
+			log.Fatalf("unable to read file: %v", err)
+		}
+
+		// fmt.Println("article:", file.Name())
+		split := strings.Split(file.Name(), ".")
+		fileId, err := strconv.ParseUint(split[0], 10, 64)
+		if err != nil {
+			log.Fatalf("unable to read id file name: %v", err)
+		}
+		
+		_, err = account.UpdateProduct(uint(fileId), map[string]interface{}{"Description":string(body)})
+		if err != nil {
+			log.Fatalf("unable to update product: %v", err)
+		}
+
+	}
+}
+
+func LoadProductCategoryDescriptionAiroClimate()  {
+	/*account, err := models.GetAccount(5)
+	if err != nil {
+		fmt.Println("Не удалось найти аккаунт для загрузки статей", err)
+	}*/
+
+	url := "/var/www/ratuscrm/files/airoclimate/categories/"
+	files, err := ioutil.ReadDir(url)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// идем по файлам
+	for _, file := range files {
+
+		//fmt.Println("Open: ", url + file.Name())
+		f, err := os.Open(url + file.Name())
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		body, err := ioutil.ReadFile(url + file.Name())
+		if err != nil {
+			log.Fatalf("unable to read file: %v", err)
+		}
+
+		// fmt.Println("article:", file.Name())
+		split := strings.Split(file.Name(), ".html")
+		routeName := split[0]
+
+		// fmt.Println(routeName)
+		// return
+
+		group := models.ProductGroup{}
+
+		if err := models.GetDB().First(&group, "route_name = ?", routeName).Error; err != nil {
+			log.Fatalf("cant find group by route name: %v", err)
+		}
+
+		mapUpd := map[string]interface{}{"Description":string(body)}
+		err = models.GetDB().Model(group).Omit("id").Updates( mapUpd ).Error
+		if err != nil {
+			log.Fatalf("unable to update product group descr: %v", err)
+		}
+	}
 }

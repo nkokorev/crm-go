@@ -19,6 +19,7 @@ type ProductGroup struct {
 	IconName string `json:"iconName" gorm:"type:varchar(255);default:null;"` // icon name
 	RouteName string `json:"routeName" gorm:"type:varchar(255);default:null;"` // Чай, кофе, ..
 
+	Order 	int		`json:"order" gorm:"type:int;default:10;"` // Порядок отображения (часто нужно файлам)
 	Breadcrumb string `json:"breadcrumb" gorm:"type:varchar(255);default:null;"`
 	ShortDescription string `json:"shortDescription" gorm:"type:varchar(255);default:null;"`
 	Description string `json:"description" gorm:"type:text;default:null;"`
@@ -191,6 +192,15 @@ func (account Account) GetProductGroups() ([]ProductGroup, error) {
 
 	return groups, nil
 }
+
+/*func (account Account) GetProductGroupByRouteName(routeName uint) (*ProductGroup, error) {
+	group, err := ProductGroup{}.get(groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	return group, nil
+}*/
 
 func (shop Shop) UpdateProductGroup(groupId uint, input map[string]interface{}) (*ProductGroup, error) {
 	productGroup, err := shop.GetProductGroup(groupId)
