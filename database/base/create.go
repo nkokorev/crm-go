@@ -1184,15 +1184,34 @@ func UploadTestDataPart_II() {
 			log.Fatalf("Не удалось получить entDeliveries: %v", err)
 		}
 	}
-
 	var delivery models.Delivery
-	if err = account.GetEntity(&delivery, 2); err != nil {
+	if err = account.LoadEntity(&delivery, 2); err != nil {
 		log.Fatal(err)
 	}
 
+	// var ds []models.Delivery
+	// ds := make([]models.Delivery,0)
+	// var ds []models.Delivery
+	entities, err := account.GetPaginationListEntity(&models.Delivery{}, 0, 100, "id", nil);
+	// entities, err := account.GetPaginationListEntity(models.Entity(ds), 0, 100, "", "id");
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	fmt.Printf("Type: %T \n: ", delivery)
-	fmt.Println("delivery name: ", delivery.Name)
+	fmt.Println(entities[0])
+
+	/*
+	entity, err := account.GetEntity(&models.Delivery{}, 2);
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, ok := entity.(*models.Delivery)
+	if !ok {
+		log.Fatal("Не удалось получить entDeliveries")
+	}*/
+
+
+	// fmt.Println("delivery name: ", d.Name)
 
 	/*var d models.Lead
 	lead, err := account.GetEntity(1, &d)

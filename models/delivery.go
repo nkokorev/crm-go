@@ -43,6 +43,10 @@ func (delivery *Delivery) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
+/*func (Delivery) GetNullArray() []interface{} {
+	return make([]Delivery,0)
+}*/
+
 // ############# Entity interface #############
 
 func (delivery Delivery) create() (Entity, error)  {
@@ -73,6 +77,24 @@ func (delivery *Delivery) load() error {
 		return err
 	}
 	return nil
+}
+
+func (Delivery) GetPaginationList(accountId uint, offset, limit int, order string, search *string) ([]Entity, error) {
+
+	delivers := make([]Delivery,0)
+
+	err := db.Model(&Delivery{}).Limit(limit).Offset(offset).Order(order).Find(&delivers, "account_id = ?", accountId).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(delivers))
+	for i, v := range delivers {
+		entities[i] = &v
+	}
+
+	return entities, nil
 }
 
 

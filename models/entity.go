@@ -21,9 +21,12 @@ type Entity interface {
 	// update(input map[string]interface{}) (*Entity, error)
 	// get (id uint) (interface{}, error)
 	get (id uint) (Entity, error)
+	GetPaginationList(accountId uint, offset, limit int, order string, search *string) ([]Entity, error)
 	load () error
 	//update(input map[string]interface{}) error
 	//delete() error
+
+	// GetNullArray() []interface{}
 
 
 }
@@ -50,7 +53,7 @@ func (account Account) CreateEntity(input Entity) (Entity, error) {
 	return input.create()
 }
 
-/*func (account Account) GetEntity(id uint, model Entity) (Entity, error) {
+func (account Account) GetEntity(model Entity, id uint) (Entity, error) {
 
 	entity, err := model.get(id)
 	if err != nil {
@@ -62,12 +65,12 @@ func (account Account) CreateEntity(input Entity) (Entity, error) {
 	}
 
 	return entity, nil
-}*/
-// func (account Account) GetEntity(id uint, entity Entity) error {
-func (account Account) GetEntity(entity Entity, keys ...uint) error {
+}
 
-	if len(keys) > 0 {
-		entity.setId(keys[0])
+func (account Account) LoadEntity(entity Entity, primaryKey ...uint) error {
+
+	if len(primaryKey) > 0 {
+		entity.setId(primaryKey[0])
 	}
 	
 	// Загружаем по ссылке
@@ -83,6 +86,30 @@ func (account Account) GetEntity(entity Entity, keys ...uint) error {
 
 	return nil
 }
+
+func (account Account) GetPaginationListEntity(model Entity, offset, limit int, order string, search *string) ([]Entity, error) {
+	return model.GetPaginationList(account.ID, offset, limit, order, search)
+}
+
+/*func (account Account) UpdateEntity(entity Entity, input map[string]interface{}) error {
+
+	if len(primaryKey) > 0 {
+		entity.setId(primaryKey[0])
+	}
+
+	// Загружаем по ссылке
+	err := entity.load()
+	if err != nil {
+		return err
+	}
+
+	// Проверяем принадлежность к аккаунту
+	if entity.GetAccountId() != account.ID {
+		return errors.New("Модель принадлежит другому аккаунту")
+	}
+
+	return nil
+}*/
 
 /*func (account Account) DeleteEntity(id uint, model Entity) error {
 
