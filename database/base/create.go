@@ -106,10 +106,11 @@ func RefreshTablesPart_II() {
 	pool := models.GetPool()
 
 
-	pool.DropTableIfExists(models.Lead{}, models.Delivery{})
+	pool.DropTableIfExists(models.Lead{}, models.DeliveryRussianPost{}, models.DeliveryOption{})
 
 	models.Lead{}.PgSqlCreate()
-	models.Delivery{}.PgSqlCreate()
+	models.DeliveryRussianPost{}.PgSqlCreate()
+	models.DeliveryOption{}.PgSqlCreate()
 
 	UploadTestDataPart_II()
 }
@@ -1165,8 +1166,16 @@ func UploadTestDataPart_II() {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
-	deliveries := []models.Delivery{
-		{Name: "Самовывоз", Enabled: true, ShopID: 1},
+	deliveryPost, err := account.CreateEntity(&models.DeliveryRussianPost{Name: "Доставка почтой России"})
+	if err != nil {
+		log.Fatalf("Не удалось получить DeliveryRussianPost: %v", err)
+	}
+
+
+	var deliveryInterface models.Delivery = deliveryPost.(*models.DeliveryRussianPost)
+
+	deliveries := []models.DeliveryOption{
+		{Name: "Самовывоз", Enabled: true, ShopID: 1, DeliveryMethod: deliveryInterface},
 		{Name: "Курьерская доставка по г. Москва", Enabled: true, ShopID: 1},
 		{Name: "Почта России", Enabled: true, ShopID: 1},
 	}
@@ -1174,15 +1183,15 @@ func UploadTestDataPart_II() {
 	for i,_ := range deliveries {
 		_, err := account.CreateEntity(&deliveries[i])
 		if err != nil {
-			log.Fatalf("Не удалось получить entDeliveries: %v", err)
+			log.Fatalf("Не удалось создать Deliveries: %v", err)
 		}
 	}
-	var delivery models.Delivery
+	var delivery models.DeliveryOption
 	if err = account.LoadEntity(&delivery, 2); err != nil {
 		log.Fatal(err)
 	}
 	
-	_, err = account.GetPaginationListEntity(&models.Delivery{}, 0, 100, "id", nil);
+	_, err = account.GetPaginationListEntity(&models.DeliveryOption{}, 0, 100, "id", nil);
 	// entities, err := account.GetPaginationListEntity(models.Entity(ds), 0, 100, "", "id");
 	if err != nil {
 		log.Fatal(err)
@@ -1197,10 +1206,7 @@ func UploadTestDataPart_II() {
 		log.Fatal(err)
 	}
 	fmt.Println("Updated: ", delivery)
-
-	if err = account.DeleteEntity(&delivery); err != nil {
-		log.Fatal(err)
-	}
+	
 	
 
 	/*

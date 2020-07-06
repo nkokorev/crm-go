@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/jinzhu/gorm"
 	"time"
 )
 
@@ -16,47 +17,40 @@ type Lead struct {
 }
 
 func (Lead) PgSqlCreate() {
-	
 	db.CreateTable(&Lead{})
+
 	db.Model(&Lead{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	
 }
 
-/*func (lead Lead) getId() uint {
-	return lead.ID
-}
-func (lead Lead) GetAccountId() uint {
-	return lead.AccountID
-}
-func (lead *Lead) setAccountId(id uint) {
-	lead.AccountID = id
-}
-func (Lead) getEntityName() string {
-	return "Lead"
-}
+// ############# Entity interface #############
+func (lead Lead) getId() uint           { return lead.ID }
+func (lead *Lead) setId(id uint)        { lead.ID = id }
+func (lead Lead) GetAccountId() uint    { return lead.AccountID }
+func (lead *Lead) setAccountId(id uint) { lead.AccountID = id }
+// ############# Entity interface #############
 
+
+// ###### GORM Functional #######
+func (Lead) TableName() string { return "leads" }
 func (lead *Lead) BeforeCreate(scope *gorm.Scope) error {
 	lead.ID = 0
 	return nil
 }
+// ###### End of GORM Functional #######
 
+// ############# CRUD Entity interface #############
 
+func (lead Lead) create() (Entity, error)  {
+	var newItem Entity = &lead
 
-////////////
-
-func (lead Lead) create() (*Entity, error)  {
-	var newLead Entity = &lead
-	
-	if err := db.Create(newLead).Error; err != nil {
+	if err := db.Create(newItem).Error; err != nil {
 		return nil, err
 	}
 
-	return &newLead, nil
+	return newItem, nil
 }
 
-func (Lead) get(id uint) (*Entity, error) {
-
-	// var entity Entity
+func (Lead) get(id uint) (Entity, error) {
 
 	var lead Lead
 
@@ -64,69 +58,42 @@ func (Lead) get(id uint) (*Entity, error) {
 	if err != nil {
 		return nil, err
 	}
-	// entity = &lead
-
 	return &lead, nil
 }
-*/
-/*func (Lead) get(id uint) (interface{}, error) {
 
-	// var entity Entity
+func (lead *Lead) load() error {
 
-	var lead Lead
-
-	err := db.First(&lead, id).Error
+	err := db.First(lead).Error
 	if err != nil {
-		return nil, err
+		return err
 	}
-	// entity = &lead
-
-	return &lead, nil
-}*/
-
-/*func (lead Lead) create() (*Entity, error)  {
-	var newLead = lead
-
-	if err := db.Create(&newLead).Error; err != nil {
-		return nil, err
-	}
-
-	var e Entity = &newLead
-	return &e, nil
-}*/
-
-/*func (ApiKey) get(id uint) (*ApiKey, error) {
-
-	apiKey := ApiKey{}
-
-	err := db.First(&apiKey, id).Error
-	if err != nil {
-		return nil, err
-	}
-	
-	return &apiKey, nil
+	return nil
 }
 
-func (ApiKey) getByToken(token string) (*ApiKey, error) {
+func (Lead) getPaginationList(accountId uint, offset, limit int, order string, search *string) ([]Entity, error) {
 
-	apiKey := ApiKey{}
+	delivers := make([]Lead,0)
 
-	err := db.First(&apiKey, "token = ?", token).Error
+	err := db.Model(&Lead{}).Limit(limit).Offset(offset).Order(order).Find(&delivers, "account_id = ?", accountId).Error
 	if err != nil {
 		return nil, err
 	}
 
-	return &apiKey, nil
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(delivers))
+	for i, v := range delivers {
+		entities[i] = &v
+	}
+
+	return entities, nil
 }
 
-func (apiKey ApiKey) delete () error {
-	return db.Model(ApiKey{}).Where("id = ?", apiKey.ID).Delete(apiKey).Error
+func (lead *Lead) update(input map[string]interface{}) error {
+	return db.Set("gorm:association_autoupdate", false).Model(lead).Omit("id", "account_id").Update(input).Error
 }
 
-func (apiKey *ApiKey) update(input interface{}) error {
-	// return db.Model(apiKey).Omit("token", "account_id", "created_at", "updated_at").Select("Name", "Enabled").Updates(&input).Error
-	return db.Model(apiKey).Select("Name", "Enabled").Updates(structs.Map(input)).Error
+func (lead Lead) delete () error {
+	return db.Model(Lead{}).Where("id = ?", lead.ID).Delete(lead).Error
+}
 
-}*/
-
-// ######## !!!! Все что выше покрыто тестами на прямую или косвено
+// ########## End of CRUD Entity interface ###########
