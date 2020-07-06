@@ -32,6 +32,41 @@ func (shop *Shop) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
+func (shop *Shop) AfterFind() (err error) {
+
+	// Находим все необходимые методы
+	var posts []DeliveryRussianPost
+	if err := db.Find(&posts, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
+		return err
+	}
+
+	var pickups []DeliveryPickup
+	if err := db.Find(&pickups, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
+		return err
+	}
+
+	var couriers []DeliveryCourier
+	if err := db.Find(&couriers, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
+		return err
+	}
+
+	deliviries := make([]Delivery, len(posts)+len(pickups) + len(couriers))
+	for i,v := range posts {
+		deliviries[i] = &v
+	}
+	for i,v := range pickups {
+		deliviries[i+len(posts)] = &v
+	}
+	for i,v := range couriers {
+		deliviries[i+len(posts)+len(pickups)] = &v
+	}
+
+	// Дополняем модель методами доставки
+	shop.Delivery = deliviries
+
+	return nil
+}
+
 func (shop Shop) getId() uint {
 	return shop.ID
 }

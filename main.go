@@ -30,7 +30,8 @@ func main() {
 	// base.LoadProductDescriptionAiroClimate()
 	// base.LoadProductCategoryDescriptionAiroClimate()
 
-	base.RefreshTablesPart_II()
+	// base.RefreshTablesPart_II()
+	
 
 
 	models.RunHttpServer(routes.Handlers())

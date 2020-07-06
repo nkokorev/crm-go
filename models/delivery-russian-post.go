@@ -13,6 +13,7 @@ type DeliveryRussianPost struct {
 	Price 		float64 `json:"price" gorm:"type:numeric;default:0"` // стоимость доставки
 	ApiKey 		float64 `json:"apiKey" gorm:"type:varchar(255);"` // стоимость доставки
 
+	Shop Shop
 	// Shop		uint 	`gorm:"polymorphic:Owner;"` // магазин, к которому относится
 }
 
