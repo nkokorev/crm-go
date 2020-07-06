@@ -16,7 +16,7 @@ type Shop struct {
 	Email string `json:"email" gorm:"type:varchar(255);default:null;"`
 	Phone string `json:"phone" gorm:"type:varchar(255);default:null;"`
 
-	Delivery []Delivery  `gorm:"-"`// `gorm:"polymorphic:Owner;"`
+	Deliveries []Delivery  `json:"deliveries" gorm:"-"`// `gorm:"polymorphic:Owner;"`
 
 	ProductGroups []ProductGroup `json:"productGroups"`
 }
@@ -34,36 +34,7 @@ func (shop *Shop) BeforeCreate(scope *gorm.Scope) error {
 
 func (shop *Shop) AfterFind() (err error) {
 
-	// Находим все необходимые методы
-	var posts []DeliveryRussianPost
-	if err := db.Find(&posts, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
-		return err
-	}
-
-	var pickups []DeliveryPickup
-	if err := db.Find(&pickups, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
-		return err
-	}
-
-	var couriers []DeliveryCourier
-	if err := db.Find(&couriers, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
-		return err
-	}
-
-	deliviries := make([]Delivery, len(posts)+len(pickups) + len(couriers))
-	for i,v := range posts {
-		deliviries[i] = &v
-	}
-	for i,v := range pickups {
-		deliviries[i+len(posts)] = &v
-	}
-	for i,v := range couriers {
-		deliviries[i+len(posts)+len(pickups)] = &v
-	}
-
-	// Дополняем модель методами доставки
-	shop.Delivery = deliviries
-
+	shop.Deliveries = shop.GetDeliveries()
 	return nil
 }
 
@@ -258,6 +229,38 @@ func (shop Shop) CreateProductWithCardAndGroup(input Product, newCard ProductCar
 func (shop Shop) AppendDeliveryMethod(entity Entity) error {
 	return entity.update(map[string]interface{}{"shop_id":shop.ID})
 }
+
+func (shop Shop) GetDeliveries() []Delivery {
+	// Находим все необходимые методы
+	var posts []DeliveryRussianPost
+	if err := db.Find(&posts, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
+		return nil
+	}
+
+	var pickups []DeliveryPickup
+	if err := db.Find(&pickups, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
+		return nil
+	}
+
+	var couriers []DeliveryCourier
+	if err := db.Find(&couriers, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
+		return nil
+	}
+
+	deliviries := make([]Delivery, len(posts)+len(pickups) + len(couriers))
+	for i,v := range posts {
+		deliviries[i] = &v
+	}
+	for i,v := range pickups {
+		deliviries[i+len(posts)] = &v
+	}
+	for i,v := range couriers {
+		deliviries[i+len(posts)+len(pickups)] = &v
+	}
+
+	return deliviries
+}
+
 /*func (shop Shop) AppendDeliveryMethod(deliveryPostRussia DeliveryRussianPost) error {
 	return deliveryPostRussia.update(map[string]interface{}{"shop_id":shop.ID})
 	// return db.Model(&shop).Association("Delivers").Append(deliveryPostRussia).Error

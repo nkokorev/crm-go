@@ -1173,7 +1173,6 @@ func UploadTestDataPart_II() {
 		log.Fatalf("Не удалось найти shop: %v", err)
 	}
 
-
 	// Создаем вариант доставки "Почтой россии"
 	entityRussianPost, err := account.CreateEntity(&models.DeliveryRussianPost{Name: "Доставка почтой России"})
 	if err != nil {
@@ -1198,17 +1197,7 @@ func UploadTestDataPart_II() {
 	if err := shop.AppendDeliveryMethod(entityCourier); err != nil {
 		log.Fatalf("Не удалось добавить метод доставки в магазин: %v\n", err)
 	}
-
-	// Создаем тип: "Доставка Почтой России"
-	/*_ent11, err := account.CreateEntity(&models.DeliveryPickup{Name: "Самовывоз из м. Текстильщики"})
-	if err != nil {
-		log.Fatalf("Не удалось получить DeliveryRussianPost: %v", err)
-	}
-	deliveryPickup := _ent11.(*models.DeliveryPickup)*/
-
-
-
-
+	
 
 }
 
