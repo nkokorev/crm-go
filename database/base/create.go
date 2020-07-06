@@ -101,6 +101,19 @@ func RefreshTables() {
 	UploadTestData()
 }
 
+func RefreshTablesPart_II() {
+
+	pool := models.GetPool()
+
+
+	pool.DropTableIfExists(models.Lead{}, models.Delivery{})
+
+	models.Lead{}.PgSqlCreate()
+	models.Delivery{}.PgSqlCreate()
+
+	UploadTestDataPart_II()
+}
+
 // загрузка первоначальных данных в EAV-таблицы
 func UploadEavData() {
 
@@ -1141,6 +1154,52 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	}
 	
 	return
+
+}
+
+func UploadTestDataPart_II() {
+
+	// 1. Получаем главный аккаунт
+	account, err := models.GetMainAccount()
+	if err != nil {
+		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
+	}
+
+	/*_l := models.Lead{Name: "Test Entity"}
+
+	_, err = account.CreateEntity(&_l)
+	if err != nil {
+		log.Fatalf("Не удалось получить Emtity: %v", err)
+	}*/
+
+	deliveries := []models.Delivery{
+		{Name: "Самовывоз", Enabled: true, ShopID: 1},
+		{Name: "Курьерская доставка по г. Москва", Enabled: true, ShopID: 1},
+		{Name: "Почта России", Enabled: true, ShopID: 1},
+	}
+
+	for i,_ := range deliveries {
+		_, err := account.CreateEntity(&deliveries[i])
+		if err != nil {
+			log.Fatalf("Не удалось получить entDeliveries: %v", err)
+		}
+	}
+
+	var delivery models.Delivery
+	if err = account.GetEntity(&delivery, 2); err != nil {
+		log.Fatal(err)
+	}
+
+
+	fmt.Printf("Type: %T \n: ", delivery)
+	fmt.Println("delivery name: ", delivery.Name)
+
+	/*var d models.Lead
+	lead, err := account.GetEntity(1, &d)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("lead: ", lead)*/
 
 }
 

@@ -116,7 +116,6 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	messageId := "1002"
 	feedBackId := "1324078:20488:trust:54854"
 
-
 	// 1. Получаем compile html из email'а
 	html, err := pkg.EmailTemplate.GetHTML(&pkg.ViewData)
 	if err != nil {
