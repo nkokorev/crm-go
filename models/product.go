@@ -130,7 +130,6 @@ func (product *Product) update(input map[string]interface{}) error {
 	return nil
 }
 
-
 func (product Product) delete () error {
 	return db.Model(Product{}).Where("id = ?", product.ID).Delete(product).Error
 }

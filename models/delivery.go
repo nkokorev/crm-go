@@ -100,7 +100,9 @@ func (Delivery) GetPaginationList(accountId uint, offset, limit int, order strin
 func (delivery *Delivery) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).Model(delivery).Omit("id", "account_id").Update(input).Error
 }
-
+func (delivery Delivery) delete () error {
+	return db.Model(Delivery{}).Where("id = ?", delivery.ID).Delete(delivery).Error
+}
 
 /*
 

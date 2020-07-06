@@ -1188,12 +1188,6 @@ func UploadTestDataPart_II() {
 		log.Fatal(err)
 	}
 
-	var e models.Delivery
-	var _e, _ = account.GetEntity(&e, 2)
-	fmt.Println(_e)
-
-	// e = (_e).(models.Delivery)
-
 	delivery.Name = "Test name"
 	if err = account.UpdateEntity(&delivery, map[string]interface{}{"name":"New name 3", "enabled": false}); err != nil {
 		log.Fatal(err)
@@ -1203,6 +1197,10 @@ func UploadTestDataPart_II() {
 		log.Fatal(err)
 	}
 	fmt.Println("Updated: ", delivery)
+
+	if err = account.DeleteEntity(&delivery); err != nil {
+		log.Fatal(err)
+	}
 	
 
 	/*
