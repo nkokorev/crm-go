@@ -1165,13 +1165,6 @@ func UploadTestDataPart_II() {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
-	/*_l := models.Lead{Name: "Test Entity"}
-
-	_, err = account.CreateEntity(&_l)
-	if err != nil {
-		log.Fatalf("Не удалось получить Emtity: %v", err)
-	}*/
-
 	deliveries := []models.Delivery{
 		{Name: "Самовывоз", Enabled: true, ShopID: 1},
 		{Name: "Курьерская доставка по г. Москва", Enabled: true, ShopID: 1},
@@ -1188,17 +1181,29 @@ func UploadTestDataPart_II() {
 	if err = account.LoadEntity(&delivery, 2); err != nil {
 		log.Fatal(err)
 	}
-
-	// var ds []models.Delivery
-	// ds := make([]models.Delivery,0)
-	// var ds []models.Delivery
-	entities, err := account.GetPaginationListEntity(&models.Delivery{}, 0, 100, "id", nil);
+	
+	_, err = account.GetPaginationListEntity(&models.Delivery{}, 0, 100, "id", nil);
 	// entities, err := account.GetPaginationListEntity(models.Entity(ds), 0, 100, "", "id");
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(entities[0])
+	var e models.Delivery
+	var _e, _ = account.GetEntity(&e, 2)
+	fmt.Println(_e)
+
+	// e = (_e).(models.Delivery)
+
+	delivery.Name = "Test name"
+	if err = account.UpdateEntity(&delivery, map[string]interface{}{"name":"New name 3", "enabled": false}); err != nil {
+		log.Fatal(err)
+	}
+
+	if err = account.LoadEntity(&delivery); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Updated: ", delivery)
+	
 
 	/*
 	entity, err := account.GetEntity(&models.Delivery{}, 2);

@@ -97,30 +97,12 @@ func (Delivery) GetPaginationList(accountId uint, offset, limit int, order strin
 	return entities, nil
 }
 
-
-/*func (ApiKey) get(id uint) (*ApiKey, error) {
-
-	apiKey := ApiKey{}
-
-	err := db.First(&apiKey, id).Error
-	if err != nil {
-		return nil, err
-	}
-	
-	return &apiKey, nil
+func (delivery *Delivery) update(input map[string]interface{}) error {
+	return db.Set("gorm:association_autoupdate", false).Model(delivery).Omit("id", "account_id").Update(input).Error
 }
 
-func (ApiKey) getByToken(token string) (*ApiKey, error) {
 
-	apiKey := ApiKey{}
-
-	err := db.First(&apiKey, "token = ?", token).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return &apiKey, nil
-}
+/*
 
 func (apiKey ApiKey) delete () error {
 	return db.Model(ApiKey{}).Where("id = ?", apiKey.ID).Delete(apiKey).Error

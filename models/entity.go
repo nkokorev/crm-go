@@ -23,7 +23,7 @@ type Entity interface {
 	get (id uint) (Entity, error)
 	GetPaginationList(accountId uint, offset, limit int, order string, search *string) ([]Entity, error)
 	load () error
-	//update(input map[string]interface{}) error
+	update(input map[string]interface{}) error
 	//delete() error
 
 	// GetNullArray() []interface{}
@@ -89,6 +89,9 @@ func (account Account) LoadEntity(entity Entity, primaryKey ...uint) error {
 
 func (account Account) GetPaginationListEntity(model Entity, offset, limit int, order string, search *string) ([]Entity, error) {
 	return model.GetPaginationList(account.ID, offset, limit, order, search)
+}
+func (account Account) UpdateEntity(model Entity, input map[string]interface{}) error {
+	return model.update(input)
 }
 
 /*func (account Account) UpdateEntity(entity Entity, input map[string]interface{}) error {
