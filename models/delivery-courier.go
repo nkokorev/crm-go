@@ -6,14 +6,12 @@ import (
 
 type DeliveryCourier struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
-	AccountID 	uint	`json:"accountId" gorm:"index,not null"` // аккаунт-владелец ключа
+	AccountID 	uint	`json:"-" gorm:"index,not null"` // аккаунт-владелец ключа
 	ShopID		uint 	`json:"shopId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	Code 		string	`json:"code" gorm:"type:varchar(16);default:'courier';"` // Для идентификации во фронтенде
 
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // "Курьерская доставка", "Почта России", "Самовывоз"
 	Price 		float64 `json:"price" gorm:"type:numeric;default:0"` // стоимость доставки
-
-	Shop Shop
-
 }
 
 func (DeliveryCourier) PgSqlCreate() {
@@ -26,6 +24,10 @@ func (deliveryCourier DeliveryCourier) getId() uint { return deliveryCourier.ID 
 func (deliveryCourier *DeliveryCourier) setId(id uint) { deliveryCourier.ID = id }
 func (deliveryCourier DeliveryCourier) GetAccountId() uint { return deliveryCourier.AccountID }
 func (deliveryCourier *DeliveryCourier) setAccountId(id uint) { deliveryCourier.AccountID = id }
+
+func (deliveryCourier DeliveryCourier) GetCode() string {
+	return deliveryCourier.Code
+}
 // ############# Entity interface #############
 func (deliveryCourier *DeliveryCourier) BeforeCreate(scope *gorm.Scope) error {
 	deliveryCourier.ID = 0

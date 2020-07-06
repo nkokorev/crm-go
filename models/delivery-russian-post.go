@@ -6,15 +6,13 @@ import (
 
 type DeliveryRussianPost struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
-	AccountID 	uint	`json:"accountId" gorm:"index,not null"` // аккаунт-владелец ключа
+	AccountID 	uint	`json:"-" gorm:"index,not null"` // аккаунт-владелец ключа
 	ShopID		uint 	`json:"shopId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	Code 		string	`json:"code" gorm:"type:varchar(16);default:'russianPost';"` // Для идентификации во фронтенде
 
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // "Курьерская доставка", "Почта России", "Самовывоз"
 	Price 		float64 `json:"price" gorm:"type:numeric;default:0"` // стоимость доставки
 	ApiKey 		float64 `json:"apiKey" gorm:"type:varchar(255);"` // стоимость доставки
-
-	Shop Shop
-	// Shop		uint 	`gorm:"polymorphic:Owner;"` // магазин, к которому относится
 }
 
 func (DeliveryRussianPost) PgSqlCreate() {
@@ -29,6 +27,10 @@ func (deliveryRussianPost DeliveryRussianPost) getId() uint { return deliveryRus
 func (deliveryRussianPost *DeliveryRussianPost) setId(id uint) { deliveryRussianPost.ID = id }
 func (deliveryRussianPost DeliveryRussianPost) GetAccountId() uint { return deliveryRussianPost.AccountID }
 func (deliveryRussianPost *DeliveryRussianPost) setAccountId(id uint) { deliveryRussianPost.AccountID = id }
+
+func (deliveryRussianPost DeliveryRussianPost) GetCode() string {
+	return deliveryRussianPost.Code
+}
 // ############# Entity interface #############
 
 
@@ -99,8 +101,4 @@ func (deliveryRussianPost DeliveryRussianPost) delete () error {
 }
 
 // ########## End of CRUD Entity interface ###########
-
-func (deliveryRussianPost DeliveryRussianPost) GetName () string {
-	return "Почта России"
-}
 

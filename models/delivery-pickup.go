@@ -6,14 +6,13 @@ import (
 
 type DeliveryPickup struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
-	AccountID 	uint	`json:"accountId" gorm:"index,not null"` // аккаунт-владелец ключа
+	AccountID 	uint	`json:"-" gorm:"index,not null"` // аккаунт-владелец ключа
 	ShopID		uint 	`json:"shopId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	Code 		string	`json:"code" gorm:"type:varchar(16);default:'pickup';"` // Для идентификации во фронтенде
 
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // "Курьерская доставка", "Почта России", "Самовывоз"
 	Price 		float64 `json:"price" gorm:"type:numeric;default:0"` // стоимость доставки
 	ApiKey 		float64 `json:"apiKey" gorm:"type:varchar(255);"` // стоимость доставки
-
-	Shop Shop
 }
 
 func (DeliveryPickup) PgSqlCreate() {
@@ -28,6 +27,10 @@ func (deliveryPickup DeliveryPickup) getId() uint { return deliveryPickup.ID }
 func (deliveryPickup *DeliveryPickup) setId(id uint) { deliveryPickup.ID = id }
 func (deliveryPickup DeliveryPickup) GetAccountId() uint { return deliveryPickup.AccountID }
 func (deliveryPickup *DeliveryPickup) setAccountId(id uint) { deliveryPickup.AccountID = id }
+
+func (deliveryPickup DeliveryPickup) GetCode() string {
+	return deliveryPickup.Code
+}
 // ############# Entity interface #############
 
 
