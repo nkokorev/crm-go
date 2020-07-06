@@ -21,6 +21,8 @@ type Entity interface {
 	update(input map[string]interface{}) error
 	delete() error
 
+	// AppendAssociationMethod(options Entity)
+
 }
 
 func Get(v Entity) error {

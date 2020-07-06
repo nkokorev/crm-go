@@ -58,7 +58,7 @@ func RefreshTables() {
 		return
 	}
 	
-	err = pool.Exec("drop table if exists user_verification_methods, accounts").Error
+	err = pool.Exec("drop table if exists accounts, user_verification_methods").Error
 	if err != nil {
 		fmt.Println("Cant create tables 3: ", err)
 		return
@@ -106,11 +106,12 @@ func RefreshTablesPart_II() {
 	pool := models.GetPool()
 
 
-	pool.DropTableIfExists(models.Lead{}, models.DeliveryRussianPost{}, models.DeliveryOption{})
+	pool.DropTableIfExists(models.Lead{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
 
 	models.Lead{}.PgSqlCreate()
 	models.DeliveryRussianPost{}.PgSqlCreate()
-	models.DeliveryOption{}.PgSqlCreate()
+	models.DeliveryPickup{}.PgSqlCreate()
+	models.DeliveryCourier{}.PgSqlCreate()
 
 	UploadTestDataPart_II()
 }
@@ -1161,73 +1162,53 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 func UploadTestDataPart_II() {
 
 	// 1. Получаем главный аккаунт
-	account, err := models.GetMainAccount()
+	account, err := models.GetAccount(5)
 	if err != nil {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
-	deliveryPost, err := account.CreateEntity(&models.DeliveryRussianPost{Name: "Доставка почтой России"})
+	// 2. Получаем магазин
+	shop, err := account.GetShop(1)
+	if err != nil {
+		log.Fatalf("Не удалось найти shop: %v", err)
+	}
+
+
+	// Создаем вариант доставки "Почтой россии"
+	entityRussianPost, err := account.CreateEntity(&models.DeliveryRussianPost{Name: "Доставка почтой России"})
 	if err != nil {
 		log.Fatalf("Не удалось получить DeliveryRussianPost: %v", err)
 	}
-
-
-	var deliveryInterface models.Delivery = deliveryPost.(*models.DeliveryRussianPost)
-
-	deliveries := []models.DeliveryOption{
-		{Name: "Самовывоз", Enabled: true, ShopID: 1, DeliveryMethod: deliveryInterface},
-		{Name: "Курьерская доставка по г. Москва", Enabled: true, ShopID: 1},
-		{Name: "Почта России", Enabled: true, ShopID: 1},
+	if err := shop.AppendDeliveryMethod(entityRussianPost); err != nil {
+		log.Fatalf("Не удалось добавить метод доставки в магазин: %v\n", err)
 	}
 
-	for i,_ := range deliveries {
-		_, err := account.CreateEntity(&deliveries[i])
-		if err != nil {
-			log.Fatalf("Не удалось создать Deliveries: %v", err)
-		}
-	}
-	var delivery models.DeliveryOption
-	if err = account.LoadEntity(&delivery, 2); err != nil {
-		log.Fatal(err)
-	}
-	
-	_, err = account.GetPaginationListEntity(&models.DeliveryOption{}, 0, 100, "id", nil);
-	// entities, err := account.GetPaginationListEntity(models.Entity(ds), 0, 100, "", "id");
+	entityPickup, err := account.CreateEntity(&models.DeliveryPickup{Name: "Самовывоз из м. Текстильщики"})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Не удалось получить entityPickup: %v", err)
+	}
+	if err := shop.AppendDeliveryMethod(entityPickup); err != nil {
+		log.Fatalf("Не удалось добавить метод доставки в магазин: %v\n", err)
 	}
 
-	delivery.Name = "Test name"
-	if err = account.UpdateEntity(&delivery, map[string]interface{}{"name":"New name 3", "enabled": false}); err != nil {
-		log.Fatal(err)
-	}
-
-	if err = account.LoadEntity(&delivery); err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Updated: ", delivery)
-	
-	
-
-	/*
-	entity, err := account.GetEntity(&models.Delivery{}, 2);
+	entityCourier, err := account.CreateEntity(&models.DeliveryCourier{Name: "Доставка курьером по г. Москва", Price: 500})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Не удалось получить entityCourier: %v", err)
 	}
-	_, ok := entity.(*models.Delivery)
-	if !ok {
-		log.Fatal("Не удалось получить entDeliveries")
-	}*/
+	if err := shop.AppendDeliveryMethod(entityCourier); err != nil {
+		log.Fatalf("Не удалось добавить метод доставки в магазин: %v\n", err)
+	}
 
-
-	// fmt.Println("delivery name: ", d.Name)
-
-	/*var d models.Lead
-	lead, err := account.GetEntity(1, &d)
+	// Создаем тип: "Доставка Почтой России"
+	/*_ent11, err := account.CreateEntity(&models.DeliveryPickup{Name: "Самовывоз из м. Текстильщики"})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Не удалось получить DeliveryRussianPost: %v", err)
 	}
-	fmt.Println("lead: ", lead)*/
+	deliveryPickup := _ent11.(*models.DeliveryPickup)*/
+
+
+
+
 
 }
 

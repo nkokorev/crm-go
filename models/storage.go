@@ -110,16 +110,6 @@ func (fs *Storage) AfterFind() (err error) {
 		fs.URL = crmHost + "/public/" + fs.HashID
 	}
 
-	/*if fs.ProductId > 0 {
-		fs.URL = crmHost + "/products/images/" + fs.HashID
-	} else {
-		if fs.EmailId > 0 {
-			fs.URL = crmHost + "/emails/images/" + fs.HashID
-		} else {
-			fs.URL = crmHost + "/public/" + fs.HashID
-		}
-	}*/
-
 	return nil
 }
 

@@ -7,12 +7,13 @@ import (
 type DeliveryRussianPost struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
 	AccountID 	uint	`json:"accountId" gorm:"index,not null"` // аккаунт-владелец ключа
+	ShopID		uint 	`json:"shopId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
 
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // "Курьерская доставка", "Почта России", "Самовывоз"
 	Price 		float64 `json:"price" gorm:"type:numeric;default:0"` // стоимость доставки
 	ApiKey 		float64 `json:"apiKey" gorm:"type:varchar(255);"` // стоимость доставки
 
-	DeliveryOptions 		[]DeliveryOption 	`gorm:"polymorphic:Owner;"`  // association_autoupdate:false;
+	// Shop		uint 	`gorm:"polymorphic:Owner;"` // магазин, к которому относится
 }
 
 func (DeliveryRussianPost) PgSqlCreate() {
@@ -102,6 +103,3 @@ func (deliveryRussianPost DeliveryRussianPost) GetName () string {
 	return "Почта России"
 }
 
-func (deliveryRussianPost DeliveryRussianPost) AppendAssociationMethod(i DeliveryOption) error {
-	return db.Model(&deliveryRussianPost).Association("DeliveryOption").Append(i).Error
-}

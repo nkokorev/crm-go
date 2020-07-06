@@ -16,6 +16,8 @@ type Shop struct {
 	Email string `json:"email" gorm:"type:varchar(255);default:null;"`
 	Phone string `json:"phone" gorm:"type:varchar(255);default:null;"`
 
+	Delivery []Delivery  `gorm:"-"`// `gorm:"polymorphic:Owner;"`
+
 	ProductGroups []ProductGroup `json:"productGroups"`
 }
 
@@ -216,5 +218,19 @@ func (shop Shop) CreateProductWithCardAndGroup(input Product, newCard ProductCar
 	return product, nil
 }
 
+/////////////////////////
 
+func (shop Shop) AppendDeliveryMethod(entity Entity) error {
+	return entity.update(map[string]interface{}{"shop_id":shop.ID})
+}
+/*func (shop Shop) AppendDeliveryMethod(deliveryPostRussia DeliveryRussianPost) error {
+	return deliveryPostRussia.update(map[string]interface{}{"shop_id":shop.ID})
+	// return db.Model(&shop).Association("Delivers").Append(deliveryPostRussia).Error
+}*/
+
+/*func (deliveryRussianPost DeliveryRussianPost) AppendAssociationMethod(deliveryOption DeliveryOption) error {
+	fmt.Println("deliveryRussianPost: ", deliveryRussianPost)
+	fmt.Println("deliveryOption: ", deliveryOption)
+	return db.Model(&deliveryRussianPost).Association("Delivers").Append(deliveryOption).Error
+}*/
 
