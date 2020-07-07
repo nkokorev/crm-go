@@ -24,7 +24,8 @@ var UiApiRoutes = func (rFree *mux.Router) {
 	
 	// rFree.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/deliveries", uiApiCr.DeliveryGetListByShop).Methods(http.MethodGet, http.MethodOptions)
 	rFree.HandleFunc("/shops/{shopId:[0-9]+}/deliveries", uiApiCr.DeliveryGetListByShop).Methods(http.MethodGet, http.MethodOptions)
-	rFree.HandleFunc("/shops/{shopId:[0-9]+}/deliveries", uiApiCr.DeliveryCalculateDeliveryCost).Methods(http.MethodPost, http.MethodOptions)
+
+	rFree.HandleFunc("/shops/{shopId:[0-9]+}/deliveries-calculate", uiApiCr.DeliveryCalculateDeliveryCost).Methods(http.MethodPost, http.MethodOptions)
 
 
 }

@@ -1,6 +1,8 @@
 package uiApiCr
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
@@ -38,11 +40,7 @@ func DeliveryGetListByShop(w http.ResponseWriter, r *http.Request) {
 
 func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
-
-	account, err = utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
@@ -55,11 +53,28 @@ func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 
 	shop, err := account.GetShop(shopId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
+		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
+		return
+	}
+	
+	var input models.DeliveryRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	resp := u.Message(true, "GET Shop Deliveries")
-	resp["deliveries"] = shop.GetDeliveries()
+	// fmt.Println("input Cart: ", input.Cart)
+
+	cost, err := shop.CalculateDelivery(input)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка расчета стоимости доставки"))
+		return
+	}
+
+	fmt.Println(cost)
+
+	resp := u.Message(true, "GET Calculate Delivery")
+	resp["cost"] = cost
 	u.Respond(w, resp)
 }

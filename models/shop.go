@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
@@ -237,13 +238,13 @@ func (shop Shop) GetDeliveries() []Delivery {
 		return nil
 	}
 
-	var pickups []DeliveryPickup
-	if err := db.Find(&pickups, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
+	var couriers []DeliveryCourier
+	if err := db.Find(&couriers, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
 		return nil
 	}
 
-	var couriers []DeliveryCourier
-	if err := db.Find(&couriers, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
+	var pickups []DeliveryPickup
+	if err := db.Find(&pickups, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
 		return nil
 	}
 
@@ -251,14 +252,49 @@ func (shop Shop) GetDeliveries() []Delivery {
 	for i,v := range posts {
 		deliviries[i] = &v
 	}
-	for i,v := range pickups {
+	for i,v := range couriers {
 		deliviries[i+len(posts)] = &v
 	}
-	for i,v := range couriers {
+	for i,v := range pickups {
 		deliviries[i+len(posts)+len(pickups)] = &v
 	}
 
 	return deliviries
+}
+
+func (shop Shop) CalculateDelivery(deliveryRequest DeliveryRequest) (float64, error) {
+
+	// Получаем все варианты доставки (обычно их мало). Можно через switch, но лень потом исправлять баг с новыми типом доставки
+	deliveries := shop.GetDeliveries()
+
+	// Ищем наш вариант доставки
+	var delivery Delivery
+	for _,v := range deliveries {
+		if v.GetCode() == deliveryRequest.DeliveryMethod.Code && v.getId() == deliveryRequest.DeliveryMethod.ID {
+			delivery = v
+			break
+		}
+	}
+	
+	// Проверяем, удалось ли найти выбранный вариант доставки
+	if delivery == nil {
+		return 0, utils.Error{Message: "Не верно указан тип доставки"}
+	}
+
+	// Начинаем расчет доставки
+	fmt.Println(delivery)
+
+	/*_d, err := account.GetEntity(&models.DeliveryRussianPost{}, input.ID)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось найти вариант доставки"))
+		return
+	}
+	delivery := _d.(*models.DeliveryRussianPost)*/
+
+
+	cost := 2000.00;
+
+	return cost, nil
 }
 
 /*func (shop Shop) AppendDeliveryMethod(deliveryPostRussia DeliveryRussianPost) error {

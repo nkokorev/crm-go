@@ -1174,7 +1174,7 @@ func UploadTestDataPart_II() {
 	}
 
 	// Создаем вариант доставки "Почтой россии"
-	entityRussianPost, err := account.CreateEntity(&models.DeliveryRussianPost{Name: "Доставка почтой России"})
+	entityRussianPost, err := account.CreateEntity(&models.DeliveryRussianPost{Name: "Доставка Почтой России"})
 	if err != nil {
 		log.Fatalf("Не удалось получить DeliveryRussianPost: %v", err)
 	}
