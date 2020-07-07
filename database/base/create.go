@@ -1182,7 +1182,7 @@ func UploadTestDataPart_II() {
 		log.Fatalf("Не удалось добавить метод доставки в магазин: %v\n", err)
 	}
 
-	entityPickup, err := account.CreateEntity(&models.DeliveryPickup{Name: "Самовывоз из м. Текстильщики"})
+	entityPickup, err := account.CreateEntity(&models.DeliveryPickup{Name: "Самовывоз из г. Москва, м. Текстильщики"})
 	if err != nil {
 		log.Fatalf("Не удалось получить entityPickup: %v", err)
 	}

@@ -1,19 +1,20 @@
-package controllers
+package appCr
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
 
 )
 
-func WebHookCreate(w http.ResponseWriter, r *http.Request) {
+func DeliveryCreate(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
-	account, err = GetWorkAccount(w,r)
+	account, err = utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
@@ -37,18 +38,18 @@ func WebHookCreate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func WebHookGet(w http.ResponseWriter, r *http.Request) {
+func DeliveryGet(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
 
-	account, err = GetWorkAccount(w,r)
+	account, err = utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
 
-	webHookId, err := GetUINTVarFromRequest(r, "webHookId")
+	webHookId, err := utilsCr.GetUINTVarFromRequest(r, "webHookId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID webHook"))
 		return
@@ -65,57 +66,29 @@ func WebHookGet(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func WebHookCall(w http.ResponseWriter, r *http.Request) {
-
-	var account *models.Account
-	var err error
-
-	account, err = GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		return
-	}
-
-	webHookId, err := GetUINTVarFromRequest(r, "webHookId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID webHook"))
-		return
-	}
-
-	webHook, err := account.GetWebHook(webHookId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти вебхук"))
-		return
-	}
-
-	go webHook.Call(nil)
-
-	resp := u.Message(true, "GET Web Hook Call")
-	u.Respond(w, resp)
-}
-
-func WebHookListPaginationGet(w http.ResponseWriter, r *http.Request) {
+func DeliveryGetListByShop(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
 	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
 
-	account, err = GetWorkAccount(w,r)
+	account, err = utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
 	// 2. Узнаем, какой список нужен
-	all, allOk := GetQuerySTRVarFromGET(r, "all")
+	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
-	limit, ok := GetQueryINTVarFromGET(r, "limit")
+	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
 	if !ok {
 		limit = 100
 	}
-	offset, ok := GetQueryINTVarFromGET(r, "offset")
+	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
 	if !ok || offset < 0 {
 		offset = 0
 	}
-	search, ok := GetQuerySTRVarFromGET(r, "search")
+	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
 	if !ok {
 		search = ""
 	}
@@ -144,16 +117,67 @@ func WebHookListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func WebHookUpdate(w http.ResponseWriter, r *http.Request) {
+func DeliveryListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
-	account, err = GetWorkAccount(w,r)
+	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
+
+	account, err = utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	webHookId, err := GetUINTVarFromRequest(r, "webHookId")
+	// 2. Узнаем, какой список нужен
+	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
+
+	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
+	if !ok {
+		limit = 100
+	}
+	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
+	if !ok || offset < 0 {
+		offset = 0
+	}
+	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
+	if !ok {
+		search = ""
+	}
+
+	webHooks := make([]models.WebHook,0)
+	total := 0
+
+	if all == "true" && allOk {
+		webHooks, err = account.GetWebHooks()
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
+			return
+		}
+	} else {
+		webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
+			return
+		}
+	}
+
+
+	resp := u.Message(true, "GET WebHooks PaginationList")
+	resp["webHooks"] = webHooks
+	resp["total"] = total
+	u.Respond(w, resp)
+}
+
+func DeliveryUpdate(w http.ResponseWriter, r *http.Request) {
+
+	var account *models.Account
+	var err error
+	account, err = utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	webHookId, err := utilsCr.GetUINTVarFromRequest(r, "webHookId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
 		return
@@ -179,16 +203,16 @@ func WebHookUpdate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func WebHookDelete(w http.ResponseWriter, r *http.Request) {
+func DeliveryDelete(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
-	account, err = GetWorkAccount(w,r)
+	account, err = utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	webHookId, err := GetUINTVarFromRequest(r, "webHookId")
+	webHookId, err := utilsCr.GetUINTVarFromRequest(r, "webHookId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
 		return

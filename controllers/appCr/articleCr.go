@@ -1,8 +1,9 @@
-package controllers
+package appCr
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 
 func ArticleCreate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
@@ -39,12 +40,12 @@ func ArticleCreate(w http.ResponseWriter, r *http.Request) {
 
 func ArticleGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	articleId, err := GetUINTVarFromRequest(r, "articleId")
+	articleId, err := utilsCr.GetUINTVarFromRequest(r, "articleId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID статьи"))
 		return
@@ -63,21 +64,21 @@ func ArticleGet(w http.ResponseWriter, r *http.Request) {
 
 func ArticleListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
 	// 2. Узнаем, какой список нужен
-	limit, ok := GetQueryINTVarFromGET(r, "limit")
+	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
 	if !ok {
 		limit = 100
 	}
-	offset, ok := GetQueryINTVarFromGET(r, "offset")
+	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
 	if !ok || offset < 0 {
 		offset = 0
 	}
-	search, ok := GetQuerySTRVarFromGET(r, "search")
+	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
 	if !ok {
 		search = ""
 	}
@@ -96,14 +97,14 @@ func ArticleListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 func ArticleUpdate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		// fmt.Println(err)
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	articleId, err := GetUINTVarFromRequest(r, "articleId")
+	articleId, err := utilsCr.GetUINTVarFromRequest(r, "articleId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID товара"))
 		return
@@ -132,14 +133,14 @@ func ArticleUpdate(w http.ResponseWriter, r *http.Request) {
 func ArticleDelete(w http.ResponseWriter, r *http.Request) {
 
 	
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		// fmt.Println(err)
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	articleId, err := GetUINTVarFromRequest(r, "articleId")
+	articleId, err := utilsCr.GetUINTVarFromRequest(r, "articleId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID товара"))
 		return

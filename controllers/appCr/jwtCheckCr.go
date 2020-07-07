@@ -1,4 +1,4 @@
-package controllers
+package appCr
 
 import (
 	u "github.com/nkokorev/crm-go/utils"

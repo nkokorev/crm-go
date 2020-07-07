@@ -1,8 +1,9 @@
-package controllers
+package appCr
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 
 func DomainsGet(w http.ResponseWriter, r *http.Request) {
 	
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
@@ -29,7 +30,7 @@ func DomainsGet(w http.ResponseWriter, r *http.Request) {
 
 func EmailTemplatesCreate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
@@ -60,13 +61,13 @@ func EmailTemplatesCreate(w http.ResponseWriter, r *http.Request) {
 /* Возвращает список шаблонов для текущего аккаунта */
 func EmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	idTemplate, err := GetUINTVarFromRequest(r, "id")
+	idTemplate, err := utilsCr.GetUINTVarFromRequest(r, "id")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
@@ -88,7 +89,7 @@ func EmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 func EmailTemplatesGetList(w http.ResponseWriter, r *http.Request) {
 
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
@@ -109,13 +110,13 @@ func EmailTemplatesGetList(w http.ResponseWriter, r *http.Request) {
 
 func EmailTemplatesUpdate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	idTemplate, err := GetUINTVarFromRequest(r, "id")
+	idTemplate, err := utilsCr.GetUINTVarFromRequest(r, "id")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
@@ -154,13 +155,13 @@ func EmailTemplatesUpdate(w http.ResponseWriter, r *http.Request) {
 
 func EmailTemplatesDelete(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	idTemplate, err := GetUINTVarFromRequest(r, "id")
+	idTemplate, err := utilsCr.GetUINTVarFromRequest(r, "id")
 	if err != nil {
 		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
@@ -197,13 +198,13 @@ func EmailTemplatesDelete(w http.ResponseWriter, r *http.Request) {
 // -- TEST -- 
 func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	hashId, ok := GetSTRVarFromRequest(r, "emailTemplateHashId")
+	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "emailTemplateHashId")
 	if !ok {
 		u.Respond(w, u.MessageError(nil, "Ошибка в обработке ID шаблона"))
 		return
@@ -253,7 +254,7 @@ func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
 // ### --- Public function --- ###
 func EmailTemplatePreviewGetHTML(w http.ResponseWriter, r *http.Request) {
 
-	hashId, ok := GetSTRVarFromRequest(r, "emailTemplateHashId")
+	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "emailTemplateHashId")
 	if !ok {
 		u.Respond(w, u.MessageError(nil, "Ошибка в обработке ID шаблона"))
 		return
@@ -290,7 +291,7 @@ func EmailTemplatePreviewGetHTML(w http.ResponseWriter, r *http.Request) {
 
 func EmailTemplatePreviewGetRawHTML(w http.ResponseWriter, r *http.Request) {
 
-	hashId, ok := GetSTRVarFromRequest(r, "emailTemplateHashId")
+	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "emailTemplateHashId")
 	if !ok {
 		u.Respond(w, u.MessageError(nil, "Ошибка в обработке ID шаблона"))
 		return

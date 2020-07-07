@@ -1,7 +1,7 @@
-package controllers
+package appCr
 
 import (
-    "crypto/rand"
+	"crypto/rand"
     "crypto/rsa"
     "crypto/x509"
     "encoding/asn1"

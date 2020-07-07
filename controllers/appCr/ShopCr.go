@@ -1,9 +1,10 @@
-package controllers
+package appCr
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/lib/pq"
+	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 
 func ShopCreate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
@@ -40,12 +41,12 @@ func ShopCreate(w http.ResponseWriter, r *http.Request) {
 
 func ShopGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке shop Id"))
 		return
@@ -66,7 +67,7 @@ func ShopGet(w http.ResponseWriter, r *http.Request) {
 
 func ShopListGet(w http.ResponseWriter, r *http.Request) {
 	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
@@ -84,13 +85,13 @@ func ShopListGet(w http.ResponseWriter, r *http.Request) {
 
 func ShopUpdate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
@@ -119,13 +120,13 @@ func ShopUpdate(w http.ResponseWriter, r *http.Request) {
 
 func ShopDelete(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
@@ -144,13 +145,13 @@ func ShopDelete(w http.ResponseWriter, r *http.Request) {
 
 func ProductGroupCreate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
@@ -184,18 +185,18 @@ func ProductGroupCreate(w http.ResponseWriter, r *http.Request) {
 
 func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-	productGroupId, err := GetUINTVarFromRequest(r, "productGroupId")
+	productGroupId, err := utilsCr.GetUINTVarFromRequest(r, "productGroupId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID product group"))
 		return
@@ -219,12 +220,12 @@ func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
 }
 func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
@@ -237,17 +238,17 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 	}
 
 	// 2. Узнаем, какой список нужен
-	all, allOk := GetQuerySTRVarFromGET(r, "all")
+	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
-	limit, ok := GetQueryINTVarFromGET(r, "limit")
+	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
 	if !ok {
 		limit = 100
 	}
-	offset, ok := GetQueryINTVarFromGET(r, "offset")
+	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
 	if !ok || offset < 0 {
 		offset = 0
 	}
-	search, ok := GetQuerySTRVarFromGET(r, "search")
+	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
 	if !ok {
 		search = ""
 	}
@@ -278,7 +279,7 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 
 func ProductGroupListGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
@@ -296,12 +297,12 @@ func ProductGroupListGet(w http.ResponseWriter, r *http.Request) {
 
 func ProductGroupUpdate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
@@ -313,7 +314,7 @@ func ProductGroupUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupId, err := GetUINTVarFromRequest(r, "groupId")
+	groupId, err := utilsCr.GetUINTVarFromRequest(r, "groupId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
 		return
@@ -342,13 +343,13 @@ func ProductGroupUpdate(w http.ResponseWriter, r *http.Request) {
 
 func ProductGroupDelete(w http.ResponseWriter, r *http.Request) {
 	
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
@@ -360,7 +361,7 @@ func ProductGroupDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupId, err := GetUINTVarFromRequest(r, "groupId")
+	groupId, err := utilsCr.GetUINTVarFromRequest(r, "groupId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
@@ -381,13 +382,13 @@ func ProductGroupDelete(w http.ResponseWriter, r *http.Request) {
 
 func ProductCardByShopCreate(w http.ResponseWriter, r *http.Request) {
 	
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
@@ -425,7 +426,7 @@ func ProductCardByShopCreate(w http.ResponseWriter, r *http.Request) {
 func ProductCardCreate(w http.ResponseWriter, r *http.Request) {
 
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
@@ -454,18 +455,18 @@ func ProductCardCreate(w http.ResponseWriter, r *http.Request) {
 // Собираем все картоки товаров для конкретного магазина
 func ProductCardByShopGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	productCardId, err := GetUINTVarFromRequest(r, "productCardId")
+	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке product Card Id"))
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
@@ -490,12 +491,12 @@ func ProductCardByShopGet(w http.ResponseWriter, r *http.Request) {
 
 func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	shopId, err := GetUINTVarFromRequest(r, "shopId")
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
@@ -508,19 +509,19 @@ func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// 2. Узнаем, какой список нужен
-	limit, ok := GetQueryINTVarFromGET(r, "limit")
+	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
 	if !ok {
 		limit = 100
 	}
-	offset, ok := GetQueryINTVarFromGET(r, "offset")
+	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
 	if !ok || offset < 0 {
 		offset = 0
 	}
-	search, ok := GetQuerySTRVarFromGET(r, "search")
+	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
 	if !ok {
 		search = ""
 	}
-	products, _ := GetQuerySTRVarFromGET(r, "products")
+	products, _ := utilsCr.GetQuerySTRVarFromGET(r, "products")
 
 	productCards, total, err := shop.GetProductCardList(offset, limit, search, products == "true")
 	if err != nil {
@@ -536,12 +537,12 @@ func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) 
 
 func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	cardId, err := GetUINTVarFromRequest(r, "cardId")
+	cardId, err := utilsCr.GetUINTVarFromRequest(r, "cardId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
 		return
@@ -584,13 +585,13 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 
 func ProductCardDelete(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	cardId, err := GetUINTVarFromRequest(r, "cardId")
+	cardId, err := utilsCr.GetUINTVarFromRequest(r, "cardId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
@@ -610,7 +611,7 @@ func ProductCardDelete(w http.ResponseWriter, r *http.Request) {
 
 func ProductCreate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
@@ -639,12 +640,12 @@ func ProductCreate(w http.ResponseWriter, r *http.Request) {
 
 func ProductGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	productId, err := GetUINTVarFromRequest(r, "productId")
+	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID товара"))
 		return
@@ -664,21 +665,21 @@ func ProductGet(w http.ResponseWriter, r *http.Request) {
 
 func ProductListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
 	// 2. Узнаем, какой список нужен
-	limit, ok := GetQueryINTVarFromGET(r, "limit")
+	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
 	if !ok {
 		limit = 100
 	}
-	offset, ok := GetQueryINTVarFromGET(r, "offset")
+	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
 	if !ok || offset < 0 {
 		offset = 0
 	}
-	search, ok := GetQuerySTRVarFromGET(r, "search")
+	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
 	if !ok {
 		search = ""
 	}
@@ -697,12 +698,12 @@ func ProductListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 func ProductUpdate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	productId, err := GetUINTVarFromRequest(r, "productId")
+	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID товара"))
 		return
@@ -734,13 +735,13 @@ func ProductUpdate(w http.ResponseWriter, r *http.Request) {
 
 func ProductDelete(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	productId, err := GetUINTVarFromRequest(r, "productId")
+	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID товара"))
 		return
@@ -760,7 +761,7 @@ func ProductDelete(w http.ResponseWriter, r *http.Request) {
 
 func ProductAttributeList(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}

@@ -1,8 +1,9 @@
-package controllers
+package appCr
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil {
 		return
 	}
@@ -20,7 +21,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		Role string `json:"role"`
 	}
 
-	if err := GetInputInterface(w,r, &input); err != nil {
+	if err := utilsCr.GetInputInterface(w,r, &input); err != nil {
 		return
 	}
 
@@ -37,21 +38,21 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUserList(w http.ResponseWriter, r *http.Request) {
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
 	// 2. Узнаем, какой список нужен
-	limit, ok := GetQueryINTVarFromGET(r, "limit")
+	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
 	if !ok {
 		limit = 100
 	}
-	offset, ok := GetQueryINTVarFromGET(r, "offset")
+	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
 	if !ok || offset < 0 {
 		offset = 0
 	}
-	search, ok := GetQuerySTRVarFromGET(r, "search")
+	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
 	if !ok {
 		search = ""
 	}
@@ -69,7 +70,7 @@ func GetUserList(w http.ResponseWriter, r *http.Request) {
 }
 
 func RoleList(w http.ResponseWriter, r *http.Request) {
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
@@ -88,12 +89,12 @@ func RoleList(w http.ResponseWriter, r *http.Request) {
 }
 
 func RemoveUserFromAccount(w http.ResponseWriter, r *http.Request) {
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	userId, ok := GetSTRVarFromRequest(r, "userHashId")
+	userId, ok := utilsCr.GetSTRVarFromRequest(r, "userHashId")
 	if !ok {
 		u.Respond(w, u.MessageError(nil, "Не удалось ID пользователя"))
 		return
@@ -110,12 +111,12 @@ func RemoveUserFromAccount(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateUserData(w http.ResponseWriter, r *http.Request) {
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	userHashId, ok := GetSTRVarFromRequest(r, "userHashId")
+	userHashId, ok := utilsCr.GetSTRVarFromRequest(r, "userHashId")
 	if !ok {
 		u.Respond(w, u.MessageError(nil, "Не удалось ID пользователя"))
 		return

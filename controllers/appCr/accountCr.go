@@ -1,8 +1,9 @@
-package controllers
+package appCr
 
 import (
 	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -74,12 +75,12 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 
 func AccountUpdate(w http.ResponseWriter, r *http.Request)  {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	hashId, ok := GetSTRVarFromRequest(r, "accountHashId")
+	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "accountHashId")
 	if !ok {
 		u.Respond(w, u.MessageError(nil, "Ошибка в обработке ID аккаунта"))
 		return
@@ -114,13 +115,13 @@ func AccountUpdate(w http.ResponseWriter, r *http.Request)  {
 func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 
 	// Аккаунт, в котором происходит авторизация: issuerAccount
-	issuerAccount, err := GetIssuerAccount(w,r)
+	issuerAccount, err := utilsCr.GetIssuerAccount(w,r)
 	if err != nil || issuerAccount == nil {
 		u.Respond(w, u.MessageError(nil, "Не удалось найти аккаунт"))
 		return
 	}
 
-	hashId, ok := GetSTRVarFromRequest(r, "accountHashId")
+	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "accountHashId")
 	if !ok || hashId == "" {
 		u.Respond(w, u.MessageError(nil, "Не удалось получить hashId аккаунта"))
 		return
@@ -175,7 +176,7 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 
 func AccountGetProfile(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}

@@ -1,9 +1,10 @@
-package controllers
+package appCr
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"io"
@@ -15,7 +16,7 @@ import (
 // todo: дописать вские мелочи
 func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
@@ -70,12 +71,12 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 	}*/
 
 	// нужна отдельная привязка к файлам
-	ownerId, ok := GetQueryUINTVarFromGET(r, "ownerId")
+	ownerId, ok := utilsCr.GetQueryUINTVarFromGET(r, "ownerId")
 	if !ok || ownerId < 1 {
 		ownerId = 0
 	}
 
-	ownerType, ok := GetQuerySTRVarFromGET(r, "ownerType")
+	ownerType, ok := utilsCr.GetQuerySTRVarFromGET(r, "ownerType")
 	if !ok {
 		ownerType = ""
 	}
@@ -148,13 +149,13 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func StorageGetFile(w http.ResponseWriter, r *http.Request) {
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	fileId, err := GetUINTVarFromRequest(r,"fileId")
+	fileId, err := utilsCr.GetUINTVarFromRequest(r,"fileId")
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
@@ -179,13 +180,13 @@ func StorageGetFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func StorageGet(w http.ResponseWriter, r *http.Request) {
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	fileId, err := GetUINTVarFromRequest(r,"fileId")
+	fileId, err := utilsCr.GetUINTVarFromRequest(r,"fileId")
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
@@ -203,32 +204,32 @@ func StorageGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func StorageGetListPagination(w http.ResponseWriter, r *http.Request) {
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
 	// 2. Узнаем, какой список нужен
-	limit, ok := GetQueryUINTVarFromGET(r, "limit")
+	limit, ok := utilsCr.GetQueryUINTVarFromGET(r, "limit")
 	if !ok || limit < 1 {
 		limit = 100
 	}
-	offset, ok := GetQueryUINTVarFromGET(r, "offset")
+	offset, ok := utilsCr.GetQueryUINTVarFromGET(r, "offset")
 	if !ok || offset < 0 {
 		offset = 0
 	}
-	search, ok := GetQuerySTRVarFromGET(r, "search")
+	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
 	if !ok {
 		search = ""
 	}
 
 	///
-	ownerId, ok := GetQueryUINTVarFromGET(r, "ownerId")
+	ownerId, ok := utilsCr.GetQueryUINTVarFromGET(r, "ownerId")
 	if !ok || ownerId < 1 {
 		ownerId = 0
 	}
-	ownerType, ok := GetQuerySTRVarFromGET(r, "ownerType")
+	ownerType, ok := utilsCr.GetQuerySTRVarFromGET(r, "ownerType")
 	if !ok {
 		ownerType = ""
 	}
@@ -256,14 +257,14 @@ func StorageGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 func StorageUpdateFile(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
 	// Get file in Data base
-	fileId, err := GetUINTVarFromRequest(r,"fileId")
+	fileId, err := utilsCr.GetUINTVarFromRequest(r,"fileId")
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"ID файла не найден"}))
 		return
@@ -300,14 +301,14 @@ func StorageUpdateFile(w http.ResponseWriter, r *http.Request) {
 
 func StorageDeleteFile(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
 	// Get file in Data base
-	fileId, err := GetUINTVarFromRequest(r,"fileId")
+	fileId, err := utilsCr.GetUINTVarFromRequest(r,"fileId")
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
@@ -331,7 +332,7 @@ func StorageDeleteFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func StorageDiskSpaceUsed(w http.ResponseWriter, r *http.Request) {
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
@@ -354,7 +355,7 @@ func StorageDiskSpaceUsed(w http.ResponseWriter, r *http.Request) {
 // Example OLD  function
 func StorageStore(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
@@ -409,7 +410,7 @@ func StorageStore(w http.ResponseWriter, r *http.Request) {
 // ### FOR CDN ###
 func StorageCDNGet(w http.ResponseWriter, r *http.Request) {
 
-	hashId, ok := GetSTRVarFromRequest(r, "hashId")
+	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "hashId")
 	if !ok  {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка id file"}))
 		return
@@ -431,7 +432,7 @@ func StorageCDNGet(w http.ResponseWriter, r *http.Request) {
 func ArticleRawPreviewCDNGet(w http.ResponseWriter, r *http.Request) {
 
 
-	hashId, ok := GetSTRVarFromRequest(r, "hashId")
+	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "hashId")
 	if !ok  {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка id file"}))
 		return
@@ -449,7 +450,7 @@ func ArticleRawPreviewCDNGet(w http.ResponseWriter, r *http.Request) {
 
 func ArticleCompilePreviewCDNGet(w http.ResponseWriter, r *http.Request) {
 
-	hashId, ok := GetSTRVarFromRequest(r, "hashId")
+	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "hashId")
 	if !ok  {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка id file"}))
 		return

@@ -79,6 +79,7 @@ func Handlers() *mux.Router {
 	******************************************************************************************************************/
 	rApi.Use	(middleware.CorsAPIAccessControl, 		middleware.CheckApiStatus, 		middleware.BearerAuthentication)
 	rApp.Use	(middleware.CheckAppUiApiStatus,	middleware.AddContextMainAccount)
+	// rUiApi.Use	(middleware.CorsAccessControl, 		middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccountHashId)
 	rUiApi.Use	(middleware.CorsAccessControl, 		middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccountHashId)
 
 	// RouteHandlers

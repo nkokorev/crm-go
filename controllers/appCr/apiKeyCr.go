@@ -1,7 +1,8 @@
-package controllers
+package appCr
 
 import (
 	"encoding/json"
+	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 
 func ApiKeyCreate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
@@ -39,7 +40,7 @@ func ApiKeyCreate(w http.ResponseWriter, r *http.Request) {
 
 func ApiKeyGetList(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
@@ -58,7 +59,7 @@ func ApiKeyGetList(w http.ResponseWriter, r *http.Request) {
 
 func ApiKeyGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
@@ -77,13 +78,13 @@ func ApiKeyGet(w http.ResponseWriter, r *http.Request) {
 
 func ApiKeyUpdate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	idApiKey, err := GetUINTVarFromRequest(r, "id")
+	idApiKey, err := utilsCr.GetUINTVarFromRequest(r, "id")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
@@ -113,13 +114,13 @@ func ApiKeyUpdate(w http.ResponseWriter, r *http.Request) {
 
 func ApiKeyDelete(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	idApiKey, err := GetUINTVarFromRequest(r, "id")
+	idApiKey, err := utilsCr.GetUINTVarFromRequest(r, "id")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return

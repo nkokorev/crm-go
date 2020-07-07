@@ -2,7 +2,7 @@ package routes
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/nkokorev/crm-go/controllers"
+	"github.com/nkokorev/crm-go/controllers/uiApiCr"
 	"net/http"
 )
 
@@ -18,13 +18,13 @@ import (
 //var UiApiRoutes = func (rFree, rUiApiAuthFull *mux.Router) {
 var UiApiRoutes = func (rFree *mux.Router) {
 
-	// загружаем базовые настройки системы
-	rFree.HandleFunc("/", controllers.CheckUiApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
-
-	rFree.HandleFunc("/users", controllers.UserRegistration).Methods(http.MethodPost, http.MethodOptions)
-	rFree.HandleFunc("/users/auth/username", controllers.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
-	rFree.HandleFunc("/users/auth/email", controllers.UserAuthByEmail).Methods(http.MethodPost, http.MethodOptions)
-	rFree.HandleFunc("/users/auth/phone", controllers.UserAuthByPhone).Methods(http.MethodPost, http.MethodOptions)
+	// rFree.HandleFunc("/users", appCr.UserRegistration).Methods(http.MethodPost, http.MethodOptions)
+	// rFree.HandleFunc("/users/auth/username", appCr.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
+	// rFree.HandleFunc("/users/auth/email", appCr.UserAuthByEmail).Methods(http.MethodPost, http.MethodOptions)
+	
+	// rFree.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/deliveries", uiApiCr.DeliveryGetListByShop).Methods(http.MethodGet, http.MethodOptions)
+	rFree.HandleFunc("/shops/{shopId:[0-9]+}/deliveries", uiApiCr.DeliveryGetListByShop).Methods(http.MethodGet, http.MethodOptions)
+	rFree.HandleFunc("/shops/{shopId:[0-9]+}/deliveries", uiApiCr.DeliveryCalculateDeliveryCost).Methods(http.MethodPost, http.MethodOptions)
 
 
 }

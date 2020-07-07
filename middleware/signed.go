@@ -42,17 +42,18 @@ func ContextMuxVarAccountHashId(next http.Handler) http.Handler {
 			u.Respond(w, u.MessageError(nil, "The hashID length must be 12 symbols"))
 			return
 		}
-
+		
 		issuerAccount, err := models.GetAccountByHash(accountHashId)
 		if err != nil {
 			u.Respond(w, u.MessageError(nil, "An account with the specified hash ID was not found"))
 			return
 		}
 
-		r = r.WithContext(context.WithValue(r.Context(), "auth", "ui/api"))
-		r = r.WithContext(context.WithValue(r.Context(), "issuerAccountId", issuerAccount.ID))
-		r = r.WithContext(context.WithValue(r.Context(), "issuerAccount", issuerAccount))
 
+		r = r.WithContext(context.WithValue(r.Context(), "auth", "ui/api"))
+		r = r.WithContext(context.WithValue(r.Context(), "accountId", issuerAccount.ID))
+		r = r.WithContext(context.WithValue(r.Context(), "account", issuerAccount))
+		
 		next.ServeHTTP(w, r)
 	})
 

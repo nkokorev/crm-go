@@ -1,10 +1,11 @@
-package controllers
+package appCr
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -155,13 +156,13 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 func UserRegistration(w http.ResponseWriter, r *http.Request) {
 
 	// Аккаунт, в котором происходит авторизация: issuerAccount
-	issuerAccount, err := GetIssuerAccount(w,r)
+	issuerAccount, err := utilsCr.GetIssuerAccount(w,r)
 	if err != nil || issuerAccount == nil {
 		return
 	}
 
 	// 1. Получаем аккаунт, в рамках которого будет происходить создание нового пользователя
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
@@ -231,7 +232,7 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 
 	// Аккаунт, в котором происходит авторизация: issuerAccount
-	issuerAccount, err := GetIssuerAccount(w,r)
+	issuerAccount, err := utilsCr.GetIssuerAccount(w,r)
 	if err != nil || issuerAccount == nil {
 		u.Respond(w, u.MessageError(err, "Ошибка во время авторизации пользователя"))
 		return
@@ -530,13 +531,13 @@ func UserGetProfile(w http.ResponseWriter, r *http.Request) {
 
 func UserAccountsGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
-	hashId, ok := GetSTRVarFromRequest(r,"hashId")
+	hashId, ok := utilsCr.GetSTRVarFromRequest(r,"hashId")
 	if !ok {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return

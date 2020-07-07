@@ -2,7 +2,7 @@ package routes
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/nkokorev/crm-go/controllers"
+	"github.com/nkokorev/crm-go/controllers/appCr"
 	"net/http"
 )
 
@@ -12,24 +12,24 @@ import (
 var ApiRoutes = func (rApi *mux.Router) {
 
 	// загружаем базовые настройки системы
-	rApi.HandleFunc("/", controllers.CheckApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
+	rApi.HandleFunc("/", appCr.CheckApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 
-	rApi.HandleFunc("/users", controllers.CreateUser).Methods(http.MethodPost)
+	rApi.HandleFunc("/users", appCr.CreateUser).Methods(http.MethodPost)
 
-	rApi.HandleFunc("/shops", controllers.ShopListGet).Methods(http.MethodGet)
-	rApi.HandleFunc("/shops/{shopId:[0-9]+}", controllers.ShopGet).Methods(http.MethodGet, http.MethodOptions)
+	rApi.HandleFunc("/shops", appCr.ShopListGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/shops/{shopId:[0-9]+}", appCr.ShopGet).Methods(http.MethodGet, http.MethodOptions)
 
-	rApi.HandleFunc("/shops/{shopId:[0-9]+}/product-groups", controllers.ProductGroupListPaginationByShopGet).Methods(http.MethodGet)
-	rApi.HandleFunc("/shops/{shopId:[0-9]+}/product-groups/{productGroupId:[0-9]+}", controllers.ProductGroupByShopGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/shops/{shopId:[0-9]+}/product-groups", appCr.ProductGroupListPaginationByShopGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/shops/{shopId:[0-9]+}/product-groups/{productGroupId:[0-9]+}", appCr.ProductGroupByShopGet).Methods(http.MethodGet)
 
-	rApi.HandleFunc("/shops/{shopId:[0-9]+}/product-cards", controllers.ProductCardListPaginationByShopGet).Methods(http.MethodGet)
-	rApi.HandleFunc("/shops/{shopId:[0-9]+}/product-cards/{productCardId:[0-9]+}", controllers.ProductCardByShopGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/shops/{shopId:[0-9]+}/product-cards", appCr.ProductCardListPaginationByShopGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/shops/{shopId:[0-9]+}/product-cards/{productCardId:[0-9]+}", appCr.ProductCardByShopGet).Methods(http.MethodGet)
 
-	rApi.HandleFunc("/shops/{shopId:[0-9]+}/products", controllers.ProductListPaginationGet).Methods(http.MethodGet)
-	rApi.HandleFunc("/shops/{shopId:[0-9]+}/products/{productId:[0-9]+}", controllers.ProductGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/shops/{shopId:[0-9]+}/products", appCr.ProductListPaginationGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/shops/{shopId:[0-9]+}/products/{productId:[0-9]+}", appCr.ProductGet).Methods(http.MethodGet)
 
-	rApi.HandleFunc("/articles", controllers.ArticleListPaginationGet).Methods(http.MethodGet)
-	rApi.HandleFunc("/articles/{articleId:[0-9]+}", controllers.ArticleGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/articles", appCr.ArticleListPaginationGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/articles/{articleId:[0-9]+}", appCr.ArticleGet).Methods(http.MethodGet)
 
 		
 }
