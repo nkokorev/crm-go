@@ -3,7 +3,9 @@ package models
 type Delivery interface {
 	Entity
 	GetCode() string
-	CalculateDelivery(deliveryData DeliveryData, weight uint) (float64, error)
+
+	CalculateDelivery(deliveryData DeliveryData) (*DeliveryData, error) // weight в кг
+	checkMaxWeight(deliveryData DeliveryData) error // проверяет макс вес
 }
 
 type DeliveryRequest struct {
@@ -25,10 +27,15 @@ type DeliveryRequest struct {
 	DeliveryData DeliveryData `json:"deliveryData"`
 
 }
-
+// Данные для расчета доставки
 type DeliveryData struct {
-	Address		string `json:"address"` 		// id доставки в ее таблице
-	PostalCode	string 	`json:"postalCode"` 	// Почтовый индекс для расчета
-	Comment		string `json:"comment"` 		// коммент к доставке
-	ProductWeightKey string `json:"productWeightKey"` //  grossWeight
+	Address		string `json:"address"` 		// адрес доставки
+	PostalCode	string 	`json:"postalCode"` 	// Почтовый индекс доставки для расчета
+	Comment		string `json:"comment"` 		// комментарий к доставке
+
+	TotalCost 	float64 `json:"totalCost"` // общая стоимость доставки в рублях ! (расчетная величина)
+	Weight 		float64 `json:"weight"` // итоговый вес посылки БРУТТО в кг ! (как правило расчетная величина)
+
+	NeedToCalculateWeight bool  `json:"needToCalculateWeight"`	// необходимость расчета веса посылки
+	ProductWeightKey string `json:"productWeightKey"` //  ключ для расчета веса продуктов в их атрибутах grossWeight
 }

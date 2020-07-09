@@ -1181,6 +1181,13 @@ func UploadTestDataPart_II() {
 			Name: "Доставка Почтой России",
 			AccessToken: "b07bk92rzBXosriAgmR5key1IpHq1Tpn",
 			XUserAuthorization: "a29yb3RhZXZAdnR2ZW50LnJ1OmpIeXc2MnIzODNKc3F6aQ==",
+			PostalCodeFrom: "109390",
+			MailCategory: "ORDINARY",
+			MailType: "POSTAL_PARCEL",
+			MaxWeight: 20.0,
+			Fragile: false,
+			WithElectronicNotice: true,
+			WithOrderOfNotice: true,
 		})
 	if err != nil {
 		log.Fatalf("Не удалось получить DeliveryRussianPost: %v", err)
@@ -1197,7 +1204,12 @@ func UploadTestDataPart_II() {
 		log.Fatalf("Не удалось добавить метод доставки в магазин: %v\n", err)
 	}
 
-	entityCourier, err := account.CreateEntity(&models.DeliveryCourier{Name: "Доставка курьером по г. Москва", Price: 500})
+	entityCourier, err := account.CreateEntity(
+		&models.DeliveryCourier{
+			Name: "Доставка курьером по г. Москва",
+			Price: 500,
+			MaxWeight: 40.0,
+		})
 	if err != nil {
 		log.Fatalf("Не удалось получить entityCourier: %v", err)
 	}

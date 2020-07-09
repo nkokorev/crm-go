@@ -3,6 +3,7 @@ package models
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -15,9 +16,17 @@ type DeliveryRussianPost struct {
 	Code 		string	`json:"code" gorm:"type:varchar(16);default:'russianPost';"` // Для идентификации во фронтенде
 
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // "Курьерская доставка", "Почта России", "Самовывоз"
+
 	AccessToken 		string `json:"accessToken" gorm:"type:varchar(255);"` // accessToken
 	XUserAuthorization 	string `json:"xUserAuthorization" gorm:"type:varchar(255);"` // XUserAuthorization в base64
-	MaxWeight 	uint `json:"maxWeight" gorm:"type:int;default:20000"` // максимальная масса в граммах
+	MaxWeight 	float64 `json:"maxWeight" gorm:"type:int;default:20"` // максимальная масса в кг
+	
+	PostalCodeFrom	string	`json:"postalCodeFrom" gorm:"type:varchar(255);"` // индекс отправки с почты России
+	MailCategory 	string	`json:"mailCategory" gorm:"type:varchar(50);"` // https://otpravka.pochta.ru/specification#/enums-base-mail-category
+	MailType 		string	`json:"mailType" gorm:"type:varchar(50);"` // https://otpravka.pochta.ru/specification#/enums-base-mail-type
+	Fragile 		bool	`json:"fragile" gorm:"type:bool;default:false"`  // отметка "Осторожно хрупкое"
+	WithElectronicNotice	bool	`json:"withElectronicNotice" gorm:"type:bool;default:true"`  // отметка "Осторожно хрупкое"
+	WithOrderOfNotice		bool	`json:"withOrderOfNotice" gorm:"type:bool;default:true"`  // отметка "Осторожно хрупкое"
 
 	AddressRequired	bool	`json:"addressRequired" gorm:"type:bool;default:true"` // Требуется ли адрес доставки
 	PostalCodeRequired	bool	`json:"postalCodeRequired" gorm:"type:bool;default:true"` // Требуется ли индекс в адресе доставки
@@ -41,7 +50,6 @@ func (deliveryRussianPost DeliveryRussianPost) GetCode() string {
 }
 // ############# Entity interface #############
 
-
 // ###### GORM Functional #######
 func (DeliveryRussianPost) TableName() string { return "delivery_russian_post" }
 func (deliveryRussianPost *DeliveryRussianPost) BeforeCreate(scope *gorm.Scope) error {
@@ -51,7 +59,6 @@ func (deliveryRussianPost *DeliveryRussianPost) BeforeCreate(scope *gorm.Scope) 
 // ###### End of GORM Functional #######
 
 // ############# CRUD Entity interface #############
-
 func (deliveryRussianPost DeliveryRussianPost) create() (Entity, error)  {
 	var newItem Entity = &deliveryRussianPost
 	
@@ -109,38 +116,35 @@ func (deliveryRussianPost DeliveryRussianPost) delete () error {
 }
 
 // ########## End of CRUD Entity interface ###########
-func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData DeliveryData, weight uint) (float64, error) {
+func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData DeliveryData) (*DeliveryData, error) {
 
-	// проверяем максимальную массу:
-	if weight*uint(1000) > deliveryRussianPost.MaxWeight {
-		return 0, utils.Error{Message: "Превышен максимальный вес посылки в 20кг"}
-	}
+	// базовые данные для запроса в api почта россиии
 	url := "https://otpravka-api.pochta.ru/1.0/tariff"
-
 	Authorization := "AccessToken " + deliveryRussianPost.AccessToken
 	XUserAuthorization := "Basic " + deliveryRussianPost.XUserAuthorization
 
+	// Формируем json для запроса
 	rawJson := utils.MapToRawJson(map[string]interface{}{
-		"index-from":	"109390",
-		"index-to": 	"107078",
-		"mail-category":"ORDINARY",
-		"mail-type":"POSTAL_PARCEL",
-		"mass": weight*uint(1000), // масса в граммах (*1000)
-		"dimension": map[string]interface{}{
+		"index-from":	deliveryRussianPost.PostalCodeFrom,
+		"index-to": 	deliveryData.PostalCode,
+		"mail-category":deliveryRussianPost.MailCategory,
+		"mail-type":deliveryRussianPost.MailType,
+		"mass": deliveryData.Weight * float64(1000), // масса в граммах (*1000)
+		/*"dimension": map[string]interface{}{
 			"height": 90, // в см.
 			"length": 30, // в см.
 			"width": 30, // в см.
-		},
-		"fragile": false, // отметка "Осторожно хрупкое"
-		"with-electronic-notice": true, // уведомление на емейл
-		"with-order-of-notice": true, // уведомление заказное
+		},*/
+		"fragile": deliveryRussianPost.Fragile, // отметка "Осторожно хрупкое"
+		"with-electronic-notice": deliveryRussianPost.WithElectronicNotice, // уведомление на емейл
+		"with-order-of-notice": deliveryRussianPost.WithOrderOfNotice, // уведомление заказное
 	})
 
 	// response, err := http.Post(url, "application/json", strings.NewReader(""))
 	client := &http.Client{}
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(rawJson))
 	if err != nil {
-		return 0, utils.Error{Message: "Ошибка связи с сервисом Почты России"}
+		return nil, utils.Error{Message: "Ошибка связи с сервисом Почты России"}
 	}
 
 	request.Header.Set("Authorization", Authorization)
@@ -149,11 +153,11 @@ func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData De
 
 	response, err := client.Do(request)
 	if err != nil {
-		return 0, utils.Error{Message: "Ошибка связи с сервисом Почты России"}
+		return nil, utils.Error{Message: "Ошибка связи с сервисом Почты России"}
 	}
 	defer response.Body.Close()
 
-	// 1. Сначала узнаем статус реквеста
+	// 1. Сначала узнаем статус запроса
 	if response.Status == "400 Bad Request" {
 
 		var input struct {
@@ -161,10 +165,10 @@ func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData De
 		}
 
 		if err := json.NewDecoder(response.Body).Decode(&input); err != nil {
-			return 0, err
+			return nil, err
 		}
 
-		return 0, utils.Error{Message: input.Desc}
+		return nil, utils.Error{Message: input.Desc}
 
 	} else {
 
@@ -174,11 +178,23 @@ func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData De
 		}
 
 		if err := json.NewDecoder(response.Body).Decode(&input); err != nil {
-			return 0, utils.Error{Message: "Ошибка данных со стороны Почты России"}
+			return nil, utils.Error{Message: "Ошибка данных со стороны Почты России"}
 		}
 
-		return input.TotalRate, nil
+		deliveryData.TotalCost = input.TotalRate / 100 // т.е. в копейках
+		return &deliveryData, nil
 	}
 
-	return 0, utils.Error{Message: "Ошибка расчета стоимости"}
+	return nil, utils.Error{Message: "Ошибка расчета стоимости"}
+}
+
+func (deliveryRussianPost DeliveryRussianPost) checkMaxWeight(deliveryData DeliveryData) error {
+	// проверяем максимальную массу:
+	fmt.Println("deliveryData.Weight: ", deliveryData.Weight)
+	fmt.Println("deliveryRussianPost.MaxWeight: ", deliveryRussianPost.MaxWeight)
+	if deliveryData.Weight > deliveryRussianPost.MaxWeight {
+		return utils.Error{Message: fmt.Sprintf("Превышен максимальный вес посылки в %vкг.", deliveryRussianPost.MaxWeight)}
+	}
+
+	return nil
 }

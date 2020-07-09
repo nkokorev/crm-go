@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
@@ -276,7 +277,7 @@ func (shop Shop) GetDeliveryMethods() []Delivery {
 	return deliviries
 }
 
-func (shop Shop) CalculateDelivery(deliveryRequest DeliveryRequest) (float64, error) {
+func (shop Shop) CalculateDelivery(deliveryRequest DeliveryRequest) (*DeliveryData, error) {
 
 	// Получаем все варианты доставки (обычно их мало). Можно через switch, но лень потом исправлять баг с новыми типом доставки
 	deliveries := shop.GetDeliveryMethods()
@@ -292,37 +293,44 @@ func (shop Shop) CalculateDelivery(deliveryRequest DeliveryRequest) (float64, er
 	
 	// Проверяем, удалось ли найти выбранный вариант доставки
 	if delivery == nil {
-		return 0, utils.Error{Message: "Не верно указан тип доставки"}
+		return nil, utils.Error{Message: "Не верно указан тип доставки"}
 	}
 
-	// Начинаем расчет доставки
+	// 1. Расчет веса посылки
+	if deliveryRequest.DeliveryData.NeedToCalculateWeight {
+		var weight float64
+		weight = 0
 
-	// 1. Определяем вес посылки
-	// weight := 8500
-	var weight float64
-	weight = 0
+		// проходим циклом по продуктам и складываем их общий вес
+		for _,v := range deliveryRequest.Cart {
+			// 1. Получаем продукт
+			product, err := shop.GetProduct(v.ProductId)
+			if err != nil {
+				return nil, err
+			}
 
-	// проходим циклом по продуктам и складываем их общий вес
-	for _,v := range deliveryRequest.Cart {
-		// 1. Получаем продукт
-		product, err := shop.GetProduct(v.ProductId)
-		if err != nil {
-			return 0, err
+			_w, err := product.GetAttribute(deliveryRequest.DeliveryData.ProductWeightKey)
+			wg, ok := _w.(float64)
+			if !ok {
+				continue
+			}
+			weight += wg * float64(v.Count)
 		}
-		// _w, err := product.GetAttribute("grossWeight")
-		_w, err := product.GetAttribute(deliveryRequest.DeliveryData.ProductWeightKey)
-		wg, ok := _w.(float64)
-		if !ok {
-		  	continue
-		}
-		weight += wg * float64(v.Count)
+
+		deliveryRequest.DeliveryData.Weight = weight
 	}
 
-	// 2. Проводим расчет доставки
-	cost, err := delivery.CalculateDelivery(deliveryRequest.DeliveryData, uint(weight))
+	// 2. Проверяем максимальный вес
+	if err := delivery.checkMaxWeight(deliveryRequest.DeliveryData); err != nil {
+		fmt.Println("Ошибка макс веса", err)
+		return nil, err
+	}
+
+	// 3. Проводим расчет стоимости доставки
+	deliveryData, err := delivery.CalculateDelivery(deliveryRequest.DeliveryData)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return cost, nil
+	return deliveryData, nil
 }

@@ -63,15 +63,13 @@ func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// fmt.Println("input Cart: ", input.Cart)
-
-	costDelivery, err := shop.CalculateDelivery(input)
+	deliveryData, err := shop.CalculateDelivery(input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка расчета стоимости доставки"))
 		return
 	}
 
 	resp := u.Message(true, "GET Calculate Delivery")
-	resp["costDelivery"] = costDelivery
+	resp["deliveryData"] = deliveryData
 	u.Respond(w, resp)
 }
