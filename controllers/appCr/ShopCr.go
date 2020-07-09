@@ -28,9 +28,14 @@ func ShopCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shop, err := account.CreateShop(input.Shop)
+	shopE, err := account.CreateEntity(&input.Shop)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
+		return
+	}
+	shop, ok := shopE.(*models.Shop)
+	if !ok {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка приведения типов при создании магазина"}))
 		return
 	}
 
@@ -52,13 +57,12 @@ func ShopGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shop, err := account.GetShop(shopId)
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
 	}
-
-
 
 	resp := u.Message(true, "GET Shop List")
 	resp["shop"] = shop
@@ -97,17 +101,22 @@ func ShopUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get JSON-request
-	var input struct{
-		models.Shop
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		return
 	}
+
+	var input map[string]interface{}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	shop, err := account.UpdateShop(shopId, &input.Shop)
+	// shop, err := account.UpdateShop(shopId, &input.Shop)
+	err = account.UpdateEntity(&shop, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -132,7 +141,13 @@ func ShopDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = account.DeleteShop(shopId); err != nil {
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		return
+	}
+	if err = account.DeleteEntity(&shop); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
 		return
 	}
@@ -157,7 +172,9 @@ func ProductGroupCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shop, err := account.GetShop(shopId)
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	// shop, err := account.GetShop(shopId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -202,7 +219,9 @@ func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shop, err := account.GetShop(shopId)
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	// shop, err := account.GetShop(shopId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -231,7 +250,9 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	shop, err := account.GetShop(shopId)
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	// shop, err := account.GetShop(shopId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -308,7 +329,9 @@ func ProductGroupUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shop, err := account.GetShop(shopId)
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	// shop, err := account.GetShop(shopId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -355,7 +378,9 @@ func ProductGroupDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shop, err := account.GetShop(shopId)
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	// shop, err := account.GetShop(shopId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -394,7 +419,9 @@ func ProductCardByShopCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shop, err := account.GetShop(shopId)
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	// shop, err := account.GetShop(shopId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -472,7 +499,9 @@ func ProductCardByShopGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shop, err := account.GetShop(shopId)
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	// shop, err := account.GetShop(shopId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -502,7 +531,9 @@ func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	shop, err := account.GetShop(shopId)
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	// shop, err := account.GetShop(shopId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return

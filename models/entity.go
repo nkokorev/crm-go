@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"github.com/nkokorev/crm-go/utils"
 	"reflect"
 )
 
@@ -80,9 +81,19 @@ func (account Account) LoadEntity(entity Entity, primaryKey ...uint) error {
 func (account Account) GetPaginationListEntity(model Entity, offset, limit int, order string, search *string) ([]Entity, error) {
 	return model.getPaginationList(account.ID, offset, limit, order, search)
 }
+
 func (account Account) UpdateEntity(entity Entity, input map[string]interface{}) error {
+	if entity.GetAccountId() != account.ID {
+		return utils.Error{Message: "Объект принадлежит другому аккаунту"}
+	}
+
 	return entity.update(input)
 }
+
 func (account Account) DeleteEntity(entity Entity) error {
+	if entity.GetAccountId() != account.ID {
+		return utils.Error{Message: "Объект принадлежит другому аккаунту"}
+	}
+	
 	return entity.delete()
 }

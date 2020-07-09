@@ -26,7 +26,9 @@ func DeliveryGetListByShop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shop, err := account.GetShop(shopId)
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	// shop, err := account.GetShop(shopId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
 		return
@@ -50,7 +52,9 @@ func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shop, err := account.GetShop(shopId)
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	// shop, err := account.GetShop(shopId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return

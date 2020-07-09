@@ -606,10 +606,12 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	}
 
 	// 4. !!! Создаем магазин
-	airoShop, err := airoClimat.CreateShop(models.Shop{Name: "airoclimate.ru", Address: "г. Москва, р-н Текстильщики", Email: "info@airoclimate.ru", Phone: "+7 (4832) 77-03-73"})
+	// airoShop, err := airoClimat.CreateShop(models.Shop{Name: "airoclimate.ru", Address: "г. Москва, р-н Текстильщики", Email: "info@airoclimate.ru", Phone: "+7 (4832) 77-03-73"})
+	airoShopE, err := airoClimat.CreateEntity(&models.Shop{Name: "airoclimate.ru", Address: "г. Москва, р-н Текстильщики", Email: "info@airoclimate.ru", Phone: "+7 (4832) 77-03-73"})
 	if err != nil {
 		log.Fatal("Не удалось создать Shop для airoClimat: ", err)
 	}
+	airoShop := airoShopE.(*models.Shop)
 	
 	groupAiroRoot, err := airoShop.CreateProductGroup(
 		models.ProductGroup{
@@ -1170,7 +1172,9 @@ func UploadTestDataPart_II() {
 	}
 
 	// 2. Получаем магазин
-	shop, err := account.GetShop(1)
+	// shop, err := account.GetShop(1)
+	var shop models.Shop
+	err = account.LoadEntity(&shop, 1)
 	if err != nil {
 		log.Fatalf("Не удалось найти shop: %v", err)
 	}
@@ -1206,7 +1210,7 @@ func UploadTestDataPart_II() {
 
 	entityCourier, err := account.CreateEntity(
 		&models.DeliveryCourier{
-			Name: "Доставка курьером по г. Москва",
+			Name: "Доставка курьером по г. Москва (в пределах МКАД)",
 			Price: 500,
 			MaxWeight: 40.0,
 		})

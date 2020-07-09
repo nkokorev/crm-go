@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 )
@@ -25,8 +24,16 @@ type Shop struct {
 func (Shop) PgSqlCreate() {
 	
 	db.CreateTable(&Shop{})
-	db.Exec("ALTER TABLE shops\n    ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n")
+	db.Model(&Shop{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Exec("ALTER TABLE shops\n    ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n")
 }
+
+// ############# Entity interface #############
+func (shop Shop) getId() uint { return shop.ID }
+func (shop *Shop) setId(id uint) { shop.ID = id }
+func (shop Shop) GetAccountId() uint { return shop.AccountID }
+func (shop *Shop) setAccountId(id uint) { shop.AccountID = id }
+// ############# END Of Entity interface #############
 
 func (shop *Shop) BeforeCreate(scope *gorm.Scope) error {
 	shop.ID = 0
@@ -39,18 +46,18 @@ func (shop *Shop) AfterFind() (err error) {
 	return nil
 }
 
-func (shop Shop) getId() uint {
-	return shop.ID
-}
-
 // ######### CRUD Functions ############
-func (shop Shop) create() (*Shop, error)  {
-	var shopNew = shop
-	err := db.Create(&shopNew).Error
-	return &shopNew, err
+func (shop Shop) create() (Entity, error)  {
+	var newItem Entity = &shop
+
+	if err := db.Create(newItem).Error; err != nil {
+		return nil, err
+	}
+
+	return newItem, nil
 }
 
-func (Shop) get(id uint) (*Shop, error) {
+/*func (Shop) get(id uint) (*Shop, error) {
 
 	shop := Shop{}
 
@@ -59,6 +66,25 @@ func (Shop) get(id uint) (*Shop, error) {
 	}
 
 	return &shop, nil
+}*/
+func (Shop) get(id uint) (Entity, error) {
+
+	var shop Shop
+
+	err := db.First(&shop, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &shop, nil
+}
+
+func (shop *Shop) load() error {
+
+	err := db.First(shop).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (Shop) getList(accountId uint) ([]Shop, error) {
@@ -73,9 +99,26 @@ func (Shop) getList(accountId uint) ([]Shop, error) {
 	return shops, nil
 }
 
-func (shop *Shop) update(input interface{}) error {
-	return db.Model(shop).Select("name", "address").Where("id = ?", shop.ID).
-		Updates(structs.Map(input)).Error
+func (Shop) getPaginationList(accountId uint, offset, limit int, order string, search *string) ([]Entity, error) {
+
+	shops := make([]Shop,0)
+
+	err := db.Model(&Shop{}).Limit(limit).Offset(offset).Order(order).Find(&shops, "account_id = ?", accountId).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(shops))
+	for i, v := range shops {
+		entities[i] = &v
+	}
+
+	return entities, nil
+}
+
+func (shop *Shop) update(input map[string]interface{}) error {
+	return db.Set("gorm:association_autoupdate", false).Model(shop).Omit("id", "account_id").Update(input).Error
 }
 
 func (shop Shop) delete () error {
@@ -84,75 +127,10 @@ func (shop Shop) delete () error {
 // ######### END CRUD Functions ############
 
 // ######### ACCOUNT Functions ############
-func (account Account) CreateShop(input Shop) (*Shop, error) {
-	input.AccountID = account.ID
-	shop, err := input.create()
-	if err != nil {
-		return nil, err
-	}
-
-	go account.CallWebHookIfExist(EventShopCreated, shop)
-
-	return shop, nil
-}
-
-func (account Account) GetShop(id uint) (*Shop, error) {
-	shop, err := Shop{}.get(id)
-	if err != nil {
-		return nil, err
-	}
-
-	if account.ID != shop.AccountID {
-		return nil, utils.Error{Message: "Магазин принадлежит другому аккаунту"}
-	}
-
-	return shop, nil
-}
-
 func (account Account) GetShops() ([]Shop, error) {
 	return Shop{}.getList(account.ID)
 }
 
-func (account Account) UpdateShop(id uint, input interface{}) (*Shop, error) {
-	shop, err := account.GetShop(id)
-	if err != nil {
-		return nil, err
-	}
-
-	if account.ID != shop.AccountID {
-		return nil, utils.Error{Message: "Магазин принадлежит другому аккаунту"}
-	}
-
-	err = shop.update(input)
-
-	return shop, err
-
-}
-
-func (account Account) DeleteShop(id uint) error {
-
-	// включает в себя проверку принадлежности к аккаунту
-	shop, err := account.GetShop(id)
-	if err != nil {
-		return err
-	}
-
-	err = shop.delete()
-	if err != nil {
-		return err;
-	}
-
-	go account.CallWebHookIfExist(EventShopDeleted, shop)
-
-	return nil
-}
-
-func (account Account) ExistShop(id uint) bool {
-	if id < 1 {
-		return false
-	}
-	return !db.Model(&Shop{}).Where("account_id = ? AND id = ?", account.ID, id).First(&Shop{}).RecordNotFound()
-}
 
 func (account Account) ExistProductGroups(groupId uint) bool {
 	if groupId < 1 {

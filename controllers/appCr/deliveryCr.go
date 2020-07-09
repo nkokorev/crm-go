@@ -121,17 +121,21 @@ func DeliveryListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
-	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
 
 	account, err = utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	// 2. Узнаем, какой список нужен
-	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
+		return
+	}
 
-	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
+	// shopE, err := account.GetEntity(&models.Shop{}, shopId)
+
+	/*limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
 	if !ok {
 		limit = 100
 	}
@@ -147,24 +151,15 @@ func DeliveryListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	webHooks := make([]models.WebHook,0)
 	total := 0
 
-	if all == "true" && allOk {
-		webHooks, err = account.GetWebHooks()
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
-			return
-		}
-	} else {
-		webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
-			return
-		}
-	}
-
+	webHooks, total, err = account.GetPaginationListEntity(&models.Shop, offset, limit, "asc", search)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
+		return
+	}*/
 
 	resp := u.Message(true, "GET WebHooks PaginationList")
-	resp["webHooks"] = webHooks
-	resp["total"] = total
+	// resp["webHooks"] = webHooks
+	resp["shopId"] = shopId
 	u.Respond(w, resp)
 }
 
