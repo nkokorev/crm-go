@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"errors"
 	"github.com/jinzhu/gorm"
@@ -59,6 +60,7 @@ type Product struct {
 	// Attributes []EavAttribute `json:"attributes" gorm:"many2many:product_eav_attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	//Attributes []EavAttribute `json:"attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	Attributes 		postgres.Jsonb `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	// Attributes 		PropertyMap `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 	// Reviews []Review // Product reviews (отзывы на товар - с рейтингом(?))
 	// Questions []question // вопросы по товару
 	// Video []Video // видеообзоры по товару на ютубе
@@ -280,5 +282,47 @@ func (product Product) ExistModel() bool {
 }
 
 func (product Product) AddAttr() error {
+	return nil
+}
+
+func (product Product) GetAttribute(name string) (interface{}, error) {
+
+	rawData, err := product.Attributes.MarshalJSON()
+	if err != nil {
+		return "", err
+	}
+
+	m := make(map[string]interface{})
+	if err = json.Unmarshal(rawData, &m); err != nil {
+		return "err", nil
+	}
+
+	return m[name], nil
+	
+}
+type PropertyMap map[string]interface{}
+
+func (p PropertyMap) Value() (driver.Value, error) {
+	j, err := json.Marshal(p)
+	return j, err
+}
+
+func (p *PropertyMap) Scan(src interface{}) error {
+	source, ok := src.([]byte)
+	if !ok {
+		return errors.New("Type assertion .([]byte) failed.")
+	}
+
+	var i interface{}
+	err := json.Unmarshal(source, &i)
+	if err != nil {
+		return err
+	}
+
+	*p, ok = i.(map[string]interface{})
+	if !ok {
+		return errors.New("Type assertion .(map[string]interface{}) failed.")
+	}
+
 	return nil
 }

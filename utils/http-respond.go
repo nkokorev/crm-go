@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/gorilla/mux"
 	"github.com/json-iterator/go"
@@ -62,3 +63,11 @@ func GetFromRequestUINT(r *http.Request, val_name string) (uint, error) {
 	return uint(id), err
 }
 
+func MapToRawJson(input map[string]interface{}) json.RawMessage {
+
+	b, err := json.Marshal(input)
+	if err != nil {
+		return json.RawMessage(`{}`)
+	}
+	return b
+}

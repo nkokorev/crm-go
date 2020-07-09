@@ -1,7 +1,11 @@
 package models
 
 import (
+	"bytes"
+	"encoding/json"
 	"github.com/jinzhu/gorm"
+	"github.com/nkokorev/crm-go/utils"
+	"net/http"
 )
 
 type DeliveryRussianPost struct {
@@ -11,10 +15,12 @@ type DeliveryRussianPost struct {
 	Code 		string	`json:"code" gorm:"type:varchar(16);default:'russianPost';"` // Для идентификации во фронтенде
 
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // "Курьерская доставка", "Почта России", "Самовывоз"
-	Price 		float64 `json:"price" gorm:"type:numeric;default:0"` // стоимость доставки
-	ApiKey 		float64 `json:"apiKey" gorm:"type:varchar(255);"` // стоимость доставки
+	AccessToken 		string `json:"accessToken" gorm:"type:varchar(255);"` // accessToken
+	XUserAuthorization 	string `json:"xUserAuthorization" gorm:"type:varchar(255);"` // XUserAuthorization в base64
+	MaxWeight 	uint `json:"maxWeight" gorm:"type:int;default:20000"` // максимальная масса в граммах
 
 	AddressRequired	bool	`json:"addressRequired" gorm:"type:bool;default:true"` // Требуется ли адрес доставки
+	PostalCodeRequired	bool	`json:"postalCodeRequired" gorm:"type:bool;default:true"` // Требуется ли индекс в адресе доставки
 }
 
 func (DeliveryRussianPost) PgSqlCreate() {
@@ -103,4 +109,76 @@ func (deliveryRussianPost DeliveryRussianPost) delete () error {
 }
 
 // ########## End of CRUD Entity interface ###########
+func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData DeliveryData, weight uint) (float64, error) {
 
+	// проверяем максимальную массу:
+	if weight*uint(1000) > deliveryRussianPost.MaxWeight {
+		return 0, utils.Error{Message: "Превышен максимальный вес посылки в 20кг"}
+	}
+	url := "https://otpravka-api.pochta.ru/1.0/tariff"
+
+	Authorization := "AccessToken " + deliveryRussianPost.AccessToken
+	XUserAuthorization := "Basic " + deliveryRussianPost.XUserAuthorization
+
+	rawJson := utils.MapToRawJson(map[string]interface{}{
+		"index-from":	"109390",
+		"index-to": 	"107078",
+		"mail-category":"ORDINARY",
+		"mail-type":"POSTAL_PARCEL",
+		"mass": weight*uint(1000), // масса в граммах (*1000)
+		"dimension": map[string]interface{}{
+			"height": 90, // в см.
+			"length": 30, // в см.
+			"width": 30, // в см.
+		},
+		"fragile": false, // отметка "Осторожно хрупкое"
+		"with-electronic-notice": true, // уведомление на емейл
+		"with-order-of-notice": true, // уведомление заказное
+	})
+
+	// response, err := http.Post(url, "application/json", strings.NewReader(""))
+	client := &http.Client{}
+	request, err := http.NewRequest("POST", url, bytes.NewBuffer(rawJson))
+	if err != nil {
+		return 0, utils.Error{Message: "Ошибка связи с сервисом Почты России"}
+	}
+
+	request.Header.Set("Authorization", Authorization)
+	request.Header.Set("X-User-Authorization", XUserAuthorization)
+	request.Header.Set("Content-Type", "application/json")
+
+	response, err := client.Do(request)
+	if err != nil {
+		return 0, utils.Error{Message: "Ошибка связи с сервисом Почты России"}
+	}
+	defer response.Body.Close()
+
+	// 1. Сначала узнаем статус реквеста
+	if response.Status == "400 Bad Request" {
+
+		var input struct {
+			Desc string `json:"desc"`
+		}
+
+		if err := json.NewDecoder(response.Body).Decode(&input); err != nil {
+			return 0, err
+		}
+
+		return 0, utils.Error{Message: input.Desc}
+
+	} else {
+
+		var input struct {
+			TotalRate float64 `json:"total-rate"`
+			TotalVat float64 `json:"total-vat"`
+		}
+
+		if err := json.NewDecoder(response.Body).Decode(&input); err != nil {
+			return 0, utils.Error{Message: "Ошибка данных со стороны Почты России"}
+		}
+
+		return input.TotalRate, nil
+	}
+
+	return 0, utils.Error{Message: "Ошибка расчета стоимости"}
+}

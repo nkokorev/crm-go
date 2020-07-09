@@ -12,7 +12,10 @@ type DeliveryPickup struct {
 
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // "Самовывоз со основного склада"
 	Price 		float64 `json:"price" gorm:"type:numeric;default:0"` // стоимость доставки при самовывозе (может быть и не 0, если через сервис)
-	
+
+	AddressRequired	bool	`json:"addressRequired" gorm:"type:bool;default:false"` // Требуется ли адрес доставки
+	PostalCodeRequired	bool	`json:"postalCodeRequired" gorm:"type:bool;default:false"` // Требуется ли индекс в адресе доставки
+
 }
 
 func (DeliveryPickup) PgSqlCreate() {
@@ -106,4 +109,7 @@ func (deliveryPickup DeliveryPickup) GetName () string {
 	return "Почта России"
 }
 
+func (deliveryPickup DeliveryPickup) CalculateDelivery(deliveryData DeliveryData, weight uint) (float64, error) {
+	return 0, nil
+}
 

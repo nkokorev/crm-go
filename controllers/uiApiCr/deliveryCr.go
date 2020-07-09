@@ -2,7 +2,6 @@ package uiApiCr
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
@@ -34,7 +33,7 @@ func DeliveryGetListByShop(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET Shop Deliveries")
-	resp["deliveries"] = shop.GetDeliveries()
+	resp["deliveryMethods"] = shop.GetDeliveryMethods()
 	u.Respond(w, resp)
 }
 
@@ -66,15 +65,13 @@ func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 
 	// fmt.Println("input Cart: ", input.Cart)
 
-	cost, err := shop.CalculateDelivery(input)
+	costDelivery, err := shop.CalculateDelivery(input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка расчета стоимости доставки"))
 		return
 	}
 
-	fmt.Println(cost)
-
 	resp := u.Message(true, "GET Calculate Delivery")
-	resp["cost"] = cost
+	resp["costDelivery"] = costDelivery
 	u.Respond(w, resp)
 }

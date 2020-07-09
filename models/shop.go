@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
@@ -35,7 +34,7 @@ func (shop *Shop) BeforeCreate(scope *gorm.Scope) error {
 
 func (shop *Shop) AfterFind() (err error) {
 
-	shop.Deliveries = shop.GetDeliveries()
+	shop.Deliveries = shop.GetDeliveryMethods()
 	return nil
 }
 
@@ -190,6 +189,21 @@ func (shop Shop) CreateProduct(input Product, card *ProductCard) (*Product, erro
 	return product, nil
 }
 
+func (shop Shop) GetProduct(productId uint) (*Product, error) {
+
+	// Создаем продукт
+	product, err := Product{}.get(productId)
+	if err != nil {
+		return nil, err
+	}
+
+	if product.AccountID != shop.AccountID {
+		return nil, utils.Error{Message: "Продукт с указанным id не найден"}
+	}
+
+	return product, nil
+}
+
 func (shop Shop) CreateProductWithCardAndGroup(input Product, newCard ProductCard, groupId *uint) (*Product, error) {
 	input.AccountID = shop.AccountID
 
@@ -231,7 +245,7 @@ func (shop Shop) AppendDeliveryMethod(entity Entity) error {
 	return entity.update(map[string]interface{}{"shop_id":shop.ID})
 }
 
-func (shop Shop) GetDeliveries() []Delivery {
+func (shop Shop) GetDeliveryMethods() []Delivery {
 	// Находим все необходимые методы
 	var posts []DeliveryRussianPost
 	if err := db.Find(&posts, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
@@ -265,7 +279,7 @@ func (shop Shop) GetDeliveries() []Delivery {
 func (shop Shop) CalculateDelivery(deliveryRequest DeliveryRequest) (float64, error) {
 
 	// Получаем все варианты доставки (обычно их мало). Можно через switch, но лень потом исправлять баг с новыми типом доставки
-	deliveries := shop.GetDeliveries()
+	deliveries := shop.GetDeliveryMethods()
 
 	// Ищем наш вариант доставки
 	var delivery Delivery
@@ -282,29 +296,33 @@ func (shop Shop) CalculateDelivery(deliveryRequest DeliveryRequest) (float64, er
 	}
 
 	// Начинаем расчет доставки
-	fmt.Println(delivery)
 
-	/*_d, err := account.GetEntity(&models.DeliveryRussianPost{}, input.ID)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти вариант доставки"))
-		return
+	// 1. Определяем вес посылки
+	// weight := 8500
+	var weight float64
+	weight = 0
+
+	// проходим циклом по продуктам и складываем их общий вес
+	for _,v := range deliveryRequest.Cart {
+		// 1. Получаем продукт
+		product, err := shop.GetProduct(v.ProductId)
+		if err != nil {
+			return 0, err
+		}
+		// _w, err := product.GetAttribute("grossWeight")
+		_w, err := product.GetAttribute(deliveryRequest.DeliveryData.ProductWeightKey)
+		wg, ok := _w.(float64)
+		if !ok {
+		  	continue
+		}
+		weight += wg * float64(v.Count)
 	}
-	delivery := _d.(*models.DeliveryRussianPost)*/
 
-
-	cost := 2000.00;
+	// 2. Проводим расчет доставки
+	cost, err := delivery.CalculateDelivery(deliveryRequest.DeliveryData, uint(weight))
+	if err != nil {
+		return 0, err
+	}
 
 	return cost, nil
 }
-
-/*func (shop Shop) AppendDeliveryMethod(deliveryPostRussia DeliveryRussianPost) error {
-	return deliveryPostRussia.update(map[string]interface{}{"shop_id":shop.ID})
-	// return db.Model(&shop).Association("Delivers").Append(deliveryPostRussia).Error
-}*/
-
-/*func (deliveryRussianPost DeliveryRussianPost) AppendAssociationMethod(deliveryOption DeliveryOption) error {
-	fmt.Println("deliveryRussianPost: ", deliveryRussianPost)
-	fmt.Println("deliveryOption: ", deliveryOption)
-	return db.Model(&deliveryRussianPost).Association("Delivers").Append(deliveryOption).Error
-}*/
-

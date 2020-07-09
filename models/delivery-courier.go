@@ -14,6 +14,7 @@ type DeliveryCourier struct {
 	Price 		float64 `json:"price" gorm:"type:numeric;default:0"` // стоимость доставки
 
 	AddressRequired	bool	`json:"addressRequired" gorm:"type:bool;default:true"` // Требуется ли адрес доставки
+	PostalCodeRequired	bool	`json:"postalCodeRequired" gorm:"type:bool;default:false"` // Требуется ли индекс в адресе доставки
 }
 
 func (DeliveryCourier) PgSqlCreate() {
@@ -101,4 +102,7 @@ func (deliveryCourier DeliveryCourier) GetName () string {
 	return "Доставка курьером"
 }
 
+func (deliveryCourier DeliveryCourier) CalculateDelivery(deliveryData DeliveryData, weight uint) (float64, error) {
+	return 45000, nil
+}
 

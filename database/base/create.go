@@ -1,11 +1,11 @@
 package base
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/models"
+	"github.com/nkokorev/crm-go/utils"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -57,12 +57,20 @@ func RefreshTables() {
 		fmt.Println("Cant create tables 2: ", err)
 		return
 	}
-	
-	err = pool.Exec("drop table if exists accounts, user_verification_methods").Error
+
+	err = pool.Exec("drop table if exists accounts").Error
 	if err != nil {
 		fmt.Println("Cant create tables 3: ", err)
 		return
 	}
+	
+	err = pool.Exec("drop table if exists user_verification_methods").Error
+	if err != nil {
+		fmt.Println("Cant create tables 3: ", err)
+		return
+	}
+
+
 	
 	err = models.CrmSetting{}.PgSqlCreate()
 	if err != nil {
@@ -82,12 +90,6 @@ func RefreshTables() {
 	models.ProductGroup{}.PgSqlCreate()
 	models.ProductCard{}.PgSqlCreate()
 	models.Product{}.PgSqlCreate()
-
-	//models.EavAttrType{}.PgSqlCreate()
-	//models.EavAttribute{}.PgSqlCreate()
-	//models.EavAttrVarchar{}.PgSqlCreate()
-	//models.EavAttrInt{}.PgSqlCreate()
-	//models.EavAttrDecimal{}.PgSqlCreate()
 
 	models.Domain{}.PgSqlCreate()
 	models.EmailBox{}.PgSqlCreate()
@@ -699,7 +701,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	cards := []models.ProductCard{
 		{ID: 0, URL: "airo-dez-adjustable-black", 	Label:"Рециркулятор AIRO-DEZ черный с регулировкой", Breadcrumb: "Рециркулятор AIRO-DEZ черный с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ черный с регулировкой",
 			SwitchProducts: postgres.Jsonb{
-				RawMessage: MapToRawJson(map[string]interface{}{
+				RawMessage: utils.MapToRawJson(map[string]interface{}{
 					"color":"черный",
 					"bodyMaterial":"металл",
 					"filterType":"угольно-фотокаталитический",
@@ -747,7 +749,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			ShortDescription: "",
 			Description: "",
 			Attributes: postgres.Jsonb{
-				RawMessage: MapToRawJson(map[string]interface{}{
+				RawMessage: utils.MapToRawJson(map[string]interface{}{
 					"color":"черный",
 					"bodyMaterial":"металл",
 					"filterType":"угольно-фотокаталитический",
@@ -775,7 +777,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			ShortDescription: "",
 			Description: "",
 			Attributes: postgres.Jsonb{
-				RawMessage: MapToRawJson(map[string]interface{}{
+				RawMessage: utils.MapToRawJson(map[string]interface{}{
 					"color":"черный",
 					"bodyMaterial":"металл",
 					"filterType":"угольно-фотокаталитический",
@@ -803,7 +805,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			ShortDescription: "",
 			Description: "",
 			Attributes: postgres.Jsonb{
-				RawMessage: MapToRawJson(map[string]interface{}{
+				RawMessage: utils.MapToRawJson(map[string]interface{}{
 					"color":"белый",
 					"bodyMaterial":"металл",
 					"filterType":"угольно-фотокаталитический",
@@ -831,7 +833,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			ShortDescription: "",
 			Description: "",
 			Attributes: postgres.Jsonb{
-				RawMessage: MapToRawJson(map[string]interface{}{
+				RawMessage: utils.MapToRawJson(map[string]interface{}{
 					"color":"белый",
 					"bodyMaterial":"металл",
 					"filterType":"угольно-фотокаталитический",
@@ -859,7 +861,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			ShortDescription: "",
 			Description: "",
 			Attributes: postgres.Jsonb{
-				RawMessage: MapToRawJson(map[string]interface{}{
+				RawMessage: utils.MapToRawJson(map[string]interface{}{
 					"color":"черный",
 					"bodyMaterial":"металл",
 					"filterType":"угольно-фотокаталитический",
@@ -889,7 +891,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			ShortDescription: "",
 			Description: "",
 			Attributes: postgres.Jsonb{
-				RawMessage: MapToRawJson(map[string]interface{}{
+				RawMessage: utils.MapToRawJson(map[string]interface{}{
 					"color":"черный",
 					"bodyMaterial":"металл",
 					//"filterType":"угольно-фотокаталитический",
@@ -918,7 +920,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			ShortDescription: "",
 			Description: "",
 			Attributes: postgres.Jsonb{
-				RawMessage: MapToRawJson(map[string]interface{}{
+				RawMessage: utils.MapToRawJson(map[string]interface{}{
 					"color":"венге",
 					"bodyMaterial":"металл",
 					//"filterType":"угольно-фотокаталитический",
@@ -948,7 +950,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			ShortDescription: "",
 			Description: "",
 			Attributes: postgres.Jsonb{
-				RawMessage: MapToRawJson(map[string]interface{}{
+				RawMessage: utils.MapToRawJson(map[string]interface{}{
 					"color":"черный",
 					"bodyMaterial":"металл",
 					//"filterType":"угольно-фотокаталитический",
@@ -977,7 +979,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			ShortDescription: "",
 			Description: "",
 			Attributes: postgres.Jsonb{
-				RawMessage: MapToRawJson(map[string]interface{}{
+				RawMessage: utils.MapToRawJson(map[string]interface{}{
 					"color":"белый",
 					"bodyMaterial":"металл",
 					//"filterType":"угольно-фотокаталитический",
@@ -1006,7 +1008,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			ShortDescription: "",
 			Description: "",
 			Attributes: postgres.Jsonb{
-				RawMessage: MapToRawJson(map[string]interface{}{
+				RawMessage: utils.MapToRawJson(map[string]interface{}{
 					"color":"черный",
 					//"bodyMaterial":"металл",
 					//"filterType":"угольно-фотокаталитический",
@@ -1035,7 +1037,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			ShortDescription: "",
 			Description: "",
 			Attributes: postgres.Jsonb{
-				RawMessage: MapToRawJson(map[string]interface{}{
+				RawMessage: utils.MapToRawJson(map[string]interface{}{
 					"color":"белый",
 					//"bodyMaterial":"металл",
 					//"filterType":"угольно-фотокаталитический",
@@ -1065,7 +1067,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			ShortDescription: "",
 			Description: "",
 			Attributes: postgres.Jsonb{
-				RawMessage: MapToRawJson(map[string]interface{}{
+				RawMessage: utils.MapToRawJson(map[string]interface{}{
 					"color":"светлая сосна",
 					"bodyMaterial":"металл",
 					//"filterType":"угольно-фотокаталитический",
@@ -1174,7 +1176,12 @@ func UploadTestDataPart_II() {
 	}
 
 	// Создаем вариант доставки "Почтой россии"
-	entityRussianPost, err := account.CreateEntity(&models.DeliveryRussianPost{Name: "Доставка Почтой России"})
+	entityRussianPost, err := account.CreateEntity(
+		&models.DeliveryRussianPost{
+			Name: "Доставка Почтой России",
+			AccessToken: "b07bk92rzBXosriAgmR5key1IpHq1Tpn",
+			XUserAuthorization: "a29yb3RhZXZAdnR2ZW50LnJ1OmpIeXc2MnIzODNKc3F6aQ==",
+		})
 	if err != nil {
 		log.Fatalf("Не удалось получить DeliveryRussianPost: %v", err)
 	}
@@ -1201,14 +1208,14 @@ func UploadTestDataPart_II() {
 
 }
 
-func MapToRawJson(input map[string]interface{}) json.RawMessage {
+/*func MapToRawJson(input map[string]interface{}) json.RawMessage {
 
 	b, err := json.Marshal(input)
 	if err != nil {
 		return json.RawMessage(`{}`)
 	}
 	return b
-}
+}*/
 
 func ToStringPointer(s string) *string {
 	return &s
