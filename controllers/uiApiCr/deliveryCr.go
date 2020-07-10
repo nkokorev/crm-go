@@ -54,7 +54,6 @@ func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 
 	var shop models.Shop
 	err = account.LoadEntity(&shop, shopId)
-	// shop, err := account.GetShop(shopId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -75,5 +74,34 @@ func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET Calculate Delivery")
 	resp["deliveryData"] = deliveryData
+	u.Respond(w, resp)
+}
+
+// func DeliveryAvailableMethodsGetList(w http.ResponseWriter, r *http.Request) {
+func DeliveryListOptions(w http.ResponseWriter, r *http.Request) {
+
+	var account *models.Account
+	var err error
+
+	account, err = utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
+		return
+	}
+
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
+		return
+	}
+
+	resp := u.Message(true, "GET Deliveries List Options By Shop")
+	resp["deliveryListOptions"] = shop.DeliveryListOptions()
 	u.Respond(w, resp)
 }

@@ -68,56 +68,33 @@ func DeliveryGet(w http.ResponseWriter, r *http.Request) {
 
 func DeliveryGetListByShop(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
-
-	account, err = utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	// 2. Узнаем, какой список нужен
-	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
-
-	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
-	if !ok {
-		limit = 100
-	}
-	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
-	if !ok || offset < 0 {
-		offset = 0
-	}
-	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
-	if !ok {
-		search = ""
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
+		return
 	}
 
-	webHooks := make([]models.WebHook,0)
-	total := 0
-
-	if all == "true" && allOk {
-		webHooks, err = account.GetWebHooks()
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
-			return
-		}
-	} else {
-		webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
-			return
-		}
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
+		return
 	}
 
+	deliveries := shop.GetDeliveryMethods()
 
-	resp := u.Message(true, "GET WebHooks PaginationList")
-	resp["webHooks"] = webHooks
-	resp["total"] = total
+	resp := u.Message(true, "GET Deliveries List By Shop")
+	resp["deliveries"] = deliveries
+	resp["total"] = len(deliveries)
 	u.Respond(w, resp)
 }
 
-func DeliveryListPaginationGet(w http.ResponseWriter, r *http.Request) {
+func DeliveryGetList(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
@@ -133,52 +110,59 @@ func DeliveryListPaginationGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// shopE, err := account.GetEntity(&models.Shop{}, shopId)
-
-	/*limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
-	if !ok {
-		limit = 100
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
+		return
 	}
-	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
+
+	/*offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
 	if !ok || offset < 0 {
 		offset = 0
 	}
+	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
+	if !ok {
+		limit = 100
+	}
+	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
+	if !ok {
+		sortBy = ""
+	}
+	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc")
 	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
 	if !ok {
 		search = ""
-	}
-
-	webHooks := make([]models.WebHook,0)
-	total := 0
-
-	webHooks, total, err = account.GetPaginationListEntity(&models.Shop, offset, limit, "asc", search)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
-		return
 	}*/
 
-	resp := u.Message(true, "GET WebHooks PaginationList")
+	deliveries := shop.GetDeliveryMethods()
+
+	resp := u.Message(true, "GET Deliveries List Pagination")
 	// resp["webHooks"] = webHooks
-	resp["shopId"] = shopId
+	resp["deliveries"] = deliveries
 	u.Respond(w, resp)
 }
 
 func DeliveryUpdate(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-	account, err = utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	webHookId, err := utilsCr.GetUINTVarFromRequest(r, "webHookId")
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-	// var input interface{}
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
+		return
+	}
+
 	var input map[string]interface{}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -187,38 +171,54 @@ func DeliveryUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webHook, err := account.UpdateWebHook(webHookId, input)
+	// Работаем через метод магазина, т.к. доставки разные и это интерфейс
+	delivery, err := shop.UpdateDelivery(input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
 	resp := u.Message(true, "PATCH WebHook Update")
-	resp["webHook"] = webHook
+	resp["delivery"] = delivery
 	u.Respond(w, resp)
 }
 
 func DeliveryDelete(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-	account, err = utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	webHookId, err := utilsCr.GetUINTVarFromRequest(r, "webHookId")
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-
-	if err = account.DeleteWebHook(webHookId); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении webHook"))
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
 	}
 
-	resp := u.Message(true, "DELETE WebHook Successful")
+	var input map[string]interface{}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	// Работаем через метод магазина, т.к. доставки разные и это интерфейс
+	if err = shop.DeleteDelivery(input); err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении метода доставки"))
+		return
+	}
+
+	resp := u.Message(true, "DELETE Delivery")
 	u.Respond(w, resp)
 }
+
+

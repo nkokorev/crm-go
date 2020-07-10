@@ -57,16 +57,6 @@ func (shop Shop) create() (Entity, error)  {
 	return newItem, nil
 }
 
-/*func (Shop) get(id uint) (*Shop, error) {
-
-	shop := Shop{}
-
-	if err := db.Table("shops").Preload("ProductGroups").First(&shop, id).Error; err != nil {
-		return nil, err
-	}
-
-	return &shop, nil
-}*/
 func (Shop) get(id uint) (Entity, error) {
 
 	var shop Shop
@@ -257,21 +247,9 @@ func (shop Shop) GetDeliveryMethods() []Delivery {
 
 func (shop Shop) CalculateDelivery(deliveryRequest DeliveryRequest) (*DeliveryData, error) {
 
-	// Получаем все варианты доставки (обычно их мало). Можно через switch, но лень потом исправлять баг с новыми типом доставки
-	deliveries := shop.GetDeliveryMethods()
-
-	// Ищем наш вариант доставки
-	var delivery Delivery
-	for _,v := range deliveries {
-		if v.GetCode() == deliveryRequest.DeliveryMethod.Code && v.getId() == deliveryRequest.DeliveryMethod.ID {
-			delivery = v
-			break
-		}
-	}
-	
-	// Проверяем, удалось ли найти выбранный вариант доставки
-	if delivery == nil {
-		return nil, utils.Error{Message: "Не верно указан тип доставки"}
+	delivery, err := shop.GetDelivery(deliveryRequest.DeliveryMethod.Code, deliveryRequest.DeliveryMethod.ID)
+	if err != nil {
+		return nil, err
 	}
 
 	// 1. Расчет веса посылки
@@ -311,4 +289,86 @@ func (shop Shop) CalculateDelivery(deliveryRequest DeliveryRequest) (*DeliveryDa
 	}
 
 	return deliveryData, nil
+}
+
+func (shop Shop) GetDelivery(code string, methodId uint) (Delivery, error) {
+
+	// Получаем все варианты доставки (обычно их мало). Можно через switch, но лень потом исправлять баг с новыми типом доставки
+	deliveries := shop.GetDeliveryMethods()
+
+	// Ищем наш вариант доставки
+	var delivery Delivery
+	for _,v := range deliveries {
+		if v.GetCode() == code && v.getId() == methodId {
+			delivery = v
+			break
+		}
+	}
+
+	// Проверяем, удалось ли найти выбранный вариант доставки
+	if delivery == nil {
+		return nil, utils.Error{Message: "Не верно указан тип доставки"}
+	}
+
+	return delivery, nil
+}
+// 
+func (shop Shop) UpdateDelivery(input map[string]interface{}) (Delivery, error) {
+
+	// Парсим тип рассылки и ее ID
+	code,ok := input["code"].(string)
+	methodId, ok := input["id"].(float64)
+	if !ok {
+		return nil, utils.Error{Message: "Код или id способа доставки не верен"}
+	}
+
+	delivery, err := shop.GetDelivery(code, uint(methodId))
+	if err != nil {
+		return nil, err
+	}
+
+	if delivery.GetAccountId() != shop.AccountID {
+		return nil, utils.Error{Message: "Метод доставки принадлежит другому аккаунту!"}
+	}
+
+	err = delivery.update(input)
+	if err != nil {
+		return nil, err
+	}
+
+	return delivery, nil
+}
+
+func (shop Shop) DeleteDelivery(input map[string]interface{}) error {
+
+	// Парсим тип рассылки и ее ID
+	code,ok := input["code"].(string)
+	methodId, ok := input["id"].(float64)
+	if !ok {
+		return utils.Error{Message: "Код или id способа доставки не верен"}
+	}
+
+	delivery, err := shop.GetDelivery(code, uint(methodId))
+	if err != nil {
+		return err
+	}
+
+	if delivery.GetAccountId() != shop.AccountID {
+		return utils.Error{Message: "Метод доставки принадлежит другому аккаунту!"}
+	}
+
+	err = delivery.delete()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (shop Shop) DeliveryListOptions() map[string]interface{} {
+	return map[string]interface{}{
+		"russianPost": "Почта России",
+		"courier": "Курьерская доставка",
+		"pickup": "Самовывоз",
+	}
 }

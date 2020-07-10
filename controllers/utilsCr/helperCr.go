@@ -196,6 +196,25 @@ func GetQuerySTRVarFromGET(r *http.Request, key string) (string, bool) {
 
 	return string(strVar), true
 }
+func GetQueryBoolVarFromGET(r *http.Request, key string) bool {
+
+	strVar := r.URL.Query().Get(key)
+
+	res := false
+	switch strVar {
+	case "":
+		res = false
+	case "false":
+		res = false
+	case "true":
+		res = true
+	default:
+		res = false
+	}
+	
+
+	return res
+}
 
 // INPUTS
 

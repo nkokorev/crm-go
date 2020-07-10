@@ -2,6 +2,8 @@ package routes
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/nkokorev/crm-go/controllers/uiApiCr"
+
 	// "github.com/nkokorev/crm-go/controllers"
 	"github.com/nkokorev/crm-go/controllers/appCr"
 	"github.com/nkokorev/crm-go/middleware"
@@ -128,9 +130,12 @@ var AppRoutes = func(r *mux.Router) {
 
 	// ### Deliveries ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/deliveries", appCr.DeliveryCreate).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/deliveries", appCr.DeliveryListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/deliveries/{deliveryId:[0-9]+}", appCr.DeliveryUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/deliveries/{deliveryId:[0-9]+}", appCr.DeliveryDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/deliveries", appCr.DeliveryGetListByShop).Methods(http.MethodGet, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/deliveries/russianPost", appCr.DeliveryUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/deliveries", appCr.DeliveryUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/deliveries", appCr.DeliveryDelete).Methods(http.MethodDelete, http.MethodOptions)
+
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/deliveries-list-options", uiApiCr.DeliveryListOptions).Methods(http.MethodGet, http.MethodOptions)
 
 	// ### WebHooks ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks", appCr.WebHookCreate).Methods(http.MethodPost, http.MethodOptions)

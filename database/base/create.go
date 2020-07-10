@@ -1183,6 +1183,7 @@ func UploadTestDataPart_II() {
 	entityRussianPost, err := account.CreateEntity(
 		&models.DeliveryRussianPost{
 			Name: "Доставка Почтой России",
+			Enabled: true,
 			AccessToken: "b07bk92rzBXosriAgmR5key1IpHq1Tpn",
 			XUserAuthorization: "a29yb3RhZXZAdnR2ZW50LnJ1OmpIeXc2MnIzODNKc3F6aQ==",
 			PostalCodeFrom: "109390",
@@ -1200,7 +1201,7 @@ func UploadTestDataPart_II() {
 		log.Fatalf("Не удалось добавить метод доставки в магазин: %v\n", err)
 	}
 
-	entityPickup, err := account.CreateEntity(&models.DeliveryPickup{Name: "Самовывоз из г. Москва, м. Текстильщики"})
+	entityPickup, err := account.CreateEntity(&models.DeliveryPickup{Name: "Самовывоз из г. Москва, м. Текстильщики", Enabled: true,})
 	if err != nil {
 		log.Fatalf("Не удалось получить entityPickup: %v", err)
 	}
@@ -1211,6 +1212,7 @@ func UploadTestDataPart_II() {
 	entityCourier, err := account.CreateEntity(
 		&models.DeliveryCourier{
 			Name: "Доставка курьером по г. Москва (в пределах МКАД)",
+			Enabled: true,
 			Price: 500,
 			MaxWeight: 40.0,
 		})
