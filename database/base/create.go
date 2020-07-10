@@ -1193,6 +1193,7 @@ func UploadTestDataPart_II() {
 			Fragile: false,
 			WithElectronicNotice: true,
 			WithOrderOfNotice: true,
+			WithSimpleNotice: false,
 		})
 	if err != nil {
 		log.Fatalf("Не удалось получить DeliveryRussianPost: %v", err)

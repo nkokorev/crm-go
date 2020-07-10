@@ -28,6 +28,7 @@ type DeliveryRussianPost struct {
 	Fragile 		bool	`json:"fragile" gorm:"type:bool;default:false"`  // отметка "Осторожно хрупкое"
 	WithElectronicNotice	bool	`json:"withElectronicNotice" gorm:"type:bool;default:true"`  // отметка "Осторожно хрупкое"
 	WithOrderOfNotice		bool	`json:"withOrderOfNotice" gorm:"type:bool;default:true"`  // отметка "Осторожно хрупкое"
+	WithSimpleNotice		bool	`json:"withSimpleNotice" gorm:"type:bool;default:false"`  // отметка "Осторожно хрупкое"
 
 	AddressRequired	bool	`json:"addressRequired" gorm:"type:bool;default:true"` // Требуется ли адрес доставки
 	PostalCodeRequired	bool	`json:"postalCodeRequired" gorm:"type:bool;default:true"` // Требуется ли индекс в адресе доставки
@@ -139,6 +140,7 @@ func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData De
 		"fragile": deliveryRussianPost.Fragile, // отметка "Осторожно хрупкое"
 		"with-electronic-notice": deliveryRussianPost.WithElectronicNotice, // уведомление на емейл
 		"with-order-of-notice": deliveryRussianPost.WithOrderOfNotice, // уведомление заказное
+		"with-simple-notice": deliveryRussianPost.WithSimpleNotice, // уведомление заказное
 	})
 
 	// response, err := http.Post(url, "application/json", strings.NewReader(""))
