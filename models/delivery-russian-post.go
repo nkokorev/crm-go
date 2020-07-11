@@ -96,13 +96,19 @@ func (deliveryRussianPost *DeliveryRussianPost) load() error {
 	return nil
 }
 
-func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, order string, search *string) ([]Entity, error) {
+func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	delivers := make([]DeliveryRussianPost,0)
+	var total uint
 
-	err := db.Model(&DeliveryRussianPost{}).Limit(limit).Offset(offset).Order(order).Find(&delivers, "account_id = ?", accountId).Error
+	err := db.Model(&DeliveryRussianPost{}).Limit(limit).Offset(offset).Order(sortBy).Find(&delivers, "account_id = ?", accountId).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	err = db.Model(&DeliveryRussianPost{}).Where("account_id = ?", accountId).Count(&total).Error
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
 
 	// Преобразуем полученные данные
@@ -111,7 +117,7 @@ func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, 
 		entities[i] = &v
 	}
 
-	return entities, nil
+	return entities, total, nil
 }
 
 func (deliveryRussianPost *DeliveryRussianPost) update(input map[string]interface{}) error {

@@ -385,55 +385,55 @@ func (account Account) GetUserByPhone(phone, region string) (*User, error) {
 }
 
 // pagination user list
-func (account Account) GetUserList(offset, limit int, search string) ([]AccountUser, uint, error) {
+func (account Account) GetUserListPagination(offset, limit int, sortBy, search string, role []uint) ([]User, uint, error) {
 
-	aUsers := make([]AccountUser,0)
+	users := make([]User,0)
+	var total uint
 
-	// if need to search
+
 	if len(search) > 0 {
 
-		// string pattern
 		search = "%"+search+"%"
 		
-		err := db.Model(&AccountUser{}).Preload("User").
-			Limit(limit).
-			Offset(offset).
-			Joins("LEFT JOIN users ON account_users.user_id = users.id").
-			Where("account_id = ?", account.ID).
-			Joins("LEFT JOIN roles ON account_users.role_id = roles.id").
-			Find(&aUsers, "users.username ILIKE ? OR users.email ILIKE ? OR users.phone ILIKE ? OR users.name ILIKE ? OR users.surname ILIKE ? OR roles.tag ILIKE ? OR roles.name ILIKE ?", search,search,search,search,search,search,search).Error
-		if err != nil && err != gorm.ErrRecordNotFound{
+		err := db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+			Order(sortBy).Limit(limit).
+			Where("account_id = ? AND role_id IN (?)", account.ID, role).
+			Find(&users, "hash_id ILIKE ? OR username ILIKE ? OR email ILIKE ? OR phone ILIKE ? OR name ILIKE ? OR surname ILIKE ? OR patronymic ILIKE ?", search,search,search,search,search,search,search).Error
+		if err != nil {
 			return nil, 0, err
+		}
+
+		// Вычисляем total
+		err = db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+			Where("account_id = ? AND role_id IN (?)", account.ID, role).
+			Where("hash_id ILIKE ? OR username ILIKE ? OR email ILIKE ? OR phone ILIKE ? OR name ILIKE ? OR surname ILIKE ? OR patronymic ILIKE ?", search,search,search,search,search,search,search).
+			Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема клиентской базы"}
 		}
 
 	} else {
-		if offset < 0 || limit < 0 {
-			return nil, 0, errors.New("Offset or limit is wrong")
-		}
-
-		// WORK!!!!
-		//err := db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").Where("account_id = ?", account.ID).Find(&users).Error
-		//err := db.Model(&AccountUser{}).Preload("User").Joins("LEFT JOIN users ON account_users.user_id = users.id").Where("account_id = ?", account.ID).Find(&users).Error
-
-		err := db.Model(&AccountUser{}).Preload("User").
-			Limit(limit).
-			Offset(offset).
-			Joins("LEFT JOIN users ON account_users.user_id = users.id").
-			Find(&aUsers, "account_id = ?", account.ID).Error
-		if err != nil && err != gorm.ErrRecordNotFound{
+		err := db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+			Order(sortBy).Offset(offset).Limit(limit).
+			Where("account_id = ? AND role_id IN (?)", account.ID, role).
+			Find(&users).Error
+		if err != nil {
 			return nil, 0, err
 		}
+
+		// Вычисляем total
+		err = db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+			Where("account_id = ? AND role_id IN (?)", account.ID, role).
+			Where("hash_id ILIKE ? OR username ILIKE ? OR email ILIKE ? OR phone ILIKE ? OR name ILIKE ? OR surname ILIKE ? OR patronymic ILIKE ?", search,search,search,search,search,search,search).
+			Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема клиентской базы"}
+		}
 	}
 
-	// total := uint(len(aUsers))
-	// len(aUsers) != всему списку!
-	var total uint
-	err := db.Model(&AccountUser{}).Where("account_id = ?", account.ID).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема клиентской базы"}
-	}
 
-	return aUsers, total, nil
+
+	return users, total, nil
 }
 
 func (Account) ExistUser(user User) bool {
@@ -540,15 +540,15 @@ func (account Account) AuthorizationUserByUsername(username, password string, on
 		return nil, "", e
 	}
 
-	if rememberChoice {
+	/*if rememberChoice {
 		user.DefaultAccountHashId = account.HashID
 		updateData := struct {
 			DefaultAccountHashId string
 		}{account.HashID}
-		if err := user.update(&updateData, false); err != nil {
+		if err := user.update(&updateData); err != nil {
 			return nil, "", errors.New("Не удалось авторизовать пользователя")
 		}
-	}
+	}*/
 
 	token, err = account.AuthorizationUser(*user, false, issuerAccount)
 	if err != nil || token == "" {
@@ -859,7 +859,7 @@ func (account Account) AuthorizationUser(user User, rememberChoice bool, issuerA
 	// Запоминаем аккаунт для будущих входов
 	user.DefaultAccountHashId = account.HashID
 
-	updateData := struct {
+	/*updateData := struct {
 		DefaultAccountHashId string
 	}{}
 
@@ -869,9 +869,9 @@ func (account Account) AuthorizationUser(user User, rememberChoice bool, issuerA
 		//updateData.DefaultAccountID = 0
 	}
 
-	if err := user.update(&updateData, false); err != nil {
+	if err := user.update(updateData); err != nil {
 		return "", errors.New("Не удалось авторизовать пользователя")
-	}
+	}*/
 
 	token, err := issuerAccount.GetAuthToken(user, account)
 	if err != nil {

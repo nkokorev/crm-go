@@ -58,13 +58,21 @@ var AppRoutes = func(r *mux.Router) {
 	// -- USERS --
 	// Запрос ниже может иметь много параметров (диапазон выборки, число пользователей)
 	// rAuthFull.HandleFunc("/accounts/{accountHashId}/users", controllers.CreateUser).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/users", appCr.GetUserList).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userHashId}", appCr.RemoveUserFromAccount).Methods(http.MethodDelete, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userHashId}", appCr.UpdateUserData).Methods(http.MethodPatch, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/users", appCr.UsersGetListPagination).Methods(http.MethodGet, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userHashId}", appCr.UserRemoveFromAccount).Methods(http.MethodDelete, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userHashId}", appCr.UserUpdate).Methods(http.MethodPatch, http.MethodOptions)
+
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/users", appCr.UserCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/users", appCr.UsersGetListPagination).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userId:[0-9]+}", appCr.UserGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userId:[0-9]+}", appCr.UserUpdate).Methods(http.MethodPatch, http.MethodOptions)
+
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userId:[0-9]+}", appCr.UserDelete).Methods(http.MethodDelete, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userId:[0-9]+}", appCr.UserRemoveFromAccount).Methods(http.MethodDelete, http.MethodOptions)
 
 	// -- ROLES --
 	// Запрос ниже может иметь много параметров (диапазон выборки, число пользователей)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/roles", appCr.RoleList).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/roles", appCr.RoleGetList).Methods(http.MethodGet, http.MethodOptions)
 
 	rAuthUser.HandleFunc("/accounts/{accountHashId}/auth", appCr.AccountAuthUser).Methods(http.MethodPost, http.MethodOptions)
 

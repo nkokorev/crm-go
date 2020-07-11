@@ -40,14 +40,10 @@ func WebHookCreate(w http.ResponseWriter, r *http.Request) {
 
 func WebHookGet(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-
-	account, err = utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
-
 
 	webHookId, err := utilsCr.GetUINTVarFromRequest(r, "webHookId")
 	if err != nil {

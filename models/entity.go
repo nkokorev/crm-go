@@ -18,7 +18,7 @@ type Entity interface {
 	create() (Entity, error)
 	get (id uint) (Entity, error)
 	load () error
-	getPaginationList(accountId uint, offset, limit int, order string, search *string) ([]Entity, error)
+	getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error)
 	update(input map[string]interface{}) error
 	delete() error
 
@@ -78,7 +78,7 @@ func (account Account) LoadEntity(entity Entity, primaryKey ...uint) error {
 	return nil
 }
 
-func (account Account) GetPaginationListEntity(model Entity, offset, limit int, order string, search *string) ([]Entity, error) {
+func (account Account) GetPaginationListEntity(model Entity, offset, limit int, order string, search string) ([]Entity, uint, error) {
 	return model.getPaginationList(account.ID, offset, limit, order, search)
 }
 

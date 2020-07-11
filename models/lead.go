@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/nkokorev/crm-go/utils"
 	"time"
 )
 
@@ -70,13 +71,19 @@ func (lead *Lead) load() error {
 	return nil
 }
 
-func (Lead) getPaginationList(accountId uint, offset, limit int, order string, search *string) ([]Entity, error) {
+func (Lead) getPaginationList(accountId uint, offset, limit int, order string, search string) ([]Entity, uint, error) {
 
 	delivers := make([]Lead,0)
+	var total uint
 
 	err := db.Model(&Lead{}).Limit(limit).Offset(offset).Order(order).Find(&delivers, "account_id = ?", accountId).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	err = db.Model(&Lead{}).Where("account_id = ?", accountId).Count(&total).Error
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
 
 	// Преобразуем полученные данные
@@ -85,7 +92,7 @@ func (Lead) getPaginationList(accountId uint, offset, limit int, order string, s
 		entities[i] = &v
 	}
 
-	return entities, nil
+	return entities, total, nil
 }
 
 func (lead *Lead) update(input map[string]interface{}) error {

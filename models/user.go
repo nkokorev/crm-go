@@ -28,7 +28,6 @@ type User struct {
 	//Role 		string `json:"role" gorm:"type:varchar(255);default:'client'"`
 	// Role Role `json:"role"`
 
-	// DefaultAccountID uint `json:"defaultAccountId" gorm:"default:NULL;type:int;"` // указывает какой аккаунт по дефолту загружать
 	DefaultAccountHashId string `json:"defaultAccountHashId" gorm:"type:varchar(12);default:null;"` // указывает какой аккаунт по дефолту загружать
 	InvitedUserID uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
 
@@ -50,24 +49,22 @@ type User struct {
 func (User) PgSqlCreate() {
 	db.CreateTable(&User{})
 
-	db.Exec("ALTER TABLE users \n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n    ADD CONSTRAINT users_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT users_default_account_hash_id_fkey FOREIGN KEY (default_account_hash_id) REFERENCES accounts(hash_id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n\ncreate unique index uix_users_issuer_account_id_username_email_mobile_phone ON users (issuer_account_id,username,email,phone);\n\n-- create unique index uix_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
-
+	db.Exec("ALTER TABLE users \n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n--     ADD CONSTRAINT users_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ADD CONSTRAINT users_default_account_hash_id_fkey FOREIGN KEY (default_account_hash_id) REFERENCES accounts(hash_id) ON DELETE SET NULL ON UPDATE CASCADE,    \n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n    ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n\ncreate unique index uix_users_issuer_account_id_username_email_mobile_phone ON users (issuer_account_id,username,email,phone);\n\n-- create unique index uix_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
+	db.Model(&User{}).AddForeignKey("issuer_account_id", "accounts(id)", "SET DEFAULT", "CASCADE")
+	db.Model(&User{}).AddForeignKey("default_account_hash_id", "accounts(id)", "SET NULL", "CASCADE")
+	db.Model(&User{}).AddForeignKey("invited_user_id", "users(id)", "SET NULL", "CASCADE")
 }
 
 func (user *User) BeforeCreate(scope *gorm.Scope) (err error) {
-
 	user.ID = 0
-
 	user.HashID = strings.ToLower(u.RandStringBytesMaskImprSrcUnsafe(12, true))
-	user.CreatedAt = time.Now().UTC()
-
+	// user.CreatedAt = time.Now().UTC()
 	return nil
 }
 
 func (user User) create () (*User, error) {
 
 	var outUser User
-	var err error
 
 	// !!! Проверка существования такого же пользователя для склейки - на строне аккаунта / контроллера !!!
 	// !!! Проверка обязательных полей для конкретных настроек аккаунта на стороне аккаунта / контроллера !!!
@@ -75,83 +72,12 @@ func (user User) create () (*User, error) {
 		return nil, err
 	}
 
-	// Теперь создаем крипто пароль
+	// Теперь создаем crypto-пароль
 	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
 	user.Password = string(password)
-
-	// копируем разрешеныне данные
-
-	outUser.IssuerAccountID = user.IssuerAccountID
-
-	outUser.Username = user.Username
-	outUser.Email = strings.ToLower(user.Email)
-	outUser.PhoneRegion = user.PhoneRegion
-	outUser.Phone = user.Phone
-
-	outUser.Password = user.Password
-
-	outUser.Name = user.Name
-	outUser.Surname = user.Surname
-	outUser.Patronymic = user.Patronymic
-
-	outUser.DefaultAccountHashId = user.DefaultAccountHashId
-	outUser.InvitedUserID = user.InvitedUserID
-	outUser.EmailVerifiedAt = user.EmailVerifiedAt // todo: Убрать!!
-
-	if err := db.Create(&outUser).Error; err != nil {
-		return nil, err
-	}
-
-	return &outUser, nil
-}
-
-func (User) createFromMap (input interface{}, issuerAccountId uint) (*User, error) {
-
-	var outUser User
-	var err error
-	
-	user, ok := input.(User)
-	if !ok {
-		return nil, u.Error{Message: "Ошибка в данных пользователя"}
-	}
-
-	// Устанавливаем исходник пользователя
-	user.IssuerAccountID = issuerAccountId
-
-	// !!! Проверка существования такого же пользователя для склейки - на строне аккаунта / контроллера !!!
-	// !!! Проверка обязательных полей для конкретных настроек аккаунта на стороне аккаунта / контроллера !!!
-	if err := user.ValidateCreate(); err != nil {
-		return nil, err
-	}
-
-	// Теперь создаем крипто пароль
-	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-	user.Password = string(password)
-
-	// копируем разрешеныне данные
-
-	outUser.IssuerAccountID = user.IssuerAccountID
-
-	outUser.Username = user.Username
-	outUser.Email = strings.ToLower(user.Email)
-	outUser.PhoneRegion = user.PhoneRegion
-	outUser.Phone = user.Phone
-
-	outUser.Password = user.Password
-
-	outUser.Name = user.Name
-	outUser.Surname = user.Surname
-	outUser.Patronymic = user.Patronymic
-
-	outUser.DefaultAccountHashId = user.DefaultAccountHashId
-	outUser.InvitedUserID = user.InvitedUserID
-	outUser.EmailVerifiedAt = user.EmailVerifiedAt // todo: Убрать!!
 
 	if err := db.Create(&outUser).Error; err != nil {
 		return nil, err
@@ -180,20 +106,16 @@ func (User) getByHashId(hashId string) (*User, error) {
 	return &user, nil
 }
 
-func (user *User) update (input interface{}, safe bool) error {
+func (user *User) update (input map[string]interface{}) error {
 
-	// safe == issuer account take change
-	// todo: продумать кто может менять личные данные пользователя
-	if safe {
-		return db.Model(user).Where("id = ?", user.ID).
-			Select("Name", "Surname", "Patronymic", "DefaultAccountHashId").
-			Updates(input).Error
-	} else {
-		return db.Model(user).Where("id = ?", user.ID).
-			Updates(input).Error
+	return db.Set("gorm:association_autoupdate", false).
+		Model(user).Omit("id", "hash_id", "issuer_account_id", "created_at", "updated_at").Update(input).Error
 
-		//Select("Username", "Email", "PhoneRegion", "Phone", "Name", "Surname", "Patronymic", "DefaultAccountHashId", "Password", "EmailVerifiedAt").
-	}
+}
+func (user *User) save () error {
+
+	return db.Set("gorm:association_autoupdate", false).
+		Model(user).Omit("id", "hash_id", "issuer_account_id", "created_at", "updated_at").Save(user).Error
 
 }
 
@@ -217,15 +139,15 @@ func getUnscopedUserById(userId uint) (*User,error) {
 
 // ######### ACCOUNT @@
 
-func (account Account) UserUpdateByHashId(hashId string, input interface{}) (*User, error) {
+func (account Account) UpdateUser(userId uint, input map[string]interface{}) (*User, error) {
 
 	// Проверка не нужна, т.к. поиск пользователя ее уже имеет
-	user, err := account.GetUserByHashId(hashId)
+	user, err := account.GetUser(userId)
 	if err != nil {
 		return nil, err
 	}
 	
-	err = user.update(input,account.ID != user.IssuerAccountID )
+	err = user.update(input)
 
 	return user, err
 }
@@ -408,43 +330,6 @@ func (user *User) RecoveryPasswordSendEmail() error {
 	return  emailToken.SendMail()
 }
 
-// сбрасывает пароль пользователя
-func (user *User) ResetPassword() error {
-	user.Password = ""
-	tnow := time.Now().UTC()
-	user.PasswordResetAt = &tnow
-	return user.update(&user, true)
-}
-
-// устанавливает новый пароль
-func (user *User) SetPassword(passwordNew, passwordOld string) error {
-
-	// 1. Проверяем старый пароль, при условии, что пароль не сброшен
-	if user.PasswordResetAt != nil && !user.ComparePassword(passwordOld) {
-		return u.Error{Message:"Не верно указан старый пароль"}
-	}
-	
-	// 2. Устанавливаем новый крипто пароль
-	password, err := bcrypt.GenerateFromPassword([]byte(passwordNew), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-	user.Password = string(password)
-
-	// 3. Ставим флаг passwordReset = false
-	tNow := time.Now().UTC()
-	user.PasswordResetAt = &tNow
-
-	// 4. Сохраняем данные пользователя
-	if err := user.update(&user, false);err!=nil {
-		return err
-	}
-
-	// 5. Очищаем таблицу от токенов по сбросу пароля (если есть)
-	(EmailAccessToken{}).UserDeletePasswordReset(user)
-
-	return nil
-}
 
 // ### Account's FUNC ###
 

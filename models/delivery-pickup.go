@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/nkokorev/crm-go/utils"
 	"time"
 )
 
@@ -82,13 +83,19 @@ func (deliveryPickup *DeliveryPickup) load() error {
 	return nil
 }
 
-func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, order string, search *string) ([]Entity, error) {
+func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	delivers := make([]DeliveryPickup,0)
+	var total uint
 
-	err := db.Model(&DeliveryPickup{}).Limit(limit).Offset(offset).Order(order).Find(&delivers, "account_id = ?", accountId).Error
+	err := db.Model(&DeliveryPickup{}).Limit(limit).Offset(offset).Order(sortBy).Find(&delivers, "account_id = ?", accountId).Error
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	err = db.Model(&DeliveryPickup{}).Where("account_id = ?", accountId).Count(&total).Error
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
 
 	// Преобразуем полученные данные
@@ -97,7 +104,7 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, order
 		entities[i] = &v
 	}
 
-	return entities, nil
+	return entities, total, nil
 }
 
 func (deliveryPickup *DeliveryPickup) update(input map[string]interface{}) error {

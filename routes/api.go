@@ -14,8 +14,6 @@ var ApiRoutes = func (rApi *mux.Router) {
 	// загружаем базовые настройки системы
 	rApi.HandleFunc("/", appCr.CheckApi).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
 
-	rApi.HandleFunc("/users", appCr.CreateUser).Methods(http.MethodPost)
-
 	rApi.HandleFunc("/shops", appCr.ShopListGet).Methods(http.MethodGet)
 	rApi.HandleFunc("/shops/{shopId:[0-9]+}", appCr.ShopGet).Methods(http.MethodGet, http.MethodOptions)
 

@@ -142,7 +142,8 @@ func (eat *EmailAccessToken) UserEmailVerificationConfirm (user *User) error {
 	// 6. Если все в порядке активируем учетную запись пользователя и сохраняем данные пользователя
 	timeNow := time.Now().UTC()
 	user.EmailVerifiedAt = &timeNow
-	if err := user.update(&user, false); err != nil {
+	// if err := user.update(user); err != nil {
+	if err := user.save(); err != nil {
 		return u.Error{Message:"Не удалось обновить данные верификации"}
 	}
 
@@ -152,7 +153,7 @@ func (eat *EmailAccessToken) UserEmailVerificationConfirm (user *User) error {
 }
 
 // Проверяет токен и сбрасывает пароль пользователю
-func (eat *EmailAccessToken) UserPasswordResetConfirm (user *User) error {
+/*func (eat *EmailAccessToken) UserPasswordResetConfirm (user *User) error {
 
 	// 1. проверяем, есть ли такой токен
 	if err := eat.Get(); err != nil {
@@ -176,7 +177,7 @@ func (eat *EmailAccessToken) UserPasswordResetConfirm (user *User) error {
 	}
 
 	return user.ResetPassword()
-}
+}*/
 
 // Удаляет токен по сбросу пароля
 func (EmailAccessToken) UserDeletePasswordReset(user *User) {

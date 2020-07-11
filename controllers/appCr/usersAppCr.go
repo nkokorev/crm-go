@@ -263,6 +263,7 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
 	aUsers, err := user.AccountList()
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить аккаунты")) // вообще тут нужен релогин
@@ -386,87 +387,9 @@ func UserRecoveryPasswordSendMail(w http.ResponseWriter, r *http.Request) {
 }
 
 // сбрасывает пароль по token'у, возвращая авторизацию пользователя
-func UserPasswordResetConfirm(w http.ResponseWriter, r *http.Request) {
-
-	user := &models.User{}
-
-	jsonData := struct {
-		Token string `json:"token"`
-	}{}
-
-	if err := json.NewDecoder(r.Body).Decode(&jsonData); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}
-
-	// Сбрасываем пароль, если токен действителен
-	if err := (&models.EmailAccessToken{Token: jsonData.Token}).UserPasswordResetConfirm(user); err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось сбросить пароль"))
-		return
-	}
-
-	/*	token, err := user.CreateJWTToken()
-		if err != nil {
-			// возвращаем обычную верфикацию
-			resp := u.Message(false, "Пароль сброшен, но не удалось создать токен авторизации")
-			u.Respond(w, resp)
-			return
-		}*/
-
-	// если все хорошо, возвращаем токен и пользователя для будущей авторизации
-	resp := u.Message(true, "Пароль успешно сброшен")
-	//resp["token"] = token // options
-
-	resp["user"] = user              // options for speed
-	resp["accounts"] = user.Accounts // options for speed
-
-	u.Respond(w, resp)
-}
 
 // Устанавливает новый пароль
-func UserSetPassword(w http.ResponseWriter, r *http.Request) {
 
-	// 1. Сначала смотрим, что нам прислал пользователь
-	jsonData := struct {
-		PasswordNew string `json:"password_new"` // новый пароль
-		PasswordOld string `json:"password_old,omitempty"`
-	}{}
-
-	if err := json.NewDecoder(r.Body).Decode(&jsonData); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}
-
-	// 2. Находим текущего пользователя
-	userID := r.Context().Value("user_id").(uint)
-
-	user := models.User{ID: userID}
-	if err := user.Get(); err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти пользователя")) // вообще тут нужен релогин
-		return
-	}
-
-	// 3. Устанавливаем новый пароль
-	if err := user.SetPassword(jsonData.PasswordNew, jsonData.PasswordOld); err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось установить пароль"))
-		return
-	}
-
-	/*token, err := user.CreateJWTToken()
-	if err != nil {
-		// возвращаем обычную верфикацию
-		resp := u.Message(false, "Пароль сброшен, но не удалось создать токен авторизации")
-		u.Respond(w, resp)
-		return
-	}*/
-
-	// если все хорошо, возвращаем токен и пользователя для будущей авторизации
-	resp := u.Message(true, "Новый пароль установлен")
-	//resp["token"] = token // options
-	resp["user"] = user // options for speed
-
-	u.Respond(w, resp)
-}
 
 // Отправка email-кода верификации для новых пользователей.
 func UserSendEmailInviteVerification(w http.ResponseWriter, r *http.Request) {

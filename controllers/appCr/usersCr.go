@@ -1,0 +1,210 @@
+package appCr
+
+import (
+	"encoding/json"
+	"github.com/nkokorev/crm-go/controllers/utilsCr"
+	"github.com/nkokorev/crm-go/models"
+	u "github.com/nkokorev/crm-go/utils"
+	"net/http"
+	"strconv"
+	"strings"
+)
+
+func UserCreate(w http.ResponseWriter, r *http.Request) {
+	
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil {
+		return
+	}
+
+	var input struct{
+		models.User
+		Role string `json:"role"`
+	}
+
+	if err := utilsCr.GetInputInterface(w,r, &input); err != nil {
+		return
+	}
+
+	user, err := account.CreateUser(input.User, input.Role)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось создать пользователя"))
+		return
+	}
+	
+	resp := u.Message(true, "CREATE User IN Account")
+	resp["user"] = user
+	u.Respond(w, resp)
+}
+
+func UserGet(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	userId, err := utilsCr.GetUINTVarFromRequest(r, "userId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID"))
+		return
+	}
+
+	user, err := account.GetUser(userId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
+		return
+	}
+
+	resp := u.Message(true, "GET User")
+	resp["user"] = user
+	u.Respond(w, resp)
+}
+
+func UsersGetListPagination(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
+	if !ok {
+		limit = 25
+	}
+	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
+	if !ok || offset < 0 {
+		offset = 0
+	}
+	sortDesc:= utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
+	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
+	if !ok {
+		sortBy = ""
+	}
+	if sortDesc {
+		sortBy += " desc"
+	}
+
+	rolesStr := r.URL.Query().Get("roles")
+	rolesArr := strings.Split(rolesStr, ",")
+	var roles []uint
+	for _, v := range rolesArr {
+		i, err := strconv.ParseUint(v, 10, 64)
+		if err == nil {
+			roles = append(roles, uint(i))
+		}
+	}
+
+	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
+	if !ok {
+		search = ""
+	}
+
+	users, total, err := account.GetUserListPagination(offset, limit, sortBy, search, roles)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список пользователей"))
+		return
+	}
+
+	resp := u.Message(true, "GET Account User List")
+	resp["total"] = total
+	resp["users"] = users
+	u.Respond(w, resp)
+}
+
+func UserUpdate(w http.ResponseWriter, r *http.Request) {
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	userId, err := utilsCr.GetUINTVarFromRequest(r, "userId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID"))
+		return
+	}
+
+	var input map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	user, err := account.UpdateUser(userId, input)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Пользователь не найден"))
+		return
+	}
+
+	resp := u.Message(true, "PATCH User Update")
+	resp["user"] = user
+	u.Respond(w, resp)
+}
+
+func UserRemoveFromAccount(w http.ResponseWriter, r *http.Request) {
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	userId, ok := utilsCr.GetSTRVarFromRequest(r, "userHashId")
+	if !ok {
+		u.Respond(w, u.MessageError(nil, "Не удалось ID пользователя"))
+		return
+	}
+
+	err = account.RemoveUserByHashId(userId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось удалить пользователя"))
+		return
+	}
+
+	resp := u.Message(true, "DELETE User from Account")
+	u.Respond(w, resp)
+}
+
+func UserDelete(w http.ResponseWriter, r *http.Request) {
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	userId, ok := utilsCr.GetSTRVarFromRequest(r, "userHashId")
+	if !ok {
+		u.Respond(w, u.MessageError(nil, "Не удалось ID пользователя"))
+		return
+	}
+
+	err = account.RemoveUserByHashId(userId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось удалить пользователя"))
+		return
+	}
+
+	resp := u.Message(true, "DELETE User from Account")
+	u.Respond(w, resp)
+}
+
+
+
+
+//////////////
+
+func RoleGetList(w http.ResponseWriter, r *http.Request) {
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	roles, err := account.GetRoleList()
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список ролей"))
+		return
+	}
+
+
+
+	resp := u.Message(true, "GET Account Role List")
+	resp["roles"] = roles
+	u.Respond(w, resp)
+}
