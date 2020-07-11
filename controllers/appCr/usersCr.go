@@ -2,6 +2,7 @@ package appCr
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -11,7 +12,7 @@ import (
 )
 
 func UserCreate(w http.ResponseWriter, r *http.Request) {
-	
+
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil {
 		return
@@ -19,20 +20,35 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 
 	var input struct{
 		models.User
-		Role string `json:"role"`
+		RoleId uint `json:"roleId"`
 	}
-
-	if err := utilsCr.GetInputInterface(w,r, &input); err != nil {
+	
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	user, err := account.CreateUser(input.User, input.Role)
+	fmt.Println("RoleId: ", input.RoleId)
+
+	var role models.Role
+	if err = account.LoadEntity(&role, input.RoleId); err != nil {
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Роль пользователя не найдена!"))
+		return
+	}
+
+	if role.IsOwner() {
+		u.Respond(w, u.MessageError(err, "Нельзя создать пользователя с ролью владельца аккаунта"))
+		return
+	}
+
+	user, err := account.CreateUser(input.User, role)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось создать пользователя"))
 		return
 	}
 	
-	resp := u.Message(true, "CREATE User IN Account")
+	resp := u.Message(true, "CREATE User in Account")
 	resp["user"] = user
 	u.Respond(w, resp)
 }
@@ -113,6 +129,7 @@ func UsersGetListPagination(w http.ResponseWriter, r *http.Request) {
 }
 
 func UserUpdate(w http.ResponseWriter, r *http.Request) {
+
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
@@ -185,26 +202,3 @@ func UserDelete(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-
-
-
-//////////////
-
-func RoleGetList(w http.ResponseWriter, r *http.Request) {
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		return
-	}
-
-	roles, err := account.GetRoleList()
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список ролей"))
-		return
-	}
-
-
-
-	resp := u.Message(true, "GET Account Role List")
-	resp["roles"] = roles
-	u.Respond(w, resp)
-}

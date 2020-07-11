@@ -218,7 +218,7 @@ func (Account) Exist(id uint) bool {
 
 // ########### User ###########
 
-func (account Account) CreateUser(input User, v_opt ...AccessRole) (*User, error) {
+func (account Account) CreateUser(input User, role Role) (*User, error) {
 
 	if account.ID < 1 {
 		return nil, errors.New("Не верно указан контекст аккаунта")
@@ -226,18 +226,11 @@ func (account Account) CreateUser(input User, v_opt ...AccessRole) (*User, error
 
 	var err error
 	var username, email, phone bool
-	var role AccessRole
 
-	// Утверждаем роль пользователя аккаунта
-	if len(v_opt) > 0 {
-		role = v_opt[0]
-		// нельзя создать пользователя с ролью Owner
-		if role == RoleOwner && input.Email != "kokorevn@gmail.com" {
-			role = RoleAdmin
-		}
-	} else {
-		role = RoleClient
-	}
+	// нельзя создать пользователя с ролью Owner
+	/*if role == RoleOwner && input.Email != "kokorevn@gmail.com" {
+		role = RoleAdmin
+	}*/
 
 	// Утверждаем main-account пользователя
 	input.IssuerAccountID = account.ID
@@ -253,15 +246,9 @@ func (account Account) CreateUser(input User, v_opt ...AccessRole) (*User, error
 
 	if len(input.Email) > 0 {
 		email = true
-		/*if account.UiApiUserEmailDeepValidation {
-			if err := utils.EmailDeepValidation(input.Email); err != nil {
-				return nil, utils.Error{Message: "Проверьте правильность заполнения формы", Errors: map[string]interface{}{"email": err.Error()}}
-			}
-		} else {
-			if err := utils.EmailValidation(input.Email); err != nil {
-				return nil, utils.Error{Message: "Проверьте правильность заполнения формы", Errors: map[string]interface{}{"email": err.Error()}}
-			}
-		}*/
+		if err := utils.EmailValidation(input.Email); err != nil {
+			return nil, utils.Error{Message: "Проверьте правильность заполнения формы", Errors: map[string]interface{}{"email": err.Error()}}
+		}
 	}
 
 	if len(input.Phone) > 0 {
@@ -317,7 +304,7 @@ func (account Account) GetUser(userId uint) (*User, error) {
 		return nil, err
 	}
 
-	// Проверим, что пользователь имеет доступ к аккаунта
+	// Проверим, что пользователь имеет доступ к аккаунту
 	aUser := AccountUser{}
 	if db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.ID, user.ID).RecordNotFound() {
 		return nil, errors.New("Пользователь не найден")
@@ -384,10 +371,11 @@ func (account Account) GetUserByPhone(phone, region string) (*User, error) {
 	return &user, err
 }
 
-// pagination user list
-func (account Account) GetUserListPagination(offset, limit int, sortBy, search string, role []uint) ([]User, uint, error) {
 
-	users := make([]User,0)
+// pagination user list
+func (account Account) GetUserListPagination(offset, limit int, sortBy, search string, role []uint) ([]UserAndRole, uint, error) {
+
+	users := make([]UserAndRole,0)
 	var total uint
 
 
@@ -395,7 +383,8 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 
 		search = "%"+search+"%"
 		
-		err := db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+		err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+			Select("account_users.account_id, account_users.role_id, users.*").
 			Order(sortBy).Limit(limit).
 			Where("account_id = ? AND role_id IN (?)", account.ID, role).
 			Find(&users, "hash_id ILIKE ? OR username ILIKE ? OR email ILIKE ? OR phone ILIKE ? OR name ILIKE ? OR surname ILIKE ? OR patronymic ILIKE ?", search,search,search,search,search,search,search).Error
@@ -413,7 +402,9 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 		}
 
 	} else {
-		err := db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+		// err := db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+		err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+			Select("account_users.account_id, account_users.role_id, users.*").
 			Order(sortBy).Offset(offset).Limit(limit).
 			Where("account_id = ? AND role_id IN (?)", account.ID, role).
 			Find(&users).Error
@@ -424,14 +415,11 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 		// Вычисляем total
 		err = db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
 			Where("account_id = ? AND role_id IN (?)", account.ID, role).
-			Where("hash_id ILIKE ? OR username ILIKE ? OR email ILIKE ? OR phone ILIKE ? OR name ILIKE ? OR surname ILIKE ? OR patronymic ILIKE ?", search,search,search,search,search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема клиентской базы"}
 		}
 	}
-
-
 
 	return users, total, nil
 }
@@ -483,18 +471,12 @@ func (account Account) GetAccountUser(user User) (*AccountUser, error) {
 }
 
 // добавляет пользователя в аккаунт. Если пользователь уже в аккаунте, то роль будет обновлена
-func (account Account) AppendUser(user User, tag AccessRole) (*AccountUser, error) {
+func (account Account) AppendUser(user User, role Role) (*AccountUser, error) {
 
 	acs := AccountUser{} // return value
 
 	if db.NewRecord(user) || !account.ExistUser(user) {
 		return nil, errors.New("Необходимо создать сначала пользователя!")
-	}
-
-	// узнаем роль, чтобы потом получить его ID
-	rSet, err := GetRole(tag)
-	if err != nil || rSet == nil {
-		return nil, err
 	}
 
 	// проверяем, относится ли пользователь к аккаунту
@@ -504,11 +486,11 @@ func (account Account) AppendUser(user User, tag AccessRole) (*AccountUser, erro
 		// создаем
 		acs.AccountId = account.ID
 		acs.UserId = user.ID
-		acs.RoleId = rSet.ID
+		acs.RoleId = role.ID
 
 		aUser, err := acs.create()
 		if err != nil || aUser == nil {
-			return nil, errors.New("Ошибка при создании AccountUser.")
+			return nil, errors.New("Ошибка при добавлении пользователя в аккаунт")
 		}
 
 		return aUser, nil
@@ -857,7 +839,7 @@ func (account Account) AuthorizationUser(user User, rememberChoice bool, issuerA
 	}
 
 	// Запоминаем аккаунт для будущих входов
-	user.DefaultAccountHashId = account.HashID
+	// user.DefaultAccountHashId = account.HashID
 
 	/*updateData := struct {
 		DefaultAccountHashId string

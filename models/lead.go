@@ -28,6 +28,7 @@ func (lead Lead) getId() uint           { return lead.ID }
 func (lead *Lead) setId(id uint)        { lead.ID = id }
 func (lead Lead) GetAccountId() uint    { return lead.AccountID }
 func (lead *Lead) setAccountId(id uint) { lead.AccountID = id }
+func (Lead) systemEntity() bool { return false }
 // ############# Entity interface #############
 
 

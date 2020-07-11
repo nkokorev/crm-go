@@ -31,7 +31,7 @@ const (
 
 type Role struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
-	AccountID uint `json:"-" gorm:"type:int;index;not null;"` // у системных ролей = 1. Из-под RatusCRM аккаунта их можно изменять.
+	AccountID uint `json:"accountId" gorm:"type:int;index;not null;"` // у системных ролей = 1. Из-под RatusCRM аккаунта их можно изменять.
 
 	// IssuerAccountId uint       `json:"issuerAccountId" gorm:"index;not null;default:1"`
 	Tag             AccessRole `json:"tag" gorm:"type:varchar(32);not null;"`	// client, admin, manager, ...
@@ -56,8 +56,8 @@ var systemRoles = []Role{
 
 func (Role) PgSqlCreate() {
 	db.CreateTable(&Role{})
-	db.Exec("-- ALTER TABLE roles\n--     ADD CONSTRAINT roles_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\ncreate unique index uix_roles_issuer_account_id_tag_code ON roles (issuer_account_id, tag);")
-	db.Model(&Role{}).AddForeignKey("issuer_account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Exec("-- ALTER TABLE roles\n--     ADD CONSTRAINT roles_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\ncreate unique index uix_roles_issuer_account_id_tag_code ON roles (account_id, tag);")
+	db.Model(&Role{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 
 	// Создаем системные роли
 	for i, v := range systemRoles {
@@ -78,40 +78,10 @@ func (role Role) getId() uint { return role.ID }
 func (role *Role) setId(id uint) { role.ID = id }
 func (role Role) GetAccountId() uint { return role.AccountID }
 func (role *Role) setAccountId(id uint) { role.AccountID = id }
+func (role Role) systemEntity() bool {
+	return role.AccountID == 1
+}
 // ############# Entity interface #############
-
-// create - inner func, need use (a *Account) CreateRole (*Role, error) { <...> }
-/*func (role Role) create () (*Role, error) {
-
-	// Validate
-	if role.AccountID < 1 {
-		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleIssuerAccountId":"Необходимо указать выпускающий аккаунт!"}}
-	}
-	if len([]rune(role.Tag)) > 32 || len([]rune(role.Tag)) < 3 {
-		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleTag":"Тип должен быть от 3 до 32 символов!"}}
-	}
-	if role.Type != roleTypeGui && role.Type != roleTypeApi {
-		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleType":"Тип должен быть или gui или api!"}}
-	}
-
-	if len([]rune(role.Name)) < 3 {
-		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleName":"Слишком короткое имя, минимум 3 символа"}}
-	}
-	if len([]rune(role.Name)) > 255 {
-		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleName":"Слишком длинное имя, макс. 255 символов"}}
-	}
-	if len([]rune(role.Description)) > 255 {
-		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleDescription":"Слишком длинное описание, макс. 255 символов"}}
-	}
-
-	var roleReturn = role
-	if err := db.Create(roleReturn).Error; err != nil {
-		return nil, err
-	}
-
-	return &roleReturn, nil
-}*/
-
 
 func (role Role) create() (Entity, error)  {
 
@@ -165,24 +135,6 @@ func (role *Role) load() error {
 	return nil
 }
 
-/*func (Role) getPaginationList(accountId uint, offset, limit int, order string, search *string) ([]Entity, error) {
-
-	roles := make([]Role,0)
-
-	err := db.Model(&DeliveryCourier{}).Limit(limit).Offset(offset).Order(order).Find(&roles, "account_id IN (?)", []uint{1, accountId}).Error
-	if err != nil {
-		return nil, err
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(roles))
-	for i, v := range roles {
-		entities[i] = &v
-	}
-
-	return entities, nil
-}*/
-
 func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	roles := make([]Role,0)
@@ -201,8 +153,8 @@ func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search 
 		}
 
 		// Определяем total
-		err = db.Model(&Role{}).Where("account_id IN (?)", []uint{1, accountId}).
-			Where("tag ILIKE ? OR type ILIKE ? OR name ILIKE ? OR description ILIKE ?", search,search,search,search).
+		err = db.Model(&Role{}).
+			Where("account_id IN (?) AND tag ILIKE ? OR type ILIKE ? OR name ILIKE ? OR description ILIKE ?", []uint{1, accountId}, search,search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -210,7 +162,7 @@ func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search 
 
 
 	} else {
-		err := db.Model(&User{}).
+		err := db.Model(&Role{}).
 			Order(sortBy).Offset(offset).Limit(limit).
 			Where("account_id IN (?)", []uint{1, accountId}).
 			Find(&roles).Error
@@ -223,6 +175,7 @@ func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search 
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
+
 	}
 
 	// Преобразуем полученные данные
@@ -244,7 +197,22 @@ func (role Role) delete () error {
 
 ////////////
 
+func (role Role) IsOwner () bool {
+	return role.Tag == "owner" && role.AccountID == 1
+}
+func (role Role) IsAdmin () bool {
+	return role.Tag == "admin" && role.AccountID == 1
+}
 
+
+func (account Account) GetRoleByTag (tag AccessRole) (*Role, error) {
+	var role Role
+	err := db.Where("account_id IN (?) AND tag = ?", []uint{1, account.ID}, tag).First(&role).Error
+	if err != nil {
+		return nil, err
+	}
+	return &role, nil
+}
 
 
 

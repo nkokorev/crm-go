@@ -37,6 +37,7 @@ func (deliveryCourier *DeliveryCourier) setId(id uint) { deliveryCourier.ID = id
 func (deliveryCourier DeliveryCourier) GetAccountId() uint { return deliveryCourier.AccountID }
 func (deliveryCourier *DeliveryCourier) setAccountId(id uint) { deliveryCourier.AccountID = id }
 func (deliveryCourier *DeliveryCourier) setShopId(shopId uint) { deliveryCourier.ShopID = shopId }
+func (DeliveryCourier) systemEntity() bool { return false }
 
 func (deliveryCourier DeliveryCourier) GetCode() string {
 	return deliveryCourier.Code

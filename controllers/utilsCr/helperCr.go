@@ -50,6 +50,7 @@ func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, er
 	}
 
 	if account == nil {
+
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
 		return nil, errors.New("Account nil pointer")
 	}
@@ -67,9 +68,6 @@ func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, er
 			u.Respond(w, u.MessageError(u.Error{Message: "Ошибка hash id code of account"}))
 			return nil, errors.New("Ошибка hash id code of account")
 		}
-
-		// fmt.Println("account.HashID", account.HashID)
-		// fmt.Println("hashId", hashId)
 
 		if account.HashID != hashId {
 		// if !strings.Contains(account.HashID, hashId) {

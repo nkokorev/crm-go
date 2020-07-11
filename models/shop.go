@@ -34,6 +34,9 @@ func (shop Shop) getId() uint { return shop.ID }
 func (shop *Shop) setId(id uint) { shop.ID = id }
 func (shop Shop) GetAccountId() uint { return shop.AccountID }
 func (shop *Shop) setAccountId(id uint) { shop.AccountID = id }
+func (shop Shop) systemEntity() bool {
+	return false
+}
 // ############# END Of Entity interface #############
 
 func (shop *Shop) BeforeCreate(scope *gorm.Scope) error {

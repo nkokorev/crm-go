@@ -23,6 +23,7 @@ type Entity interface {
 	delete() error
 
 	// AppendAssociationMethod(options Entity)
+	systemEntity() bool
 
 }
 
@@ -52,7 +53,10 @@ func (account Account) GetEntity(model Entity, id uint) (Entity, error) {
 	}
 
 	if entity.GetAccountId() != account.ID {
-		return nil, errors.New("Модель принадлежит другому аккаунту")
+		if !entity.systemEntity() {
+			return nil, errors.New("Модель принадлежит другому аккаунту")
+		}
+
 	}
 
 	return entity, nil
@@ -72,7 +76,10 @@ func (account Account) LoadEntity(entity Entity, primaryKey ...uint) error {
 
 	// Проверяем принадлежность к аккаунту
 	if entity.GetAccountId() != account.ID {
-		return errors.New("Модель принадлежит другому аккаунту")
+		if !entity.systemEntity() {
+			return errors.New("Модель принадлежит другому аккаунту")
+		}
+
 	}
 
 	return nil

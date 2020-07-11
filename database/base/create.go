@@ -17,16 +17,9 @@ import (
 
 func RefreshTables() {
 
+
 	var err error
 	pool := models.GetPool()
-
-	// дропаем системные таблицы
-	// err = pool.Exec("drop table if exists product_card_products, unit_measurements, product_cards, products, product_groups, shops").Error
-	/*err = pool.Exec("drop table if exists eav_attribute_types, eav_attributes_varchar, eav_attributes_int, eav_attributes").Error
-	if err != nil {
-		fmt.Println("Cant create tables 0: ", err)
-		return
-	}*/
 
 	err = pool.Exec("drop table if exists web_hooks, articles").Error
 	if err != nil {
@@ -58,18 +51,11 @@ func RefreshTables() {
 		return
 	}
 
-	err = pool.Exec("drop table if exists accounts").Error
+	err = pool.Exec("drop table if exists accounts, user_verification_methods").Error
 	if err != nil {
 		fmt.Println("Cant create tables 3: ", err)
 		return
 	}
-	
-	err = pool.Exec("drop table if exists user_verification_methods").Error
-	if err != nil {
-		fmt.Println("Cant create tables 3: ", err)
-		return
-	}
-
 
 	
 	err = models.CrmSetting{}.PgSqlCreate()
@@ -152,6 +138,19 @@ func UploadTestData() {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
+	roleOwnerMain, err := mAcc.GetRoleByTag(models.RoleOwner)
+	if err != nil {
+		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
+	}
+	roleAdminMain, err := mAcc.GetRoleByTag(models.RoleAdmin)
+	if err != nil {
+		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
+	}
+	roleClientMain, err := mAcc.GetRoleByTag(models.RoleClient)
+	if err != nil {
+		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
+	}
+
 	// 2. Создаем пользователя admin в main аккаунте
 	timeNow := time.Now().UTC()
 	owner, err := mAcc.CreateUser(
@@ -167,7 +166,7 @@ func UploadTestData() {
 			//DefaultAccountID:null,
 			EmailVerifiedAt:&timeNow,
 			},
-		models.RoleOwner,
+		*roleOwnerMain,
 		)
 	if err != nil || owner == nil {
 		log.Fatal("Не удалось создать admin'a: ", err)
@@ -186,7 +185,7 @@ func UploadTestData() {
 			//DefaultAccountID:null,
 			EmailVerifiedAt:&timeNow,
 		},
-		models.RoleAdmin,
+		*roleAdminMain,
 	)
 	if err != nil || mex388 == nil {
 		log.Fatal("Не удалось создать mex388'a: ", err)
@@ -255,7 +254,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 			Patronymic:"Николаевич",
 			EmailVerifiedAt:&timeNow,
 		},
-		models.RoleClient,
+		*roleClientMain,
 	)
 	if err != nil || owner == nil {
 		log.Fatal("Не удалось создать admin'a: ", err)
@@ -295,7 +294,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	}
 
 	// 3. добавляем меня как админа
-	_, err = acc357.AppendUser(*owner, models.RoleAdmin)
+	_, err = acc357.AppendUser(*owner, *roleAdminMain)
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя admin in 357gr")
 		return
@@ -313,7 +312,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 			})
 		}
 		for i,_ := range clients {
-			_, err := acc357.CreateUser(clients[i])
+			_, err := acc357.CreateUser(clients[i], *roleClientMain)
 			if err != nil {
 				fmt.Println(err)
 				log.Fatal("Не удалось добавить клиента id: ", i)
@@ -363,7 +362,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 			Patronymic:"",
 			EmailVerifiedAt:&timeNow,
 		},
-		models.RoleClient,
+		*roleClientMain,
 	)
 	if err != nil || owner == nil {
 		log.Fatal("Не удалось создать admin'a: ", err)
@@ -384,14 +383,14 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	}
 
 	// 2. добавляем меня как админа
-	_, err = accSyndicAd.AppendUser(*owner, models.RoleAdmin)
+	_, err = accSyndicAd.AppendUser(*owner, *roleAdminMain)
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя admin in 357gr")
 		return
 	}
 
 	// 2.2 Добавляем Mex388
-	_, err = accSyndicAd.AppendUser(*mex388, models.RoleAdmin)
+	_, err = accSyndicAd.AppendUser(*mex388, *roleAdminMain)
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя mex388 in 357gr")
 		return
@@ -446,14 +445,14 @@ pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
 	}
 
 	// 2. добавляем меня как админа
-	_, err = brouser.AppendUser(*owner, models.RoleAdmin)
+	_, err = brouser.AppendUser(*owner, *roleAdminMain)
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя admin in 357gr")
 		return
 	}
 
 	// 2.2. Добавляем mex388
-	_, err = brouser.AppendUser(*mex388, models.RoleAdmin)
+	_, err = brouser.AppendUser(*mex388, *roleAdminMain)
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя mex388 in brouser")
 		return
@@ -535,7 +534,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			Patronymic:"Валерьевич",
 			EmailVerifiedAt:&timeNow,
 		},
-		models.RoleClient,
+		*roleClientMain,
 	)
 	if err != nil || owner == nil {
 		log.Fatal("Не удалось создать korotaev'a: ", err)
@@ -555,14 +554,14 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	}
 
 	// 2. добавляем меня как админа
-	_, err = airoClimat.AppendUser(*owner, models.RoleAdmin)
+	_, err = airoClimat.AppendUser(*owner, *roleAdminMain)
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя admin in 357gr")
 		return
 	}
 
 	// 2.2. Добавляем mex388 как админа
-	_, err = airoClimat.AppendUser(*mex388, models.RoleAdmin)
+	_, err = airoClimat.AppendUser(*mex388, *roleAdminMain)
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя mex388 in brouser")
 		return

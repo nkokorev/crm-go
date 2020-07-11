@@ -8,6 +8,7 @@ import (
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
+	"log"
 	"net/http"
 	"time"
 )
@@ -39,14 +40,12 @@ func GetDataUserRegistration(r *http.Request) (*inputUserData, error) {
  */
 func UserSignUp(w http.ResponseWriter, r *http.Request) {
 
-	if r.Context().Value("account") == nil {
-		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка в обработке запроса", Errors: map[string]interface{}{"account": "not load"}}))
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
 		return
 	}
-	account := r.Context().Value("account").(models.Account)
 
 	var user *models.User
-	var err error
 
 	// Проверяем разрешение на регистрацию новых пользователей через UI/API
 	if !account.UiApiEnabledUserRegistration {
@@ -108,7 +107,12 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 		}()
 	}
 
-	user, err = account.CreateUser(input.User)
+	roleClientMain, err := account.GetRoleByTag(models.RoleClient)
+	if err != nil {
+		log.Fatalf("Не удалось найти аккаунт: %v", err)
+	}
+
+	user, err = account.CreateUser(input.User, *roleClientMain)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось создать пользователя")) // что это?)
 		return
@@ -209,7 +213,11 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// роль = клиент
-	user, err := account.CreateUser(*input.User)
+	roleClientMain, err := account.GetRoleByTag(models.RoleClient)
+	if err != nil {
+		log.Fatalf("Не удалось найти аккаунт: %v", err)
+	}
+	user, err := account.CreateUser(*input.User, *roleClientMain)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при создании пользователя"))
 		return
