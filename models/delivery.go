@@ -6,6 +6,8 @@ type Delivery interface {
 
 	CalculateDelivery(deliveryData DeliveryData) (*DeliveryData, error) // weight в кг
 	checkMaxWeight(deliveryData DeliveryData) error // проверяет макс вес
+
+	setShopId(uint)
 }
 
 type DeliveryRequest struct {

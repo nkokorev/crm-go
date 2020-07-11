@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/jinzhu/gorm"
+	"time"
 )
 
 type DeliveryPickup struct {
@@ -17,6 +18,8 @@ type DeliveryPickup struct {
 	AddressRequired	bool	`json:"addressRequired" gorm:"type:bool;default:false"` // Требуется ли адрес доставки
 	PostalCodeRequired	bool	`json:"postalCodeRequired" gorm:"type:bool;default:false"` // Требуется ли индекс в адресе доставки
 
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
 }
 
 func (DeliveryPickup) PgSqlCreate() {
@@ -31,6 +34,7 @@ func (deliveryPickup DeliveryPickup) getId() uint { return deliveryPickup.ID }
 func (deliveryPickup *DeliveryPickup) setId(id uint) { deliveryPickup.ID = id }
 func (deliveryPickup DeliveryPickup) GetAccountId() uint { return deliveryPickup.AccountID }
 func (deliveryPickup *DeliveryPickup) setAccountId(id uint) { deliveryPickup.AccountID = id }
+func (deliveryPickup *DeliveryPickup) setShopId(shopId uint) { deliveryPickup.ShopID = shopId }
 
 func (deliveryPickup DeliveryPickup) GetCode() string {
 	return deliveryPickup.Code

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"time"
 )
 
 type DeliveryCourier struct {
@@ -20,6 +21,9 @@ type DeliveryCourier struct {
 
 	AddressRequired	bool	`json:"addressRequired" gorm:"type:bool;default:true"` // Требуется ли адрес доставки
 	PostalCodeRequired	bool	`json:"postalCodeRequired" gorm:"type:bool;default:false"` // Требуется ли индекс в адресе доставки
+
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
 }
 
 func (DeliveryCourier) PgSqlCreate() {
@@ -32,6 +36,7 @@ func (deliveryCourier DeliveryCourier) getId() uint { return deliveryCourier.ID 
 func (deliveryCourier *DeliveryCourier) setId(id uint) { deliveryCourier.ID = id }
 func (deliveryCourier DeliveryCourier) GetAccountId() uint { return deliveryCourier.AccountID }
 func (deliveryCourier *DeliveryCourier) setAccountId(id uint) { deliveryCourier.AccountID = id }
+func (deliveryCourier *DeliveryCourier) setShopId(shopId uint) { deliveryCourier.ShopID = shopId }
 
 func (deliveryCourier DeliveryCourier) GetCode() string {
 	return deliveryCourier.Code

@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/mitchellh/mapstructure"
 	"github.com/nkokorev/crm-go/utils"
 )
 
@@ -231,18 +232,24 @@ func (shop Shop) GetDeliveryMethods() []Delivery {
 		return nil
 	}
 
-	deliviries := make([]Delivery, len(posts)+len(pickups) + len(couriers))
-	for i,v := range posts {
-		deliviries[i] = &v
+
+	deliveries := make([]Delivery, len(posts)+len(pickups)+len(couriers))
+	for i,_ := range posts {
+		deliveries[i] = &posts[i]
 	}
-	for i,v := range couriers {
-		deliviries[i+len(posts)] = &v
+	for i,_ := range couriers {
+		deliveries[i+len(posts)] = &couriers[i]
 	}
-	for i,v := range pickups {
-		deliviries[i+len(posts)+len(pickups)] = &v
+	for i,_ := range pickups {
+		deliveries[i+len(posts)+len(couriers)] = &pickups[i]
 	}
 
-	return deliviries
+/*	fmt.Println("New list: ")
+	for i,v := range deliveries {
+		fmt.Printf("[%s], %v\n\r",i, v)
+	}*/
+
+	return deliveries
 }
 
 func (shop Shop) CalculateDelivery(deliveryRequest DeliveryRequest) (*DeliveryData, error) {
@@ -289,6 +296,45 @@ func (shop Shop) CalculateDelivery(deliveryRequest DeliveryRequest) (*DeliveryDa
 	}
 
 	return deliveryData, nil
+}
+
+func (shop Shop) CreateDelivery(input map[string]interface{}) (*Entity, error) {
+
+	var delivery Delivery
+
+	switch input["code"].(string) {
+	case "russianPost":
+		var deliveryRussianPost DeliveryRussianPost
+		if err := mapstructure.Decode(input, &deliveryRussianPost); err != nil {
+			return nil, err
+		}
+		delivery = &deliveryRussianPost
+	case "courier":
+		var deliveryCourier DeliveryCourier
+		if err := mapstructure.Decode(input, &deliveryCourier); err != nil {
+			return nil, err
+		}
+		delivery = &deliveryCourier
+	case "pickup":
+		var deliveryPickup DeliveryPickup
+		if err := mapstructure.Decode(input, &deliveryPickup); err != nil {
+			return nil, err
+		}
+		delivery = &deliveryPickup
+	default:
+		return nil, utils.Error{Message: "Ошибка в коде типа создаваемого интерфейса"}
+	}
+
+	delivery.setShopId(shop.ID)
+	delivery.setAccountId(shop.AccountID)
+
+	entity, err := delivery.create()
+	if err != nil {
+		return nil, err
+	}
+	return &entity, nil
+
+	// return &delivery, nil
 }
 
 func (shop Shop) GetDelivery(code string, methodId uint) (Delivery, error) {
@@ -372,3 +418,5 @@ func (shop Shop) DeliveryListOptions() map[string]interface{} {
 		"pickup": "Самовывоз",
 	}
 }
+
+/*,*/

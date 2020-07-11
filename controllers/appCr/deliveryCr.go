@@ -12,29 +12,39 @@ import (
 
 func DeliveryCreate(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-	account, err = utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	var input struct{
-		models.WebHook
+	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
+		return
 	}
+
+	var shop models.Shop
+	err = account.LoadEntity(&shop, shopId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
+		return
+	}
+
+	var input map[string]interface{}
+
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	wh, err := account.CreateWebHook(input.WebHook)
+	delivery, err := shop.CreateDelivery(input)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания WebHook"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания"}))
 		return
 	}
 
-	resp := u.Message(true, "POST WebHook Create")
-	resp["webHook"] = *wh
+	resp := u.Message(true, "POST Delivery Create")
+	resp["delivery"] = delivery
 	u.Respond(w, resp)
 }
 
@@ -88,9 +98,9 @@ func DeliveryGetListByShop(w http.ResponseWriter, r *http.Request) {
 
 	deliveries := shop.GetDeliveryMethods()
 
+
 	resp := u.Message(true, "GET Deliveries List By Shop")
 	resp["deliveries"] = deliveries
-	resp["total"] = len(deliveries)
 	u.Respond(w, resp)
 }
 
