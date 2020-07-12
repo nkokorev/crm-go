@@ -24,13 +24,13 @@ func main() {
 	pool.DB().SetMaxIdleConns(10)
 	pool.DB().SetMaxOpenConns(10)
 
-	// runMigration("full")
+	runMigration("full")
 	// base.LoadImagesAiroClimate(13)
 	// base.LoadArticlesAiroClimate()
 	// base.LoadProductDescriptionAiroClimate()
 	// base.LoadProductCategoryDescriptionAiroClimate()
-
-	// base.RefreshTablesPart_II()
+	// 
+	base.RefreshTablesPart_II()
 	
 	models.RunHttpServer(routes.Handlers())
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")

@@ -6,6 +6,7 @@ import (
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -27,8 +28,6 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
-
-	fmt.Println("RoleId: ", input.RoleId)
 
 	var role models.Role
 	if err = account.LoadEntity(&role, input.RoleId); err != nil {
@@ -178,16 +177,27 @@ func UserRemoveFromAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Узнаем доп. данные
-	var input struct{
-		DeleteUser bool `json:"deleteUser"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось прочитать тело сообщения"))
 		return
 	}
 
-	if input.DeleteUser {
+	// Узнаем доп. данные
+	var input struct{
+		SoftDelete bool `json:"softDelete,omitempty"`
+	}
+
+	if len(string(body)) >= 0 {
+		if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+			input.SoftDelete = false
+		}
+
+	} else {
+		input.SoftDelete = false
+	}
+
+	if input.SoftDelete {
 		err = account.DeleteUser(user)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось удалить пользователя"))

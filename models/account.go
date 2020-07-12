@@ -607,8 +607,8 @@ func (account Account) IsVerifiedUser(userId uint) (bool, error) {
 // !!! удаляет пользователя soft !!!
 func (account *Account) DeleteUser(user *User) error {
 
-	if user.IssuerAccountID == account.ID {
-		return utils.Error{Message: "Невозможно удалить пользователя т.к. он принадлежит другому аккаунту"}
+	if user.IssuerAccountID != account.ID {
+		return utils.Error{Message: "Невозможно удалить пользователя т.к. он привязан к другому аккаунту"}
 	}
 	if err := db.Model(&user).Association("accounts").Delete(account).Error; err != nil {
 		return err

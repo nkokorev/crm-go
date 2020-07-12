@@ -21,6 +21,8 @@ func RefreshTables() {
 	var err error
 	pool := models.GetPool()
 
+	pool.DropTableIfExists(models.Lead{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
+
 	err = pool.Exec("drop table if exists web_hooks, articles").Error
 	if err != nil {
 		fmt.Println("Cant create tables -1: ", err)
@@ -51,7 +53,7 @@ func RefreshTables() {
 		return
 	}
 
-	err = pool.Exec("drop table if exists accounts, user_verification_methods").Error
+	err = pool.Exec("drop table if exists user_verification_methods, accounts").Error
 	if err != nil {
 		fmt.Println("Cant create tables 3: ", err)
 		return
