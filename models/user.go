@@ -15,10 +15,10 @@ type User struct {
 	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 	IssuerAccountID uint `json:"issuerAccountId" gorm:"index;not null"`
 	
-	Username 	string `json:"username" gorm:"type:varchar(255);unique_index;default:null;"`
-	Email 		string `json:"email" gorm:"type:varchar(255);unique_index;default:null;"`
+	Username 	string `json:"username" gorm:"type:varchar(255);index;default:null;"`
+	Email 		string `json:"email" gorm:"type:varchar(255);index;default:null;"`
 	PhoneRegion string `json:"phoneRegion" gorm:"type:varchar(3);not null;default:'RU';"` // нужно проработать формат данных
-	Phone		string `json:"phone" gorm:"type:varchar(32);unique_index;default:null;"` // нужно проработать формат данных
+	Phone		string `json:"phone" gorm:"type:varchar(32);default:null;"` // нужно проработать формат данных
 	Password 	string `json:"-" gorm:"type:varchar(255);default:null;"` // json:"-"
 
 	Name 		string `json:"name" gorm:"type:varchar(64)"`
