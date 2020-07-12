@@ -311,7 +311,14 @@ func (shop Shop) CreateDelivery(input map[string]interface{}) (*Entity, error) {
 
 	var delivery Delivery
 
-	switch input["code"].(string) {
+	codeStr, ok := input["code"];
+	if !ok {
+		return nil, utils.Error{Message: "Не хватает параметра code в запросе"}
+	}
+
+	code, ok := codeStr.(string)
+
+	switch code {
 	case "russianPost":
 		var deliveryRussianPost DeliveryRussianPost
 		if err := mapstructure.Decode(input, &deliveryRussianPost); err != nil {

@@ -14,16 +14,16 @@ import (
 
 func UserCreate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil {
 		return
 	}
 
-	var input struct{
+	var input struct {
 		models.User
 		RoleId uint `json:"roleId"`
 	}
-	
+
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
@@ -46,7 +46,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Не удалось создать пользователя"))
 		return
 	}
-	
+
 	resp := u.Message(true, "CREATE User in Account")
 	resp["user"] = user
 	u.Respond(w, resp)
@@ -54,7 +54,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 
 func UserGet(w http.ResponseWriter, r *http.Request) {
 
-	account, err := utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
 		return
 	}
@@ -78,7 +78,7 @@ func UserGet(w http.ResponseWriter, r *http.Request) {
 
 func UsersGetListPagination(w http.ResponseWriter, r *http.Request) {
 
-	account, err := utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
 		return
 	}
@@ -91,7 +91,7 @@ func UsersGetListPagination(w http.ResponseWriter, r *http.Request) {
 	if !ok || offset < 0 {
 		offset = 0
 	}
-	sortDesc:= utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
+	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
 		sortBy = ""
@@ -129,7 +129,7 @@ func UsersGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 func UserUpdate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
 		return
 	}
@@ -146,10 +146,57 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var roleId float64
+	var role models.Role
+
+	if roleIdStr, ok := input["roleId"]; ok {
+		roleId, ok = roleIdStr.(float64)
+		if !ok {
+			roleId = 0
+		} else {
+			// 1. Получаем роль, которую надо назначить
+			rolePtr, err := account.GetRole(uint(roleId))
+			if err != nil {
+				u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя"))
+				return
+			}
+
+			if rolePtr.IsOwner() {
+				u.Respond(w, u.MessageError(err, "Нельзя назначить пользователя с ролью владельца аккаунта"))
+				return
+			}
+
+			role = *rolePtr
+		}
+	}
+
+	delete(input, "roleId")
+
 	user, err := account.UpdateUser(userId, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Пользователь не найден"))
 		return
+	}
+
+
+	// Обновляем роль пользователя
+	currentRole, err := account.GetUserRole(*user)
+	if err == nil && roleId > 0 && (currentRole.ID != uint(roleId)){
+
+
+
+		err = account.UpdateUserRole(*user, role)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя"))
+			return
+		}
+
+		user, err = account.GetUserWithRoleId(user.ID)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Ошибка при поиске пользователя"))
+			return
+		}
+
 	}
 
 	resp := u.Message(true, "PATCH User Update")
@@ -160,7 +207,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 // Удаляет пользователя из аккаунта
 // Если issuerId = accountId, то может быть применен запрос на удаление пользователя 
 func UserRemoveFromAccount(w http.ResponseWriter, r *http.Request) {
-	account, err := utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
 		return
 	}
@@ -184,7 +231,7 @@ func UserRemoveFromAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Узнаем доп. данные
-	var input struct{
+	var input struct {
 		SoftDelete bool `json:"softDelete,omitempty"`
 	}
 
@@ -211,9 +258,6 @@ func UserRemoveFromAccount(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-
 	resp := u.Message(true, "DELETE User from Account")
 	u.Respond(w, resp)
 }
-
-

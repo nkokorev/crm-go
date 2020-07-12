@@ -98,7 +98,6 @@ func DeliveryGetListByShop(w http.ResponseWriter, r *http.Request) {
 
 	deliveries := shop.GetDeliveryMethods()
 
-
 	resp := u.Message(true, "GET Deliveries List By Shop")
 	resp["deliveries"] = deliveries
 	u.Respond(w, resp)

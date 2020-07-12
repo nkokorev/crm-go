@@ -204,6 +204,14 @@ func (role Role) IsAdmin () bool {
 	return role.Tag == "admin" && role.AccountID == 1
 }
 
+func (account Account) GetRole (roleId uint) (*Role, error) {
+	var role Role
+	err := db.Where("account_id IN (?) AND id = ?", []uint{1, account.ID}, roleId).First(&role).Error
+	if err != nil {
+		return nil, err
+	}
+	return &role, nil
+}
 
 func (account Account) GetRoleByTag (tag AccessRole) (*Role, error) {
 	var role Role

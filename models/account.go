@@ -309,6 +309,19 @@ func (account Account) GetUser(userId uint) (*User, error) {
 	return user, nil
 }
 
+func (account Account) GetUserWithRoleId(userId uint) (*User, error) {
+
+	var user User
+	if err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+		Select("account_users.account_id, account_users.role_id, users.*").
+		Where("account_id = ?", account.ID).
+		Find(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 func (account Account) GetUserByHashId(hashId string) (*User, error) {
 	user, err := User{}.getByHashId(hashId)
 	if err != nil {
@@ -667,6 +680,26 @@ func (account Account) GetUserAccessRole(user User) (*AccessRole, error) {
 	aRole := role.Tag
 
 	return &aRole, err
+}
+
+func (account Account) UpdateUserRole(user User, role Role) error {
+
+	if db.NewRecord(account) || db.NewRecord(user) {
+		return errors.New("GetUserRole: Аккаунта или пользователя не существует!")
+	}
+
+	aUser, err := account.GetAccountUser(user)
+	if err != nil || aUser == nil {
+		return err
+	}
+
+	err = aUser.update(map[string]interface{}{"roleId":role.ID})
+	if err != nil {
+		return err
+	}
+
+
+	return nil
 }
 
 // Авторизация пользователя со всеми паралельными процессами
