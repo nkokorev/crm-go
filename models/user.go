@@ -39,7 +39,7 @@ type User struct {
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
-	// DeletedAt *time.Time `json:"-" sql:"index"`
+	DeletedAt *time.Time `json:"-" sql:"index"`
 
 	//Profile UserProfile `json:"profile" gorm:"preload"`
 

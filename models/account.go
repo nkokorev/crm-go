@@ -21,7 +21,7 @@ const (
 )
 
 type Account struct {
-	ID     uint   `json:"-" gorm:"primary_key"`
+	ID     uint   `json:"id" gorm:"primary_key"`
 	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 
 	// данные аккаунта
@@ -202,9 +202,6 @@ func GetAccountByHash(hashId string) (*Account, error) {
 	return &account, err
 }
 
-/*func (account *Account) update(input interface{}) error {
-	return db.Model(account).Omit("id", "hash_id", "created_at", "updated_at", "deleted_at").Updates(structs.Map(input)).Error
-}*/
 // Нужны бы проверки на потенциально опасные элементы в обновлении
 func (account *Account) Update(input map[string]interface{}) error {
 	return db.Model(account).Where("id = ?", account.ID).
@@ -607,12 +604,26 @@ func (account Account) IsVerifiedUser(userId uint) (bool, error) {
 	return status, nil
 }
 
-// !!! Если Issuer аккаунт удаляет пользователя - то он совсем soft delete()
-func (account *Account) RemoveUser(user *User) error {
-
+// !!! удаляет пользователя soft !!!
+func (account *Account) DeleteUser(user *User) error {
 
 	if user.IssuerAccountID == account.ID {
+		return utils.Error{Message: "Невозможно удалить пользователя т.к. он принадлежит другому аккаунту"}
+	}
+	if err := db.Model(&user).Association("accounts").Delete(account).Error; err != nil {
+		return err
+	}
 
+	if err := user.delete(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// !!! Если Issuer аккаунт удаляет пользователя - то он совсем soft delete()
+func (account *Account) RemoveUser(user *User) error {
+	if user.IssuerAccountID == account.ID {
 		if err := user.delete(); err != nil {
 			return err
 		}
@@ -622,29 +633,6 @@ func (account *Account) RemoveUser(user *User) error {
 		}
 	}
 	return db.Model(&user).Association("accounts").Delete(account).Error
-}
-
-func (account *Account) RemoveUserById(id uint) error {
-	user, err := account.GetUser(id)
-	if err != nil {
-		return err
-	}
-	if user == nil {
-		return utils.Error{Message: "Не удалось найти пользователя"}
-	}
-
-	return account.RemoveUser(user)
-}
-
-func (account *Account) RemoveUserByHashId(hashId string) error {
-	user, err := account.GetUserByHashId(hashId)
-	if err != nil {
-		return err
-	}
-	if user == nil {
-		return utils.Error{Message: "Не удалось найти пользователя"}
-	}
-	return account.RemoveUser(user)
 }
 
 func (account Account) GetUserRole(user User) (*Role, error) {

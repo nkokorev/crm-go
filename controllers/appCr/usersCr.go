@@ -158,47 +158,52 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+// Удаляет пользователя из аккаунта
+// Если issuerId = accountId, то может быть применен запрос на удаление пользователя 
 func UserRemoveFromAccount(w http.ResponseWriter, r *http.Request) {
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	userId, ok := utilsCr.GetSTRVarFromRequest(r, "userHashId")
-	if !ok {
-		u.Respond(w, u.MessageError(nil, "Не удалось ID пользователя"))
+	userId, err := utilsCr.GetUINTVarFromRequest(r, "userId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID"))
 		return
 	}
 
-	err = account.RemoveUserByHashId(userId)
+	user, err := account.GetUser(userId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось удалить пользователя"))
+		u.Respond(w, u.MessageError(err, "Пользователь не найден"))
 		return
 	}
+
+	// Узнаем доп. данные
+	var input struct{
+		DeleteUser bool `json:"deleteUser"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	if input.DeleteUser {
+		err = account.DeleteUser(user)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось удалить пользователя"))
+			return
+		}
+	} else {
+		err = account.RemoveUser(user)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось исключить пользователя"))
+			return
+		}
+	}
+
 
 	resp := u.Message(true, "DELETE User from Account")
 	u.Respond(w, resp)
 }
 
-func UserDelete(w http.ResponseWriter, r *http.Request) {
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		return
-	}
-
-	userId, ok := utilsCr.GetSTRVarFromRequest(r, "userHashId")
-	if !ok {
-		u.Respond(w, u.MessageError(nil, "Не удалось ID пользователя"))
-		return
-	}
-
-	err = account.RemoveUserByHashId(userId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось удалить пользователя"))
-		return
-	}
-
-	resp := u.Message(true, "DELETE User from Account")
-	u.Respond(w, resp)
-}
 
