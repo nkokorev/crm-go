@@ -1,59 +1,61 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"github.com/nkokorev/crm-go/event"
+	"github.com/nkokorev/crm-go/utils"
+	"reflect"
 )
 
-func init() {
-	fmt.Println("Регистрируем слушателей")
-
-	event.On("userCreated", event.ListenerFunc(func(e event.Event) error {
-		// fmt.Printf("handle event 1: %s\n", e.Name())
-		return nil
-	}), event.Normal)
-
-	// Register multiple listeners
-	event.On("userAddedToAccount", event.ListenerFunc(func(e event.Event) error {
-
-		value, ok := e.Data()["accountId"];
-		if !ok {
-			e.Abort(true)
-			return errors.New("ID аккаунта не указано")
-		}
-		accountId, ok := value.(uint)
-		if !ok {
-			e.Abort(true)
-			return errors.New("ID аккаунта неверного формата")
-		}
-
-		eventActions, err := EventActions{}.getEnabledByName(accountId, e.Name())
-		if err != nil {
-			return err
-		}
-
-		// fmt.Println("CallEventAction ", e)
-		CallEventAction(eventActions, e)
-
-		return nil
-	}), event.Normal)
-}
-
-func CallEventAction(eventActions []EventActions, e event.Event)  {
-
-	for _,v := range eventActions {
-
-		switch v.TargetName {
-		case "emailQueueRun":
-			fmt.Printf("Запуск серии писем №%v , данные: %v\n", v.TargetId, e.Data())
-		case "webHookCall":
-			fmt.Printf("Вызов вебхука №%v , данные: %v\n", v.TargetId, e.Data())
-
-		}
-
+func (EventHandler) GetTargets () map[string]func(e event.Event) error {
+	return map[string]func(e event.Event)error {
+	"EmailQueueRun": EventHandler{}.EmailQueueRun,
+	"WebHookCall": EventHandler{}.WebHookCall,
 	}
 }
+
+// Нужна функция ReloadEventHandler(e)
+func RegisterEventHandler() error {
+
+	eventListeners, err := EventHandler{}.getFullList()
+	if err != nil {
+		return utils.Error{Message: "Не удалось загрузить EventHandlers!"}
+	}
+
+	for _,v := range eventListeners {
+		event.On(v.EventName, v, v.Priority)
+	}
+	return nil
+}
+
+// функция обработчик для каждого!!!
+// дописать проверку на всякие ошибки!!!
+func (eh EventHandler) Handle(e event.Event) error {
+
+	method := reflect.ValueOf(eh).MethodByName(eh.TargetName)
+	fmt.Println(method)
+
+	m := reflect.ValueOf(eh).MethodByName(eh.TargetName)
+	mCallable := m.Interface().(func(e event.Event) error)
+
+	if err := mCallable(e); err != nil {
+		e.Abort(true)
+	}
+
+	return nil
+}
+
+func (eh EventHandler) EmailQueueRun(e event.Event) error {
+	fmt.Printf("Запуск серии писем, данные: %v\n", e.Data())
+	fmt.Println("EventHandler: ", eh) // контекст серии писем, какой именно и т.д.
+	return nil
+}
+func (eh EventHandler) WebHookCall(e event.Event) error {
+	fmt.Printf("Вызов вебхука, данные: %v\n", e.Data())
+	fmt.Println("EventHandler: ", eh) // контекст вебхука, какой именно и т.д.
+	return nil
+}
+
 
 func runEvents() {
 	// Register event listener

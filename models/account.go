@@ -509,7 +509,7 @@ func (account Account) AppendUser(user User, role Role) (*AccountUser, error) {
 		acs = *_asc
 	}
 
-	err, _ := event.Fire("userAddedToAccount", map[string]interface{}{"id":acs.UserId, "accountId":acs.AccountId})
+	err, _ := event.Fire("userAddedToAccount", map[string]interface{}{"userId":acs.UserId, "accountId":acs.AccountId})
 	if err != nil {
 		log.Printf("Error event: ", err)
 	}

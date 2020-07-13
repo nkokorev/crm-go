@@ -191,7 +191,7 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 			Offset(offset).
 			Order("id").
 			Where("account_id = ?", account.ID).
-			Find(&products, "id ILIKE ? OR name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?" , search, search,search,search,search,search,search).Error
+			Find(&products, "name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?", search,search,search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}

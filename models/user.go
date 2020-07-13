@@ -90,7 +90,7 @@ func (user User) create () (*User, error) {
 		return nil, err
 	}
 
-	err, _ = event.Fire("userCreated", map[string]interface{}{"id":userReturn.ID, "accountId":userReturn.IssuerAccountID})
+	err, _ = event.Fire("userCreated", map[string]interface{}{"userId":userReturn.ID, "accountId":userReturn.IssuerAccountID})
 	if err != nil {
 		log.Printf("Ошибка event.Fire 'userCreated': %v", err)
 	}
