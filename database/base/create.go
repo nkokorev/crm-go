@@ -96,14 +96,17 @@ func RefreshTablesPart_II() {
 	pool := models.GetPool()
 
 
-	pool.DropTableIfExists(models.Lead{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
+	pool.DropTableIfExists(models.EventActions{}, models.Lead{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
 
 	models.Lead{}.PgSqlCreate()
 	models.DeliveryRussianPost{}.PgSqlCreate()
 	models.DeliveryPickup{}.PgSqlCreate()
 	models.DeliveryCourier{}.PgSqlCreate()
 
+	models.EventActions{}.PgSqlCreate()
+
 	UploadTestDataPart_II()
+	UploadTestDataPart_III()
 }
 
 // загрузка первоначальных данных в EAV-таблицы
@@ -1225,6 +1228,27 @@ func UploadTestDataPart_II() {
 		log.Fatalf("Не удалось добавить метод доставки в магазин: %v\n", err)
 	}
 	
+
+}
+
+func UploadTestDataPart_III() {
+	// 1. Получаем главный аккаунт
+	account, err := models.GetAccount(5)
+	if err != nil {
+		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
+	}
+
+	els := []models.EventActions{
+		{EventName: "userAddedToAccount", TargetId: 1, TargetName: "emailQueueRun"},
+		{EventName: "userAddedToAccount", TargetId: 1, TargetName: "webHookCall"},
+	}
+
+	for _,v := range els {
+		_, err = account.CreateEntity(&v)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 }
 

@@ -10,42 +10,47 @@ import (
 	"text/template"
 )
 
-type EventType = string
+type EventTypeOld = string
+
+type WebHookEventObject interface {
+	getId() uint
+}
+
 
 const (
-	EventShopCreated 	EventType = "ShopCreated"
-	EventShopUpdated 	EventType = "ShopUpdated"
-	EventShopDeleted 	EventType = "ShopDeleted"
-	EventShopsUpdate 	EventType = "ShopsUpdate"
+	EventShopCreated 	EventTypeOld = "ShopCreated"
+	EventShopUpdated 	EventTypeOld = "ShopUpdated"
+	EventShopDeleted 	EventTypeOld = "ShopDeleted"
+	EventShopsUpdate 	EventTypeOld = "ShopsUpdate"
 
-	EventProductCreated 	EventType = "ProductCreated"
-	EventProductUpdated 	EventType = "ProductUpdated"
-	EventProductDeleted 	EventType = "ProductDeleted"
-	EventProductsUpdate 		EventType = "ProductsUpdate"
+	EventProductCreated 	EventTypeOld = "ProductCreated"
+	EventProductUpdated 	EventTypeOld = "ProductUpdated"
+	EventProductDeleted 	EventTypeOld = "ProductDeleted"
+	EventProductsUpdate 		EventTypeOld = "ProductsUpdate"
 
-	EventProductCardCreated 	EventType = "ProductCardCreated"
-	EventProductCardUpdated 	EventType = "ProductCardUpdated"
-	EventProductCardDeleted 	EventType = "ProductCardDeleted"
-	EventProductCardsUpdate 	EventType = "ProductCardsUpdate"
+	EventProductCardCreated 	EventTypeOld = "ProductCardCreated"
+	EventProductCardUpdated 	EventTypeOld = "ProductCardUpdated"
+	EventProductCardDeleted 	EventTypeOld = "ProductCardDeleted"
+	EventProductCardsUpdate 	EventTypeOld = "ProductCardsUpdate"
 
-	EventProductGroupCreated 	EventType = "ProductGroupCreated"
-	EventProductGroupUpdated 	EventType = "ProductGroupUpdated"
-	EventProductGroupDeleted 	EventType = "ProductGroupDeleted"
-	EventProductGroupsUpdate 	EventType = "ProductGroupsUpdate"
+	EventProductGroupCreated 	EventTypeOld = "ProductGroupCreated"
+	EventProductGroupUpdated 	EventTypeOld = "ProductGroupUpdated"
+	EventProductGroupDeleted 	EventTypeOld = "ProductGroupDeleted"
+	EventProductGroupsUpdate 	EventTypeOld = "ProductGroupsUpdate"
 
-	EventArticleCreated 	EventType = "ArticleCreated"
-	EventArticleUpdated 	EventType = "ArticleUpdated"
-	EventArticleDeleted 	EventType = "ArticleDeleted"
-	EventArticlesUpdate 		EventType = "ArticlesUpdate"
+	EventArticleCreated 	EventTypeOld = "ArticleCreated"
+	EventArticleUpdated 	EventTypeOld = "ArticleUpdated"
+	EventArticleDeleted 	EventTypeOld = "ArticleDeleted"
+	EventArticlesUpdate 	EventTypeOld = "ArticlesUpdate"
 
-	EventUpdateAllShopData 	EventType = "UpdateAllShopData"
+	EventUpdateAllShopData 	EventTypeOld = "UpdateAllShopData"
 )
 
 type WebHook struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
 	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	EventType	EventType 	`json:"eventType" gorm:"type:varchar(128);default:''"` // Имя события
+	EventType	EventTypeOld 	`json:"eventType" gorm:"type:varchar(128);default:''"` // Имя события
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // обрабатывать ли вебхук
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя вебхука
@@ -140,7 +145,7 @@ func (account Account) GetWebHook(id uint) (*WebHook, error) {
 	return wh, nil
 }
 
-func (account Account) GetWebHookByEvent(eventType EventType) (*WebHook, error) {
+func (account Account) GetWebHookByEvent(eventType EventTypeOld) (*WebHook, error) {
 
 	wh, err := WebHook{}.getByEvent(eventType)
 	if err != nil {
@@ -154,7 +159,7 @@ func (account Account) GetWebHookByEvent(eventType EventType) (*WebHook, error) 
 	return wh, nil
 }
 
-func (account Account) CallWebHookIfExist(eventType EventType, object EventObject) bool {
+func (account Account) CallWebHookIfExist(eventType EventTypeOld, object WebHookEventObject) bool {
 
 	webHook, err := account.GetWebHookByEvent(eventType)
 	if err != nil {
@@ -240,7 +245,7 @@ func (account Account) DeleteWebHook(webHookId uint) error {
 
 // ##################
 
-func (webHook WebHook) Call(entity EventObject) bool {
+func (webHook WebHook) Call(entity WebHookEventObject) bool {
 
 	tplUrl, err := template.New("url").Parse(webHook.URL)
 	if err != nil {

@@ -46,8 +46,7 @@ func (aUser AccountUser) create () (*AccountUser, error) {
 	if aUser.RoleId < 1 {
 		e.AddErrors("roleId", "Необходимо указать роль пользователя")
 	}
-
-	//if  !(Account{ID:aUser.AccountId}).Exist() {
+	
 	if  !(Account{}).Exist(aUser.AccountId) {
 		return nil, errors.New("Аккаунт, в рамках которого создается пользователь, не существует!")
 	}
@@ -63,30 +62,20 @@ func (aUser AccountUser) create () (*AccountUser, error) {
 		return nil, e
 	}
 
-	// копируем разрешеныне данные
-	outUser := AccountUser{
-		AccountId:aUser.AccountId,
-		UserId:aUser.UserId,
-		RoleId:aUser.RoleId,
-
-		Account:aUser.Account,
-		User:aUser.User,
-		Role:aUser.Role,
-	}
-
-	if err := db.Model(&AccountUser{}).Create(&outUser).Error; err != nil {
+	// if err := db.Model(&AccountUser{}).Create(&outUser).Error; err != nil {
+	if err := db.Model(&AccountUser{}).Create(&aUser).Error; err != nil {
 		return nil, err
 	}
+
+	// fmt.Println("### Созданный aUser методом create(): ", aUser)
 
 	// получаем созданного пользователя с прелоадом данных
-	aUserOut := AccountUser{}
+	/*aUserOut := AccountUser{}
 	if err := db.Model(&AccountUser{}).Preload("User").Preload("Account").Preload("Role").First(&aUserOut).Error; err != nil {
 		return nil, err
-	}
+	}*/
 
-	//fmt.Println("### Созданный aUser методом create(): ", aUserOut)
-
-	return &aUserOut, nil
+	return &aUser, nil
 }
 
 func (aUser *AccountUser) update (input interface{}) error {

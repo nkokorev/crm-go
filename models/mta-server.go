@@ -51,7 +51,7 @@ func mtaServer(c <-chan EmailPkg) {
 
 	var wg sync.WaitGroup // можно доработать синхронизацию, но после тестов по отправке
 
-	// target speed: 16 mail per second (62 ms / 1 mail)
+	// target speed: 16 mail per second (62 ms / 1 mail) [~4800 / мин]
 	for {
 		select {
 		case pkg := <- c:
@@ -76,32 +76,6 @@ func mtaServer(c <-chan EmailPkg) {
 			time.Sleep(time.Millisecond*100)
 		}
 	}
-	/*for {
-		for i := 0; i < workerCount; i++ {
-			select {
-			 case pkg := <- c:
-
-				 // fmt.Printf("Принял сообщение: %s \n", pkg.Subject)
-				 // fmt.Printf("В очереди: %d\n", len(c))
-				 // fmt.Printf("Макс. длина: %d\n", cap(c))
-
-				 // обновляем счетчик WaitGroup
-				 if workerCount < 1 {
-				 	wg.Wait()
-				 }
-				 wg.Add(1)
-				 workerCount--
-				 
-				 // Без go - ожидает отправки каждого сообщения
-				 go mtaSender(pkg, &wg)
-			default:
-			 	time.Sleep(time.Millisecond*100)
-			}
-		}
-
-		// ждем завершения предыдущих отправок в {workerCount} потоков
-		// wg.Wait()
-	}*/
 }
 
 // Функция по отправке почтового пакета, обычно, работает в отдельной горутине

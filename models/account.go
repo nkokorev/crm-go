@@ -6,6 +6,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
+	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
 	"strings"
@@ -490,20 +491,30 @@ func (account Account) AppendUser(user User, role Role) (*AccountUser, error) {
 
 	// проверяем, относится ли пользователь к аккаунту
 	if account.ExistAccountUser(user) {
+		// обновляем роль
+		// todo дописать..
 		return nil, errors.New("Невозможно добавить пользователя в аккаунт, т.к. он в нем уже есть.")
+
 	} else {
 		// создаем
 		acs.AccountId = account.ID
 		acs.UserId = user.ID
 		acs.RoleId = role.ID
 
-		aUser, err := acs.create()
-		if err != nil || aUser == nil {
+		_asc, err := acs.create()
+		if err != nil || _asc == nil {
 			return nil, errors.New("Ошибка при добавлении пользователя в аккаунт")
 		}
 
-		return aUser, nil
+		acs = *_asc
 	}
+
+	err, _ := event.Fire("userAddedToAccount", map[string]interface{}{"id":acs.UserId, "accountId":acs.AccountId})
+	if err != nil {
+		log.Printf("Error event: ", err)
+	}
+
+	return &acs, nil
 }
 
 // !!!!!! ### Выше функции покрытые тестами ### !!!!!!!!!!1

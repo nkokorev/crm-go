@@ -30,19 +30,22 @@ func main() {
 	// base.LoadProductDescriptionAiroClimate()
 	// base.LoadProductCategoryDescriptionAiroClimate()
 
-	// base.RefreshTablesPart_II()
+	base.RefreshTablesPart_II()
+
+	// runEvents()
 	
 	models.RunHttpServer(routes.Handlers())
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
 }
 
+
+
 func runMigration(line string) {
 	switch line {
-		case "full":
-			base.RefreshTables()
+	case "full":
+		base.RefreshTables()
 	}
 }
-
 func examplePhone(numToParse string) {
 
 	//num, err := libphonenumber.Get
@@ -64,7 +67,6 @@ func examplePhone(numToParse string) {
 	// num is a *libphonenumber.PhoneNumber
 
 }
-
 func SendMail() error {
 
 	// 1. Получаем аккаунт
@@ -96,7 +98,6 @@ func SendMail() error {
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
-
