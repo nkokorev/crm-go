@@ -8,17 +8,17 @@ import (
 )
 
 // Возвращает список всех возможных обработчиков
-func (EventHandler) GetSystemHandleList () map[string]interface{} {
-	return map[string]interface{}{
-		"EmailQueueRun": map[string]string{"description":"Запуск автоматической серии email писем с указанным ID."},
-		"WebHookCall": map[string]string{"description":"Вызов WebHook с указанным ID."},
+func GetSystemHandlerList () []map[string]string{
+	return []map[string]string {
+		{"name": "EmailQueueRun", "description": "Запуск автоматической серии email писем с указанным ID."},
+		{"name":"WebHookCall","description":"Вызов WebHook с указанным ID."},
 	}
 }
 
 // Нужна функция ReloadEventHandler(e)
-func (EventHandler) RegisterEventHandler() error {
+func (Observer) Registration() error {
 
-	eventListeners, err := EventHandler{}.getFullList()
+	eventListeners, err := Observer{}.getFullList()
 	if err != nil {
 		return utils.Error{Message: "Не удалось загрузить EventHandlers!"}
 	}
@@ -30,30 +30,30 @@ func (EventHandler) RegisterEventHandler() error {
 	return nil
 }
 
-func (EventHandler) ReloadEventHandler() error {
+func (Observer) ReloadEventHandler() error {
 	em := event.DefaultEM
 	em.Clear()
 
-	return EventHandler{}.RegisterEventHandler()
+	return Observer{}.Registration()
 }
 
 
 
 // функция обработчик для каждого события
-func (eh EventHandler) Handle(e event.Event) error {
+func (eh Observer) Handle(e event.Event) error {
 
 	// 1. Получаем метод обработки по имени Target
 	m := reflect.ValueOf(eh).MethodByName(eh.TargetName)
 	if m.IsNil() {
 		e.Abort(true)
-		return utils.Error{Message: fmt.Sprintf("EventHandler Handle is nill: %v", eh.TargetName)}
+		return utils.Error{Message: fmt.Sprintf("Observer Handle is nill: %v", eh.TargetName)}
 	}
 
 	// 2. Преобразуем метод, чтобы его можно было вызвать от объекта Event
 	target, ok := m.Interface().(func(e event.Event) error)
 	if !ok {
 		e.Abort(true)
-		return utils.Error{Message: fmt.Sprintf("EventHandler mCallable !ok: %v", eh.TargetName)}
+		return utils.Error{Message: fmt.Sprintf("Observer mCallable !ok: %v", eh.TargetName)}
 	}
 
 	// 3. Вызываем Target-метод с объектом Event
@@ -69,15 +69,15 @@ func (eh EventHandler) Handle(e event.Event) error {
 
 
 // #############   Event Handlers   #############
-func (eh EventHandler) EmailQueueRun(e event.Event) error {
+func (eh Observer) EmailQueueRun(e event.Event) error {
 	fmt.Printf("Запуск серии писем, данные: %v\n", e.Data())
-	// fmt.Println("EventHandler: ", eh) // контекст серии писем, какой именно и т.д.
+	// fmt.Println("Observer: ", eh) // контекст серии писем, какой именно и т.д.
 	// e.Set("result", "OK") // возможность записать в событие какие-то данные для других обработчиков..
 	return nil
 }
-func (eh EventHandler) WebHookCall(e event.Event) error {
+func (eh Observer) WebHookCall(e event.Event) error {
 	fmt.Printf("Вызов вебхука, данные: %v\n", e.Data())
-	// fmt.Println("EventHandler: ", eh) // контекст вебхука, какой именно и т.д.
+	// fmt.Println("Observer: ", eh) // контекст вебхука, какой именно и т.д.
 	// e.Set("result", "OK")
 	return nil
 }

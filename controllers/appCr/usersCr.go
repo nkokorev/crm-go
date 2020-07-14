@@ -2,7 +2,6 @@ package appCr
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -31,7 +30,6 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 
 	var role models.Role
 	if err = account.LoadEntity(&role, input.RoleId); err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Роль пользователя не найдена!"))
 		return
 	}

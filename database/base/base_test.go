@@ -13,6 +13,5 @@ func TestGetDB(t *testing.T) {
 	}
 
 	// RefreshTables()
-	// fmt.Println("Рефреш")
 }
 

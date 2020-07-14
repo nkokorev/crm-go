@@ -96,14 +96,14 @@ func RefreshTablesPart_II() {
 	pool := models.GetPool()
 
 
-	pool.DropTableIfExists(models.EventHandler{}, models.Lead{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
+	pool.DropTableIfExists(models.Observer{}, models.Lead{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
 
 	models.Lead{}.PgSqlCreate()
 	models.DeliveryRussianPost{}.PgSqlCreate()
 	models.DeliveryPickup{}.PgSqlCreate()
 	models.DeliveryCourier{}.PgSqlCreate()
 
-	models.EventHandler{}.PgSqlCreate()
+	models.Observer{}.PgSqlCreate()
 
 	UploadTestDataPart_II()
 	UploadTestDataPart_III()
@@ -1238,7 +1238,7 @@ func UploadTestDataPart_III() {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
-	els := []models.EventHandler{
+	els := []models.Observer{
 		{EventName: "UserAppendedToAccount", TargetId: 1, TargetName: "EmailQueueRun"},
 		{EventName: "UserAppendedToAccount", TargetId: 1, TargetName: "WebHookCall"},
 	}

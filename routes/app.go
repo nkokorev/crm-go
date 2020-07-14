@@ -68,7 +68,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userId:[0-9]+}", appCr.UserUpdate).Methods(http.MethodPatch, http.MethodOptions)
 
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userId:[0-9]+}", appCr.UserRemoveFromAccount).Methods(http.MethodDelete, http.MethodOptions)
-	
+
 	// rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userId:[0-9]+}", appCr.UserDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 
@@ -99,7 +99,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{id}", appCr.EmailTemplateGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{id}", appCr.EmailTemplatesUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{id}", appCr.EmailTemplatesDelete).Methods(http.MethodDelete, http.MethodOptions)
-	
+
 	// ---ACCOUNT---
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{emailTemplateHashId}/send/user", appCr.EmailTemplateSendToUser).Methods(http.MethodPost, http.MethodOptions)
 
@@ -160,6 +160,16 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles", appCr.ArticleListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles/{articleId:[0-9]+}", appCr.ArticleGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles/{articleId:[0-9]+}", appCr.ArticleUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles/{articleId:[0-9]+}", appCr.ArticleDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles/{articleId:[0-9]+}", appCr.ArticleDelete).Methods(http.MethodDelete, http.MethodOptions)// ### Article ###
+
+	// ### EventHandlers ###
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/observers", appCr.ObserverCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/observers", appCr.ObserverGetListPagination).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/observers/{observerId:[0-9]+}", appCr.ObserverGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/observers/{observerIdId:[0-9]+}", appCr.ObserverUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/observers/{observerIdId:[0-9]+}", appCr.ObserverDelete).Methods(http.MethodDelete, http.MethodOptions)
+
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/events", appCr.EventSystemListGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/handlers", appCr.HandlersSystemListGet).Methods(http.MethodGet, http.MethodOptions)
 
 }

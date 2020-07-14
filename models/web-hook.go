@@ -16,7 +16,6 @@ type WebHookEventObject interface {
 	getId() uint
 }
 
-
 const (
 	EventShopCreated 	EventTypeOld = "ShopCreated"
 	EventShopUpdated 	EventTypeOld = "ShopUpdated"
