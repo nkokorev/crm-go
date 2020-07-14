@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// Список событий, на которые можно навесить обработчик EventHandler
 type EventItem struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
 	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`

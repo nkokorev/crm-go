@@ -25,7 +25,7 @@ func ObserverItemCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Get JSON-request
 	var input struct{
-		models.ObserverItem
+		models.HandlerItem
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -33,7 +33,7 @@ func ObserverItemCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	obItem, err := account.CreateEntity(&input.ObserverItem)
+	obItem, err := account.CreateEntity(&input.HandlerItem)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время объекта"}))
 		return
@@ -57,7 +57,7 @@ func ObserverItemGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var obItem models.ObserverItem
+	var obItem models.HandlerItem
 	err = account.LoadEntity(&obItem, observerItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить observer item"))
@@ -103,13 +103,13 @@ func ObserverItemGetList(w http.ResponseWriter, r *http.Request) {
 	var total uint = 0
 	observerItems := make([]models.Entity,0)
 	if all == "true" && allOk {
-		observerItems, total, err = account.GetListEntity(&models.ObserverItem{}, sortBy)
+		observerItems, total, err = account.GetListEntity(&models.HandlerItem{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 			return
 		}
 	} else {
-		observerItems, total, err = account.GetPaginationListEntity(&models.ObserverItem{}, offset, limit, sortBy, search)
+		observerItems, total, err = account.GetPaginationListEntity(&models.HandlerItem{}, offset, limit, sortBy, search)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -158,13 +158,13 @@ func ObserverItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 	observerItems := make([]models.Entity,0)
 
 	if all == "true" && allOk {
-		observerItems, total, err = account.GetListEntity(&models.ObserverItem{}, sortBy)
+		observerItems, total, err = account.GetListEntity(&models.HandlerItem{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 			return
 		}
 	} else {
-		observerItems, total, err = account.GetPaginationListEntity(&models.ObserverItem{}, offset, limit, sortBy, search)
+		observerItems, total, err = account.GetPaginationListEntity(&models.HandlerItem{}, offset, limit, sortBy, search)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -198,7 +198,7 @@ func ObserverItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var obItem models.ObserverItem
+	var obItem models.HandlerItem
 	err = account.LoadEntity(&obItem, observerItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
@@ -242,7 +242,7 @@ func ObserverItemDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var obItem models.ObserverItem
+	var obItem models.HandlerItem
 	err = account.LoadEntity(&obItem, observerItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
@@ -253,6 +253,6 @@ func ObserverItemDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := u.Message(true, "DELETE ObserverItem Successful")
+	resp := u.Message(true, "DELETE HandlerItem Successful")
 	u.Respond(w, resp)
 }

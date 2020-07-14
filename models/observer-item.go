@@ -6,7 +6,8 @@ import (
 	"time"
 )
 
-type ObserverItem struct {
+// Список функций обработки, которые можно вызвать в Observer
+type HandlerItem struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
 	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
@@ -19,27 +20,27 @@ type ObserverItem struct {
 }
 
 
-func (ObserverItem) PgSqlCreate() {
-	db.CreateTable(&ObserverItem{})
-	db.Model(&ObserverItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+func (HandlerItem) PgSqlCreate() {
+	db.CreateTable(&HandlerItem{})
+	db.Model(&HandlerItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }
 
-func (obItem *ObserverItem) BeforeCreate(scope *gorm.Scope) error {
+func (obItem *HandlerItem) BeforeCreate(scope *gorm.Scope) error {
 	obItem.ID = 0
 	return nil
 }
 
 // ############# Entity interface #############
-func (obItem ObserverItem) getId() uint { return obItem.ID }
-func (obItem *ObserverItem) setId(id uint) { obItem.ID = id }
-func (obItem ObserverItem) GetAccountId() uint { return obItem.AccountID }
-func (obItem *ObserverItem) setAccountId(id uint) { obItem.AccountID = id }
-func (ObserverItem) systemEntity() bool { return true }
+func (obItem HandlerItem) getId() uint { return obItem.ID }
+func (obItem *HandlerItem) setId(id uint) { obItem.ID = id }
+func (obItem HandlerItem) GetAccountId() uint { return obItem.AccountID }
+func (obItem *HandlerItem) setAccountId(id uint) { obItem.AccountID = id }
+func (HandlerItem) systemEntity() bool { return true }
 
 // ############# Entity interface #############
 
 
-func (obItem ObserverItem) create() (Entity, error)  {
+func (obItem HandlerItem) create() (Entity, error)  {
 	var newItem Entity = &obItem
 
 	if err := db.Create(newItem).Error; err != nil {
@@ -49,9 +50,9 @@ func (obItem ObserverItem) create() (Entity, error)  {
 	return newItem, nil
 }
 
-func (ObserverItem) get(id uint) (Entity, error) {
+func (HandlerItem) get(id uint) (Entity, error) {
 
-	var obItem ObserverItem
+	var obItem HandlerItem
 
 	err := db.First(&obItem, id).Error
 	if err != nil {
@@ -60,7 +61,7 @@ func (ObserverItem) get(id uint) (Entity, error) {
 	return &obItem, nil
 }
 
-func (obItem *ObserverItem) load() error {
+func (obItem *HandlerItem) load() error {
 
 	err := db.First(obItem).Error
 	if err != nil {
@@ -69,19 +70,19 @@ func (obItem *ObserverItem) load() error {
 	return nil
 }
 
-func (ObserverItem) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (HandlerItem) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
-	obItems := make([]ObserverItem,0)
+	obItems := make([]HandlerItem,0)
 	var total uint
 
-	err := db.Model(&ObserverItem{}).Limit(1000).Order(sortBy).Where( "account_id IN (?)", []uint{1, accountId}).
+	err := db.Model(&HandlerItem{}).Limit(1000).Order(sortBy).Where( "account_id IN (?)", []uint{1, accountId}).
 		Find(&obItems).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&ObserverItem{}).Where( "account_id IN (?)", []uint{1, accountId}).Count(&total).Error
+	err = db.Model(&HandlerItem{}).Where( "account_id IN (?)", []uint{1, accountId}).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -95,16 +96,16 @@ func (ObserverItem) getList(accountId uint, sortBy string) ([]Entity, uint, erro
 	return entities, total, nil
 }
 
-func (ObserverItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (HandlerItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
-	obItems := make([]ObserverItem,0)
+	obItems := make([]HandlerItem,0)
 	var total uint
 
 	if len(search) > 0 {
 
 		search = "%"+search+"%"
 
-		err := db.Model(&ObserverItem{}).
+		err := db.Model(&HandlerItem{}).
 			Order(sortBy).Offset(offset).Limit(limit).
 			Where("account_id IN (?)", []uint{1, accountId}).
 			Find(&obItems, "name ILIKE ? OR description ILIKE ?",search,search).Error
@@ -113,7 +114,7 @@ func (ObserverItem) getPaginationList(accountId uint, offset, limit int, sortBy,
 		}
 
 		// Определяем total
-		err = db.Model(&ObserverItem{}).
+		err = db.Model(&HandlerItem{}).
 			Where("account_id IN (?) AND name ILIKE ? OR description ILIKE ?", []uint{1, accountId}, search,search).
 			Count(&total).Error
 		if err != nil {
@@ -122,7 +123,7 @@ func (ObserverItem) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 
 	} else {
-		err := db.Model(&ObserverItem{}).
+		err := db.Model(&HandlerItem{}).
 			Order(sortBy).Offset(offset).Limit(limit).
 			Where("account_id IN (?)", []uint{1, accountId}).
 			Find(&obItems).Error
@@ -131,7 +132,7 @@ func (ObserverItem) getPaginationList(accountId uint, offset, limit int, sortBy,
 		}
 
 		// Определяем total
-		err = db.Model(&ObserverItem{}).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
+		err = db.Model(&HandlerItem{}).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -147,10 +148,10 @@ func (ObserverItem) getPaginationList(accountId uint, offset, limit int, sortBy,
 	return entities, total, nil
 }
 
-func (obItem *ObserverItem) update(input map[string]interface{}) error {
+func (obItem *HandlerItem) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).Model(obItem).Omit("id", "account_id").Update(input).Error
 }
 
-func (obItem ObserverItem) delete () error {
-	return db.Model(ObserverItem{}).Where("id = ?", obItem.ID).Delete(obItem).Error
+func (obItem HandlerItem) delete () error {
+	return db.Model(HandlerItem{}).Where("id = ?", obItem.ID).Delete(obItem).Error
 }

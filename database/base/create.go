@@ -96,16 +96,17 @@ func RefreshTablesPart_II() {
 	pool := models.GetPool()
 
 
-	pool.DropTableIfExists(models.EventItem{},models.ObserverItem{}, models.Observer{}, models.Order{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
+	pool.DropTableIfExists(models.EventItem{},models.HandlerItem{}, models.Observer{}, models.Order{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
 
 	models.Order{}.PgSqlCreate()
 	models.DeliveryRussianPost{}.PgSqlCreate()
 	models.DeliveryPickup{}.PgSqlCreate()
 	models.DeliveryCourier{}.PgSqlCreate()
 
-	models.Observer{}.PgSqlCreate()
-	models.ObserverItem{}.PgSqlCreate()
+	models.HandlerItem{}.PgSqlCreate()
 	models.EventItem{}.PgSqlCreate()
+	models.Observer{}.PgSqlCreate()
+
 
 	UploadTestDataPart_II()
 	UploadTestDataPart_III()
@@ -1240,29 +1241,17 @@ func UploadTestDataPart_III() {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
-	els := []models.Observer{
-		{EventName: "UserAppendedToAccount", TargetId: 1, TargetName: "EmailQueueRun"},
-		{EventName: "UserAppendedToAccount", TargetId: 1, TargetName: "WebHookCall"},
-	}
-
-	for _,v := range els {
-		_, err = account.CreateEntity(&v)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
 	mainAccount, err := models.GetMainAccount()
 	if err != nil {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
 	// Observers
-	obItems := []models.ObserverItem{
+	eventHandlers := []models.HandlerItem{
 		{Name: "EmailQueueRun", Enabled: true, Description: "Запуск автоматической серии email писем с указанным ID"},
 		{Name: "WebHookCall", Enabled: true, Description: "Вызов WebHook с указанным ID."},
 	}
-	for _,v := range obItems {
+	for _,v := range eventHandlers {
 		_, err = mainAccount.CreateEntity(&v)
 		if err != nil {
 			log.Fatal(err)
@@ -1280,6 +1269,24 @@ func UploadTestDataPart_III() {
 			log.Fatal(err)
 		}
 	}
+
+	/*els := []models.Observer{
+		{EventName: "UserAppendedToAccount", TargetId: 1, TargetName: "EmailQueueRun"},
+		{EventName: "UserAppendedToAccount", TargetId: 1, TargetName: "WebHookCall"},
+	}*/
+
+	els := []models.Observer{
+		{EventID: 1, HandlerID: 1},
+		{EventID: 2, HandlerID: 2},
+	}
+	for _,v := range els {
+		_, err = account.CreateEntity(&v)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+
 
 }
 
