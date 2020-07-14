@@ -1239,8 +1239,8 @@ func UploadTestDataPart_III() {
 	}
 
 	els := []models.EventHandler{
-		{EventName: "userAddedToAccount", TargetId: 1, TargetName: "EmailQueueRun"},
-		{EventName: "userAddedToAccount", TargetId: 1, TargetName: "WebHookCall"},
+		{EventName: "UserAppendedToAccount", TargetId: 1, TargetName: "EmailQueueRun"},
+		{EventName: "UserAppendedToAccount", TargetId: 1, TargetName: "WebHookCall"},
 	}
 
 	for _,v := range els {

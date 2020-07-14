@@ -30,12 +30,19 @@ func main() {
 	// base.LoadProductDescriptionAiroClimate()
 	// base.LoadProductCategoryDescriptionAiroClimate()
 
-	// base.RefreshTablesPart_II()
+	base.RefreshTablesPart_II()
 
-	models.RegisterEventHandler()
+	if err := (models.EventHandler{}).RegisterEventHandler(); err != nil {
+		log.Fatal(fmt.Sprintf("Не удалось зарегистрировать EventHandler: %v", err))
+	}
 	// runEvents()
+
+	list := models.GetSystemEventList()
+	fmt.Println("list: ", list)
 	
 	models.RunHttpServer(routes.Handlers())
+
+
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
 }
 

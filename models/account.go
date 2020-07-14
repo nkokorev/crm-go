@@ -509,10 +509,19 @@ func (account Account) AppendUser(user User, role Role) (*AccountUser, error) {
 		acs = *_asc
 	}
 
-	err, _ := event.Fire("userAddedToAccount", map[string]interface{}{"userId":acs.UserId, "accountId":acs.AccountId})
+	event.Fire(Event{}.UserAppendedToAccount(acs.Account, acs.User, acs.Role))
+	
+
+	// event.Fire("e1", nil)
+
+	/*e := &UserAppendedToAccount{customData: "hello"}
+	e.SetName("UserAppendedToAccount")
+	event.AddEvent(e)
+
+	err := event.FireEvent(e)
 	if err != nil {
 		log.Printf("Error event: ", err)
-	}
+	}*/
 
 	return &acs, nil
 }

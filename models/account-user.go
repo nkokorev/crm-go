@@ -63,7 +63,7 @@ func (aUser AccountUser) create () (*AccountUser, error) {
 	}
 
 	// if err := db.Model(&AccountUser{}).Create(&outUser).Error; err != nil {
-	if err := db.Model(&AccountUser{}).Create(&aUser).Error; err != nil {
+	if err := db.Model(&AccountUser{}).Create(&aUser).Preload("User").Preload("Account").Preload("Role").First(&aUser).Error; err != nil {
 		return nil, err
 	}
 
