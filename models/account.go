@@ -509,19 +509,7 @@ func (account Account) AppendUser(user User, role Role) (*AccountUser, error) {
 		acs = *_asc
 	}
 
-	event.Fire(Event{}.UserAppendedToAccount(acs.Account, acs.User, acs.Role))
-	
-
-	// event.Fire("e1", nil)
-
-	/*e := &UserAppendedToAccount{customData: "hello"}
-	e.SetName("UserAppendedToAccount")
-	event.AddEvent(e)
-
-	err := event.FireEvent(e)
-	if err != nil {
-		log.Printf("Error event: ", err)
-	}*/
+	event.AsyncFire(Event{}.UserAppendedToAccount(acs.Account, acs.User, acs.Role))
 
 	return &acs, nil
 }

@@ -1,9 +1,19 @@
 package models
 
 import (
+	"fmt"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
+	"reflect"
 )
+
+// Возвращает список всех возможных обработчиков
+func (EventHandler) GetSystemHandleList () map[string]interface{} {
+	return map[string]interface{}{
+		"EmailQueueRun": map[string]string{"description":"Запуск автоматической серии email писем с указанным ID."},
+		"WebHookCall": map[string]string{"description":"Вызов WebHook с указанным ID."},
+	}
+}
 
 // Нужна функция ReloadEventHandler(e)
 func (EventHandler) RegisterEventHandler() error {
@@ -20,53 +30,55 @@ func (EventHandler) RegisterEventHandler() error {
 	return nil
 }
 
-// Возвращает список обработчиков, которые могут быть назначены на event
-/*func (EventHandler) EventList () map[string]interface{} {
-	return map[string]interface{}{
-		"userCreated": map[string]string{"description":"Создан новый пользователь в рамках текущего аккаунта"},
-		"userAddedToAccount": map[string]string{"description":"Пользователь добавлен в аккаунт"},
-		"userRemovedFromAccount": map[string]string{"description":"Исключение пользователя из аккаунта"},
-	}
+func (EventHandler) ReloadEventHandler() error {
+	em := event.DefaultEM
+	em.Clear()
+
+	return EventHandler{}.RegisterEventHandler()
 }
 
-func (EventHandler) HandleList () map[string]interface{} {
-	return map[string]interface{}{
-		"EmailQueueRun": map[string]string{"description":"Запуск автоматической серии email писем с указанным ID."},
-		"WebHookCall": map[string]string{"description":"Вызов WebHook с указанным ID."},
+
+
+// функция обработчик для каждого события
+func (eh EventHandler) Handle(e event.Event) error {
+
+	// 1. Получаем метод обработки по имени Target
+	m := reflect.ValueOf(eh).MethodByName(eh.TargetName)
+	if m.IsNil() {
+		e.Abort(true)
+		return utils.Error{Message: fmt.Sprintf("EventHandler Handle is nill: %v", eh.TargetName)}
 	}
-}*/
 
-
-
-/*func (EventHandler) GetTargets () map[string]func(e event.Event) error {
-	return map[string]func(e event.Event)error {
-		"EmailQueueRun": EventHandler{}.EmailQueueRun,
-		"WebHookCall": EventHandler{}.WebHookCall,
+	// 2. Преобразуем метод, чтобы его можно было вызвать от объекта Event
+	target, ok := m.Interface().(func(e event.Event) error)
+	if !ok {
+		e.Abort(true)
+		return utils.Error{Message: fmt.Sprintf("EventHandler mCallable !ok: %v", eh.TargetName)}
 	}
-}*/
 
-func runEvents() {
-	// Register event listener
-
-
-	// ... ...
-
-	// Trigger event
-	// Note: The second listener has a higher priority, so it will be executed first.
-	/*err, _e := event.Fire("userCreated", event.M{"arg0": "val0", "arg1": "val1"})
-	if err != nil {
-		log.Println(err)
+	// 3. Вызываем Target-метод с объектом Event
+	if err := target(e); err != nil {
+		e.Abort(true)
+		return err
 	}
-	fmt.Println("_e: ", _e)*/
-	// event.AddEvent(e)
 
-	// err, _e := event.Fire(e.Name(), e.Data())
-
-	/*e := event.NewBasic("userCreated", event.M{"id":2, "createdAt":time.Now().String()})
-	err := event.FireEvent(e)
-	if err != nil {
-		log.Println(err)
-	}*/
-	// fmt.Println("_e: ", _e.IsAborted())
-
+	return nil
 }
+
+// ########################################################
+
+
+// #############   Event Handlers   #############
+func (eh EventHandler) EmailQueueRun(e event.Event) error {
+	fmt.Printf("Запуск серии писем, данные: %v\n", e.Data())
+	// fmt.Println("EventHandler: ", eh) // контекст серии писем, какой именно и т.д.
+	// e.Set("result", "OK") // возможность записать в событие какие-то данные для других обработчиков..
+	return nil
+}
+func (eh EventHandler) WebHookCall(e event.Event) error {
+	fmt.Printf("Вызов вебхука, данные: %v\n", e.Data())
+	// fmt.Println("EventHandler: ", eh) // контекст вебхука, какой именно и т.д.
+	// e.Set("result", "OK")
+	return nil
+}
+// #############   END Of Event Handlers   #############

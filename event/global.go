@@ -17,6 +17,11 @@ func Fire(name string, params M) (error, Event) {
 	return DefaultEM.Fire(name, params)
 }
 
+// By Nikita Kokorev
+func AsyncFire(e Event) {
+	DefaultEM.AsyncFire(e)
+}
+
 // FireEvent fire listeners by Event instance.
 func FireEvent(e Event) error {
 	return DefaultEM.FireEvent(e)
