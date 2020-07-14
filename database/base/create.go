@@ -96,7 +96,7 @@ func RefreshTablesPart_II() {
 	pool := models.GetPool()
 
 
-	pool.DropTableIfExists(models.ObserverItem{}, models.Observer{}, models.Order{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
+	pool.DropTableIfExists(models.EventItem{},models.ObserverItem{}, models.Observer{}, models.Order{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
 
 	models.Order{}.PgSqlCreate()
 	models.DeliveryRussianPost{}.PgSqlCreate()
@@ -105,6 +105,7 @@ func RefreshTablesPart_II() {
 
 	models.Observer{}.PgSqlCreate()
 	models.ObserverItem{}.PgSqlCreate()
+	models.EventItem{}.PgSqlCreate()
 
 	UploadTestDataPart_II()
 	UploadTestDataPart_III()
@@ -1256,12 +1257,24 @@ func UploadTestDataPart_III() {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
+	// Observers
 	obItems := []models.ObserverItem{
 		{Name: "EmailQueueRun", Enabled: true, Description: "Запуск автоматической серии email писем с указанным ID"},
 		{Name: "WebHookCall", Enabled: true, Description: "Вызов WebHook с указанным ID."},
 	}
-
 	for _,v := range obItems {
+		_, err = mainAccount.CreateEntity(&v)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// Events
+	eventItems := []models.EventItem{
+		{Name: "UserCreated", Enabled: true, Description: "Создание пользователя в текущем аккаунте. Сам пользователь на момент вызова не имеет доступа к аккаунту (если вообще будет)."},
+		{Name: "UserAppendedToAccount", Enabled: true, Description: "Пользователь получил доступ в текущий аккаунт с какой-то конкретно ролью."},
+	}
+	for _,v := range eventItems {
 		_, err = mainAccount.CreateEntity(&v)
 		if err != nil {
 			log.Fatal(err)

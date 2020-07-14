@@ -10,7 +10,7 @@ import (
 
 // Обсерверы являются чисто системными, их нельзя добавлять или менять из-под других аккаунтов
 
-func ObserverItemCreate(w http.ResponseWriter, r *http.Request) {
+func EventItemCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -25,7 +25,7 @@ func ObserverItemCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Get JSON-request
 	var input struct{
-		models.ObserverItem
+		models.EventItem
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -33,18 +33,18 @@ func ObserverItemCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	obItem, err := account.CreateEntity(&input.ObserverItem)
+	eventItem, err := account.CreateEntity(&input.EventItem)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время объекта"}))
 		return
 	}
 
 	resp := u.Message(true, "POST Observer Item Created")
-	resp["observerItem"] = obItem
+	resp["eventItem"] = eventItem
 	u.Respond(w, resp)
 }
 
-func ObserverItemGet(w http.ResponseWriter, r *http.Request) {
+func EventItemGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -57,19 +57,19 @@ func ObserverItemGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var obItem models.ObserverItem
-	err = account.LoadEntity(&obItem, observerItemId)
+	var eventItem models.EventItem
+	err = account.LoadEntity(&eventItem, observerItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить observer item"))
 		return
 	}
 
-	resp := u.Message(true, "GET Observer List")
-	resp["observerItem"] = obItem
+	resp := u.Message(true, "GET Event List")
+	resp["eventItem"] = eventItem
 	u.Respond(w, resp)
 }
 
-func ObserverItemGetList(w http.ResponseWriter, r *http.Request) {
+func EventItemGetList(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
@@ -103,13 +103,13 @@ func ObserverItemGetList(w http.ResponseWriter, r *http.Request) {
 	var total uint = 0
 	observerItems := make([]models.Entity,0)
 	if all == "true" && allOk {
-		observerItems, total, err = account.GetListEntity(&models.ObserverItem{}, sortBy)
+		observerItems, total, err = account.GetListEntity(&models.EventItem{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 			return
 		}
 	} else {
-		observerItems, total, err = account.GetPaginationListEntity(&models.ObserverItem{}, offset, limit, sortBy, search)
+		observerItems, total, err = account.GetPaginationListEntity(&models.EventItem{}, offset, limit, sortBy, search)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -118,13 +118,13 @@ func ObserverItemGetList(w http.ResponseWriter, r *http.Request) {
 
 
 
-	resp := u.Message(true, "GET System Observers Pagination List")
+	resp := u.Message(true, "GET System Event Pagination List")
 	resp["total"] = total
-	resp["observerItems"] = observerItems
+	resp["eventItems"] = observerItems
 	u.Respond(w, resp)
 }
 
-func ObserverItemGetListPagination(w http.ResponseWriter, r *http.Request) {
+func EventItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
@@ -158,13 +158,13 @@ func ObserverItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 	observerItems := make([]models.Entity,0)
 
 	if all == "true" && allOk {
-		observerItems, total, err = account.GetListEntity(&models.ObserverItem{}, sortBy)
+		observerItems, total, err = account.GetListEntity(&models.EventItem{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 			return
 		}
 	} else {
-		observerItems, total, err = account.GetPaginationListEntity(&models.ObserverItem{}, offset, limit, sortBy, search)
+		observerItems, total, err = account.GetPaginationListEntity(&models.EventItem{}, offset, limit, sortBy, search)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -173,13 +173,13 @@ func ObserverItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 
 
-	resp := u.Message(true, "GET System Observers Pagination List")
+	resp := u.Message(true, "GET System Event Pagination List")
 	resp["total"] = total
-	resp["observerItems"] = observerItems
+	resp["eventItems"] = observerItems
 	u.Respond(w, resp)
 }
 
-func ObserverItemUpdate(w http.ResponseWriter, r *http.Request) {
+func EventItemUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -198,8 +198,8 @@ func ObserverItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var obItem models.ObserverItem
-	err = account.LoadEntity(&obItem, observerItemId)
+	var eventItem models.EventItem
+	err = account.LoadEntity(&eventItem, observerItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -212,18 +212,18 @@ func ObserverItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&obItem, input)
+	err = account.UpdateEntity(&eventItem, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH Observer Item Update")
-	resp["observerItem"] = obItem
+	resp := u.Message(true, "PATCH Event Item Update")
+	resp["eventItem"] = eventItem
 	u.Respond(w, resp)
 }
 
-func ObserverItemDelete(w http.ResponseWriter, r *http.Request) {
+func EventItemDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -242,17 +242,17 @@ func ObserverItemDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var obItem models.ObserverItem
-	err = account.LoadEntity(&obItem, observerItemId)
+	var eventItem models.EventItem
+	err = account.LoadEntity(&eventItem, observerItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return
 	}
-	if err = account.DeleteEntity(&obItem); err != nil {
+	if err = account.DeleteEntity(&eventItem); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении"))
 		return
 	}
 
-	resp := u.Message(true, "DELETE ObserverItem Successful")
+	resp := u.Message(true, "DELETE EventItem Successful")
 	u.Respond(w, resp)
 }

@@ -175,6 +175,7 @@ func (account Account) GetProduct(productId uint) (*Product, error) {
 func (account Account) GetProductListPagination(offset, limit int, search string) ([]Product, uint, error) {
 
 	products := make([]Product,0)
+	var total uint
 
 	// if need to search
 	if len(search) > 0 {
@@ -196,6 +197,14 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 			return nil, 0, err
 		}
 
+		// Определяем total
+		err = db.Model(&Product{}).
+			Where("account_id = ? AND name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?", account.ID, search,search,search,search,search,search).
+			Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+
 	} else {
 		if offset < 0 || limit < 0 {
 			return nil, 0, errors.New("Offset or limit is wrong")
@@ -208,17 +217,15 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 			}).
 			Limit(limit).Offset(offset).Order("id").Find(&products, "account_id = ?", account.ID).Error
 
-
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
-	}
 
-	// len(cards) != всему списку!
-	var total uint
-	err := db.Model(&Product{}).Where("account_id = ?", account.ID).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема"}
+		// Определяем total
+		err = db.Model(&Product{}).Where("account_id = ?", account.ID).Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
 	}
 
 	return products, total, nil

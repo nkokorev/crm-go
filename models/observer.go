@@ -16,16 +16,22 @@ type Observer struct {
 	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// какой событие слушаем
-	EventName 	string 	`json:"eventName"`
+	// EventName 	string 	`json:"eventName"`
+	EventID		uint `json:"eventId" gorm:"type:int;not null;"` // аналог EventName
+	HandlerID	uint `json:"eventId" gorm:"type:int;not null;"` // аналог EventName
+
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"`
 
 	// какое действие выполняем (имя функции)
-	TargetId	uint 	`json:"targetId"`   // 1
-	TargetName	string 	`json:"targetName"` //webhooks
+	/*TargetId	uint 	`json:"targetId"`   // 1
+	TargetName	string 	`json:"targetName"` //webhooks*/
 
 	// Target		event.ListenerFunc 	`json:"target"` //webhooks
 
 	Priority 	int		`json:"priority" gorm:"type:int;default:0"` // Приоритет выполнения, по умолчанию 0 - Normal
+
+	Event 		EventItem 		`json:"event"  gorm:"preload:true"`
+	Handler 	ObserverItem    `json:"handler"  gorm:"preload:true"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`

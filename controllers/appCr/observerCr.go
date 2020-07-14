@@ -95,12 +95,24 @@ func ObserverGetListPagination(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		search = ""
 	}
+	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
-	// eventHandlers, total, err := account.GetUserListPagination(offset, limit, sortBy, search, roles)
-	observers, total, err := account.GetPaginationListEntity(&models.Observer{}, offset, limit, sortBy, search)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список обработчиков"))
-		return
+	var total uint = 0
+	observers := make([]models.Entity,0)
+
+
+	if all == "true" && allOk {
+		observers, total, err = account.GetListEntity(&models.Observer{}, sortBy)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+			return
+		}
+	} else {
+		observers, total, err = account.GetPaginationListEntity(&models.Observer{}, offset, limit, sortBy, search)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			return
+		}
 	}
 
 	resp := u.Message(true, "GET System Observers Pagination List")
