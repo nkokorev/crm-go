@@ -84,25 +84,75 @@ func (deliveryPickup *DeliveryPickup) load() error {
 	return nil
 }
 
-func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (DeliveryPickup) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
-	delivers := make([]DeliveryPickup,0)
+	deliveryPickups := make([]DeliveryPickup,0)
 	var total uint
 
-	err := db.Model(&DeliveryPickup{}).Limit(limit).Offset(offset).Order(sortBy).Find(&delivers, "account_id = ?", accountId).Error
-	if err != nil {
+	err := db.Model(&DeliveryPickup{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+		Find(&deliveryPickups).Error
+	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
+	// Определяем total
 	err = db.Model(&DeliveryPickup{}).Where("account_id = ?", accountId).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(delivers))
-	for i, v := range delivers {
-		entities[i] = &v
+	entities := make([]Entity,len(deliveryPickups))
+	for i,_ := range deliveryPickups {
+		entities[i] = &deliveryPickups[i]
+	}
+
+	return entities, total, nil
+}
+func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+
+	deliveryPickups := make([]DeliveryPickup,0)
+	var total uint
+
+	// if need to search
+	if len(search) > 0 {
+
+		// string pattern
+		search = "%"+search+"%"
+
+		err := db.Model(&DeliveryPickup{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&deliveryPickups, "name ILIKE ? OR code ILIKE ? OR price ILIKE ?", search,search,search).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = db.Model(&DeliveryPickup{}).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR price ILIKE ?", accountId, search,search,search).
+			Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+
+	} else {
+
+		err := db.Model(&DeliveryPickup{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&deliveryPickups).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = db.Model(&DeliveryPickup{}).Where("account_id = ?", accountId).Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(deliveryPickups))
+	for i,_ := range deliveryPickups {
+		entities[i] = &deliveryPickups[i]
 	}
 
 	return entities, total, nil

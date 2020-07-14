@@ -21,7 +21,7 @@ func RefreshTables() {
 	var err error
 	pool := models.GetPool()
 
-	pool.DropTableIfExists(models.Lead{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
+	pool.DropTableIfExists(models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
 
 	err = pool.Exec("drop table if exists web_hooks, articles").Error
 	if err != nil {
@@ -96,14 +96,15 @@ func RefreshTablesPart_II() {
 	pool := models.GetPool()
 
 
-	pool.DropTableIfExists(models.Observer{}, models.Lead{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
+	pool.DropTableIfExists(models.ObserverItem{}, models.Observer{}, models.Order{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
 
-	models.Lead{}.PgSqlCreate()
+	models.Order{}.PgSqlCreate()
 	models.DeliveryRussianPost{}.PgSqlCreate()
 	models.DeliveryPickup{}.PgSqlCreate()
 	models.DeliveryCourier{}.PgSqlCreate()
 
 	models.Observer{}.PgSqlCreate()
+	models.ObserverItem{}.PgSqlCreate()
 
 	UploadTestDataPart_II()
 	UploadTestDataPart_III()
@@ -1250,16 +1251,25 @@ func UploadTestDataPart_III() {
 		}
 	}
 
+	mainAccount, err := models.GetMainAccount()
+	if err != nil {
+		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
+	}
+
+	obItems := []models.ObserverItem{
+		{Name: "EmailQueueRun", Enabled: true, Description: "Запуск автоматической серии email писем с указанным ID"},
+		{Name: "WebHookCall", Enabled: true, Description: "Вызов WebHook с указанным ID."},
+	}
+
+	for _,v := range obItems {
+		_, err = mainAccount.CreateEntity(&v)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 }
 
-/*func MapToRawJson(input map[string]interface{}) json.RawMessage {
-
-	b, err := json.Marshal(input)
-	if err != nil {
-		return json.RawMessage(`{}`)
-	}
-	return b
-}*/
 
 func ToStringPointer(s string) *string {
 	return &s

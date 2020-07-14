@@ -36,11 +36,7 @@ func main() {
 		log.Fatal(fmt.Sprintf("Не удалось зарегистрировать EventHandler: %v", err))
 	}
 
-
-
 	models.RunHttpServer(routes.Handlers())
-
-
 	//controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
 }
 

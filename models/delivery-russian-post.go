@@ -97,25 +97,77 @@ func (deliveryRussianPost *DeliveryRussianPost) load() error {
 	return nil
 }
 
-func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (DeliveryRussianPost) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
-	delivers := make([]DeliveryRussianPost,0)
+	deliveryRussianPosts := make([]DeliveryRussianPost,0)
 	var total uint
 
-	err := db.Model(&DeliveryRussianPost{}).Limit(limit).Offset(offset).Order(sortBy).Find(&delivers, "account_id = ?", accountId).Error
-	if err != nil {
+	// if need to search
+	err := db.Model(&DeliveryRussianPost{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+		Find(&deliveryRussianPosts).Error
+	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
+	// Определяем total
 	err = db.Model(&DeliveryRussianPost{}).Where("account_id = ?", accountId).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(delivers))
-	for i, v := range delivers {
-		entities[i] = &v
+	entities := make([]Entity,len(deliveryRussianPosts))
+	for i,_ := range deliveryRussianPosts {
+		entities[i] = &deliveryRussianPosts[i]
+	}
+
+	return entities, total, nil
+}
+
+func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+
+	deliveryRussianPosts := make([]DeliveryRussianPost,0)
+	var total uint
+
+	// if need to search
+	if len(search) > 0 {
+
+		// string pattern
+		search = "%"+search+"%"
+
+		err := db.Model(&DeliveryRussianPost{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&deliveryRussianPosts, "name ILIKE ? OR code ILIKE ? OR postal_code_from ILIKE ?", search,search,search).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = db.Model(&DeliveryRussianPost{}).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR postal_code_from ILIKE ?", accountId, search,search,search).
+			Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+
+	} else {
+
+		err := db.Model(&DeliveryRussianPost{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&deliveryRussianPosts).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = db.Model(&DeliveryRussianPost{}).Where("account_id = ?", accountId).Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(deliveryRussianPosts))
+	for i,_ := range deliveryRussianPosts {
+		entities[i] = &deliveryRussianPosts[i]
 	}
 
 	return entities, total, nil

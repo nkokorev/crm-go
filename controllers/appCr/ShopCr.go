@@ -13,7 +13,7 @@ import (
 func ShopCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
+	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
@@ -28,19 +28,14 @@ func ShopCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopE, err := account.CreateEntity(&input.Shop)
+	shop, err := account.CreateEntity(&input.Shop)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
 		return
 	}
-	shop, ok := shopE.(*models.Shop)
-	if !ok {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка приведения типов при создании магазина"}))
-		return
-	}
 
 	resp := u.Message(true, "POST Shop Created")
-	resp["shop"] = *shop
+	resp["shop"] = shop
 	u.Respond(w, resp)
 }
 
@@ -60,7 +55,7 @@ func ShopGet(w http.ResponseWriter, r *http.Request) {
 	var shop models.Shop
 	err = account.LoadEntity(&shop, shopId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
 		return
 	}
 
@@ -76,7 +71,17 @@ func ShopListGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shops, err := account.GetShops()
+	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
+	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
+	if !ok {
+		sortBy = ""
+	}
+	if sortDesc {
+		sortBy += " desc"
+	}
+
+	// shops, err := account.GetShops()
+	shops, total, err := account.GetListEntity(&models.Shop{}, sortBy)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -84,6 +89,7 @@ func ShopListGet(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET Shop List")
 	resp["shops"] = shops
+	resp["total"] = total
 	u.Respond(w, resp)
 }
 
@@ -144,7 +150,7 @@ func ShopDelete(w http.ResponseWriter, r *http.Request) {
 	var shop models.Shop
 	err = account.LoadEntity(&shop, shopId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
 		return
 	}
 	if err = account.DeleteEntity(&shop); err != nil {

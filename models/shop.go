@@ -81,28 +81,19 @@ func (shop *Shop) load() error {
 	return nil
 }
 
-func (Shop) getList(accountId uint) ([]Shop, error) {
 
-	shops := make([]Shop,0)
-
-	err := db.Find(&shops, "account_id = ?", accountId).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, err
-	}
-
-	return shops, nil
-}
-
-func (Shop) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (Shop) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
 	shops := make([]Shop,0)
 	var total uint
 
-	err := db.Model(&Shop{}).Limit(limit).Offset(offset).Order(sortBy).Find(&shops, "account_id = ?", accountId).Error
-	if err != nil {
+	err := db.Model(&Shop{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+		Find(&shops).Error
+	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
+	// Определяем total
 	err = db.Model(&Shop{}).Where("account_id = ?", accountId).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -110,8 +101,57 @@ func (Shop) getPaginationList(accountId uint, offset, limit int, sortBy, search 
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(shops))
-	for i, v := range shops {
-		entities[i] = &v
+	for i,_ := range shops {
+		entities[i] = &shops[i]
+	}
+
+	return entities, total, nil
+}
+
+func (Shop) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+
+	shops := make([]Shop,0)
+	var total uint
+
+	// if need to search
+	if len(search) > 0 {
+
+		// string pattern
+		search = "%"+search+"%"
+
+		err := db.Model(&Shop{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&shops, "name ILIKE ? OR address ILIKE ? OR email ILIKE ? OR phone ILIKE ?", search,search,search,search).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = db.Model(&Shop{}).
+			Where("account_id = ? AND name ILIKE ? OR address ILIKE ? OR email ILIKE ? OR phone ILIKE ?", accountId, search,search,search,search).
+			Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+
+	} else {
+
+		err := db.Model(&Shop{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&shops).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = db.Model(&Shop{}).Where("account_id = ?", accountId).Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(shops))
+	for i,_ := range shops {
+		entities[i] = &shops[i]
 	}
 
 	return entities, total, nil
@@ -127,10 +167,6 @@ func (shop Shop) delete () error {
 // ######### END CRUD Functions ############
 
 // ######### ACCOUNT Functions ############
-func (account Account) GetShops() ([]Shop, error) {
-	return Shop{}.getList(account.ID)
-}
-
 
 func (account Account) ExistProductGroups(groupId uint) bool {
 	if groupId < 1 {

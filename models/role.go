@@ -135,6 +135,32 @@ func (role *Role) load() error {
 	return nil
 }
 
+func (Role) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+
+	roles := make([]Role,0)
+	var total uint
+
+	err := db.Model(&Role{}).Order(sortBy).Limit(1000).
+		Where("account_id IN (?)", []uint{1, accountId}).
+		Find(&roles).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Определяем total
+	err = db.Model(&Role{}).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(roles))
+	for i, v := range roles {
+		entities[i] = &v
+	}
+
+	return entities, total, nil
+}
 func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	roles := make([]Role,0)

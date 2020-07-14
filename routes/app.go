@@ -172,4 +172,11 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/events", appCr.EventSystemListGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/handlers", appCr.HandlersSystemListGet).Methods(http.MethodGet, http.MethodOptions)
 
+	// ### ObserverItem ###
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/observer-items", appCr.ObserverItemCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/observer-items", appCr.ObserverItemGetListPagination).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/observer-items/{observerItemId:[0-9]+}", appCr.ObserverItemGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/observer-items/{observerItemId:[0-9]+}", appCr.ObserverItemUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/observer-items/{observerItemId:[0-9]+}", appCr.ObserverItemDelete).Methods(http.MethodDelete, http.MethodOptions)
+
 }
