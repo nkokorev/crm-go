@@ -1279,6 +1279,12 @@ func UploadTestDataPart_III() {
 			log.Fatal(err)
 		}
 	}
+	for i := range els {
+		_, err = mainAccount.CreateEntity(&els[i])
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 
 

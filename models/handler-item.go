@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Список функций обработки, которые можно вызвать в Observer
+// Список системных функций обработки, которые можно вызвать в Observer
 type HandlerItem struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
 	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`

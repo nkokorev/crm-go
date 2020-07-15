@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
@@ -24,7 +23,9 @@ type EventListener struct {
 	Priority 	int		`json:"priority" gorm:"type:int;default:0"` // Приоритет выполнения, по умолчанию 0 - Normal
 
 	Event 		EventItem 	`json:"event"  gorm:"preload:true"`
-	Handler 	HandlerItem `json:"handler"  gorm:"preload:true"`       // gorm:"preload:true"
+	Handler 	HandlerItem		`json:"handler"  gorm:"preload:true"`       // gorm:"preload:true"
+
+	TargetName string `json:"-" gorm:"-"`// Имя функции, которую вызывают локально
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -36,7 +37,7 @@ func (EventListener) PgSqlCreate() {
 	db.CreateTable(&EventListener{})
 	db.Model(&EventListener{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Model(&EventListener{}).AddForeignKey("event_id", "event_items(id)", "CASCADE", "CASCADE")
-	db.Model(&EventListener{}).AddForeignKey("handler_id", "handler_items(id)", "CASCADE", "CASCADE")
+	db.Model(&EventListener{}).AddForeignKey("handler_id", "handlers(id)", "CASCADE", "CASCADE")
 
 }
 
@@ -60,7 +61,7 @@ func (eventListener EventListener) create() (Entity, error)  {
 		return nil, err
 	}
 
-	go EventListener{}.LoadListener()
+	go eventListener.LoadListener()
 
 	return newItem, nil
 }
@@ -203,7 +204,7 @@ func (eventListener *EventListener) update(input map[string]interface{}) error {
 func (eventListener EventListener) delete () error {
 	if err := db.Model(EventListener{}).Where("id = ?", eventListener.ID).Delete(eventListener).Error; err != nil {return err}
 
-	go eventListener.RemoveListener()
+	go EventListener{}.ReloadEventHandlers()
 
 	return nil
 }
@@ -216,8 +217,11 @@ func (EventListener) Registration() error {
 		return utils.Error{Message: "Не удалось загрузить EventHandlers!"}
 	}
 
+	// fmt.Println("eventListeners")
+
 	for i,v := range eventListeners {
 		if v.Enabled && eventListeners[i].Event.Enabled && eventListeners[i].Handler.Enabled {
+			// fmt.Println("Event listener: ", v.Event.Name, " - ", v.Handler.Name)
 			eventListeners[i].LoadListener()
 			// event.On(v.Event.Name, Handler{TargetName: v.Handler.Name}, v.Priority)
 		}
@@ -233,31 +237,22 @@ func (EventListener) ReloadEventHandlers() error {
 	return EventListener{}.Registration()
 }
 
-// Новые данные - текущие
-func (eventListener EventListener) ReloadListener(old EventListener) {
-	em := event.DefaultEM
-
-	em.RemoveListener(old.Event.Name, Handler{TargetName: old.Handler.Name})
-
-	if eventListener.Enabled {
-		em.AddListener(eventListener.Event.Name, Handler{TargetName: eventListener.Handler.Name}, eventListener.Priority)
-	}
-	fmt.Println("===========================")
-}
-
 func (eventListener EventListener) LoadListener() {
+	// fmt.Println(": ", eventListener.Event)
 	if eventListener.Event.Name == "" || eventListener.Handler.Name == "" {
 		log.Println("LoadListener is empty name")
+		// log.Println("LoadListener is empty name", eventListener.Event, eventListener.Handler)
 		return
 	}
 	em := event.DefaultEM
-	em.AddListener(eventListener.Event.Name, Handler{TargetName: eventListener.Handler.Name}, eventListener.Priority)
+	// em.AddListener(eventListener.Event.Name, Handler{TargetName: eventListener.Handler.Name}, eventListener.Priority)
+	em.AddListener(eventListener.Event.Name, eventListener, eventListener.Priority)
 }
 
-func (eventListener EventListener) RemoveListener() {
+/*func (eventListener EventListener) RemoveListener() {
 	em := event.DefaultEM
 	em.RemoveListener(eventListener.Event.Name, Handler{TargetName: eventListener.Handler.Name})
-}
+}*/
 
 // для интерфейса event.Listener - функция обработчик для каждого события
 // Она вызывается в цепочке первой, а затем уже соответствующая функция target из EventListener (см. ниже)

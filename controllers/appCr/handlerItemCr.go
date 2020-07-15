@@ -33,14 +33,14 @@ func HandlerItemCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	obItem, err := account.CreateEntity(&input.HandlerItem)
+	handlerItem, err := account.CreateEntity(&input.HandlerItem)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время объекта"}))
 		return
 	}
 
-	resp := u.Message(true, "POST Handler Item Created")
-	resp["handlerItem"] = obItem
+	resp := u.Message(true, "POST HandlerItem Created")
+	resp["handlerItem"] = handlerItem
 	u.Respond(w, resp)
 }
 
@@ -53,19 +53,19 @@ func HandlerItemGet(w http.ResponseWriter, r *http.Request) {
 
 	handlerItemId, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке handler Item Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке handlerItem Item Id"))
 		return
 	}
 
-	var obItem models.HandlerItem
-	err = account.LoadEntity(&obItem, handlerItemId)
+	var handlerItem models.HandlerItem
+	err = account.LoadEntity(&handlerItem, handlerItemId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить handler item"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить handlerItem item"))
 		return
 	}
 
-	resp := u.Message(true, "GET Handler List")
-	resp["handlerItem"] = obItem
+	resp := u.Message(true, "GET HandlerItem List")
+	resp["handlerItem"] = handlerItem
 	u.Respond(w, resp)
 }
 
@@ -194,12 +194,12 @@ func HandlerItemUpdate(w http.ResponseWriter, r *http.Request) {
 
 	handlerItemId, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке handler Item Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке handlerItem Item Id"))
 		return
 	}
 
-	var obItem models.HandlerItem
-	err = account.LoadEntity(&obItem, handlerItemId)
+	var handlerItem models.HandlerItem
+	err = account.LoadEntity(&handlerItem, handlerItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -212,14 +212,14 @@ func HandlerItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&obItem, input)
+	err = account.UpdateEntity(&handlerItem, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH Handler Item Update")
-	resp["handlerItem"] = obItem
+	resp := u.Message(true, "PATCH HandlerItem Update")
+	resp["handlerItem"] = handlerItem
 	u.Respond(w, resp)
 }
 
@@ -242,13 +242,13 @@ func HandlerItemDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var obItem models.HandlerItem
-	err = account.LoadEntity(&obItem, handlerItemId)
+	var handlerItem models.HandlerItem
+	err = account.LoadEntity(&handlerItem, handlerItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return
 	}
-	if err = account.DeleteEntity(&obItem); err != nil {
+	if err = account.DeleteEntity(&handlerItem); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении"))
 		return
 	}
