@@ -108,7 +108,7 @@ func (role Role) create() (Entity, error)  {
 
 	var newItem Entity = &role
 
-	if err := db.Create(newItem).Error; err != nil {
+	if err := db.Create(newItem).First(newItem).Error; err != nil {
 		return nil, err
 	}
 

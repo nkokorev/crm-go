@@ -2,14 +2,13 @@ package appCr
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
 )
 
-func ObserverCreate(w http.ResponseWriter, r *http.Request) {
+func EventListenerCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -19,7 +18,7 @@ func ObserverCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Get JSON-request
 	var input struct{
-		models.Shop
+		models.EventListener
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -27,48 +26,43 @@ func ObserverCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopE, err := account.CreateEntity(&input.Shop)
+	eventListener, err := account.CreateEntity(&input.EventListener)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
 		return
 	}
-	shop, ok := shopE.(*models.Shop)
-	if !ok {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка приведения типов при создании магазина"}))
-		return
-	}
 
-	resp := u.Message(true, "POST Shop Created")
-	resp["shop"] = *shop
+	resp := u.Message(true, "POST Event Listener Created")
+	resp["eventListener"] = eventListener
 	u.Respond(w, resp)
 }
 
-func ObserverGet(w http.ResponseWriter, r *http.Request) {
+func EventListenerGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	eventListenerId, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке shop Id"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
+	var eventListener models.EventListener
+	err = account.LoadEntity(&eventListener, eventListenerId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
 	}
 
-	resp := u.Message(true, "GET Shop List")
-	resp["shop"] = shop
+	resp := u.Message(true, "GET Event Listener")
+	resp["eventListener"] = eventListener
 	u.Respond(w, resp)
 }
 
-func ObserverGetListPagination(w http.ResponseWriter, r *http.Request) {
+func EventListenerGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
@@ -99,30 +93,30 @@ func ObserverGetListPagination(w http.ResponseWriter, r *http.Request) {
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
 	var total uint = 0
-	observers := make([]models.Entity,0)
+	eventListeners := make([]models.Entity,0)
 
 
 	if all == "true" && allOk {
-		observers, total, err = account.GetListEntity(&models.Observer{}, sortBy)
+		eventListeners, total, err = account.GetListEntity(&models.EventListener{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 			return
 		}
 	} else {
-		observers, total, err = account.GetPaginationListEntity(&models.Observer{}, offset, limit, sortBy, search)
+		eventListeners, total, err = account.GetPaginationListEntity(&models.EventListener{}, offset, limit, sortBy, search)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	}
 
-	resp := u.Message(true, "GET System Observers Pagination List")
+	resp := u.Message(true, "GET Event Listener Pagination List")
 	resp["total"] = total
-	resp["observers"] = observers
+	resp["eventListeners"] = eventListeners
 	u.Respond(w, resp)
 }
 
-func ObserverUpdate(w http.ResponseWriter, r *http.Request) {
+func EventListenerUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -130,20 +124,18 @@ func ObserverUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	observerId, err := utilsCr.GetUINTVarFromRequest(r, "observerId")
+	eventListenerId, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
-	var observer models.Observer
-	err = account.LoadEntity(&observer, observerId)
+	var eventListener models.EventListener
+	err = account.LoadEntity(&eventListener, eventListenerId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
 	}
-
-	fmt.Println("Load Event.Name: ", observer.Event)
 
 	var input map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -151,18 +143,18 @@ func ObserverUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&observer, input)
+	err = account.UpdateEntity(&eventListener, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH Observer Update")
-	resp["observer"] = observer
+	resp := u.Message(true, "PATCH Event Listener Update")
+	resp["eventListener"] = eventListener
 	u.Respond(w, resp)
 }
 
-func ObserverDelete(w http.ResponseWriter, r *http.Request) {
+func EventListenerDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -170,24 +162,24 @@ func ObserverDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	eventListenerId, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
+	var eventListener models.EventListener
+	err = account.LoadEntity(&eventListener, eventListenerId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
 	}
-	if err = account.DeleteEntity(&shop); err != nil {
+	if err = account.DeleteEntity(&eventListener); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
 		return
 	}
 
-	resp := u.Message(true, "DELETE Shop Successful")
+	resp := u.Message(true, "DELETE Event Listener Successful")
 	u.Respond(w, resp)
 }
 

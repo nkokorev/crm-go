@@ -96,7 +96,7 @@ func RefreshTablesPart_II() {
 	pool := models.GetPool()
 
 
-	pool.DropTableIfExists(models.EventItem{},models.HandlerItem{}, models.Observer{}, models.Order{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
+	pool.DropTableIfExists(models.EventItem{},models.HandlerItem{}, models.EventListener{}, models.Order{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
 
 	models.Order{}.PgSqlCreate()
 	models.DeliveryRussianPost{}.PgSqlCreate()
@@ -105,8 +105,7 @@ func RefreshTablesPart_II() {
 
 	models.HandlerItem{}.PgSqlCreate()
 	models.EventItem{}.PgSqlCreate()
-	models.Observer{}.PgSqlCreate()
-
+	models.EventListener{}.PgSqlCreate()
 
 	UploadTestDataPart_II()
 	UploadTestDataPart_III()
@@ -1246,7 +1245,7 @@ func UploadTestDataPart_III() {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
-	// Observers
+	// HandlerItem
 	eventHandlers := []models.HandlerItem{
 		{Name: "EmailQueueRun", Enabled: true, Description: "Запуск автоматической серии email писем с указанным ID"},
 		{Name: "WebHookCall", Enabled: true, Description: "Вызов WebHook с указанным ID."},
@@ -1270,17 +1269,12 @@ func UploadTestDataPart_III() {
 		}
 	}
 
-	/*els := []models.Observer{
-		{EventName: "UserAppendedToAccount", TargetId: 1, TargetName: "EmailQueueRun"},
-		{EventName: "UserAppendedToAccount", TargetId: 1, TargetName: "WebHookCall"},
-	}*/
-
-	els := []models.Observer{
-		{EventID: 1, HandlerID: 1},
-		{EventID: 2, HandlerID: 2},
+	els := []models.EventListener{
+		{Name: "Велком серия", EventID: 1, HandlerID: 1, Enabled: true},
+		{Name: "Что-то еще", EventID: 2, HandlerID: 2, Enabled: true},
 	}
-	for _,v := range els {
-		_, err = account.CreateEntity(&v)
+	for i := range els {
+		_, err = account.CreateEntity(&els[i])
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -54,7 +54,7 @@ func (shop *Shop) AfterFind() (err error) {
 func (shop Shop) create() (Entity, error)  {
 	var newItem Entity = &shop
 
-	if err := db.Create(newItem).Error; err != nil {
+	if err := db.Create(newItem).First(newItem).Error; err != nil {
 		return nil, err
 	}
 

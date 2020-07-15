@@ -163,11 +163,11 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles/{articleId:[0-9]+}", appCr.ArticleDelete).Methods(http.MethodDelete, http.MethodOptions)// ### Article ###
 
 	// ### EventHandlers ###
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/observers", appCr.ObserverCreate).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/observers", appCr.ObserverGetListPagination).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/observers/{observerId:[0-9]+}", appCr.ObserverGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/observers/{observerId:[0-9]+}", appCr.ObserverUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/observers/{observerId:[0-9]+}", appCr.ObserverDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/event-listeners", appCr.EventListenerCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/event-listeners", appCr.EventListenerGetListPagination).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/event-listeners/{eventListenerId:[0-9]+}", appCr.EventListenerGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/event-listeners/{eventListenerId:[0-9]+}", appCr.EventListenerUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/event-listeners/{eventListenerId:[0-9]+}", appCr.EventListenerDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/events", appCr.EventSystemListGet).Methods(http.MethodGet, http.MethodOptions)
 	// rAuthFull.HandleFunc("/accounts/{accountHashId}/handlers", appCr.HandlersSystemListGet).Methods(http.MethodGet, http.MethodOptions)
