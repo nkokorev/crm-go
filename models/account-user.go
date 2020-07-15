@@ -62,18 +62,11 @@ func (aUser AccountUser) create () (*AccountUser, error) {
 		return nil, e
 	}
 
-	// if err := db.Model(&AccountUser{}).Create(&outUser).Error; err != nil {
-	if err := db.Model(&AccountUser{}).Create(&aUser).Preload("User").Preload("Account").Preload("Role").First(&aUser).Error; err != nil {
+	if err := db.Model(&aUser).Create(&aUser).Preload("User").Preload("Account").Preload("Role").Find(&aUser).Error; err != nil {
 		return nil, err
 	}
 
-	// fmt.Println("### Созданный aUser методом create(): ", aUser)
-
-	// получаем созданного пользователя с прелоадом данных
-	/*aUserOut := AccountUser{}
-	if err := db.Model(&AccountUser{}).Preload("User").Preload("Account").Preload("Role").First(&aUserOut).Error; err != nil {
-		return nil, err
-	}*/
+	// fmt.Println("### UserId:  ", aUser.Role)
 
 	return &aUser, nil
 }

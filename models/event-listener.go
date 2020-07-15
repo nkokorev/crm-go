@@ -18,6 +18,9 @@ type EventListener struct {
 	EventID		uint `json:"eventId" gorm:"type:int;"` // аналог EventName
 	HandlerID	uint `json:"handlerId" gorm:"type:int;"` // аналог EventName
 
+	// TargetID		uint `json:"handlerId" gorm:"type:int;"` // аналог EventName
+	// OwnerType	uint `json:"handlerId" gorm:"type:int;"` // аналог EventName
+
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false"`
 
 	Priority 	int		`json:"priority" gorm:"type:int;default:0"` // Приоритет выполнения, по умолчанию 0 - Normal
@@ -25,7 +28,7 @@ type EventListener struct {
 	Event 		EventItem 	`json:"event"  gorm:"preload:true"`
 	Handler 	HandlerItem		`json:"handler"  gorm:"preload:true"`       // gorm:"preload:true"
 
-	TargetName string `json:"-" gorm:"-"`// Имя функции, которую вызывают локально
+	// TargetName string `json:"-" gorm:"-"`// Имя функции, которую вызывают локально
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -37,7 +40,7 @@ func (EventListener) PgSqlCreate() {
 	db.CreateTable(&EventListener{})
 	db.Model(&EventListener{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Model(&EventListener{}).AddForeignKey("event_id", "event_items(id)", "CASCADE", "CASCADE")
-	db.Model(&EventListener{}).AddForeignKey("handler_id", "handlers(id)", "CASCADE", "CASCADE")
+	db.Model(&EventListener{}).AddForeignKey("handler_id", "handler_items(id)", "CASCADE", "CASCADE")
 
 }
 

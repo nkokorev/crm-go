@@ -17,40 +17,33 @@ func (handle EventListener) Handle(e event.Event) error {
 
 	// utils.TimeTrack(time.Now())
 
-	handle.TargetName = handle.Handler.Name
+	if handle.Handler.Name == "" {
+		log.Printf("EventListener Handle Name is nill: %v\n", handle.Handler.Name)
+		return utils.Error{Message: fmt.Sprintf("EventListener Handle Name is nill %v\n", handle.Handler.Name)}
+	}
+
 	// 1. Получаем метод обработки по имени Target
-	m := reflect.ValueOf(handle).MethodByName(handle.TargetName)
+	m := reflect.ValueOf(handle).MethodByName(handle.Handler.Name)
 	if m.IsNil() {
-		e.Abort(true)
 		log.Println("Observer Handle is nill")
-		return utils.Error{Message: fmt.Sprintf("Observer Handle is nill: %v", handle.TargetName)}
+		return utils.Error{Message: fmt.Sprintf("Observer Handle is nill: %v", handle.Handler.Name)}
 	}
 
 	// 2. Преобразуем метод, чтобы его можно было вызвать от объекта Event
 	target, ok := m.Interface().(func(e event.Event) error)
 	if !ok {
-		e.Abort(true)
 		log.Println("Observer mCallable !ok")
-		return utils.Error{Message: fmt.Sprintf("Observer mCallable !ok: %v", handle.TargetName)}
+		return utils.Error{Message: fmt.Sprintf("Observer mCallable !ok: %v", handle.Handler.Name)}
 	}
 
 	// 3. Вызываем Target-метод с объектом Event
 	accountStr := e.Get("accountId")
 	accountId, ok :=  accountStr.(uint)
-	if !ok {
-		log.Println("Not ok!")
+	if !ok || handle.AccountID != accountId {
+		return nil
 	}
 
-	// Выполняем, только если совпадает контекст аккаунта
-	if handle.AccountID == accountId {
-		if err := target(e); err != nil {
-			e.Abort(true)
-			return err
-		}
-	}
-
-
-	return nil
+	return target(e)
 }
 
 // #############   Event Handlers   #############

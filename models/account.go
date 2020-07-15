@@ -507,9 +507,9 @@ func (account Account) AppendUser(user User, role Role) (*AccountUser, error) {
 		}
 
 		acs = *_asc
-	}
 
-	event.AsyncFire(Event{}.UserAppendedToAccount(account.ID, acs.UserId, acs.RoleId))
+		event.AsyncFire(Event{}.UserAppendedToAccount(account.ID, acs.UserId, acs.RoleId))
+	}
 
 	return &acs, nil
 }
