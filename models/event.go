@@ -9,12 +9,12 @@ import (
 type Event struct {}
 
 
-func (Event) UserCreated(account Account, user User) event.Event {
-	return event.NewBasic("UserCreated", map[string]interface{}{"accountId":account.ID, "userId":user.ID})
+func (Event) UserCreated(accountId uint, userId uint) event.Event {
+	return event.NewBasic("UserCreated", map[string]interface{}{"accountId":accountId, "userId":userId})
 }
 
-func (Event) UserAppendedToAccount(account Account, user User, role Role) event.Event {
-	return event.NewBasic("UserAppendedToAccount", map[string]interface{}{"accountId":account.ID, "userId":user.ID, "roleId":role.ID})
+func (Event) UserAppendedToAccount(accountId, userId, roleId uint) event.Event {
+	return event.NewBasic("UserAppendedToAccount", map[string]interface{}{"accountId":accountId, "userId":userId, "roleId":roleId})
 }
 
 

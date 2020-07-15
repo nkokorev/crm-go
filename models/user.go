@@ -7,7 +7,6 @@ import (
 	"github.com/nkokorev/crm-go/event"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 	"strings"
 	"time"
 )
@@ -86,14 +85,11 @@ func (user User) create () (*User, error) {
 
 	var userReturn = user
 
-	if err := db.Create(&userReturn).Error; err != nil {
+	if err := db.Create(&userReturn).First(&userReturn).Error; err != nil {
 		return nil, err
 	}
 
-	err, _ = event.Fire("userCreated", map[string]interface{}{"userId":userReturn.ID, "accountId":userReturn.IssuerAccountID})
-	if err != nil {
-		log.Printf("Ошибка event.Fire 'userCreated': %v", err)
-	}
+	event.AsyncFire(Event{}.UserCreated(user.IssuerAccountID, userReturn.ID))
 
 	return &userReturn, nil
 }

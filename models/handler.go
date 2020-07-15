@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
+	"log"
 	"reflect"
 )
 
@@ -18,6 +19,7 @@ func (handle Handler) Handle(e event.Event) error {
 	m := reflect.ValueOf(handle).MethodByName(handle.TargetName)
 	if m.IsNil() {
 		e.Abort(true)
+		log.Println("Observer Handle is nill")
 		return utils.Error{Message: fmt.Sprintf("Observer Handle is nill: %v", handle.TargetName)}
 	}
 
@@ -25,6 +27,7 @@ func (handle Handler) Handle(e event.Event) error {
 	target, ok := m.Interface().(func(e event.Event) error)
 	if !ok {
 		e.Abort(true)
+		log.Println("Observer mCallable !ok")
 		return utils.Error{Message: fmt.Sprintf("Observer mCallable !ok: %v", handle.TargetName)}
 	}
 
@@ -39,13 +42,13 @@ func (handle Handler) Handle(e event.Event) error {
 
 // #############   Event Handlers   #############
 func (observer Handler) EmailQueueRun(e event.Event) error {
-	fmt.Printf("Запуск серии писем, данные: %v\n", e.Data())
+	fmt.Printf("Запуск серии писем, обытие: %v данные: %v\n",e.Name(), e.Data())
 	// fmt.Println("Observer: ", observer) // контекст серии писем, какой именно и т.д.
 	// e.Set("result", "OK") // возможность записать в событие какие-то данные для других обработчиков..
 	return nil
 }
 func (observer Handler) WebHookCall(e event.Event) error {
-	fmt.Printf("Вызов вебхука, данные: %v\n", e.Data())
+	fmt.Printf("Вызов вебхука, событие: %v Данные: %v\n", e.Name(), e.Data())
 	// fmt.Println("Observer: ", observer) // контекст вебхука, какой именно и т.д.
 	// e.Set("result", "OK")
 	return nil

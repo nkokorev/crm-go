@@ -1271,7 +1271,7 @@ func UploadTestDataPart_III() {
 
 	els := []models.EventListener{
 		{Name: "Велком серия", EventID: 1, HandlerID: 1, Enabled: true},
-		{Name: "Что-то еще", EventID: 2, HandlerID: 2, Enabled: true},
+		{Name: "Уведомление сайта", EventID: 2, HandlerID: 2, Enabled: true},
 	}
 	for i := range els {
 		_, err = account.CreateEntity(&els[i])

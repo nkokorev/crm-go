@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
@@ -132,7 +133,11 @@ func (EventListener) getList(accountId uint, sortBy string) ([]Entity, uint, err
 }
 func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
-	eventListeners := make([]EventListener,0)
+	type EventListenerSearch struct {
+		EventListener
+		EventItem
+	}
+	eventListeners := make([]EventListenerSearch,0)
 	var total uint
 
 	// if need to search
@@ -141,15 +146,19 @@ func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&EventListener{}).Preload("Event").Preload("Handler").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&eventListeners, "event_name ILIKE ? OR target_name ILIKE ?", search,search).Error
+		err := db.Table("event_listeners").Model(&EventListener{}).
+			Joins("LEFT JOIN event_items ON event_items.id = event_listeners.event_id").Select("event_items.name as e_name, event_listeners.*").
+			Limit(limit).Offset(offset).Order(sortBy).Where( "event_listeners.account_id = ?", accountId).Preload("Event").Preload("Handler").
+			Find(&eventListeners, "event_listeners.name ILIKE ? OR event_items.name ILIKE ?", search,search).Error
+		
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&EventListener{}).
-			Where("account_id = ? AND event_name ILIKE ? OR target_name ILIKE ?", accountId, search,search).
+		err = db.Table("event_listeners").
+			Joins("LEFT JOIN event_items ON event_items.id = event_listeners.event_id").Select("event_items.name as e_name, event_items.description as e_desc, event_listeners.*").
+			Where( "event_listeners.account_id = ? AND event_listeners.name ILIKE ? OR event_items.name ILIKE ?", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -157,14 +166,14 @@ func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	} else {
 
-		err := db.Model(&EventListener{}).Preload("Event").Preload("Handler").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Table("event_listeners").Model(&EventListener{}).Preload("Event").Preload("Handler").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&eventListeners).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&EventListener{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Table("event_listeners").Model(&EventListener{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -173,7 +182,8 @@ func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(eventListeners))
 	for i := range eventListeners {
-		entities[i] = &eventListeners[i]
+		// entities[i] = &eventListeners[i]
+		entities[i] = &eventListeners[i].EventListener
 	}
 	
 	return entities, total, nil
@@ -181,14 +191,12 @@ func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy
 func (eventListener *EventListener) update(input map[string]interface{}) error {
 
 	// фиксируем состояние ДО обновления
-	var old = *eventListener
-	
 	if err := db.Set("gorm:association_autoupdate", false).
 		Model(eventListener).Omit("id","account_id","created_at", "updated_at", "event", "handler").Update(input).Error; err != nil {
 			return err
 	}
 
-	go eventListener.ReloadListener(old)
+	go eventListener.ReloadEventHandlers()
 
 	return nil
 }
@@ -218,7 +226,7 @@ func (EventListener) Registration() error {
 	return nil
 }
 
-func (EventListener) ReloadEventHandler() error {
+func (EventListener) ReloadEventHandlers() error {
 	em := event.DefaultEM
 	em.Clear()
 
@@ -234,7 +242,7 @@ func (eventListener EventListener) ReloadListener(old EventListener) {
 	if eventListener.Enabled {
 		em.AddListener(eventListener.Event.Name, Handler{TargetName: eventListener.Handler.Name}, eventListener.Priority)
 	}
-	// fmt.Println("===========================")
+	fmt.Println("===========================")
 }
 
 func (eventListener EventListener) LoadListener() {
