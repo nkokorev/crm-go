@@ -88,7 +88,6 @@ func RefreshTables() {
 
 	models.Article{}.PgSqlCreate()
 
-	UploadTestData()
 }
 
 func RefreshTablesPart_II() {
@@ -109,8 +108,7 @@ func RefreshTablesPart_II() {
 
 	models.WebHook{}.PgSqlCreate()
 
-	UploadTestDataPart_II()
-	UploadTestDataPart_III()
+
 }
 
 // загрузка первоначальных данных в EAV-таблицы
@@ -611,15 +609,20 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	_, err = airoClimat.ApiKeyCreate(models.ApiKey{Name:"Для сайта"})
 	if err != nil {
 		log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
+		return
 	}
 
 	// 4. !!! Создаем магазин
-	// airoShop, err := airoClimat.CreateShop(models.Shop{Name: "airoclimate.ru", Address: "г. Москва, р-н Текстильщики", Email: "info@airoclimate.ru", Phone: "+7 (4832) 77-03-73"})
 	airoShopE, err := airoClimat.CreateEntity(&models.Shop{Name: "airoclimate.ru", Address: "г. Москва, р-н Текстильщики", Email: "info@airoclimate.ru", Phone: "+7 (4832) 77-03-73"})
 	if err != nil {
 		log.Fatal("Не удалось создать Shop для airoClimat: ", err)
+		return
 	}
-	airoShop := airoShopE.(*models.Shop)
+	airoShop, ok := airoShopE.(*models.Shop)
+	if !ok {
+		log.Fatal("Не удалось преобразовать Shop для airoClimat: ", err)
+		return
+	}
 	
 	groupAiroRoot, err := airoShop.CreateProductGroup(
 		models.ProductGroup{
@@ -627,6 +630,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+		return
 	}
 
 	groupAiroCatalogRoot, err := groupAiroRoot.CreateChild(
@@ -635,6 +639,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+		return
 	}
 	groupAiro1, err := groupAiroCatalogRoot.CreateChild(
 		models.ProductGroup{
@@ -642,6 +647,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+		return
 	}
 	groupAiro2, err := groupAiroCatalogRoot.CreateChild(
 		models.ProductGroup{
@@ -649,6 +655,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+		return
 	}
 
 	//////////////
@@ -1116,9 +1123,6 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	}
 
 
-
-
-	
 	return
 
 }
@@ -1250,7 +1254,7 @@ func UploadTestDataPart_III() {
 	els := []models.EventListener{
 		{Name: "Уведомление сайта 1", EventID: 1, HandlerID: 1, EntityId: 1, Enabled: true},
 		{Name: "Уведомление сайта 2", EventID: 2, HandlerID: 2, EntityId: 2, Enabled: true},
-		{Name: "Уведомление сайта 2", EventID: 3, HandlerID: 2, EntityId: 13, Enabled: true},
+		{Name: "Уведомление сайта 2", EventID: 7, HandlerID: 2, EntityId: 13, Enabled: true},
 	}
 	for i := range els {
 		_, err = airoAccount.CreateEntity(&els[i])
@@ -1273,6 +1277,7 @@ func UploadTestDataPart_III() {
 	}
 
 	webHooks := []models.WebHook {
+
 		{Name: "Upload all shop data", Code: models.EventUpdateAllShopData, URL: domainAiroSite + "/ratuscrm/webhooks/upload/all", HttpMethod: http.MethodGet},
 
 		// Upload all
@@ -1284,24 +1289,24 @@ func UploadTestDataPart_III() {
 
 		// Create entity
 		{Name: "Create shop", Code: models.EventShopCreated, URL: domainAiroSite + "/ratuscrm/webhooks/shops/{{.ID}}", HttpMethod: http.MethodPost},
-		{Name: "create product", Code: models.EventProductCreated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.ID}}", HttpMethod: http.MethodPost},
-		{Name: "Create product card", Code: models.EventProductCardCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.ID}}", HttpMethod: http.MethodPost},
-		{Name: "Create product group", Code: models.EventProductGroupCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.ID}}", HttpMethod: http.MethodPost},
-		{Name: "Create article", Code: models.EventArticleCreated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.ID}}", HttpMethod: http.MethodPost},
+		{Name: "create product", Code: models.EventProductCreated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productId}}", HttpMethod: http.MethodPost},
+		{Name: "Create product card", Code: models.EventProductCardCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.productCardId}}", HttpMethod: http.MethodPost},
+		{Name: "Create product group", Code: models.EventProductGroupCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupId}}", HttpMethod: http.MethodPost},
+		{Name: "Create article", Code: models.EventArticleCreated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleId}}", HttpMethod: http.MethodPost},
 
 		// Update entity
 		{Name: "Update shop", Code: models.EventShopUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/shops", HttpMethod: http.MethodPatch},
-		{Name: "Update product", Code: models.EventProductUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.ID}}", HttpMethod: http.MethodPatch},
-		{Name: "Update product card", Code: models.EventProductCardUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.ID}}", HttpMethod: http.MethodPatch},
-		{Name: "Update product group", Code: models.EventProductGroupUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.ID}}", HttpMethod: http.MethodPatch},
-		{Name: "Update article", Code: models.EventArticleUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.ID}}", HttpMethod: http.MethodPatch},
+		{Name: "Update product", Code: models.EventProductUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productId}}", HttpMethod: http.MethodPatch},
+		{Name: "Update product card", Code: models.EventProductCardUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.productCardId}}", HttpMethod: http.MethodPatch},
+		{Name: "Update product group", Code: models.EventProductGroupUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupId}}", HttpMethod: http.MethodPatch},
+		{Name: "Update article", Code: models.EventArticleUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleId}}", HttpMethod: http.MethodPatch},
 
 		// Delete
 		{Name: "Delete shop", Code: models.EventShopDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/shops", HttpMethod: http.MethodDelete},
-		{Name: "Delete product", Code: models.EventProductDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.ID}}", HttpMethod: http.MethodDelete},
-		{Name: "Delete product card", Code: models.EventProductCardDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.ID}}", HttpMethod: http.MethodDelete},
-		{Name: "Delete product group", Code: models.EventProductGroupDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.ID}}", HttpMethod: http.MethodDelete},
-		{Name: "Delete article", Code: models.EventArticleDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.ID}}", HttpMethod: http.MethodDelete},
+		{Name: "Delete product", Code: models.EventProductDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productId}}", HttpMethod: http.MethodDelete},
+		{Name: "Delete product card", Code: models.EventProductCardDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.productCardId}}", HttpMethod: http.MethodDelete},
+		{Name: "Delete product group", Code: models.EventProductGroupDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupId}}", HttpMethod: http.MethodDelete},
+		{Name: "Delete article", Code: models.EventArticleDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleId}}", HttpMethod: http.MethodDelete},
 	}
 	for i,_ := range webHooks {
 		// _, err = airoAccount.CreateWebHook(webHooks[i])

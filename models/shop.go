@@ -263,17 +263,17 @@ func (shop Shop) AppendDeliveryMethod(entity Entity) error {
 func (shop Shop) GetDeliveryMethods() []Delivery {
 	// Находим все необходимые методы
 	var posts []DeliveryRussianPost
-	if err := db.Find(&posts, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
+	if err := db.Model(&DeliveryRussianPost{}).Find(&posts, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
 		return nil
 	}
 
 	var couriers []DeliveryCourier
-	if err := db.Find(&couriers, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
+	if err := db.Model(&DeliveryCourier{}).Find(&couriers, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
 		return nil
 	}
 
 	var pickups []DeliveryPickup
-	if err := db.Find(&pickups, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
+	if err := db.Model(&DeliveryPickup{}).Find(&pickups, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
 		return nil
 	}
 

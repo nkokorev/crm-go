@@ -25,12 +25,16 @@ func main() {
 	pool.DB().SetMaxOpenConns(10)
 
 	// runMigration("full")
+	// base.UploadTestData()
+	
+	// base.RefreshTablesPart_II()
+
 	// base.LoadImagesAiroClimate(13)
 	// base.LoadArticlesAiroClimate()
 	// base.LoadProductDescriptionAiroClimate()
 	// base.LoadProductCategoryDescriptionAiroClimate()
 
-	base.RefreshTablesPart_II()
+	// base.UploadTestDataPart_III()
 
 	if err := (models.EventListener{}).ReloadEventHandlers(); err != nil {
 		log.Fatal(fmt.Sprintf("Не удалось зарегистрировать EventHandler: %v", err))

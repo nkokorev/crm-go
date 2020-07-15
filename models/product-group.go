@@ -65,7 +65,11 @@ func (productGroup ProductGroup) create() (*ProductGroup, error)  {
 	}
 
 	var productGroupNew = productGroup
-	if err := db.Create(&productGroupNew).Preload("Shop").Find(productGroupNew).Error; err != nil {
+	// if err := db.Create(&productGroupNew).Preload("Shop").Find(productGroupNew).Error; err != nil {
+	if err := db.Create(&productGroupNew).Error; err != nil {
+		return nil, err
+	}
+	if err := db.Model(&productGroupNew).Preload("Shop").First(&productGroupNew).Error; err != nil {
 		return nil, err
 	}
 
@@ -111,6 +115,7 @@ func (productGroup ProductGroup) delete () error {
 // ######### SHOP Functions ############
 func (shop Shop) CreateProductGroup(input ProductGroup) (*ProductGroup, error) {
 	input.ShopID = shop.ID
+
 	productGroup, err := input.create()
 	if err != nil {
 		return nil, err

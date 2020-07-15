@@ -2,7 +2,9 @@ package models
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"net/http"
 	"strings"
@@ -97,16 +99,6 @@ func (webHook WebHook) create() (Entity, error)  {
 	return newItem, nil
 }
 
-/*func (WebHook) get(id uint) (*WebHook, error) {
-
-	wh := WebHook{}
-
-	if err := db.First(&wh, id).Error; err != nil {
-		return nil, err
-	}
-
-	return &wh, nil
-}*/
 func (WebHook) get(id uint) (Entity, error) {
 
 	var webHook WebHook
@@ -357,23 +349,31 @@ func (account Account) DeleteWebHook(webHookId uint) error {
 
 // ##################
 
-func (webHook WebHook) Call(entity WebHookEventObject) bool {
+func (webHook WebHook) Call(e event.Event) error {
 
 	tplUrl, err := template.New("url").Parse(webHook.URL)
 	if err != nil {
-		//fmt.Println("Error parse URL: ", err)
-		return false
+		// log.Println("Error parse URL: ", err)
+		return utils.Error{Message: fmt.Sprintf("Error parse URL: %v", err)}
 	}
 
 	urlB := new(bytes.Buffer)
-	err = tplUrl.Execute(urlB, entity)
-	if err != nil {
-		return false
+	var data interface{}
+
+	if e != nil && e.Data() != nil {
+		data = e.Data()
 	}
+
+	err = tplUrl.Execute(urlB, data)
+	if err != nil {
+		// log.Println("Error Execute URL: ", err)
+		return utils.Error{Message: fmt.Sprintf("Error execute URL: %v", err)}
+	}
+
 
 	url := urlB.String()
 
-	// fmt.Println(url)
+	fmt.Println("URL: ", url)
 
 	var response *http.Response
 	var request *http.Request
@@ -401,10 +401,59 @@ func (webHook WebHook) Call(entity WebHookEventObject) bool {
 	}
 
 	if err != nil {
+		return utils.Error{Message: fmt.Sprintf("Error execute URL: %v", err)}
+	}
+	defer response.Body.Close()
+
+	return nil
+}
+
+/*func (webHook WebHook) Call(entity WebHookEventObject) bool {
+
+	tplUrl, err := template.New("url").Parse(webHook.URL)
+	if err != nil {
+		//fmt.Println("Error parse URL: ", err)
+		return false
+	}
+
+	urlB := new(bytes.Buffer)
+	err = tplUrl.Execute(urlB, entity)
+	if err != nil {
+		return false
+	}
+
+	url := urlB.String()
+
+	var response *http.Response
+	var request *http.Request
+
+	switch webHook.HttpMethod {
+
+	case http.MethodPost:
+		response, err = http.Post(url, "application/json", nil)
+
+	case http.MethodGet:
+		response, err = http.Get(url)
+
+	case http.MethodPatch, http.MethodPut:
+		client := &http.Client{}
+		request, err = http.NewRequest("PATCH", url, strings.NewReader(""))
+		if err != nil {
+			break
+		}
+		response, err = client.Do(request)
+
+	case http.MethodDelete:
+		client := &http.Client{}
+		request, err = http.NewRequest("DELETE", url, nil)
+		response, err = client.Do(request)
+	}
+
+	if err != nil {
 		//fmt.Println(err)
 		return false
 	}
 	defer response.Body.Close()
 
 	return true
-}
+}*/

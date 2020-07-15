@@ -45,7 +45,13 @@ func (handle EventListener) Handle(e event.Event) error {
 		return nil
 	}
 
-	return target(e)
+	if err := target(e); err != nil {
+		log.Println(err)
+	}
+
+	fmt.Println("target успешно выполнен!")
+
+	return nil
 }
 
 // #############   Event Handlers   #############
@@ -56,11 +62,26 @@ func (handler EventListener) EmailQueueRun(e event.Event) error {
 	return nil
 }
 func (handler EventListener) WebHookCall(e event.Event) error {
+
 	fmt.Printf("Вызов вебхука, событие: %v Данные: %v, entityId %v\n", e.Name(), e.Data(), handler.EntityId)
 
+	accountStr := e.Get("accountId")
+	accountId, ok :=  accountStr.(uint)
+	if !ok {
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить WebHook id = %v, не найден accountId.", handler.EntityId)}
+	}
 
+	account, err := GetAccount(accountId)
+	if err != nil {
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить WebHook id = %v, не найден account by id: %v.", handler.EntityId, accountId)}
+	}
 
-	return nil
+	var webHook WebHook
+	if err := account.LoadEntity(&webHook, handler.EntityId); err != nil {
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить WebHook id = %v, не загружается webHook.", handler.EntityId)}
+	}
+
+	return webHook.Call(e)
 }
 // #############   END Of Event Handlers   #############
 

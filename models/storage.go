@@ -65,6 +65,7 @@ func (fs *Storage) BeforeCreate(scope *gorm.Scope) error {
 }
 
 func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
+
 	if len(fs.OwnerType) > 0 {
 		account, err := GetAccount(fs.AccountID)
 		if err == nil {
@@ -75,7 +76,9 @@ func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
 }
 
 func (fs *Storage) AfterCreate(tx *gorm.DB) (err error) {
-	if len(fs.OwnerType) > 0 {
+
+	if fs.OwnerType != "" {
+
 		account, err := GetAccount(fs.AccountID)
 		if err == nil {
 			account.CallWebHookCreated(*fs)
