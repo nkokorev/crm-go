@@ -12,9 +12,18 @@ type Event struct {}
 func (Event) UserCreated(accountId uint, userId uint) event.Event {
 	return event.NewBasic("UserCreated", map[string]interface{}{"accountId":accountId, "userId":userId})
 }
+func (Event) UserUpdated(accountId uint, userId uint) event.Event {
+	return event.NewBasic("UserUpdated", map[string]interface{}{"accountId":accountId, "userId":userId})
+}
+func (Event) UserDeleted(accountId uint, userId uint) event.Event {
+	return event.NewBasic("UserDeleted", map[string]interface{}{"accountId":accountId, "userId":userId})
+}
 
 func (Event) UserAppendedToAccount(accountId, userId, roleId uint) event.Event {
 	return event.NewBasic("UserAppendedToAccount", map[string]interface{}{"accountId":accountId, "userId":userId, "roleId":roleId})
+}
+func (Event) UserRemovedFromAccount(accountId, userId, roleId uint) event.Event {
+	return event.NewBasic("UserRemovedFromAccount", map[string]interface{}{"accountId":accountId, "userId":userId})
 }
 
 // ######### Product #########
@@ -26,17 +35,6 @@ func (Event) ProductUpdated(accountId, productId uint) event.Event {
 }
 func (Event) ProductDeleted(accountId, productId uint) event.Event {
 	return event.NewBasic("ProductDeleted", map[string]interface{}{"accountId":accountId, "productId":productId})
-}
-
-// ######### Article #########
-func (Event) ArticleCreated(accountId, articleId uint) event.Event {
-	return event.NewBasic("ArticleCreated", map[string]interface{}{"accountId":accountId, "articleId":articleId})
-}
-func (Event) ArticleUpdated(accountId, articleId uint) event.Event {
-	return event.NewBasic("ArticleUpdated", map[string]interface{}{"accountId":accountId, "articleId":articleId})
-}
-func (Event) ArticleDeleted(accountId, articleId uint) event.Event {
-	return event.NewBasic("ArticleDeleted", map[string]interface{}{"accountId":accountId, "articleId":articleId})
 }
 
 // ######### ProductCard #########
@@ -70,4 +68,15 @@ func (Event) StorageUpdated(accountId, productId uint) event.Event {
 }
 func (Event) StorageDeleted(accountId, productId uint) event.Event {
 	return event.NewBasic("ProductDeleted", map[string]interface{}{"accountId":accountId, "productId":productId})
+}
+
+// ######### Article #########
+func (Event) ArticleCreated(accountId, articleId uint) event.Event {
+	return event.NewBasic("ArticleCreated", map[string]interface{}{"accountId":accountId, "articleId":articleId})
+}
+func (Event) ArticleUpdated(accountId, articleId uint) event.Event {
+	return event.NewBasic("ArticleUpdated", map[string]interface{}{"accountId":accountId, "articleId":articleId})
+}
+func (Event) ArticleDeleted(accountId, articleId uint) event.Event {
+	return event.NewBasic("ArticleDeleted", map[string]interface{}{"accountId":accountId, "articleId":articleId})
 }
