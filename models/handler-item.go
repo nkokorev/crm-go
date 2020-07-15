@@ -149,7 +149,11 @@ func (HandlerItem) getPaginationList(accountId uint, offset, limit int, sortBy, 
 }
 
 func (obItem *HandlerItem) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(obItem).Omit("id", "account_id").Update(input).Error
+	if err := db.Set("gorm:association_autoupdate", false).Model(obItem).Omit("id", "account_id").Update(input).Error; err != nil {return err}
+
+	go EventListener{}.ReloadEventHandlers()
+
+	return nil
 }
 
 func (obItem HandlerItem) delete () error {

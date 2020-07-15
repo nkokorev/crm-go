@@ -60,7 +60,7 @@ func (eventListener EventListener) create() (Entity, error)  {
 		return nil, err
 	}
 
-	go eventListener.LoadListener()
+	go EventListener{}.LoadListener()
 
 	return newItem, nil
 }
@@ -196,7 +196,7 @@ func (eventListener *EventListener) update(input map[string]interface{}) error {
 			return err
 	}
 
-	go eventListener.ReloadEventHandlers()
+	go EventListener{}.ReloadEventHandlers()
 
 	return nil
 }
@@ -217,7 +217,7 @@ func (EventListener) Registration() error {
 	}
 
 	for i,v := range eventListeners {
-		if v.Enabled {
+		if v.Enabled && eventListeners[i].Event.Enabled && eventListeners[i].Handler.Enabled {
 			eventListeners[i].LoadListener()
 			// event.On(v.Event.Name, Handler{TargetName: v.Handler.Name}, v.Priority)
 		}
