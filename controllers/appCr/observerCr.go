@@ -129,35 +129,33 @@ func ObserverUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	observerIdId, err := utilsCr.GetUINTVarFromRequest(r, "observerIdId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
+	var observer models.Observer
+	err = account.LoadEntity(&observer, observerIdId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
 	}
 
 	var input map[string]interface{}
-
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	// shop, err := account.UpdateShop(shopId, &input.Shop)
-	err = account.UpdateEntity(&shop, input)
+	err = account.UpdateEntity(&observer, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH Shop Update")
-	resp["shop"] = shop
+	resp := u.Message(true, "PATCH Observer Update")
+	resp["observer"] = observer
 	u.Respond(w, resp)
 }
 

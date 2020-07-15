@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
@@ -14,8 +15,8 @@ type Observer struct {
 
 	// какой событие слушаем
 	// EventName 	string 	`json:"eventName"`
-	EventID		uint `json:"eventId" gorm:"type:int;not null;"` // аналог EventName
-	HandlerID	uint `json:"handlerId" gorm:"type:int;not null;"` // аналог EventName
+	EventID		uint `json:"eventId" gorm:"type:int;default:1"` // аналог EventName
+	HandlerID	uint `json:"handlerId" gorm:"type:int;"` // аналог EventName
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"`
 
@@ -27,8 +28,8 @@ type Observer struct {
 
 	Priority 	int		`json:"priority" gorm:"type:int;default:0"` // Приоритет выполнения, по умолчанию 0 - Normal
 
-	Event 		EventItem 	`json:"event"  gorm:"preload:true"`
-	Handler 	HandlerItem `json:"handler"  gorm:"preload:true"`
+	Event 		EventItem 	`json:"event"  `
+	Handler 	HandlerItem `json:"handler"  `       // gorm:"preload:true"
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -180,7 +181,12 @@ func (Observer) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 	return entities, total, nil
 }
 func (observer *Observer) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(observer).Omit("id", "account_id").Update(input).Error
+	fmt.Println(input)
+	// return db.Model(observer).Omit("id", "account_id", "updated_at", "created_at").Update(input).Error
+	// m := map[string]interface{}{"accountId":2}
+	// m := map[string]interface{}{"eventId":3, "priority":10}
+	return db.Set("gorm:association_autoupdate", false).
+		Model(observer).Omit("id","account_id","created_at", "updated_at").Updates(input).Error
 }
 func (observer Observer) delete () error {
 	return db.Model(Observer{}).Where("id = ?", observer.ID).Delete(observer).Error
@@ -189,7 +195,7 @@ func (observer Observer) delete () error {
 // Нужна функция ReloadEventHandler(e)
 func (Observer) Registration() error {
 
-	return nil
+
 	eventListeners, err := Observer{}.getAllAccountsList()
 	if err != nil {
 		return utils.Error{Message: "Не удалось загрузить EventHandlers!"}

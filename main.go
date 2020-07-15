@@ -30,7 +30,7 @@ func main() {
 	// base.LoadProductDescriptionAiroClimate()
 	// base.LoadProductCategoryDescriptionAiroClimate()
 
-	base.RefreshTablesPart_II()
+	// base.RefreshTablesPart_II()
 
 	if err := (models.Observer{}).Registration(); err != nil {
 		log.Fatal(fmt.Sprintf("Не удалось зарегистрировать EventHandler: %v", err))
