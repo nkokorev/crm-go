@@ -48,34 +48,6 @@ func DeliveryCreate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func DeliveryGet(w http.ResponseWriter, r *http.Request) {
-
-	var account *models.Account
-	var err error
-
-	account, err = utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		return
-	}
-
-
-	webHookId, err := utilsCr.GetUINTVarFromRequest(r, "webHookId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID webHook"))
-		return
-	}
-
-	webHook, err := account.GetWebHook(webHookId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
-		return
-	}
-
-	resp := u.Message(true, "GET Web Hook")
-	resp["webHook"] = webHook
-	u.Respond(w, resp)
-}
-
 func DeliveryGetListByShop(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)

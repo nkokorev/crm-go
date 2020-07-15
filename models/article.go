@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"github.com/jinzhu/gorm"
+	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"strings"
 	"time"
@@ -141,7 +142,7 @@ func (account Account) CreateArticle(input Article) (*Article, error) {
 		return nil, err
 	}
 
-	go account.CallWebHookIfExist(EventArticleCreated, article)
+	event.AsyncFire(Event{}.ArticleCreated(account.ID, article.ID))
 
 	return article, nil
 }
@@ -252,8 +253,7 @@ func (account Account) UpdateArticle(articleId uint, input map[string]interface{
 		return nil, err
 	}
 
-	// todo: костыль вместо евента
-	go account.CallWebHookIfExist(EventArticlesUpdate, article)
+	event.AsyncFire(Event{}.ArticleUpdated(account.ID, article.ID))
 
 	return article, err
 
@@ -270,7 +270,7 @@ func (account Account) DeleteArticle(articleId uint) error {
 	err = article.delete()
 	if err !=nil { return err }
 
-	go account.CallWebHookIfExist(EventArticleDeleted, article)
+	event.AsyncFire(Event{}.ArticleDeleted(account.ID, article.ID))
 
 	return nil
 }

@@ -18,8 +18,8 @@ type EventListener struct {
 	EventID		uint `json:"eventId" gorm:"type:int;"` // аналог EventName
 	HandlerID	uint `json:"handlerId" gorm:"type:int;"` // аналог EventName
 
-	// TargetID		uint `json:"handlerId" gorm:"type:int;"` // аналог EventName
-	// OwnerType	uint `json:"handlerId" gorm:"type:int;"` // аналог EventName
+	EntityId	uint 	`json:"entityId" gorm:"type:int;"` // ID целевого entity
+	// EntityType	string 	`json:"entityType" gorm:"type:varchar(50);default:''"` // таблица / Объект
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false"`
 
@@ -242,14 +242,13 @@ func (EventListener) ReloadEventHandlers() error {
 
 func (eventListener EventListener) LoadListener() {
 	// fmt.Println(": ", eventListener.Event)
-	if eventListener.Event.Name == "" || eventListener.Handler.Name == "" {
+	if eventListener.Event.Code == "" || eventListener.Handler.Code == "" {
 		log.Println("LoadListener is empty name")
 		// log.Println("LoadListener is empty name", eventListener.Event, eventListener.Handler)
 		return
 	}
 	em := event.DefaultEM
-	// em.AddListener(eventListener.Event.Name, Handler{TargetName: eventListener.Handler.Name}, eventListener.Priority)
-	em.AddListener(eventListener.Event.Name, eventListener, eventListener.Priority)
+	em.AddListener(eventListener.Event.Code, eventListener, eventListener.Priority)
 }
 
 /*func (eventListener EventListener) RemoveListener() {

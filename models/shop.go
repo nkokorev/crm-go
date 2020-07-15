@@ -471,4 +471,16 @@ func (shop Shop) DeliveryListOptions() map[string]interface{} {
 	}
 }
 
+// Вспомогательная функция
+func GetAccountIdByShopId(shopId uint) (uint, error) {
+	type Result struct {
+		AccountId uint `json:"accountId"`
+	}
+	var result Result
+	if err := db.Table("shops").Where("shop_id = ?", shopId).Scan(&result).Error; err != nil {
+		return 0, err
+	}
+
+	return result.AccountId, nil
+}
 /*,*/

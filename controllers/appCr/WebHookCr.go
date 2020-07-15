@@ -27,14 +27,14 @@ func WebHookCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wh, err := account.CreateWebHook(input.WebHook)
+	entity, err := account.CreateEntity(&input.WebHook)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания WebHook"}))
 		return
 	}
 
 	resp := u.Message(true, "POST WebHook Create")
-	resp["webHook"] = *wh
+	resp["webHook"] = entity
 	u.Respond(w, resp)
 }
 
@@ -51,7 +51,8 @@ func WebHookGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webHook, err := account.GetWebHook(webHookId)
+	var webHook models.WebHook
+	err = account.LoadEntity(&webHook, webHookId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -78,7 +79,8 @@ func WebHookCall(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webHook, err := account.GetWebHook(webHookId)
+	var webHook models.WebHook
+	err = account.LoadEntity(&webHook, webHookId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти вебхук"))
 		return
@@ -101,33 +103,42 @@ func WebHookListPaginationGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Узнаем, какой список нужен
-	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
-
 	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
 	if !ok {
-		limit = 100
+		limit = 25
 	}
 	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
 	if !ok || offset < 0 {
 		offset = 0
 	}
+	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
+	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
+	if !ok {
+		sortBy = ""
+	}
+	if sortDesc {
+		sortBy += " desc"
+	}
 	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
 	if !ok {
 		search = ""
 	}
+	// 2. Узнаем, какой список нужен
+	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
-	webHooks := make([]models.WebHook,0)
-	total := 0
+
+	var total uint = 0
+	webHooks := make([]models.Entity,0)
 
 	if all == "true" && allOk {
-		webHooks, err = account.GetWebHooks()
+		webHooks, total, err = account.GetListEntity(&models.WebHook{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
 			return
 		}
 	} else {
-		webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
+		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
+		webHooks, total, err = account.GetPaginationListEntity(&models.WebHook{}, offset, limit, sortBy, search)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
 			return
@@ -165,8 +176,14 @@ func WebHookUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webHook, err := account.UpdateWebHook(webHookId, input)
-	if err != nil {
+	var webHook models.WebHook
+	if err = account.LoadEntity(&webHook, webHookId); err != nil {
+		u.Respond(w, u.MessageError(err, "WEbHook не найден"))
+		return
+	}
+
+	// webHook, err := account.UpdateWebHook(webHookId, input)
+	if err = account.UpdateEntity(&webHook, input); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
@@ -191,9 +208,15 @@ func WebHookDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var webHook models.WebHook
+	if err = account.LoadEntity(&webHook, webHookId); err != nil {
+		u.Respond(w, u.MessageError(err, "WEbHook не найден"))
+		return
+	}
 
-	if err = account.DeleteWebHook(webHookId); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении webHook"))
+	// webHook, err := account.UpdateWebHook(webHookId, input)
+	if err = account.DeleteEntity(&webHook); err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении"))
 		return
 	}
 

@@ -11,8 +11,14 @@ type HandlerItem struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
 	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	Name		string 	`json:"name" gorm:"type:varchar(255);unique;not null;"`
+	Name		string 	`json:"name" gorm:"type:varchar(255);unique;not null;"`  // Вызов WebHook'а
+
+	Code		string 	`json:"code" gorm:"type:varchar(255);unique;not null;"` // Имя функции 'WebHookCall'
+	EntityType	string 	`json:"entityType" gorm:"type:varchar(50);not null;"` // имя типа (таблицы): 'web_hooks'
+
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false;"` // Глобальный статус Observer
+
+
 
 	Description string 	`json:"description" gorm:"type:text;"` // pgsql: text
 

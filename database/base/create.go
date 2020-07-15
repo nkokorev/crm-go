@@ -85,7 +85,7 @@ func RefreshTables() {
 
 	models.Storage{}.PgSqlCreate()
 
-	models.WebHook{}.PgSqlCreate()
+
 	models.Article{}.PgSqlCreate()
 
 	UploadTestData()
@@ -96,7 +96,7 @@ func RefreshTablesPart_II() {
 	pool := models.GetPool()
 
 
-	pool.DropTableIfExists(models.EventListener{}, models.EventItem{},models.HandlerItem{}, models.Order{}, models.DeliveryPickup{}, models.DeliveryRussianPost{}, models.DeliveryCourier{})
+	pool.DropTableIfExists(models.WebHook{}, models.EventListener{}, models.EventItem{},models.HandlerItem{}, models.Order{}, models.DeliveryPickup{}, models.DeliveryRussianPost{}, models.DeliveryCourier{})
 
 	models.Order{}.PgSqlCreate()
 	models.DeliveryRussianPost{}.PgSqlCreate()
@@ -106,6 +106,8 @@ func RefreshTablesPart_II() {
 	models.HandlerItem{}.PgSqlCreate()
 	models.EventItem{}.PgSqlCreate()
 	models.EventListener{}.PgSqlCreate()
+
+	models.WebHook{}.PgSqlCreate()
 
 	UploadTestDataPart_II()
 	UploadTestDataPart_III()
@@ -1113,57 +1115,9 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		}
 	}
 
-	// 9. Создаем вебхкуи
-	domainAiroSite := ""
-	AppEnv := os.Getenv("APP_ENV")
 
-	switch AppEnv {
-	case "local":
-		domainAiroSite = "http://airoclimate.me"
-	case "public":
-		domainAiroSite = "http://airoclimate.ratus-dev.ru"
-	default:
-		domainAiroSite = "http://airoclimate.ratus-dev.ru"
-	}
 
-	webHooks := []models.WebHook {
-		{Name: "Upload all shop data", EventType: models.EventUpdateAllShopData, URL: domainAiroSite + "/ratuscrm/webhooks/upload/all", HttpMethod: http.MethodGet},
 
-		// Upload all
-		{Name: "Upload all shop", EventType: models.EventShopsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/shops", HttpMethod: http.MethodGet},
-		{Name: "Upload all products", EventType: models.EventProductsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/products", HttpMethod: http.MethodGet},
-		{Name: "Upload all product cards", EventType: models.EventProductCardsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards", HttpMethod: http.MethodGet},
-		{Name: "Upload all product groups", EventType: models.EventProductGroupsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups", HttpMethod: http.MethodGet},
-		{Name: "Upload all articles", EventType: models.EventArticlesUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/articles", HttpMethod: http.MethodGet},
-
-		// Create entity
-		{Name: "Create shop", EventType: models.EventShopCreated, URL: domainAiroSite + "/ratuscrm/webhooks/shops/{{.ID}}", HttpMethod: http.MethodPost},
-		{Name: "create product", EventType: models.EventProductCreated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.ID}}", HttpMethod: http.MethodPost},
-		{Name: "Create product card", EventType: models.EventProductCardCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.ID}}", HttpMethod: http.MethodPost},
-		{Name: "Create product group", EventType: models.EventProductGroupCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.ID}}", HttpMethod: http.MethodPost},
-		{Name: "Create article", EventType: models.EventArticleCreated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.ID}}", HttpMethod: http.MethodPost},
-
-		// Update entity
-		{Name: "Update shop", EventType: models.EventShopUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/shops", HttpMethod: http.MethodPatch},
-		{Name: "Update product", EventType: models.EventProductUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.ID}}", HttpMethod: http.MethodPatch},
-		{Name: "Update product card", EventType: models.EventProductCardUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.ID}}", HttpMethod: http.MethodPatch},
-		{Name: "Update product group", EventType: models.EventProductGroupUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.ID}}", HttpMethod: http.MethodPatch},
-		{Name: "Update article", EventType: models.EventArticleUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.ID}}", HttpMethod: http.MethodPatch},
-
-		// Delete
-		{Name: "Delete shop", EventType: models.EventShopDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/shops", HttpMethod: http.MethodDelete},
-		{Name: "Delete product", EventType: models.EventProductDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.ID}}", HttpMethod: http.MethodDelete},
-		{Name: "Delete product card", EventType: models.EventProductCardDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.ID}}", HttpMethod: http.MethodDelete},
-		{Name: "Delete product group", EventType: models.EventProductGroupDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.ID}}", HttpMethod: http.MethodDelete},
-		{Name: "Delete article", EventType: models.EventArticleDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.ID}}", HttpMethod: http.MethodDelete},
-	}
-	for i,_ := range webHooks {
-		 _, err = airoClimat.CreateWebHook(webHooks[i])
-		if err != nil {
-			log.Fatal("Не удалось создать webHook: ", err)
-		}
-
-	}
 	
 	return
 
@@ -1235,7 +1189,7 @@ func UploadTestDataPart_II() {
 
 func UploadTestDataPart_III() {
 	// 1. Получаем главный аккаунт
-	account, err := models.GetAccount(5)
+	airoAccount, err := models.GetAccount(5)
 	if err != nil {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
@@ -1246,9 +1200,9 @@ func UploadTestDataPart_III() {
 	}
 
 	// HandlerItem
-	eventHandlers := []models.HandlerItem{
-		{Name: "EmailQueueRun", Enabled: true, Description: "Запуск автоматической серии email писем с указанным ID"},
-		{Name: "WebHookCall", Enabled: true, Description: "Вызов WebHook с указанным ID."},
+	eventHandlers := []models.HandlerItem {
+		{Name:"Запуск email-серии", Code: "EmailQueueRun", EntityType: "email_templates", Enabled: true, Description: "Запуск автоматической серии email писем с указанным ID"},
+		{Name:"Вызов WebHook'а", Code: "WebHookCall", EntityType: "web_hooks", Enabled: true, Description: "Вызов указанного WebHook'а"},
 	}
 	for _,v := range eventHandlers {
 		_, err = mainAccount.CreateEntity(&v)
@@ -1259,8 +1213,9 @@ func UploadTestDataPart_III() {
 
 	// Events
 	eventItems := []models.EventItem{
-		{Name: "UserCreated", Enabled: true, Description: "Создание пользователя в текущем аккаунте. Сам пользователь на момент вызова не имеет доступа к аккаунту (если вообще будет)."},
-		{Name: "UserAppendedToAccount", Enabled: true, Description: "Пользователь получил доступ в текущий аккаунт с какой-то конкретно ролью."},
+		{Name: "Пользователь создан", Code: "UserCreated", Enabled: true, Description: "Создание пользователя в текущем аккаунте. Сам пользователь на момент вызова не имеет доступа к аккаунту (если вообще будет)."},
+		{Name: "Пользователь добавлен в аккаунт", Code: "UserAppendedToAccount", Enabled: true, Description: "Пользователь получил доступ в текущий аккаунт с какой-то конкретно ролью."},
+		{Name: "Товар обновлен", Code: "ProductUpdated", Enabled: true, Description: "Данные товара или услуги обновлены"},
 	}
 	for _,v := range eventItems {
 		_, err = mainAccount.CreateEntity(&v)
@@ -1270,21 +1225,75 @@ func UploadTestDataPart_III() {
 	}
 
 	els := []models.EventListener{
-		{Name: "Велком серия", EventID: 1, HandlerID: 1, Enabled: true},
-		{Name: "Уведомление сайта", EventID: 2, HandlerID: 2, Enabled: true},
+		{Name: "Уведомление сайта 1", EventID: 1, HandlerID: 1, EntityId: 1, Enabled: true},
+		{Name: "Уведомление сайта 2", EventID: 2, HandlerID: 2, EntityId: 2, Enabled: true},
+		{Name: "Уведомление сайта 2", EventID: 3, HandlerID: 2, EntityId: 13, Enabled: true},
 	}
 	for i := range els {
-		_, err = account.CreateEntity(&els[i])
+		_, err = airoAccount.CreateEntity(&els[i])
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	for i := range els {
+
+	// 9. Создаем вебхкуи
+	domainAiroSite := ""
+	AppEnv := os.Getenv("APP_ENV")
+
+	switch AppEnv {
+	case "local":
+		domainAiroSite = "http://airoclimate.me"
+	case "public":
+		domainAiroSite = "http://airoclimate.ratus-dev.ru"
+	default:
+		domainAiroSite = "http://airoclimate.ratus-dev.ru"
+	}
+
+	webHooks := []models.WebHook {
+		{Name: "Upload all shop data", Code: models.EventUpdateAllShopData, URL: domainAiroSite + "/ratuscrm/webhooks/upload/all", HttpMethod: http.MethodGet},
+
+		// Upload all
+		{Name: "Upload all shop", Code: models.EventShopsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/shops", HttpMethod: http.MethodGet},
+		{Name: "Upload all products", Code: models.EventProductsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/products", HttpMethod: http.MethodGet},
+		{Name: "Upload all product cards", Code: models.EventProductCardsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards", HttpMethod: http.MethodGet},
+		{Name: "Upload all product groups", Code: models.EventProductGroupsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups", HttpMethod: http.MethodGet},
+		{Name: "Upload all articles", Code: models.EventArticlesUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/articles", HttpMethod: http.MethodGet},
+
+		// Create entity
+		{Name: "Create shop", Code: models.EventShopCreated, URL: domainAiroSite + "/ratuscrm/webhooks/shops/{{.ID}}", HttpMethod: http.MethodPost},
+		{Name: "create product", Code: models.EventProductCreated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.ID}}", HttpMethod: http.MethodPost},
+		{Name: "Create product card", Code: models.EventProductCardCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.ID}}", HttpMethod: http.MethodPost},
+		{Name: "Create product group", Code: models.EventProductGroupCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.ID}}", HttpMethod: http.MethodPost},
+		{Name: "Create article", Code: models.EventArticleCreated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.ID}}", HttpMethod: http.MethodPost},
+
+		// Update entity
+		{Name: "Update shop", Code: models.EventShopUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/shops", HttpMethod: http.MethodPatch},
+		{Name: "Update product", Code: models.EventProductUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.ID}}", HttpMethod: http.MethodPatch},
+		{Name: "Update product card", Code: models.EventProductCardUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.ID}}", HttpMethod: http.MethodPatch},
+		{Name: "Update product group", Code: models.EventProductGroupUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.ID}}", HttpMethod: http.MethodPatch},
+		{Name: "Update article", Code: models.EventArticleUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.ID}}", HttpMethod: http.MethodPatch},
+
+		// Delete
+		{Name: "Delete shop", Code: models.EventShopDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/shops", HttpMethod: http.MethodDelete},
+		{Name: "Delete product", Code: models.EventProductDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.ID}}", HttpMethod: http.MethodDelete},
+		{Name: "Delete product card", Code: models.EventProductCardDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.ID}}", HttpMethod: http.MethodDelete},
+		{Name: "Delete product group", Code: models.EventProductGroupDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.ID}}", HttpMethod: http.MethodDelete},
+		{Name: "Delete article", Code: models.EventArticleDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.ID}}", HttpMethod: http.MethodDelete},
+	}
+	for i,_ := range webHooks {
+		// _, err = airoAccount.CreateWebHook(webHooks[i])
+		_, err = airoAccount.CreateEntity(&webHooks[i])
+		if err != nil {
+			log.Fatal("Не удалось создать webHook: ", err)
+		}
+
+	}
+/*	for i := range els {
 		_, err = mainAccount.CreateEntity(&els[i])
 		if err != nil {
 			log.Fatal(err)
 		}
-	}
+	}*/
 
 
 

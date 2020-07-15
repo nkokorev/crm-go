@@ -3,6 +3,8 @@ package models
 import (
 	"errors"
 	"github.com/jinzhu/gorm"
+	"github.com/nkokorev/crm-go/event"
+	"github.com/nkokorev/crm-go/utils"
 )
 
 type ProductGroup struct {
@@ -57,9 +59,19 @@ func (productGroup ProductGroup) getId() uint {
 
 // ######### CRUD Functions ############
 func (productGroup ProductGroup) create() (*ProductGroup, error)  {
+	
+	if productGroup.ShopID < 1 {
+		return nil, utils.Error{Message: "Необходимо указать ID магазина"}
+	}
+
 	var productGroupNew = productGroup
-	err := db.Create(&productGroupNew).First(&productGroupNew).Error
-	return &productGroupNew, err
+	if err := db.Create(&productGroupNew).Preload("Shop").Find(productGroupNew).Error; err != nil {
+		return nil, err
+	}
+
+	event.AsyncFire(Event{}.ProductGroupCreated(productGroupNew.Shop.AccountID, productGroupNew.ID))
+	
+	return &productGroupNew, nil
 }
 
 func (ProductGroup) get(id uint) (*ProductGroup, error) {
@@ -74,13 +86,24 @@ func (ProductGroup) get(id uint) (*ProductGroup, error) {
 }
 
 func (productGroup *ProductGroup) update(input map[string]interface{}) error {
-	// return db.Model(group).Omit("id").Updates(structs.Map(input)).Error
-	return db.Model(productGroup).Omit("id").Updates(input).Error
+	if err :=  db.Model(productGroup).Omit("id").Updates(input).Preload("Shop").Find(productGroup).Error; err != nil { return err }
 
+	event.AsyncFire(Event{}.ProductGroupUpdated(productGroup.Shop.AccountID, productGroup.ID))
+
+	return nil
 }
 
 func (productGroup ProductGroup) delete () error {
-	return db.Model(ProductGroup{}).Where("id = ?", productGroup.ID).Delete(productGroup).Error
+
+	accountId, err2 := GetAccountIdByShopId(productGroup.ShopID)
+
+	if err := db.Model(ProductGroup{}).Where("id = ?", productGroup.ID).Delete(productGroup).Error; err != nil { return err }
+
+	if err2 != nil {
+		event.AsyncFire(Event{}.ProductGroupDeleted(accountId, productGroup.ID))
+	}
+
+	return nil
 }
 // ######### END CRUD Functions ############
 
@@ -93,10 +116,10 @@ func (shop Shop) CreateProductGroup(input ProductGroup) (*ProductGroup, error) {
 		return nil, err
 	}
 
-	account, err := GetAccount(shop.AccountID)
+	/*account, err := GetAccount(shop.AccountID)
 	if err == nil && account != nil {
-		go account.CallWebHookIfExist(EventProductGroupCreated, productGroup)
-	}
+		event.AsyncFire(Event{}.ProductGroupCreated(account.ID, productGroup.ID))
+	}*/
 
 	return productGroup, nil
 }
@@ -232,10 +255,10 @@ func (shop Shop) UpdateProductGroup(groupId uint, input map[string]interface{}) 
 		return nil, err
 	}
 
-	account, err := GetAccount(shop.AccountID)
+	/*account, err := GetAccount(shop.AccountID)
 	if err == nil && account != nil {
 		go account.CallWebHookIfExist(EventProductGroupUpdated, productGroup)
-	}
+	}*/
 
 	return productGroup, nil
 }
@@ -250,11 +273,6 @@ func (shop Shop) DeleteProductGroup(groupId uint) error {
 
 	if err = productGroup.delete(); err != nil {
 		return err
-	}
-
-	account, err := GetAccount(shop.AccountID)
-	if err == nil && account != nil {
-		go account.CallWebHookIfExist(EventProductGroupDeleted, productGroup)
 	}
 
 	return nil

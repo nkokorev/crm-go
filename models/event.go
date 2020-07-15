@@ -17,4 +17,57 @@ func (Event) UserAppendedToAccount(accountId, userId, roleId uint) event.Event {
 	return event.NewBasic("UserAppendedToAccount", map[string]interface{}{"accountId":accountId, "userId":userId, "roleId":roleId})
 }
 
+// ######### Product #########
+func (Event) ProductCreated(accountId, productId uint) event.Event {
+	return event.NewBasic("ProductCreated", map[string]interface{}{"accountId":accountId, "productId":productId})
+}
+func (Event) ProductUpdated(accountId, productId uint) event.Event {
+	return event.NewBasic("ProductUpdated", map[string]interface{}{"accountId":accountId, "productId":productId})
+}
+func (Event) ProductDeleted(accountId, productId uint) event.Event {
+	return event.NewBasic("ProductDeleted", map[string]interface{}{"accountId":accountId, "productId":productId})
+}
 
+// ######### Article #########
+func (Event) ArticleCreated(accountId, articleId uint) event.Event {
+	return event.NewBasic("ArticleCreated", map[string]interface{}{"accountId":accountId, "articleId":articleId})
+}
+func (Event) ArticleUpdated(accountId, articleId uint) event.Event {
+	return event.NewBasic("ArticleUpdated", map[string]interface{}{"accountId":accountId, "articleId":articleId})
+}
+func (Event) ArticleDeleted(accountId, articleId uint) event.Event {
+	return event.NewBasic("ArticleDeleted", map[string]interface{}{"accountId":accountId, "articleId":articleId})
+}
+
+// ######### ProductCard #########
+func (Event) ProductCardCreated(accountId, productCardId uint) event.Event {
+	return event.NewBasic("ProductCardCreated", map[string]interface{}{"accountId":accountId, "productCardId":productCardId})
+}
+func (Event) ProductCardUpdated(accountId, productCardId uint) event.Event {
+	return event.NewBasic("ProductCardUpdated", map[string]interface{}{"accountId":accountId, "productCardId":productCardId})
+}
+func (Event) ProductCardDeleted(accountId, productCardId uint) event.Event {
+	return event.NewBasic("ProductCardDeleted", map[string]interface{}{"accountId":accountId, "productCardId":productCardId})
+}
+
+// ######### ProductGroup #########
+func (Event) ProductGroupCreated(accountId, productGroupId uint) event.Event {
+	return event.NewBasic("ProductGroupCreated", map[string]interface{}{"accountId":accountId, "productGroupId":productGroupId})
+}
+func (Event) ProductGroupUpdated(accountId, productGroupId uint) event.Event {
+	return event.NewBasic("ProductGroupUpdated", map[string]interface{}{"accountId":accountId, "productGroupId":productGroupId})
+}
+func (Event) ProductGroupDeleted(accountId, productGroupId uint) event.Event {
+	return event.NewBasic("ProductGroupDeleted", map[string]interface{}{"accountId":accountId, "productGroupId":productGroupId})
+}
+
+// ######### Storage #########
+func (Event) StorageCreated(accountId, productId uint) event.Event {
+	return event.NewBasic("ProductCreated", map[string]interface{}{"accountId":accountId, "productId":productId})
+}
+func (Event) StorageUpdated(accountId, productId uint) event.Event {
+	return event.NewBasic("ProductUpdated", map[string]interface{}{"accountId":accountId, "productId":productId})
+}
+func (Event) StorageDeleted(accountId, productId uint) event.Event {
+	return event.NewBasic("ProductDeleted", map[string]interface{}{"accountId":accountId, "productId":productId})
+}

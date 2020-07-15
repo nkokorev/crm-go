@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
 )
@@ -91,8 +92,10 @@ func (product Product) getId() uint {
 // ######### CRUD Functions ############
 func (product Product) create() (*Product, error)  {
 	var newProduct = product
-	err := db.Create(&newProduct).First(&newProduct).Error
-	return &newProduct, err
+	if err := db.Create(&newProduct).First(&newProduct).Error; err != nil { return nil, err }
+
+	event.AsyncFire(Event{}.ProductCreated(newProduct.AccountID, newProduct.ID))
+	return &newProduct, nil
 }
 
 func (Product) get(id uint) (*Product, error) {
@@ -129,11 +132,19 @@ func (product *Product) update(input map[string]interface{}) error {
 		return err
 	}
 
+	event.AsyncFire(Event{}.ProductUpdated(product.AccountID, product.ID))
+
 	return nil
 }
 
 func (product Product) delete () error {
-	return db.Model(Product{}).Where("id = ?", product.ID).Delete(product).Error
+	if err := db.Model(Product{}).Where("id = ?", product.ID).Delete(product).Error; err != nil {
+		return err
+	}
+	
+	event.AsyncFire(Event{}.ProductDeleted(product.AccountID, product.ID))
+
+	return nil
 }
 // ######### END CRUD Functions ############
 
@@ -152,9 +163,6 @@ func (account Account) CreateProduct(input Product) (*Product, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// todo: костыль вместо евента
-	go account.CallWebHookIfExist(EventProductCreated, product)
 
 	return product, nil
 }
@@ -255,7 +263,7 @@ func (account Account) UpdateProduct(productId uint, input map[string]interface{
 	}
 
 	// todo: костыль вместо евента
-	go account.CallWebHookIfExist(EventProductUpdated, product)
+	// go account.CallWebHookIfExist(EventProductUpdated, product)
 
 	return product, err
 
@@ -271,8 +279,6 @@ func (account Account) DeleteProduct(productId uint) error {
 
 	err = product.delete()
 	if err !=nil { return err }
-
-	go account.CallWebHookIfExist(EventProductDeleted, product)
 
 	return nil
 }

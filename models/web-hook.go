@@ -2,7 +2,6 @@ package models
 
 import (
 	"bytes"
-	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -10,77 +9,95 @@ import (
 	"text/template"
 )
 
-type EventTypeOld = string
+type WebHookType = string
 
 type WebHookEventObject interface {
 	getId() uint
 }
 
 const (
-	EventShopCreated 	EventTypeOld = "ShopCreated"
-	EventShopUpdated 	EventTypeOld = "ShopUpdated"
-	EventShopDeleted 	EventTypeOld = "ShopDeleted"
-	EventShopsUpdate 	EventTypeOld = "ShopsUpdate"
+	EventShopCreated 	WebHookType = "ShopCreated"
+	EventShopUpdated 	WebHookType = "ShopUpdated"
+	EventShopDeleted 	WebHookType = "ShopDeleted"
+	EventShopsUpdate 	WebHookType = "ShopsUpdate"
 
-	EventProductCreated 	EventTypeOld = "ProductCreated"
-	EventProductUpdated 	EventTypeOld = "ProductUpdated"
-	EventProductDeleted 	EventTypeOld = "ProductDeleted"
-	EventProductsUpdate 		EventTypeOld = "ProductsUpdate"
+	EventProductCreated 	WebHookType = "ProductCreated"
+	EventProductUpdated 	WebHookType = "ProductUpdated"
+	EventProductDeleted 	WebHookType = "ProductDeleted"
+	EventProductsUpdate 		WebHookType = "ProductsUpdate"
 
-	EventProductCardCreated 	EventTypeOld = "ProductCardCreated"
-	EventProductCardUpdated 	EventTypeOld = "ProductCardUpdated"
-	EventProductCardDeleted 	EventTypeOld = "ProductCardDeleted"
-	EventProductCardsUpdate 	EventTypeOld = "ProductCardsUpdate"
+	EventProductCardCreated 	WebHookType = "ProductCardCreated"
+	EventProductCardUpdated 	WebHookType = "ProductCardUpdated"
+	EventProductCardDeleted 	WebHookType = "ProductCardDeleted"
+	EventProductCardsUpdate 	WebHookType = "ProductCardsUpdate"
 
-	EventProductGroupCreated 	EventTypeOld = "ProductGroupCreated"
-	EventProductGroupUpdated 	EventTypeOld = "ProductGroupUpdated"
-	EventProductGroupDeleted 	EventTypeOld = "ProductGroupDeleted"
-	EventProductGroupsUpdate 	EventTypeOld = "ProductGroupsUpdate"
+	EventProductGroupCreated 	WebHookType = "ProductGroupCreated"
+	EventProductGroupUpdated 	WebHookType = "ProductGroupUpdated"
+	EventProductGroupDeleted 	WebHookType = "ProductGroupDeleted"
+	EventProductGroupsUpdate 	WebHookType = "ProductGroupsUpdate"
 
-	EventArticleCreated 	EventTypeOld = "ArticleCreated"
-	EventArticleUpdated 	EventTypeOld = "ArticleUpdated"
-	EventArticleDeleted 	EventTypeOld = "ArticleDeleted"
-	EventArticlesUpdate 	EventTypeOld = "ArticlesUpdate"
+	EventArticleCreated 	WebHookType = "ArticleCreated"
+	EventArticleUpdated 	WebHookType = "ArticleUpdated"
+	EventArticleDeleted 	WebHookType = "ArticleDeleted"
+	EventArticlesUpdate 	WebHookType = "ArticlesUpdate"
 
-	EventUpdateAllShopData 	EventTypeOld = "UpdateAllShopData"
+	EventUpdateAllShopData 	WebHookType = "UpdateAllShopData"
 )
 
 type WebHook struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
 	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	EventType	EventTypeOld 	`json:"eventType" gorm:"type:varchar(128);default:''"` // Имя события
+	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя вебхука
+	
+	Code		WebHookType `json:"code" gorm:"type:varchar(128);default:''"` // Имя события
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // обрабатывать ли вебхук
-	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя вебхука
+	
 	Description 		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
 	URL 		string 	`json:"url" gorm:"type:varchar(255);"` // вызов, который совершается
 	HttpMethod		string `json:"httpMethod" gorm:"type:varchar(15);default:'get';"` // Тип вызова (GET, POST, PUT, puth и т.д.)
 	//URLTemplate 		template.Template 	`json:"url" gorm:"type:varchar(255);"` // вызов, который совершается
 }
 
+// ############# Entity interface #############
+func (webHook WebHook) getId() uint { return webHook.ID }
+func (webHook *WebHook) setId(id uint) { webHook.ID = id }
+func (webHook WebHook) GetAccountId() uint { return webHook.AccountID }
+func (webHook *WebHook) setAccountId(id uint) { webHook.AccountID = id }
+func (WebHook) systemEntity() bool { return false }
+
+// ############# Entity interface #############
+
 func (WebHook) PgSqlCreate() {
 	db.CreateTable(&WebHook{})
 	db.Model(&WebHook{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }
-
 func (webHook *WebHook) BeforeCreate(scope *gorm.Scope) error {
 	webHook.ID = 0
 	return nil
 }
-
 func (WebHook) TableName() string {
 	return "web_hooks"
 }
 
 // ######### CRUD Functions ############
-func (webHook WebHook) create() (*WebHook, error) {
+/*func (webHook WebHook) create() (*WebHook, error) {
 	var whNew = webHook
 	err := db.Create(&whNew).First(&whNew).Error
 	return &whNew, err
+}*/
+func (webHook WebHook) create() (Entity, error)  {
+	var newItem Entity = &webHook
+
+	if err := db.Create(newItem).Error; err != nil {
+		return nil, err
+	}
+
+	return newItem, nil
 }
 
-func (WebHook) get(id uint) (*WebHook, error) {
+/*func (WebHook) get(id uint) (*WebHook, error) {
 
 	wh := WebHook{}
 
@@ -89,6 +106,99 @@ func (WebHook) get(id uint) (*WebHook, error) {
 	}
 
 	return &wh, nil
+}*/
+func (WebHook) get(id uint) (Entity, error) {
+
+	var webHook WebHook
+
+	err := db.First(&webHook, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &webHook, nil
+}
+func (webHook *WebHook) load() error {
+
+	err := db.First(webHook).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (WebHook) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+
+	webHooks := make([]WebHook,0)
+	var total uint
+
+	err := db.Model(&WebHook{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+		Find(&webHooks).Error
+	if err != nil && err != gorm.ErrRecordNotFound{
+		return nil, 0, err
+	}
+
+	// Определяем total
+	err = db.Model(&WebHook{}).Where("account_id = ?", accountId).Count(&total).Error
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(webHooks))
+	for i,_ := range webHooks {
+		entities[i] = &webHooks[i]
+	}
+
+	return entities, total, nil
+}
+
+func (WebHook) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+
+	webHooks := make([]WebHook,0)
+	var total uint
+
+	// if need to search
+	if len(search) > 0 {
+
+		// string pattern
+		search = "%"+search+"%"
+
+		err := db.Model(&WebHook{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = db.Model(&WebHook{}).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
+			Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+
+	} else {
+
+		err := db.Model(&WebHook{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&webHooks).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = db.Model(&WebHook{}).Where("account_id = ?", accountId).Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(webHooks))
+	for i,_ := range webHooks {
+		entities[i] = &webHooks[i]
+	}
+
+	return entities, total, nil
 }
 
 func (WebHook) getByEvent(eventName string) (*WebHook, error) {
@@ -115,9 +225,12 @@ func (WebHook) getListByAccount(accountId uint) ([]WebHook, error) {
 
 }
 
-func (webHook *WebHook) update(input interface{}) error {
+/*func (webHook *WebHook) update(input interface{}) error {
 	return db.Model(webHook).Omit("id", "account_id").Update(input).Error
 
+}*/
+func (webHook *WebHook) update(input map[string]interface{}) error {
+	return db.Set("gorm:association_autoupdate", false).Model(webHook).Omit("id", "account_id").Update(input).Error
 }
 
 func (webHook WebHook) delete () error {
@@ -125,7 +238,7 @@ func (webHook WebHook) delete () error {
 }
 // ######### END CRUD Functions ############
 
-func (account Account) CreateWebHook(input WebHook) (*WebHook, error) {
+/*func (account Account) CreateWebHook(input WebHook) (*WebHook, error) {
 	input.AccountID = account.ID
 	return input.create()
 }
@@ -144,7 +257,7 @@ func (account Account) GetWebHook(id uint) (*WebHook, error) {
 	return wh, nil
 }
 
-func (account Account) GetWebHookByEvent(eventType EventTypeOld) (*WebHook, error) {
+func (account Account) GetWebHookByEvent(eventType WebHookType) (*WebHook, error) {
 
 	wh, err := WebHook{}.getByEvent(eventType)
 	if err != nil {
@@ -158,7 +271,7 @@ func (account Account) GetWebHookByEvent(eventType EventTypeOld) (*WebHook, erro
 	return wh, nil
 }
 
-func (account Account) CallWebHookIfExist(eventType EventTypeOld, object WebHookEventObject) bool {
+func (account Account) CallWebHookIfExist(eventType WebHookType, object WebHookEventObject) bool {
 
 	webHook, err := account.GetWebHookByEvent(eventType)
 	if err != nil {
@@ -240,7 +353,7 @@ func (account Account) DeleteWebHook(webHookId uint) error {
 	}
 
 	return webHook.delete()
-}
+}*/
 
 // ##################
 

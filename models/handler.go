@@ -17,23 +17,25 @@ func (handle EventListener) Handle(e event.Event) error {
 
 	// utils.TimeTrack(time.Now())
 
-	if handle.Handler.Name == "" {
-		log.Printf("EventListener Handle Name is nill: %v\n", handle.Handler.Name)
-		return utils.Error{Message: fmt.Sprintf("EventListener Handle Name is nill %v\n", handle.Handler.Name)}
+	TargetName := handle.Handler.Code
+
+	if TargetName == "" {
+		log.Printf("EventListener Handle Name is nill: %v\n", TargetName)
+		return utils.Error{Message: fmt.Sprintf("EventListener Handle Name is nill %v\n", TargetName)}
 	}
 
 	// 1. Получаем метод обработки по имени Target
-	m := reflect.ValueOf(handle).MethodByName(handle.Handler.Name)
+	m := reflect.ValueOf(handle).MethodByName(TargetName)
 	if m.IsNil() {
 		log.Println("Observer Handle is nill")
-		return utils.Error{Message: fmt.Sprintf("Observer Handle is nill: %v", handle.Handler.Name)}
+		return utils.Error{Message: fmt.Sprintf("Observer Handle is nill: %v", TargetName)}
 	}
 
 	// 2. Преобразуем метод, чтобы его можно было вызвать от объекта Event
 	target, ok := m.Interface().(func(e event.Event) error)
 	if !ok {
 		log.Println("Observer mCallable !ok")
-		return utils.Error{Message: fmt.Sprintf("Observer mCallable !ok: %v", handle.Handler.Name)}
+		return utils.Error{Message: fmt.Sprintf("Observer mCallable !ok: %v", TargetName)}
 	}
 
 	// 3. Вызываем Target-метод с объектом Event
@@ -54,9 +56,10 @@ func (handler EventListener) EmailQueueRun(e event.Event) error {
 	return nil
 }
 func (handler EventListener) WebHookCall(e event.Event) error {
-	fmt.Printf("Вызов вебхука, событие: %v Данные: %v\n", e.Name(), e.Data())
-	// fmt.Println("Observer: ", handler) // контекст вебхука, какой именно и т.д.
-	// e.Set("result", "OK")
+	fmt.Printf("Вызов вебхука, событие: %v Данные: %v, entityId %v\n", e.Name(), e.Data(), handler.EntityId)
+
+
+
 	return nil
 }
 // #############   END Of Event Handlers   #############

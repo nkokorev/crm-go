@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 )
 
@@ -60,8 +61,13 @@ func (productCard ProductCard) getId() uint {
 // ######### CRUD Functions ############
 func (productCard ProductCard) create() (*ProductCard, error) {
 	var productCardNew = productCard
-	err := db.Create(&productCardNew).First(&productCardNew).Error
-	return &productCardNew, err
+	if err := db.Create(&productCardNew).First(&productCardNew).Error; err != nil {
+		return nil, err
+	}
+
+	event.AsyncFire(Event{}.ProductCardCreated(productCardNew.AccountID, productCardNew.ID))
+
+	return &productCardNew, nil
 }
 
 func (ProductCard) get(id uint) (*ProductCard, error) {
@@ -112,15 +118,21 @@ func (ProductCard) getListByAccount(accountId uint) ([]ProductCard, error) {
 }
 
 func (productCard *ProductCard) update(input map[string]interface{}) error {
-	// fmt.Println(input)
-	// return db.Model(card).Omit("id", "account_id").Update(input).Error
-	//return db.Model(productCard).Omit("id", "account_id").Updates(structs.Map(input)).Error
-	return db.Model(productCard).Omit("id", "account_id").Updates(input).Error
+	if err := db.Model(productCard).Omit("id", "account_id").Updates(input).Find(productCard).Error; err != nil {
+		return err
+	}
 
+	event.AsyncFire(Event{}.ProductCardUpdated(productCard.AccountID, productCard.ID))
+
+	return nil
 }
 
 func (productCard ProductCard) delete () error {
-	return db.Model(ProductCard{}).Where("id = ?", productCard.ID).Delete(productCard).Error
+	if err := db.Model(ProductCard{}).Where("id = ?", productCard.ID).Delete(productCard).Error; err != nil { return err }
+
+	event.AsyncFire(Event{}.ProductCardDeleted(productCard.AccountID, productCard.ID))
+
+	return nil
 }
 // ######### END CRUD Functions ############
 
@@ -218,9 +230,6 @@ func (account Account) CreateProductCard(input ProductCard) (*ProductCard, error
 		return nil, err
 	}
 
-	// todo: костыль вместо евента
-	go account.CallWebHookIfExist(EventProductCardCreated, productCard)
-
 	return productCard, nil
 }
 
@@ -247,9 +256,6 @@ func (account Account) UpdateProductCard(cardId uint, input map[string]interface
 		return nil, err
 	}
 
-	// todo: костыль вместо евента
-	go account.CallWebHookIfExist(EventProductCardUpdated, productCard)
-
 	return productCard, nil
 }
 
@@ -265,9 +271,6 @@ func (account Account) DeleteProductCard(cardId uint) error {
 		return err
 	}
 
-
-	go account.CallWebHookIfExist(EventProductCardDeleted, productCard)
-
 	return nil
 }
 // ######### END IF SHOP PRODUCT Functions ############
@@ -281,7 +284,7 @@ func (productCard ProductCard) AppendProduct(product *Product) error {
 
 	account, err := GetAccount(productCard.AccountID)
 	if err == nil && account != nil {
-		go account.CallWebHookIfExist(EventProductCardUpdated, productCard)
+		event.AsyncFire(Event{}.ProductCardUpdated(account.ID, productCard.ID))
 	}
 
 	return nil

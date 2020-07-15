@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
+	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"os"
 	"strings"
@@ -140,7 +141,7 @@ func (Storage) getByHashId(hashId string) (*Storage, error)  {
 	return &fs, nil
 }
 
-func (fs *Storage) update(input interface{}) error {
+func (fs *Storage) update(input map[string]interface{}) error {
 	// fmt.Println(input)
 	// return db.Model(fs).Omit("id", "hashId", "account_id","created_at", "updated_at").Updates(structs.Map(input)).Error
 	return db.Model(fs).Omit("id", "hashId", "account_id","created_at", "updated_at").Updates(input).Error
@@ -277,7 +278,7 @@ func (account Account) StorageGetList(offset, limit uint, search string, ownerId
 	return files, total, nil
 }
 
-func (account Account) StorageUpdateFile(file *Storage, input interface{}) error {
+func (account Account) StorageUpdateFile(file *Storage, input map[string]interface{}) error {
 
 	if file.AccountID != account.ID {
 		return errors.New("Файл принадлежит другому аккаунту")
@@ -348,25 +349,31 @@ func (account Account) CallWebHookCreated(fs Storage) {
 	// fmt.Println("OwnerType: ", fs.OwnerType)
 	switch fs.OwnerType {
 	case "products":
-		go account.CallWebHookIfExist(EventArticleUpdated, Product{ID: fs.OwnerID})
+		event.AsyncFire(Event{}.ProductUpdated(account.ID, fs.OwnerID))
+		// go account.CallWebHookIfExist(EventArticleUpdated, Product{ID: fs.OwnerID})
 	case "articles":
-		go account.CallWebHookIfExist(EventArticleUpdated, Article{ID: fs.OwnerID})
+		event.AsyncFire(Event{}.ArticleUpdated(account.ID, fs.OwnerID))
+		// go account.CallWebHookIfExist(EventArticleUpdated, Article{ID: fs.OwnerID})
 	}
 }
 func (account Account) CallWebHookUpdated(fs Storage) {
 	switch fs.OwnerType {
 	case "products":
-		go account.CallWebHookIfExist(EventProductUpdated, Product{ID: fs.OwnerID})
+		event.AsyncFire(Event{}.ProductUpdated(account.ID, fs.OwnerID))
+		// go account.CallWebHookIfExist(EventProductUpdated, Product{ID: fs.OwnerID})
 	case "articles":
-		go account.CallWebHookIfExist(EventArticleUpdated, Article{ID: fs.OwnerID})
+		event.AsyncFire(Event{}.ArticleUpdated(account.ID, fs.OwnerID))
+		// go account.CallWebHookIfExist(EventArticleUpdated, Article{ID: fs.OwnerID})
 	}
 }
 func (account Account) CallWebHookDeleted(fs Storage) {
 	switch fs.OwnerType {
 	case "products":
-		go account.CallWebHookIfExist(EventArticleUpdated, Product{ID: fs.OwnerID})
+		event.AsyncFire(Event{}.ProductDeleted(account.ID, fs.OwnerID))
+		// go account.CallWebHookIfExist(EventArticleUpdated, Product{ID: fs.OwnerID})
 	case "articles":
-		go account.CallWebHookIfExist(EventArticleUpdated, Article{ID: fs.OwnerID})
+		event.AsyncFire(Event{}.ArticleDeleted(account.ID, fs.OwnerID))
+		// go account.CallWebHookIfExist(EventArticleUpdated, Article{ID: fs.OwnerID})
 	}
 }
 
