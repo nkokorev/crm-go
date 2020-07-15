@@ -80,3 +80,14 @@ func (Event) ArticleUpdated(accountId, articleId uint) event.Event {
 func (Event) ArticleDeleted(accountId, articleId uint) event.Event {
 	return event.NewBasic("ArticleDeleted", map[string]interface{}{"accountId":accountId, "articleId":articleId})
 }
+
+// ######### Shop #########
+func (Event) ShopCreated(accountId, shopId uint) event.Event {
+	return event.NewBasic("ShopCreated", map[string]interface{}{"accountId":accountId, "shopId":shopId})
+}
+func (Event) ShopUpdated(accountId, shopId uint) event.Event {
+	return event.NewBasic("ShopUpdated", map[string]interface{}{"accountId":accountId, "shopId":shopId})
+}
+func (Event) ShopDeleted(accountId, shopId uint) event.Event {
+	return event.NewBasic("ShopDeleted", map[string]interface{}{"accountId":accountId, "shopId":shopId})
+}
