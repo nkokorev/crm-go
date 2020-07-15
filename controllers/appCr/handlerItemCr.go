@@ -10,7 +10,7 @@ import (
 
 // Обсерверы являются чисто системными, их нельзя добавлять или менять из-под других аккаунтов
 
-func ObserverItemCreate(w http.ResponseWriter, r *http.Request) {
+func HandlerItemCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -39,37 +39,37 @@ func ObserverItemCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := u.Message(true, "POST Observer Item Created")
-	resp["observerItem"] = obItem
+	resp := u.Message(true, "POST Handler Item Created")
+	resp["handlerItem"] = obItem
 	u.Respond(w, resp)
 }
 
-func ObserverItemGet(w http.ResponseWriter, r *http.Request) {
+func HandlerItemGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	observerItemId, err := utilsCr.GetUINTVarFromRequest(r, "observerItemId")
+	handlerItemId, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке observer Item Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке handler Item Id"))
 		return
 	}
 
 	var obItem models.HandlerItem
-	err = account.LoadEntity(&obItem, observerItemId)
+	err = account.LoadEntity(&obItem, handlerItemId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить observer item"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить handler item"))
 		return
 	}
 
-	resp := u.Message(true, "GET Observer List")
-	resp["observerItem"] = obItem
+	resp := u.Message(true, "GET Handler List")
+	resp["handlerItem"] = obItem
 	u.Respond(w, resp)
 }
 
-func ObserverItemGetList(w http.ResponseWriter, r *http.Request) {
+func HandlerItemGetList(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
@@ -101,15 +101,15 @@ func ObserverItemGetList(w http.ResponseWriter, r *http.Request) {
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
 	var total uint = 0
-	observerItems := make([]models.Entity,0)
+	handlerItems := make([]models.Entity,0)
 	if all == "true" && allOk {
-		observerItems, total, err = account.GetListEntity(&models.HandlerItem{}, sortBy)
+		handlerItems, total, err = account.GetListEntity(&models.HandlerItem{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 			return
 		}
 	} else {
-		observerItems, total, err = account.GetPaginationListEntity(&models.HandlerItem{}, offset, limit, sortBy, search)
+		handlerItems, total, err = account.GetPaginationListEntity(&models.HandlerItem{}, offset, limit, sortBy, search)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -120,11 +120,11 @@ func ObserverItemGetList(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET System Observers Pagination List")
 	resp["total"] = total
-	resp["observerItems"] = observerItems
+	resp["handlerItems"] = handlerItems
 	u.Respond(w, resp)
 }
 
-func ObserverItemGetListPagination(w http.ResponseWriter, r *http.Request) {
+func HandlerItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
@@ -155,16 +155,16 @@ func ObserverItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
 	var total uint = 0
-	observerItems := make([]models.Entity,0)
+	handlerItems := make([]models.Entity,0)
 
 	if all == "true" && allOk {
-		observerItems, total, err = account.GetListEntity(&models.HandlerItem{}, sortBy)
+		handlerItems, total, err = account.GetListEntity(&models.HandlerItem{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 			return
 		}
 	} else {
-		observerItems, total, err = account.GetPaginationListEntity(&models.HandlerItem{}, offset, limit, sortBy, search)
+		handlerItems, total, err = account.GetPaginationListEntity(&models.HandlerItem{}, offset, limit, sortBy, search)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -175,11 +175,11 @@ func ObserverItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET System Observers Pagination List")
 	resp["total"] = total
-	resp["observerItems"] = observerItems
+	resp["handlerItems"] = handlerItems
 	u.Respond(w, resp)
 }
 
-func ObserverItemUpdate(w http.ResponseWriter, r *http.Request) {
+func HandlerItemUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -192,14 +192,14 @@ func ObserverItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	observerItemId, err := utilsCr.GetUINTVarFromRequest(r, "observerItemId")
+	handlerItemId, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке observer Item Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке handler Item Id"))
 		return
 	}
 
 	var obItem models.HandlerItem
-	err = account.LoadEntity(&obItem, observerItemId)
+	err = account.LoadEntity(&obItem, handlerItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -218,12 +218,12 @@ func ObserverItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := u.Message(true, "PATCH Observer Item Update")
-	resp["observerItem"] = obItem
+	resp := u.Message(true, "PATCH Handler Item Update")
+	resp["handlerItem"] = obItem
 	u.Respond(w, resp)
 }
 
-func ObserverItemDelete(w http.ResponseWriter, r *http.Request) {
+func HandlerItemDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -236,14 +236,14 @@ func ObserverItemDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	observerItemId, err := utilsCr.GetUINTVarFromRequest(r, "observerItemId")
+	handlerItemId, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
 	var obItem models.HandlerItem
-	err = account.LoadEntity(&obItem, observerItemId)
+	err = account.LoadEntity(&obItem, handlerItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return

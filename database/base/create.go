@@ -96,7 +96,7 @@ func RefreshTablesPart_II() {
 	pool := models.GetPool()
 
 
-	pool.DropTableIfExists(models.EventItem{},models.HandlerItem{}, models.EventListener{}, models.Order{}, models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
+	pool.DropTableIfExists(models.EventListener{}, models.EventItem{},models.HandlerItem{}, models.Order{}, models.DeliveryPickup{}, models.DeliveryRussianPost{}, models.DeliveryCourier{})
 
 	models.Order{}.PgSqlCreate()
 	models.DeliveryRussianPost{}.PgSqlCreate()

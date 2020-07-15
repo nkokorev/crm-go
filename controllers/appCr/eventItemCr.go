@@ -51,14 +51,14 @@ func EventItemGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	observerItemId, err := utilsCr.GetUINTVarFromRequest(r, "observerItemId")
+	eventItemId, err := utilsCr.GetUINTVarFromRequest(r, "eventItemId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке observer Item Id"))
 		return
 	}
 
 	var eventItem models.EventItem
-	err = account.LoadEntity(&eventItem, observerItemId)
+	err = account.LoadEntity(&eventItem, eventItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить observer item"))
 		return
@@ -192,14 +192,14 @@ func EventItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	observerItemId, err := utilsCr.GetUINTVarFromRequest(r, "observerItemId")
+	eventItemId, err := utilsCr.GetUINTVarFromRequest(r, "eventItemId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке observer Item Id"))
 		return
 	}
 
 	var eventItem models.EventItem
-	err = account.LoadEntity(&eventItem, observerItemId)
+	err = account.LoadEntity(&eventItem, eventItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -236,14 +236,14 @@ func EventItemDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	observerItemId, err := utilsCr.GetUINTVarFromRequest(r, "observerItemId")
+	eventItemId, err := utilsCr.GetUINTVarFromRequest(r, "eventItemId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
 	var eventItem models.EventItem
-	err = account.LoadEntity(&eventItem, observerItemId)
+	err = account.LoadEntity(&eventItem, eventItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return

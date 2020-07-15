@@ -15,7 +15,7 @@ type EventListener struct {
 
 	Name        string   `json:"name" gorm:"type:varchar(255);"` // для чего ?
 	
-	EventID		uint `json:"eventId" gorm:"type:int;default:1"` // аналог EventName
+	EventID		uint `json:"eventId" gorm:"type:int;"` // аналог EventName
 	HandlerID	uint `json:"handlerId" gorm:"type:int;"` // аналог EventName
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false"`
@@ -33,7 +33,9 @@ func (EventListener) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&EventListener{})
-	db.Model(&WebHook{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Model(&EventListener{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Model(&EventListener{}).AddForeignKey("event_id", "event_items(id)", "CASCADE", "CASCADE")
+	db.Model(&EventListener{}).AddForeignKey("handler_id", "handler_items(id)", "CASCADE", "CASCADE")
 
 }
 

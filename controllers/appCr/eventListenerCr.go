@@ -184,29 +184,3 @@ func EventListenerDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 ///////////////////////////
-
-
-
-func EventSystemListGet(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		return
-	}
-
-	resp := u.Message(true, "GET System Event List")
-	resp["systemEvents"] = models.GetSystemEventList()
-	u.Respond(w, resp)
-}
-
-func HandlersSystemListGet(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		return
-	}
-
-	resp := u.Message(true, "GET systemHandlers Event List")
-	resp["systemHandlers"] = models.GetSystemHandlerList()
-	u.Respond(w, resp)
-}
