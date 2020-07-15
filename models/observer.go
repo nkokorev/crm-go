@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
@@ -28,8 +27,8 @@ type Observer struct {
 
 	Priority 	int		`json:"priority" gorm:"type:int;default:0"` // Приоритет выполнения, по умолчанию 0 - Normal
 
-	Event 		EventItem 	`json:"event"  `
-	Handler 	HandlerItem `json:"handler"  `       // gorm:"preload:true"
+	Event 		EventItem 	`json:"event"  gorm:"preload:true"`
+	Handler 	HandlerItem `json:"handler"  gorm:"preload:true"`       // gorm:"preload:true"
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -94,7 +93,6 @@ func (Observer) getAllAccountsList() ([]Observer, error) {
 	
 	return observers, nil
 }
-
 func (Observer) getEnabledByName(accountId uint, eventName string) ([]Observer, error) {
 
 	observers := make([]Observer,0)
@@ -106,7 +104,6 @@ func (Observer) getEnabledByName(accountId uint, eventName string) ([]Observer, 
 
 	return observers, nil
 }
-
 func (Observer) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
 	observers := make([]Observer,0)
@@ -181,12 +178,8 @@ func (Observer) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 	return entities, total, nil
 }
 func (observer *Observer) update(input map[string]interface{}) error {
-	fmt.Println(input)
-	// return db.Model(observer).Omit("id", "account_id", "updated_at", "created_at").Update(input).Error
-	// m := map[string]interface{}{"accountId":2}
-	// m := map[string]interface{}{"eventId":3, "priority":10}
 	return db.Set("gorm:association_autoupdate", false).
-		Model(observer).Omit("id","account_id","created_at", "updated_at").Updates(input).Error
+		Model(observer).Omit("id","account_id","created_at", "updated_at", "event", "handler").Update(input).Error
 }
 func (observer Observer) delete () error {
 	return db.Model(Observer{}).Where("id = ?", observer.ID).Delete(observer).Error

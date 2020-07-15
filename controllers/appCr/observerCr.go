@@ -2,6 +2,7 @@ package appCr
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -129,18 +130,20 @@ func ObserverUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	observerIdId, err := utilsCr.GetUINTVarFromRequest(r, "observerIdId")
+	observerId, err := utilsCr.GetUINTVarFromRequest(r, "observerId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
 	var observer models.Observer
-	err = account.LoadEntity(&observer, observerIdId)
+	err = account.LoadEntity(&observer, observerId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
 	}
+
+	fmt.Println("Load Event.Name: ", observer.Event)
 
 	var input map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
