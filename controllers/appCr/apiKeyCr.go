@@ -65,14 +65,20 @@ func ApiKeyGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	templates, err := account.EmailTemplatesList()
+	apiKeyId, err := utilsCr.GetUINTVarFromRequest(r, "apiKeyId")
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"emailTemplates":"Не удалось получить список доменов"}}))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id"))
 		return
 	}
 
-	resp := u.Message(true, "GET account templates")
-	resp["emailTemplates"] = templates
+	apiKey, err := account.ApiKeyGet(apiKeyId)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"emailTemplates":"Не удалось получить ключ"}}))
+		return
+	}
+
+	resp := u.Message(true, "GET ApiKey")
+	resp["apiKey"] = apiKey
 	u.Respond(w, resp)
 }
 

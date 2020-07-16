@@ -41,7 +41,8 @@ func RefreshTables() {
 		return
 	}
 
-	err = pool.Exec("drop table if exists domains, email_boxes, email_senders, email_templates, api_keys").Error
+	// err = pool.Exec("drop table if exists domains, email_boxes, email_senders, email_templates, api_keys").Error
+	err = pool.Exec("drop table if exists api_keys").Error
 	if err != nil {
 		fmt.Println("Cant create tables 1: ", err)
 		return
@@ -81,7 +82,7 @@ func RefreshTables() {
 
 	models.Domain{}.PgSqlCreate()
 	models.EmailBox{}.PgSqlCreate()
-	models.EmailTemplate{}.PgSqlCreate()
+
 
 	models.Storage{}.PgSqlCreate()
 
@@ -95,7 +96,12 @@ func RefreshTablesPart_II() {
 	pool := models.GetPool()
 
 
+	pool.DropTableIfExists(models.Domain{},models.EmailBox{}, models.EmailTemplate{})
 	pool.DropTableIfExists(models.WebHook{}, models.EventListener{}, models.EventItem{},models.HandlerItem{}, models.Order{}, models.DeliveryPickup{}, models.DeliveryRussianPost{}, models.DeliveryCourier{})
+
+	models.Domain{}.PgSqlCreate()
+	models.EmailBox{}.PgSqlCreate()
+	models.EmailTemplate{}.PgSqlCreate()
 
 	models.Order{}.PgSqlCreate()
 	models.DeliveryRussianPost{}.PgSqlCreate()
@@ -497,32 +503,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		log.Fatal("Не удалось создать MailBoxes для Brouser: ", err)
 	}
 	
-	// Добавляем шаблоны писем для синдиката и главного аккаунта
-	/*data, err := ioutil.ReadFile("/var/www/ratuscrm/files/example.html")
-	if err != nil {
-		fmt.Println("File reading error", err)
-		return
-	}
 
-	_, err = mAcc.CreateEmailTemplate(models.EmailTemplate{Name: "example", Code: string(data)})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = acc357.CreateEmailTemplate(models.EmailTemplate{Name: "example", Code: string(data)})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = accSyndicAd.CreateEmailTemplate(models.EmailTemplate{Name: "example", Code: string(data)})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = brouser.CreateEmailTemplate(models.EmailTemplate{Name: "example", Code: string(data)})
-	if err != nil {
-		log.Fatal(err)
-	}*/
 
 	// AiroClimate
 
@@ -1337,14 +1318,25 @@ func UploadTestDataPart_III() {
 		}
 
 	}
-/*	for i := range els {
-		_, err = mainAccount.CreateEntity(&els[i])
-		if err != nil {
-			log.Fatal(err)
-		}
-	}*/
 
+	// Добавляем шаблоны писем для синдиката и главного аккаунта
+	data, err := ioutil.ReadFile("/var/www/ratuscrm/files/airoclimate/emails/example.html")
+	if err != nil {
+		fmt.Println("File reading error", err)
+		return
+	}
 
+	emailTemplates := []models.EmailTemplate{
+		{Name: "Спасибо за ваш заказ", Description: "Уведомление клиента о заказе, который не оплачен.", Code: string(data)},
+		{Name: "Новый заказ", Description: "Уведомление о новом заказе для менеджеров", Code: string(data)},
+		{Name: "Ваш заказ отправлен", Description: "Уведомление для клиента об отправке заказа по почте.", Code: string(data)},
+		{Name: "Благодарим за покупку", Description: "Письмо-благодарность для клиента, после оплаты.", Code: string(data)},
+	}
+
+	for i := range emailTemplates {
+		_, err = airoAccount.CreateEntity(&emailTemplates[i])
+		if err != nil {log.Fatal(err)}
+	}
 
 }
 

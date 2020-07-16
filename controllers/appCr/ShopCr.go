@@ -250,56 +250,51 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
-		return
-	}
-
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
-	// shop, err := account.GetShop(shopId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
-		return
-	}
-
-	// 2. Узнаем, какой список нужен
-	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
-
 	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
 	if !ok {
-		limit = 100
+		limit = 25
 	}
 	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
 	if !ok || offset < 0 {
 		offset = 0
 	}
+	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
+	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
+	if !ok {
+		sortBy = ""
+	}
+	if sortDesc {
+		sortBy += " desc"
+	}
 	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
 	if !ok {
 		search = ""
 	}
+	// 2. Узнаем, какой список нужен
+	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
-	productGroups := make([]models.ProductGroup,0)
-	total := 0
+
+	var total uint = 0
+	shops := make([]models.Entity,0)
 
 	if all == "true" && allOk {
-		productGroups, err = shop.GetProductGroups()
+		shops, total, err = account.GetListEntity(&models.Shop{}, sortBy)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить список сайтов"))
 			return
 		}
 	} else {
-		productGroups, total, err = shop.GetProductGroupsPaginationList(offset, limit, search)
+		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
+		shops, total, err = account.GetPaginationListEntity(&models.Shop{}, offset, limit, sortBy, search)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить список сайтов"))
 			return
 		}
 	}
 
 
-	resp := u.Message(true, "GET Product Group List")
-	resp["productGroups"] = productGroups
+	resp := u.Message(true, "GET WebHooks PaginationList")
+	resp["shops"] = shops
 	resp["total"] = total
 	u.Respond(w, resp)
 }

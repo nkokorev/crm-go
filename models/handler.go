@@ -9,9 +9,6 @@ import (
 )
 
 // Список всех событий, которы могут быть вызваны // !!! Не добавлять другие функции под этим интерфейсом !!!
-/*type EventListener struct {
-	TargetName string // Имя функции, которую вызывают локально
-}*/
 
 func (handle EventListener) Handle(e event.Event) error {
 
@@ -61,6 +58,7 @@ func (handler EventListener) EmailQueueRun(e event.Event) error {
 	// e.Set("result", "OK") // возможность записать в событие какие-то данные для других обработчиков..
 	return nil
 }
+
 func (handler EventListener) WebHookCall(e event.Event) error {
 
 	fmt.Printf("Вызов вебхука, событие: %v Данные: %v, entityId %v\n", e.Name(), e.Data(), handler.EntityId)

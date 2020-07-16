@@ -373,7 +373,7 @@ func (webHook WebHook) Call(e event.Event) error {
 
 	url := urlB.String()
 
-	fmt.Println("URL: ", url)
+	// fmt.Println("URL: ", url)
 
 	var response *http.Response
 	var request *http.Request

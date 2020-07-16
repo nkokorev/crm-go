@@ -7,9 +7,31 @@ import (
     "encoding/asn1"
     "encoding/pem"
     "fmt"
+    "github.com/nkokorev/crm-go/controllers/utilsCr"
+    u "github.com/nkokorev/crm-go/utils"
     "log"
+    "net/http"
     "os"
 )
+
+func DomainsGet(w http.ResponseWriter, r *http.Request) {
+
+    account, err := utilsCr.GetWorkAccount(w,r)
+    if err != nil || account == nil {
+        u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+        return
+    }
+
+    domains, err := account.GetDomains()
+    if err != nil || domains == nil {
+        u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"domains":"Не удалось получить список доменов"}}))
+        return
+    }
+
+    resp := u.Message(true, "GET account domains")
+    resp["domains"] = domains
+    u.Respond(w, resp)
+}
 
 func Keymaker(path string) {
     reader := rand.Reader

@@ -60,7 +60,6 @@ func (deliveryCourier DeliveryCourier) create() (Entity, error)  {
 
 	return newItem, nil
 }
-
 func (DeliveryCourier) get(id uint) (Entity, error) {
 
 	var deliveryCourier DeliveryCourier
@@ -71,7 +70,6 @@ func (DeliveryCourier) get(id uint) (Entity, error) {
 	}
 	return &deliveryCourier, nil
 }
-
 func (deliveryCourier *DeliveryCourier) load() error {
 
 	err := db.First(deliveryCourier).Error
@@ -80,7 +78,6 @@ func (deliveryCourier *DeliveryCourier) load() error {
 	}
 	return nil
 }
-
 func (DeliveryCourier) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
 	deliveryCouriers := make([]DeliveryCourier,0)
@@ -106,7 +103,6 @@ func (DeliveryCourier) getList(accountId uint, sortBy string) ([]Entity, uint, e
 
 	return entities, total, nil
 }
-
 func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	deliveryCouriers := make([]DeliveryCourier,0)
@@ -155,11 +151,9 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 
 	return entities, total, nil
 }
-
 func (deliveryCourier *DeliveryCourier) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).Model(deliveryCourier).Omit("id", "account_id").Update(input).Error
 }
-
 func (deliveryCourier DeliveryCourier) delete () error {
 	return db.Model(DeliveryCourier{}).Where("id = ?", deliveryCourier.ID).Delete(deliveryCourier).Error
 }
@@ -169,13 +163,11 @@ func (deliveryCourier DeliveryCourier) delete () error {
 func (deliveryCourier DeliveryCourier) GetName () string {
 	return "Доставка курьером"
 }
-
 func (deliveryCourier DeliveryCourier) CalculateDelivery(deliveryData DeliveryData) (*DeliveryData, error) {
 
 	deliveryData.TotalCost = deliveryCourier.Price
 	return &deliveryData, nil
 }
-
 func (deliveryCourier DeliveryCourier) checkMaxWeight(deliveryData DeliveryData) error {
 	// проверяем максимальную массу:
 	if deliveryData.Weight > deliveryCourier.MaxWeight {

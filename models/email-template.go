@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/fatih/structs"
 	"github.com/jackc/pgtype"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
@@ -27,11 +26,13 @@ type EmailTemplate struct {
 	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
 
-	Public bool `json:"public" gorm:"type:bool;default:true;"` // показывать ли на домене public
+	Name 		string	`json:"name" gorm:"type:varchar(255);not null"` // inside name of mail
+	Description	string 	`json:"description" gorm:"type:varchar(255);default:''"` // краткое назначение письма
+	PreviewText string 	`json:"previewText" gorm:"type:varchar(255);default:''"` // превью текст может использоваться, да
 
-	Name string `json:"name" gorm:"type:varchar(255);not null"` // inside name of mail
-	PreviewText string `json:"previewText" gorm:"type:varchar(255);default:''"` // inside name of mail
 	Code string `json:"code, omitempty" gorm:"type:text;"` // сам шаблон письма
+
+	Public bool `json:"public" gorm:"type:bool;default:true;"` // показывать ли на домене public
 
 	// User *User `json:"-" sql:"-"` // Пользователь, который получит сообщение
 	Json pgtype.JSON `json:"json" gorm:"type:json;default:'{\"Example\":\"Тестовые данные в формате json\"}'"`
@@ -46,11 +47,17 @@ func (EmailTemplate) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&EmailTemplate{})
-	db.Exec("ALTER TABLE email_templates \n ADD CONSTRAINT email_templates_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n")
-
+	db.Model(&EmailTemplate{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }
 
-// ########### CRUD FUNCTIONAL #########
+// ############# Entity interface #############
+func (emailTemplate EmailTemplate) getId() uint { return emailTemplate.ID }
+func (emailTemplate *EmailTemplate) setId(id uint) { emailTemplate.ID = id }
+func (emailTemplate EmailTemplate) GetAccountId() uint { return emailTemplate.AccountID }
+func (emailTemplate *EmailTemplate) setAccountId(id uint) { emailTemplate.AccountID = id }
+func (EmailTemplate) systemEntity() bool { return false }
+func (emailTemplate EmailTemplate) GetCode() string { return emailTemplate.Code }
+// ############# Entity interface #############
 
 func (et *EmailTemplate) BeforeCreate(scope *gorm.Scope) error {
 	et.ID = 0
@@ -60,15 +67,25 @@ func (et *EmailTemplate) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
-func (et EmailTemplate) create() (*EmailTemplate, error)  {
+// ########### CRUD FUNCTIONAL #########
+/*func (et EmailTemplate) create() (*EmailTemplate, error)  {
 	if et.Name == "" {
 		return nil, utils.Error{Message: "Ошибки при создании шаблона", Errors: map[string]interface{}{"name":"Необходимо указать имя"}}
 	}
 	err := db.Create(&et).Error
 	return &et, err
+}*/
+func (et EmailTemplate) create() (Entity, error)  {
+	var newItem Entity = &et
+
+	if err := db.Create(newItem).Error; err != nil {
+		return nil, err
+	}
+
+	return newItem, nil
 }
 
-func (EmailTemplate) get(id uint) (*EmailTemplate, error)  {
+/*func (EmailTemplate) get(id uint) (*EmailTemplate, error)  {
 
 	et := EmailTemplate{}
 
@@ -77,6 +94,24 @@ func (EmailTemplate) get(id uint) (*EmailTemplate, error)  {
 		return nil, err
 	}
 	return &et, nil
+}*/
+func (EmailTemplate) get(id uint) (Entity, error) {
+
+	var et EmailTemplate
+
+	err := db.First(&et, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &et, nil
+}
+func (et *EmailTemplate) load() error {
+
+	err := db.First(et).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (EmailTemplate) getByHashId(hashId string) (*EmailTemplate, error) {
@@ -89,21 +124,98 @@ func (EmailTemplate) getByHashId(hashId string) (*EmailTemplate, error) {
 	return &et, nil
 }
 
-func (et *EmailTemplate) update(input interface{}) error {
-	return db.Model(et).Omit("id", "hashId", "account_id", "created_at", "deleted_at", "updated_at").Update(structs.Map(input)).Error
+func (EmailTemplate) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+
+	emailTemplates := make([]EmailTemplate,0)
+	var total uint
+
+	err := db.Model(&EmailTemplate{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).Find(&emailTemplates).Error
+	if err != nil && err != gorm.ErrRecordNotFound{
+		return nil, 0, err
+	}
+
+	// Определяем total
+	err = db.Model(&EmailTemplate{}).Where("account_id = ?", accountId).Count(&total).Error
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(emailTemplates))
+	for i,_ := range emailTemplates {
+		entities[i] = &emailTemplates[i]
+	}
+
+	return entities, total, nil
+}
+func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+
+	emailTemplates := make([]EmailTemplate,0)
+	var total uint
+
+	// if need to search
+	if len(search) > 0 {
+
+		// string pattern
+		search = "%"+search+"%"
+
+		err := db.Model(&EmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&emailTemplates, "name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", search,search,search).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = db.Model(&EmailTemplate{}).
+			Where("account_id = ? AND name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", accountId, search,search,search).
+			Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+
+	} else {
+
+		err := db.Model(&EmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&emailTemplates).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = db.Model(&EmailTemplate{}).Where("account_id = ?", accountId).Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(emailTemplates))
+	for i,_ := range emailTemplates {
+		entities[i] = &emailTemplates[i]
+	}
+
+	return entities, total, nil
 }
 
-func (et EmailTemplate) Delete () error {
+/*func (et *EmailTemplate) update(input interface{}) error {
+	return db.Model(et).Omit("id", "hashId", "account_id", "created_at", "deleted_at", "updated_at").Update(structs.Map(input)).Error
+}*/
+func (et *EmailTemplate) update(input map[string]interface{}) error {
+	return db.Set("gorm:association_autoupdate", false).Model(et).Omit("id", "account_id").Update(input).Error
+}
+
+/*func (et EmailTemplate) Delete () error {
+	return db.Model(EmailTemplate{}).Where("id = ?", et.ID).Delete(et).Error
+}*/
+func (et EmailTemplate) delete () error {
 	return db.Model(EmailTemplate{}).Where("id = ?", et.ID).Delete(et).Error
 }
-
 // ########### ACCOUNT FUNCTIONAL ###########
 
-func (account Account) CreateEmailTemplate(et EmailTemplate) (*EmailTemplate, error) {
+/*func (account Account) CreateEmailTemplate(et EmailTemplate) (*EmailTemplate, error) {
 	et.AccountID = account.ID
 	return et.create()
 }
-
 func (account Account) EmailTemplateGet(id uint) (*EmailTemplate, error) {
 
 	et, err := (EmailTemplate{}).get(id)
@@ -116,8 +228,7 @@ func (account Account) EmailTemplateGet(id uint) (*EmailTemplate, error) {
 	}
 
 	return et, nil
-}
-
+}*/
 func (account Account) EmailTemplateGetByHashID(hashId string) (*EmailTemplate, error) {
 	et, err := (EmailTemplate{}).getByHashId(hashId)
 	if err != nil {
@@ -130,7 +241,6 @@ func (account Account) EmailTemplateGetByHashID(hashId string) (*EmailTemplate, 
 
 	return et, nil
 }
-
 func (Account) EmailTemplateGetSharedByHashID(hashId string) (*EmailTemplate, error) {
 	et, err := (EmailTemplate{}).getByHashId(hashId)
 	if err != nil {
@@ -144,26 +254,23 @@ func (Account) EmailTemplateGetSharedByHashID(hashId string) (*EmailTemplate, er
 	return et, nil
 }
 
-func (account Account) GetEmailTemplates() ([]EmailTemplate, error) {
+/*func (account Account) GetEmailTemplates() ([]EmailTemplate, error) {
 	var templates []EmailTemplate
 	err := db.Find(&templates, "account_id = ?", account.ID).Error
 	return templates, err
 }
-
 func (account Account) EmailTemplatesList() ([]EmailTemplate, error) {
-
-	templates := make([]EmailTemplate,0)
+	emailTemplates := make([]EmailTemplate,0)
 
 	// Without Code string
-	err := db.Select([]string{"id", "hash_id", "public", "name", "updated_at", "created_at"}).Find(&templates, "account_id = ?", account.ID).Error
+	err := db.Find(&emailTemplates, "account_id = ?", account.ID).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		fmt.Println("Error email templates: ", err)
 		return nil, err
 	}
 
-	return templates, nil
+	return emailTemplates, nil
 }
-
 func (account Account) EmailTemplateUpdate(et *EmailTemplate, input interface{}) error {
 
 	// check account ID
@@ -173,7 +280,6 @@ func (account Account) EmailTemplateUpdate(et *EmailTemplate, input interface{})
 
 	return et.update(input)
 }
-
 func (account Account) GetEmailTemplate(id uint) (*EmailTemplate, error) {
 
 	et, err := (EmailTemplate{}).get(id)
@@ -187,9 +293,7 @@ func (account Account) GetEmailTemplate(id uint) (*EmailTemplate, error) {
 
 	return et, nil
 
-}
-
-
+}*/
 
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 

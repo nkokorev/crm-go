@@ -45,7 +45,7 @@ func (shop *Shop) BeforeCreate(scope *gorm.Scope) error {
 }
 
 func (shop *Shop) AfterFind() (err error) {
-
+	
 	shop.Deliveries = shop.GetDeliveryMethods()
 	return nil
 }

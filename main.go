@@ -26,7 +26,7 @@ func main() {
 
 	// runMigration("full")
 	// base.UploadTestData()
-	
+
 	base.RefreshTablesPart_II()
 
 	// base.LoadImagesAiroClimate(13)
@@ -34,6 +34,7 @@ func main() {
 	// base.LoadProductDescriptionAiroClimate()
 	// base.LoadProductCategoryDescriptionAiroClimate()
 
+	// base.UploadTestDataPart_II()
 	base.UploadTestDataPart_III()
 
 	if err := (models.EventListener{}).ReloadEventHandlers(); err != nil {
@@ -82,7 +83,8 @@ func SendMail() error {
 	}
 
 	// 2. Загружаем шаблон из БД
-	et, err := acc.GetEmailTemplate(4)
+	var et models.EmailTemplate
+	err = acc.LoadEntity(&et, 4)
 	if err != nil {
 		return err
 	}
