@@ -160,14 +160,14 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 		search = "%"+search+"%"
 
 		err := db.Model(&EmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&emailTemplates, "name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", search,search,search).Error
+			Find(&emailTemplates, "hash_id ILIKE ? OR name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
 		err = db.Model(&EmailTemplate{}).
-			Where("account_id = ? AND name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", accountId, search,search,search).
+			Where("account_id = ? AND hash_id ILIKE ? OR name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", accountId, search,search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
