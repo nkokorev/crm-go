@@ -102,8 +102,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{emailTemplateId}", appCr.EmailTemplateGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{emailTemplateId}", appCr.EmailTemplateUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{emailTemplateId}", appCr.EmailTemplateDelete).Methods(http.MethodDelete, http.MethodOptions)
-
-	// ---ACCOUNT---
+	// !!!!!!!!
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{emailTemplateHashId}/send/user", appCr.EmailTemplateSendToUser).Methods(http.MethodPost, http.MethodOptions)
 
 	// ### STORAGE CRUD ####
@@ -156,7 +155,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks/{webHookId}", appCr.WebHookGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks/{webHookId}", appCr.WebHookUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks/{webHookId}", appCr.WebHookDelete).Methods(http.MethodDelete, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks/{webHookId}/call", appCr.WebHookCall).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks/{webHookId}/execute", appCr.WebHookExecute).Methods(http.MethodGet, http.MethodOptions)
 
 	// ### Article ###
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles", appCr.ArticleCreate).Methods(http.MethodPost, http.MethodOptions)
@@ -188,5 +187,13 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/{eventItemId:[0-9]+}", appCr.EventItemGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/{eventItemId:[0-9]+}", appCr.EventItemUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/{eventItemId:[0-9]+}", appCr.EventItemDelete).Methods(http.MethodDelete, http.MethodOptions)
+
+	// ### Email Templates ####
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-notifications", appCr.EmailNotificationCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-notifications", appCr.EmailNotificationGetListPagination).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-notifications/{emailNotificationId}", appCr.EmailNotificationGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-notifications/{emailNotificationId}", appCr.EmailNotificationUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-notifications/{emailNotificationId}", appCr.EmailNotificationDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-notifications/{emailNotificationId}/execute", appCr.EmailNotificationExecute).Methods(http.MethodGet, http.MethodOptions)
 
 }

@@ -259,7 +259,6 @@ func EmailTemplatePreviewGetHTML(w http.ResponseWriter, r *http.Request) {
 
 	template, err := (models.Account{}).EmailTemplateGetSharedByHashID(hashId)
 	if err != nil || template == nil {
-		fmt.Println("Шаблон не получен..", err)
 		w.Header().Set("Content-Type", "text/html;charset=UTF-8")
 		w.Write([]byte(`<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Шаблон не может быть отображен</title></head><body><h4 style="color:#5f5f5f;">Данный шаблон не может быть отображен.</h4></body></html>`))
 		return

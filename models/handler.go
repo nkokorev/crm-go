@@ -79,7 +79,7 @@ func (handler EventListener) WebHookCall(e event.Event) error {
 		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить WebHook id = %v, не загружается webHook.", handler.EntityId)}
 	}
 
-	return webHook.Call(e)
+	return webHook.Execute(e)
 }
 // #############   END Of Event Handlers   #############
 

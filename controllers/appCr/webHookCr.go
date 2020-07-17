@@ -63,7 +63,7 @@ func WebHookGet(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func WebHookCall(w http.ResponseWriter, r *http.Request) {
+func WebHookExecute(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
@@ -86,7 +86,7 @@ func WebHookCall(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go webHook.Call(nil)
+	go webHook.Execute(nil)
 
 	resp := u.Message(true, "GET Web Hook Call")
 	u.Respond(w, resp)

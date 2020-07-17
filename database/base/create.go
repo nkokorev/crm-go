@@ -96,7 +96,7 @@ func RefreshTablesPart_II() {
 	pool := models.GetPool()
 
 
-	pool.DropTableIfExists(models.Domain{},models.EmailBox{}, models.EmailTemplate{})
+	pool.DropTableIfExists(models.EmailNotification{}, models.Domain{},models.EmailBox{}, models.EmailTemplate{})
 	pool.DropTableIfExists(models.WebHook{}, models.EventListener{}, models.EventItem{},models.HandlerItem{}, models.Order{}, models.DeliveryPickup{}, models.DeliveryRussianPost{}, models.DeliveryCourier{})
 
 	models.Domain{}.PgSqlCreate()
@@ -113,6 +113,9 @@ func RefreshTablesPart_II() {
 	models.EventListener{}.PgSqlCreate()
 
 	models.WebHook{}.PgSqlCreate()
+
+	// Уведомления
+	models.EmailNotification{}.PgSqlCreate()
 
 
 }
@@ -1186,8 +1189,9 @@ func UploadTestDataPart_III() {
 
 	// HandlerItem
 	eventHandlers := []models.HandlerItem {
-		{Name:"Запуск email-серии", Code: "EmailQueueRun", EntityType: "email_templates", Enabled: true, Description: "Запуск автоматической серии email писем с указанным ID"},
 		{Name:"Вызов WebHook'а", Code: "WebHookCall", EntityType: "web_hooks", Enabled: true, Description: "Вызов указанного WebHook'а"},
+		{Name:"Запуск email-уведомления", Code: "EmailNotificationRun", EntityType: "email_notification", Enabled: true, Description: "Отправка электронного письма. Адресат выбирается в зависимости от настроек уведомления и события. Если объект пользователь - то на его email. При отсутствии email'а, запуск уведомления не произойдет."},
+		{Name:"Запуск email-серии", Code: "EmailQueueRun", EntityType: "email_queue", Enabled: true, Description: "Запуск автоматической серии писем. Адресат выбирается исходя из события. Если объект пользователь - то на его email. При отсутствии email'а, запуск серии не произойдет."},
 	}
 	for _,v := range eventHandlers {
 		_, err = mainAccount.CreateEntity(&v)
@@ -1336,6 +1340,31 @@ func UploadTestDataPart_III() {
 	for i := range emailTemplates {
 		_, err = airoAccount.CreateEntity(&emailTemplates[i])
 		if err != nil {log.Fatal(err)}
+	}
+
+	// =================================
+
+
+	emailNotifications := []models.EmailNotification {
+		{
+			Enabled: true, Delay: 0, Name:"Новый заказ", Description: "Оповещение менеджеров о новом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
+			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-markeitng.ru"})},
+		},
+		{
+			Enabled: true, Delay: 0, Name:"Ваш заказ получен!", Description: "Информирование клиента о принятом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
+			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"mex388@gmail.com"})},
+		},
+		{
+			Enabled: true, Delay: 0, Name:"Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
+			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-markeitng.ru","mex388@gmail.com"})},
+		},
+
+	}
+	for _,v := range emailNotifications {
+		_, err = airoAccount.CreateEntity(&v)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 }

@@ -32,7 +32,7 @@ type EmailTemplate struct {
 
 	Code string `json:"code, omitempty" gorm:"type:text;"` // сам шаблон письма
 
-	Public bool `json:"public" gorm:"type:bool;default:true;"` // показывать ли на домене public
+	Public bool `json:"public" gorm:"type:bool;"` // показывать ли на домене public
 
 	// User *User `json:"-" sql:"-"` // Пользователь, который получит сообщение
 	Json pgtype.JSON `json:"json" gorm:"type:json;default:'{\"Example\":\"Тестовые данные в формате json\"}'"`
@@ -68,33 +68,16 @@ func (et *EmailTemplate) BeforeCreate(scope *gorm.Scope) error {
 }
 
 // ########### CRUD FUNCTIONAL #########
-/*func (et EmailTemplate) create() (*EmailTemplate, error)  {
-	if et.Name == "" {
-		return nil, utils.Error{Message: "Ошибки при создании шаблона", Errors: map[string]interface{}{"name":"Необходимо указать имя"}}
-	}
-	err := db.Create(&et).Error
-	return &et, err
-}*/
 func (et EmailTemplate) create() (Entity, error)  {
 	var newItem Entity = &et
 
-	if err := db.Create(newItem).Error; err != nil {
+	if err := db.Create(newItem).Find(newItem).Error; err != nil {
 		return nil, err
 	}
 
 	return newItem, nil
 }
 
-/*func (EmailTemplate) get(id uint) (*EmailTemplate, error)  {
-
-	et := EmailTemplate{}
-
-	err := db.First(&et, id).Error
-	if err != nil {
-		return nil, err
-	}
-	return &et, nil
-}*/
 func (EmailTemplate) get(id uint) (Entity, error) {
 
 	var et EmailTemplate
@@ -197,38 +180,16 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 	return entities, total, nil
 }
 
-/*func (et *EmailTemplate) update(input interface{}) error {
-	return db.Model(et).Omit("id", "hashId", "account_id", "created_at", "deleted_at", "updated_at").Update(structs.Map(input)).Error
-}*/
 func (et *EmailTemplate) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).Model(et).Omit("id", "account_id").Update(input).Error
 }
 
-/*func (et EmailTemplate) Delete () error {
-	return db.Model(EmailTemplate{}).Where("id = ?", et.ID).Delete(et).Error
-}*/
+
 func (et EmailTemplate) delete () error {
 	return db.Model(EmailTemplate{}).Where("id = ?", et.ID).Delete(et).Error
 }
 // ########### ACCOUNT FUNCTIONAL ###########
 
-/*func (account Account) CreateEmailTemplate(et EmailTemplate) (*EmailTemplate, error) {
-	et.AccountID = account.ID
-	return et.create()
-}
-func (account Account) EmailTemplateGet(id uint) (*EmailTemplate, error) {
-
-	et, err := (EmailTemplate{}).get(id)
-	if err != nil {
-		return nil, err
-	}
-
-	if et.AccountID != account.ID {
-		return nil, errors.New("Шаблон принадлежит другому аккаунту")
-	}
-
-	return et, nil
-}*/
 func (account Account) EmailTemplateGetByHashID(hashId string) (*EmailTemplate, error) {
 	et, err := (EmailTemplate{}).getByHashId(hashId)
 	if err != nil {
@@ -253,48 +214,6 @@ func (Account) EmailTemplateGetSharedByHashID(hashId string) (*EmailTemplate, er
 
 	return et, nil
 }
-
-/*func (account Account) GetEmailTemplates() ([]EmailTemplate, error) {
-	var templates []EmailTemplate
-	err := db.Find(&templates, "account_id = ?", account.ID).Error
-	return templates, err
-}
-func (account Account) EmailTemplatesList() ([]EmailTemplate, error) {
-	emailTemplates := make([]EmailTemplate,0)
-
-	// Without Code string
-	err := db.Find(&emailTemplates, "account_id = ?", account.ID).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		fmt.Println("Error email templates: ", err)
-		return nil, err
-	}
-
-	return emailTemplates, nil
-}
-func (account Account) EmailTemplateUpdate(et *EmailTemplate, input interface{}) error {
-
-	// check account ID
-	if et.AccountID != account.ID {
-		return errors.New("Шаблон принадлежит другому аккаунту")
-	}
-
-	return et.update(input)
-}
-func (account Account) GetEmailTemplate(id uint) (*EmailTemplate, error) {
-
-	et, err := (EmailTemplate{}).get(id)
-	if err != nil {
-		return nil, err
-	}
-
-	if et.AccountID != account.ID {
-		return nil, errors.New("Шаблон принадлежит другому аккаунту")
-	}
-
-	return et, nil
-
-}*/
-
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 
 // Подготавливает данные для отправки обезличивая их
