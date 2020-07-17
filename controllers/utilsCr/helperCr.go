@@ -78,6 +78,22 @@ func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, er
 
 	return account, nil
 }
+func GetAccountByHashId(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
+
+	accountHashId, ok := GetSTRVarFromRequest(r,"accountHashId")
+	if !ok {
+		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка hash id code of account"}))
+		return nil, errors.New("Ошибка hash id code of account")
+	}
+
+	account, err := models.GetAccountByHash(accountHashId)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка hash id code of account"}))
+		return nil, errors.New("Ошибка hash id code of account")
+	}
+
+	return account, nil
+}
 
 func GetWorkAccountCheckHashIdOLD(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
 

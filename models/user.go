@@ -29,6 +29,8 @@ type User struct {
 	//Role 		string `json:"role" gorm:"type:varchar(255);default:'client'"`
 	// Role Role `json:"role"`
 
+	EnabledAuthFromApp	bool	`json:"enabledAuthFromApp" gorm:"type:bool;default:false;"` // Разрешен ли вход, через app.ratuscrm.com
+
 	DefaultAccountId uint `json:"defaultAccountId" gorm:"type:varchar(12);default:null;"` // указывает какой аккаунт по дефолту загружать
 	InvitedUserID uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
 
@@ -82,6 +84,9 @@ func (user User) create () (*User, error) {
 		return nil, err
 	}
 	user.Password = string(password)
+	// fix
+	var time = time.Now()
+	user.EmailVerifiedAt = &time
 
 	var userReturn = user
 
@@ -192,8 +197,11 @@ func (user *User) GetByEmail () error {
 }
 
 // осуществляет поиск по имени пользователя
-func (user *User) GetByUsername () error {
-	return db.First(user,"username = ?", user.Username).Error
+func (User) GetByUsername (username string) (*User, error) {
+	var user User
+	if err := db.First(&user,"username = ?", username).Error; err != nil {return nil, err}
+
+	return &user, nil
 }
 
 func (user User) Exist() bool {
@@ -318,7 +326,6 @@ func (user *User) SendEmailRecoveryUsername() error {
 
 // Проверяет пароль пользователя
 func (user User) ComparePassword(password string) bool {
-	// если пользователь не найден temp.Username == nil, то пароль не будет искаться, т.к. он будет равен нулю (не с чем сравнивать)
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return false
 	}

@@ -83,3 +83,4 @@ func (aUser *AccountUser) delete() error {
 	}
 	return db.Model(AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).Delete(aUser).Error
 }
+

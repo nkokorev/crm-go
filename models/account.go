@@ -281,19 +281,27 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 	}
 
 	// создаем пользователя
-	u, err := input.create()
-	if err != nil || u == nil {
-		return u, err
+	user, err := input.create()
+	if err != nil || user == nil {
+		return user, err
 	}
 
 	// Автоматически добавляем пользователя в аккаунт
-	aUser, err := account.AppendUser(*u, role)
+	aUser, err := account.AppendUser(*user, role)
 	if err != nil || aUser == nil {
 		return nil, err
 	}
-	return u, nil
+
+	/*if true {
+		if err = (RatusCRM{}).AllowedUserLoginCRM(user.ID); err != nil {
+			log.Printf("Пользователь id = %v создан, но вход в CRM не удалось разрешить", user.ID)
+		}
+	}*/
+
+	return user, nil
 }
 
+// Возвращает пользователя везде, кроме главного аккаунта
 func (account Account) GetUser(userId uint) (*User, error) {
 
 	user, err := User{}.get(userId)
@@ -306,6 +314,7 @@ func (account Account) GetUser(userId uint) (*User, error) {
 	if db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.ID, user.ID).RecordNotFound() {
 		return nil, errors.New("Пользователь не найден")
 	}
+
 
 	return user, nil
 }
@@ -338,17 +347,52 @@ func (account Account) GetUserByHashId(hashId string) (*User, error) {
 	return user, nil
 }
 
+// Получает пользователя в аккаунте, в том числе, если он просто клиент (не его issuer account)
 func (account Account) GetUserByUsername(username string) (*User, error) {
 
 	if username == "" {
 		return nil, gorm.ErrRecordNotFound
 	}
 
-	user := User{}
+	// Просто ищем пользователя с таким username
+	user, err := User{}.GetByUsername(username)
+	if err != nil {
+		return nil, utils.Error{Message: "Пользователь не найден"}
+	}
 
-	err := db.Model(&User{}).Where("issuer_account_id = ? AND username = ?", account.ID, username).First(&user).Error
+	if !account.AccessUserById(user.ID) {
+		return nil, utils.Error{Message: "Пользователь не найден"}
+	}
 
-	return &user, err
+	return user, err
+}
+
+// Получает пользователя в аккаунте, в том числе в RatusCRM, если он не является его прямым клиентом
+func (account Account) GetUserForAuthAppByUsername(username string) (*User, error) {
+
+	if username == "" { return nil, gorm.ErrRecordNotFound }
+
+	// Просто ищем пользователя с таким username
+	user, err := User{}.GetByUsername(username)
+	if err != nil {
+		return nil, utils.Error{Message: "Пользователь не найден"}
+	}
+
+	// 2. Проверяем, имеет ли он доступ к целевому аккаунту
+	if account.IsMainAccount() && user.IssuerAccountID != 1 {
+		// если логинится в главном аккаунте и ему не разрешен доступ
+	   if !user.EnabledAuthFromApp {
+		   return nil, utils.Error{Message: "Вход через RatusCRM не разрешен"}
+	   }
+
+	} else {
+		// Если это не RatusCRM аккаунт, то проверяем через AccountUser есть ли его ID
+		if !account.AccessUserById(user.ID) {
+			return nil, utils.Error{Message: "Пользователь не найден"}
+		}
+	}
+
+	return user, err
 }
 
 func (account Account) GetUserByEmail(email string) (*User, error) {
@@ -450,16 +494,46 @@ func (account Account) ExistAccountUser(user User) bool {
 }
 
 // Если пользователь не найден - вернет gorm.ErrRecordNotFound
-func (account Account) GetAccountUser(user User) (*AccountUser, error) {
+func (account Account) GetAccountUser(userId uint) (*AccountUser, error) {
 
 	aUser := AccountUser{}
 
-	if db.NewRecord(account) || db.NewRecord(user) {
-		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
+	if account.ID < 1 {
+		return nil, errors.New("Аккаунта или пользователя не существует!")
 	}
 
 	err := db.Model(&AccountUser{}).
-		Where("account_id = ? AND user_id = ?", account.ID, user.ID).
+		Where("account_id = ? AND user_id = ?", account.ID, userId).
+		Preload("Role").
+		Preload("Account").
+		Preload("User").
+		First(&aUser).Error
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+
+	if &aUser == nil {
+		return nil, errors.New("Не удалось создать пользователя")
+	}
+
+	if err == gorm.ErrRecordNotFound {
+		return nil, err
+	}
+
+	return &aUser, nil
+}
+
+func (account Account) GetAccountUserByUsername(username string) (*AccountUser, error) {
+
+	aUser := AccountUser{}
+
+	if account.ID < 1 {
+		return nil, errors.New("Аккаунта или пользователя не существует!")
+	}
+
+	err := db.Model(&AccountUser{}).
+		Where("account_id = ? AND user_id = ?", account.ID, username).
 		Preload("Role").
 		Preload("Account").
 		Preload("User").
@@ -517,23 +591,23 @@ func (account Account) AppendUser(user User, role Role) (*AccountUser, error) {
 // !!!!!! ### Выше функции покрытые тестами ### !!!!!!!!!!1
 
 // Ищет пользователя, авторизует и в случае успеха возвращает пользователя и jwt-token. issuerAccount - место, где берутся коды
-func (account Account) AuthorizationUserByUsername(username, password string, onceLogin,rememberChoice bool, issuerAccount *Account) (user *User, token string, err error) {
-
+// в app.ratuscrm.com контекст - RatusCRM, accountId = 1
+func (account Account) AuthorizationUserByUsername(username, password string, onceLogin,rememberChoice bool, issuerAccount *Account) (*User, string, error) {
 
 	var e utils.Error
-
-	// Проверяем, есть ли вообще такой пользователь в аккаунте
-	user, err = account.GetUserByUsername(username)
-	if err != nil || user == nil {
-		return nil, "", errors.New("Пользователь не найден")
+	
+	// Проверяем, можем ли мы выдать временную авторизацию в аккаунте (не то же самое, что войти в аккаунт!)
+	user, err := account.GetUserForAuthAppByUsername(username)
+	if err != nil {
+		return nil, "", err
 	}
 
-	// Проверяем пароль, чтобы авторизовать пользователя
+	// 3. Проверяем пароль, чтобы авторизовать пользователя
 	if !user.ComparePassword(password) {
 		e.AddErrors("password", "Неверный пароль")
 	}
 
-	// Если есть какие-то ошибки - сбрасываем автоирзацию
+	// Если есть какие-то ошибки - сбрасываем авторизацию
 	if e.HasErrors() {
 		e.Message = "Проверьте указанные данные"
 		return nil, "", e
@@ -549,12 +623,19 @@ func (account Account) AuthorizationUserByUsername(username, password string, on
 		}
 	}*/
 
-	token, err = account.AuthorizationUser(*user, false, issuerAccount)
+	token, err := account.AuthorizationUser(*user, false, issuerAccount)
 	if err != nil || token == "" {
 		return nil, "", errors.New("Не удалось авторизовать пользователя")
 	}
 
 	return user, token, nil
+}
+
+// проверяет, имеет ли указанный пользователь доступ к аккаунту
+func (account Account) AccessUserById(userId uint) bool {
+	if userId < 1 {return false}
+	// fmt.Printf("issuer_account_id = %v AND email = %v\n", account.ID, email)
+	return !db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.ID, userId).First(&AccountUser{}).RecordNotFound()
 }
 
 // *** New functions ****
@@ -662,7 +743,7 @@ func (account Account) GetUserRole(user User) (*Role, error) {
 		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
 	}
 
-	aUser, err := account.GetAccountUser(user)
+	aUser, err := account.GetAccountUser(user.ID)
 	if err != nil || aUser == nil {
 		return nil, err
 	}
@@ -696,7 +777,7 @@ func (account Account) UpdateUserRole(user User, role Role) error {
 		return errors.New("GetUserRole: Аккаунта или пользователя не существует!")
 	}
 
-	aUser, err := account.GetAccountUser(user)
+	aUser, err := account.GetAccountUser(user.ID)
 	if err != nil || aUser == nil {
 		return err
 	}

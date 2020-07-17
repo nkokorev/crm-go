@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -89,6 +90,7 @@ func JwtCheckUserAuthentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+
 		// Проверяем контекст на выпуск аккаунта, чтобы из-под него проверить подпись JWT
 		if r.Context().Value("issuerAccount") == nil {
 			u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
@@ -132,14 +134,18 @@ func JwtCheckUserAuthentication(next http.Handler) http.Handler {
 			return
 		}
 
-		// Подружаем аккаунт, к которому привязан пользователь
+		// Подгружаем аккаунт, к которому привязан пользователь
 		if r.Context().Value("issuerAccount") == nil {
 			u.Respond(w, u.MessageError(u.Error{Message: "Ошибка в обработке запроса", Errors: map[string]interface{}{"account": "not load"}}))
 			return
 		}
 
+		account, err := utilsCr.GetAccountByHashId(w,r)
+		if err != nil {
+			return
+		}
 		// Загружаем пользователя в рамках аккаунта
-		user, err := issuerAccount.GetUser(tk.UserID)
+		user, err := account.GetUser(tk.UserID)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			u.Respond(w, u.Message(false, "Пользователь не найден"))

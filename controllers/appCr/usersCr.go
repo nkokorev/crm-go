@@ -21,6 +21,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		models.User
 		RoleId uint `json:"roleId"`
+		Password string `json:"password"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -38,6 +39,9 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Нельзя создать пользователя с ролью владельца аккаунта"))
 		return
 	}
+
+	// Т.к. пароль не передается, читаем и назначем отдельно json -
+	input.User.Password = input.Password
 
 	user, err := account.CreateUser(input.User, role)
 	if err != nil {

@@ -113,21 +113,19 @@ func AccountUpdate(w http.ResponseWriter, r *http.Request)  {
 
 // Возвращает профиль аккаунта, указанного в переменной .../{hashId}/...
 func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
-
+	
 	// Аккаунт, в котором происходит авторизация: issuerAccount
 	issuerAccount, err := utilsCr.GetIssuerAccount(w,r)
 	if err != nil || issuerAccount == nil {
 		u.Respond(w, u.MessageError(nil, "Не удалось найти аккаунт"))
 		return
 	}
-
+	
 	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "accountHashId")
 	if !ok || hashId == "" {
 		u.Respond(w, u.MessageError(nil, "Не удалось получить hashId аккаунта"))
 		return
 	}
-
-
 
 	account, err := models.GetAccountByHash(hashId)
 	if err != nil || account == nil {
@@ -161,6 +159,8 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка обновления ключа авторизации.."}))
 		return
 	}
+
+
 
 	token, err := account.AuthorizationUser(*user, v.RememberChoice, issuerAccount)
 	if err != nil || token == "" {

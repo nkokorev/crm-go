@@ -247,13 +247,13 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get JSON-request
-	v := &struct {
+	input := &struct {
 		Username       string `json:"username"`
 		Password       string `json:"password"`
 		OnceLogin      bool   `json:"onceLogin"`
 		RememberChoice bool   `json:"rememberChoice"`
 	}{}
-	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
@@ -261,7 +261,7 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 	// Есть процесс авторизации пользователя, а есть выдача token. Лучше бы связать эти данные...
 	// В каком аккаунте происходит авторизация? Где регистрируется триггер "user authorization"
 	// user, token, err := issuerAccount.AuthorizationUserByUsername(v.Username, v.Password, v.OnceLogin, v.RememberChoice, issuerAccount)
-	user, token, err := issuerAccount.AuthorizationUserByUsername(v.Username, v.Password, v.OnceLogin, v.RememberChoice, issuerAccount)
+	user, token, err := issuerAccount.AuthorizationUserByUsername(input.Username, input.Password, input.OnceLogin, input.RememberChoice, issuerAccount)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка авторизации пользователя!"))
 		return
@@ -375,10 +375,11 @@ func UserRecoveryPasswordSendMail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user = models.User{Username: jsonData.Username}
+	// var user = models.User{Username: jsonData.Username}
 
 	// 1. Пробуем найти пользователя с таким email
-	if err := user.GetByUsername(); err != nil {
+	user, err := (models.User{}).GetByUsername(jsonData.Username);
+	if err != nil {
 		u.Respond(w, u.MessageError(err, "Пользователь не найден"))
 		return
 	}

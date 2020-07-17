@@ -320,11 +320,12 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	if true {
 		var clients []models.User
 
-		for i:=0; i < 10 ;i++ {
+		for i:=0; i < 1 ;i++ {
 			clients = append(clients, models.User{
 				Name: fmt.Sprintf("Name #%d", i),
 				Email: fmt.Sprintf("email%d@mail.ru", i),
 				Phone: fmt.Sprintf("+7925195221%d", i),
+				Password: "asdfg109#QW",
 			})
 		}
 		for i,_ := range clients {
