@@ -8,6 +8,7 @@ import (
 
 /**
 * [API] - группа роутов доступных только после Bearer Авторизации. В контексте всегда доступен account & accountId
+
 */
 var ApiRoutes = func (rApi *mux.Router) {
 
@@ -29,5 +30,8 @@ var ApiRoutes = func (rApi *mux.Router) {
 	rApi.HandleFunc("/articles", appCr.ArticleListPaginationGet).Methods(http.MethodGet)
 	rApi.HandleFunc("/articles/{articleId:[0-9]+}", appCr.ArticleGet).Methods(http.MethodGet)
 
-		
+	// ######### User #########
+	// rApi.HandleFunc("/articles/{articleId:[0-9]+}", appCr.ArticleGet).Methods(http.MethodGet)
+
+
 }

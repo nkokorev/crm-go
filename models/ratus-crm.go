@@ -1,5 +1,6 @@
 package models
 
+// Системные функции
 type RatusCRM struct {
 
 }
