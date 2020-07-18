@@ -11,9 +11,7 @@ import (
 
 func EmailNotificationCreate(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-	account, err = utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
@@ -57,17 +55,14 @@ func EmailNotificationGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := u.Message(true, "GET Web Hook")
+	resp := u.Message(true, "GET Email Notification")
 	resp["emailNotification"] = emailNotification
 	u.Respond(w, resp)
 }
 
 func EmailNotificationExecute(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-
-	account, err = utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
@@ -87,17 +82,13 @@ func EmailNotificationExecute(w http.ResponseWriter, r *http.Request) {
 
 	go emailNotification.Execute(nil)
 
-	resp := u.Message(true, "GET Web Hook Call")
+	resp := u.Message(true, "GET Email Notification Execute Call")
 	u.Respond(w, resp)
 }
 
 func EmailNotificationGetListPagination(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
-
-	account, err = utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
@@ -132,20 +123,20 @@ func EmailNotificationGetListPagination(w http.ResponseWriter, r *http.Request) 
 	if all == "true" && allOk {
 		emailNotifications, total, err = account.GetListEntity(&models.EmailNotification{}, sortBy)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить данные"))
 			return
 		}
 	} else {
 		// emailNotifications, total, err = account.GetEmailNotificationsPaginationList(offset, limit, search)
 		emailNotifications, total, err = account.GetPaginationListEntity(&models.EmailNotification{}, offset, limit, sortBy, search)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить данные"))
 			return
 		}
 	}
 
 
-	resp := u.Message(true, "GET EmailNotifications PaginationList")
+	resp := u.Message(true, "GET Email Notification PaginationList")
 	resp["emailNotifications"] = emailNotifications
 	resp["total"] = total
 	u.Respond(w, resp)
@@ -153,16 +144,14 @@ func EmailNotificationGetListPagination(w http.ResponseWriter, r *http.Request) 
 
 func EmailNotificationUpdate(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-	account, err = utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
 	emailNotificationId, err := utilsCr.GetUINTVarFromRequest(r, "emailNotificationId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID"))
 		return
 	}
 
@@ -179,30 +168,19 @@ func EmailNotificationUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
-	// fmt.Println("До: ", input["recipientList"])
-	/*if input["recipientList"] == nil {
-		val := pq.StringArray{}
-		input["recipientList"] = val
-	}*/
-
-	// fmt.Println("После: ", input["recipientList"])
-
 	if err = account.UpdateEntity(&emailNotification, input); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH EmailNotification Update")
+	resp := u.Message(true, "PATCH Email Notification Update")
 	resp["emailNotification"] = emailNotification
 	u.Respond(w, resp)
 }
 
 func EmailNotificationDelete(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-	account, err = utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}

@@ -128,14 +128,14 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		search = "%"+search+"%"
 
 		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&emailNotifications, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
+			Find(&emailNotifications, "name ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
 		err = db.Model(&EmailNotification{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -190,26 +190,9 @@ func (EmailNotification) getListByAccount(accountId uint) ([]EmailNotification, 
 }
 
 
-
 func (emailNotification *EmailNotification) update(input map[string]interface{}) error {
 
-	/*unkVar, ok := input["recipientList"].([]interface{})
-	if !ok {
-		fmt.Println("Not ok!")
-		return nil
-	}
-
-	var strArr = make([]string, 0)
-	for i := range unkVar {
-		fmt.Println(unkVar[i])
-		v, ok := unkVar[i].(string)
-		if !ok { break }
-		strArr = append(strArr, v)
-	}
-	input["recipientList"] = postgres.Jsonb{RawMessage: utils.StringArrToRawJson(strArr)}*/
-	
 	input = utils.FixJSONB(input, []string{"recipientList"})
-
 
 	if err := db.Model(emailNotification).Update(input).Error; err != nil {
 		return err
