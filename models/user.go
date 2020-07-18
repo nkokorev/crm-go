@@ -27,7 +27,8 @@ type User struct {
 	Patronymic 	string `json:"patronymic" gorm:"type:varchar(64)"`
 
 	//Role 		string `json:"role" gorm:"type:varchar(255);default:'client'"`
-	Role []Role `json:"role" gorm:"many2many:account_users;preload"`
+	Roles 		[]Role `json:"roles" gorm:"many2many:account_users;preload"`
+	// Account 	Account `json:"account" gorm:"preload" sql:"-"`
 
 	EnabledAuthFromApp	bool	`json:"enabledAuthFromApp" gorm:"type:bool;default:false;"` // Разрешен ли вход, через app.ratuscrm.com
 
@@ -70,6 +71,7 @@ func (user *User) BeforeCreate(scope *gorm.Scope) (err error) {
 	return nil
 }
 
+
 func (user User) create () (*User, error) {
 
 	// !!! Проверка существования такого же пользователя для склейки - на строне аккаунта / контроллера !!!
@@ -102,11 +104,19 @@ func (user User) create () (*User, error) {
 func (User) get(id uint) (*User, error) {
 	user := User{}
 
-	err := db.First(&user, id).Error
+	err := db.Preload("Roles").First(&user, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &user, nil
+}
+func (user *User) load() error {
+
+	err := db.Model(user).Preload("Roles").First(user).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (User) getByHashId(hashId string) (*User, error) {

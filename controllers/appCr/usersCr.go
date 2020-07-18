@@ -2,6 +2,7 @@ package appCr
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -193,7 +194,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 	var roleId float64
 	var role models.Role
 
-	if roleIdStr, ok := input["roleId"]; ok {
+	/*if roleIdStr, ok := input["roleId"]; ok {
 		roleId, ok = roleIdStr.(float64)
 		if !ok {
 			roleId = 0
@@ -214,7 +215,45 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	delete(input, "roleId")
+	delete(input, "roleId")*/
+
+	if _role, ok := input["_role"]; ok {
+
+		mRole, ok := _role.(map[string]interface{})
+		if !ok {
+			u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя: роль не опознана"))
+			return
+		}
+
+		roleIdVar, ok := mRole["id"]
+		if !ok {
+			u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя: id роли не опознана"))
+			return
+		}
+
+		roleId64, ok := roleIdVar.(float64)
+		if !ok {
+			u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя: id роли не читается"))
+			return
+		}
+
+		// 1. Получаем роль, которую надо назначить. Если роль вне аккаунта и не системная, получим ошибку
+		rolePtr, err := account.GetRole(uint(roleId64))
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя"))
+			return
+		}
+
+		if rolePtr.IsOwner() {
+			u.Respond(w, u.MessageError(err, "Нельзя назначить пользователя с ролью владельца аккаунта"))
+			return
+		}
+
+		role = *rolePtr
+		roleId = roleId64
+	}
+
+	delete(input, "_role")
 
 	// Обновляем данные пользователя
 
@@ -229,19 +268,20 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 	currentRole, err := account.GetUserRole(*user)
 	if err == nil && roleId > 0 && (currentRole.ID != uint(roleId)){
 
+		fmt.Println("Обновляем роль!")
 		// err = account.UpdateUserRole(user, role)
 		_, err = account.SetUserRole(user, role)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя"))
 			return
 		}
+	}
 
-		user, err = account.GetUserWithRoleId(user.ID)
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Ошибка при поиске пользователя"))
-			return
-		}
 
+	user, err = account.GetUserWithRolesId(user.ID)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при поиске пользователя"))
+		return
 	}
 
 	resp := u.Message(true, "PATCH User Update")

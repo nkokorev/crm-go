@@ -287,12 +287,12 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 	}
 
 	// Автоматически добавляем пользователя в аккаунт
-	aUser, err := account.AppendUser(*user, role)
-	if err != nil || aUser == nil {
+	_, err = account.AppendUser(*user, role)
+	if err != nil {
 		return nil, err
 	}
 
-	user, err = account.GetUserWithRoleId(user.ID)
+	user, err = account.GetUserWithRolesId(user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -318,17 +318,20 @@ func (account Account) GetUser(userId uint) (*User, error) {
 	return user, nil
 }
 
-func (account Account) GetUserWithRoleId(userId uint) (*User, error) {
+func (account Account) GetUserWithRolesId(userId uint) (*User, error) {
 
-	var user User
-	if err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
-		Select("account_users.account_id, account_users.role_id, users.*").
-		Where("account_id = ?", account.ID).
-		Find(&user).Error; err != nil {
+	user, err := User{}.get(userId)
+	if err != nil {
 		return nil, err
 	}
 
-	return &user, nil
+	// Проверим, что пользователь имеет доступ к аккаунта
+	aUser := AccountUser{}
+	if db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.ID, userId).RecordNotFound() {
+		return nil, errors.New("Пользователь не найден")
+	}
+
+	return user, nil
 }
 
 func (account Account) GetUserByHashId(hashId string) (*User, error) {
@@ -434,7 +437,7 @@ func (account Account) GetUsersByListID(list []uint, sortBy string) ([]User, uin
 
 	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
 		Select("account_users.account_id, account_users.role_id, users.*").Order(sortBy).
-		Where("account_users.account_id = ? AND users.id IN (?)", account.ID, list).
+		Where("account_users.account_id = ? AND users.id IN (?)", account.ID, list).Preload("Roles").
 		Find(&users).Error
 	if err != nil {
 		return nil, 0, err
@@ -451,11 +454,10 @@ func (account Account) GetUsersByListID(list []uint, sortBy string) ([]User, uin
 	return users, total, nil
 }
 
-func (account Account) GetUserListPagination(offset, limit int, sortBy, search string, role []uint) ([]UserAndRole, uint, error) {
+func (account Account) GetUserListPagination(offset, limit int, sortBy, search string, role []uint) ([]User, uint, error) {
 
 	users := make([]User,0)
 	var total uint
-
 
 	if len(search) > 0 {
 
@@ -464,7 +466,7 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 		err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
 			Select("account_users.account_id, account_users.role_id, users.*").
 			Order(sortBy).Limit(limit).
-			Where("account_id = ? AND role_id IN (?)", account.ID, role).
+			Where("account_id = ? AND role_id IN (?)", account.ID, role).Preload("Roles").
 			Find(&users, "hash_id ILIKE ? OR username ILIKE ? OR email ILIKE ? OR phone ILIKE ? OR name ILIKE ? OR surname ILIKE ? OR patronymic ILIKE ?", search,search,search,search,search,search,search).Error
 		if err != nil {
 			return nil, 0, err
@@ -484,6 +486,7 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 		err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
 			Select("account_users.account_id, account_users.role_id, users.*").
 			Order(sortBy).Offset(offset).Limit(limit).
+			Preload("Roles").
 			Where("account_id = ? AND role_id IN (?)", account.ID, role).
 			Find(&users).Error
 		if err != nil {
@@ -599,15 +602,6 @@ func (account Account) AppendUser(user User, role Role) (*AccountUser, error) {
 		if err != nil || _asc == nil {
 			return nil, errors.New("Ошибка при добавлении пользователя в аккаунт")
 		}
-		// создаем
-		/*acs.AccountId = account.ID
-		acs.UserId = user.ID
-		acs.RoleId = role.ID
-
-		_asc, err := acs.create()
-		if err != nil || _asc == nil {
-			return nil, errors.New("Ошибка при добавлении пользователя в аккаунт")
-		}*/
 
 		acs = *_asc
 

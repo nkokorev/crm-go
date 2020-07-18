@@ -54,7 +54,7 @@ func Connect() *gorm.DB {
 	}
 	//db = db.Set("gorm:auto_preload", true)
 
-	db = db.LogMode(true)
+	// db = db.LogMode(true)
 
 	SetDB(db)
 
