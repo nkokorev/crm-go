@@ -102,26 +102,71 @@ func UsersGetListPagination(w http.ResponseWriter, r *http.Request) {
 		sortBy += " desc"
 	}
 
-	rolesStr := r.URL.Query().Get("roles")
-	rolesArr := strings.Split(rolesStr, ",")
-	var roles []uint
-	for _, v := range rolesArr {
-		i, err := strconv.ParseUint(v, 10, 64)
-		if err == nil {
-			roles = append(roles, uint(i))
+	var total uint
+	users := make([]models.UserAndRole,0)
+
+	var list []uint
+	listStr := r.URL.Query().Get("list")
+	if listStr != "" && listStr != "all" {
+		listArr := strings.Split(listStr, ",")
+		for _, v := range listArr {
+			i, err := strconv.ParseUint(v, 10, 64)
+			if err == nil {
+				list = append(list, uint(i))
+			}
 		}
+
+		// I. получаем выборку пользователей
+
+		users, total, err = account.GetUsersByListID(list, sortBy)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список пользователей"))
+			return
+		}
+
+
+	} else {
+
+		// II. Получаем pagination list
+
+
+		var roles []uint
+		rolesStr := r.URL.Query().Get("roles")
+		if rolesStr == "" || rolesStr == "all" {
+			_roles, err := account.GetRoleList()
+			if err != nil {
+				u.Respond(w, u.MessageError(err, "Не удалось получить список ролей пользователей"))
+				return
+			}
+			for i := range _roles {
+				roles = append(roles, _roles[i].ID)
+			}
+		} else {
+			rolesArr := strings.Split(rolesStr, ",")
+			for _, v := range rolesArr {
+				i, err := strconv.ParseUint(v, 10, 64)
+				if err == nil {
+					roles = append(roles, uint(i))
+				}
+			}
+		}
+
+		search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
+		if !ok {
+			search = ""
+		}
+
+		users, total, err = account.GetUserListPagination(offset, limit, sortBy, search, roles)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список пользователей"))
+			return
+		}
+
 	}
 
-	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
-	if !ok {
-		search = ""
-	}
 
-	users, total, err := account.GetUserListPagination(offset, limit, sortBy, search, roles)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список пользователей"))
-		return
-	}
+
+
 
 	resp := u.Message(true, "GET Account User List")
 	resp["total"] = total

@@ -426,7 +426,34 @@ func (account Account) GetUserByPhone(phone, region string) (*User, error) {
 }
 
 
-// pagination user list
+// pagination user list, учитывая роли по списку id
+func (account Account) GetUsersByListID(list []uint, sortBy string) ([]UserAndRole, uint, error) {
+
+	users := make([]UserAndRole,0)
+	var total uint
+
+
+	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+		Select("account_users.account_id, account_users.role_id, users.*").Order(sortBy).
+		Where("account_users.account_id = ? AND users.id IN (?)", account.ID, list).
+		Find(&users).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Вычисляем total
+	err = db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+		Where("account_id = ? AND id IN (?)", account.ID, list).
+		Count(&total).Error
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема клиентской базы"}
+	}
+
+	fmt.Println("Users list: ", list)
+
+	return users, total, nil
+}
+
 func (account Account) GetUserListPagination(offset, limit int, sortBy, search string, role []uint) ([]UserAndRole, uint, error) {
 
 	users := make([]UserAndRole,0)
@@ -436,7 +463,7 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 	if len(search) > 0 {
 
 		search = "%"+search+"%"
-		
+
 		err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
 			Select("account_users.account_id, account_users.role_id, users.*").
 			Order(sortBy).Limit(limit).

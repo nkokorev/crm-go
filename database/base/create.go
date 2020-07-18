@@ -1350,6 +1350,8 @@ func UploadTestDataPart_III() {
 		{
 			Enabled: true, Delay: 0, Name:"Новый заказ", Description: "Оповещение менеджеров о новом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-markeitng.ru"})},
+			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{2,6,7})},
+
 		},
 		{
 			Enabled: true, Delay: 0, Name:"Ваш заказ получен!", Description: "Информирование клиента о принятом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
