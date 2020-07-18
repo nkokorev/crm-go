@@ -95,11 +95,13 @@ func (emailNotification *EmailNotification) AfterFind() (err error) {
 
 // ######### CRUD Functions ############
 func (emailNotification EmailNotification) create() (Entity, error)  {
-	var newItem Entity = &emailNotification
 
-	if err := db.Create(newItem).Error; err != nil {
+
+	if err := db.Create(&emailNotification).Find(&emailNotification).Error; err != nil {
 		return nil, err
 	}
+
+	var newItem Entity = &emailNotification
 
 	return newItem, nil
 }
@@ -215,15 +217,21 @@ func (EmailNotification) getListByAccount(accountId uint) ([]EmailNotification, 
 
 func (emailNotification *EmailNotification) update(input map[string]interface{}) error {
 
-	input = utils.FixJSONB(input, []string{"recipientList"})
-	delete(input, "recipientList")
-	delete(input, "recipientUsersList")
+	// Приводим в опрядок
+	input = utils.FixJSONB_String(input, []string{"recipientList"})
+	input = utils.FixJSONB_Uint(input, []string{"recipientUsersList"})
 
-	if err := db.Model(emailNotification).Update(input).Error; err != nil {
+	// delete(input, "recipientList")
+	// delete(input, "recipientUsersList")
+
+
+	if err := db.Set("gorm:association_autoupdate", false).Model(emailNotification).Update(input).Error; err != nil {
 		return err
 	}
 
-	return db.Set("gorm:association_autoupdate", false).Model(emailNotification).Omit("id", "account_id").Update(input).Error
+	emailNotification.load()
+
+	return nil
 }
 
 func (emailNotification EmailNotification) delete () error {
