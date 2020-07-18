@@ -39,7 +39,7 @@ type EmailNotification struct {
 
 	// ==========================================
 
-	RecipientUsers []User	`json:"recipientUsersList2" gorm:"-"`
+	RecipientUsers []User	`json:"_recipientUsers" gorm:"-"`
 
 	CreatedAt 		time.Time `json:"createdAt"`
 	UpdatedAt 		time.Time `json:"updatedAt"`
@@ -65,29 +65,18 @@ func (emailNotification *EmailNotification) BeforeCreate(scope *gorm.Scope) erro
 }
 func (emailNotification *EmailNotification) AfterFind() (err error) {
 
-	// Найдем всех пользователей
-	/*var ListUser = struct {
-		ListId []int
-	}{}*/
-
+	// Собираем пользователей
 	b, err := emailNotification.RecipientUsersList.MarshalJSON()
 	if err != nil {
-		fmt.Println(err)
-			return err
+		return err
 	}
 
-	var arr []int
-	_ = json.Unmarshal(b, &arr)
-	fmt.Println(arr)
+	var arr []uint
+	err = json.Unmarshal(b, &arr)
+	if err != nil { return err }
 
-	// fmt.Println(data)
-
-	/*fmt.Println(emailNotification.RecipientUsersList)
-	if err := emailNotification.RecipientUsersList.Scan(&List); err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(List)*/
+	err = db.Find(&emailNotification.RecipientUsers, "id IN (?)", arr).Error
+	if err != nil  {return err}
 
 	/////////////////////////////////////
 
