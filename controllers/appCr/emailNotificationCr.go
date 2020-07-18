@@ -173,17 +173,6 @@ func EmailNotificationUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/*inputPgRaw := struct {
-		RecipientList map[int]string `json:"recipientList" `
-	}{}
-	if err := json.NewDecoder(r.Body).Decode(&inputPgRaw); err != nil {
-		fmt.Println(err)
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}
-
-	fmt.Println("inputPgRaw: ", inputPgRaw)*/
-
 	var emailNotification models.EmailNotification
 	if err = account.LoadEntity(&emailNotification, emailNotificationId); err != nil {
 		u.Respond(w, u.MessageError(err, "Уведомление не найдено"))

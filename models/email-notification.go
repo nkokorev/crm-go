@@ -189,9 +189,11 @@ func (EmailNotification) getListByAccount(accountId uint) ([]EmailNotification, 
 
 }
 
+
+
 func (emailNotification *EmailNotification) update(input map[string]interface{}) error {
 
-	unkVar, ok := input["recipientList"].([]interface{})
+	/*unkVar, ok := input["recipientList"].([]interface{})
 	if !ok {
 		fmt.Println("Not ok!")
 		return nil
@@ -204,7 +206,9 @@ func (emailNotification *EmailNotification) update(input map[string]interface{})
 		if !ok { break }
 		strArr = append(strArr, v)
 	}
-	input["recipientList"] = postgres.Jsonb{RawMessage: utils.StringArrToRawJson(strArr)}
+	input["recipientList"] = postgres.Jsonb{RawMessage: utils.StringArrToRawJson(strArr)}*/
+	
+	input = utils.FixJSONB(input, []string{"recipientList"})
 
 
 	if err := db.Model(emailNotification).Update(input).Error; err != nil {
