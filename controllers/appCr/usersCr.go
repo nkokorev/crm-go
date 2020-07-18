@@ -128,8 +128,6 @@ func UsersGetListPagination(w http.ResponseWriter, r *http.Request) {
 	} else {
 
 		// II. Получаем pagination list
-
-
 		var roles []uint
 		rolesStr := r.URL.Query().Get("roles")
 		if rolesStr == "" || rolesStr == "all" {
