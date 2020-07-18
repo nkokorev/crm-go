@@ -403,7 +403,10 @@ func (Storage) SelectArrayWithoutDataURL() []string {
 
 
 func (product Product) AppendAssociationImage(fs Storage) error {
-	return db.Model(&product).Association("Images").Append(fs).Error
+	if err := db.Model(&product).Association("Images").Append(fs).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 func (article Article) AppendAssociationImage(fs Storage) error {

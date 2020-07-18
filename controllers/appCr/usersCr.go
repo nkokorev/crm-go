@@ -103,8 +103,10 @@ func UsersGetListPagination(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var total uint
-	users := make([]models.UserAndRole,0)
+	// users := make([]models.UserAndRole,0)
+	users := make([]models.User,0)
 
+	// При наличии "list=1,2,3" делается выборка по указанным ID
 	var list []uint
 	listStr := r.URL.Query().Get("list")
 	if listStr != "" && listStr != "all" {
@@ -162,10 +164,6 @@ func UsersGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-
-
-
-
 	resp := u.Message(true, "GET Account User List")
 	resp["total"] = total
 	resp["users"] = users
@@ -191,6 +189,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Если обновляются роли, удаляем из общего массива input и потом отдельно обновляем
 	var roleId float64
 	var role models.Role
 
@@ -199,7 +198,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			roleId = 0
 		} else {
-			// 1. Получаем роль, которую надо назначить
+			// 1. Получаем роль, которую надо назначить. Если роль вне аккаунта и не системная, получим ошибку
 			rolePtr, err := account.GetRole(uint(roleId))
 			if err != nil {
 				u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя"))
@@ -217,6 +216,8 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 
 	delete(input, "roleId")
 
+	// Обновляем данные пользователя
+
 	user, err := account.UpdateUser(userId, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Пользователь не найден"))
@@ -224,13 +225,12 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 
-	// Обновляем роль пользователя
+	// Обновляем роль пользователя, если она изменилась
 	currentRole, err := account.GetUserRole(*user)
 	if err == nil && roleId > 0 && (currentRole.ID != uint(roleId)){
 
-
-
-		err = account.UpdateUserRole(*user, role)
+		// err = account.UpdateUserRole(user, role)
+		_, err = account.SetUserRole(user, role)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя"))
 			return

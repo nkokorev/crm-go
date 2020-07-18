@@ -27,7 +27,7 @@ type User struct {
 	Patronymic 	string `json:"patronymic" gorm:"type:varchar(64)"`
 
 	//Role 		string `json:"role" gorm:"type:varchar(255);default:'client'"`
-	// Role Role `json:"role"`
+	Role []Role `json:"role" gorm:"many2many:account_users;preload"`
 
 	EnabledAuthFromApp	bool	`json:"enabledAuthFromApp" gorm:"type:bool;default:false;"` // Разрешен ли вход, через app.ratuscrm.com
 
@@ -360,8 +360,6 @@ func (user *User) LoadAccounts() error {
 func (user User) AccountList() ([]AccountUser, error) {
 	
 	aUsers := make([]AccountUser,0)
-
-	// err := db.Model(&AccountUser{}).Preload("Role").Preload("Account").Find(&aUsers, "user_id = ?", user.ID).Error;
 
 	err := db.Model(&AccountUser{}).Preload("Role").Preload("Account").Find(&aUsers, "user_id = ?", user.ID).Error;
 	if err != nil && err != gorm.ErrRecordNotFound {

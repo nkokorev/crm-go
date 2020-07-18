@@ -230,6 +230,7 @@ func (role Role) IsAdmin () bool {
 	return role.Tag == "admin" && role.AccountID == 1
 }
 
+// Получаем роль либо системную или в акаунте. Как правило, первое.
 func (account Account) GetRole (roleId uint) (*Role, error) {
 	var role Role
 	err := db.Where("account_id IN (?) AND id = ?", []uint{1, account.ID}, roleId).First(&role).Error

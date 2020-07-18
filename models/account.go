@@ -292,11 +292,10 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 		return nil, err
 	}
 
-	/*if true {
-		if err = (RatusCRM{}).AllowedUserLoginCRM(user.ID); err != nil {
-			log.Printf("Пользователь id = %v создан, но вход в CRM не удалось разрешить", user.ID)
-		}
-	}*/
+	user, err = account.GetUserWithRoleId(user.ID)
+	if err != nil {
+		return nil, err
+	}
 
 	return user, nil
 }
@@ -427,9 +426,9 @@ func (account Account) GetUserByPhone(phone, region string) (*User, error) {
 
 
 // pagination user list, учитывая роли по списку id
-func (account Account) GetUsersByListID(list []uint, sortBy string) ([]UserAndRole, uint, error) {
+func (account Account) GetUsersByListID(list []uint, sortBy string) ([]User, uint, error) {
 
-	users := make([]UserAndRole,0)
+	users := make([]User,0)
 	var total uint
 
 
@@ -449,14 +448,12 @@ func (account Account) GetUsersByListID(list []uint, sortBy string) ([]UserAndRo
 		return nil, 0, utils.Error{Message: "Ошибка определения объема клиентской базы"}
 	}
 
-	fmt.Println("Users list: ", list)
-
 	return users, total, nil
 }
 
 func (account Account) GetUserListPagination(offset, limit int, sortBy, search string, role []uint) ([]UserAndRole, uint, error) {
 
-	users := make([]UserAndRole,0)
+	users := make([]User,0)
 	var total uint
 
 
@@ -597,15 +594,20 @@ func (account Account) AppendUser(user User, role Role) (*AccountUser, error) {
 		return nil, errors.New("Невозможно добавить пользователя в аккаунт, т.к. он в нем уже есть.")
 
 	} else {
+
+		_asc, err := account.SetUserRole(&user, role)
+		if err != nil || _asc == nil {
+			return nil, errors.New("Ошибка при добавлении пользователя в аккаунт")
+		}
 		// создаем
-		acs.AccountId = account.ID
+		/*acs.AccountId = account.ID
 		acs.UserId = user.ID
 		acs.RoleId = role.ID
 
 		_asc, err := acs.create()
 		if err != nil || _asc == nil {
 			return nil, errors.New("Ошибка при добавлении пользователя в аккаунт")
-		}
+		}*/
 
 		acs = *_asc
 
@@ -798,12 +800,14 @@ func (account Account) GetUserAccessRole(user User) (*AccessRole, error) {
 	return &aRole, err
 }
 
-func (account Account) UpdateUserRole(user User, role Role) error {
+// Обновление роли пользователя для текущего аккаунта
+func (account Account) UpdateUserRole(user *User, role Role) error {
 
 	if db.NewRecord(account) || db.NewRecord(user) {
 		return errors.New("GetUserRole: Аккаунта или пользователя не существует!")
 	}
 
+	// Проверяем, есть ли
 	aUser, err := account.GetAccountUser(user.ID)
 	if err != nil || aUser == nil {
 		return err
@@ -814,8 +818,26 @@ func (account Account) UpdateUserRole(user User, role Role) error {
 		return err
 	}
 
-
 	return nil
+}
+
+func (account Account) SetUserRole(user *User, role Role) (*AccountUser, error) {
+
+	if db.NewRecord(account) || db.NewRecord(user) {
+		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
+	}
+
+	aUser := AccountUser{AccountId: account.ID, RoleId: role.ID, UserId: user.ID}
+
+	err := db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.ID, user.ID).
+		FirstOrCreate(&aUser).
+		Update(map[string]interface{}{"roleId":role.ID}).Find(&aUser).Error
+	if err != nil {
+		fmt.Println("Ошибка: ", err)
+		return nil, err
+	}
+
+	return &aUser, nil
 }
 
 // Авторизация пользователя со всеми паралельными процессами

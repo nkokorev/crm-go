@@ -12,10 +12,13 @@ type AccountUser struct {
 	RoleId uint	`json:"roleId" gorm:"type:int;not null;"`
 
 	User    User    `json:"user"  gorm:"preload:true"`
+
 	//User `json:"user"  gorm:"preload:true"`
 	Account Account `json:"account" gorm:"preload:true"`
 	//Role    Role    `json:"role" gorm:"preload:true"`
 	Role    Role    `json:"role" gorm:"preload:true"`
+	// Role    Role    `json:"role"  gorm:"many2many:account_users;preload"`
+	// Role []Role `json:"role" gorm:"many2many:account_users;preload"`
 }
 
 func (AccountUser) PgSqlCreate() {
@@ -75,6 +78,10 @@ func (aUser *AccountUser) update (input interface{}) error {
 	return db.Model(AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).
 		Update(input).Preload("Account").Preload("User").Preload("Role").First(aUser).Error
 }
+
+/*func (aUser *AccountUser) save () error {
+	return db.Model(&AccountUser{}).Save(aUser).Preload("Account").Preload("User").Preload("Role").First(aUser).Error
+}*/
 
 func (aUser *AccountUser) delete() error {
 	
