@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
@@ -38,6 +39,8 @@ type EmailNotification struct {
 
 	// ==========================================
 
+	RecipientUsers []User	`json:"recipientUsersList2" gorm:"-"`
+
 	CreatedAt 		time.Time `json:"createdAt"`
 	UpdatedAt 		time.Time `json:"updatedAt"`
 }
@@ -61,6 +64,33 @@ func (emailNotification *EmailNotification) BeforeCreate(scope *gorm.Scope) erro
 	return nil
 }
 func (emailNotification *EmailNotification) AfterFind() (err error) {
+
+	// Найдем всех пользователей
+	/*var ListUser = struct {
+		ListId []int
+	}{}*/
+
+	b, err := emailNotification.RecipientUsersList.MarshalJSON()
+	if err != nil {
+		fmt.Println(err)
+			return err
+	}
+
+	var arr []int
+	_ = json.Unmarshal(b, &arr)
+	fmt.Println(arr)
+
+	// fmt.Println(data)
+
+	/*fmt.Println(emailNotification.RecipientUsersList)
+	if err := emailNotification.RecipientUsersList.Scan(&List); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(List)*/
+
+	/////////////////////////////////////
+
 	
 	if reflect.DeepEqual(emailNotification.SendingToFixedAddresses, *new(postgres.Jsonb)) {
 		emailNotification.RecipientUsersList = postgres.Jsonb{RawMessage: []byte("[]")}
@@ -69,6 +99,8 @@ func (emailNotification *EmailNotification) AfterFind() (err error) {
 	if reflect.DeepEqual(emailNotification.RecipientUsersList, *new(postgres.Jsonb)) {
 		emailNotification.RecipientUsersList = postgres.Jsonb{RawMessage: []byte("[]")}
 	}
+
+
 	return nil
 }
 
@@ -195,6 +227,8 @@ func (EmailNotification) getListByAccount(accountId uint) ([]EmailNotification, 
 func (emailNotification *EmailNotification) update(input map[string]interface{}) error {
 
 	input = utils.FixJSONB(input, []string{"recipientList"})
+	delete(input, "recipientList")
+	delete(input, "recipientUsersList")
 
 	if err := db.Model(emailNotification).Update(input).Error; err != nil {
 		return err
