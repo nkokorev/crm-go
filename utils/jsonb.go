@@ -39,3 +39,11 @@ func FixJSONB(input map[string]interface{}, keys []string) map[string]interface{
 
 	return input
 }
+
+func NullArrIfNotFound() {
+
+	/*rawJSON, err := json.Marshal([]string{})
+	if err != nil {
+		rawJSON = json.RawMessage(`{}`)
+	}*/
+}

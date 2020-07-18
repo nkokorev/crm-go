@@ -214,7 +214,7 @@ func (eventListener EventListener) delete () error {
 
 // Нужна функция ReloadEventHandler(e)
 func (EventListener) Registration() error {
-	
+
 	eventListeners, err := EventListener{}.getAllAccountsList()
 	if err != nil {
 		return utils.Error{Message: "Не удалось загрузить EventHandlers!"}

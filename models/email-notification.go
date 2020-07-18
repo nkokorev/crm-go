@@ -5,6 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
+	"reflect"
 	"time"
 )
 
@@ -29,7 +30,7 @@ type EmailNotification struct {
 	RecipientUsersList	postgres.Jsonb 	`json:"recipientUsersList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // список id пользователей, которые получат уведомление
 
 	// Список фиксированных адресов позволяет сделать "рассылку" по своей базе, до 10 человек.
-	SendingToFixedAddresses	bool	`json:"sendingToFixedAddresses" gorm:"type:bool;default:false"` // Отправлять ли на фиксированный адрес или пытаться спарсить его от события?
+	SendingToFixedAddresses	bool	`json:"sendingToFixedAddresses" gorm:"type:bool;default:false"` // Отправлять ли на фиксированный адреса
 	RecipientList			postgres.Jsonb	`json:"recipientList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // фиксированный список адресов, на которые будет произведено уведомление
 	
 	// Динамический список пользователей
@@ -57,6 +58,17 @@ func (EmailNotification) PgSqlCreate() {
 }
 func (emailNotification *EmailNotification) BeforeCreate(scope *gorm.Scope) error {
 	emailNotification.ID = 0
+	return nil
+}
+func (emailNotification *EmailNotification) AfterFind() (err error) {
+	
+	if reflect.DeepEqual(emailNotification.SendingToFixedAddresses, *new(postgres.Jsonb)) {
+		emailNotification.RecipientUsersList = postgres.Jsonb{RawMessage: []byte("[]")}
+	}
+
+	if reflect.DeepEqual(emailNotification.RecipientUsersList, *new(postgres.Jsonb)) {
+		emailNotification.RecipientUsersList = postgres.Jsonb{RawMessage: []byte("[]")}
+	}
 	return nil
 }
 
@@ -125,17 +137,19 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 	if len(search) > 0 {
 
 		// string pattern
+		// jsearch := search
 		search = "%"+search+"%"
 
 		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&emailNotifications, "name ILIKE ? OR description ILIKE ?", search,search,search).Error
+			Find(&emailNotifications, "name ILIKE ? OR description ILIKE ?", search,search).Error
+
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
 		err = db.Model(&EmailNotification{}).
-			Where("account_id = ? AND name ILIKE ? OR description ILIKE ?", accountId, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR description ILIKE ? ", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -165,30 +179,18 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 	return entities, total, nil
 }
 
-func (EmailNotification) getByEvent(eventName string) (*EmailNotification, error) {
-
-	wh := EmailNotification{}
-
-	if err := db.First(&wh, "event_type = ?", eventName).Error; err != nil {
-		return nil, err
-	}
-
-	return &wh, nil
-}
-
 func (EmailNotification) getListByAccount(accountId uint) ([]EmailNotification, error) {
 
-	whs := make([]EmailNotification,0)
+	emailNotifications := make([]EmailNotification,0)
 
-	err := db.Find(&whs, "accountId = ?", accountId).Error
+	err := db.Find(&emailNotifications, "accountId = ?", accountId).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
 
-	return whs, nil
+	return emailNotifications, nil
 
 }
-
 
 func (emailNotification *EmailNotification) update(input map[string]interface{}) error {
 
