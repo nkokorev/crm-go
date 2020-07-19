@@ -14,7 +14,7 @@ type EmailNotification struct {
 	ID     			uint   	`json:"id" gorm:"primary_key"`
 	AccountID 		uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	Enabled 		bool 	`json:"enabled" gorm:"type:bool;default:true"` // отключить / включить
+	Enabled 		bool 	`json:"enabled" gorm:"type:bool;default:false;"` // отключить / включить
 	Delay			uint 	`json:"delay" gorm:"type:int;default:0"` // Задержка перед отправлением в минутах: [0-180]
 	
 	Name 			string 	`json:"name" gorm:"type:varchar(128);default:''"` // "Оповещение менеджера", "Оповещение клиента"
@@ -100,7 +100,7 @@ func (emailNotification *EmailNotification) AfterFind() (err error) {
 func (emailNotification EmailNotification) create() (Entity, error)  {
 
 
-	if err := db.Create(&emailNotification).Find(&emailNotification).Error; err != nil {
+	if err := db.Create(&emailNotification).Find(&emailNotification, emailNotification.ID).Error; err != nil {
 		return nil, err
 	}
 

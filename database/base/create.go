@@ -1243,7 +1243,7 @@ func UploadTestDataPart_III() {
 
 	els := []models.EventListener {
 		// товар
-		{Name: "Обновление товара на сайте", EventID: 6, HandlerID: 2, EntityId: 4, Enabled: true},
+		{Name: "Добавление товара на сайт", EventID: 6, HandlerID: 2, EntityId: 3, Enabled: true},
 		{Name: "Обновление товара на сайте", EventID: 7, HandlerID: 2, EntityId: 5, Enabled: true},
 		{Name: "Обновление товара на сайте", EventID: 8, HandlerID: 2, EntityId: 6, Enabled: true},
 
@@ -1337,7 +1337,6 @@ func UploadTestDataPart_III() {
 		{Name: "Ваш заказ отправлен", Description: "Уведомление для клиента об отправке заказа по почте.", Data: string(data)},
 		{Name: "Благодарим за покупку", Description: "Письмо-благодарность для клиента, после оплаты.", Data: string(data)},
 	}
-
 	for i := range emailTemplates {
 		_, err = airoAccount.CreateEntity(&emailTemplates[i])
 		if err != nil {log.Fatal(err)}
@@ -1348,19 +1347,19 @@ func UploadTestDataPart_III() {
 
 	emailNotifications := []models.EmailNotification {
 		{
-			Enabled: true, Delay: 0, Name:"Новый заказ", Description: "Оповещение менеджеров о новом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
+			Enabled: false, Delay: 0, Name:"Новый заказ", Description: "Оповещение менеджеров о новом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-markeitng.ru"})},
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{2,6,7})},
 
 		},
 		{
-			Enabled: true, Delay: 0, Name:"Ваш заказ получен!", Description: "Информирование клиента о принятом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
+			Enabled: false, Delay: 0, Name:"Ваш заказ получен!", Description: "Информирование клиента о принятом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"mex388@gmail.com"})},
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{7})},
 		},
 		{
 			Enabled: true, Delay: 0, Name:"Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
-			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-markeitng.ru","mex388@gmail.com"})},
+			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-markeitng.ru"})},
 		},
 
 	}
