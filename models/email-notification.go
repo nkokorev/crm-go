@@ -166,7 +166,10 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		// jsearch := search
 		search = "%"+search+"%"
 
-		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).Preload("EmailTemplate").
+		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
+				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
+			}).
 			Find(&emailNotifications, "name ILIKE ? OR description ILIKE ?", search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -183,7 +186,10 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 
 	} else {
 
-		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).Preload("EmailTemplate").
+		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
+				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
+			}).
 			Find(&emailNotifications).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err

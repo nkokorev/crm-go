@@ -302,7 +302,7 @@ func EmailTemplatePreviewGetRawHTML(w http.ResponseWriter, r *http.Request) {
 
 
 	w.Header().Set("Content-Type", "text/html;charset=UTF-8")
-	w.Write([]byte(template.Code))
+	w.Write([]byte(template.Data))
 }
 
 func errorHTMLPage(errorText string) []byte {

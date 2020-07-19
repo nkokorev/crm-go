@@ -1332,10 +1332,10 @@ func UploadTestDataPart_III() {
 	}
 
 	emailTemplates := []models.EmailTemplate{
-		{Name: "Спасибо за ваш заказ", Description: "Уведомление клиента о заказе, который не оплачен.", Code: string(data)},
-		{Name: "Новый заказ", Description: "Уведомление о новом заказе для менеджеров", Code: string(data)},
-		{Name: "Ваш заказ отправлен", Description: "Уведомление для клиента об отправке заказа по почте.", Code: string(data)},
-		{Name: "Благодарим за покупку", Description: "Письмо-благодарность для клиента, после оплаты.", Code: string(data)},
+		{Name: "Спасибо за ваш заказ", Description: "Уведомление клиента о заказе, который не оплачен.", Data: string(data)},
+		{Name: "Новый заказ", Description: "Уведомление о новом заказе для менеджеров", Data: string(data)},
+		{Name: "Ваш заказ отправлен", Description: "Уведомление для клиента об отправке заказа по почте.", Data: string(data)},
+		{Name: "Благодарим за покупку", Description: "Письмо-благодарность для клиента, после оплаты.", Data: string(data)},
 	}
 
 	for i := range emailTemplates {

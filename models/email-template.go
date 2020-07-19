@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/fatih/structs"
 	"github.com/jackc/pgtype"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
@@ -30,7 +31,7 @@ type EmailTemplate struct {
 	Description	string 	`json:"description" gorm:"type:varchar(255);default:''"` // краткое назначение письма
 	PreviewText string 	`json:"previewText" gorm:"type:varchar(255);default:''"` // превью текст может использоваться, да
 
-	Code string `json:"code, omitempty" gorm:"type:text;"` // сам шаблон письма
+	Data string `json:"data, omitempty" gorm:"type:text;"` // сам шаблон письма
 
 	Public bool `json:"public" gorm:"type:bool;"` // показывать ли на домене public
 
@@ -56,7 +57,7 @@ func (emailTemplate *EmailTemplate) setId(id uint) { emailTemplate.ID = id }
 func (emailTemplate EmailTemplate) GetAccountId() uint { return emailTemplate.AccountID }
 func (emailTemplate *EmailTemplate) setAccountId(id uint) { emailTemplate.AccountID = id }
 func (EmailTemplate) systemEntity() bool { return false }
-func (emailTemplate EmailTemplate) GetCode() string { return emailTemplate.Code }
+func (emailTemplate EmailTemplate) GetData() string { return emailTemplate.Data }
 // ############# Entity interface #############
 
 func (et *EmailTemplate) BeforeCreate(scope *gorm.Scope) error {
@@ -112,7 +113,8 @@ func (EmailTemplate) getList(accountId uint, sortBy string) ([]Entity, uint, err
 	emailTemplates := make([]EmailTemplate,0)
 	var total uint
 
-	err := db.Model(&EmailTemplate{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).Find(&emailTemplates).Error
+	err := db.Model(&EmailTemplate{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+		Select(EmailTemplate{}.SelectArrayWithoutData()).Find(&emailTemplates).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
@@ -143,6 +145,7 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 		search = "%"+search+"%"
 
 		err := db.Model(&EmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Select(EmailTemplate{}.SelectArrayWithoutData()).
 			Find(&emailTemplates, "hash_id ILIKE ? OR name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -159,6 +162,7 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 	} else {
 
 		err := db.Model(&EmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Select(EmailTemplate{}.SelectArrayWithoutData()).
 			Find(&emailTemplates).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -239,7 +243,7 @@ func (et EmailTemplate) GetHTML(viewData *ViewData) (html string, err error) {
 
 	body := new(bytes.Buffer)
 
-	tmpl, err := template.New(et.Name).Parse(et.Code)
+	tmpl, err := template.New(et.Name).Parse(et.Data)
 	if err != nil {
 		return "", err
 	}
@@ -552,4 +556,10 @@ func GetHeaderKeys(e map[string]string) (headers []string) {
 		headers = append(headers, key)
 	}
 	return headers
+}
+
+func (EmailTemplate) SelectArrayWithoutData() []string {
+	fields := structs.Names(&EmailTemplate{}) //.(map[string]string)
+	fields = utils.RemoveKey(fields, "Data")
+	return utils.ToLowerSnakeCaseArr(fields)
 }
