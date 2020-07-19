@@ -21,7 +21,7 @@ type EmailNotification struct {
 	Description		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
 
 	EmailTemplateId uint 	`json:"emailTemplateId" gorm:"type:int;"` // всегда должен быть шаблон, иначе смысла в нем нет
-	EmailTemplate 	EmailTemplate 	`json:"-" gorm:"preload:true"`
+	EmailTemplate 	EmailTemplate 	`json:"emailTemplate" gorm:"preload:true"`
 
 
 	// =============   Настройки получателей    ===================
@@ -78,6 +78,9 @@ func (emailNotification *EmailNotification) AfterFind() (err error) {
 	err = db.Find(&emailNotification.RecipientUsers, "id IN (?)", arr).Error
 	if err != nil  {return err}
 
+	//////
+
+
 	/////////////////////////////////////
 
 	
@@ -118,7 +121,7 @@ func (EmailNotification) get(id uint) (Entity, error) {
 }
 func (emailNotification *EmailNotification) load() error {
 
-	err := db.First(emailNotification).Error
+	err := db.First(emailNotification, emailNotification.ID).Error
 	if err != nil {
 		return err
 	}
@@ -130,7 +133,7 @@ func (EmailNotification) getList(accountId uint, sortBy string) ([]Entity, uint,
 	emailNotifications := make([]EmailNotification,0)
 	var total uint
 
-	err := db.Model(&EmailNotification{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+	err := db.Model(&EmailNotification{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).Preload("EmailTemplate").
 		Find(&emailNotifications).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
@@ -163,7 +166,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		// jsearch := search
 		search = "%"+search+"%"
 
-		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).Preload("EmailTemplate").
 			Find(&emailNotifications, "name ILIKE ? OR description ILIKE ?", search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -180,7 +183,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 
 	} else {
 
-		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).Preload("EmailTemplate").
 			Find(&emailNotifications).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -223,13 +226,17 @@ func (emailNotification *EmailNotification) update(input map[string]interface{})
 
 	// delete(input, "recipientList")
 	// delete(input, "recipientUsersList")
+	delete(input, "emailTemplate")
 
 
-	if err := db.Set("gorm:association_autoupdate", false).Model(emailNotification).Update(input).Error; err != nil {
+	if err := db.Model(emailNotification).Omit("id", "account_id").Update(input).Error; err != nil {
 		return err
 	}
 
-	emailNotification.load()
+	err := db.Preload("EmailTemplate").First(emailNotification, emailNotification.ID).Error
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
