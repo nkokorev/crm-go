@@ -248,7 +248,7 @@ func (eventListener EventListener) LoadListener() {
 		return
 	}
 	em := event.DefaultEM
-	em.AddListener(eventListener.Event.Code, eventListener, eventListener.Priority)
+	em.AddListener(eventListener.Event.Code, &eventListener, eventListener.Priority)
 }
 
 /*func (eventListener EventListener) RemoveListener() {

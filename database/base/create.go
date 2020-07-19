@@ -1244,7 +1244,7 @@ func UploadTestDataPart_III() {
 	els := []models.EventListener {
 		// товар
 		{Name: "Добавление товара на сайт", EventID: 6, HandlerID: 2, EntityId: 3, Enabled: true},
-		{Name: "Обновление товара на сайте", EventID: 7, HandlerID: 2, EntityId: 5, Enabled: true},
+		{Name: "Обновление товара на сайте", EventID: 7, HandlerID: 2, EntityId: 3, Enabled: true},
 		{Name: "Обновление товара на сайте", EventID: 8, HandlerID: 2, EntityId: 6, Enabled: true},
 
 		// Карточки товара

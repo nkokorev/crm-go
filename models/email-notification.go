@@ -255,6 +255,7 @@ func (emailNotification EmailNotification) delete () error {
 // Вызов уведомления
 func (emailNotification EmailNotification) Execute(data map[string]interface{}) error {
 
+	
 	if data == nil {
 		fmt.Println("Execute EmailNotification of data[] is null!")
 	} else {
