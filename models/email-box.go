@@ -59,7 +59,7 @@ func (EmailBox) get(id uint) (Entity, error) {
 
 	var emailBox EmailBox
 
-	err := db.First(&emailBox, id).Error
+	err := db.Preload("WebSite").First(&emailBox, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (emailBox *EmailBox) load() error {
 	if emailBox.ID < 1 {
 		return utils.Error{Message: "Невозможно загрузить EmailBox - не указан  ID"}
 	}
-	err := db.First(emailBox).Error
+	err := db.Preload("WebSite").First(emailBox).Error
 	if err != nil {
 		return err
 	}

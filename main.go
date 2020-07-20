@@ -34,7 +34,7 @@ func main() {
 	// base.LoadArticlesAiroClimate()
 	// base.LoadProductDescriptionAiroClimate()
 	// base.LoadProductCategoryDescriptionAiroClimate()
-
+	
 	// base.UploadTestDataPart_II()
 	// base.UploadTestDataPart_III()
 

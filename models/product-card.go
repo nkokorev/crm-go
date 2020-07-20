@@ -85,7 +85,7 @@ func (ProductCard) getByAccount(id, accountId uint) (*ProductCard, error) {
 
 	card := ProductCard{}
 
-	if err := db.First(&card, "id = ? AND account_id = ?", id, accountId).Error; err != nil {
+	if err := db.Preload("Products").First(&card, "id = ? AND account_id = ?", id, accountId).Error; err != nil {
 		return nil, err
 	}
 
@@ -96,7 +96,7 @@ func (ProductCard) getListByShop(webSiteID uint) ([]ProductCard, error) {
 
 	cards := make([]ProductCard,0)
 
-	err := db.Find(&cards, "webSiteID = ?", webSiteID).Error
+	err := db.Preload("Products").Find(&cards, "webSiteID = ?", webSiteID).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (ProductCard) getListByAccount(accountId uint) ([]ProductCard, error) {
 
 	cards := make([]ProductCard,0)
 
-	err := db.Find(&cards, "account_id = ?", accountId).Error
+	err := db.Preload("Products").Find(&cards, "account_id = ?", accountId).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (webSite WebSite) GetProductCardList(offset, limit int, search string, prod
 				return nil, 0, err
 			}
 		} else {
-			err := db.Model(&ProductCard{}).Limit(limit).Offset(offset).Find(&cards, "account_id = ? AND web_site_id = ?", webSite.AccountID, webSite.ID).Error
+			err := db.Model(&ProductCard{}).Preload("Products").Limit(limit).Offset(offset).Find(&cards, "account_id = ? AND web_site_id = ?", webSite.AccountID, webSite.ID).Error
 			if err != nil && err != gorm.ErrRecordNotFound{
 				return nil, 0, err
 			}

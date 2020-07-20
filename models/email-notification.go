@@ -266,7 +266,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 
 
 
-	eb, err := (EmailBox{}).get(1)
+	eb, err := (EmailBox{}).get(5)
 	if err != nil {
 		fmt.Println(err)
 		return utils.Error{Message: "Ошибка отправления Уведомления - шаблон принадлежит другому аккаунту 3"}

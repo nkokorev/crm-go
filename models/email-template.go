@@ -460,11 +460,14 @@ func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, 
 
 	email := []byte(message)
 	if err := dkim.Sign(&email, options); err != nil {
-		return errors.New("Cant sign")
+		fmt.Println(err)
+		return errors.New("Cant sign async")
 	}
 
 	mx, err := net.LookupMX(host)
 	if err != nil {
+		fmt.Println("Email: ", toEmail)
+		fmt.Println(err)
 		log.Fatal("Не найдена MX-запись")
 	}
 

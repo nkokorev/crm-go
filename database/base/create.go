@@ -589,21 +589,26 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			Name: "Сайт по продаже бактерицидных рециркуляторов", Address: "г. Москва, р-н Текстильщики", Email: "info@airoclimate.ru", Phone: "+7 (4832) 77-03-73",
 			Hostname: "airoclimate.ru",
 			URL: "https://airoclimate.ru",
-			DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvryklToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHcumqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB`,
+			DKIMPublicRSAKey: `-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDFS3EibqbaeWQvH8+2CRw5ijKV
+1UOoR1Uzi/wNjOIlAxQJfBnocmLtmLVcpTW/ZmjES6iV2e3WkOICzgxLT44UlXFj
+Fox0sQ+qWzKAFjz5SWWZ2vTFrMicGweps48TQ+L9ZX6yRIxuJQGN0uGd0MH49Wzc
++kOepVTv5oxkqAUjFQIDAQAB
+-----END PUBLIC KEY-----`,
 			DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
-MIICXAIBAAKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvry
-klToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHc
-umqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB
-AoGAIIBS6PSEfeQJLuMb/C4V521YMEcYj4b+bN/jpdeW5uM8JurCrgJwVnJCPPaY
-wpNtf+0nB4ZFge0iJYjEJiS/KJ1YT50fEKqMPx/GVm9UULDvUsWsLFONGr1+hP2+
-XaU4ik/+ym3SQ9Ir+VAq6qyBeOwZlpRBySezCGJ+UpluIrECQQDrItv+oYR8QzzA
-4G3ZaP3PclwPOVWIJyvxM6E0zgPRR4JQO80MVEj0IcaZUl/7EsgqOkRorye0Tba1
-eJmrZbu7AkEA6m94LzePJslSqGcAiU7eyJuqBQbkKaJmK0nVFAkAf4hm1om1DSgk
-iPShiBQ79vTP5T7l2j20miqm+E00CDBpnwJAT7jF9hM1JBx34L03AVuDkm4noFHE
-GiGN2H20zn569N3V5PYhk2iQQ5WgDCPNvwajLw4KW6PnRk6DAAwfrekUOQJAcG0W
-oOYvE3W22yXSXwbg1im4poKAhurnvljBA8OxZne+gaI2nmGi678NfBngC/WpgZHh
-XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
-3/m5b5CLpflEX58hz9NeWHfoNJ2QXj3bkYDzZ1vnzJw=
+MIICXgIBAAKBgQDFS3EibqbaeWQvH8+2CRw5ijKV1UOoR1Uzi/wNjOIlAxQJfBno
+cmLtmLVcpTW/ZmjES6iV2e3WkOICzgxLT44UlXFjFox0sQ+qWzKAFjz5SWWZ2vTF
+rMicGweps48TQ+L9ZX6yRIxuJQGN0uGd0MH49Wzc+kOepVTv5oxkqAUjFQIDAQAB
+AoGBALeXWWLaJugcmA6GAqp5Vctxf1sQRlI8dtttwxH07KfWcnnVAuLcNpS0Sug4
+UIiYSpuHcAxp7DmDPt2vUZ9vG10FWDptoc731TrRDbp83nEJpvS1Me95KHNyKKk5
+k531CX7lhUqmLjqLvSCXDqbhP/QdRp8AUvB3b0BhcqW8c1ChAkEA+vD6UsOBGMGm
+12CId0uB7Od3x7j1kk3HiH8olZtBAxIDy5NelZdu/ViigHCN4wzYcnRQm1Y5p/Bb
+vLv7cWhlWQJBAMlFnLzdtx6RrcU6L9OHXlEuBp8GR8S2LPhnYv0dM1T2sBpLTbmO
+jk16kPXeGWDLOPIdrSFb71AH8p0ymH4B6B0CQQCMd4nX/EHuZrAKzal2BZlD0Em3
+TayA6fLwUCWaoR5iJppjQSnn2K2zOQM1nEuANfePEdbxLPH3NM9VNXDJiaN5AkEA
+s+Wdh44gi5koGV29u7KF0cdysZa6dQ9juI8oAhakd++aTZY7HXxWotfHU4s1Ybei
+6X0u7t8uUnkYF/tOI2pu3QJAbpjBRWfkYBM7Nxwd2UVCVQRR0KA+bSbrxUwyQV+V
+TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 -----END RSA PRIVATE KEY-----
 `,
 			DKIMSelector: "dk1",
@@ -1371,7 +1376,7 @@ func UploadTestDataPart_III() {
 	emailNotifications := []models.EmailNotification {
 		{
 			Enabled: false, Delay: 0, Name:"Новый заказ", Description: "Оповещение менеджеров о новом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
-			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-markeitng.ru"})},
+			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-marketing.ru"})},
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{2,6,7})},
 
 		},
@@ -1381,8 +1386,8 @@ func UploadTestDataPart_III() {
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{7})},
 		},
 		{
-			Enabled: true, Delay: 0, Name:"Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
-			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-markeitng.ru"})},
+			Enabled: true, Delay: 0, Name:"*Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
+			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-marketing.ru"})},
 		},
 
 	}
