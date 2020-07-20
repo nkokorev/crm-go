@@ -623,6 +623,14 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для AiroClimate: ", err)
 	}
+	_, err = webSiteAiro.CreateEmailBox(models.EmailBox{Default: false, Allowed: true, Name: "Отдел продаж AIRO Climate", Box: "sale"})
+	if err != nil {
+		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
+	}
+	_, err = webSiteAiro.CreateEmailBox(models.EmailBox{Default: false, Allowed: true, Name: "Служба поддержки AIRO Climate", Box: "help"})
+	if err != nil {
+		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
+	}
 	
 	groupAiroRoot, err := webSiteAiro.CreateProductGroup(
 		models.ProductGroup{

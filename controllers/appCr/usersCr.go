@@ -2,7 +2,6 @@ package appCr
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -121,7 +120,7 @@ func UsersGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 		// I. получаем выборку пользователей
 
-		users, total, err = account.GetUsersByListID(list, sortBy)
+		users, total, err = account.GetUsersByList(list, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список пользователей"))
 			return
@@ -254,6 +253,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	delete(input, "_role")
+	delete(input, "accountUser")
 
 	// Обновляем данные пользователя
 
@@ -268,8 +268,6 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 	currentRole, err := account.GetUserRole(*user)
 	if err == nil && roleId > 0 && (currentRole.ID != uint(roleId)){
 
-		fmt.Println("Обновляем роль!")
-		// err = account.UpdateUserRole(user, role)
 		_, err = account.SetUserRole(user, role)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя"))
@@ -278,7 +276,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 
-	user, err = account.GetUserWithRolesId(user.ID)
+	user, err = account.GetUserWithAUser(user.ID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при поиске пользователя"))
 		return

@@ -81,7 +81,6 @@ func (Account) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&Account{})
-	// db.Exec("ALTER TABLE accounts \n--     ADD CONSTRAINT uix_email_account_id_parent_id unique (email,account_id,parent_id),\n    ADD CONSTRAINT accounts_user_verification_method_id_fkey FOREIGN KEY (user_verification_method_id) REFERENCES user_verification_methods(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT users_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ALTER COLUMN parent_id SET DEFAULT NULL,\n--     ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,    \n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE;\n\n-- create unique index uix_user_id_account_id_email_parent_id_not_null ON users (account_id,email,parent_id) WHERE parent_id IS NOT NULL;\n-- create unique index uix_account_id_email_parent_id_when_null ON users (account_id,email,parent_id) WHERE parent_id IS NULL;\n")
 
 	// 2. Создаем Главный аккаунт через спец. функцию
 	_, err := CreateMainAccount()
@@ -294,7 +293,7 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 		return nil, err
 	}
 
-	user, err = account.GetUserWithRolesId(user.ID)
+	user, err = account.GetUserWithAUser(user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -320,20 +319,15 @@ func (account Account) GetUser(userId uint) (*User, error) {
 	return user, nil
 }
 
-func (account Account) GetUserWithRolesId(userId uint) (*User, error) {
+func (account Account) GetUserWithAUser(userId uint) (*User, error) {
 
-	user, err := User{}.get(userId)
-	if err != nil {
-		return nil, err
-	}
+	var user User
 
-	// Проверим, что пользователь имеет доступ к аккаунта
-	aUser := AccountUser{}
-	if db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.ID, userId).RecordNotFound() {
-		return nil, errors.New("Пользователь не найден")
-	}
+	if err := db.Preload("AccountUser", func(db *gorm.DB) *gorm.DB {
+		return db.Where("account_id = ?", account.ID).Select(AccountUser{}.SelectArrayWithoutBigObject())
+	}).First(&user, userId).Error; err != nil { return nil, err }
 
-	return user, nil
+	return &user, nil
 }
 
 func (account Account) GetUserByHashId(hashId string) (*User, error) {
@@ -431,7 +425,7 @@ func (account Account) GetUserByPhone(phone, region string) (*User, error) {
 
 
 // pagination user list, учитывая роли по списку id
-func (account Account) GetUsersByListID(list []uint, sortBy string) ([]User, uint, error) {
+func (account Account) GetUsersByList(list []uint, sortBy string) ([]User, uint, error) {
 
 	users := make([]User,0)
 	var total uint
@@ -468,6 +462,9 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 		err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
 			Select("account_users.account_id, account_users.role_id, users.*").
 			Order(sortBy).Limit(limit).
+			Preload("AccountUser", func(db *gorm.DB) *gorm.DB {
+				return db.Select(AccountUser{}.SelectArrayWithoutBigObject())
+			}).
 			Where("account_id = ? AND role_id IN (?)", account.ID, role).Preload("Roles").
 			Find(&users, "hash_id ILIKE ? OR username ILIKE ? OR email ILIKE ? OR phone ILIKE ? OR name ILIKE ? OR surname ILIKE ? OR patronymic ILIKE ?", search,search,search,search,search,search,search).Error
 		if err != nil {
@@ -484,12 +481,14 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 		}
 
 	} else {
-		// err := db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+
 		err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
 			Select("account_users.account_id, account_users.role_id, users.*").
+			Where("account_users.account_id = ? AND account_users.role_id IN (?)", account.ID, role).
 			Order(sortBy).Offset(offset).Limit(limit).
-			Preload("Roles").
-			Where("account_id = ? AND role_id IN (?)", account.ID, role).
+			Preload("AccountUser", func(db *gorm.DB) *gorm.DB {
+				return db.Select(AccountUser{}.SelectArrayWithoutBigObject())
+			}).
 			Find(&users).Error
 		if err != nil {
 			return nil, 0, err
@@ -503,6 +502,11 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 			return nil, 0, utils.Error{Message: "Ошибка определения объема клиентской базы"}
 		}
 	}
+
+	/*for i := range users {
+		// delete users["aUser.account"]
+		delete(users[i].AccountUser, "aUser.account")
+	}*/
 
 	return users, total, nil
 }

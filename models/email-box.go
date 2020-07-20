@@ -14,8 +14,8 @@ type EmailBox struct {
 	Default bool `json:"default" gorm:"type:bool;default:false"` // является ли дефолтным почтовым ящиком для домена
 	Allowed bool `json:"allowed" gorm:"type:bool;default:true"` // прошел ли проверку домен на право отправлять с него почту
 	
-	Name string `json:"name" gorm:"type:varchar(255);not null;"` // от имени кого отправляется RatusCRM, Магазин 357 грамм..
-	Box string `json:"box" gorm:"type:varchar(255);not null;"` // обратный адрес info@, news@, mail@...
+	Name string `json:"name" gorm:"type:varchar(15);not null;"` // от имени кого отправляется RatusCRM, Магазин 357 грамм..
+	Box string `json:"box" gorm:"type:varchar(32);not null;"` // обратный адрес info@, news@, mail@...
 
 	WebSite WebSite `json:"-"`
 }
@@ -41,6 +41,10 @@ func (EmailBox) systemEntity() bool { return false }
 
 // ############# Entity interface #############
 func (emailBox EmailBox) create() (Entity, error)  {
+	if emailBox.Box == "" {
+		return nil, utils.Error{Message: "Необходимо указать имя почтового ящика"}
+	}
+
 	eb := emailBox
 	if err := db.Create(&eb).Error; err != nil {
 		return nil, err
@@ -99,30 +103,17 @@ func (EmailBox) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return entities, total, nil
 }
 
-func (EmailBox) getListByWebSite(accountId uint, webSiteId uint, sortBy string) ([]Entity, uint, error) {
+func (EmailBox) getListByWebSite(accountId uint, webSiteId uint, sortBy string) ([]EmailBox, error) {
 
-	webHooks := make([]EmailBox,0)
-	var total uint
+	emailBoxes := make([]EmailBox,0)
 
 	err := db.Model(&EmailBox{}).Limit(1000).Order(sortBy).Where( "account_id = ? AND web_site_id = ?", accountId, webSiteId).
-		Find(&webHooks).Error
+		Find(&emailBoxes).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
+		return nil, err
 	}
 
-	// Определяем total
-	err = db.Model(&EmailBox{}).Where("account_id = ? AND web_site_id = ?", accountId, webSiteId).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(webHooks))
-	for i,_ := range webHooks {
-		entities[i] = &webHooks[i]
-	}
-
-	return entities, total, nil
+	return emailBoxes, nil
 }
 
 func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {

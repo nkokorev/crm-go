@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"github.com/fatih/structs"
 	"github.com/nkokorev/crm-go/utils"
 )
 
@@ -91,3 +92,10 @@ func (aUser *AccountUser) delete() error {
 	return db.Model(AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).Delete(aUser).Error
 }
 
+func (AccountUser) SelectArrayWithoutBigObject() []string {
+	fields := structs.Names(&AccountUser{}) //.(map[string]string)
+	fields = utils.RemoveKey(fields, "Account")
+	fields = utils.RemoveKey(fields, "User")
+	fields = utils.RemoveKey(fields, "Role")
+	return utils.ToLowerSnakeCaseArr(fields)
+}

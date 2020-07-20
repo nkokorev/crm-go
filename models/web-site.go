@@ -504,3 +504,7 @@ func (webSite WebSite) CreateEmailBox(emailBox EmailBox) (Entity, error) {
 	emailBox.WebSiteID = webSite.ID
 	return emailBox.create()
 }
+
+func (webSite WebSite) GetEmailBoxList(sortBy string) ([]EmailBox, error) {
+	return EmailBox{}.getListByWebSite(webSite.AccountID, webSite.ID, sortBy)
+}

@@ -28,6 +28,7 @@ type User struct {
 
 	//Role 		string `json:"role" gorm:"type:varchar(255);default:'client'"`
 	Roles 		[]Role `json:"roles" gorm:"many2many:account_users;preload"`
+	AccountUser *AccountUser	`json:"accountUser" gorm:"preload"`
 	// Account 	Account `json:"account" gorm:"preload" sql:"-"`
 
 	EnabledAuthFromApp	bool	`json:"enabledAuthFromApp" gorm:"type:bool;default:false;"` // Разрешен ли вход, через app.ratuscrm.com
@@ -87,8 +88,8 @@ func (user User) create () (*User, error) {
 	}
 	user.Password = string(password)
 	// fix
-	var time = time.Now()
-	user.EmailVerifiedAt = &time
+	var timeNow = time.Now()
+	user.EmailVerifiedAt = &timeNow
 
 	var userReturn = user
 
@@ -104,12 +105,23 @@ func (user User) create () (*User, error) {
 func (User) get(id uint) (*User, error) {
 	user := User{}
 
-	err := db.Preload("Roles").First(&user, id).Error
+	err := db.First(&user, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
+/*func (User) getWithAUser(accountId, id uint) (*User, error) {
+	user := User{}
+
+	err := db.Preload("AccountUser", func(db *gorm.DB) *gorm.DB {
+		return db.Where("account_id = ?", accountId).Select(AccountUser{}.SelectArrayWithoutBigObject())
+	}).First(&user, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}*/
 func (user *User) load() error {
 
 	err := db.Model(user).Preload("Roles").First(user).Error

@@ -111,7 +111,7 @@ var AppRoutes = func(r *mux.Router) {
 
 	// ### Web Site ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites", appCr.WebSiteCreate).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites", appCr.WebSiteListGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites", appCr.WebSiteListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}", appCr.WebSiteGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}", appCr.WebSiteUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}", appCr.WebSiteDelete).Methods(http.MethodDelete, http.MethodOptions)
@@ -120,8 +120,6 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups", appCr.ProductGroupCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups", appCr.ProductGroupListPaginationByShopGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups/{productGroupId:[0-9]+}", appCr.ProductGroupByShopGet).Methods(http.MethodGet, http.MethodOptions)
-	//rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups", controllers.ProductGroupListGet).Methods(http.MethodGet, http.MethodOptions)
-	//rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/product-groups", controllers.ProductGroupListGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups/{groupId:[0-9]+}", appCr.ProductGroupUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups/{groupId:[0-9]+}", appCr.ProductGroupDelete).Methods(http.MethodDelete, http.MethodOptions)
 
@@ -155,6 +153,13 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks/{webHookId}", appCr.WebHookUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks/{webHookId}", appCr.WebHookDelete).Methods(http.MethodDelete, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks/{webHookId}/execute", appCr.WebHookExecute).Methods(http.MethodGet, http.MethodOptions)
+
+	// ### EmailBoxes ####
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/email-boxes", appCr.EmailBoxCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/email-boxes", appCr.EmailBoxListGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/email-boxes/{emailBoxId:[0-9]+}", appCr.EmailBoxGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/email-boxes/{emailBoxId:[0-9]+}", appCr.EmailBoxUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/email-boxes/{emailBoxId:[0-9]+}", appCr.EmailBoxDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### Article ###
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles", appCr.ArticleCreate).Methods(http.MethodPost, http.MethodOptions)
