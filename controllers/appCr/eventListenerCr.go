@@ -46,7 +46,7 @@ func EventListenerGet(w http.ResponseWriter, r *http.Request) {
 
 	eventListenerId, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке shop Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке web site Id"))
 		return
 	}
 

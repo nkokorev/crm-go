@@ -41,13 +41,15 @@ func (EventItem) systemEntity() bool { return true }
 
 
 func (eventItem EventItem) create() (Entity, error)  {
-	var newItem Entity = &eventItem
 
-	if err := db.Create(newItem).Error; err != nil {
+	ei := eventItem
+
+	if err := db.Create(&ei).Error; err != nil {
 		return nil, err
 	}
+	var entity Entity = &ei
 
-	return newItem, nil
+	return entity, nil
 }
 
 func (EventItem) get(id uint) (Entity, error) {

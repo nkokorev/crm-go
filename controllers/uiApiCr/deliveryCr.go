@@ -20,22 +20,22 @@ func DeliveryGetListByShop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке shopId"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке webSiteId"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
-	// shop, err := account.GetShop(shopId)
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
+	// webSite, err := account.GetShop(webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
 		return
 	}
 
-	resp := u.Message(true, "GET Shop Deliveries")
-	resp["deliveryMethods"] = shop.GetDeliveryMethods()
+	resp := u.Message(true, "GET WebSite Deliveries")
+	resp["deliveryMethods"] = webSite.GetDeliveryMethods()
 	u.Respond(w, resp)
 }
 
@@ -46,14 +46,14 @@ func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке shopId"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке webSiteId"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -66,7 +66,7 @@ func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deliveryData, err := shop.CalculateDelivery(input)
+	deliveryData, err := webSite.CalculateDelivery(input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка расчета стоимости доставки"))
 		return
@@ -88,20 +88,20 @@ func DeliveryListOptions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
 	}
 
-	resp := u.Message(true, "GET Deliveries List Options By Shop")
-	resp["deliveryListOptions"] = shop.DeliveryListOptions()
+	resp := u.Message(true, "GET Deliveries List Options By WebSite")
+	resp["deliveryListOptions"] = webSite.DeliveryListOptions()
 	u.Respond(w, resp)
 }

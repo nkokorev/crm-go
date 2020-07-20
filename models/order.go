@@ -43,13 +43,14 @@ func (order *Order) BeforeCreate(scope *gorm.Scope) error {
 // ############# CRUD Entity interface #############
 
 func (order Order) create() (Entity, error)  {
-	var newItem Entity = &order
 
-	if err := db.Create(newItem).Error; err != nil {
+	ord := order
+	if err := db.Create(&ord).Error; err != nil {
 		return nil, err
 	}
+	var entity Entity = &ord
 
-	return newItem, nil
+	return entity, nil
 }
 
 func (Order) get(id uint) (Entity, error) {

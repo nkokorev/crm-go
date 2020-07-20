@@ -22,7 +22,7 @@ type DeliveryRequest struct {
 	DeliveryMethod struct{
 		ID 		uint 	`json:"id"` 	// id доставки в ее таблице
 		Code 	string 	`json:"code"`	// code по которому можно понять что за таблица
-		ShopId 	uint 	`json:"shopId"` // на всякий случай
+		WebSiteId 	uint 	`json:"webSiteId"` // на всякий случай
 	} `json:"deliveryMethod"`
 
 	// Данные для расчета доставки

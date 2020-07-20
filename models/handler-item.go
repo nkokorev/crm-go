@@ -46,14 +46,16 @@ func (HandlerItem) systemEntity() bool { return true }
 // ############# Entity interface #############
 
 
-func (obItem HandlerItem) create() (Entity, error)  {
-	var newItem Entity = &obItem
+func (handlerItem HandlerItem) create() (Entity, error)  {
 
-	if err := db.Create(newItem).Error; err != nil {
+	hi := handlerItem
+
+	if err := db.Create(&hi).Error; err != nil {
 		return nil, err
 	}
+	var entity Entity = &hi
 
-	return newItem, nil
+	return entity, nil
 }
 
 func (HandlerItem) get(id uint) (Entity, error) {

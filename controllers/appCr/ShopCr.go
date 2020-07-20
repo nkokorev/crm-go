@@ -10,157 +10,7 @@ import (
 	"net/http"
 )
 
-func ShopCreate(w http.ResponseWriter, r *http.Request) {
 
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	// Get JSON-request
-	var input struct{
-		models.Shop
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}
-
-	shop, err := account.CreateEntity(&input.Shop)
-	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
-		return
-	}
-
-	resp := u.Message(true, "POST Shop Created")
-	resp["shop"] = shop
-	u.Respond(w, resp)
-}
-
-func ShopGet(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		return
-	}
-
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке shop Id"))
-		return
-	}
-
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
-		return
-	}
-
-	resp := u.Message(true, "GET Shop List")
-	resp["shop"] = shop
-	u.Respond(w, resp)
-}
-
-func ShopListGet(w http.ResponseWriter, r *http.Request) {
-	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		return
-	}
-
-	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
-	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
-	if !ok {
-		sortBy = ""
-	}
-	if sortDesc {
-		sortBy += " desc"
-	}
-
-	// shops, err := account.GetShops()
-	shops, total, err := account.GetListEntity(&models.Shop{}, sortBy)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
-		return
-	}
-
-	resp := u.Message(true, "GET Shop List")
-	resp["shops"] = shops
-	resp["total"] = total
-	u.Respond(w, resp)
-}
-
-func ShopUpdate(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
-		return
-	}
-
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
-		return
-	}
-
-	var input map[string]interface{}
-
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}
-
-	// shop, err := account.UpdateShop(shopId, &input.Shop)
-	err = account.UpdateEntity(&shop, input)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
-		return
-	}
-
-	resp := u.Message(true, "PATCH Shop Update")
-	resp["shop"] = shop
-	u.Respond(w, resp)
-}
-
-func ShopDelete(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
-		return
-	}
-
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
-		return
-	}
-	if err = account.DeleteEntity(&shop); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
-		return
-	}
-
-	resp := u.Message(true, "DELETE Shop Successful")
-	u.Respond(w, resp)
-}
 
 /////////////////////////////////////
 
@@ -172,15 +22,15 @@ func ProductGroupCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
-	// shop, err := account.GetShop(shopId)
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
+	// webSite, err := account.GetShop(webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -195,7 +45,7 @@ func ProductGroupCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group, err := shop.CreateProductGroup(input.ProductGroup)
+	group, err := webSite.CreateProductGroup(input.ProductGroup)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания группы"}))
 		return
@@ -213,7 +63,7 @@ func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
@@ -225,15 +75,15 @@ func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
-	// shop, err := account.GetShop(shopId)
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
+	// webSite, err := account.GetShop(webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
 	}
 
-	productGroup, err := shop.GetProductGroup(productGroupId)
+	productGroup, err := webSite.GetProductGroup(productGroupId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -275,17 +125,17 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 
 
 	var total uint = 0
-	shops := make([]models.Entity,0)
+	webSites := make([]models.Entity,0)
 
 	if all == "true" && allOk {
-		shops, total, err = account.GetListEntity(&models.Shop{}, sortBy)
+		webSites, total, err = account.GetListEntity(&models.WebSite{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список сайтов"))
 			return
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		shops, total, err = account.GetPaginationListEntity(&models.Shop{}, offset, limit, sortBy, search)
+		webSites, total, err = account.GetPaginationListEntity(&models.WebSite{}, offset, limit, sortBy, search)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список сайтов"))
 			return
@@ -294,7 +144,7 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 
 
 	resp := u.Message(true, "GET WebHooks PaginationList")
-	resp["shops"] = shops
+	resp["webSites"] = webSites
 	resp["total"] = total
 	u.Respond(w, resp)
 }
@@ -324,15 +174,15 @@ func ProductGroupUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
-	// shop, err := account.GetShop(shopId)
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
+	// webSite, err := account.GetShop(webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -353,8 +203,8 @@ func ProductGroupUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// group, err := shop.UpdateProductGroup(groupId, &input.ProductGroup)
-	group, err := shop.UpdateProductGroup(groupId, input)
+	// group, err := webSite.UpdateProductGroup(groupId, &input.ProductGroup)
+	group, err := webSite.UpdateProductGroup(groupId, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -373,15 +223,15 @@ func ProductGroupDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
-	// shop, err := account.GetShop(shopId)
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
+	// webSite, err := account.GetShop(webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -394,7 +244,7 @@ func ProductGroupDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 
-	if err = shop.DeleteProductGroup(groupId); err != nil {
+	if err = webSite.DeleteProductGroup(groupId); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении товарной группы"))
 		return
 	}
@@ -414,15 +264,15 @@ func ProductCardByShopCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
-	// shop, err := account.GetShop(shopId)
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
+	// webSite, err := account.GetShop(webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -438,9 +288,9 @@ func ProductCardByShopCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	// special fix!
-	input.ProductCard.ShopID = shopId
+	input.ProductCard.WebSiteID = webSiteId
 
-	card, err := shop.CreateProductCard(input.ProductCard, nil)
+	card, err := webSite.CreateProductCard(input.ProductCard, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания группы"}))
 		return
@@ -494,21 +344,21 @@ func ProductCardByShopGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
-	// shop, err := account.GetShop(shopId)
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
+	// webSite, err := account.GetShop(webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
 	}
 
-	productCard, err := shop.GetProductCard(productCardId)
+	productCard, err := webSite.GetProductCard(productCardId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить карточку товара"))
 		return
@@ -526,15 +376,15 @@ func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
-	// shop, err := account.GetShop(shopId)
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
+	// webSite, err := account.GetShop(webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -555,7 +405,7 @@ func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) 
 	}
 	products, _ := utilsCr.GetQuerySTRVarFromGET(r, "products")
 
-	productCards, total, err := shop.GetProductCardList(offset, limit, search, products == "true")
+	productCards, total, err := webSite.GetProductCardList(offset, limit, search, products == "true")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return

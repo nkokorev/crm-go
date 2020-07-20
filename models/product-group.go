@@ -9,7 +9,7 @@ import (
 
 type ProductGroup struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
-	ShopID uint `json:"shopId" gorm:"type:int;index;not null;"` // магазин, к которому относится данная группа
+	WebSiteID uint `json:"webSiteId" gorm:"type:int;index;not null;"` // магазин, к которому относится данная группа
 	// AccountID uint `json:"-" gorm:"type:int;index;not null;"` // хз хз
 	// ParentID uint `json:"parentId,omitempty" gorm:"default:NULL"`
 	ParentID *uint `json:"parentId" gorm:"default:NULL"`
@@ -30,7 +30,7 @@ type ProductGroup struct {
 	MetaKeywords string `json:"metaKeywords" gorm:"type:varchar(255);default:null;"`
 	MetaDescription string `json:"metaDescription" gorm:"type:varchar(255);default:null;"`
 
-	Shop Shop `json:"shop" `
+	WebSite WebSite `json:"webSite" `
 	ParentGroup *ProductGroup `json:"-"` // if has parentId
 	// ProductCards ProductCard `json:"productCards" gorm:"many2many:product_group_product_cards"`
 	ProductCards []ProductCard `json:"productCards"`
@@ -41,7 +41,9 @@ type ProductGroup struct {
 func (ProductGroup) PgSqlCreate() {
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&ProductGroup{})
-	db.Exec("ALTER TABLE product_groups\n--     ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT products_shop_id_fkey FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    alter column parent_id SET DEFAULT NULL;\n--     ADD CONSTRAINT products_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\n\n-- create unique index uix_products_account_id_sku ON products (account_id,sku);\n-- alter table product_groups alter column parent_id set default NULL;\n")
+	db.Model(&ProductGroup{}).AddForeignKey("web_site_id", "web_sites(id)", "CASCADE", "CASCADE")
+
+	db.Exec("ALTER TABLE product_groups\n--     ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    alter column parent_id SET DEFAULT NULL;\n--     ADD CONSTRAINT products_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\n\n-- create unique index uix_products_account_id_sku ON products (account_id,sku);\n-- alter table product_groups alter column parent_id set default NULL;\n")
 }
 
 func (productGroup *ProductGroup) BeforeCreate(scope *gorm.Scope) error {
@@ -60,20 +62,20 @@ func (productGroup ProductGroup) getId() uint {
 // ######### CRUD Functions ############
 func (productGroup ProductGroup) create() (*ProductGroup, error)  {
 	
-	if productGroup.ShopID < 1 {
+	if productGroup.WebSiteID < 1 {
 		return nil, utils.Error{Message: "Необходимо указать ID магазина"}
 	}
 
 	var productGroupNew = productGroup
-	// if err := db.Create(&productGroupNew).Preload("Shop").Find(productGroupNew).Error; err != nil {
+	// if err := db.Create(&productGroupNew).Preload("WebSite").Find(productGroupNew).Error; err != nil {
 	if err := db.Create(&productGroupNew).Error; err != nil {
 		return nil, err
 	}
-	if err := db.Model(&productGroupNew).Preload("Shop").First(&productGroupNew).Error; err != nil {
+	if err := db.Model(&productGroupNew).Preload("WebSite").First(&productGroupNew).Error; err != nil {
 		return nil, err
 	}
 
-	event.AsyncFire(Event{}.ProductGroupCreated(productGroupNew.Shop.AccountID, productGroupNew.ID))
+	event.AsyncFire(Event{}.ProductGroupCreated(productGroupNew.WebSite.AccountID, productGroupNew.ID))
 	
 	return &productGroupNew, nil
 }
@@ -90,16 +92,16 @@ func (ProductGroup) get(id uint) (*ProductGroup, error) {
 }
 
 func (productGroup *ProductGroup) update(input map[string]interface{}) error {
-	if err :=  db.Model(productGroup).Omit("id").Updates(input).Preload("Shop").Find(productGroup).Error; err != nil { return err }
+	if err :=  db.Model(productGroup).Omit("id").Updates(input).Preload("WebSite").Find(productGroup).Error; err != nil { return err }
 
-	event.AsyncFire(Event{}.ProductGroupUpdated(productGroup.Shop.AccountID, productGroup.ID))
+	event.AsyncFire(Event{}.ProductGroupUpdated(productGroup.WebSite.AccountID, productGroup.ID))
 
 	return nil
 }
 
 func (productGroup ProductGroup) delete () error {
 
-	accountId, err2 := GetAccountIdByShopId(productGroup.ShopID)
+	accountId, err2 := GetAccountIdByShopId(productGroup.WebSiteID)
 
 	if err := db.Model(ProductGroup{}).Where("id = ?", productGroup.ID).Delete(productGroup).Error; err != nil { return err }
 
@@ -113,15 +115,15 @@ func (productGroup ProductGroup) delete () error {
 
 
 // ######### SHOP Functions ############
-func (shop Shop) CreateProductGroup(input ProductGroup) (*ProductGroup, error) {
-	input.ShopID = shop.ID
+func (webSite WebSite) CreateProductGroup(input ProductGroup) (*ProductGroup, error) {
+	input.WebSiteID = webSite.ID
 
 	productGroup, err := input.create()
 	if err != nil {
 		return nil, err
 	}
 
-	/*account, err := GetAccount(shop.AccountID)
+	/*account, err := GetAccount(webSite.AccountID)
 	if err == nil && account != nil {
 		event.AsyncFire(Event{}.ProductGroupCreated(account.ID, productGroup.ID))
 	}*/
@@ -129,7 +131,7 @@ func (shop Shop) CreateProductGroup(input ProductGroup) (*ProductGroup, error) {
 	return productGroup, nil
 }
 
-func (shop Shop) GetProductGroup(groupId uint) (*ProductGroup, error) {
+func (webSite WebSite) GetProductGroup(groupId uint) (*ProductGroup, error) {
 	group, err := ProductGroup{}.get(groupId)
 	if err != nil {
 		return nil, err
@@ -138,11 +140,11 @@ func (shop Shop) GetProductGroup(groupId uint) (*ProductGroup, error) {
 	return group, nil
 }
 
-func (shop Shop) GetProductGroups() ([]ProductGroup, error) {
+func (webSite WebSite) GetProductGroups() ([]ProductGroup, error) {
 
 	groups := make([]ProductGroup,0)
 
-	err := db.Model(&shop).Where("shop_id = ?", shop.ID).Association("ProductGroups").Find(&groups).Error
+	err := db.Model(&webSite).Where("web_site_id = ?", webSite.ID).Association("ProductGroups").Find(&groups).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, err
 	}
@@ -152,7 +154,7 @@ func (shop Shop) GetProductGroups() ([]ProductGroup, error) {
 
 	return groups, nil
 }
-func (shop Shop) GetProductGroupsPaginationList(offset, limit int, search string) ([]ProductGroup, int, error) {
+func (webSite WebSite) GetProductGroupsPaginationList(offset, limit int, search string) ([]ProductGroup, int, error) {
 
 	groups := make([]ProductGroup,0)
 	//groups := []ProductGroup{}
@@ -162,10 +164,10 @@ func (shop Shop) GetProductGroupsPaginationList(offset, limit int, search string
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Shop{}).
+		err := db.Model(&WebSite{}).
 			Limit(limit).
 			Offset(offset).
-			Where("shop_id = ?", shop.ID).
+			Where("web_site_id = ?", webSite.ID).
 			Where("code ILIKE ? OR url ILIKE ? OR name ILIKE ? OR short_description ILIKE ? OR description ILIKE ? OR meta_title ILIKE ? OR meta_keywords ILIKE ? OR meta_description ILIKE ?" , search,search,search,search,search,search,search,search,search).
 			Association("ProductGroups").
 			Find(&groups).Error
@@ -178,18 +180,18 @@ func (shop Shop) GetProductGroupsPaginationList(offset, limit int, search string
 			return nil, 0, errors.New("Offset or limit is wrong")
 		}
 
-		/*if err := db.Model(&shop).Association("ProductGroups").Find(&groups).Error; err != nil {
+		/*if err := db.Model(&webSite).Association("ProductGroups").Find(&groups).Error; err != nil {
 			return nil, 0, err
 		}
 
 		fmt.Println(groups)*/
 
-		//err := db.Model(&shop).Association("ProductGroups").Find(&groups).Error
+		//err := db.Model(&webSite).Association("ProductGroups").Find(&groups).Error
 
-		err := db.Model(&shop).
+		err := db.Model(&webSite).
 			Limit(limit).
 			Offset(offset).
-			Where("shop_id = ?", shop.ID).
+			Where("web_site_id = ?", webSite.ID).
 			Association("ProductGroups").
 			Find(&groups).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -197,9 +199,9 @@ func (shop Shop) GetProductGroupsPaginationList(offset, limit int, search string
 		}
 	}
 
-	total := db.Model(&shop).Where("shop_id = ?", shop.ID).Association("ProductGroups").Count()
+	total := db.Model(&webSite).Where("web_site_id = ?", webSite.ID).Association("ProductGroups").Count()
 
-	/*if err := db.Model(&shop).Association("ProductGroups").Find(&groups).Error; err != nil {
+	/*if err := db.Model(&webSite).Association("ProductGroups").Find(&groups).Error; err != nil {
 		return nil, err
 	}*/
 
@@ -211,7 +213,7 @@ func (account Account) GetProductGroups() ([]ProductGroup, error) {
 	groups := make([]ProductGroup,0)
 
 	err := db.Model(&ProductGroup{}).
-		Joins("LEFT JOIN shops ON product_groups.shop_id = shops.id").
+		Joins("LEFT JOIN web_sites ON product_groups.web_site_id = web_sites.id").
 		Where("account_id = ?", account.ID).
 		Find(&groups).Error;
 	if err != nil {
@@ -230,22 +232,22 @@ func (account Account) GetProductGroups() ([]ProductGroup, error) {
 	return group, nil
 }*/
 
-func (shop Shop) UpdateProductGroup(groupId uint, input map[string]interface{}) (*ProductGroup, error) {
-	productGroup, err := shop.GetProductGroup(groupId)
+func (webSite WebSite) UpdateProductGroup(groupId uint, input map[string]interface{}) (*ProductGroup, error) {
+	productGroup, err := webSite.GetProductGroup(groupId)
 	if err != nil {
 		return nil, err
 	}
 
-	// Проверим, что новый Shop принадлежит этому аккаунту
+	// Проверим, что новый WebSite принадлежит этому аккаунту
 	/*m := structs.Map(input)
 
 	// todo: 
-	if m["ShopID"] != shop.ID {
-	   acc, err := GetAccount(shop.AccountID)
+	if m["WebSiteID"] != webSite.ID {
+	   acc, err := GetAccount(webSite.AccountID)
 	   if err != nil {
 		   return nil, utils.Error{Message: "Не удалось получить аккаунт"}
 	   }
-		if !acc.ExistShop(group.ShopID) {
+		if !acc.ExistShop(group.WebSiteID) {
 			return nil, utils.Error{Message: "Указанный магазин принадлежит другому аккаунту"}
 		}
 	}
@@ -260,7 +262,7 @@ func (shop Shop) UpdateProductGroup(groupId uint, input map[string]interface{}) 
 		return nil, err
 	}
 
-	/*account, err := GetAccount(shop.AccountID)
+	/*account, err := GetAccount(webSite.AccountID)
 	if err == nil && account != nil {
 		go account.CallWebHookIfExist(EventProductGroupUpdated, productGroup)
 	}*/
@@ -268,10 +270,10 @@ func (shop Shop) UpdateProductGroup(groupId uint, input map[string]interface{}) 
 	return productGroup, nil
 }
 
-func (shop Shop) DeleteProductGroup(groupId uint) error {
+func (webSite WebSite) DeleteProductGroup(groupId uint) error {
 
 	// включает в себя проверку принадлежности к аккаунту
-	productGroup, err := shop.GetProductGroup(groupId)
+	productGroup, err := webSite.GetProductGroup(groupId)
 	if err != nil {
 		return err
 	}
@@ -289,7 +291,7 @@ func (shop Shop) DeleteProductGroup(groupId uint) error {
 // ######### ProductGroup Functions ############
 func (productGroup ProductGroup) CreateChild(input ProductGroup) (*ProductGroup, error) {
 	input.ParentID = &productGroup.ID
-	input.ShopID = productGroup.ShopID
+	input.WebSiteID = productGroup.WebSiteID
 	return input.create()
 }
 

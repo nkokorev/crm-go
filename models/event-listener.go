@@ -251,11 +251,6 @@ func (eventListener EventListener) LoadListener() {
 	em.AddListener(eventListener.Event.Code, &eventListener, eventListener.Priority)
 }
 
-/*func (eventListener EventListener) RemoveListener() {
-	em := event.DefaultEM
-	em.RemoveListener(eventListener.Event.Name, Handler{TargetName: eventListener.Handler.Name})
-}*/
-
 // для интерфейса event.Listener - функция обработчик для каждого события
 // Она вызывается в цепочке первой, а затем уже соответствующая функция target из EventListener (см. ниже)
 

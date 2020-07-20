@@ -9,7 +9,7 @@ import (
 type DeliveryPickup struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
 	AccountID 	uint	`json:"-" gorm:"index,not null"` // аккаунт-владелец ключа
-	ShopID		uint 	`json:"shopId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	WebSiteId		uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
 	Code 		string	`json:"code" gorm:"type:varchar(16);default:'pickup';"` // Для идентификации во фронтенде
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // активен ли способ доставки
@@ -35,7 +35,7 @@ func (deliveryPickup DeliveryPickup) getId() uint { return deliveryPickup.ID }
 func (deliveryPickup *DeliveryPickup) setId(id uint) { deliveryPickup.ID = id }
 func (deliveryPickup DeliveryPickup) GetAccountId() uint { return deliveryPickup.AccountID }
 func (deliveryPickup *DeliveryPickup) setAccountId(id uint) { deliveryPickup.AccountID = id }
-func (deliveryPickup *DeliveryPickup) setShopId(shopId uint) { deliveryPickup.ShopID = shopId }
+func (deliveryPickup *DeliveryPickup) setShopId(webSiteId uint) { deliveryPickup.WebSiteId = webSiteId }
 func (DeliveryPickup) systemEntity() bool { return false }
 
 func (deliveryPickup DeliveryPickup) GetCode() string {
@@ -55,13 +55,14 @@ func (deliveryPickup *DeliveryPickup) BeforeCreate(scope *gorm.Scope) error {
 // ############# CRUD Entity interface #############
 
 func (deliveryPickup DeliveryPickup) create() (Entity, error)  {
-	var newItem Entity = &deliveryPickup
+	dp := deliveryPickup
 	
-	if err := db.Create(newItem).Error; err != nil {
+	if err := db.Create(&dp).Error; err != nil {
 		return nil, err
 	}
+	var entity Entity = &dp
 
-	return newItem, nil
+	return entity, nil
 }
 
 func (DeliveryPickup) get(id uint) (Entity, error) {

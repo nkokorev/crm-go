@@ -85,13 +85,15 @@ func (WebHook) TableName() string {
 
 // ######### CRUD Functions ############
 func (webHook WebHook) create() (Entity, error)  {
-	var newItem Entity = &webHook
-
-	if err := db.Create(newItem).Error; err != nil {
+	// if err := db.Create(&webHook).Find(&webHook, webHook.ID).Error; err != nil {
+	wb := webHook
+	if err := db.Create(&wb).Error; err != nil {
 		return nil, err
 	}
 
-	return newItem, nil
+	var entity Entity = &wb
+
+	return entity, nil
 }
 
 func (WebHook) get(id uint) (Entity, error) {
@@ -105,6 +107,9 @@ func (WebHook) get(id uint) (Entity, error) {
 	return &webHook, nil
 }
 func (webHook *WebHook) load() error {
+	if webHook.ID < 1 {
+		return utils.Error{Message: "Невозможно загрузить WebHook - не указан  ID"}
+	}
 
 	err := db.First(webHook).Error
 	if err != nil {
@@ -197,19 +202,6 @@ func (WebHook) getByEvent(eventName string) (*WebHook, error) {
 	}
 
 	return &wh, nil
-}
-
-func (WebHook) getListByAccount(accountId uint) ([]WebHook, error) {
-
-	whs := make([]WebHook,0)
-
-	err := db.Find(&whs, "accountId = ?", accountId).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, err
-	}
-
-	return whs, nil
-
 }
 
 func (webHook *WebHook) update(input map[string]interface{}) error {

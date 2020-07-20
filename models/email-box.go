@@ -1,97 +1,192 @@
 package models
 
 import (
-	"errors"
+	"github.com/jinzhu/gorm"
+	"github.com/nkokorev/crm-go/utils"
 	"net/mail"
 )
 
 type EmailBox struct {
-	ID     uint   `json:"-" gorm:"primary_key"`
-	
+	ID     		uint   	`json:"id" gorm:"primary_key"`
 	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
-	DomainID uint `json:"domainId" gorm:"type:int;index;not null;"` // обязательно!
+	WebSiteID uint `json:"webSiteId" gorm:"type:int;not null;"` // какой сайт обязательно!
 	
 	Default bool `json:"default" gorm:"type:bool;default:false"` // является ли дефолтным почтовым ящиком для домена
 	Allowed bool `json:"allowed" gorm:"type:bool;default:true"` // прошел ли проверку домен на право отправлять с него почту
 	
-	Name string `json:"name" gorm:"type:varchar(255);not null;"` // RatusCRM, Магазин 357 грамм..
-	
-	// Domain string `json:"host" gorm:"type:varchar(255);not null;"` // ratuscrm.com, 357gr.ru
-	Box string `json:"box" gorm:"type:varchar(255);not null;"` // info, news, mail ...
+	Name string `json:"name" gorm:"type:varchar(255);not null;"` // от имени кого отправляется RatusCRM, Магазин 357 грамм..
+	Box string `json:"box" gorm:"type:varchar(255);not null;"` // обратный адрес info@, news@, mail@...
 
-	Domain *Domain
+	WebSite WebSite `json:"-"`
 }
 
 func (EmailBox) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&EmailBox{})
-	db.Exec("ALTER TABLE email_boxes \n ADD CONSTRAINT email_boxes_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n")
-
+	db.Model(&EmailBox{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Model(&EmailBox{}).AddForeignKey("web_site_id", "web_sites(id)", "CASCADE", "CASCADE")
+}
+func (emailBox *EmailBox) BeforeCreate(scope *gorm.Scope) error {
+	emailBox.ID = 0
+	return nil
 }
 
-func (ebox EmailBox) GetMailAddress() mail.Address {
-	return mail.Address{Name: ebox.Name, Address: ebox.Box + "@" + ebox.Domain.Hostname}
+// ############# Entity interface #############
+func (emailBox EmailBox) getId() uint { return emailBox.ID }
+func (emailBox *EmailBox) setId(id uint) { emailBox.ID = id }
+func (emailBox EmailBox) GetAccountId() uint { return emailBox.AccountID }
+func (emailBox *EmailBox) setAccountId(id uint) { emailBox.AccountID = id }
+func (EmailBox) systemEntity() bool { return false }
+
+// ############# Entity interface #############
+func (emailBox EmailBox) create() (Entity, error)  {
+	eb := emailBox
+	if err := db.Create(&eb).Error; err != nil {
+		return nil, err
+	}
+
+	var entity Entity = &eb
+
+	return entity, nil
 }
 
-// ########### CRUD FUNCTIONAL #########
+func (EmailBox) get(id uint) (Entity, error) {
 
-func (ebox EmailBox) create() (*EmailBox, error)  {
-	err := db.Create(&ebox).Error
-	return &ebox, err
-}
+	var emailBox EmailBox
 
-func (EmailBox) get(id uint) (*EmailBox, error)  {
-
-	var box EmailBox
-
-	err := db.Preload("Domain").First(&box, id).Error
+	err := db.First(&emailBox, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &box, nil
+	return &emailBox, nil
 }
+func (emailBox *EmailBox) load() error {
 
-func (ebox *EmailBox) update(input interface{}) error {
-	return db.Model(ebox).Omit("id", "created_at", "deleted_at", "updated_at").Updates(&input).Error
-}
-
-func (et EmailBox) delete () error {
-	if et.ID < 1 {
-		return errors.New("Не возможно удалить email box: не указан id")
+	if emailBox.ID < 1 {
+		return utils.Error{Message: "Невозможно загрузить EmailBox - не указан  ID"}
 	}
-	return db.Model(EmailBox{}).Where("id = ?", et.ID).Delete(et).Error
+	err := db.First(emailBox).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-// ########### END OF CRUD FUNCTIONAL #########
+func (EmailBox) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
-// ########### ACCOUNT FUNCTIONAL ###########
+	webHooks := make([]EmailBox,0)
+	var total uint
 
-func (account Account) CreateEmailBox(ebox EmailBox) (*EmailBox, error) {
-	ebox.AccountID = account.ID
-	return ebox.create()
+	err := db.Model(&EmailBox{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+		Find(&webHooks).Error
+	if err != nil && err != gorm.ErrRecordNotFound{
+		return nil, 0, err
+	}
+
+	// Определяем total
+	err = db.Model(&EmailBox{}).Where("account_id = ?", accountId).Count(&total).Error
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(webHooks))
+	for i,_ := range webHooks {
+		entities[i] = &webHooks[i]
+	}
+
+	return entities, total, nil
 }
 
-func (account Account) GetEmailBox(id uint) (*EmailBox, error) {
-	var ebox EmailBox
-	err := db.Preload("Domain").First(&ebox, "id = ? AND account_id = ?", id, account.ID).Error
-	return &ebox, err
+func (EmailBox) getListByWebSite(accountId uint, webSiteId uint, sortBy string) ([]Entity, uint, error) {
+
+	webHooks := make([]EmailBox,0)
+	var total uint
+
+	err := db.Model(&EmailBox{}).Limit(1000).Order(sortBy).Where( "account_id = ? AND web_site_id = ?", accountId, webSiteId).
+		Find(&webHooks).Error
+	if err != nil && err != gorm.ErrRecordNotFound{
+		return nil, 0, err
+	}
+
+	// Определяем total
+	err = db.Model(&EmailBox{}).Where("account_id = ? AND web_site_id = ?", accountId, webSiteId).Count(&total).Error
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(webHooks))
+	for i,_ := range webHooks {
+		entities[i] = &webHooks[i]
+	}
+
+	return entities, total, nil
 }
 
-func (account Account) GetEmailBoxes() (*[]EmailBox, error) {
-	eboxes := make([]EmailBox,0)
-	err := db.Preload("Domain").Find(&eboxes, "account_id = ?", account.ID).Error
-	return &eboxes, err
+func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+
+	webHooks := make([]EmailBox,0)
+	var total uint
+
+	// if need to search
+	if len(search) > 0 {
+
+		// string pattern
+		search = "%"+search+"%"
+
+		err := db.Model(&EmailBox{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&webHooks, "name ILIKE ? OR box ILIKE ?", search,search).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = db.Model(&EmailBox{}).
+			Where("account_id = ? AND name ILIKE ? OR box ILIKE ?", accountId, search,search).
+			Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+
+	} else {
+
+		err := db.Model(&EmailBox{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&webHooks).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = db.Model(&EmailBox{}).Where("account_id = ?", accountId).Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(webHooks))
+	for i,_ := range webHooks {
+		entities[i] = &webHooks[i]
+	}
+
+	return entities, total, nil
 }
 
-func (account Account) GetEmailBoxDefault() (*EmailBox, error) {
-	var eboxes EmailBox
-	err := db.Preload("Domain").First(&eboxes, "account_id = ? AND default = true", account.ID).Error
-
-	return &eboxes, err
+func (emailBox *EmailBox) update(input map[string]interface{}) error {
+	return db.Set("gorm:association_autoupdate", false).Model(emailBox).Omit("id", "account_id").Update(input).Error
 }
 
-// ########### END OF ACCOUNT FUNCTIONAL ###########
+func (emailBox EmailBox) delete () error {
+	return db.Model(EmailBox{}).Where("id = ?", emailBox.ID).Delete(emailBox).Error
+}
 
-// ########### EMAIL TEMPLATE FUNCTIONAL ###########
-// ########### EMAIL TEMPLATE FUNCTIONAL ###########
+
+// ########### EmailBox FUNCTIONAL ###########
+func (ebox EmailBox) GetMailAddress() mail.Address {
+	return mail.Address{Name: ebox.Name, Address: ebox.Box + "@" + ebox.WebSite.Hostname}
+}
+
+// ########### END OF EmailBox FUNCTIONAL ###########
+

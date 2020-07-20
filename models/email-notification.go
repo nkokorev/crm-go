@@ -102,12 +102,13 @@ func (emailNotification *EmailNotification) AfterFind() (err error) {
 // ######### CRUD Functions ############
 func (emailNotification EmailNotification) create() (Entity, error)  {
 
+	en := emailNotification
 
-	if err := db.Create(&emailNotification).Find(&emailNotification, emailNotification.ID).Error; err != nil {
+	if err := db.Create(&en).Error; err != nil {
 		return nil, err
 	}
 
-	var newItem Entity = &emailNotification
+	var newItem Entity = &en
 
 	return newItem, nil
 }
@@ -215,19 +216,6 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 	return entities, total, nil
 }
 
-func (EmailNotification) getListByAccount(accountId uint) ([]EmailNotification, error) {
-
-	emailNotifications := make([]EmailNotification,0)
-
-	err := db.Find(&emailNotifications, "accountId = ?", accountId).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, err
-	}
-
-	return emailNotifications, nil
-
-}
-
 func (emailNotification *EmailNotification) update(input map[string]interface{}) error {
 
 	// Приводим в опрядок
@@ -277,16 +265,22 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 	}
 
 
+
 	eb, err := (EmailBox{}).get(1)
 	if err != nil {
 		fmt.Println(err)
 		return utils.Error{Message: "Ошибка отправления Уведомления - шаблон принадлежит другому аккаунту 3"}
 	}
 
+	emailBox, ok := eb.(*EmailBox)
+	if !ok {
+		return utils.Error{Message: "Ошибка отправления Уведомления - не удается получить почтовый ящик"}
+	}
+
    	emailList := utils.ParseJSONBToString(emailNotification.RecipientList)
 
    	for _,v := range(emailList) {
-		err = emailTemplate.SendMail(*eb, v, emailNotification.Sabject, data)
+		err = emailTemplate.SendMail(*emailBox, v, emailNotification.Subject, data)
 		if err != nil {
 			fmt.Println("Ошибка отправления: ", err)
 		}
@@ -297,7 +291,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 
 	return nil
 
-	err = emailTemplate.SendMail(*eb, "mex388@mail.ru", "Отличная новость!", data)
+	err = emailTemplate.SendMail(*emailBox, "mex388@mail.ru", "Отличная новость!", data)
 	if err != nil {
 		fmt.Println("Ошибка отправления: ", err)
 		return utils.Error{Message: "Ошибка отправления Уведомления - шаблон принадлежит другому аккаунту"}

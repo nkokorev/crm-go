@@ -17,14 +17,14 @@ func DeliveryCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -37,7 +37,7 @@ func DeliveryCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	delivery, err := shop.CreateDelivery(input)
+	delivery, err := webSite.CreateDelivery(input)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания"}))
 		return
@@ -55,22 +55,22 @@ func DeliveryGetListByShop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
 	}
 
-	deliveries := shop.GetDeliveryMethods()
+	deliveries := webSite.GetDeliveryMethods()
 
-	resp := u.Message(true, "GET Deliveries List By Shop")
+	resp := u.Message(true, "GET Deliveries List By WebSite")
 	resp["deliveries"] = deliveries
 	u.Respond(w, resp)
 }
@@ -85,14 +85,14 @@ func DeliveryGetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -116,7 +116,7 @@ func DeliveryGetList(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}*/
 
-	deliveries := shop.GetDeliveryMethods()
+	deliveries := webSite.GetDeliveryMethods()
 
 	resp := u.Message(true, "GET Deliveries List Pagination")
 	// resp["webHooks"] = webHooks
@@ -131,14 +131,14 @@ func DeliveryUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -153,7 +153,7 @@ func DeliveryUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Работаем через метод магазина, т.к. доставки разные и это интерфейс
-	delivery, err := shop.UpdateDelivery(input)
+	delivery, err := webSite.UpdateDelivery(input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -171,14 +171,14 @@ func DeliveryDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shopId, err := utilsCr.GetUINTVarFromRequest(r, "shopId")
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-	var shop models.Shop
-	err = account.LoadEntity(&shop, shopId)
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -193,7 +193,7 @@ func DeliveryDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Работаем через метод магазина, т.к. доставки разные и это интерфейс
-	if err = shop.DeleteDelivery(input); err != nil {
+	if err = webSite.DeleteDelivery(input); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении метода доставки"))
 		return
 	}

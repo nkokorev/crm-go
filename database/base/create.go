@@ -35,7 +35,7 @@ func RefreshTables() {
 		return
 	}
 
-	err = pool.Exec("drop table if exists  storage, products, shops, product_groups").Error
+	err = pool.Exec("drop table if exists  storage, products, product_groups").Error
 	if err != nil {
 		fmt.Println("Cant create tables 1: ", err)
 		return
@@ -60,11 +60,22 @@ func RefreshTables() {
 		return
 	}
 
-	
-	err = models.CrmSetting{}.PgSqlCreate()
-	if err != nil {
-		log.Fatal(err)
-	}
+
+
+}
+
+func RefreshTablesPart_I() {
+
+	pool := models.GetPool()
+
+	pool.DropTableIfExists(models.Product{}, models.ProductCard{}, models.ProductGroup{})
+	pool.DropTableIfExists(models.EmailNotification{}, models.EmailBox{}, models.WebSite{},models.EmailTemplate{})
+	pool.DropTableIfExists(models.WebHook{}, models.EventListener{}, models.EventItem{},models.HandlerItem{}, models.Order{}, models.DeliveryPickup{}, models.DeliveryRussianPost{}, models.DeliveryCourier{})
+
+	pool.DropTableIfExists(models.Article{}, models.Storage{}, models.UnitMeasurement{}, models.ApiKey{}, models.AccountUser{}, models.User{})
+	pool.DropTableIfExists(models.Role{}, models.UserVerificationMethod{}, models.Account{}, models.CrmSetting{})
+
+	models.CrmSetting{}.PgSqlCreate()
 
 	models.UserVerificationMethod{}.PgSqlCreate()
 	models.Account{}.PgSqlCreate()
@@ -74,34 +85,19 @@ func RefreshTables() {
 	models.ApiKey{}.PgSqlCreate()
 
 	models.UnitMeasurement{}.PgSqlCreate()
-	
-	models.Shop{}.PgSqlCreate()
+
+	models.Storage{}.PgSqlCreate()
+	models.Article{}.PgSqlCreate()
+
+	/////////////////////
+
+	models.WebSite{}.PgSqlCreate()
+	models.EmailBox{}.PgSqlCreate()
+	models.EmailTemplate{}.PgSqlCreate()
+
 	models.ProductGroup{}.PgSqlCreate()
 	models.ProductCard{}.PgSqlCreate()
 	models.Product{}.PgSqlCreate()
-
-	models.Domain{}.PgSqlCreate()
-	models.EmailBox{}.PgSqlCreate()
-
-
-	models.Storage{}.PgSqlCreate()
-
-
-	models.Article{}.PgSqlCreate()
-
-}
-
-func RefreshTablesPart_II() {
-
-	pool := models.GetPool()
-
-
-	pool.DropTableIfExists(models.EmailNotification{}, models.Domain{},models.EmailBox{}, models.EmailTemplate{})
-	pool.DropTableIfExists(models.WebHook{}, models.EventListener{}, models.EventItem{},models.HandlerItem{}, models.Order{}, models.DeliveryPickup{}, models.DeliveryRussianPost{}, models.DeliveryCourier{})
-
-	models.Domain{}.PgSqlCreate()
-	models.EmailBox{}.PgSqlCreate()
-	models.EmailTemplate{}.PgSqlCreate()
 
 	models.Order{}.PgSqlCreate()
 	models.DeliveryRussianPost{}.PgSqlCreate()
@@ -116,7 +112,8 @@ func RefreshTablesPart_II() {
 
 	// Уведомления
 	models.EmailNotification{}.PgSqlCreate()
-
+}
+func RefreshTablesPart_II() {
 
 }
 
@@ -146,7 +143,7 @@ func UploadEavData() {
 
 }
 
-func UploadTestData() {
+func UploadTestDataPart_I() {
 	
 	// 1. Получаем главный аккаунт
 	mAcc, err := models.GetMainAccount()
@@ -208,7 +205,7 @@ func UploadTestData() {
 	}
 
 	// 3. Создаем домен для главного аккаунта
-	domainMain, err := mAcc.CreateDomain(models.Domain{
+	_webSiteMain, err := mAcc.CreateEntity(&models.WebSite{
 		Hostname: "ratuscrm.com",
 		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4dksLEYhARII4b77fe403uCJhD8x5Rddp9aUJCg1vby7d6QLOpP7uXpXKVLXxaxQcX7Kjw2kGzlvx7N+d2tToZ8+T3SUadZxLOLYDYkwalkP3vhmA3cMuhpRrwOgWzDqSWsDfXgr4w+p1BmNbScpBYCwCrRQ7B12/EXioNcioCQIDAQAB`,
 		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
@@ -231,9 +228,13 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	if err != nil {
 		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
 	}
+	webSiteMain, ok := _webSiteMain.(*models.WebSite)
+	if !ok {
+		log.Fatal("Не удалось создать web-site для главного аккаунта: ", err)
+	}
 
 	// 4. Добавляем почтовые ящики в домен
-	_, err = domainMain.AddMailBox(models.EmailBox{Default: true, Allowed: true, Name: "RatusCRM", Box: "info"})
+	err = webSiteMain.AddEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "RatusCRM", Box: "info"})
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
 	}
@@ -340,7 +341,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 
 
 	// 4. Создаем домен для 357gr
-	domain357gr, err := acc357.CreateDomain(models.Domain{
+	_webSite357, err := acc357.CreateEntity(&models.WebSite{
 		Hostname: "357gr.ru",
 		DKIMPublicRSAKey: ``,
 		DKIMPrivateRSAKey: ``,
@@ -349,9 +350,13 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	if err != nil {
 		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
 	}
+	webSite357, ok := _webSite357.(*models.WebSite)
+	if !ok {
+		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
+	}
 
 	// 5. Добавляем почтовые ящики в домен 357gr
-	_, err = domain357gr.AddMailBox(models.EmailBox{Default: true, Allowed: true, Name: "357 Грамм", Box: "info"})
+	err = webSite357.AddEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "357 Грамм", Box: "info"})
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
 	}
@@ -414,7 +419,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	}
 
 	// 2. Создаем домен для синдиката
-	domainSynd, err := accSyndicAd.CreateDomain(models.Domain{
+	_webSiteSynd, err := accSyndicAd.CreateEntity(&models.WebSite{
 		Hostname: "syndicad.com",
 		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDEwBDUBhnVcb+wPoyj6UrobwhKp0bIMzl9znfS127PdLqeGEyxCGy6CTT7coAturzb2dw33e3OhzzOvvBjnzSamRfpAj3vuBiSWtykS4JH17EN/4+ABtf7VOqfRWwB7F80VJ+3/Xv7TzkmNcAg+ksgDzk//BCXfcVFfx56Jxf7mQIDAQAB`,
 		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
@@ -438,9 +443,13 @@ pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
 	if err != nil {
 		log.Fatal("Не удалось создать домены для Синдиката: ", err)
 	}
+	webSiteSynd, ok := _webSiteSynd.(*models.WebSite)
+	if !ok {
+		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
+	}
 
 	// 3. Добавляем почтовые ящики
-	_, err = domainSynd.AddMailBox(models.EmailBox{Default: true, Allowed: true, Name: "SyndicAd", Box: "info"})
+	err = webSiteSynd.AddEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "SyndicAd", Box: "info"})
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для Синдиката: ", err)
 	}
@@ -476,7 +485,7 @@ pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
 	}
 
 	// 2. Создаем домен для синдиката
-	domainBrouser, err := brouser.CreateDomain(models.Domain{
+	_webSiteBro, err := brouser.CreateEntity(&models.WebSite{
 		Hostname: "brouser.com",
 		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvryklToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHcumqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB`,
 		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
@@ -500,9 +509,13 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	if err != nil {
 		log.Fatal("Не удалось создать домены для Brouser: ", err)
 	}
+	webSiteBro, ok := _webSiteBro.(*models.WebSite)
+	if !ok {
+		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
+	}
 
 	// 3. Добавляем почтовые ящики
-	_, err = domainBrouser.AddMailBox(models.EmailBox{Default: true, Allowed: true, Name: "Brouser", Box: "info"})
+	err = webSiteBro.AddEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "Brouser", Box: "info"})
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для Brouser: ", err)
 	}
@@ -534,14 +547,14 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	airoClimat, err := korotaev.CreateAccount(models.Account{
 		Name:                                "AIRO Climate",
-		Website:                             "http://airoclimate.ru",
-		Type:                                "internet-shop",
+		Website:                             "https://airoclimate.ru",
+		Type:                                "shop",
 		ApiEnabled:                          true,
 		UiApiEnabled:                        true,
 		VisibleToClients:                    false,
 	})
 	if err != nil || airoClimat == nil {
-		log.Fatal("Не удалось создать аккаунт Brouser")
+		log.Fatal("Не удалось создать аккаунт AIRO")
 		return
 	}
 
@@ -559,11 +572,24 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		return
 	}
 
-	// 2. Создаем домен для airoClimat
-	domainAiroClimate, err := airoClimat.CreateDomain(models.Domain{
-		Hostname: "airoclimate.ru",
-		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvryklToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHcumqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB`,
-		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
+	_, err = airoClimat.ApiKeyCreate(models.ApiKey{Name:"Для сайта"})
+	if err != nil {
+		log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
+		return
+	}
+
+	///////////////////////////////////////
+
+
+
+	///////////////////////////////////////
+	// 4. !!! Создаем магазин
+	airoShopE, err := airoClimat.CreateEntity(
+		&models.WebSite{
+			Name: "airoclimate.ru", Address: "г. Москва, р-н Текстильщики", Email: "info@airoclimate.ru", Phone: "+7 (4832) 77-03-73",
+			Hostname: "airoclimate.ru",
+			DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvryklToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHcumqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB`,
+			DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
 MIICXAIBAAKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvry
 klToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHc
 umqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB
@@ -579,42 +605,30 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 3/m5b5CLpflEX58hz9NeWHfoNJ2QXj3bkYDzZ1vnzJw=
 -----END RSA PRIVATE KEY-----
 `,
-		DKIMSelector: "dk1",
-	})
+			DKIMSelector: "dk1",
+		})
 	if err != nil {
-		log.Fatal("Не удалось создать домены для Brouser: ", err)
-	}
-
-	// 3. Добавляем почтовые ящики
-	_, err = domainAiroClimate.AddMailBox(models.EmailBox{Default: true, Allowed: true, Name: "AIRO Climate", Box: "info"})
-	if err != nil {
-		log.Fatal("Не удалось создать MailBoxes для Brouser: ", err)
-	}
-
-	_, err = airoClimat.ApiKeyCreate(models.ApiKey{Name:"Для сайта"})
-	if err != nil {
-		log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
+		log.Fatal("Не удалось создать WebSite для airoClimat: ", err)
 		return
 	}
 
-	// 4. !!! Создаем магазин
-	airoShopE, err := airoClimat.CreateEntity(&models.Shop{Name: "airoclimate.ru", Address: "г. Москва, р-н Текстильщики", Email: "info@airoclimate.ru", Phone: "+7 (4832) 77-03-73"})
-	if err != nil {
-		log.Fatal("Не удалось создать Shop для airoClimat: ", err)
-		return
-	}
-	airoShop, ok := airoShopE.(*models.Shop)
+	webSiteAiro, ok := airoShopE.(*models.WebSite)
 	if !ok {
-		log.Fatal("Не удалось преобразовать Shop для airoClimat: ", err)
+		log.Fatal("Не удалось преобразовать WebSite для airoClimat: ", err)
 		return
+	}
+	// 3. Добавляем почтовые ящики
+	err = webSiteAiro.AddEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "AIRO Climate", Box: "info"})
+	if err != nil {
+		log.Fatal("Не удалось создать MailBoxes для AiroClimate: ", err)
 	}
 	
-	groupAiroRoot, err := airoShop.CreateProductGroup(
+	groupAiroRoot, err := webSiteAiro.CreateProductGroup(
 		models.ProductGroup{
 			Code: "root", Name: "", URL: "/", IconName: "far fa-home", RouteName: "info.index",
 		})
 	if err != nil {
-		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 		return
 	}
 
@@ -623,7 +637,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			Code: "catalog", Name: "Весь каталог", URL: "catalog", IconName: "far fa-th-large", RouteName: "catalog",
 		})
 	if err != nil {
-		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 		return
 	}
 	groupAiro1, err := groupAiroCatalogRoot.CreateChild(
@@ -631,7 +645,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			Code: "catalog",Name: "Бактерицидные рециркуляторы", URL: "bactericidal-recirculators", IconName: "far fa-fan-table", RouteName: "catalog.recirculators",
 		})
 	if err != nil {
-		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 		return
 	}
 	groupAiro2, err := groupAiroCatalogRoot.CreateChild(
@@ -639,7 +653,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			Code: "catalog",Name: "Бактерицидные камеры", URL: "bactericidal-chambers", IconName: "far fa-box-full", RouteName: "catalog.chambers",
 			})
 	if err != nil {
-		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 		return
 	}
 
@@ -651,7 +665,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			Code: "info", Name: "Статьи", URL: "articles", IconName: "far fa-books", RouteName: "info.articles", Order: 1,
 		})
 	if err != nil {
-		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
 	deliveryGroupRoute, err := groupAiroRoot.CreateChild(
 		models.ProductGroup{
@@ -666,28 +680,28 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			Code: "delivery", Name: "Возврат товара", URL: "moneyback", IconName: "far fa-exchange-alt", RouteName: "delivery.moneyback", Order: 3,
 		})
 	if err != nil {
-		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
 	_, err = groupAiroRoot.CreateChild(
 		models.ProductGroup{
 			Code: "info", Name: "О компании", URL: "about", IconName: "far fa-home-heart", RouteName: "info.about",      Order: 5,
 		})
 	if err != nil {
-		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
 	_, err = groupAiroRoot.CreateChild(
 		models.ProductGroup{
 			Code: "info", Name: "Политика конфиденциальности", URL: "privacy-policy", IconName: "far fa-home-heart", RouteName: "info.privacy-policy",      Order: 6,
 		})
 	if err != nil {
-		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
 	_, err = groupAiroRoot.CreateChild(
 		models.ProductGroup{
 			Code: "info", Name: "Контакты", URL: "contacts", IconName: "far fa-address-book", RouteName: "info.contacts",  Order: 10,
 		})
 	if err != nil {
-		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
 
 	////////
@@ -696,7 +710,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			Code: "cart", Name: "Корзина", URL: "cart", IconName: "far fa-cart-arrow-down", RouteName: "cart", Order: 1,
 		})
 	if err != nil {
-		log.Fatal("Не удалось создать ProductGroup для airoClimat shop: ", err)
+		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
 
 	// 6. Создаем карточки товара
@@ -1101,7 +1115,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		} else {
 			group = groupAiro2
 		}
-		_, err = airoShop.CreateProductWithCardAndGroup(products[i], cards[i], &group.ID)
+		_, err = webSiteAiro.CreateProductWithCardAndGroup(products[i], cards[i], &group.ID)
 		if err != nil {
 			log.Fatal("Не удалось создать Product для airoClimat: ", err)
 		}
@@ -1114,22 +1128,21 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 func UploadTestDataPart_II() {
 
-	// 1. Получаем главный аккаунт
-	account, err := models.GetAccount(5)
+	// 1. Получаем AiroClimate аккаунт
+	accountAiro, err := models.GetAccount(5)
 	if err != nil {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
 	// 2. Получаем магазин
-	// shop, err := account.GetShop(1)
-	var shop models.Shop
-	err = account.LoadEntity(&shop, 1)
+	var webSite models.WebSite
+	err = accountAiro.LoadEntity(&webSite, 5)
 	if err != nil {
-		log.Fatalf("Не удалось найти shop: %v", err)
+		log.Fatalf("Не удалось найти webSite: %v", err)
 	}
 
 	// Создаем вариант доставки "Почтой россии"
-	entityRussianPost, err := account.CreateEntity(
+	entityRussianPost, err := accountAiro.CreateEntity(
 		&models.DeliveryRussianPost{
 			Name: "Доставка Почтой России",
 			Enabled: true,
@@ -1147,19 +1160,19 @@ func UploadTestDataPart_II() {
 	if err != nil {
 		log.Fatalf("Не удалось получить DeliveryRussianPost: %v", err)
 	}
-	if err := shop.AppendDeliveryMethod(entityRussianPost); err != nil {
+	if err := webSite.AppendDeliveryMethod(entityRussianPost); err != nil {
 		log.Fatalf("Не удалось добавить метод доставки в магазин: %v\n", err)
 	}
 
-	entityPickup, err := account.CreateEntity(&models.DeliveryPickup{Name: "Самовывоз из г. Москва, м. Текстильщики", Enabled: true,})
+	entityPickup, err := accountAiro.CreateEntity(&models.DeliveryPickup{Name: "Самовывоз из г. Москва, м. Текстильщики", Enabled: true,})
 	if err != nil {
 		log.Fatalf("Не удалось получить entityPickup: %v", err)
 	}
-	if err := shop.AppendDeliveryMethod(entityPickup); err != nil {
+	if err := webSite.AppendDeliveryMethod(entityPickup); err != nil {
 		log.Fatalf("Не удалось добавить метод доставки в магазин: %v\n", err)
 	}
 
-	entityCourier, err := account.CreateEntity(
+	entityCourier, err := accountAiro.CreateEntity(
 		&models.DeliveryCourier{
 			Name: "Доставка курьером по г. Москва (в пределах МКАД)",
 			Enabled: true,
@@ -1169,7 +1182,7 @@ func UploadTestDataPart_II() {
 	if err != nil {
 		log.Fatalf("Не удалось получить entityCourier: %v", err)
 	}
-	if err := shop.AppendDeliveryMethod(entityCourier); err != nil {
+	if err := webSite.AppendDeliveryMethod(entityCourier); err != nil {
 		log.Fatalf("Не удалось добавить метод доставки в магазин: %v\n", err)
 	}
 	
@@ -1188,37 +1201,6 @@ func UploadTestDataPart_III() {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
-	// 2. Создаем домен для airoClimat
-	domainAiroClimate, err := airoAccount.CreateDomain(models.Domain{
-		Hostname: "airoclimate.ru",
-		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvryklToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHcumqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB`,
-		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
-MIICXAIBAAKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvry
-klToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHc
-umqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB
-AoGAIIBS6PSEfeQJLuMb/C4V521YMEcYj4b+bN/jpdeW5uM8JurCrgJwVnJCPPaY
-wpNtf+0nB4ZFge0iJYjEJiS/KJ1YT50fEKqMPx/GVm9UULDvUsWsLFONGr1+hP2+
-XaU4ik/+ym3SQ9Ir+VAq6qyBeOwZlpRBySezCGJ+UpluIrECQQDrItv+oYR8QzzA
-4G3ZaP3PclwPOVWIJyvxM6E0zgPRR4JQO80MVEj0IcaZUl/7EsgqOkRorye0Tba1
-eJmrZbu7AkEA6m94LzePJslSqGcAiU7eyJuqBQbkKaJmK0nVFAkAf4hm1om1DSgk
-iPShiBQ79vTP5T7l2j20miqm+E00CDBpnwJAT7jF9hM1JBx34L03AVuDkm4noFHE
-GiGN2H20zn569N3V5PYhk2iQQ5WgDCPNvwajLw4KW6PnRk6DAAwfrekUOQJAcG0W
-oOYvE3W22yXSXwbg1im4poKAhurnvljBA8OxZne+gaI2nmGi678NfBngC/WpgZHh
-XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
-3/m5b5CLpflEX58hz9NeWHfoNJ2QXj3bkYDzZ1vnzJw=
------END RSA PRIVATE KEY-----
-`,
-		DKIMSelector: "dk1",
-	})
-	if err != nil {
-		log.Fatal("Не удалось создать домены для AiroClimate: ", err)
-	}
-
-	// 3. Добавляем почтовые ящики
-	_, err = domainAiroClimate.AddMailBox(models.EmailBox{Default: true, Allowed: true, Name: "AIRO Climate", Box: "info"})
-	if err != nil {
-		log.Fatal("Не удалось создать MailBoxes для AiroClimate: ", err)
-	}
 
 	// HandlerItem
 	eventHandlers := []models.HandlerItem {
@@ -1284,7 +1266,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		{Name: "Обновление карточек товара", EventID: 10, HandlerID: 2, EntityId: 9, Enabled: true},
 		{Name: "Обновление карточек товара", EventID: 11, HandlerID: 2, EntityId: 10, Enabled: true},
 
-		// Магазин (Shop)
+		// Магазин (WebSite)
 		{Name: "Обновление данных магазина", EventID: 16, HandlerID: 2, EntityId: 2, Enabled: true},
 		{Name: "Обновление данных магазина", EventID: 17, HandlerID: 2, EntityId: 3, Enabled: true},
 
@@ -1316,11 +1298,11 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	webHooks := []models.WebHook {
 
-		{Name: "Upload all shop data", Code: models.EventUpdateAllShopData, URL: domainAiroSite + "/ratuscrm/webhooks/upload/all", HttpMethod: http.MethodGet},
+		{Name: "Upload all webSite data", Code: models.EventUpdateAllShopData, URL: domainAiroSite + "/ratuscrm/webhooks/upload/all", HttpMethod: http.MethodGet},
 
-		// Shop
-		{Name: "Update shop", Code: models.EventShopUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/shops", HttpMethod: http.MethodPatch},
-		{Name: "Delete shop", Code: models.EventShopDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/shops", HttpMethod: http.MethodDelete},
+		// WebSite
+		{Name: "Update webSite", Code: models.EventShopUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/web-sites", HttpMethod: http.MethodPatch},
+		{Name: "Delete webSite", Code: models.EventShopDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/web-sites", HttpMethod: http.MethodDelete},
 
 		// Product
 		{Name: "Create product", Code: models.EventProductCreated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productId}}", HttpMethod: http.MethodPost},

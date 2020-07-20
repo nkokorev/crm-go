@@ -22,12 +22,11 @@ var UiApiRoutes = func (rFree *mux.Router) {
 	// rFree.HandleFunc("/users/auth/username", appCr.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
 	// rFree.HandleFunc("/users/auth/email", appCr.UserAuthByEmail).Methods(http.MethodPost, http.MethodOptions)
 	
-	// rFree.HandleFunc("/accounts/{accountHashId}/shops/{shopId:[0-9]+}/deliveries", uiApiCr.DeliveryGetListByShop).Methods(http.MethodGet, http.MethodOptions)
-	rFree.HandleFunc("/shops/{shopId:[0-9]+}/deliveries", uiApiCr.DeliveryGetListByShop).Methods(http.MethodGet, http.MethodOptions)
+	rFree.HandleFunc("/web-sites/{webSiteId:[0-9]+}/deliveries", uiApiCr.DeliveryGetListByShop).Methods(http.MethodGet, http.MethodOptions)
 
-	rFree.HandleFunc("/shops/{shopId:[0-9]+}/deliveries-calculate", uiApiCr.DeliveryCalculateDeliveryCost).Methods(http.MethodPost, http.MethodOptions)
+	rFree.HandleFunc("/web-sites/{webSiteId:[0-9]+}/deliveries-calculate", uiApiCr.DeliveryCalculateDeliveryCost).Methods(http.MethodPost, http.MethodOptions)
 
-	rFree.HandleFunc("/shops/{shopId:[0-9]+}/deliveries-list-options", uiApiCr.DeliveryListOptions).Methods(http.MethodGet, http.MethodOptions)
+	rFree.HandleFunc("/web-sites/{webSiteId:[0-9]+}/deliveries-list-options", uiApiCr.DeliveryListOptions).Methods(http.MethodGet, http.MethodOptions)
 
 
 }

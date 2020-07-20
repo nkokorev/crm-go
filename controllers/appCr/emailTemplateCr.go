@@ -230,14 +230,15 @@ func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ebox, err := account.GetEmailBox(input.EmailBoxId)
+	var ebox models.EmailBox
+	err = account.LoadEntity(&ebox, input.EmailBoxId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID Email box"))
 		return
 	}
 
 	// err = template.Send(*ebox,*user,input.Subject)
-	err = template.SendChannel(*ebox,user.Email,input.Subject, nil)
+	err = template.SendChannel(ebox,user.Email,input.Subject, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в отправке письма"))
 		return

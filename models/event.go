@@ -81,13 +81,13 @@ func (Event) ArticleDeleted(accountId, articleId uint) event.Event {
 	return event.NewBasic("ArticleDeleted", map[string]interface{}{"accountId":accountId, "articleId":articleId})
 }
 
-// ######### Shop #########
-func (Event) ShopCreated(accountId, shopId uint) event.Event {
-	return event.NewBasic("ShopCreated", map[string]interface{}{"accountId":accountId, "shopId":shopId})
+// ######### WebSite #########
+func (Event) WebSiteCreated(accountId, webSiteId uint) event.Event {
+	return event.NewBasic("WebSiteCreated", map[string]interface{}{"accountId":accountId, "webSiteId":webSiteId})
 }
-func (Event) ShopUpdated(accountId, shopId uint) event.Event {
-	return event.NewBasic("ShopUpdated", map[string]interface{}{"accountId":accountId, "shopId":shopId})
+func (Event) WebSiteUpdated(accountId, webSiteId uint) event.Event {
+	return event.NewBasic("WebSiteUpdated", map[string]interface{}{"accountId":accountId, "webSiteId":webSiteId})
 }
-func (Event) ShopDeleted(accountId, shopId uint) event.Event {
-	return event.NewBasic("ShopDeleted", map[string]interface{}{"accountId":accountId, "shopId":shopId})
+func (Event) WebSiteDeleted(accountId, webSiteId uint) event.Event {
+	return event.NewBasic("WebSiteDeleted", map[string]interface{}{"accountId":accountId, "webSiteId":webSiteId})
 }

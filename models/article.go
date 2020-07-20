@@ -74,7 +74,8 @@ func (article Article) getEntityName() string {
 // ######### CRUD Functions ############
 func (article Article) create() (*Article, error)  {
 	var newArticle = article
-	err := db.Create(&newArticle).First(&newArticle).Error
+	err := db.Create(&newArticle).Error
+	if err != nil {return nil, err}
 	return &newArticle, err
 }
 

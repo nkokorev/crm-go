@@ -8,73 +8,84 @@ import (
 )
 
 // Прообраз торговой точки
-type Shop struct {
+type WebSite struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
 	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
 
-	Name string `json:"name" gorm:"type:varchar(255);default:'Новый магазин';not null;"`
-	Address string `json:"address" gorm:"type:varchar(255);default:null;"`
-	Email string `json:"email" gorm:"type:varchar(255);default:null;"`
-	Phone string `json:"phone" gorm:"type:varchar(255);default:null;"`
+	Name string `json:"name" gorm:"type:varchar(255);default:'Новый магазин';not null;"` // Внутреннее имя сайта
+	Hostname string `json:"hostname" gorm:"type:varchar(255);not_null;"` // ratuscrm.com, airoclimate.ru, vetvent.ru, ..
 
-	Deliveries []Delivery  `json:"deliveries" gorm:"-"`// `gorm:"polymorphic:Owner;"`
+	// Email DKIM
+	DKIMPublicRSAKey string `json:"dkimPublicRsaKey" gorm:"type:text;"` // публичный ключ
+	DKIMPrivateRSAKey string `json:"dkimPrivateRsaKey" gorm:"type:text;"` // приватный ключ
+	DKIMSelector string `json:"dkimSelector" gorm:"type:varchar(255);default:'dk1'"` // dk1
 
-	ProductGroups []ProductGroup `json:"productGroups"`
+	// Контактные данные
+	Address string `json:"address" gorm:"type:varchar(255);default:null;"` // Публичный физический адрес
+	Email string `json:"email" gorm:"type:varchar(255);default:null;"` // Публичный email магазина
+	Phone string `json:"phone" gorm:"type:varchar(255);default:null;"` // Публичный телефон
+
+	Type	string 	`json:"type" gorm:"type:varchar(50);not null;"` // имя типа shop, site, ... хз как это использовать, на будущее
+
+	Deliveries 		[]Delivery  `json:"deliveries" gorm:"-"`// `gorm:"polymorphic:Owner;"`
+	ProductGroups 	[]ProductGroup `json:"productGroups"`
+	EmailBoxes 		[]EmailBox `json:"emailBoxes" gorm:"many2many:web_sites_email_boxes;preload"` // доступные почтовые ящики с которых можно отправлять
 }
 
-func (Shop) PgSqlCreate() {
+func (WebSite) PgSqlCreate() {
 	
-	db.CreateTable(&Shop{})
-	db.Model(&Shop{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	// db.Exec("ALTER TABLE shops\n    ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n")
+	db.CreateTable(&WebSite{})
+	db.Model(&WebSite{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }
 
 // ############# Entity interface #############
-func (shop Shop) getId() uint { return shop.ID }
-func (shop *Shop) setId(id uint) { shop.ID = id }
-func (shop Shop) GetAccountId() uint { return shop.AccountID }
-func (shop *Shop) setAccountId(id uint) { shop.AccountID = id }
-func (shop Shop) systemEntity() bool {
+func (webSite WebSite) getId() uint { return webSite.ID }
+func (webSite *WebSite) setId(id uint) { webSite.ID = id }
+func (webSite WebSite) GetAccountId() uint { return webSite.AccountID }
+func (webSite *WebSite) setAccountId(id uint) { webSite.AccountID = id }
+func (webSite WebSite) systemEntity() bool {
 	return false
 }
 // ############# END Of Entity interface #############
 
-func (shop *Shop) BeforeCreate(scope *gorm.Scope) error {
-	shop.ID = 0
+func (webSite *WebSite) BeforeCreate(scope *gorm.Scope) error {
+	webSite.ID = 0
 	return nil
 }
 
-func (shop *Shop) AfterFind() (err error) {
+func (webSite *WebSite) AfterFind() (err error) {
 	
-	shop.Deliveries = shop.GetDeliveryMethods()
+	webSite.Deliveries = webSite.GetDeliveryMethods()
 	return nil
 }
 
 // ######### CRUD Functions ############
-func (shop Shop) create() (Entity, error)  {
-	var newItem Entity = &shop
+func (webSite WebSite) create() (Entity, error)  {
 
-	if err := db.Create(newItem).First(newItem).Error; err != nil {
+	wb := webSite
+	
+	if err := db.Create(&wb).Error; err != nil {
 		return nil, err
 	}
 
+	var newItem Entity = &wb
 	return newItem, nil
 }
 
-func (Shop) get(id uint) (Entity, error) {
+func (WebSite) get(id uint) (Entity, error) {
 
-	var shop Shop
+	var webSite WebSite
 
-	err := db.First(&shop, id).Error
+	err := db.First(&webSite, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &shop, nil
+	return &webSite, nil
 }
 
-func (shop *Shop) load() error {
+func (webSite *WebSite) load() error {
 
-	err := db.First(shop).Error
+	err := db.First(webSite).Error
 	if err != nil {
 		return err
 	}
@@ -82,35 +93,35 @@ func (shop *Shop) load() error {
 }
 
 
-func (Shop) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (WebSite) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
-	shops := make([]Shop,0)
+	webSites := make([]WebSite,0)
 	var total uint
 
-	err := db.Model(&Shop{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
-		Find(&shops).Error
+	err := db.Model(&WebSite{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+		Find(&webSites).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&Shop{}).Where("account_id = ?", accountId).Count(&total).Error
+	err = db.Model(&WebSite{}).Where("account_id = ?", accountId).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(shops))
-	for i,_ := range shops {
-		entities[i] = &shops[i]
+	entities := make([]Entity,len(webSites))
+	for i,_ := range webSites {
+		entities[i] = &webSites[i]
 	}
 
 	return entities, total, nil
 }
 
-func (Shop) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
-	shops := make([]Shop,0)
+	webSites := make([]WebSite,0)
 	var total uint
 
 	// if need to search
@@ -119,14 +130,14 @@ func (Shop) getPaginationList(accountId uint, offset, limit int, sortBy, search 
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Shop{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&shops, "name ILIKE ? OR address ILIKE ? OR email ILIKE ? OR phone ILIKE ?", search,search,search,search).Error
+		err := db.Model(&WebSite{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&webSites, "name ILIKE ? OR address ILIKE ? OR email ILIKE ? OR phone ILIKE ?", search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Shop{}).
+		err = db.Model(&WebSite{}).
 			Where("account_id = ? AND name ILIKE ? OR address ILIKE ? OR email ILIKE ? OR phone ILIKE ?", accountId, search,search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -135,34 +146,34 @@ func (Shop) getPaginationList(accountId uint, offset, limit int, sortBy, search 
 
 	} else {
 
-		err := db.Model(&Shop{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&shops).Error
+		err := db.Model(&WebSite{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&webSites).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Shop{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&WebSite{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(shops))
-	for i,_ := range shops {
-		entities[i] = &shops[i]
+	entities := make([]Entity,len(webSites))
+	for i,_ := range webSites {
+		entities[i] = &webSites[i]
 	}
 
 	return entities, total, nil
 }
 
-func (shop *Shop) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(shop).Omit("id", "account_id").Update(input).Error
+func (webSite *WebSite) update(input map[string]interface{}) error {
+	return db.Set("gorm:association_autoupdate", false).Model(webSite).Omit("id", "account_id").Update(input).Error
 }
 
-func (shop Shop) delete () error {
-	return db.Model(Shop{}).Where("id = ?", shop.ID).Delete(shop).Error
+func (webSite WebSite) delete () error {
+	return db.Model(WebSite{}).Where("id = ?", webSite.ID).Delete(webSite).Error
 }
 // ######### END CRUD Functions ############
 
@@ -178,8 +189,8 @@ func (account Account) ExistProductGroups(groupId uint) bool {
 // ######### END OF ACCOUNT Functions ############
 
 // ######### SHOP PRODUCT Functions ############
-func (shop Shop) CreateProduct(input Product, card *ProductCard) (*Product, error) {
-	input.AccountID = shop.AccountID
+func (webSite WebSite) CreateProduct(input Product, card *ProductCard) (*Product, error) {
+	input.AccountID = webSite.AccountID
 
 	if input.ExistSKU() {
 		return nil, utils.Error{Message: "Повторение данных", Errors: map[string]interface{}{"sku":"Товар с таким SKU уже есть"}}
@@ -204,7 +215,7 @@ func (shop Shop) CreateProduct(input Product, card *ProductCard) (*Product, erro
 	return product, nil
 }
 
-func (shop Shop) GetProduct(productId uint) (*Product, error) {
+func (webSite WebSite) GetProduct(productId uint) (*Product, error) {
 
 	// Создаем продукт
 	product, err := Product{}.get(productId)
@@ -212,15 +223,15 @@ func (shop Shop) GetProduct(productId uint) (*Product, error) {
 		return nil, err
 	}
 
-	if product.AccountID != shop.AccountID {
+	if product.AccountID != webSite.AccountID {
 		return nil, utils.Error{Message: "Продукт с указанным id не найден"}
 	}
 
 	return product, nil
 }
 
-func (shop Shop) CreateProductWithCardAndGroup(input Product, newCard ProductCard, groupId *uint) (*Product, error) {
-	input.AccountID = shop.AccountID
+func (webSite WebSite) CreateProductWithCardAndGroup(input Product, newCard ProductCard, groupId *uint) (*Product, error) {
+	input.AccountID = webSite.AccountID
 
 	if input.ExistSKU() {
 		return nil, utils.Error{Message: "Повторение данных", Errors: map[string]interface{}{"sku":"Товар с таким SKU уже есть"}}
@@ -236,8 +247,8 @@ func (shop Shop) CreateProductWithCardAndGroup(input Product, newCard ProductCar
 	}
 
 	// Создаем карточку товара
-	newCard.AccountID = shop.AccountID
-	newCard.ShopID = shop.ID
+	newCard.AccountID = webSite.AccountID
+	newCard.WebSiteID = webSite.ID
 	if groupId != nil {
 		newCard.ProductGroupID = groupId
 	}
@@ -256,24 +267,24 @@ func (shop Shop) CreateProductWithCardAndGroup(input Product, newCard ProductCar
 
 /////////////////////////
 
-func (shop Shop) AppendDeliveryMethod(entity Entity) error {
-	return entity.update(map[string]interface{}{"shop_id":shop.ID})
+func (webSite WebSite) AppendDeliveryMethod(entity Entity) error {
+	return entity.update(map[string]interface{}{"web_site_id":webSite.ID})
 }
 
-func (shop Shop) GetDeliveryMethods() []Delivery {
+func (webSite WebSite) GetDeliveryMethods() []Delivery {
 	// Находим все необходимые методы
 	var posts []DeliveryRussianPost
-	if err := db.Model(&DeliveryRussianPost{}).Find(&posts, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
+	if err := db.Model(&DeliveryRussianPost{}).Find(&posts, "account_id = ? AND web_site_id = ?", webSite.AccountID, webSite.ID).Error; err != nil {
 		return nil
 	}
 
 	var couriers []DeliveryCourier
-	if err := db.Model(&DeliveryCourier{}).Find(&couriers, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
+	if err := db.Model(&DeliveryCourier{}).Find(&couriers, "account_id = ? AND web_site_id = ?", webSite.AccountID, webSite.ID).Error; err != nil {
 		return nil
 	}
 
 	var pickups []DeliveryPickup
-	if err := db.Model(&DeliveryPickup{}).Find(&pickups, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error; err != nil {
+	if err := db.Model(&DeliveryPickup{}).Find(&pickups, "account_id = ? AND web_site_id = ?", webSite.AccountID, webSite.ID).Error; err != nil {
 		return nil
 	}
 
@@ -297,9 +308,9 @@ func (shop Shop) GetDeliveryMethods() []Delivery {
 	return deliveries
 }
 
-func (shop Shop) CalculateDelivery(deliveryRequest DeliveryRequest) (*DeliveryData, error) {
+func (webSite WebSite) CalculateDelivery(deliveryRequest DeliveryRequest) (*DeliveryData, error) {
 
-	delivery, err := shop.GetDelivery(deliveryRequest.DeliveryMethod.Code, deliveryRequest.DeliveryMethod.ID)
+	delivery, err := webSite.GetDelivery(deliveryRequest.DeliveryMethod.Code, deliveryRequest.DeliveryMethod.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -312,7 +323,7 @@ func (shop Shop) CalculateDelivery(deliveryRequest DeliveryRequest) (*DeliveryDa
 		// проходим циклом по продуктам и складываем их общий вес
 		for _,v := range deliveryRequest.Cart {
 			// 1. Получаем продукт
-			product, err := shop.GetProduct(v.ProductId)
+			product, err := webSite.GetProduct(v.ProductId)
 			if err != nil {
 				return nil, err
 			}
@@ -343,7 +354,7 @@ func (shop Shop) CalculateDelivery(deliveryRequest DeliveryRequest) (*DeliveryDa
 	return deliveryData, nil
 }
 
-func (shop Shop) CreateDelivery(input map[string]interface{}) (*Entity, error) {
+func (webSite WebSite) CreateDelivery(input map[string]interface{}) (*Entity, error) {
 
 	var delivery Delivery
 
@@ -377,8 +388,8 @@ func (shop Shop) CreateDelivery(input map[string]interface{}) (*Entity, error) {
 		return nil, utils.Error{Message: "Ошибка в коде типа создаваемого интерфейса"}
 	}
 
-	delivery.setShopId(shop.ID)
-	delivery.setAccountId(shop.AccountID)
+	delivery.setShopId(webSite.ID)
+	delivery.setAccountId(webSite.AccountID)
 
 	entity, err := delivery.create()
 	if err != nil {
@@ -389,10 +400,10 @@ func (shop Shop) CreateDelivery(input map[string]interface{}) (*Entity, error) {
 	// return &delivery, nil
 }
 
-func (shop Shop) GetDelivery(code string, methodId uint) (Delivery, error) {
+func (webSite WebSite) GetDelivery(code string, methodId uint) (Delivery, error) {
 
 	// Получаем все варианты доставки (обычно их мало). Можно через switch, но лень потом исправлять баг с новыми типом доставки
-	deliveries := shop.GetDeliveryMethods()
+	deliveries := webSite.GetDeliveryMethods()
 
 	// Ищем наш вариант доставки
 	var delivery Delivery
@@ -411,7 +422,7 @@ func (shop Shop) GetDelivery(code string, methodId uint) (Delivery, error) {
 	return delivery, nil
 }
 // 
-func (shop Shop) UpdateDelivery(input map[string]interface{}) (Delivery, error) {
+func (webSite WebSite) UpdateDelivery(input map[string]interface{}) (Delivery, error) {
 
 	// Парсим тип рассылки и ее ID
 	code,ok := input["code"].(string)
@@ -420,12 +431,12 @@ func (shop Shop) UpdateDelivery(input map[string]interface{}) (Delivery, error) 
 		return nil, utils.Error{Message: "Код или id способа доставки не верен"}
 	}
 
-	delivery, err := shop.GetDelivery(code, uint(methodId))
+	delivery, err := webSite.GetDelivery(code, uint(methodId))
 	if err != nil {
 		return nil, err
 	}
 
-	if delivery.GetAccountId() != shop.AccountID {
+	if delivery.GetAccountId() != webSite.AccountID {
 		return nil, utils.Error{Message: "Метод доставки принадлежит другому аккаунту!"}
 	}
 
@@ -437,7 +448,7 @@ func (shop Shop) UpdateDelivery(input map[string]interface{}) (Delivery, error) 
 	return delivery, nil
 }
 
-func (shop Shop) DeleteDelivery(input map[string]interface{}) error {
+func (webSite WebSite) DeleteDelivery(input map[string]interface{}) error {
 
 	// Парсим тип рассылки и ее ID
 	code,ok := input["code"].(string)
@@ -446,12 +457,12 @@ func (shop Shop) DeleteDelivery(input map[string]interface{}) error {
 		return utils.Error{Message: "Код или id способа доставки не верен"}
 	}
 
-	delivery, err := shop.GetDelivery(code, uint(methodId))
+	delivery, err := webSite.GetDelivery(code, uint(methodId))
 	if err != nil {
 		return err
 	}
 
-	if delivery.GetAccountId() != shop.AccountID {
+	if delivery.GetAccountId() != webSite.AccountID {
 		return utils.Error{Message: "Метод доставки принадлежит другому аккаунту!"}
 	}
 
@@ -463,7 +474,7 @@ func (shop Shop) DeleteDelivery(input map[string]interface{}) error {
 	return nil
 }
 
-func (shop Shop) DeliveryListOptions() map[string]interface{} {
+func (webSite WebSite) DeliveryListOptions() map[string]interface{} {
 	return map[string]interface{}{
 		"russianPost": "Почта России",
 		"courier": "Курьерская доставка",
@@ -472,15 +483,18 @@ func (shop Shop) DeliveryListOptions() map[string]interface{} {
 }
 
 // Вспомогательная функция
-func GetAccountIdByShopId(shopId uint) (uint, error) {
+func GetAccountIdByShopId(webSiteId uint) (uint, error) {
 	type Result struct {
 		AccountId uint `json:"accountId"`
 	}
 	var result Result
-	if err := db.Table("shops").Where("shop_id = ?", shopId).Scan(&result).Error; err != nil {
+	if err := db.Model(&WebSite{}).Where("web_site_id = ?", webSiteId).Scan(&result).Error; err != nil {
 		return 0, err
 	}
 
 	return result.AccountId, nil
 }
-/*,*/
+
+func (webSite WebSite) AddEmailBox(emailBox EmailBox) error{
+	return nil
+}

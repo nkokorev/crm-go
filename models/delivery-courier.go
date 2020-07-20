@@ -10,7 +10,7 @@ import (
 type DeliveryCourier struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
 	AccountID 	uint	`json:"-" gorm:"index,not null"` // аккаунт-владелец ключа
-	ShopID		uint 	`json:"shopId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	WebSiteId		uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
 	Code 		string	`json:"code" gorm:"type:varchar(16);default:'courier';"` // Для идентификации во фронтенде
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // активен ли способ доставки
@@ -36,7 +36,7 @@ func (deliveryCourier DeliveryCourier) getId() uint { return deliveryCourier.ID 
 func (deliveryCourier *DeliveryCourier) setId(id uint) { deliveryCourier.ID = id }
 func (deliveryCourier DeliveryCourier) GetAccountId() uint { return deliveryCourier.AccountID }
 func (deliveryCourier *DeliveryCourier) setAccountId(id uint) { deliveryCourier.AccountID = id }
-func (deliveryCourier *DeliveryCourier) setShopId(shopId uint) { deliveryCourier.ShopID = shopId }
+func (deliveryCourier *DeliveryCourier) setShopId(webSiteId uint) { deliveryCourier.WebSiteId = webSiteId }
 func (DeliveryCourier) systemEntity() bool { return false }
 
 func (deliveryCourier DeliveryCourier) GetCode() string {
@@ -52,13 +52,15 @@ func (deliveryCourier *DeliveryCourier) BeforeCreate(scope *gorm.Scope) error {
 // ############# CRUD Entity interface #############
 
 func (deliveryCourier DeliveryCourier) create() (Entity, error)  {
-	var newItem Entity = &deliveryCourier
-	
-	if err := db.Create(newItem).Error; err != nil {
+
+	dc := deliveryCourier
+	if err := db.Create(&dc).Error; err != nil {
 		return nil, err
 	}
+	var entity Entity = &dc
 
-	return newItem, nil
+
+	return entity, nil
 }
 func (DeliveryCourier) get(id uint) (Entity, error) {
 

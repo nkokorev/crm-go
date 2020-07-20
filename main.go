@@ -24,18 +24,19 @@ func main() {
 	pool.DB().SetMaxIdleConns(10)
 	pool.DB().SetMaxOpenConns(10)
 
-	// runMigration("full")
-	// base.UploadTestData()
 
-	// base.RefreshTablesPart_II()
+	base.RefreshTablesPart_I()
+	base.RefreshTablesPart_II()
+
+	base.UploadTestDataPart_I()	
 
 	// base.LoadImagesAiroClimate(13)
 	// base.LoadArticlesAiroClimate()
 	// base.LoadProductDescriptionAiroClimate()
 	// base.LoadProductCategoryDescriptionAiroClimate()
 
-	// base.UploadTestDataPart_II()
-	// base.UploadTestDataPart_III()
+	base.UploadTestDataPart_II()
+	base.UploadTestDataPart_III()
 
 	if err := (models.EventListener{}).ReloadEventHandlers(); err != nil {
 		log.Fatal(fmt.Sprintf("Не удалось зарегистрировать EventHandler: %v", err))
@@ -90,7 +91,8 @@ func SendMail() error {
 	}
 
 	// 3. Выбираем MailBox
-	mb, err := acc.GetEmailBox(4)
+	var ebox4 models.EmailBox
+	err = acc.LoadEntity(&ebox4, 4)
 	if err != nil {
 		return err
 	}
@@ -102,7 +104,7 @@ func SendMail() error {
 
 	// 4. Отправляем шаблон из MailBox
 	// err = et.Send(*mb, models.User{Email: "aix27249@yandex.ru"}, "Тест return path")
-	err = et.Send(*mb, models.User{Email: "nkokorev@rus-marketing.ru"}, "Тест return path")
+	err = et.Send(ebox4, models.User{Email: "nkokorev@rus-marketing.ru"}, "Тест return path")
 	if err != nil {
 		return err
 	}

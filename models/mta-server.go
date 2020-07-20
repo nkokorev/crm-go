@@ -32,7 +32,7 @@ type EmailPkg struct {
 	From 		mail.Address
 	To 			mail.Address
 	Subject     string
-	Domain 		Domain // for DKIM
+	WebSite		WebSite // for DKIM
 
 	EmailTemplate EmailTemplate // сам шаблон письма
 	ViewData	ViewData
@@ -102,7 +102,7 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	headers := getHeaders(pkg.From, pkg.To, pkg.Subject, messageId, feedBackId)
 
 	// 3. Создаем тело сообщения с хедерами и html
-	body, err := getSignBody(headers, html, pkg.Domain)
+	body, err := getSignBody(headers, html, pkg.WebSite)
 	if err != nil {
 		skipSend(err)
 		return
@@ -161,7 +161,7 @@ func getHeaders(from, to mail.Address, subject string, messageId, feedbackId str
 	return &headers
 }
 
-func getOptionsForDKIM(domain Domain, headers map[string]string) dkim.SigOptions {
+func getOptionsForDKIM(domain WebSite, headers map[string]string) dkim.SigOptions {
 	options := dkim.NewSigOptions()
 	options.PrivateKey = []byte(domain.DKIMPrivateRSAKey)
 	options.Domain = domain.Hostname
@@ -175,7 +175,7 @@ func getOptionsForDKIM(domain Domain, headers map[string]string) dkim.SigOptions
 	return options
 }
 
-func getSignBody(headers *map[string]string, html string, domain Domain) ([]byte, error) {
+func getSignBody(headers *map[string]string, html string, webSite WebSite) ([]byte, error) {
 
 	message := "" // return value
 
@@ -197,7 +197,7 @@ func getSignBody(headers *map[string]string, html string, domain Domain) ([]byte
 	message += "\r\n" + buf.String()
 
 	// try DKIM
-	dkimOptions := getOptionsForDKIM(domain, *headers)
+	dkimOptions := getOptionsForDKIM(webSite, *headers)
 
 	body := []byte(message)
 	if err := dkim.Sign(&body, dkimOptions); err != nil {

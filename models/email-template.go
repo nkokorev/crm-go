@@ -69,14 +69,16 @@ func (et *EmailTemplate) BeforeCreate(scope *gorm.Scope) error {
 }
 
 // ########### CRUD FUNCTIONAL #########
-func (et EmailTemplate) create() (Entity, error)  {
-	var newItem Entity = &et
+func (emailTemplate EmailTemplate) create() (Entity, error) {
 
-	if err := db.Create(newItem).Find(newItem).Error; err != nil {
+	et := emailTemplate
+
+	if err := db.Create(&emailTemplate).Error; err != nil {
 		return nil, err
 	}
+	var entity Entity = &et
 
-	return newItem, nil
+	return entity, nil
 }
 
 func (EmailTemplate) get(id uint) (Entity, error) {
@@ -310,12 +312,12 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string) error {
 
 	_, host := split(user.Email)
 	
-	privRSAKey := from.Domain.DKIMPrivateRSAKey
+	privRSAKey := from.WebSite.DKIMPrivateRSAKey
 
 	options := dkim.NewSigOptions()
 	options.PrivateKey = []byte(privRSAKey)
 	//options.Domain = "rtcrm.ru"
-	options.Domain = from.Domain.Hostname
+	options.Domain = from.WebSite.Hostname
 	options.Selector = "dk1"
 	options.SignatureExpireIn = 0
 	options.BodyLength = 50
@@ -440,12 +442,12 @@ func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, 
 
 	_, host := split(toEmail)
 
-	privRSAKey := from.Domain.DKIMPrivateRSAKey
+	privRSAKey := from.WebSite.DKIMPrivateRSAKey
 
 	options := dkim.NewSigOptions()
 	options.PrivateKey = []byte(privRSAKey)
 	//options.Domain = "rtcrm.ru"
-	options.Domain = from.Domain.Hostname
+	options.Domain = from.WebSite.Hostname
 	options.Selector = "dk1"
 	options.SignatureExpireIn = 0
 	options.BodyLength = 50
@@ -529,7 +531,7 @@ func (et EmailTemplate) SendChannel(emailBox EmailBox, toEmail string, subject s
 		From: 	emailBox.GetMailAddress(),
 		To: 	mail.Address{Address: toEmail},
 		Subject: 	subject,
-		Domain: 	*emailBox.Domain,
+		WebSite: 	emailBox.WebSite,
 		EmailTemplate: et,
 		ViewData:  	*data,
 		Account:	*account,
@@ -599,11 +601,11 @@ func (et EmailTemplate) SendChannel(emailBox EmailBox, toEmail string, subject s
 
 	_, host := split(toEmail) // получаем хост, на который нужно совершить отправку данных
 
-	privRSAKey := emailBox.Domain.DKIMPrivateRSAKey
+	privRSAKey := emailBox.WebSite.DKIMPrivateRSAKey
 
 	options := dkim.NewSigOptions()
 	options.PrivateKey = []byte(privRSAKey)
-	options.Domain = emailBox.Domain.Hostname
+	options.Domain = emailBox.WebSite.Hostname
 	options.Selector = "dk1"
 	options.SignatureExpireIn = 0
 	options.BodyLength = 50

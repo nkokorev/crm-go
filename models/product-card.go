@@ -12,7 +12,7 @@ import (
 type ProductCard struct {
 	ID     				uint `json:"id" gorm:"primary_key"`
 	AccountID 			uint `json:"-" gorm:"type:int;index;not null;"` // потребуется, если productGroupId == null
-	ShopID 				uint `json:"shopId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	WebSiteID 			uint `json:"webSiteID" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
 	ProductGroupID 		*uint `json:"productGroupId" gorm:"type:int;index;default:NULL;"` // группа товаров, категория товаров
 
 	Enabled 			bool 	`json:"enabled" gorm:"type:bool;default:true"` // активна ли карточка товара
@@ -36,7 +36,7 @@ type ProductCard struct {
 
 	// ProductGroups 		[]ProductGroup `json:"productGroups" gorm:"many2many:product_group_product_cards"` // для разделов new и т.д.
 	ProductGroup 		ProductGroup `json:"-"` // для разделов new и т.д.
-	Shop		 		Shop `json:"-"` // к какому магазину относится
+	WebSite		 		WebSite `json:"-"` // к какому магазину относится
 	Products 			[]Product `json:"products" gorm:"many2many:product_card_products"` // можно заводить два схожих продукта, разных по цвету
 }
 
@@ -92,11 +92,11 @@ func (ProductCard) getByAccount(id, accountId uint) (*ProductCard, error) {
 	return &card, nil
 }
 
-func (ProductCard) getListByShop(shopId uint) ([]ProductCard, error) {
+func (ProductCard) getListByShop(webSiteID uint) ([]ProductCard, error) {
 
 	cards := make([]ProductCard,0)
 
-	err := db.Find(&cards, "shopId = ?", shopId).Error
+	err := db.Find(&cards, "webSiteID = ?", webSiteID).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
@@ -137,14 +137,14 @@ func (productCard ProductCard) delete () error {
 // ######### END CRUD Functions ############
 
 // ######### SHOP PRODUCT Functions ############
-func (shop Shop) CreateProductCard(input ProductCard, group *ProductGroup) (*ProductCard, error) {
+func (webSite WebSite) CreateProductCard(input ProductCard, group *ProductGroup) (*ProductCard, error) {
 
-	if shop.ID < 1 {
+	if webSite.ID < 1 {
 		return nil, utils.Error{Message: "Не верно указан id магазина"}
 	}
 	
-	input.ShopID = shop.ID
-	input.AccountID = shop.AccountID
+	input.WebSiteID = webSite.ID
+	input.AccountID = webSite.AccountID
 
 	if group != nil {
 		return group.CreateProductCard(&input);
@@ -154,11 +154,11 @@ func (shop Shop) CreateProductCard(input ProductCard, group *ProductGroup) (*Pro
 
 }
 
-func (shop Shop) GetProductCard(cardId uint) (*ProductCard, error) {
+func (webSite WebSite) GetProductCard(cardId uint) (*ProductCard, error) {
 	return ProductCard{}.get(cardId)
 }
 
-func (shop Shop) GetProductCardList(offset, limit int, search string, products bool) ([]ProductCard, uint, error) {
+func (webSite WebSite) GetProductCardList(offset, limit int, search string, products bool) ([]ProductCard, uint, error) {
 	cards := make([]ProductCard,0)
 
 	// if need to search
@@ -167,7 +167,7 @@ func (shop Shop) GetProductCardList(offset, limit int, search string, products b
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&ProductCard{}).Preload("Products").Limit(limit).Offset(offset).Where("account_id = ?", shop.AccountID).Order("id").
+		err := db.Model(&ProductCard{}).Preload("Products").Limit(limit).Offset(offset).Where("account_id = ?", webSite.AccountID).Order("id").
 			Find(&cards, "url ILIKE ? OR breadcrumb ILIKE ? OR meta_title ILIKE ? OR meta_keywords ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ?" , search,search,search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -179,12 +179,12 @@ func (shop Shop) GetProductCardList(offset, limit int, search string, products b
 		}
 
 		if products {
-			err := db.Model(&ProductCard{}).Preload("Products").Limit(limit).Offset(offset).Order("id").Find(&cards, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error
+			err := db.Model(&ProductCard{}).Preload("Products").Limit(limit).Offset(offset).Order("id").Find(&cards, "account_id = ? AND web_site_id = ?", webSite.AccountID, webSite.ID).Error
 			if err != nil && err != gorm.ErrRecordNotFound{
 				return nil, 0, err
 			}
 		} else {
-			err := db.Model(&ProductCard{}).Limit(limit).Offset(offset).Find(&cards, "account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Error
+			err := db.Model(&ProductCard{}).Limit(limit).Offset(offset).Find(&cards, "account_id = ? AND web_site_id = ?", webSite.AccountID, webSite.ID).Error
 			if err != nil && err != gorm.ErrRecordNotFound{
 				return nil, 0, err
 			}
@@ -196,7 +196,7 @@ func (shop Shop) GetProductCardList(offset, limit int, search string, products b
 
 	// len(cards) != всему списку!
 	var total uint
-	err := db.Model(&ProductCard{}).Where("account_id = ? AND shop_id = ?", shop.AccountID, shop.ID).Count(&total).Error
+	err := db.Model(&ProductCard{}).Where("account_id = ? AND web_site_id = ?", webSite.AccountID, webSite.ID).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема"}
 	}
@@ -204,10 +204,10 @@ func (shop Shop) GetProductCardList(offset, limit int, search string, products b
 	return cards, total, nil
 }
 
-func (shop Shop) DeleteProductCard(cardId uint) error {
+func (webSite WebSite) DeleteProductCard(cardId uint) error {
 
 	// включает в себя проверку принадлежности к аккаунту
-	card, err := shop.GetProductCard(cardId)
+	card, err := webSite.GetProductCard(cardId)
 	if err != nil {
 		return err
 	}
