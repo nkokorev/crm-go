@@ -234,7 +234,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	}
 
 	// 4. Добавляем почтовые ящики в домен
-	err = webSiteMain.AddEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "RatusCRM", Box: "info"})
+	_, err = webSiteMain.CreateEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "RatusCRM", Box: "info"})
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
 	}
@@ -356,7 +356,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	}
 
 	// 5. Добавляем почтовые ящики в домен 357gr
-	err = webSite357.AddEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "357 Грамм", Box: "info"})
+	_, err = webSite357.CreateEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "357 Грамм", Box: "info"})
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
 	}
@@ -449,7 +449,7 @@ pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
 	}
 
 	// 3. Добавляем почтовые ящики
-	err = webSiteSynd.AddEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "SyndicAd", Box: "info"})
+	_, err = webSiteSynd.CreateEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "SyndicAd", Box: "info"})
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для Синдиката: ", err)
 	}
@@ -515,7 +515,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	}
 
 	// 3. Добавляем почтовые ящики
-	err = webSiteBro.AddEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "Brouser", Box: "info"})
+	_, err = webSiteBro.CreateEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "Brouser", Box: "info"})
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для Brouser: ", err)
 	}
@@ -586,8 +586,9 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	// 4. !!! Создаем магазин
 	airoShopE, err := airoClimat.CreateEntity(
 		&models.WebSite{
-			Name: "airoclimate.ru", Address: "г. Москва, р-н Текстильщики", Email: "info@airoclimate.ru", Phone: "+7 (4832) 77-03-73",
+			Name: "Сайт по продаже бактерицидных рециркуляторов", Address: "г. Москва, р-н Текстильщики", Email: "info@airoclimate.ru", Phone: "+7 (4832) 77-03-73",
 			Hostname: "airoclimate.ru",
+			URL: "https://airoclimate.ru",
 			DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvryklToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHcumqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB`,
 			DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
 MIICXAIBAAKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvry
@@ -618,7 +619,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		return
 	}
 	// 3. Добавляем почтовые ящики
-	err = webSiteAiro.AddEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "AIRO Climate", Box: "info"})
+	_, err = webSiteAiro.CreateEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "AIRO Climate", Box: "info"})
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для AiroClimate: ", err)
 	}
@@ -1236,9 +1237,9 @@ func UploadTestDataPart_III() {
 		{Name: "Раздел сайта обновлен", Code: "ProductGroupUpdated", Enabled: true, Description: "Данные раздела или категории сайта успешно обновлены."},
 		{Name: "Раздел сайта удален", 	Code: "ProductGroupDeleted", Enabled: true, Description: "Раздел сайта или категория удалена из системы"},
 
-		{Name: "Сайт создан", 	Code: "ShopCreated", Enabled: true, Description: "Создан новый сайт или магазин."},
-		{Name: "Сайт обновлен", Code: "ShopUpdated", Enabled: true, Description: "Персональные данные сайта или магазина были успешно обновлены."},
-		{Name: "Сайт удален", 	Code: "ShopDeleted", Enabled: true, Description: "Сайт или магазин удален из системы."},
+		{Name: "Сайт создан", 	Code: "WebSiteCreated", Enabled: true, Description: "Создан новый сайт или магазин."},
+		{Name: "Сайт обновлен", Code: "WebSiteUpdated", Enabled: true, Description: "Персональные данные сайта или магазина были успешно обновлены."},
+		{Name: "Сайт удален", 	Code: "WebSiteDeleted", Enabled: true, Description: "Сайт или магазин удален из системы."},
 		
 		{Name: "Файл создан", 	Code: "StorageCreated", Enabled: true, Description: "В системе создан новый файл."},
 		{Name: "Файл обновлен", Code: "StorageUpdated", Enabled: true, Description: "Какие-то данные файла успешно изменены."},
@@ -1291,9 +1292,9 @@ func UploadTestDataPart_III() {
 	case "local":
 		domainAiroSite = "http://airoclimate.me"
 	case "public":
-		domainAiroSite = "http://airoclimate.ratus-dev.ru"
+		domainAiroSite = "https://airoclimate.ru"
 	default:
-		domainAiroSite = "http://airoclimate.ratus-dev.ru"
+		domainAiroSite = "https://airoclimate.ru"
 	}
 
 	webHooks := []models.WebHook {

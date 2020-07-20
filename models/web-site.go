@@ -14,6 +14,7 @@ type WebSite struct {
 
 	Name string `json:"name" gorm:"type:varchar(255);default:'Новый магазин';not null;"` // Внутреннее имя сайта
 	Hostname string `json:"hostname" gorm:"type:varchar(255);not_null;"` // ratuscrm.com, airoclimate.ru, vetvent.ru, ..
+	URL 	string `json:"url" gorm:"type:varchar(255);not_null;"` // https://ratuscrm.com, https://airoclimate.ru, http://vetvent.ru, ..
 
 	// Email DKIM
 	DKIMPublicRSAKey string `json:"dkimPublicRsaKey" gorm:"type:text;"` // публичный ключ
@@ -26,10 +27,11 @@ type WebSite struct {
 	Phone string `json:"phone" gorm:"type:varchar(255);default:null;"` // Публичный телефон
 
 	Type	string 	`json:"type" gorm:"type:varchar(50);not null;"` // имя типа shop, site, ... хз как это использовать, на будущее
+	Description string `json:"description" gorm:"type:text;default:''"` // html-описание магазина
 
 	Deliveries 		[]Delivery  `json:"deliveries" gorm:"-"`// `gorm:"polymorphic:Owner;"`
 	ProductGroups 	[]ProductGroup `json:"productGroups"`
-	EmailBoxes 		[]EmailBox `json:"emailBoxes" gorm:"many2many:web_sites_email_boxes;preload"` // доступные почтовые ящики с которых можно отправлять
+	EmailBoxes 		[]EmailBox `json:"emailBoxes"` // доступные почтовые ящики с которых можно отправлять
 }
 
 func (WebSite) PgSqlCreate() {
@@ -85,7 +87,7 @@ func (WebSite) get(id uint) (Entity, error) {
 
 func (webSite *WebSite) load() error {
 
-	err := db.First(webSite).Error
+	err := db.Preload("EmailBoxes").First(webSite).Error
 	if err != nil {
 		return err
 	}
@@ -99,7 +101,7 @@ func (WebSite) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	var total uint
 
 	err := db.Model(&WebSite{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
-		Find(&webSites).Error
+		Preload("EmailBoxes").Find(&webSites).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
@@ -131,6 +133,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		search = "%"+search+"%"
 
 		err := db.Model(&WebSite{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Preload("EmailBoxes").
 			Find(&webSites, "name ILIKE ? OR address ILIKE ? OR email ILIKE ? OR phone ILIKE ?", search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -147,6 +150,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 	} else {
 
 		err := db.Model(&WebSite{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Preload("EmailBoxes").
 			Find(&webSites).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -169,7 +173,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 }
 
 func (webSite *WebSite) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(webSite).Omit("id", "account_id").Update(input).Error
+	return db.Set("gorm:association_autoupdate", false).Model(webSite).Omit("id", "account_id").Update(input).Preload("EmailBoxes").First(webSite,webSite.ID).Error
 }
 
 func (webSite WebSite) delete () error {
@@ -495,6 +499,8 @@ func GetAccountIdByShopId(webSiteId uint) (uint, error) {
 	return result.AccountId, nil
 }
 
-func (webSite WebSite) AddEmailBox(emailBox EmailBox) error{
-	return nil
+func (webSite WebSite) CreateEmailBox(emailBox EmailBox) (Entity, error) {
+	emailBox.AccountID = webSite.AccountID
+	emailBox.WebSiteID = webSite.ID
+	return emailBox.create()
 }
