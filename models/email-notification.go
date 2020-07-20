@@ -18,6 +18,9 @@ type EmailNotification struct {
 	Delay			uint 	`json:"delay" gorm:"type:int;default:0"` // Задержка перед отправлением в минутах: [0-180]
 	
 	Name 			string 	`json:"name" gorm:"type:varchar(128);default:''"` // "Оповещение менеджера", "Оповещение клиента"
+
+	Subject			string 	`json:"subject" gorm:"type:varchar(128);default:''"` // Тема сообщения, компилируются
+	
 	Description		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
 
 	EmailTemplateId uint 	`json:"emailTemplateId" gorm:"type:int;"` // всегда должен быть шаблон, иначе смысла в нем нет
@@ -127,6 +130,7 @@ func (emailNotification *EmailNotification) load() error {
 	}
 	return nil
 }
+
 
 func (EmailNotification) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
@@ -255,12 +259,61 @@ func (emailNotification EmailNotification) delete () error {
 // Вызов уведомления
 func (emailNotification EmailNotification) Execute(data map[string]interface{}) error {
 
+	if !emailNotification.Enabled {
+		return utils.Error{Message: "Уведомление не может быть отправлено т.к. находится в статусе - 'Отключено'"}
+	}
+
+	emailTemplateEntity, err := EmailTemplate{}.get(emailNotification.EmailTemplateId)
+	if err != nil {
+		return err
+	}
+	if emailTemplateEntity.GetAccountId() != emailNotification.AccountID {
+		return utils.Error{Message: "Ошибка отправления Уведомления - шаблон принадлежит другому аккаунту 2"}
+	}
+
+	emailTemplate, ok := emailTemplateEntity.(*EmailTemplate)
+	if !ok {
+		return utils.Error{Message: "Ошибка отправления Уведомления - не удалось получить шаблон"}
+	}
+
+
+	eb, err := (EmailBox{}).get(1)
+	if err != nil {
+		fmt.Println(err)
+		return utils.Error{Message: "Ошибка отправления Уведомления - шаблон принадлежит другому аккаунту 3"}
+	}
+
+   	emailList := utils.ParseJSONBToString(emailNotification.RecipientList)
+
+   	for _,v := range(emailList) {
+		err = emailTemplate.SendMail(*eb, v, emailNotification.Sabject, data)
+		if err != nil {
+			fmt.Println("Ошибка отправления: ", err)
+		}
+
+	}
+
+	// fmt.Printf("B %T: %v\n", b, string(b))
+
+	return nil
+
+	err = emailTemplate.SendMail(*eb, "mex388@mail.ru", "Отличная новость!", data)
+	if err != nil {
+		fmt.Println("Ошибка отправления: ", err)
+		return utils.Error{Message: "Ошибка отправления Уведомления - шаблон принадлежит другому аккаунту"}
+	}
+
+	// emailTemplate := emailNotification.EmailTemplate
+	fmt.Println(emailTemplate)
+	
 	
 	if data == nil {
 		fmt.Println("Execute EmailNotification of data[] is null!")
 	} else {
 		fmt.Println("Execute EmailNotification of data[] not null!!")
 	}
+
+
 
 	return nil
 }

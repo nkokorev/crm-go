@@ -43,7 +43,8 @@ type EmailPkg struct {
 type ViewData struct{
 	TemplateName string
 	PreviewText string
-	User map[string]interface{}
+	Data map[string]interface{}
+	// User map[string]interface{}
 	Json map[string]interface{}
 }
 

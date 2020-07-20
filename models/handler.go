@@ -67,12 +67,7 @@ func (handle *EventListener) Handle(e event.Event) error {
 }
 
 // #############   Event Handlers   #############
-func (handler EventListener) EmailQueueRun(e event.Event) error {
-	fmt.Printf("Запуск серии писем, обытие: %v данные: %v\n",e.Name(), e.Data())
-	// fmt.Println("Observer: ", handler) // контекст серии писем, какой именно и т.д.
-	// e.Set("result", "OK") // возможность записать в событие какие-то данные для других обработчиков..
-	return nil
-}
+
 
 func (handler EventListener) EmailNotificationRun(e event.Event) error {
 
@@ -95,7 +90,21 @@ func (handler EventListener) EmailNotificationRun(e event.Event) error {
 		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить Email Notification id = %v, уведомление не найдено!", handler.EntityId)}
 	}
 
+	if !en.Enabled {
+		return utils.Error{Message: fmt.Sprintf("Уведомление id = %v не может быть отправлено т.к. находится в статусе - 'Отключено'", handler.EntityId)}
+	}
+
+	// Загружаем данные в теле
+	handler.uploadEntitiesData(&e)
+
 	return en.Execute(e.Data())
+}
+
+func (handler EventListener) EmailQueueRun(e event.Event) error {
+	fmt.Printf("Запуск серии писем, обытие: %v данные: %v\n",e.Name(), e.Data())
+	// fmt.Println("Observer: ", handler) // контекст серии писем, какой именно и т.д.
+	// e.Set("result", "OK") // возможность записать в событие какие-то данные для других обработчиков..
+	return nil
 }
 
 func (handler EventListener) WebHookCall(e event.Event) error {
@@ -123,3 +132,34 @@ func (handler EventListener) WebHookCall(e event.Event) error {
 // #############   END Of Event Handlers   #############
 
 
+// Загружает данные по переданным id
+func (handle EventListener) uploadEntitiesData(event *event.Event) {
+	// data :=(*e).Data()
+	e := *event
+
+	// 1. Get Account
+	accountId, ok :=  e.Get("accountId").(uint);
+	if !ok { return }
+
+	account, err := GetAccount(accountId)
+	if err != nil || account == nil {
+		return
+	}
+	e.Add("Account", *account)
+
+
+	if productId, ok := e.Get("productId").(uint); ok {
+	   product, err := account.GetProduct(productId)
+	   if err == nil {
+		   e.Add("Product", *product)
+	   }
+	}
+
+	if productCardId, ok := e.Get("productCardId").(uint); ok {
+		productCard, err := account.GetProductCard(productCardId)
+		if err == nil {
+			e.Add("ProductCard", *productCard)
+		}
+	}
+	
+}

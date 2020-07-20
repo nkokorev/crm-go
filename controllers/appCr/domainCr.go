@@ -35,7 +35,8 @@ func DomainsGet(w http.ResponseWriter, r *http.Request) {
 
 func Keymaker(path string) {
     reader := rand.Reader
-    bitSize := 2048
+    // bitSize := 2048
+    bitSize := 1024
 
     key, err := rsa.GenerateKey(reader, bitSize)
     checkError(err)

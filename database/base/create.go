@@ -1188,6 +1188,38 @@ func UploadTestDataPart_III() {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
+	// 2. Создаем домен для airoClimat
+	domainAiroClimate, err := airoAccount.CreateDomain(models.Domain{
+		Hostname: "airoclimate.ru",
+		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvryklToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHcumqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB`,
+		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
+MIICXAIBAAKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvry
+klToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHc
+umqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB
+AoGAIIBS6PSEfeQJLuMb/C4V521YMEcYj4b+bN/jpdeW5uM8JurCrgJwVnJCPPaY
+wpNtf+0nB4ZFge0iJYjEJiS/KJ1YT50fEKqMPx/GVm9UULDvUsWsLFONGr1+hP2+
+XaU4ik/+ym3SQ9Ir+VAq6qyBeOwZlpRBySezCGJ+UpluIrECQQDrItv+oYR8QzzA
+4G3ZaP3PclwPOVWIJyvxM6E0zgPRR4JQO80MVEj0IcaZUl/7EsgqOkRorye0Tba1
+eJmrZbu7AkEA6m94LzePJslSqGcAiU7eyJuqBQbkKaJmK0nVFAkAf4hm1om1DSgk
+iPShiBQ79vTP5T7l2j20miqm+E00CDBpnwJAT7jF9hM1JBx34L03AVuDkm4noFHE
+GiGN2H20zn569N3V5PYhk2iQQ5WgDCPNvwajLw4KW6PnRk6DAAwfrekUOQJAcG0W
+oOYvE3W22yXSXwbg1im4poKAhurnvljBA8OxZne+gaI2nmGi678NfBngC/WpgZHh
+XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
+3/m5b5CLpflEX58hz9NeWHfoNJ2QXj3bkYDzZ1vnzJw=
+-----END RSA PRIVATE KEY-----
+`,
+		DKIMSelector: "dk1",
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать домены для AiroClimate: ", err)
+	}
+
+	// 3. Добавляем почтовые ящики
+	_, err = domainAiroClimate.AddMailBox(models.EmailBox{Default: true, Allowed: true, Name: "AIRO Climate", Box: "info"})
+	if err != nil {
+		log.Fatal("Не удалось создать MailBoxes для AiroClimate: ", err)
+	}
+
 	// HandlerItem
 	eventHandlers := []models.HandlerItem {
 		{Name:"Вызов WebHook'а", Code: "WebHookCall", EntityType: "web_hooks", Enabled: true, Description: "Вызов указанного WebHook'а"},

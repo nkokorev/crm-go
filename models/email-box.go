@@ -43,13 +43,13 @@ func (ebox EmailBox) create() (*EmailBox, error)  {
 
 func (EmailBox) get(id uint) (*EmailBox, error)  {
 
-	ebox := EmailBox{}
+	var box EmailBox
 
-	err := db.First(ebox, id).Error
+	err := db.Preload("Domain").First(&box, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &ebox, nil
+	return &box, nil
 }
 
 func (ebox *EmailBox) update(input interface{}) error {

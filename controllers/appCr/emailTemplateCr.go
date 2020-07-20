@@ -237,7 +237,7 @@ func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// err = template.Send(*ebox,*user,input.Subject)
-	err = template.SendChannel(*ebox,*user,input.Subject)
+	err = template.SendChannel(*ebox,user.Email,input.Subject, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в отправке письма"))
 		return
@@ -265,7 +265,8 @@ func EmailTemplatePreviewGetHTML(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Подготавливаем данные для шаблона
-	vData, err := template.PrepareViewData(tempUser())
+	// vData, err := template.PrepareViewData(tempUser())
+	vData, err := template.PrepareViewData(nil)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html;charset=UTF-8")
 		w.Write(errorHTMLPage("Ошибка подготовки данных для отображения HTML"))

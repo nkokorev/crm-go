@@ -5,7 +5,7 @@ import (
 	"github.com/jinzhu/gorm/dialects/postgres"
 )
 
-
+// For function Update()
 func FixJSONB_String(input map[string]interface{}, keys []string) map[string]interface{} {
 
 	if len(keys) < 1 || len(input) < 1 {
@@ -39,6 +39,8 @@ func FixJSONB_String(input map[string]interface{}, keys []string) map[string]int
 
 	return input
 }
+
+// For function Update()
 func FixJSONB_Uint(input map[string]interface{}, keys []string) map[string]interface{} {
 
 	if len(keys) < 1 || len(input) < 1 {
@@ -73,10 +75,18 @@ func FixJSONB_Uint(input map[string]interface{}, keys []string) map[string]inter
 	return input
 }
 
-func NullArrIfNotFound() {
+func ParseJSONBToString(jsonb postgres.Jsonb) []string {
 
-	/*rawJSON, err := json.Marshal([]string{})
+	var data = make([]string,0)
+
+	b, err := jsonb.MarshalJSON()
 	if err != nil {
-		rawJSON = json.RawMessage(`{}`)
-	}*/
+		return data
+	}
+	
+	if err := json.Unmarshal(b, &data); err != nil {
+		return data
+	}
+	
+	return data
 }
