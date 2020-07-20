@@ -140,7 +140,7 @@ func (webSite WebSite) GetProductGroup(groupId uint) (*ProductGroup, error) {
 	return group, nil
 }
 
-func (webSite WebSite) GetProductGroups() ([]ProductGroup, error) {
+func (webSite WebSite) GetProductGroupList() ([]ProductGroup, error) {
 
 	groups := make([]ProductGroup,0)
 
@@ -154,7 +154,7 @@ func (webSite WebSite) GetProductGroups() ([]ProductGroup, error) {
 
 	return groups, nil
 }
-func (webSite WebSite) GetProductGroupsPaginationList(offset, limit int, search string) ([]ProductGroup, int, error) {
+func (webSite WebSite) GetProductGroupsPaginationList(offset, limit int, search string) ([]ProductGroup, uint, error) {
 
 	groups := make([]ProductGroup,0)
 	//groups := []ProductGroup{}
@@ -205,7 +205,7 @@ func (webSite WebSite) GetProductGroupsPaginationList(offset, limit int, search 
 		return nil, err
 	}*/
 
-	return groups, total, nil
+	return groups, uint(total), nil
 }
 
 func (account Account) GetProductGroups() ([]ProductGroup, error) {

@@ -100,6 +100,19 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
+		return
+	}
+
+	var webSite models.WebSite
+	err = account.LoadEntity(&webSite, webSiteId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
+		return
+	}
+
 	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
 	if !ok {
 		limit = 25
@@ -125,17 +138,20 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 
 
 	var total uint = 0
-	webSites := make([]models.Entity,0)
+	productGroups := make([]models.ProductGroup,0)
 
 	if all == "true" && allOk {
-		webSites, total, err = account.GetListEntity(&models.WebSite{}, sortBy)
+
+		// webSites, total, err = account.GetListEntity(&models.ProductGroup{}, sortBy)
+		productGroups, err = webSite.GetProductGroupList()
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список сайтов"))
 			return
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		webSites, total, err = account.GetPaginationListEntity(&models.WebSite{}, offset, limit, sortBy, search)
+		// webSites, total, err = account.GetPaginationListEntity(&models.ProductGroup{}, offset, limit, sortBy, search)
+		productGroups, total, err = webSite.GetProductGroupsPaginationList(offset, limit, search)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список сайтов"))
 			return
@@ -143,8 +159,8 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 	}
 
 
-	resp := u.Message(true, "GET WebHooks PaginationList")
-	resp["webSites"] = webSites
+	resp := u.Message(true, "GET ProductGroup PaginationList")
+	resp["productGroups"] = productGroups
 	resp["total"] = total
 	u.Respond(w, resp)
 }
