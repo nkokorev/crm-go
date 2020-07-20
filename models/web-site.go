@@ -487,12 +487,12 @@ func (webSite WebSite) DeliveryListOptions() map[string]interface{} {
 }
 
 // Вспомогательная функция
-func GetAccountIdByShopId(webSiteId uint) (uint, error) {
+func GetAccountIdByWebSiteId(webSiteId uint) (uint, error) {
 	type Result struct {
 		AccountId uint `json:"accountId"`
 	}
 	var result Result
-	if err := db.Model(&WebSite{}).Where("web_site_id = ?", webSiteId).Scan(&result).Error; err != nil {
+	if err := db.Model(&WebSite{}).Where("id = ?", webSiteId).Scan(&result).Error; err != nil {
 		return 0, err
 	}
 

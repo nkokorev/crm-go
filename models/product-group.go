@@ -101,7 +101,7 @@ func (productGroup *ProductGroup) update(input map[string]interface{}) error {
 
 func (productGroup ProductGroup) delete () error {
 
-	accountId, err2 := GetAccountIdByShopId(productGroup.WebSiteID)
+	accountId, err2 := GetAccountIdByWebSiteId(productGroup.WebSiteID)
 
 	if err := db.Model(ProductGroup{}).Where("id = ?", productGroup.ID).Delete(productGroup).Error; err != nil { return err }
 
