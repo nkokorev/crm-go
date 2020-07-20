@@ -14,7 +14,7 @@ type EmailBox struct {
 	Default bool `json:"default" gorm:"type:bool;default:false"` // является ли дефолтным почтовым ящиком для домена
 	Allowed bool `json:"allowed" gorm:"type:bool;default:true"` // прошел ли проверку домен на право отправлять с него почту
 	
-	Name string `json:"name" gorm:"type:varchar(15);not null;"` // от имени кого отправляется RatusCRM, Магазин 357 грамм..
+	Name string `json:"name" gorm:"type:varchar(32);not null;"` // от имени кого отправляется RatusCRM, Магазин 357 грамм..
 	Box string `json:"box" gorm:"type:varchar(32);not null;"` // обратный адрес info@, news@, mail@...
 
 	WebSite WebSite `json:"-"`
