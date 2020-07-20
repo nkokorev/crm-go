@@ -156,7 +156,7 @@ func (webSite WebSite) GetProductGroupList() ([]ProductGroup, error) {
 }
 func (webSite WebSite) GetProductGroupsPaginationList(offset, limit int, search string) ([]ProductGroup, uint, error) {
 
-	groups := make([]ProductGroup,0)
+	productGroups := make([]ProductGroup,0)
 	//groups := []ProductGroup{}
 
 	if len(search) > 0 {
@@ -164,13 +164,13 @@ func (webSite WebSite) GetProductGroupsPaginationList(offset, limit int, search 
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&WebSite{}).
+		err := db.Model(&webSite).
 			Limit(limit).
 			Offset(offset).
 			Where("web_site_id = ?", webSite.ID).
-			Where("code ILIKE ? OR url ILIKE ? OR name ILIKE ? OR short_description ILIKE ? OR description ILIKE ? OR meta_title ILIKE ? OR meta_keywords ILIKE ? OR meta_description ILIKE ?" , search,search,search,search,search,search,search,search,search).
+			Where("code ILIKE ? OR url ILIKE ? OR name ILIKE ? OR short_description ILIKE ? OR description ILIKE ? OR meta_title ILIKE ? OR meta_keywords ILIKE ? OR meta_description ILIKE ?" , search,search,search,search,search,search,search,search).
 			Association("ProductGroups").
-			Find(&groups).Error
+			Find(&productGroups).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -180,20 +180,12 @@ func (webSite WebSite) GetProductGroupsPaginationList(offset, limit int, search 
 			return nil, 0, errors.New("Offset or limit is wrong")
 		}
 
-		/*if err := db.Model(&webSite).Association("ProductGroups").Find(&groups).Error; err != nil {
-			return nil, 0, err
-		}
-
-		fmt.Println(groups)*/
-
-		//err := db.Model(&webSite).Association("ProductGroups").Find(&groups).Error
-
 		err := db.Model(&webSite).
 			Limit(limit).
 			Offset(offset).
 			Where("web_site_id = ?", webSite.ID).
 			Association("ProductGroups").
-			Find(&groups).Error
+			Find(&productGroups).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -205,7 +197,7 @@ func (webSite WebSite) GetProductGroupsPaginationList(offset, limit int, search 
 		return nil, err
 	}*/
 
-	return groups, uint(total), nil
+	return productGroups, uint(total), nil
 }
 
 func (account Account) GetProductGroups() ([]ProductGroup, error) {

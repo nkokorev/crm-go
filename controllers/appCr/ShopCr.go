@@ -204,7 +204,7 @@ func ProductGroupUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupId, err := utilsCr.GetUINTVarFromRequest(r, "groupId")
+	productGroupId, err := utilsCr.GetUINTVarFromRequest(r, "productGroupId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
 		return
@@ -220,7 +220,7 @@ func ProductGroupUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// group, err := webSite.UpdateProductGroup(groupId, &input.ProductGroup)
-	group, err := webSite.UpdateProductGroup(groupId, input)
+	group, err := webSite.UpdateProductGroup(productGroupId, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -253,14 +253,14 @@ func ProductGroupDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	groupId, err := utilsCr.GetUINTVarFromRequest(r, "groupId")
+	productGroupId, err := utilsCr.GetUINTVarFromRequest(r, "productGroupId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 
-	if err = webSite.DeleteProductGroup(groupId); err != nil {
+	if err = webSite.DeleteProductGroup(productGroupId); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении товарной группы"))
 		return
 	}
@@ -435,12 +435,13 @@ func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) 
 
 func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 
+	fmt.Println("ss")
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	cardId, err := utilsCr.GetUINTVarFromRequest(r, "cardId")
+	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
 		return
@@ -462,14 +463,8 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 		input["switchProducts"] = pq.StringArray{"color"}
 	}
 
-	//fmt.Println(pq.StringArray{"color"})
-	//fmt.Println(input["switchProducts"])
-	/*if input.SwitchProducts == nil {
-		val := pq.StringArray{}
-		input.SwitchProducts = val
-	}*/
 
-	card, err := account.UpdateProductCard(cardId, input)
+	card, err := account.UpdateProductCard(productCardId, input)
 	//card, err := account.UpdateProductCard(cardId, input.ProductCard)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
@@ -489,14 +484,14 @@ func ProductCardDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cardId, err := utilsCr.GetUINTVarFromRequest(r, "cardId")
+	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 
-	if err = account.DeleteProductCard(cardId); err != nil {
+	if err = account.DeleteProductCard(productCardId); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении карточки товара"))
 		return
 	}
