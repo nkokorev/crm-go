@@ -205,7 +205,7 @@ func (WebHook) getByEvent(eventName string) (*WebHook, error) {
 }
 
 func (webHook *WebHook) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(webHook).Omit("id", "account_id").Update(input).Error
+	return db.Set("gorm:association_autoupdate", false).Model(webHook).Omit("id", "account_id").Updates(input).Error
 }
 
 func (webHook WebHook) delete () error {

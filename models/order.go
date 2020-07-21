@@ -149,7 +149,7 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 }
 
 func (order *Order) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(order).Omit("id", "account_id").Update(input).Error
+	return db.Set("gorm:association_autoupdate", false).Model(order).Omit("id", "account_id").Updates(input).Error
 }
 
 func (order Order) delete () error {

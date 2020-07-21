@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"strings"
@@ -91,9 +90,9 @@ func (apiKey ApiKey) delete () error {
 	return db.Model(ApiKey{}).Where("id = ?", apiKey.ID).Delete(apiKey).Error
 }
 
-func (apiKey *ApiKey) update(input interface{}) error {
+func (apiKey *ApiKey) update(input map[string]interface{}) error {
 	// return db.Model(apiKey).Omit("token", "account_id", "created_at", "updated_at").Select("Name", "Enabled").Updates(&input).Error
-	return db.Model(apiKey).Select("Name", "Enabled").Updates(structs.Map(input)).Error
+	return db.Model(apiKey).Select("Name", "Enabled").Updates(input).Error
 
 }
 
@@ -142,7 +141,7 @@ func (account Account) ApiKeysList() ([]ApiKey, error) {
 	return keyList, nil
 }
 
-func (account Account) ApiKeyUpdate(id uint, input interface{}) (*ApiKey, error) {
+func (account Account) ApiKeyUpdate(id uint, input map[string]interface{}) (*ApiKey, error) {
 	apiKey, err := account.ApiKeyGet(id)
 	if err != nil {
 		return nil, err

@@ -188,7 +188,7 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 
 func (et *EmailTemplate) update(input map[string]interface{}) error {
 	// return db.Model(&EmailTemplate{}).Where("id = ?", et.ID).Omit("id", "account_id").Update(input).Error
-	return db.Model(et).Where("id = ?", et.ID).Omit("id", "account_id").Update(input).Error
+	return db.Model(et).Where("id = ?", et.ID).Omit("id", "account_id").Updates(input).Error
 }
 
 

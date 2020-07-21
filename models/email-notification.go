@@ -231,7 +231,13 @@ func (emailNotification *EmailNotification) update(input map[string]interface{})
 	delete(input, "emailTemplate")
 	delete(input, "emailBox")
 
-	if err := db.Model(EmailNotification{}).Where("id = ?", emailNotification.ID).Omit("id", "account_id").Updates(input).Error; err != nil {
+	// if err := db.Model(EmailNotification{}).Where("id = ?", emailNotification.ID).Omit("id", "account_id").Updates(input).Error; err != nil {
+	// 	return err
+	// }
+	fmt.Println("emailNotification id", emailNotification.ID)
+	// if err := db.Model(EmailNotification{}).Where("id = ?", emailNotification.ID).Omit("id", "account_id").Updates(input).Error; err != nil {
+	if err := db.Set("gorm:association_autoupdate", false).Model(EmailNotification{}).Where(" id = ?", emailNotification.ID).
+		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
 		return err
 	}
 

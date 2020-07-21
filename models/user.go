@@ -144,7 +144,7 @@ func (User) getByHashId(hashId string) (*User, error) {
 func (user *User) update (input map[string]interface{}) error {
 
 	err := db.Set("gorm:association_autoupdate", false).
-		Model(user).Omit("id", "hash_id", "issuer_account_id", "created_at", "updated_at").Update(input).Error
+		Model(user).Omit("id", "hash_id", "issuer_account_id", "created_at", "updated_at").Updates(input).Error
 	if err != nil {
 		 return err
 	}

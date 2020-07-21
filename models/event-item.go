@@ -151,7 +151,8 @@ func (EventItem) getPaginationList(accountId uint, offset, limit int, sortBy, se
 }
 
 func (eventItem *EventItem) update(input map[string]interface{}) error {
-	if err := db.Set("gorm:association_autoupdate", false).Model(eventItem).Omit("id", "account_id", "updated_at", "created_at").Update(input).Error; err != nil { return err}
+	if err := db.Set("gorm:association_autoupdate", false).Model(eventItem).
+		Omit("id", "account_id", "updated_at", "created_at").Updates(input).Error; err != nil { return err}
 
 	go EventListener{}.ReloadEventHandlers()
 

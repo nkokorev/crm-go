@@ -208,7 +208,7 @@ func GetAccountByHash(hashId string) (*Account, error) {
 func (account *Account) Update(input map[string]interface{}) error {
 	return db.Model(account).Where("id = ?", account.ID).
 		Omit("id", "hash_id", "disk_space_available", "created_at", "updated_at", "deleted_at").
-		Update(input).Error
+		Updates(input).Error
 }
 
 func (Account) Exist(id uint) bool {
@@ -845,7 +845,7 @@ func (account Account) SetUserRole(user *User, role Role) (*AccountUser, error) 
 
 	err := db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.ID, user.ID).
 		FirstOrCreate(&aUser).
-		Update(map[string]interface{}{"roleId":role.ID}).Find(&aUser).Error
+		Updates(map[string]interface{}{"roleId":role.ID}).Find(&aUser).Error
 	if err != nil {
 		fmt.Println("Ошибка: ", err)
 		return nil, err

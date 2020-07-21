@@ -175,7 +175,7 @@ func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, 
 }
 
 func (deliveryRussianPost *DeliveryRussianPost) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(deliveryRussianPost).Omit("id", "account_id").Update(input).Error
+	return db.Set("gorm:association_autoupdate", false).Model(deliveryRussianPost).Omit("id", "account_id").Updates(input).Error
 }
 
 func (deliveryRussianPost DeliveryRussianPost) delete () error {

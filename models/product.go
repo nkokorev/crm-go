@@ -127,7 +127,7 @@ func (Product) getList(accountId uint) ([]Product, error) {
 }
 
 func (product *Product) update(input map[string]interface{}) error {
-	err := db.Set("gorm:association_autoupdate", false).Model(product).Omit("id", "account_id").Update(input).Error
+	err := db.Set("gorm:association_autoupdate", false).Model(product).Omit("id", "account_id").Updates(input).Error
 	if err != nil {
 		return err
 	}

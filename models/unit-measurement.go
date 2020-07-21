@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 )
 
@@ -82,8 +81,8 @@ func (UnitMeasurement) getList() ([]UnitMeasurement, error) {
 	return units, nil
 }
 
-func (ut *UnitMeasurement) update(input interface{}) error {
-	return db.Model(ut).Omit("id").Updates(structs.Map(input)).Error
+func (ut *UnitMeasurement) update(input map[string]interface{}) error {
+	return db.Model(ut).Omit("id").Updates(input).Error
 
 }
 

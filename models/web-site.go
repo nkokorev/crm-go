@@ -173,7 +173,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 }
 
 func (webSite *WebSite) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(webSite).Omit("id", "account_id").Update(input).Preload("EmailBoxes").First(webSite,webSite.ID).Error
+	return db.Set("gorm:association_autoupdate", false).Model(webSite).Omit("id", "account_id").Updates(input).Preload("EmailBoxes").First(webSite,webSite.ID).Error
 }
 
 func (webSite WebSite) delete () error {

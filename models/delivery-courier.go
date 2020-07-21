@@ -154,7 +154,7 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 	return entities, total, nil
 }
 func (deliveryCourier *DeliveryCourier) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(deliveryCourier).Omit("id", "account_id").Update(input).Error
+	return db.Set("gorm:association_autoupdate", false).Model(deliveryCourier).Omit("id", "account_id").Updates(input).Error
 }
 func (deliveryCourier DeliveryCourier) delete () error {
 	return db.Model(DeliveryCourier{}).Where("id = ?", deliveryCourier.ID).Delete(deliveryCourier).Error

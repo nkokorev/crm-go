@@ -196,7 +196,7 @@ func (eventListener *EventListener) update(input map[string]interface{}) error {
 
 	// фиксируем состояние ДО обновления
 	if err := db.Set("gorm:association_autoupdate", false).
-		Model(eventListener).Omit("id","account_id","created_at", "updated_at", "event", "handler").Update(input).Error; err != nil {
+		Model(eventListener).Omit("id","account_id","created_at", "updated_at", "event", "handler").Updates(input).Error; err != nil {
 			return err
 	}
 

@@ -214,7 +214,7 @@ func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search 
 }
 
 func (role *Role) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(role).Omit("id", "account_id").Update(input).Error
+	return db.Set("gorm:association_autoupdate", false).Model(role).Omit("id", "account_id").Updates(input).Error
 }
 
 func (role Role) delete () error {

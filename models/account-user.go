@@ -77,7 +77,7 @@ func (aUser AccountUser) create () (*AccountUser, error) {
 
 func (aUser *AccountUser) update (input interface{}) error {
 	return db.Model(AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).
-		Update(input).Preload("Account").Preload("User").Preload("Role").First(aUser).Error
+		Updates(input).Preload("Account").Preload("User").Preload("Role").First(aUser).Error
 }
 
 /*func (aUser *AccountUser) save () error {

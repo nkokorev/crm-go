@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	u "github.com/nkokorev/crm-go/utils"
 	"github.com/segmentio/ksuid"
@@ -98,9 +99,9 @@ func (eat *EmailAccessToken) Delete () error {
 }
 
 // сохраняет все поля в модели, кроме id, deleted_at
-func (eat *EmailAccessToken) Update (input interface{}) error {
+func (eat *EmailAccessToken) Update (input map[string]interface{}) error {
 	//return db.Model(EmailAccessToken{}).Where("token = ?", ueat.Token).Omit("created_at").Save(ueat).Find(ueat, "token = ?", ueat.Token).Error
-	return db.Model(EmailAccessToken{}).Where("token = ?", eat.Token).Omit("created_at").Update(input).Error
+	return db.Model(EmailAccessToken{}).Where("token = ?", eat.Token).Omit("created_at").Updates(input).Error
 }
 
 // ### Helpers FUNC
@@ -306,7 +307,8 @@ func (eat *EmailAccessToken) SendMail() error {
 	eat.NotificationAt = time.Now().UTC()
 	eat.NotificationCount++
 
-	if err := eat.Update(eat); err != nil {
+	// if err := eat.Update(map[string]interface{}{"notificationCount":eat.NotificationCount, "notificationAt":eat.NotificationAt}); err != nil {
+	if err := eat.Update(structs.Map(eat)); err != nil {
 		return err
 	}
 

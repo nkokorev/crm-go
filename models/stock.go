@@ -97,7 +97,7 @@ func (stock *Stock) Update(input interface{}) error {
 
 	// обновляем данные
 	err :=  db.Model(Stock{}).Where("id = ? AND account_id = ?", stock.ID, stock.AccountID).Omit("id", "account_id").
-		Update(input).Find(stock, "id = ?", stock.ID).Error
+		Updates(input).Find(stock, "id = ?", stock.ID).Error
 
 	if err != nil && err == gorm.ErrRecordNotFound {
 		return utils.Error{Message:fmt.Sprintf("Невозможно обновить склад, указанный id = %v не найден.", stock.ID)}

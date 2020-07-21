@@ -97,17 +97,15 @@ func ApiKeyUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get JSON-request
-	input := struct {
-		Name string `json:"name"`
-		Enabled bool `json:"enabled"`
-	}{}
 
+	var input map[string]interface{}
+	                                                              
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	apiKey, err := account.ApiKeyUpdate(idApiKey, &input)
+	apiKey, err := account.ApiKeyUpdate(idApiKey, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return

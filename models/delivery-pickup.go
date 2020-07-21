@@ -160,7 +160,7 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortB
 }
 
 func (deliveryPickup *DeliveryPickup) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(deliveryPickup).Omit("id", "account_id").Update(input).Error
+	return db.Set("gorm:association_autoupdate", false).Model(deliveryPickup).Omit("id", "account_id").Updates(input).Error
 }
 
 func (deliveryPickup DeliveryPickup) delete () error {
