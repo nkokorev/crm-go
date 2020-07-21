@@ -753,6 +753,8 @@ func (account *Account) DeleteUser(user *User) error {
 		return err
 	}
 
+	event.AsyncFire(Event{}.UserDeleted(account.ID, user.ID))
+
 	return nil
 }
 
@@ -767,7 +769,14 @@ func (account *Account) RemoveUser(user *User) error {
 	 		return err
 		}
 	}
-	return db.Model(&user).Association("accounts").Delete(account).Error
+
+	if err := db.Model(&user).Association("accounts").Delete(account).Error; err != nil {
+		return err
+	}
+
+	event.AsyncFire(Event{}.UserRemovedFromAccount(account.ID, user.ID))
+
+	return nil
 }
 
 func (account Account) GetUserRole(user User) (*Role, error) {

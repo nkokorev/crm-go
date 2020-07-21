@@ -215,29 +215,31 @@ func (webHook WebHook) delete () error {
 
 func (webHook WebHook) Execute(e event.Event) error {
 
+	// проверка
+	if !webHook.Enabled || webHook.URL == "" {
+		return utils.Error{Message: "Не корректные данные ВебХука"}
+	}
+
+	// Создаем шаблон для вычисления URL
 	tplUrl, err := template.New("url").Parse(webHook.URL)
 	if err != nil {
-		// log.Println("Error parse URL: ", err)
 		return utils.Error{Message: fmt.Sprintf("Error parse URL: %v", err)}
 	}
 
 	urlB := new(bytes.Buffer)
 	var data interface{}
 
+	// Данные для расчета url вебхука
 	if e != nil && e.Data() != nil {
 		data = e.Data()
 	}
 
 	err = tplUrl.Execute(urlB, data)
 	if err != nil {
-		// log.Println("Error Execute URL: ", err)
 		return utils.Error{Message: fmt.Sprintf("Error execute URL: %v", err)}
 	}
 
-
 	url := urlB.String()
-
-	// fmt.Println("URL: ", url)
 
 	var response *http.Response
 	var request *http.Request

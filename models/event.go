@@ -22,7 +22,7 @@ func (Event) UserDeleted(accountId uint, userId uint) event.Event {
 func (Event) UserAppendedToAccount(accountId, userId, roleId uint) event.Event {
 	return event.NewBasic("UserAppendedToAccount", map[string]interface{}{"accountId":accountId, "userId":userId, "roleId":roleId})
 }
-func (Event) UserRemovedFromAccount(accountId, userId, roleId uint) event.Event {
+func (Event) UserRemovedFromAccount(accountId, userId uint) event.Event {
 	return event.NewBasic("UserRemovedFromAccount", map[string]interface{}{"accountId":accountId, "userId":userId})
 }
 

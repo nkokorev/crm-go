@@ -143,9 +143,15 @@ func (User) getByHashId(hashId string) (*User, error) {
 
 func (user *User) update (input map[string]interface{}) error {
 
-	return db.Set("gorm:association_autoupdate", false).
+	err := db.Set("gorm:association_autoupdate", false).
 		Model(user).Omit("id", "hash_id", "issuer_account_id", "created_at", "updated_at").Update(input).Error
+	if err != nil {
+		 return err
+	}
+	
+	// event.AsyncFire(Event{}.UserUpdated(user.IssuerAccountID, user.ID))
 
+	return nil
 }
 func (user *User) save () error {
 
@@ -183,6 +189,9 @@ func (account Account) UpdateUser(userId uint, input map[string]interface{}) (*U
 	}
 	
 	err = user.update(input)
+	if err != nil { return nil, err }
+
+	event.AsyncFire(Event{}.UserUpdated(account.ID, user.ID))
 
 	return user, err
 }

@@ -147,6 +147,12 @@ func (handle EventListener) uploadEntitiesData(event *event.Event) {
 	}
 	e.Add("Account", *account)
 
+	if userId, ok := e.Get("userId").(uint); ok {
+		user, err := account.GetUser(userId)
+		if err == nil {
+			e.Add("User", *user)
+		}
+	}
 
 	if productId, ok := e.Get("productId").(uint); ok {
 	   product, err := account.GetProduct(productId)
