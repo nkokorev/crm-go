@@ -271,7 +271,14 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, err = issuerAccount.GetUserWithAUser(user.ID)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка авторизации пользователя!"))
+		return
+	}
 
+
+	// Список аккаунтов
 	aUsers, err := user.AccountList()
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить аккаунты")) // вообще тут нужен релогин

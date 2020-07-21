@@ -157,6 +157,7 @@ var AppRoutes = func(r *mux.Router) {
 	// ### EmailBoxes ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/email-boxes", appCr.EmailBoxCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/email-boxes", appCr.EmailBoxListGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/email-boxes", appCr.EmailBoxFullListGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/email-boxes/{emailBoxId:[0-9]+}", appCr.EmailBoxGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/email-boxes/{emailBoxId:[0-9]+}", appCr.EmailBoxUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/email-boxes/{emailBoxId:[0-9]+}", appCr.EmailBoxDelete).Methods(http.MethodDelete, http.MethodOptions)

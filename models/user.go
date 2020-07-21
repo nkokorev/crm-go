@@ -378,10 +378,17 @@ func (user *User) LoadAccounts() error {
 	return db.Preload("Accounts").First(&user).Error
 }
 
+type AcoountUserAuth = struct {
+	AccountUser
+	Account Account	`json:"account"`
+	Role Role	`json:"role"`
+}
+
 // Возвращает массив доступных аккаунтов с ролью в аккаунте
-func (user User) AccountList() ([]AccountUser, error) {
-	
-	aUsers := make([]AccountUser,0)
+func (user User) AccountList() ([]AcoountUserAuth, error) {
+
+
+	aUsers := make([]AcoountUserAuth,0)
 
 	err := db.Model(&AccountUser{}).Preload("Role").Preload("Account").Find(&aUsers, "user_id = ?", user.ID).Error;
 	if err != nil && err != gorm.ErrRecordNotFound {

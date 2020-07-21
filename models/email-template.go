@@ -73,7 +73,7 @@ func (emailTemplate EmailTemplate) create() (Entity, error) {
 
 	et := emailTemplate
 
-	if err := db.Create(&emailTemplate).Error; err != nil {
+	if err := db.Create(&et).Error; err != nil {
 		return nil, err
 	}
 	var entity Entity = &et
@@ -187,7 +187,8 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 }
 
 func (et *EmailTemplate) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(et).Omit("id", "account_id").Update(input).Error
+	// return db.Model(&EmailTemplate{}).Where("id = ?", et.ID).Omit("id", "account_id").Update(input).Error
+	return db.Model(et).Where("id = ?", et.ID).Omit("id", "account_id").Update(input).Error
 }
 
 
@@ -389,14 +390,18 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string) error {
 	return nil
 }
 
-func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, data map[string]interface{}) error {
+func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, vData *ViewData) error {
+
+	if from.WebSite.ID <1 {
+		log.Println("EmailTemplate: Не удалось определить WebSite")
+		return utils.Error{Message: "Не удалось определить WebSite"}
+	}
 
 	// Принадлежность пользователя к аккаунту не проверяем, т.к. это пофигу
 	// user - получатель письма, письмо уйдет на user.Email
 
 	// Формируем данные для сборки шаблона
-	// vData := ViewData{et, user, json}
-	vData, err := et.PrepareViewData(data)
+	// vData, err := et.PrepareViewData(data)
 
 	// 1. Получаем html из email'а
 	html, err := et.GetHTML(vData)
@@ -448,7 +453,7 @@ func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, 
 	options.PrivateKey = []byte(privRSAKey)
 	//options.Domain = "rtcrm.ru"
 	options.Domain = from.WebSite.Hostname
-	options.Selector = "dk1"
+	options.Selector = from.WebSite.DKIMSelector // dk1
 	options.SignatureExpireIn = 0
 	options.BodyLength = 50
 	//options.Headers = []string{"from", "date", "mime-version", "received", "received"}
@@ -483,40 +488,40 @@ func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, 
 		InsecureSkipVerify: true,
 		ServerName: host,
 	}); err != nil {
-		log.Fatalf("client.StartTLS fail: %v", err)
+		log.Printf("client.StartTLS fail: %v", err)
 	}
 
 	// from
 	// err = client.Mail(from.GetMailAddress().Address)
-	err = client.Mail("userId.abuse.@ratuscrm.com")
+	err = client.Mail("user-21.abuse.@ratuscrm.com")
 	if err != nil {
-		log.Fatal("Почтовый адрес не может принять почту")
+		log.Println("Почтовый адрес не может принять почту")
 	}
 
 	err = client.Rcpt(toEmail)
 	if err != nil {
-		log.Fatal("Похоже, почтовый адрес не сущесвует")
+		log.Println("Похоже, почтовый адрес не существует")
 	}
 
 	wc, err := client.Data()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	_, err = wc.Write(email)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	err = wc.Close()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	// Send the QUIT command and close the connection.
 	err = client.Quit()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	return nil

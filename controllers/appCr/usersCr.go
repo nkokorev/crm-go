@@ -69,7 +69,7 @@ func UserGet(w http.ResponseWriter, r *http.Request) {
 
 	user, err := account.GetUser(userId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
+		u.Respond(w, u.MessageError(err, "Не удалось найти пользователя"))
 		return
 	}
 
@@ -79,7 +79,7 @@ func UserGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func UsersGetListPagination(w http.ResponseWriter, r *http.Request) {
-
+	
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
 		return
@@ -109,7 +109,9 @@ func UsersGetListPagination(w http.ResponseWriter, r *http.Request) {
 	// При наличии "list=1,2,3" делается выборка по указанным ID
 	var list []uint
 	listStr := r.URL.Query().Get("list")
-	if listStr != "" && listStr != "all" {
+
+	if listStr != "" {
+		
 		listArr := strings.Split(listStr, ",")
 		for _, v := range listArr {
 			i, err := strconv.ParseUint(v, 10, 64)
@@ -128,8 +130,6 @@ func UsersGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 
 	} else {
-
-		// II. Получаем pagination list
 		var roles []uint
 		rolesStr := r.URL.Query().Get("roles")
 		if rolesStr == "" || rolesStr == "all" {
@@ -162,12 +162,13 @@ func UsersGetListPagination(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		resp := u.Message(true, "GET Account User List")
+		resp["total"] = total
+		resp["users"] = users
+		u.Respond(w, resp)
 	}
 
-	resp := u.Message(true, "GET Account User List")
-	resp["total"] = total
-	resp["users"] = users
-	u.Respond(w, resp)
+
 }
 
 func UserUpdate(w http.ResponseWriter, r *http.Request) {
@@ -191,6 +192,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 
 	// Если обновляются роли, удаляем из общего массива input и потом отдельно обновляем
 	var roleId float64
+	var apiRoleId64 float64 = -1
 	var role models.Role
 
 	/*if roleIdStr, ok := input["roleId"]; ok {
@@ -252,7 +254,15 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 		roleId = roleId64
 	}
 
+
+	if apiRoleIdI, ok := input["roleId"]; ok {
+		if _apiRoleId64, ok := apiRoleIdI.(float64); ok {
+			apiRoleId64 = _apiRoleId64
+		}
+	}
+
 	delete(input, "_role")
+	delete(input, "roleId")
 	delete(input, "accountUser")
 
 	// Обновляем данные пользователя
@@ -273,6 +283,31 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 			u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя"))
 			return
 		}
+	}  else {
+
+		 if apiRoleId64 > 0 {
+			 currentRole2, err := account.GetUserRole(*user)
+			 if err == nil && (currentRole2.ID != uint(apiRoleId64)){
+
+			 	// получаем роль 2
+				 rolePtr, err := account.GetRole(uint(apiRoleId64))
+				 if err != nil {
+					 u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя"))
+					 return
+				 }
+
+				 if rolePtr.IsOwner() {
+					 u.Respond(w, u.MessageError(err, "Нельзя назначить пользователя с ролью владельца аккаунта"))
+					 return
+				 }
+				 
+				 _, err = account.SetUserRole(user, *rolePtr)
+				 if err != nil {
+					 u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя"))
+					 return
+				 }
+			 }
+		 }
 	}
 
 
@@ -290,6 +325,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 // Удаляет пользователя из аккаунта
 // Если issuerId = accountId, то может быть применен запрос на удаление пользователя 
 func UserRemoveFromAccount(w http.ResponseWriter, r *http.Request) {
+	
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
 		return
@@ -334,6 +370,7 @@ func UserRemoveFromAccount(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
+		// Убирает аккаунт пользователя или удаляет, если он из этого аккаунта
 		err = account.RemoveUser(user)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось исключить пользователя"))

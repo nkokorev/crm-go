@@ -374,11 +374,11 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	stas, err := mAcc.CreateUser(
 		models.User{
 			Username:"ikomastas",
-			// Email:"sa-tolstov@yandex.ru",
-			Email:"info@rus-marketing.ru",
+			Email:"sa-tolstov@yandex.ru",
+			// Email:"info@rus-marketing.ru",
 			PhoneRegion: "RU",
 			Phone: "",
-			Password:"qwerty109#QW",
+			Password:"qwerty123#Q",
 			Name:"Станислав",
 			Surname:"Толстов",
 			Patronymic:"",
@@ -416,6 +416,11 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя mex388 in 357gr")
 		return
+	}
+
+	_, err = accSyndicAd.ApiKeyCreate(models.ApiKey{Name:"Для интеграции с системой"})
+	if err != nil {
+		log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
 	}
 
 	// 2. Создаем домен для синдиката
@@ -484,8 +489,14 @@ pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
 		return
 	}
 
-	// 2. Создаем домен для синдиката
+	_, err = brouser.ApiKeyCreate(models.ApiKey{Name:"Для интеграции с главной системой"})
+	if err != nil {
+		log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
+	}
+
+	// 2. Создаем домен для BroUser
 	_webSiteBro, err := brouser.CreateEntity(&models.WebSite{
+		Name: "Сайт-визитка",
 		Hostname: "brouser.com",
 		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvryklToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHcumqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB`,
 		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
@@ -1373,20 +1384,21 @@ func UploadTestDataPart_III() {
 	// =================================
 
 
+	numOne := uint(1)
 	emailNotifications := []models.EmailNotification {
 		{
-			Enabled: false, Delay: 0, Name:"Новый заказ", Description: "Оповещение менеджеров о новом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
+			Enabled: false, Delay: 0, Name:"Новый заказ", Description: "Оповещение менеджеров о новом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-marketing.ru"})},
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{2,6,7})},
 
 		},
 		{
-			Enabled: false, Delay: 0, Name:"Ваш заказ получен!", Description: "Информирование клиента о принятом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
+			Enabled: false, Delay: 0, Name:"Ваш заказ получен!", Description: "Информирование клиента о принятом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"mex388@gmail.com"})},
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{7})},
 		},
 		{
-			Enabled: true, Delay: 0, Name:"*Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateId: 1, SendingToFixedAddresses: true,
+			Enabled: true, Delay: 0, Name:"*Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-marketing.ru"})},
 		},
 

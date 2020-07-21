@@ -495,12 +495,15 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 		}
 
 		// Вычисляем total
-		err = db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
-			Where("account_id = ? AND role_id IN (?)", account.ID, role).
-			Count(&total).Error
-		if err != nil {
-			return nil, 0, utils.Error{Message: "Ошибка определения объема клиентской базы"}
+		if len(users) > 0 {
+			err = db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").Offset(offset).
+				Where("account_id = ? AND role_id IN (?)", account.ID, role).
+				Count(&total).Error
+			if err != nil && err != gorm.ErrRecordNotFound {
+				return nil, 0, utils.Error{Message: "Ошибка определения объема клиентской базы"}
+			}
 		}
+
 	}
 
 	/*for i := range users {
@@ -641,6 +644,8 @@ func (account Account) AuthorizationUserByUsername(username, password string, on
 		e.Message = "Проверьте указанные данные"
 		return nil, "", e
 	}
+
+
 
 	/*if rememberChoice {
 		user.DefaultAccountHashId = account.HashID

@@ -1,11 +1,13 @@
 package models
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
+	"html/template"
 	"reflect"
 	"time"
 )
@@ -23,10 +25,11 @@ type EmailNotification struct {
 	
 	Description		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
 
-	EmailTemplateId uint 	`json:"emailTemplateId" gorm:"type:int;"` // всегда должен быть шаблон, иначе смысла в нем нет
+	EmailTemplateId *uint 	`json:"emailTemplateId" gorm:"type:int;default:null;"` // всегда должен быть шаблон, иначе смысла в нем нет
 	EmailTemplate 	EmailTemplate 	`json:"emailTemplate" gorm:"preload:true"`
 
-
+	EmailBoxId		uint 	`json:"emailBoxId" gorm:"type:int;default:null;"` // С какого ящика идет отправка
+	EmailBox		EmailBox `json:"emailBox" gorm:"preload:false"`
 	// =============   Настройки получателей    ===================
 
 	// Список пользователей позволяет сделать "рассылку" уведомления по email-адреса пользователей, до 10 человек.
@@ -42,6 +45,7 @@ type EmailNotification struct {
 
 	// ==========================================
 
+	// Скрытый список пользователей для Data и фронтенда
 	RecipientUsers []User	`json:"_recipientUsers" gorm:"-"`
 
 	CreatedAt 		time.Time `json:"createdAt"`
@@ -117,7 +121,7 @@ func (EmailNotification) get(id uint) (Entity, error) {
 
 	var emailNotification EmailNotification
 
-	err := db.First(&emailNotification, id).Error
+	err := db.Preload("EmailBox").First(&emailNotification, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +129,7 @@ func (EmailNotification) get(id uint) (Entity, error) {
 }
 func (emailNotification *EmailNotification) load() error {
 
-	err := db.First(emailNotification, emailNotification.ID).Error
+	err := db.Preload("EmailBox").First(emailNotification, emailNotification.ID).Error
 	if err != nil {
 		return err
 	}
@@ -138,7 +142,7 @@ func (EmailNotification) getList(accountId uint, sortBy string) ([]Entity, uint,
 	emailNotifications := make([]EmailNotification,0)
 	var total uint
 
-	err := db.Model(&EmailNotification{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).Preload("EmailTemplate").
+	err := db.Model(&EmailNotification{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).Preload("EmailTemplate").Preload("EmailBox").
 		Find(&emailNotifications).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
@@ -174,7 +178,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
 				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
-			}).
+			}).Preload("EmailBox").
 			Find(&emailNotifications, "name ILIKE ? OR description ILIKE ?", search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -194,7 +198,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
 				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
-			}).
+			}).Preload("EmailBox").
 			Find(&emailNotifications).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -225,13 +229,13 @@ func (emailNotification *EmailNotification) update(input map[string]interface{})
 	// delete(input, "recipientList")
 	// delete(input, "recipientUsersList")
 	delete(input, "emailTemplate")
+	delete(input, "emailBox")
 
-
-	if err := db.Model(emailNotification).Omit("id", "account_id").Update(input).Error; err != nil {
+	if err := db.Model(EmailNotification{}).Where("id = ?", emailNotification.ID).Omit("id", "account_id").Updates(input).Error; err != nil {
 		return err
 	}
 
-	err := db.Preload("EmailTemplate").First(emailNotification, emailNotification.ID).Error
+	err := db.Preload("EmailBox").Preload("EmailTemplate").First(emailNotification, emailNotification.ID).Error
 	if err != nil {
 		return err
 	}
@@ -251,7 +255,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		return utils.Error{Message: "Уведомление не может быть отправлено т.к. находится в статусе - 'Отключено'"}
 	}
 
-	emailTemplateEntity, err := EmailTemplate{}.get(emailNotification.EmailTemplateId)
+	emailTemplateEntity, err := EmailTemplate{}.get(*emailNotification.EmailTemplateId)
 	if err != nil {
 		return err
 	}
@@ -264,50 +268,76 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удалось получить шаблон"}
 	}
 
+	vData, err := emailTemplate.PrepareViewData(data)
 
-
-	eb, err := (EmailBox{}).get(5)
-	if err != nil {
-		fmt.Println(err)
-		return utils.Error{Message: "Ошибка отправления Уведомления - шаблон принадлежит другому аккаунту 3"}
-	}
-
-	emailBox, ok := eb.(*EmailBox)
-	if !ok {
+	if emailNotification.EmailBox.ID < 1 {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается получить почтовый ящик"}
 	}
 
-   	emailList := utils.ParseJSONBToString(emailNotification.RecipientList)
-
-   	for _,v := range(emailList) {
-		err = emailTemplate.SendMail(*emailBox, v, emailNotification.Subject, data)
-		if err != nil {
-			fmt.Println("Ошибка отправления: ", err)
-		}
-
-	}
-
-	// fmt.Printf("B %T: %v\n", b, string(b))
-
-	return nil
-
-	err = emailTemplate.SendMail(*emailBox, "mex388@mail.ru", "Отличная новость!", data)
+	_subject, err := parseSubjectByData(emailNotification.Subject, vData)
 	if err != nil {
-		fmt.Println("Ошибка отправления: ", err)
-		return utils.Error{Message: "Ошибка отправления Уведомления - шаблон принадлежит другому аккаунту"}
+		return utils.Error{Message: "Ошибка отправления Уведомления - не удается прочитать тему сообщения"}
+	}
+	if _subject == "" {
+		_subject = fmt.Sprintf("Уведомление по почте #%v", emailNotification.ID)
 	}
 
-	// emailTemplate := emailNotification.EmailTemplate
-	fmt.Println(emailTemplate)
-	
-	
-	if data == nil {
-		fmt.Println("Execute EmailNotification of data[] is null!")
-	} else {
-		fmt.Println("Execute EmailNotification of data[] not null!!")
+	// 1. Список пользователей
+	var userEmails = make([]string,0)
+	for i,_ := range emailNotification.RecipientUsers {
+		userEmails = append(userEmails,emailNotification.RecipientUsers[i].Email)
 	}
 
+	// 2. список фиксированных адресов
+	emailList := utils.ParseJSONBToString(emailNotification.RecipientList)
+
+	// fmt.Println("emailNotification.EmailBox: ", emailNotification.EmailBox.ID)
+	// return nil
+
+
+	err = emailNotification.EmailBox.load()
+	if err != nil {
+		return utils.Error{Message: "Ошибка отправления Уведомления - не удается загрузить данные WEbSite"}
+	}
+
+
+	// Проверяем и отправляем 1
+	if emailNotification.SendingToUsers {
+		for _,v := range(userEmails) {
+			err = emailTemplate.SendMail(emailNotification.EmailBox, v, _subject, vData)
+			if err != nil {
+				fmt.Println("Ошибка отправления: ", err)
+			}
+		}
+	}
+
+	// Проверяем и отправляем 2
+	if emailNotification.SendingToFixedAddresses {
+		for _,v := range(emailList) {
+			err = emailTemplate.SendMail(emailNotification.EmailBox, v, _subject, vData)
+			if err != nil {
+				fmt.Println("Ошибка отправления: ", err)
+			}
+		}
+	}
 
 
 	return nil
+}
+
+func parseSubjectByData(tpl string, vData *ViewData) (string, error) {
+
+	body := new(bytes.Buffer)
+
+	tmpl, err := template.New("et.Name").Parse(tpl)
+	if err != nil {
+		return "", err
+	}
+
+	err = tmpl.Execute(body, vData)
+	if err != nil {
+		return "", utils.Error{Message: fmt.Sprintf("Ошибка в заголовке шаблона")}
+	}
+
+	return body.String(), nil
 }

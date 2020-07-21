@@ -90,3 +90,4 @@ func ParseJSONBToString(jsonb postgres.Jsonb) []string {
 	
 	return data
 }
+

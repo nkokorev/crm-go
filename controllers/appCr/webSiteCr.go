@@ -2,6 +2,7 @@ package appCr
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -287,6 +288,35 @@ func EmailBoxGet(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET EmailBox")
 	resp["emailBox"] = emailBox
+	u.Respond(w, resp)
+}
+
+// без учета сайта
+func EmailBoxFullListGet(w http.ResponseWriter, r *http.Request) {
+	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
+	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
+	if !ok {
+		sortBy = ""
+	}
+	if sortDesc {
+		sortBy += " desc"
+	}
+
+	emailBoxes, total, err := account.GetListEntity(&models.EmailBox{},sortBy)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список почтовых ящиков"))
+		return
+	}
+
+	resp := u.Message(true, "GET Email Box Full List")
+	resp["emailBoxes"] = emailBoxes
+	resp["total"] = total
 	u.Respond(w, resp)
 }
 

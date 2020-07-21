@@ -27,14 +27,11 @@ func main() {
 
 	// base.RefreshTablesPart_I()
 	// base.RefreshTablesPart_II()
-
 	// base.UploadTestDataPart_I()
-
 	// base.LoadImagesAiroClimate(13)
 	// base.LoadArticlesAiroClimate()
 	// base.LoadProductDescriptionAiroClimate()
 	// base.LoadProductCategoryDescriptionAiroClimate()
-	
 	// base.UploadTestDataPart_II()
 	// base.UploadTestDataPart_III()
 
