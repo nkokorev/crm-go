@@ -244,12 +244,15 @@ func (yandexPayment YandexPayment) ExternalCreate(payment Payment) (*Payment, er
 	url := "https://payment.yandex.net/api/v3/payments"
 
 	// Собираем данные
+	// buffer := new(bytes.Buffer)
 	body, err := json.Marshal(payment)
 	if err != nil {
 		fmt.Printf("Error: %s", err)
 		return nil, err;
 	}
 	fmt.Println("Request: ", string(body))
+
+	// buffer.WriteString(string(body))
 
 	// var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
 
@@ -261,6 +264,7 @@ func (yandexPayment YandexPayment) ExternalCreate(payment Payment) (*Payment, er
 	}
 
 	// crate new request
+	// request, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, utils.Error{Message: "Не удалось создать http-запрос для создания платежа"}

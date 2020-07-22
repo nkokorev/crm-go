@@ -8,7 +8,7 @@ import (
 )
 
 //Объект платежа - кто-то, что-то вам заплатил. Или хочет заплатить. Или должен...
-type AmountPay struct {
+type Amount struct {
 	Value 	float64	`json:"value" gorm:"type:numeric;default:0"`
 	Currency 	string 	`json:"currency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
 }
@@ -20,6 +20,31 @@ type PaymentMethod struct {
 type Confirmation struct {
 	Type 	string `json:"type" gorm:"type:varchar(32);"` // embedded, redirect, external, qr
 	ReturnUrl 	string `json:"return_url" gorm:"type:varchar(255);"`
+}
+
+type Recipient struct {
+	AccountId	string	`json:"account_id" gorm:"type:varchar(32);default:''"` // Идентификатор магазина в Яндекс.Кассе.
+	GatewayId	string	`json:"gateway_id" gorm:"type:varchar(32);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+}
+
+type CancellationDetails struct {
+	Party	string	`json:"party" gorm:"type:varchar(32);default:''"` 
+	Reason	string	`json:"reason" gorm:"type:varchar(32);default:''"`
+}
+type AuthorizationDetails struct {
+	// Retrieval Reference Number — уникальный идентификатор транзакции в системе эмитента. Используется при оплате банковской картой.
+	Rrn	string	`json:"rrn" gorm:"type:varchar(32);default:''"`
+
+	// Код авторизации банковской карты. Выдается эмитентом и подтверждает проведение авторизации.
+	AuthCode	string	`json:"authCode" gorm:"type:varchar(50);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+}
+type Transfers struct {
+	// Retrieval Reference Number — уникальный идентификатор транзакции в системе эмитента. Используется при оплате банковской картой.
+	AccountId	string	`json:"account_id" gorm:"type:varchar(32);default:''"`
+
+	// Код авторизации банковской карты. Выдается эмитентом и подтверждает проведение авторизации.
+	Amount	Amount	`json:"amount"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+	Status	string	`json:"status" gorm:"type:varchar(50);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
 }
 
 type Payment struct {
@@ -39,30 +64,31 @@ type Payment struct {
 	// объем платежа по факту
 	// AmountValue 	float64	`json:"amountValue" gorm:"type:numeric;default:0"`
 	// AmountCurrency 	string 	`json:"amountCurrency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
-	Amount  AmountPay	`json:"amount"`
+	Amount  Amount	`json:"amount"`
 
 	// Каков "приход" за вычетом комиссии посредника.
 	// IncomeValue 	float64 `json:"incomeValue" gorm:"type:numeric;default:0"`
 	// IncomeCurrency 	string 	`json:"incomeCurrency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
-	IncomeAmount  AmountPay	`json:"incomeAmount"`
+	IncomeAmount  Amount	`json:"income_amount"`
 
 	// Сумма, которая вернулась пользователю. Присутствует, если у этого платежа есть успешные возвраты.
 	Refundable 				bool 	`json:"refundable" gorm:"type:bool;default:false;"` // Возможность провести возврат по API
 	// RefundedAmountValue 	float64	`json:"refundedAmountValue" gorm:"type:numeric;default:0"`
 	// RefundedAmountCurrency 	string 	`json:"refundedAmountCurrency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
-	RefundedAmount  AmountPay	`json:"refundedAmount"`
+	RefundedAmount  Amount	`json:"refunded_amount"`
 
 	// описание транзакции, которую в Я.Кассе пользователь увидит при оплате
 	Description 	string 	`json:"description" gorm:"type:varchar(255);default:''"`
 
 	// Получатель платежа на стороне Сервиса. В Яндекс кассе это магазин и канал внутри я.кассы.
 	// Нужен, если вы разделяете потоки платежей в рамках одного аккаунта или создаете платеж в адрес другого аккаунта.
-	RecipientAccountId	string	`json:"recipientAccountId" gorm:"type:varchar(255);default:''"` // Идентификатор магазина в Яндекс.Кассе.
-	RecipientGatewayId	string	`json:"recipientGatewayId" gorm:"type:varchar(255);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+	// RecipientAccountId	string	`json:"recipientAccountId" gorm:"type:varchar(255);default:''"` // Идентификатор магазина в Яндекс.Кассе.
+	// RecipientGatewayId	string	`json:"recipientGatewayId" gorm:"type:varchar(255);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+	Recipient	Recipient `json:"recipient" gorm:"type:varchar(255);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
 
 	// Способ оплаты платежа = {type:"bank_card", id:"", saved:true, card:""}. Может быть и другой платеж, в зависимости от OwnerType
 	// PaymentMethod	postgres.Jsonb	`json:"paymentMethod" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
-	PaymentMethod	PaymentMethod	`json:"paymentMethod"`
+	PaymentMethod	PaymentMethod	`json:"payment_method_data"`
 
 	// Сохранение платежных данных (с их помощью можно проводить повторные безакцептные списания ).
 	SavePaymentMethod 	bool 	`json:"savePaymentMethod" gorm:"type:bool;default:false"`
@@ -84,13 +110,15 @@ type Payment struct {
 	Metadata	postgres.Jsonb	`json:"metadata" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 
 	// Комментарий к статусу canceled: {party:"[yandex_checkout, payment_network, merchant]", reason:"..."}
-	CancellationDetails	postgres.Jsonb	`json:"cancellationDetails" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	// CancellationDetails	postgres.Jsonb	`json:"cancellationDetails" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	CancellationDetails CancellationDetails `json:"cancellationDetails"`
 
 	// Данные об авторизации платежа. {rrn:"", auth_code:""}
-	AuthorizationDetails	postgres.Jsonb	`json:"authorizationDetails" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	// AuthorizationDetails	postgres.Jsonb	`json:"authorizationDetails" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	AuthorizationDetails	AuthorizationDetails	`json:"authorizationDetails"`
 
 	// Данные о распределении денег {account_id:"", amount:"", status:"[waiting_for_capture, succeeded, canceled]"}
-	Transfers	postgres.Jsonb	`json:"transfers" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	Transfers	Transfers	`json:"transfers" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 
 	// #### Внутренние данные #####
 
