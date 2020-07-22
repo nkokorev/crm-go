@@ -28,7 +28,7 @@ type EmailNotification struct {
 	EmailTemplateId *uint 	`json:"emailTemplateId" gorm:"type:int;default:null;"` // всегда должен быть шаблон, иначе смысла в нем нет
 	EmailTemplate 	EmailTemplate 	`json:"emailTemplate" gorm:"preload:true"`
 
-	EmailBoxId		uint 	`json:"emailBoxId" gorm:"type:int;default:null;"` // С какого ящика идет отправка
+	EmailBoxId		*uint 	`json:"emailBoxId" gorm:"type:int;default:null;"` // С какого ящика идет отправка
 	EmailBox		EmailBox `json:"emailBox" gorm:"preload:false"`
 	// =============   Настройки получателей    ===================
 
@@ -53,7 +53,7 @@ type EmailNotification struct {
 }
 
 // ############# Entity interface #############
-func (emailNotification EmailNotification) getId() uint { return emailNotification.ID }
+func (emailNotification EmailNotification) GetId() uint { return emailNotification.ID }
 func (emailNotification *EmailNotification) setId(id uint) { emailNotification.ID = id }
 func (emailNotification EmailNotification) GetAccountId() uint { return emailNotification.AccountID }
 func (emailNotification *EmailNotification) setAccountId(id uint) { emailNotification.AccountID = id }
@@ -231,11 +231,18 @@ func (emailNotification *EmailNotification) update(input map[string]interface{})
 	delete(input, "emailTemplate")
 	delete(input, "emailBox")
 
+
 	// if err := db.Model(EmailNotification{}).Where("id = ?", emailNotification.ID).Omit("id", "account_id").Updates(input).Error; err != nil {
 	// 	return err
 	// }
-	fmt.Println("emailNotification id", emailNotification.ID)
-	// if err := db.Model(EmailNotification{}).Where("id = ?", emailNotification.ID).Omit("id", "account_id").Updates(input).Error; err != nil {
+	// fmt.Println("emailNotification id", emailNotification.EmailBoxId)
+
+/*	if err := db.Model(emailNotification).
+		Omit("id", "account_id","created_at").Update(input).Error; err != nil {
+		return err
+	}*/
+
+	// work!!!
 	if err := db.Set("gorm:association_autoupdate", false).Model(EmailNotification{}).Where(" id = ?", emailNotification.ID).
 		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
 		return err

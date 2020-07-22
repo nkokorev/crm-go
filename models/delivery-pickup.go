@@ -31,7 +31,7 @@ func (DeliveryPickup) PgSqlCreate() {
 }
 
 // ############# Entity interface #############
-func (deliveryPickup DeliveryPickup) getId() uint { return deliveryPickup.ID }
+func (deliveryPickup DeliveryPickup) GetId() uint { return deliveryPickup.ID }
 func (deliveryPickup *DeliveryPickup) setId(id uint) { deliveryPickup.ID = id }
 func (deliveryPickup DeliveryPickup) GetAccountId() uint { return deliveryPickup.AccountID }
 func (deliveryPickup *DeliveryPickup) setAccountId(id uint) { deliveryPickup.AccountID = id }

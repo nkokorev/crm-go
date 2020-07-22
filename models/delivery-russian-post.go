@@ -46,7 +46,7 @@ func (DeliveryRussianPost) PgSqlCreate() {
 }
 
 // ############# Entity interface #############
-func (deliveryRussianPost DeliveryRussianPost) getId() uint { return deliveryRussianPost.ID }
+func (deliveryRussianPost DeliveryRussianPost) GetId() uint { return deliveryRussianPost.ID }
 func (deliveryRussianPost *DeliveryRussianPost) setId(id uint) { deliveryRussianPost.ID = id }
 func (deliveryRussianPost DeliveryRussianPost) GetAccountId() uint { return deliveryRussianPost.AccountID }
 func (deliveryRussianPost *DeliveryRussianPost) setAccountId(id uint) { deliveryRussianPost.AccountID = id }

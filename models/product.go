@@ -84,7 +84,7 @@ func (product *Product) BeforeCreate(scope *gorm.Scope) error {
 }
 
 // ######### INTERFACE EVENT Functions ############
-func (product Product) getId() uint {
+func (product Product) GetId() uint {
 	return product.ID
 }
 // ######### END OF INTERFAe Functions ############

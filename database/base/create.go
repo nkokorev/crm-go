@@ -113,9 +113,7 @@ func RefreshTablesPart_I() {
 	// Уведомления
 	models.EmailNotification{}.PgSqlCreate()
 }
-func RefreshTablesPart_II() {
 
-}
 
 // загрузка первоначальных данных в EAV-таблицы
 func UploadEavData() {
@@ -1371,10 +1369,10 @@ func UploadTestDataPart_III() {
 	}
 
 	emailTemplates := []models.EmailTemplate{
-		{Name: "Спасибо за ваш заказ", Description: "Уведомление клиента о заказе, который не оплачен.", Data: string(data)},
-		{Name: "Новый заказ", Description: "Уведомление о новом заказе для менеджеров", Data: string(data)},
-		{Name: "Ваш заказ отправлен", Description: "Уведомление для клиента об отправке заказа по почте.", Data: string(data)},
-		{Name: "Благодарим за покупку", Description: "Письмо-благодарность для клиента, после оплаты.", Data: string(data)},
+		{Name: "Спасибо за ваш заказ", Description: "Уведомление клиента о заказе, который не оплачен.", HTMLData: string(data)},
+		{Name: "Новый заказ", Description: "Уведомление о новом заказе для менеджеров", HTMLData: string(data)},
+		{Name: "Ваш заказ отправлен", Description: "Уведомление для клиента об отправке заказа по почте.", HTMLData: string(data)},
+		{Name: "Благодарим за покупку", Description: "Письмо-благодарность для клиента, после оплаты.", HTMLData: string(data)},
 	}
 	for i := range emailTemplates {
 		_, err = airoAccount.CreateEntity(&emailTemplates[i])
@@ -1385,21 +1383,27 @@ func UploadTestDataPart_III() {
 
 
 	numOne := uint(1)
+	num5 := uint(5)
+	num6 := uint(6)
+	num7 := uint(7)
 	emailNotifications := []models.EmailNotification {
 		{
 			Enabled: false, Delay: 0, Name:"Новый заказ", Description: "Оповещение менеджеров о новом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-marketing.ru"})},
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{2,6,7})},
+			EmailBoxId: &num5,
 
 		},
 		{
 			Enabled: false, Delay: 0, Name:"Ваш заказ получен!", Description: "Информирование клиента о принятом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"mex388@gmail.com"})},
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{7})},
+			EmailBoxId: &num6,
 		},
 		{
 			Enabled: true, Delay: 0, Name:"*Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-marketing.ru"})},
+			EmailBoxId: &num7,
 		},
 
 	}
@@ -1624,4 +1628,82 @@ func LoadProductCategoryDescriptionAiroClimate()  {
 			log.Fatalf("unable to update product group descr: %v", err)
 		}
 	}
+}
+
+func RefreshTablesPart_IV() {
+	pool := models.GetPool()
+
+	pool.DropTableIfExists(models.Order{}, models.Payment{},models.YandexPayment{})
+
+	// А теперь создаем
+	models.Order{}.PgSqlCreate()
+	models.YandexPayment{}.PgSqlCreate()
+	models.Payment{}.PgSqlCreate()
+}
+
+func UploadTestDataPart_IV()  {
+
+	// 1. Получаем главный аккаунт
+	airoAccount, err := models.GetAccount(5)
+	if err != nil {
+		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
+	}
+
+	// Создаем метод платежки
+/*	entityPayment, err := airoAccount.CreateEntity(
+		&models.YandexPayment{
+			Name:   "Прием платежей через интернет-магазин airoclimate.ru",
+			ApiKey: "test_f56EEL_m2Ky7CJnnRjSpb4JLMhiGoGD3X6ScMHGPruM",
+			ShopId: "730509",
+			URL: "https://ui.api.ratuscrm.com/yandex-payment/dasdasdsa/notifications",
+			ReturnUrl: "https://airoclimate.ru/payment-return",
+			Enabled: true,
+			Description: "-",
+			SavePaymentMethod: false,
+			Capture: false,
+		})
+	if err != nil {
+		log.Fatalf("Не удалось создать entityPayment: ", err)
+	}
+	var yandexPayment models.YandexPayment
+	if err = airoAccount.LoadEntity(&yandexPayment,entityPayment.GetId()); err != nil {
+		log.Fatalf("Не удалось найти entityPayment: ", err)
+	}*/
+
+	// Создаем заказ (Order)
+	entity, err := airoAccount.CreateEntity(&models.Order{Description: "Заказ товаров в магазине AiroClimate"})
+	if err != nil {
+		log.Fatalf("Не удалось создать заказ: ", err)
+	}
+	var order models.Order
+	if err = airoAccount.LoadEntity(&order,entity.GetId()); err != nil {
+		log.Fatalf("Не удалось найти заказ: ", err)
+	}
+
+	///////////////
+
+	yandexPayment := models.YandexPayment{
+		Name:   "Прием платежей через интернет-магазин airoclimate.ru",
+		ApiKey: "test_f56EEL_m2Ky7CJnnRjSpb4JLMhiGoGD3X6ScMHGPruM",
+		ShopId: "730509",
+		URL: "https://ui.api.ratuscrm.com/yandex-payment/dasdasdsa/notifications",
+		ReturnUrl: "https://airoclimate.ru/payment-return",
+		Enabled: true,
+		Description: "-",
+		SavePaymentMethod: false,
+		Capture: false,
+	}
+
+	_, err = yandexPayment.CreatePaymentByOrder(order)
+	if err != nil {
+		log.Fatalf("Не удалось создать заказ в системе: ", err)
+	}
+
+	/*err = yandexPayment.ExternalCreate(payment)
+	if err != nil {
+		log.Fatal("Ошибка запроса: ", err)
+	}*/
+
+    // fmt.Println("Закза создан: ", payment)
+    fmt.Println("Закза создан: ")
 }

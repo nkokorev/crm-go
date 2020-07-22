@@ -33,7 +33,7 @@ func (emailBox *EmailBox) BeforeCreate(scope *gorm.Scope) error {
 }
 
 // ############# Entity interface #############
-func (emailBox EmailBox) getId() uint { return emailBox.ID }
+func (emailBox EmailBox) GetId() uint { return emailBox.ID }
 func (emailBox *EmailBox) setId(id uint) { emailBox.ID = id }
 func (emailBox EmailBox) GetAccountId() uint { return emailBox.AccountID }
 func (emailBox *EmailBox) setAccountId(id uint) { emailBox.AccountID = id }

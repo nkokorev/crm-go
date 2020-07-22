@@ -37,7 +37,7 @@ func (obItem *HandlerItem) BeforeCreate(scope *gorm.Scope) error {
 }
 
 // ############# Entity interface #############
-func (obItem HandlerItem) getId() uint { return obItem.ID }
+func (obItem HandlerItem) GetId() uint { return obItem.ID }
 func (obItem *HandlerItem) setId(id uint) { obItem.ID = id }
 func (obItem HandlerItem) GetAccountId() uint { return obItem.AccountID }
 func (obItem *HandlerItem) setAccountId(id uint) { obItem.AccountID = id }

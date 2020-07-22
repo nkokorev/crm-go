@@ -31,7 +31,7 @@ func (eventItem *EventItem) BeforeCreate(scope *gorm.Scope) error {
 }
 
 // ############# Entity interface #############
-func (eventItem EventItem) getId() uint { return eventItem.ID }
+func (eventItem EventItem) GetId() uint { return eventItem.ID }
 func (eventItem *EventItem) setId(id uint) { eventItem.ID = id }
 func (eventItem EventItem) GetAccountId() uint { return eventItem.AccountID }
 func (eventItem *EventItem) setAccountId(id uint) { eventItem.AccountID = id }

@@ -1,31 +1,53 @@
 package models
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
+	"github.com/satori/go.uuid"
+	"net/http"
+	"strings"
 )
 
 type YandexPayment struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
+	HashID 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
+	
 	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя интеграции
-	
+
+	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя интеграции магазина "<name>"
+
+	// ####### API YandexPayment ####### //
+
+	// Для авторизации Basic Auth: username:password
 	ApiKey	string	`json:"apiKey" gorm:"type:varchar(128);"` // ApiKey от яндекс кассы
-	ShopId	uint	`json:"shopId" gorm:"type:int;"` // shop id от яндекс кассы
+	ShopId	string	`json:"shopId" gorm:"type:int;"` // shop id от яндекс кассы
 
-	Code		WebHookType `json:"code" gorm:"type:varchar(128);default:''"` // Имя события
+	// URL для уведомлений со стороны Я.Кассы.
+	URL		string 	`json:"url" gorm:"type:varchar(255);"`
+	EnabledIncomingNotifications 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // обрабатывать ли уведомления от Я.Кассы.
+	// ####### Внутренние данные ####### //
 
+	// Возврат после платежа или отмена для пользователя
+	ReturnUrl		string 	`json:"returnUrl" gorm:"type:varchar(255);"`
+
+	// Включен ли данный способ оплаты
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // обрабатывать ли вебхук
-	
 	Description 		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
-	URL 		string 	`json:"url" gorm:"type:varchar(255);"` // вызов, который совершается
-	HttpMethod		string `json:"httpMethod" gorm:"type:varchar(15);default:'get';"` // Тип вызова (GET, POST, PUT, puth и т.д.)
-	//URLTemplate 		template.Template 	`json:"url" gorm:"type:varchar(255);"` // вызов, который совершается
+
+	// Сохранение платежных данных (с их помощью можно проводить повторные безакцептные списания ).
+	SavePaymentMethod 	bool 	`json:"savePaymentMethod" gorm:"type:bool;default:false"`
+
+	// Автоматический прием  поступившего платежа. Со стороны Я.Кассы
+	Capture	bool	`json:"capture" gorm:"type:bool;default:true"`
 }
 
 // ############# Entity interface #############
-func (yandexPayment YandexPayment) getId() uint { return yandexPayment.ID }
+func (yandexPayment YandexPayment) GetId() uint { return yandexPayment.ID }
 func (yandexPayment *YandexPayment) setId(id uint) { yandexPayment.ID = id }
 func (yandexPayment YandexPayment) GetAccountId() uint { return yandexPayment.AccountID }
 func (yandexPayment *YandexPayment) setAccountId(id uint) { yandexPayment.AccountID = id }
@@ -39,11 +61,10 @@ func (YandexPayment) PgSqlCreate() {
 }
 func (yandexPayment *YandexPayment) BeforeCreate(scope *gorm.Scope) error {
 	yandexPayment.ID = 0
+	yandexPayment.HashID = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	return nil
 }
-func (YandexPayment) TableName() string {
-	return "web_hooks"
-}
+
 
 // ######### CRUD Functions ############
 func (yandexPayment YandexPayment) create() (Entity, error)  {
@@ -175,3 +196,102 @@ func (yandexPayment YandexPayment) delete () error {
 	return db.Model(YandexPayment{}).Where("id = ?", yandexPayment.ID).Delete(yandexPayment).Error
 }
 // ######### END CRUD Functions ############
+
+
+// ########## Work function ############
+
+func (yandexPayment YandexPayment) CreatePaymentByOrder(order Order) (*Payment, error) {
+
+	_p := Payment {
+		AccountID: yandexPayment.AccountID,
+		Paid: false,
+		Amount: AmountPay{Value: float64(12),Currency: "RUB"},
+		Description:  fmt.Sprintf("Заказ №%v в магазине AiroCliamte", order.ID),  // Видит клиент
+		PaymentMethod: PaymentMethod{Type: "bank_card"},
+		Confirmation: Confirmation{Type: "redirect", ReturnUrl: yandexPayment.ReturnUrl},
+
+		// Чтобы понять какой платеж был оплачен!!!
+		Metadata: postgres.Jsonb{ RawMessage: utils.MapToRawJson(map[string]interface{}{
+			"orderId":order.ID,
+			"accountId":yandexPayment.AccountID,
+		})},
+		SavePaymentMethod: yandexPayment.SavePaymentMethod,
+		OwnerID: yandexPayment.ID,
+		Capture: yandexPayment.Capture,
+		OwnerType: "yandex_payment",
+		OrderID: order.ID,
+	}
+
+	// Вызываем
+	payment, err := yandexPayment.ExternalCreate(_p)
+	if err != nil {
+		return nil, err
+	}
+
+/*	entity, err := _p.create()
+	if err != nil {
+		return nil, err
+	}
+	payment := entity.(*Payment)*/
+
+	return payment, nil
+}
+
+func (yandexPayment YandexPayment) ExternalCreate(payment Payment) (*Payment, error) {
+
+	fmt.Println("Вызываем yandex payment")
+	
+	url := "https://payment.yandex.net/api/v3/payments"
+
+	// Собираем данные
+	body, err := json.Marshal(payment)
+	if err != nil {
+		fmt.Printf("Error: %s", err)
+		return nil, err;
+	}
+	fmt.Println("Request: ", string(body))
+
+	// var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
+
+	//
+	uuidV4, err := uuid.NewV4()
+	if err != nil {
+		fmt.Printf("Something went wrong: %s", err)
+		return nil, utils.Error{Message: "Не удалось создать UUID для создания платежа"}
+	}
+
+	// crate new request
+	request, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, utils.Error{Message: "Не удалось создать http-запрос для создания платежа"}
+	}
+
+	request.Header.Set("Idempotence-Key", uuidV4.String())
+	request.Header.Set("Content-Type", "application/json")
+	request.SetBasicAuth(yandexPayment.ShopId, yandexPayment.ApiKey)
+
+	// Делаем вызов
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, utils.Error{Message: fmt.Sprintf("Ошибка запроса для Yandex кассы: %v", err)}
+	}
+	defer response.Body.Close()
+
+	fmt.Println("======= Код ответа: ", response.Status)
+	// fmt.Println("======= Запрос Body: ", response.Body)
+	fmt.Println("========================")
+
+	// var responseRequest Payment
+	var responseRequest map[string]interface{}
+	if err := json.NewDecoder(response.Body).Decode(&responseRequest); err != nil {
+		return nil, utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы: %v", err)}
+	}
+
+	fmt.Println("Обработанный ответ: ", responseRequest)
+
+
+	// todo: тут мы создаем payment, если все хорошо
+
+	return &payment, nil
+}

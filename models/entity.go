@@ -9,7 +9,7 @@ import (
 
 type Entity interface {
 
-	getId() uint
+	GetId() uint
 	setId(id uint)
 	GetAccountId() uint
 	setAccountId(id uint)

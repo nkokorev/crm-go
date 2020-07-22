@@ -24,7 +24,6 @@ func main() {
 	pool.DB().SetMaxIdleConns(10)
 	pool.DB().SetMaxOpenConns(10)
 
-
 	// base.RefreshTablesPart_I()
 	// base.RefreshTablesPart_II()
 	// base.UploadTestDataPart_I()
@@ -34,6 +33,10 @@ func main() {
 	// base.LoadProductCategoryDescriptionAiroClimate()
 	// base.UploadTestDataPart_II()
 	// base.UploadTestDataPart_III()
+
+	// yandex payment
+	base.RefreshTablesPart_IV()
+	base.UploadTestDataPart_IV()
 
 	if err := (models.EventListener{}).ReloadEventHandlers(); err != nil {
 		log.Fatal(fmt.Sprintf("Не удалось зарегистрировать EventHandler: %v", err))

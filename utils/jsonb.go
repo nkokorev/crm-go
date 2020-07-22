@@ -91,3 +91,19 @@ func ParseJSONBToString(jsonb postgres.Jsonb) []string {
 	return data
 }
 
+
+func ParseJSONBToMapString(jsonb postgres.Jsonb) map[string]interface{} {
+
+	var data map[string]interface{}
+
+	b, err := jsonb.MarshalJSON()
+	if err != nil {
+		return data
+	}
+
+	if err := json.Unmarshal(b, &data); err != nil {
+		return data
+	}
+
+	return data
+}

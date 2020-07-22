@@ -63,7 +63,7 @@ type WebHook struct {
 }
 
 // ############# Entity interface #############
-func (webHook WebHook) getId() uint { return webHook.ID }
+func (webHook WebHook) GetId() uint { return webHook.ID }
 func (webHook *WebHook) setId(id uint) { webHook.ID = id }
 func (webHook WebHook) GetAccountId() uint { return webHook.AccountID }
 func (webHook *WebHook) setAccountId(id uint) { webHook.AccountID = id }
@@ -78,9 +78,6 @@ func (WebHook) PgSqlCreate() {
 func (webHook *WebHook) BeforeCreate(scope *gorm.Scope) error {
 	webHook.ID = 0
 	return nil
-}
-func (WebHook) TableName() string {
-	return "web_hooks"
 }
 
 // ######### CRUD Functions ############

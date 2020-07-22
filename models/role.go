@@ -74,7 +74,7 @@ func (role *Role) BeforeCreate(scope *gorm.Scope) error {
 
 
 // ############# Entity interface #############
-func (role Role) getId() uint { return role.ID }
+func (role Role) GetId() uint { return role.ID }
 func (role *Role) setId(id uint) { role.ID = id }
 func (role Role) GetAccountId() uint { return role.AccountID }
 func (role *Role) setAccountId(id uint) { role.AccountID = id }

@@ -41,7 +41,7 @@ func (WebSite) PgSqlCreate() {
 }
 
 // ############# Entity interface #############
-func (webSite WebSite) getId() uint { return webSite.ID }
+func (webSite WebSite) GetId() uint { return webSite.ID }
 func (webSite *WebSite) setId(id uint) { webSite.ID = id }
 func (webSite WebSite) GetAccountId() uint { return webSite.AccountID }
 func (webSite *WebSite) setAccountId(id uint) { webSite.AccountID = id }
@@ -412,7 +412,7 @@ func (webSite WebSite) GetDelivery(code string, methodId uint) (Delivery, error)
 	// Ищем наш вариант доставки
 	var delivery Delivery
 	for _,v := range deliveries {
-		if v.GetCode() == code && v.getId() == methodId {
+		if v.GetCode() == code && v.GetId() == methodId {
 			delivery = v
 			break
 		}

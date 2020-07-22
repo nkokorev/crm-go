@@ -7,7 +7,8 @@ import (
 )
 
 /**
-* [UI-API] - группа роутов для работы публичного UI/API через ui.api.ratuscrm.com
+* [UI-API] - группа роутов для работы публичного UI/API через ui.api.ratuscrm.com.
+* Авторизации по-умолчанию не требуется!!!
 *
 * В контексте issuerAccountId = accountId всегда, т.к. доступ к нескольким аккаунтам не предусматриваются.
 
@@ -28,5 +29,12 @@ var UiApiRoutes = func (rFree *mux.Router) {
 
 	rFree.HandleFunc("/web-sites/{webSiteId:[0-9]+}/deliveries-list-options", uiApiCr.DeliveryListOptions).Methods(http.MethodGet, http.MethodOptions)
 
+
+	// YandexPayment
+	// Адрес для вебхуков от Яндекс.Кассы. Код ответа 200 в случае обработки.
+	// rFree.HandleFunc("/payments/yandex-payment/{yandexPayment:[0-9]+}/notifications/", uiApiCr.DeliveryListOptions).Methods(http.MethodGet, http.MethodOptions)
+
+	// вставляется hashId магазина, а не id - чтобы защититься от атак.
+	rFree.HandleFunc("/yandex-payment/{yandexPaymentHashId:[0-9]+}/notifications/", uiApiCr.DeliveryListOptions).Methods(http.MethodGet, http.MethodOptions)
 
 }

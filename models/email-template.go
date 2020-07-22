@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fatih/structs"
-	"github.com/jackc/pgtype"
 	"github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
 	"github.com/toorop/go-dkim"
 	"html/template"
@@ -31,12 +31,13 @@ type EmailTemplate struct {
 	Description	string 	`json:"description" gorm:"type:varchar(255);default:''"` // краткое назначение письма
 	PreviewText string 	`json:"previewText" gorm:"type:varchar(255);default:''"` // превью текст может использоваться, да
 
-	Data string `json:"data, omitempty" gorm:"type:text;"` // сам шаблон письма
+	HTMLData string `json:"htmlData" gorm:"type:text;"` // сам шаблон письма
 
 	Public bool `json:"public" gorm:"type:bool;"` // показывать ли на домене public
 
 	// User *User `json:"-" sql:"-"` // Пользователь, который получит сообщение
-	Json pgtype.JSON `json:"json" gorm:"type:json;default:'{\"Example\":\"Тестовые данные в формате json\"}'"`
+	// Json pgtype.JSON `json:"json" gorm:"type:json;default:'{\"Example\":\"Тестовые данные в формате json\"}'"`
+	JsonData postgres.Jsonb `json:"jsonData" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 
 	// GORM vars
 	CreatedAt time.Time  `json:"createdAt"`
@@ -52,12 +53,12 @@ func (EmailTemplate) PgSqlCreate() {
 }
 
 // ############# Entity interface #############
-func (emailTemplate EmailTemplate) getId() uint { return emailTemplate.ID }
+func (emailTemplate EmailTemplate) GetId() uint { return emailTemplate.ID }
 func (emailTemplate *EmailTemplate) setId(id uint) { emailTemplate.ID = id }
 func (emailTemplate EmailTemplate) GetAccountId() uint { return emailTemplate.AccountID }
 func (emailTemplate *EmailTemplate) setAccountId(id uint) { emailTemplate.AccountID = id }
 func (EmailTemplate) systemEntity() bool { return false }
-func (emailTemplate EmailTemplate) GetData() string { return emailTemplate.Data }
+func (emailTemplate EmailTemplate) GetData() string { return emailTemplate.HTMLData }
 // ############# Entity interface #############
 
 func (et *EmailTemplate) BeforeCreate(scope *gorm.Scope) error {
@@ -188,7 +189,10 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 
 func (et *EmailTemplate) update(input map[string]interface{}) error {
 	// return db.Model(&EmailTemplate{}).Where("id = ?", et.ID).Omit("id", "account_id").Update(input).Error
-	return db.Model(et).Where("id = ?", et.ID).Omit("id", "account_id").Updates(input).Error
+
+	input = utils.FixJSONB_String(input, []string{"jsonData"})
+
+	return db.Model(et).Omit("id", "account_id").Updates(input).Error
 }
 
 
@@ -227,11 +231,16 @@ func (Account) EmailTemplateGetSharedByHashID(hashId string) (*EmailTemplate, er
 func (et EmailTemplate) PrepareViewData(data map[string]interface{}) (*ViewData, error) {
 
 	// 1. Готовим JSON
-	jsonMap := make(map[string]interface{})
+	// WORK OLD !!!
+	/*jsonMap := make(map[string]interface{})
 	err := et.Json.AssignTo(&jsonMap)
 	if err != nil {
 		return nil, errors.New("Json data not valid")
-	}
+	}*/
+
+	jsonMap := make(map[string]interface{})
+	jsonMap = utils.ParseJSONBToMapString(et.JsonData)
+
 
 	return &ViewData{
 		TemplateName: et.Name, // ? надо ли?
@@ -246,7 +255,7 @@ func (et EmailTemplate) GetHTML(viewData *ViewData) (html string, err error) {
 
 	body := new(bytes.Buffer)
 
-	tmpl, err := template.New(et.Name).Parse(et.Data)
+	tmpl, err := template.New(et.Name).Parse(et.HTMLData)
 	if err != nil {
 		return "", err
 	}

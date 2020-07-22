@@ -50,7 +50,7 @@ func (eventListener *EventListener) BeforeCreate(scope *gorm.Scope) error {
 }
 
 // ############# Entity interface #############
-func (eventListener EventListener) getId() uint { return eventListener.ID }
+func (eventListener EventListener) GetId() uint { return eventListener.ID }
 func (eventListener *EventListener) setId(id uint) { eventListener.ID = id }
 func (eventListener EventListener) GetAccountId() uint { return eventListener.AccountID }
 func (eventListener *EventListener) setAccountId(id uint) { eventListener.AccountID = id }
