@@ -1649,8 +1649,8 @@ func UploadTestDataPart_IV()  {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
-	// Создаем метод платежки
-/*	entityPayment, err := airoAccount.CreateEntity(
+	// Создаем Yandex платежки
+	entityPayment, err := airoAccount.CreateEntity(
 		&models.YandexPayment{
 			Name:   "Прием платежей через интернет-магазин airoclimate.ru",
 			ApiKey: "test_f56EEL_m2Ky7CJnnRjSpb4JLMhiGoGD3X6ScMHGPruM",
@@ -1668,7 +1668,7 @@ func UploadTestDataPart_IV()  {
 	var yandexPayment models.YandexPayment
 	if err = airoAccount.LoadEntity(&yandexPayment,entityPayment.GetId()); err != nil {
 		log.Fatalf("Не удалось найти entityPayment: ", err)
-	}*/
+	}
 
 	// Создаем заказ (Order)
 	entity, err := airoAccount.CreateEntity(&models.Order{Description: "Заказ товаров в магазине AiroClimate"})
@@ -1682,7 +1682,7 @@ func UploadTestDataPart_IV()  {
 
 	///////////////
 
-	yandexPayment := models.YandexPayment{
+	/*yandexPayment := models.YandexPayment{
 		Name:   "Прием платежей через интернет-магазин airoclimate.ru",
 		ApiKey: "test_f56EEL_m2Ky7CJnnRjSpb4JLMhiGoGD3X6ScMHGPruM",
 		ShopId: "730509",
@@ -1692,7 +1692,7 @@ func UploadTestDataPart_IV()  {
 		Description: "-",
 		SavePaymentMethod: false,
 		Capture: false,
-	}
+	}*/
 
 	_, err = yandexPayment.CreatePaymentByOrder(order)
 	if err != nil {

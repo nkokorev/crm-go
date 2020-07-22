@@ -205,7 +205,7 @@ func (yandexPayment YandexPayment) CreatePaymentByOrder(order Order) (*Payment, 
 	_p := Payment {
 		AccountID: yandexPayment.AccountID,
 		Paid: false,
-		Amount: AmountPay{Value: float64(12),Currency: "RUB"},
+		Amount: Amount{Value: float64(12),Currency: "RUB"},
 		Description:  fmt.Sprintf("Заказ №%v в магазине AiroCliamte", order.ID),  // Видит клиент
 		PaymentMethod: PaymentMethod{Type: "bank_card"},
 		Confirmation: Confirmation{Type: "redirect", ReturnUrl: yandexPayment.ReturnUrl},
@@ -222,52 +222,45 @@ func (yandexPayment YandexPayment) CreatePaymentByOrder(order Order) (*Payment, 
 		OrderID: order.ID,
 	}
 
-	// Вызываем
-	payment, err := yandexPayment.ExternalCreate(_p)
+	// создаем внутри платеж
+	entity, err := _p.create()
 	if err != nil {
 		return nil, err
 	}
+	payment := entity.(*Payment)
 
-/*	entity, err := _p.create()
+	// Вызываем Yandex для созданного платежа
+	err = yandexPayment.ExternalCreate(payment)
 	if err != nil {
 		return nil, err
 	}
-	payment := entity.(*Payment)*/
 
 	return payment, nil
 }
 
-func (yandexPayment YandexPayment) ExternalCreate(payment Payment) (*Payment, error) {
+func (yandexPayment YandexPayment) ExternalCreate(payment *Payment) error {
 
 	fmt.Println("Вызываем yandex payment")
 	
 	url := "https://payment.yandex.net/api/v3/payments"
 
-	// Собираем данные
-	// buffer := new(bytes.Buffer)
+	// Собираем JSON данные
 	body, err := json.Marshal(payment)
 	if err != nil {
-		fmt.Printf("Error: %s", err)
-		return nil, err;
+		return err;
 	}
 	fmt.Println("Request: ", string(body))
 
-	// buffer.WriteString(string(body))
-
-	// var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
-
-	//
 	uuidV4, err := uuid.NewV4()
 	if err != nil {
 		fmt.Printf("Something went wrong: %s", err)
-		return nil, utils.Error{Message: "Не удалось создать UUID для создания платежа"}
+		return utils.Error{Message: "Не удалось создать UUID для создания платежа"}
 	}
 
 	// crate new request
-	// request, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, utils.Error{Message: "Не удалось создать http-запрос для создания платежа"}
+		return utils.Error{Message: "Не удалось создать http-запрос для создания платежа"}
 	}
 
 	request.Header.Set("Idempotence-Key", uuidV4.String())
@@ -278,24 +271,30 @@ func (yandexPayment YandexPayment) ExternalCreate(payment Payment) (*Payment, er
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		return nil, utils.Error{Message: fmt.Sprintf("Ошибка запроса для Yandex кассы: %v", err)}
+		return utils.Error{Message: fmt.Sprintf("Ошибка запроса для Yandex кассы: %v", err)}
 	}
 	defer response.Body.Close()
 
 	fmt.Println("======= Код ответа: ", response.Status)
-	// fmt.Println("======= Запрос Body: ", response.Body)
+	fmt.Println("======= Запрос Body: ", response.Body)
 	fmt.Println("========================")
 
 	// var responseRequest Payment
 	var responseRequest map[string]interface{}
 	if err := json.NewDecoder(response.Body).Decode(&responseRequest); err != nil {
-		return nil, utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы: %v", err)}
+		return utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы: %v", err)}
 	}
 
+/*	if err = payment.update(responseRequest); err != nil {
+		fmt.Println(err)
+		return utils.Error{Message: "Ошибка сохранения responseRequest от Яндекс кассы"}
+	}*/
+
 	fmt.Println("Обработанный ответ: ", responseRequest)
+	fmt.Println("Обновленный payment: ", payment)
 
 
 	// todo: тут мы создаем payment, если все хорошо
 
-	return &payment, nil
+	return nil
 }

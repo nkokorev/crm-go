@@ -43,7 +43,7 @@ type Transfers struct {
 	AccountId	string	`json:"account_id" gorm:"type:varchar(32);default:''"`
 
 	// Код авторизации банковской карты. Выдается эмитентом и подтверждает проведение авторизации.
-	Amount	Amount	`json:"amount"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+	Amount	Amount	`json:"amount" ` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
 	Status	string	`json:"status" gorm:"type:varchar(50);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
 }
 
@@ -64,7 +64,7 @@ type Payment struct {
 	// объем платежа по факту
 	// AmountValue 	float64	`json:"amountValue" gorm:"type:numeric;default:0"`
 	// AmountCurrency 	string 	`json:"amountCurrency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
-	Amount  Amount	`json:"amount"`
+	Amount  Amount	`json:"amount" gorm:"type:JSONB;"`
 
 	// Каков "приход" за вычетом комиссии посредника.
 	// IncomeValue 	float64 `json:"incomeValue" gorm:"type:numeric;default:0"`
@@ -84,7 +84,7 @@ type Payment struct {
 	// Нужен, если вы разделяете потоки платежей в рамках одного аккаунта или создаете платеж в адрес другого аккаунта.
 	// RecipientAccountId	string	`json:"recipientAccountId" gorm:"type:varchar(255);default:''"` // Идентификатор магазина в Яндекс.Кассе.
 	// RecipientGatewayId	string	`json:"recipientGatewayId" gorm:"type:varchar(255);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
-	Recipient	Recipient `json:"recipient" gorm:"type:varchar(255);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+	Recipient	Recipient `json:"_recipient"`
 
 	// Способ оплаты платежа = {type:"bank_card", id:"", saved:true, card:""}. Может быть и другой платеж, в зависимости от OwnerType
 	// PaymentMethod	postgres.Jsonb	`json:"paymentMethod" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
@@ -118,7 +118,7 @@ type Payment struct {
 	AuthorizationDetails	AuthorizationDetails	`json:"authorizationDetails"`
 
 	// Данные о распределении денег {account_id:"", amount:"", status:"[waiting_for_capture, succeeded, canceled]"}
-	Transfers	Transfers	`json:"transfers" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	Transfers	Transfers	`json:"_transfers"`
 
 	// #### Внутренние данные #####
 
@@ -280,8 +280,7 @@ func (Payment) getByEvent(eventName string) (*Payment, error) {
 }
 
 func (payment *Payment) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).
-		Model(payment).Where("id", payment.ID).Omit("id", "account_id").Updates(input).Error
+	return db.Model(payment).Where("id", payment.ID).Omit("id", "account_id").Updates(input).Error
 }
 
 func (payment Payment) delete () error {
