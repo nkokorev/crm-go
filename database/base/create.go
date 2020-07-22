@@ -68,12 +68,18 @@ func RefreshTablesPart_I() {
 
 	pool := models.GetPool()
 
+	// not there
+	pool.DropTableIfExists(models.Order{}, models.Payment{},models.YandexPayment{})
+
+
 	pool.DropTableIfExists(models.Product{}, models.ProductCard{}, models.ProductGroup{})
 	pool.DropTableIfExists(models.EmailNotification{}, models.EmailBox{}, models.WebSite{},models.EmailTemplate{})
-	pool.DropTableIfExists(models.WebHook{}, models.EventListener{}, models.EventItem{},models.HandlerItem{}, models.Order{}, models.DeliveryPickup{}, models.DeliveryRussianPost{}, models.DeliveryCourier{})
+	pool.DropTableIfExists(models.WebHook{}, models.EventListener{}, models.EventItem{},models.HandlerItem{}, models.DeliveryPickup{}, models.DeliveryRussianPost{}, models.DeliveryCourier{})
 
 	pool.DropTableIfExists(models.Article{}, models.Storage{}, models.UnitMeasurement{}, models.ApiKey{}, models.AccountUser{}, models.User{})
 	pool.DropTableIfExists(models.Role{}, models.UserVerificationMethod{}, models.Account{}, models.CrmSetting{})
+
+
 
 	models.CrmSetting{}.PgSqlCreate()
 
@@ -89,6 +95,8 @@ func RefreshTablesPart_I() {
 	models.Storage{}.PgSqlCreate()
 	models.Article{}.PgSqlCreate()
 
+
+
 	/////////////////////
 
 	models.WebSite{}.PgSqlCreate()
@@ -99,14 +107,16 @@ func RefreshTablesPart_I() {
 	models.ProductCard{}.PgSqlCreate()
 	models.Product{}.PgSqlCreate()
 
-	models.Order{}.PgSqlCreate()
 	models.DeliveryRussianPost{}.PgSqlCreate()
 	models.DeliveryPickup{}.PgSqlCreate()
 	models.DeliveryCourier{}.PgSqlCreate()
 
+
+
 	models.HandlerItem{}.PgSqlCreate()
 	models.EventItem{}.PgSqlCreate()
 	models.EventListener{}.PgSqlCreate()
+
 
 	models.WebHook{}.PgSqlCreate()
 
@@ -1280,23 +1290,23 @@ func UploadTestDataPart_III() {
 
 	els := []models.EventListener {
 		// товар
-		{Name: "Добавление товара на сайт", EventID: 6, HandlerID: 2, EntityId: 3, Enabled: true},
-		{Name: "Обновление товара на сайте", EventID: 7, HandlerID: 2, EntityId: 3, Enabled: true},
-		{Name: "Обновление товара на сайте", EventID: 8, HandlerID: 2, EntityId: 6, Enabled: true},
+		{Name: "Добавление товара на сайт", EventID: 6, HandlerID: 2, EntityID: 3, Enabled: true},
+		{Name: "Обновление товара на сайте", EventID: 7, HandlerID: 2, EntityID: 3, Enabled: true},
+		{Name: "Обновление товара на сайте", EventID: 8, HandlerID: 2, EntityID: 6, Enabled: true},
 
 		// Карточки товара
-		{Name: "Обновление карточек товара", EventID: 9, HandlerID: 2, EntityId: 8, Enabled: true},
-		{Name: "Обновление карточек товара", EventID: 10, HandlerID: 2, EntityId: 9, Enabled: true},
-		{Name: "Обновление карточек товара", EventID: 11, HandlerID: 2, EntityId: 10, Enabled: true},
+		{Name: "Обновление карточек товара", EventID: 9, HandlerID: 2, EntityID: 8, Enabled: true},
+		{Name: "Обновление карточек товара", EventID: 10, HandlerID: 2, EntityID: 9, Enabled: true},
+		{Name: "Обновление карточек товара", EventID: 11, HandlerID: 2, EntityID: 10, Enabled: true},
 
 		// Магазин (WebSite)
-		{Name: "Обновление данных магазина", EventID: 16, HandlerID: 2, EntityId: 2, Enabled: true},
-		{Name: "Обновление данных магазина", EventID: 17, HandlerID: 2, EntityId: 3, Enabled: true},
+		{Name: "Обновление данных магазина", EventID: 16, HandlerID: 2, EntityID: 2, Enabled: true},
+		{Name: "Обновление данных магазина", EventID: 17, HandlerID: 2, EntityID: 3, Enabled: true},
 
 		// Статьи
-		{Name: "Обновление статей на сайте", EventID: 21, HandlerID: 2, EntityId: 16, Enabled: true},
-		{Name: "Обновление статей на сайте", EventID: 22, HandlerID: 2, EntityId: 17, Enabled: true},
-		{Name: "Обновление статей на сайте", EventID: 23, HandlerID: 2, EntityId: 18, Enabled: true},
+		{Name: "Обновление статей на сайте", EventID: 21, HandlerID: 2, EntityID: 16, Enabled: true},
+		{Name: "Обновление статей на сайте", EventID: 22, HandlerID: 2, EntityID: 17, Enabled: true},
+		{Name: "Обновление статей на сайте", EventID: 23, HandlerID: 2, EntityID: 18, Enabled: true},
 
 	}
 	for i := range els {
@@ -1328,27 +1338,27 @@ func UploadTestDataPart_III() {
 		{Name: "Delete webSite", Code: models.EventShopDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/web-sites", HttpMethod: http.MethodDelete},
 
 		// Product
-		{Name: "Create product", Code: models.EventProductCreated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productId}}", HttpMethod: http.MethodPost},
-		{Name: "Update product", Code: models.EventProductUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productId}}", HttpMethod: http.MethodPatch},
-		{Name: "Delete product", Code: models.EventProductDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productId}}", HttpMethod: http.MethodDelete},
+		{Name: "Create product", Code: models.EventProductCreated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productID}}", HttpMethod: http.MethodPost},
+		{Name: "Update product", Code: models.EventProductUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productID}}", HttpMethod: http.MethodPatch},
+		{Name: "Delete product", Code: models.EventProductDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productID}}", HttpMethod: http.MethodDelete},
 		{Name: "Upload all products", Code: models.EventProductsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/products", HttpMethod: http.MethodGet},
 
 		// ProductCard
-		{Name: "Create product card", Code: models.EventProductCardCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.productCardId}}", HttpMethod: http.MethodPost},
-		{Name: "Update product card", Code: models.EventProductCardUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.productCardId}}", HttpMethod: http.MethodPatch},
-		{Name: "Delete product card", Code: models.EventProductCardDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.productCardId}}", HttpMethod: http.MethodDelete},
+		{Name: "Create product card", Code: models.EventProductCardCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.productCardID}}", HttpMethod: http.MethodPost},
+		{Name: "Update product card", Code: models.EventProductCardUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.productCardID}}", HttpMethod: http.MethodPatch},
+		{Name: "Delete product card", Code: models.EventProductCardDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.productCardID}}", HttpMethod: http.MethodDelete},
 		{Name: "Upload all product cards", Code: models.EventProductCardsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards", HttpMethod: http.MethodGet},
 
 		// Groups
-		{Name: "Create product group", Code: models.EventProductGroupCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupId}}", HttpMethod: http.MethodPost},
-		{Name: "Update product group", Code: models.EventProductGroupUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupId}}", HttpMethod: http.MethodPatch},
-		{Name: "Delete product group", Code: models.EventProductGroupDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupId}}", HttpMethod: http.MethodDelete},
+		{Name: "Create product group", Code: models.EventProductGroupCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupID}}", HttpMethod: http.MethodPost},
+		{Name: "Update product group", Code: models.EventProductGroupUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupID}}", HttpMethod: http.MethodPatch},
+		{Name: "Delete product group", Code: models.EventProductGroupDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupID}}", HttpMethod: http.MethodDelete},
 		{Name: "Upload all product groups", Code: models.EventProductGroupsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups", HttpMethod: http.MethodGet},
 
 		// Articles
-		{Name: "Create article", Code: models.EventArticleCreated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleId}}", HttpMethod: http.MethodPost},
-		{Name: "Update article", Code: models.EventArticleUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleId}}", HttpMethod: http.MethodPatch},
-		{Name: "Delete article", Code: models.EventArticleDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleId}}", HttpMethod: http.MethodDelete},
+		{Name: "Create article", Code: models.EventArticleCreated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleID}}", HttpMethod: http.MethodPost},
+		{Name: "Update article", Code: models.EventArticleUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleID}}", HttpMethod: http.MethodPatch},
+		{Name: "Delete article", Code: models.EventArticleDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleID}}", HttpMethod: http.MethodDelete},
 		{Name: "Upload all articles", Code: models.EventArticlesUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/articles", HttpMethod: http.MethodGet},
 
 	}
@@ -1388,22 +1398,22 @@ func UploadTestDataPart_III() {
 	num7 := uint(7)
 	emailNotifications := []models.EmailNotification {
 		{
-			Enabled: false, Delay: 0, Name:"Новый заказ", Description: "Оповещение менеджеров о новом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
+			Enabled: false, Delay: 0, Name:"Новый заказ", Description: "Оповещение менеджеров о новом заказе", EmailTemplateID: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-marketing.ru"})},
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{2,6,7})},
-			EmailBoxId: &num5,
+			EmailBoxID: &num5,
 
 		},
 		{
-			Enabled: false, Delay: 0, Name:"Ваш заказ получен!", Description: "Информирование клиента о принятом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
+			Enabled: false, Delay: 0, Name:"Ваш заказ получен!", Description: "Информирование клиента о принятом заказе", EmailTemplateID: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"mex388@gmail.com"})},
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{7})},
-			EmailBoxId: &num6,
+			EmailBoxID: &num6,
 		},
 		{
-			Enabled: true, Delay: 0, Name:"*Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
+			Enabled: true, Delay: 0, Name:"*Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateID: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-marketing.ru"})},
-			EmailBoxId: &num7,
+			EmailBoxID: &num7,
 		},
 
 	}
@@ -1462,8 +1472,6 @@ func LoadImagesAiroClimate(count int)  {
 				MIME: mimeType,
 				Size: uint(file.Size()),
 				Priority: 0,
-				//OwnerID: uint(index),
-				//EmailId: uint(emailId),
 			}
 			file, err := account.StorageCreateFile(&fs)
 			if err != nil {
@@ -1569,12 +1577,12 @@ func LoadProductDescriptionAiroClimate()  {
 
 		// fmt.Println("article:", file.Name())
 		split := strings.Split(file.Name(), ".")
-		fileId, err := strconv.ParseUint(split[0], 10, 64)
+		fileID, err := strconv.ParseUint(split[0], 10, 64)
 		if err != nil {
 			log.Fatalf("unable to read id file name: %v", err)
 		}
 		
-		_, err = account.UpdateProduct(uint(fileId), map[string]interface{}{"Description":string(body)})
+		_, err = account.UpdateProduct(uint(fileID), map[string]interface{}{"Description":string(body)})
 		if err != nil {
 			log.Fatalf("unable to update product: %v", err)
 		}
@@ -1649,12 +1657,12 @@ func UploadTestDataPart_IV()  {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
-	// Создаем Yandex платежки
+	// Создаем способ оплаты YandexPayment
 	entityPayment, err := airoAccount.CreateEntity(
 		&models.YandexPayment{
 			Name:   "Прием платежей через интернет-магазин airoclimate.ru",
 			ApiKey: "test_f56EEL_m2Ky7CJnnRjSpb4JLMhiGoGD3X6ScMHGPruM",
-			ShopId: "730509",
+			ShopID: "730509",
 			URL: "https://ui.api.ratuscrm.com/yandex-payment/dasdasdsa/notifications",
 			ReturnUrl: "https://airoclimate.ru/payment-return",
 			Enabled: true,
@@ -1666,7 +1674,7 @@ func UploadTestDataPart_IV()  {
 		log.Fatalf("Не удалось создать entityPayment: ", err)
 	}
 	var yandexPayment models.YandexPayment
-	if err = airoAccount.LoadEntity(&yandexPayment,entityPayment.GetId()); err != nil {
+	if err = airoAccount.LoadEntity(&yandexPayment,entityPayment.GetID()); err != nil {
 		log.Fatalf("Не удалось найти entityPayment: ", err)
 	}
 
@@ -1676,34 +1684,18 @@ func UploadTestDataPart_IV()  {
 		log.Fatalf("Не удалось создать заказ: ", err)
 	}
 	var order models.Order
-	if err = airoAccount.LoadEntity(&order,entity.GetId()); err != nil {
+	if err = airoAccount.LoadEntity(&order,entity.GetID()); err != nil {
 		log.Fatalf("Не удалось найти заказ: ", err)
 	}
 
 	///////////////
 
-	/*yandexPayment := models.YandexPayment{
-		Name:   "Прием платежей через интернет-магазин airoclimate.ru",
-		ApiKey: "test_f56EEL_m2Ky7CJnnRjSpb4JLMhiGoGD3X6ScMHGPruM",
-		ShopId: "730509",
-		URL: "https://ui.api.ratuscrm.com/yandex-payment/dasdasdsa/notifications",
-		ReturnUrl: "https://airoclimate.ru/payment-return",
-		Enabled: true,
-		Description: "-",
-		SavePaymentMethod: false,
-		Capture: false,
-	}*/
 
-	_, err = yandexPayment.CreatePaymentByOrder(order)
+	// Отправляем
+/*	_, err = yandexPayment.CreatePaymentByOrder(order)
 	if err != nil {
 		log.Fatalf("Не удалось создать заказ в системе: ", err)
-	}
-
-	/*err = yandexPayment.ExternalCreate(payment)
-	if err != nil {
-		log.Fatal("Ошибка запроса: ", err)
 	}*/
 
-    // fmt.Println("Закза создан: ", payment)
     fmt.Println("Закза создан: ")
 }

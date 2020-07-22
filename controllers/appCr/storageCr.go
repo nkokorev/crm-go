@@ -48,32 +48,32 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println("File name: ", header.Filename)
 
 	// Собираем всякие мета данные загружаемого файла для его предназначения
-	/*var productId uint64
-	productSTR := r.FormValue("productId")
+	/*var productID uint64
+	productSTR := r.FormValue("productID")
 	if productSTR != "" {
-		productId, err = strconv.ParseUint(productSTR, 10, 64)
+		productID, err = strconv.ParseUint(productSTR, 10, 64)
 		if err != nil {
 			fmt.Println(err)
-			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка чтения данных о файле productId"}))
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка чтения данных о файле productID"}))
 			return
 		}
 	}
 
-	var emailId uint64
-	emailSTR := r.FormValue("emailId")
+	var emailID uint64
+	emailSTR := r.FormValue("emailID")
 	if emailSTR != "" {
-		emailId, err = strconv.ParseUint(emailSTR, 10, 64)
+		emailID, err = strconv.ParseUint(emailSTR, 10, 64)
 		if err != nil {
 			fmt.Println(err)
-			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка чтения данных о файле emailId"}))
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка чтения данных о файле emailID"}))
 			return
 		}
 	}*/
 
 	// нужна отдельная привязка к файлам
-	ownerId, ok := utilsCr.GetQueryUINTVarFromGET(r, "ownerId")
-	if !ok || ownerId < 1 {
-		ownerId = 0
+	ownerID, ok := utilsCr.GetQueryUINTVarFromGET(r, "ownerID")
+	if !ok || ownerID < 1 {
+		ownerID = 0
 	}
 
 	ownerType, ok := utilsCr.GetQuerySTRVarFromGET(r, "ownerType")
@@ -84,13 +84,13 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 	// check accoount entity
 	/*switch ownerType {
 	case "products":
-		_, err = account.GetProduct(ownerId)
+		_, err = account.GetProduct(ownerID)
 		if err != nil {
 			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска товара для загрузки изображения"}))
 			return
 		}
 	case "articles":
-		_, err = account.GetArticle(ownerId)
+		_, err = account.GetArticle(ownerID)
 		if err != nil {
 			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска статьи для загрузки изображения"}))
 			return
@@ -109,7 +109,7 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		Data: buf.Bytes(),
 		MIME: header.Header.Get("Content-Type"),
 		Size: uint(header.Size),
-		// OwnerID: ownerId, // нуу хз
+		// OwnerID: ownerID, // нуу хз
 		// OwnerType: ownerType,
 	}
 
@@ -121,13 +121,13 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 
 	switch ownerType {
 	case "products":
-		err = (models.Product{ID: ownerId}).AppendAssociationImage(*_fl)
+		err = (models.Product{ID: ownerID}).AppendAssociationImage(*_fl)
 		if err != nil {
 			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска продуктадля загрузки изображения"}))
 			return
 		}
 	case "articles":
-		err = (models.Article{ID: ownerId}).AppendAssociationImage(*_fl)
+		err = (models.Article{ID: ownerID}).AppendAssociationImage(*_fl)
 		if err != nil {
 			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска статьи для загрузки изображения"}))
 			return
@@ -155,13 +155,13 @@ func StorageGetFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fileId, err := utilsCr.GetUINTVarFromRequest(r,"fileId")
+	fileID, err := utilsCr.GetUINTVarFromRequest(r,"fileID")
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
 
-	fs, err := account.StorageGet(fileId)
+	fs, err := account.StorageGet(fileID)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Получения списка"}))
 		return
@@ -186,13 +186,13 @@ func StorageGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fileId, err := utilsCr.GetUINTVarFromRequest(r,"fileId")
+	fileID, err := utilsCr.GetUINTVarFromRequest(r,"fileID")
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
 
-	fs, err := account.StorageGet(fileId)
+	fs, err := account.StorageGet(fileID)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Получения списка"}))
 		return
@@ -225,9 +225,9 @@ func StorageGetListPagination(w http.ResponseWriter, r *http.Request) {
 	}
 
 	///
-	ownerId, ok := utilsCr.GetQueryUINTVarFromGET(r, "ownerId")
-	if !ok || ownerId < 1 {
-		ownerId = 0
+	ownerID, ok := utilsCr.GetQueryUINTVarFromGET(r, "ownerID")
+	if !ok || ownerID < 1 {
+		ownerID = 0
 	}
 	ownerType, ok := utilsCr.GetQuerySTRVarFromGET(r, "ownerType")
 	if !ok {
@@ -236,7 +236,7 @@ func StorageGetListPagination(w http.ResponseWriter, r *http.Request) {
 	
 	// without Data (body of file)
 	// todo тут надо тип файлов дописать
-	files, total, err := account.StorageGetList(offset, limit, search, &ownerId, &ownerType)
+	files, total, err := account.StorageGetList(offset, limit, search, &ownerID, &ownerType)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка получения списка файлов"}))
 		return
@@ -264,13 +264,13 @@ func StorageUpdateFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get file in Data base
-	fileId, err := utilsCr.GetUINTVarFromRequest(r,"fileId")
+	fileID, err := utilsCr.GetUINTVarFromRequest(r,"fileID")
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"ID файла не найден"}))
 		return
 	}
 
-	fs, err := account.StorageGet(fileId)
+	fs, err := account.StorageGet(fileID)
 	if err != nil || fs == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
@@ -308,13 +308,13 @@ func StorageDeleteFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get file in Data base
-	fileId, err := utilsCr.GetUINTVarFromRequest(r,"fileId")
+	fileID, err := utilsCr.GetUINTVarFromRequest(r,"fileID")
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
 
-	err = account.StorageDeleteFile(fileId)
+	err = account.StorageDeleteFile(fileID)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Произошла ошибка во время удаления"}))
 		return
@@ -410,13 +410,13 @@ func StorageStore(w http.ResponseWriter, r *http.Request) {
 // ### FOR CDN ###
 func StorageCDNGet(w http.ResponseWriter, r *http.Request) {
 
-	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "hashId")
+	hashID, ok := utilsCr.GetSTRVarFromRequest(r, "hashID")
 	if !ok  {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка id file"}))
 		return
 	}
 
-	fs, err := (models.Account{}).StorageGetPublicByHashId(hashId)
+	fs, err := (models.Account{}).StorageGetPublicByHashID(hashID)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
@@ -432,13 +432,13 @@ func StorageCDNGet(w http.ResponseWriter, r *http.Request) {
 func ArticleRawPreviewCDNGet(w http.ResponseWriter, r *http.Request) {
 
 
-	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "hashId")
+	hashID, ok := utilsCr.GetSTRVarFromRequest(r, "hashID")
 	if !ok  {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка id file"}))
 		return
 	}
 
-	article, err := (models.Account{}).GetArticleSharedByHashId(hashId)
+	article, err := (models.Account{}).GetArticleSharedByHashID(hashID)
 	if err != nil {
 		fmt.Println("fdsfds", err)
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
@@ -450,13 +450,13 @@ func ArticleRawPreviewCDNGet(w http.ResponseWriter, r *http.Request) {
 
 func ArticleCompilePreviewCDNGet(w http.ResponseWriter, r *http.Request) {
 
-	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "hashId")
+	hashID, ok := utilsCr.GetSTRVarFromRequest(r, "hashID")
 	if !ok  {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка id file"}))
 		return
 	}
 
-	article, err := (models.Account{}).GetArticleSharedByHashId(hashId)
+	article, err := (models.Account{}).GetArticleSharedByHashID(hashID)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return

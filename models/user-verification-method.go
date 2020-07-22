@@ -54,7 +54,7 @@ func (uvt UserVerificationMethod) Create () (*UserVerificationMethod, error) {
 	return &uvt, nil
 }
 
-func GetUserVerificationTypeById(id uint) (*UserVerificationMethod, error) {
+func GetUserVerificationTypeByID(id uint) (*UserVerificationMethod, error) {
 	uvt := UserVerificationMethod{}
 	err := db.First(&uvt,id).Error
 	if err == gorm.ErrRecordNotFound {

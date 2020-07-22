@@ -45,14 +45,14 @@ func WebHookGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webHookId, err := utilsCr.GetUINTVarFromRequest(r, "webHookId")
+	webHookID, err := utilsCr.GetUINTVarFromRequest(r, "webHookID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID webHook"))
 		return
 	}
 
 	var webHook models.WebHook
-	err = account.LoadEntity(&webHook, webHookId)
+	err = account.LoadEntity(&webHook, webHookID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -73,14 +73,14 @@ func WebHookExecute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webHookId, err := utilsCr.GetUINTVarFromRequest(r, "webHookId")
+	webHookID, err := utilsCr.GetUINTVarFromRequest(r, "webHookID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID webHook"))
 		return
 	}
 
 	var webHook models.WebHook
-	err = account.LoadEntity(&webHook, webHookId)
+	err = account.LoadEntity(&webHook, webHookID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти вебхук"))
 		return
@@ -96,7 +96,7 @@ func WebHookListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
-	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
+	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashID}.)
 
 	account, err = utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -161,7 +161,7 @@ func WebHookUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webHookId, err := utilsCr.GetUINTVarFromRequest(r, "webHookId")
+	webHookID, err := utilsCr.GetUINTVarFromRequest(r, "webHookID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
 		return
@@ -177,12 +177,12 @@ func WebHookUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var webHook models.WebHook
-	if err = account.LoadEntity(&webHook, webHookId); err != nil {
+	if err = account.LoadEntity(&webHook, webHookID); err != nil {
 		u.Respond(w, u.MessageError(err, "WEbHook не найден"))
 		return
 	}
 
-	// webHook, err := account.UpdateWebHook(webHookId, input)
+	// webHook, err := account.UpdateWebHook(webHookID, input)
 	if err = account.UpdateEntity(&webHook, input); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -202,19 +202,19 @@ func WebHookDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webHookId, err := utilsCr.GetUINTVarFromRequest(r, "webHookId")
+	webHookID, err := utilsCr.GetUINTVarFromRequest(r, "webHookID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
 		return
 	}
 
 	var webHook models.WebHook
-	if err = account.LoadEntity(&webHook, webHookId); err != nil {
+	if err = account.LoadEntity(&webHook, webHookID); err != nil {
 		u.Respond(w, u.MessageError(err, "WEbHook не найден"))
 		return
 	}
 
-	// webHook, err := account.UpdateWebHook(webHookId, input)
+	// webHook, err := account.UpdateWebHook(webHookID, input)
 	if err = account.DeleteEntity(&webHook); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении"))
 		return

@@ -85,11 +85,11 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	defer wg.Done() // отписываемся о закрытии текущей горутины
 	defer func() {workerCount++}() // освобождаем счетчик потоков (горутин) по отправке
 
-	// todo: сделать осознанные messageID feedbackId
+	// todo: сделать осознанные messageID feedbackID
 	// todo: сделать осознанный returnPath
 	returnPath := "abuse@ratuscrm.com"
-	messageId := "1002"
-	feedBackId := "1324078:20488:trust:54854"
+	messageID := "1002"
+	feedBackID := "1324078:20488:trust:54854"
 
 	// 1. Получаем compile html из email'а
 	html, err := pkg.EmailTemplate.GetHTML(&pkg.ViewData)
@@ -99,7 +99,7 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	}
 
 	// 2. Собираем хедеры
-	headers := getHeaders(pkg.From, pkg.To, pkg.Subject, messageId, feedBackId)
+	headers := getHeaders(pkg.From, pkg.To, pkg.Subject, messageID, feedBackID)
 
 	// 3. Создаем тело сообщения с хедерами и html
 	body, err := getSignBody(headers, html, pkg.WebSite)
@@ -135,9 +135,9 @@ func skipSend(err error)  {
 	fmt.Println("Error: ", err)
 }
 
-func getHeaders(from, to mail.Address, subject string, messageId, feedbackId string) *map[string]string {
-	if len([]rune(messageId)) > 40 {
-		messageId = "101"
+func getHeaders(from, to mail.Address, subject string, messageID, feedbackID string) *map[string]string {
+	if len([]rune(messageID)) > 40 {
+		messageID = "101"
 	}
 	
 	headers := make(map[string]string)
@@ -151,11 +151,11 @@ func getHeaders(from, to mail.Address, subject string, messageId, feedbackId str
 	headers["MIME-Version"] = "1.0"
 	headers["Content-Type"] = "text/html; charset=UTF-8"
 	headers["Content-Transfer-Encoding"] = "quoted-printable"
-	headers["Feedback-ID"] = feedbackId //"1324078:20488:trust:54854"
+	headers["Feedback-ID"] = feedbackID //"1324078:20488:trust:54854"
 	// Идентификатор представляет собой 32-битное число в диапазоне от 1 до 2147483647, либо строку длиной до 40 символов, состоящую из латинских букв, цифр и символов ".-_".
 	//List-Unsubscribe-Post: List-Unsubscribe=One-Click
 	//List-Unsubscribe: <https://your-company-net/unsubscribe/example>
-	headers["Message-ID"] = messageId // номер сообщения (внутренний номер)
+	headers["Message-ID"] = messageID // номер сообщения (внутренний номер)
 	headers["Received"] = "RatusCRM"  // имя SMTP сервера
 
 	return &headers

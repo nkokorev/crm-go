@@ -4,7 +4,7 @@ package models
 type StockProduct struct {
 	ID uint	`json:"id"`
 	AccountID uint `json:"-"`
-	ProductID uint `json:"productId"`
+	ProductID uint `json:"productID"`
 
 
 	Product Product `json:"-"`

@@ -14,7 +14,7 @@ import (
 
 type YandexPayment struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
-	HashID 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
+	HashID 		string `json:"hashID" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 	
 	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
@@ -25,7 +25,7 @@ type YandexPayment struct {
 
 	// Для авторизации Basic Auth: username:password
 	ApiKey	string	`json:"apiKey" gorm:"type:varchar(128);"` // ApiKey от яндекс кассы
-	ShopId	string	`json:"shopId" gorm:"type:int;"` // shop id от яндекс кассы
+	ShopID	string	`json:"shopID" gorm:"type:int;"` // shop id от яндекс кассы
 
 	// URL для уведомлений со стороны Я.Кассы.
 	URL		string 	`json:"url" gorm:"type:varchar(255);"`
@@ -47,10 +47,10 @@ type YandexPayment struct {
 }
 
 // ############# Entity interface #############
-func (yandexPayment YandexPayment) GetId() uint { return yandexPayment.ID }
-func (yandexPayment *YandexPayment) setId(id uint) { yandexPayment.ID = id }
-func (yandexPayment YandexPayment) GetAccountId() uint { return yandexPayment.AccountID }
-func (yandexPayment *YandexPayment) setAccountId(id uint) { yandexPayment.AccountID = id }
+func (yandexPayment YandexPayment) GetID() uint { return yandexPayment.ID }
+func (yandexPayment *YandexPayment) setID(id uint) { yandexPayment.ID = id }
+func (yandexPayment YandexPayment) GetAccountID() uint { return yandexPayment.AccountID }
+func (yandexPayment *YandexPayment) setAccountID(id uint) { yandexPayment.AccountID = id }
 func (YandexPayment) systemEntity() bool { return false }
 
 // ############# Entity interface #############
@@ -101,19 +101,19 @@ func (yandexPayment *YandexPayment) load() error {
 	return nil
 }
 
-func (YandexPayment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (YandexPayment) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 
 	webHooks := make([]YandexPayment,0)
 	var total uint
 
-	err := db.Model(&YandexPayment{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+	err := db.Model(&YandexPayment{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
 		Find(&webHooks).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&YandexPayment{}).Where("account_id = ?", accountId).Count(&total).Error
+	err = db.Model(&YandexPayment{}).Where("account_id = ?", accountID).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -127,7 +127,7 @@ func (YandexPayment) getList(accountId uint, sortBy string) ([]Entity, uint, err
 	return entities, total, nil
 }
 
-func (YandexPayment) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (YandexPayment) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	webHooks := make([]YandexPayment,0)
 	var total uint
@@ -138,7 +138,7 @@ func (YandexPayment) getPaginationList(accountId uint, offset, limit int, sortBy
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&YandexPayment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&YandexPayment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -146,7 +146,7 @@ func (YandexPayment) getPaginationList(accountId uint, offset, limit int, sortBy
 
 		// Определяем total
 		err = db.Model(&YandexPayment{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountID, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -154,14 +154,14 @@ func (YandexPayment) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	} else {
 
-		err := db.Model(&YandexPayment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&YandexPayment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Find(&webHooks).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&YandexPayment{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&YandexPayment{}).Where("account_id = ?", accountID).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -212,8 +212,8 @@ func (yandexPayment YandexPayment) CreatePaymentByOrder(order Order) (*Payment, 
 
 		// Чтобы понять какой платеж был оплачен!!!
 		Metadata: postgres.Jsonb{ RawMessage: utils.MapToRawJson(map[string]interface{}{
-			"orderId":order.ID,
-			"accountId":yandexPayment.AccountID,
+			"orderID":order.ID,
+			"accountID":yandexPayment.AccountID,
 		})},
 		SavePaymentMethod: yandexPayment.SavePaymentMethod,
 		OwnerID: yandexPayment.ID,
@@ -265,7 +265,7 @@ func (yandexPayment YandexPayment) ExternalCreate(payment *Payment) error {
 
 	request.Header.Set("Idempotence-Key", uuidV4.String())
 	request.Header.Set("Content-Type", "application/json")
-	request.SetBasicAuth(yandexPayment.ShopId, yandexPayment.ApiKey)
+	request.SetBasicAuth(yandexPayment.ShopID, yandexPayment.ApiKey)
 
 	// Делаем вызов
 	client := &http.Client{}

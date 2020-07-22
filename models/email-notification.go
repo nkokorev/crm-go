@@ -25,10 +25,10 @@ type EmailNotification struct {
 	
 	Description		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
 
-	EmailTemplateId *uint 	`json:"emailTemplateId" gorm:"type:int;default:null;"` // всегда должен быть шаблон, иначе смысла в нем нет
+	EmailTemplateID *uint 	`json:"emailTemplateID" gorm:"type:int;default:null;"` // всегда должен быть шаблон, иначе смысла в нем нет
 	EmailTemplate 	EmailTemplate 	`json:"emailTemplate" gorm:"preload:true"`
 
-	EmailBoxId		*uint 	`json:"emailBoxId" gorm:"type:int;default:null;"` // С какого ящика идет отправка
+	EmailBoxID		*uint 	`json:"emailBoxID" gorm:"type:int;default:null;"` // С какого ящика идет отправка
 	EmailBox		EmailBox `json:"emailBox" gorm:"preload:false"`
 	// =============   Настройки получателей    ===================
 
@@ -41,7 +41,7 @@ type EmailNotification struct {
 	RecipientList			postgres.Jsonb	`json:"recipientList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // фиксированный список адресов, на которые будет произведено уведомление
 	
 	// Динамический список пользователей
-	ParseRecipientUsers	bool	`json:"parseRecipientUsers" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя(ей) по userId / users: ['email@mail.ru']
+	ParseRecipientUsers	bool	`json:"parseRecipientUsers" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя(ей) по userID / users: ['email@mail.ru']
 
 	// ==========================================
 
@@ -53,10 +53,10 @@ type EmailNotification struct {
 }
 
 // ############# Entity interface #############
-func (emailNotification EmailNotification) GetId() uint { return emailNotification.ID }
-func (emailNotification *EmailNotification) setId(id uint) { emailNotification.ID = id }
-func (emailNotification EmailNotification) GetAccountId() uint { return emailNotification.AccountID }
-func (emailNotification *EmailNotification) setAccountId(id uint) { emailNotification.AccountID = id }
+func (emailNotification EmailNotification) GetID() uint { return emailNotification.ID }
+func (emailNotification *EmailNotification) setID(id uint) { emailNotification.ID = id }
+func (emailNotification EmailNotification) GetAccountID() uint { return emailNotification.AccountID }
+func (emailNotification *EmailNotification) setAccountID(id uint) { emailNotification.AccountID = id }
 func (EmailNotification) systemEntity() bool { return false }
 
 // ############# Entity interface #############
@@ -137,19 +137,19 @@ func (emailNotification *EmailNotification) load() error {
 }
 
 
-func (EmailNotification) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (EmailNotification) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 
 	emailNotifications := make([]EmailNotification,0)
 	var total uint
 
-	err := db.Model(&EmailNotification{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).Preload("EmailTemplate").Preload("EmailBox").
+	err := db.Model(&EmailNotification{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).Preload("EmailTemplate").Preload("EmailBox").
 		Find(&emailNotifications).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&EmailNotification{}).Where("account_id = ?", accountId).Count(&total).Error
+	err = db.Model(&EmailNotification{}).Where("account_id = ?", accountID).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -163,7 +163,7 @@ func (EmailNotification) getList(accountId uint, sortBy string) ([]Entity, uint,
 	return entities, total, nil
 }
 
-func (EmailNotification) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (EmailNotification) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	emailNotifications := make([]EmailNotification,0)
 	var total uint
@@ -175,7 +175,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		// jsearch := search
 		search = "%"+search+"%"
 
-		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
 				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
 			}).Preload("EmailBox").
@@ -187,7 +187,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 
 		// Определяем total
 		err = db.Model(&EmailNotification{}).
-			Where("account_id = ? AND name ILIKE ? OR description ILIKE ? ", accountId, search,search).
+			Where("account_id = ? AND name ILIKE ? OR description ILIKE ? ", accountID, search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -195,7 +195,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 
 	} else {
 
-		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
 				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
 			}).Preload("EmailBox").
@@ -205,7 +205,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		}
 
 		// Определяем total
-		err = db.Model(&EmailNotification{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&EmailNotification{}).Where("account_id = ?", accountID).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -235,7 +235,7 @@ func (emailNotification *EmailNotification) update(input map[string]interface{})
 	// if err := db.Model(EmailNotification{}).Where("id = ?", emailNotification.ID).Omit("id", "account_id").Updates(input).Error; err != nil {
 	// 	return err
 	// }
-	// fmt.Println("emailNotification id", emailNotification.EmailBoxId)
+	// fmt.Println("emailNotification id", emailNotification.EmailBoxID)
 
 /*	if err := db.Model(emailNotification).
 		Omit("id", "account_id","created_at").Update(input).Error; err != nil {
@@ -268,11 +268,11 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		return utils.Error{Message: "Уведомление не может быть отправлено т.к. находится в статусе - 'Отключено'"}
 	}
 
-	emailTemplateEntity, err := EmailTemplate{}.get(*emailNotification.EmailTemplateId)
+	emailTemplateEntity, err := EmailTemplate{}.get(*emailNotification.EmailTemplateID)
 	if err != nil {
 		return err
 	}
-	if emailTemplateEntity.GetAccountId() != emailNotification.AccountID {
+	if emailTemplateEntity.GetAccountID() != emailNotification.AccountID {
 		return utils.Error{Message: "Ошибка отправления Уведомления - шаблон принадлежит другому аккаунту 2"}
 	}
 

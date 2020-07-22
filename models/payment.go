@@ -23,8 +23,8 @@ type Confirmation struct {
 }
 
 type Recipient struct {
-	AccountId	string	`json:"account_id" gorm:"type:varchar(32);default:''"` // Идентификатор магазина в Яндекс.Кассе.
-	GatewayId	string	`json:"gateway_id" gorm:"type:varchar(32);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+	AccountID	string	`json:"account_id" gorm:"type:varchar(32);default:''"` // Идентификатор магазина в Яндекс.Кассе.
+	GatewayID	string	`json:"gateway_id" gorm:"type:varchar(32);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
 }
 
 type CancellationDetails struct {
@@ -40,7 +40,7 @@ type AuthorizationDetails struct {
 }
 type Transfers struct {
 	// Retrieval Reference Number — уникальный идентификатор транзакции в системе эмитента. Используется при оплате банковской картой.
-	AccountId	string	`json:"account_id" gorm:"type:varchar(32);default:''"`
+	AccountID	string	`json:"account_id" gorm:"type:varchar(32);default:''"`
 
 	// Код авторизации банковской карты. Выдается эмитентом и подтверждает проведение авторизации.
 	Amount	Amount	`json:"amount" ` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
@@ -53,7 +53,7 @@ type Payment struct {
 	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Идентификатор платежа в Яндекс.Кассе или у другого посредника.
-	ExternalID	uint	`json:"externalId" gorm:"type:int;index;default:null"`
+	ExternalID	uint	`json:"externalID" gorm:"type:int;index;default:null"`
 
 	// статус платежа:  [pending, waiting_for_capture, succeeded и canceled]
 	Status	string	`json:"status" gorm:"type:varchar(32);not null"`
@@ -82,8 +82,8 @@ type Payment struct {
 
 	// Получатель платежа на стороне Сервиса. В Яндекс кассе это магазин и канал внутри я.кассы.
 	// Нужен, если вы разделяете потоки платежей в рамках одного аккаунта или создаете платеж в адрес другого аккаунта.
-	// RecipientAccountId	string	`json:"recipientAccountId" gorm:"type:varchar(255);default:''"` // Идентификатор магазина в Яндекс.Кассе.
-	// RecipientGatewayId	string	`json:"recipientGatewayId" gorm:"type:varchar(255);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+	// RecipientAccountID	string	`json:"recipientAccountID" gorm:"type:varchar(255);default:''"` // Идентификатор магазина в Яндекс.Кассе.
+	// RecipientGatewayID	string	`json:"recipientGatewayID" gorm:"type:varchar(255);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
 	Recipient	Recipient `json:"_recipient"`
 
 	// Способ оплаты платежа = {type:"bank_card", id:"", saved:true, card:""}. Может быть и другой платеж, в зависимости от OwnerType
@@ -126,11 +126,11 @@ type Payment struct {
 
 
 	// Внутренний ID объекта типа платежа Яндекс.Касса, кэш или у другого посредника.
-	OwnerID	uint	`json:"ownerId" gorm:"type:int"` // ID в
+	OwnerID	uint	`json:"ownerID" gorm:"type:int"` // ID в
 	// таблица или тип объекта: [yandex_payment,cash, ...] // тут надо бы доработать список
 	OwnerType	string `json:"ownerType" gorm:"type:varchar(255);default:''"`
 
-	OrderID	uint	`json:"orderId" gorm:"type:int"` // ID заказа в системе
+	OrderID	uint	`json:"orderID" gorm:"type:int"` // ID заказа в системе
 	// таблица или тип объекта: [yandex_payment,cash, ...] // тут надо бы доработать список
 
 	ExternalCapturedAt 	time.Time  `json:"externalCapturedAt"` // Время подтверждения платежа, UTC
@@ -144,10 +144,10 @@ type Payment struct {
 }
 
 // ############# Entity interface #############
-func (payment Payment) GetId() uint { return payment.ID }
-func (payment *Payment) setId(id uint) { payment.ID = id }
-func (payment Payment) GetAccountId() uint { return payment.AccountID }
-func (payment *Payment) setAccountId(id uint) { payment.AccountID = id }
+func (payment Payment) GetID() uint { return payment.ID }
+func (payment *Payment) setID(id uint) { payment.ID = id }
+func (payment Payment) GetAccountID() uint { return payment.AccountID }
+func (payment *Payment) setAccountID(id uint) { payment.AccountID = id }
 func (Payment) systemEntity() bool { return false }
 // ############# Entity interface #############
 
@@ -195,19 +195,19 @@ func (payment *Payment) load() error {
 	return nil
 }
 
-func (Payment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (Payment) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 
 	webHooks := make([]Payment,0)
 	var total uint
 
-	err := db.Model(&Payment{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+	err := db.Model(&Payment{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
 		Find(&webHooks).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&Payment{}).Where("account_id = ?", accountId).Count(&total).Error
+	err = db.Model(&Payment{}).Where("account_id = ?", accountID).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -221,7 +221,7 @@ func (Payment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return entities, total, nil
 }
 
-func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (Payment) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	webHooks := make([]Payment,0)
 	var total uint
@@ -232,7 +232,7 @@ func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Payment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&Payment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -240,7 +240,7 @@ func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 		// Определяем total
 		err = db.Model(&Payment{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountID, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -248,14 +248,14 @@ func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 
-		err := db.Model(&Payment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&Payment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Find(&webHooks).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Payment{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&Payment{}).Where("account_id = ?", accountID).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}

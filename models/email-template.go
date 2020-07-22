@@ -24,7 +24,7 @@ import (
 type EmailTemplate struct {
 
 	ID     uint   `json:"id" gorm:"primary_key"`
-	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
+	HashID string `json:"hashID" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
 
 	Name 		string	`json:"name" gorm:"type:varchar(255);not null"` // inside name of mail
@@ -53,10 +53,10 @@ func (EmailTemplate) PgSqlCreate() {
 }
 
 // ############# Entity interface #############
-func (emailTemplate EmailTemplate) GetId() uint { return emailTemplate.ID }
-func (emailTemplate *EmailTemplate) setId(id uint) { emailTemplate.ID = id }
-func (emailTemplate EmailTemplate) GetAccountId() uint { return emailTemplate.AccountID }
-func (emailTemplate *EmailTemplate) setAccountId(id uint) { emailTemplate.AccountID = id }
+func (emailTemplate EmailTemplate) GetID() uint { return emailTemplate.ID }
+func (emailTemplate *EmailTemplate) setID(id uint) { emailTemplate.ID = id }
+func (emailTemplate EmailTemplate) GetAccountID() uint { return emailTemplate.AccountID }
+func (emailTemplate *EmailTemplate) setAccountID(id uint) { emailTemplate.AccountID = id }
 func (EmailTemplate) systemEntity() bool { return false }
 func (emailTemplate EmailTemplate) GetData() string { return emailTemplate.HTMLData }
 // ############# Entity interface #############
@@ -101,29 +101,29 @@ func (et *EmailTemplate) load() error {
 	return nil
 }
 
-func (EmailTemplate) getByHashId(hashId string) (*EmailTemplate, error) {
+func (EmailTemplate) getByHashID(hashID string) (*EmailTemplate, error) {
 	et := EmailTemplate{}
 
-	err := db.First(&et, "hash_id = ?", hashId).Error
+	err := db.First(&et, "hash_id = ?", hashID).Error
 	if err != nil {
 		return nil, err
 	}
 	return &et, nil
 }
 
-func (EmailTemplate) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (EmailTemplate) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 
 	emailTemplates := make([]EmailTemplate,0)
 	var total uint
 
-	err := db.Model(&EmailTemplate{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+	err := db.Model(&EmailTemplate{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
 		Select(EmailTemplate{}.SelectArrayWithoutData()).Find(&emailTemplates).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&EmailTemplate{}).Where("account_id = ?", accountId).Count(&total).Error
+	err = db.Model(&EmailTemplate{}).Where("account_id = ?", accountID).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -136,7 +136,7 @@ func (EmailTemplate) getList(accountId uint, sortBy string) ([]Entity, uint, err
 
 	return entities, total, nil
 }
-func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (EmailTemplate) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	emailTemplates := make([]EmailTemplate,0)
 	var total uint
@@ -147,7 +147,7 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&EmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&EmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Select(EmailTemplate{}.SelectArrayWithoutData()).
 			Find(&emailTemplates, "hash_id ILIKE ? OR name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -156,7 +156,7 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 
 		// Определяем total
 		err = db.Model(&EmailTemplate{}).
-			Where("account_id = ? AND hash_id ILIKE ? OR name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", accountId, search,search,search,search).
+			Where("account_id = ? AND hash_id ILIKE ? OR name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", accountID, search,search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -164,7 +164,7 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	} else {
 
-		err := db.Model(&EmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&EmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Select(EmailTemplate{}.SelectArrayWithoutData()).
 			Find(&emailTemplates).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -172,7 +172,7 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 		}
 
 		// Определяем total
-		err = db.Model(&EmailTemplate{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&EmailTemplate{}).Where("account_id = ?", accountID).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -201,8 +201,8 @@ func (et EmailTemplate) delete () error {
 }
 // ########### ACCOUNT FUNCTIONAL ###########
 
-func (account Account) EmailTemplateGetByHashID(hashId string) (*EmailTemplate, error) {
-	et, err := (EmailTemplate{}).getByHashId(hashId)
+func (account Account) EmailTemplateGetByHashID(hashID string) (*EmailTemplate, error) {
+	et, err := (EmailTemplate{}).getByHashID(hashID)
 	if err != nil {
 		return nil, err
 	}
@@ -213,8 +213,8 @@ func (account Account) EmailTemplateGetByHashID(hashId string) (*EmailTemplate, 
 
 	return et, nil
 }
-func (Account) EmailTemplateGetSharedByHashID(hashId string) (*EmailTemplate, error) {
-	et, err := (EmailTemplate{}).getByHashId(hashId)
+func (Account) EmailTemplateGetSharedByHashID(hashID string) (*EmailTemplate, error) {
+	et, err := (EmailTemplate{}).getByHashID(hashID)
 	if err != nil {
 		return nil, err
 	}
@@ -365,7 +365,7 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string) error {
 
 	// from
 	// err = client.Mail(from.GetMailAddress().Address)
-	err = client.Mail("userId.abuse.@ratuscrm.com")
+	err = client.Mail("userID.abuse.@ratuscrm.com")
 	if err != nil {
 		log.Fatal("Почтовый адрес не может принять почту")
 	}
@@ -659,7 +659,7 @@ func (et EmailTemplate) SendChannel(emailBox EmailBox, toEmail string, subject s
 
 	// from
 	// err = client.Mail(from.GetMailAddress().Address)
-	err = client.Mail("userId.abuse.@ratuscrm.com")
+	err = client.Mail("userID.abuse.@ratuscrm.com")
 	if err != nil {
 		log.Fatal("Почтовый адрес не может принять почту")
 	}

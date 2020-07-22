@@ -14,7 +14,7 @@ type EmailAccessToken struct {
 	Token 	string `json:"token"` // json:"token"
 	ActionType 	string `json:"actionType"` // json:"verification, recover (username, password, email), join to account"
 	DestinationEmail string `json:"destinationEmail"` // куда отправлять email и для какого емейла был предназначен токен. Не может быть <null>, только целевые приглашения.
-	OwnerID 	uint `json:"ownerId"` // userID - создатель токена (может быть self)
+	OwnerID 	uint `json:"ownerID"` // userID - создатель токена (может быть self)
 	NotificationCount uint `json:"notificationCount"` // число успешных уведомлений
 	NotificationAt time.Time `json:"notificationAt"` // время ПОСЛЕДНЕГО уведомления
 	CreatedAt time.Time `json:"createdAt"`

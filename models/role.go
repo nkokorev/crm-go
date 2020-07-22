@@ -31,9 +31,9 @@ const (
 
 type Role struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
-	AccountID uint `json:"accountId" gorm:"type:int;index;not null;"` // у системных ролей = 1. Из-под RatusCRM аккаунта их можно изменять.
+	AccountID uint `json:"accountID" gorm:"type:int;index;not null;"` // у системных ролей = 1. Из-под RatusCRM аккаунта их можно изменять.
 
-	// IssuerAccountId uint       `json:"issuerAccountId" gorm:"index;not null;default:1"`
+	// IssuerAccountID uint       `json:"issuerAccountID" gorm:"index;not null;default:1"`
 	Tag             AccessRole `json:"tag" gorm:"type:varchar(32);not null;"`	// client, admin, manager, ...
 	Type            roleType   `json:"type" gorm:"type:varchar(3);not null;"`	// gui / api
 	Name            string     `json:"name" gorm:"type:varchar(255);not null;"` // "Владелец аккаунта", "Администратор", "Менеджер" ...
@@ -74,10 +74,10 @@ func (role *Role) BeforeCreate(scope *gorm.Scope) error {
 
 
 // ############# Entity interface #############
-func (role Role) GetId() uint { return role.ID }
-func (role *Role) setId(id uint) { role.ID = id }
-func (role Role) GetAccountId() uint { return role.AccountID }
-func (role *Role) setAccountId(id uint) { role.AccountID = id }
+func (role Role) GetID() uint { return role.ID }
+func (role *Role) setID(id uint) { role.ID = id }
+func (role Role) GetAccountID() uint { return role.AccountID }
+func (role *Role) setAccountID(id uint) { role.AccountID = id }
 func (role Role) systemEntity() bool {
 	return role.AccountID == 1
 }
@@ -87,7 +87,7 @@ func (role Role) create() (Entity, error)  {
 
 	// Validate
 	if role.AccountID < 1 {
-		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleIssuerAccountId":"Необходимо указать выпускающий аккаунт!"}}
+		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleIssuerAccountID":"Необходимо указать выпускающий аккаунт!"}}
 	}
 	if len([]rune(role.Tag)) > 32 || len([]rune(role.Tag)) < 3 {
 		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleTag":"Тип должен быть от 3 до 32 символов!"}}
@@ -135,20 +135,20 @@ func (role *Role) load() error {
 	return nil
 }
 
-func (Role) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (Role) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 
 	roles := make([]Role,0)
 	var total uint
 
 	err := db.Model(&Role{}).Order(sortBy).Limit(1000).
-		Where("account_id IN (?)", []uint{1, accountId}).
+		Where("account_id IN (?)", []uint{1, accountID}).
 		Find(&roles).Error
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&Role{}).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
+	err = db.Model(&Role{}).Where("account_id IN (?)", []uint{1, accountID}).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -161,7 +161,7 @@ func (Role) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
 	return entities, total, nil
 }
-func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (Role) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	roles := make([]Role,0)
 	var total uint
@@ -172,7 +172,7 @@ func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search 
 
 		err := db.Model(&Role{}).
 			Order(sortBy).Offset(offset).Limit(limit).
-			Where("account_id IN (?)", []uint{1, accountId}).
+			Where("account_id IN (?)", []uint{1, accountID}).
 			Find(&roles, "tag ILIKE ? OR type ILIKE ? OR name ILIKE ? OR description ILIKE ?", search,search,search,search).Error
 		if err != nil {
 			return nil, 0, err
@@ -180,7 +180,7 @@ func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search 
 
 		// Определяем total
 		err = db.Model(&Role{}).
-			Where("account_id IN (?) AND tag ILIKE ? OR type ILIKE ? OR name ILIKE ? OR description ILIKE ?", []uint{1, accountId}, search,search,search,search).
+			Where("account_id IN (?) AND tag ILIKE ? OR type ILIKE ? OR name ILIKE ? OR description ILIKE ?", []uint{1, accountID}, search,search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -190,14 +190,14 @@ func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search 
 	} else {
 		err := db.Model(&Role{}).
 			Order(sortBy).Offset(offset).Limit(limit).
-			Where("account_id IN (?)", []uint{1, accountId}).
+			Where("account_id IN (?)", []uint{1, accountID}).
 			Find(&roles).Error
 		if err != nil {
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Role{}).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
+		err = db.Model(&Role{}).Where("account_id IN (?)", []uint{1, accountID}).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -231,9 +231,9 @@ func (role Role) IsAdmin () bool {
 }
 
 // Получаем роль либо системную или в акаунте. Как правило, первое.
-func (account Account) GetRole (roleId uint) (*Role, error) {
+func (account Account) GetRole (roleID uint) (*Role, error) {
 	var role Role
-	err := db.Where("account_id IN (?) AND id = ?", []uint{1, account.ID}, roleId).First(&role).Error
+	err := db.Where("account_id IN (?) AND id = ?", []uint{1, account.ID}, roleID).First(&role).Error
 	if err != nil {
 		return nil, err
 	}

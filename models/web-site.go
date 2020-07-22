@@ -41,10 +41,10 @@ func (WebSite) PgSqlCreate() {
 }
 
 // ############# Entity interface #############
-func (webSite WebSite) GetId() uint { return webSite.ID }
-func (webSite *WebSite) setId(id uint) { webSite.ID = id }
-func (webSite WebSite) GetAccountId() uint { return webSite.AccountID }
-func (webSite *WebSite) setAccountId(id uint) { webSite.AccountID = id }
+func (webSite WebSite) GetID() uint { return webSite.ID }
+func (webSite *WebSite) setID(id uint) { webSite.ID = id }
+func (webSite WebSite) GetAccountID() uint { return webSite.AccountID }
+func (webSite *WebSite) setAccountID(id uint) { webSite.AccountID = id }
 func (webSite WebSite) systemEntity() bool {
 	return false
 }
@@ -95,19 +95,19 @@ func (webSite *WebSite) load() error {
 }
 
 
-func (WebSite) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (WebSite) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 
 	webSites := make([]WebSite,0)
 	var total uint
 
-	err := db.Model(&WebSite{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+	err := db.Model(&WebSite{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
 		Preload("EmailBoxes").Find(&webSites).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&WebSite{}).Where("account_id = ?", accountId).Count(&total).Error
+	err = db.Model(&WebSite{}).Where("account_id = ?", accountID).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -121,7 +121,7 @@ func (WebSite) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return entities, total, nil
 }
 
-func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (WebSite) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	webSites := make([]WebSite,0)
 	var total uint
@@ -132,7 +132,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&WebSite{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&WebSite{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Preload("EmailBoxes").
 			Find(&webSites, "name ILIKE ? OR address ILIKE ? OR email ILIKE ? OR phone ILIKE ?", search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -141,7 +141,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 		// Определяем total
 		err = db.Model(&WebSite{}).
-			Where("account_id = ? AND name ILIKE ? OR address ILIKE ? OR email ILIKE ? OR phone ILIKE ?", accountId, search,search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR address ILIKE ? OR email ILIKE ? OR phone ILIKE ?", accountID, search,search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -149,7 +149,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 
-		err := db.Model(&WebSite{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&WebSite{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Preload("EmailBoxes").
 			Find(&webSites).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -157,7 +157,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		}
 
 		// Определяем total
-		err = db.Model(&WebSite{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&WebSite{}).Where("account_id = ?", accountID).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -183,12 +183,12 @@ func (webSite WebSite) delete () error {
 
 // ######### ACCOUNT Functions ############
 
-func (account Account) ExistProductGroups(groupId uint) bool {
-	if groupId < 1 {
+func (account Account) ExistProductGroups(groupID uint) bool {
+	if groupID < 1 {
 		return false
 	}
 
-	return !db.Model(&ProductGroup{}).Where("account_id = ? AND id = ?", account.ID, groupId).First(&ProductGroup{}).RecordNotFound()
+	return !db.Model(&ProductGroup{}).Where("account_id = ? AND id = ?", account.ID, groupID).First(&ProductGroup{}).RecordNotFound()
 }
 // ######### END OF ACCOUNT Functions ############
 
@@ -219,10 +219,10 @@ func (webSite WebSite) CreateProduct(input Product, card *ProductCard) (*Product
 	return product, nil
 }
 
-func (webSite WebSite) GetProduct(productId uint) (*Product, error) {
+func (webSite WebSite) GetProduct(productID uint) (*Product, error) {
 
 	// Создаем продукт
-	product, err := Product{}.get(productId)
+	product, err := Product{}.get(productID)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ func (webSite WebSite) GetProduct(productId uint) (*Product, error) {
 	return product, nil
 }
 
-func (webSite WebSite) CreateProductWithCardAndGroup(input Product, newCard ProductCard, groupId *uint) (*Product, error) {
+func (webSite WebSite) CreateProductWithCardAndGroup(input Product, newCard ProductCard, groupID *uint) (*Product, error) {
 	input.AccountID = webSite.AccountID
 
 	if input.ExistSKU() {
@@ -253,8 +253,8 @@ func (webSite WebSite) CreateProductWithCardAndGroup(input Product, newCard Prod
 	// Создаем карточку товара
 	newCard.AccountID = webSite.AccountID
 	newCard.WebSiteID = webSite.ID
-	if groupId != nil {
-		newCard.ProductGroupID = groupId
+	if groupID != nil {
+		newCard.ProductGroupID = groupID
 	}
 	card, err := newCard.create()
 	if err != nil {
@@ -327,7 +327,7 @@ func (webSite WebSite) CalculateDelivery(deliveryRequest DeliveryRequest) (*Deli
 		// проходим циклом по продуктам и складываем их общий вес
 		for _,v := range deliveryRequest.Cart {
 			// 1. Получаем продукт
-			product, err := webSite.GetProduct(v.ProductId)
+			product, err := webSite.GetProduct(v.ProductID)
 			if err != nil {
 				return nil, err
 			}
@@ -392,8 +392,8 @@ func (webSite WebSite) CreateDelivery(input map[string]interface{}) (*Entity, er
 		return nil, utils.Error{Message: "Ошибка в коде типа создаваемого интерфейса"}
 	}
 
-	delivery.setShopId(webSite.ID)
-	delivery.setAccountId(webSite.AccountID)
+	delivery.setShopID(webSite.ID)
+	delivery.setAccountID(webSite.AccountID)
 
 	entity, err := delivery.create()
 	if err != nil {
@@ -404,7 +404,7 @@ func (webSite WebSite) CreateDelivery(input map[string]interface{}) (*Entity, er
 	// return &delivery, nil
 }
 
-func (webSite WebSite) GetDelivery(code string, methodId uint) (Delivery, error) {
+func (webSite WebSite) GetDelivery(code string, methodID uint) (Delivery, error) {
 
 	// Получаем все варианты доставки (обычно их мало). Можно через switch, но лень потом исправлять баг с новыми типом доставки
 	deliveries := webSite.GetDeliveryMethods()
@@ -412,7 +412,7 @@ func (webSite WebSite) GetDelivery(code string, methodId uint) (Delivery, error)
 	// Ищем наш вариант доставки
 	var delivery Delivery
 	for _,v := range deliveries {
-		if v.GetCode() == code && v.GetId() == methodId {
+		if v.GetCode() == code && v.GetID() == methodID {
 			delivery = v
 			break
 		}
@@ -430,17 +430,17 @@ func (webSite WebSite) UpdateDelivery(input map[string]interface{}) (Delivery, e
 
 	// Парсим тип рассылки и ее ID
 	code,ok := input["code"].(string)
-	methodId, ok := input["id"].(float64)
+	methodID, ok := input["id"].(float64)
 	if !ok {
 		return nil, utils.Error{Message: "Код или id способа доставки не верен"}
 	}
 
-	delivery, err := webSite.GetDelivery(code, uint(methodId))
+	delivery, err := webSite.GetDelivery(code, uint(methodID))
 	if err != nil {
 		return nil, err
 	}
 
-	if delivery.GetAccountId() != webSite.AccountID {
+	if delivery.GetAccountID() != webSite.AccountID {
 		return nil, utils.Error{Message: "Метод доставки принадлежит другому аккаунту!"}
 	}
 
@@ -456,17 +456,17 @@ func (webSite WebSite) DeleteDelivery(input map[string]interface{}) error {
 
 	// Парсим тип рассылки и ее ID
 	code,ok := input["code"].(string)
-	methodId, ok := input["id"].(float64)
+	methodID, ok := input["id"].(float64)
 	if !ok {
 		return utils.Error{Message: "Код или id способа доставки не верен"}
 	}
 
-	delivery, err := webSite.GetDelivery(code, uint(methodId))
+	delivery, err := webSite.GetDelivery(code, uint(methodID))
 	if err != nil {
 		return err
 	}
 
-	if delivery.GetAccountId() != webSite.AccountID {
+	if delivery.GetAccountID() != webSite.AccountID {
 		return utils.Error{Message: "Метод доставки принадлежит другому аккаунту!"}
 	}
 
@@ -487,16 +487,16 @@ func (webSite WebSite) DeliveryListOptions() map[string]interface{} {
 }
 
 // Вспомогательная функция
-func GetAccountIdByWebSiteId(webSiteId uint) (uint, error) {
+func GetAccountIDByWebSiteID(webSiteID uint) (uint, error) {
 	type Result struct {
-		AccountId uint `json:"accountId"`
+		AccountID uint `json:"accountID"`
 	}
 	var result Result
-	if err := db.Model(&WebSite{}).Where("id = ?", webSiteId).Scan(&result).Error; err != nil {
+	if err := db.Model(&WebSite{}).Where("id = ?", webSiteID).Scan(&result).Error; err != nil {
 		return 0, err
 	}
 
-	return result.AccountId, nil
+	return result.AccountID, nil
 }
 
 func (webSite WebSite) CreateEmailBox(emailBox EmailBox) (Entity, error) {

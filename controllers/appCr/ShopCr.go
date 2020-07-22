@@ -22,15 +22,15 @@ func ProductGroupCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
-	// webSite, err := account.GetShop(webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
+	// webSite, err := account.GetShop(webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -63,27 +63,27 @@ func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
-	productGroupId, err := utilsCr.GetUINTVarFromRequest(r, "productGroupId")
+	productGroupID, err := utilsCr.GetUINTVarFromRequest(r, "productGroupID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID product group"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
-	// webSite, err := account.GetShop(webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
+	// webSite, err := account.GetShop(webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
 	}
 
-	productGroup, err := webSite.GetProductGroup(productGroupId)
+	productGroup, err := webSite.GetProductGroup(productGroupID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -100,14 +100,14 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -190,21 +190,21 @@ func ProductGroupUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
-	// webSite, err := account.GetShop(webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
+	// webSite, err := account.GetShop(webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
 	}
 
-	productGroupId, err := utilsCr.GetUINTVarFromRequest(r, "productGroupId")
+	productGroupID, err := utilsCr.GetUINTVarFromRequest(r, "productGroupID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
 		return
@@ -219,8 +219,8 @@ func ProductGroupUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// group, err := webSite.UpdateProductGroup(groupId, &input.ProductGroup)
-	group, err := webSite.UpdateProductGroup(productGroupId, input)
+	// group, err := webSite.UpdateProductGroup(groupID, &input.ProductGroup)
+	group, err := webSite.UpdateProductGroup(productGroupID, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -239,28 +239,28 @@ func ProductGroupDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
-	// webSite, err := account.GetShop(webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
+	// webSite, err := account.GetShop(webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
 	}
 
-	productGroupId, err := utilsCr.GetUINTVarFromRequest(r, "productGroupId")
+	productGroupID, err := utilsCr.GetUINTVarFromRequest(r, "productGroupID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 
-	if err = webSite.DeleteProductGroup(productGroupId); err != nil {
+	if err = webSite.DeleteProductGroup(productGroupID); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении товарной группы"))
 		return
 	}
@@ -280,15 +280,15 @@ func ProductCardByShopCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
-	// webSite, err := account.GetShop(webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
+	// webSite, err := account.GetShop(webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -304,7 +304,7 @@ func ProductCardByShopCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	// special fix!
-	input.ProductCard.WebSiteID = webSiteId
+	input.ProductCard.WebSiteID = webSiteID
 
 	card, err := webSite.CreateProductCard(input.ProductCard, nil)
 	if err != nil {
@@ -354,27 +354,27 @@ func ProductCardByShopGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	productCardID, err := utilsCr.GetUINTVarFromRequest(r, "productCardID")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке product Card Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке product Card ID"))
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
-	// webSite, err := account.GetShop(webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
+	// webSite, err := account.GetShop(webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
 	}
 
-	productCard, err := webSite.GetProductCard(productCardId)
+	productCard, err := webSite.GetProductCard(productCardID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить карточку товара"))
 		return
@@ -392,15 +392,15 @@ func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
-	// webSite, err := account.GetShop(webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
+	// webSite, err := account.GetShop(webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -441,7 +441,7 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	productCardID, err := utilsCr.GetUINTVarFromRequest(r, "productCardID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID группы"))
 		return
@@ -464,8 +464,8 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 
-	card, err := account.UpdateProductCard(productCardId, input)
-	//card, err := account.UpdateProductCard(cardId, input.ProductCard)
+	card, err := account.UpdateProductCard(productCardID, input)
+	//card, err := account.UpdateProductCard(cardID, input.ProductCard)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -484,14 +484,14 @@ func ProductCardDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	productCardID, err := utilsCr.GetUINTVarFromRequest(r, "productCardID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 
-	if err = account.DeleteProductCard(productCardId); err != nil {
+	if err = account.DeleteProductCard(productCardID); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении карточки товара"))
 		return
 	}
@@ -538,13 +538,13 @@ func ProductGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	productID, err := utilsCr.GetUINTVarFromRequest(r, "productID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID товара"))
 		return
 	}
 
-	product, err := account.GetProduct(productId)
+	product, err := account.GetProduct(productID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -596,7 +596,7 @@ func ProductUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	productID, err := utilsCr.GetUINTVarFromRequest(r, "productID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID товара"))
 		return
@@ -614,8 +614,8 @@ func ProductUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//card, err := account.UpdateProduct(productId, input.Product)
-	card, err := account.UpdateProduct(productId, input)
+	//card, err := account.UpdateProduct(productID, input.Product)
+	card, err := account.UpdateProduct(productID, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -634,14 +634,14 @@ func ProductDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	productID, err := utilsCr.GetUINTVarFromRequest(r, "productID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID товара"))
 		return
 	}
 
 
-	if err = account.DeleteProduct(productId); err != nil {
+	if err = account.DeleteProduct(productID); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении карточки товара"))
 		return
 	}

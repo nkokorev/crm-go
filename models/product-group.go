@@ -9,10 +9,10 @@ import (
 
 type ProductGroup struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
-	WebSiteID uint `json:"webSiteId" gorm:"type:int;index;not null;"` // магазин, к которому относится данная группа
+	WebSiteID uint `json:"webSiteID" gorm:"type:int;index;not null;"` // магазин, к которому относится данная группа
 	// AccountID uint `json:"-" gorm:"type:int;index;not null;"` // хз хз
-	// ParentID uint `json:"parentId,omitempty" gorm:"default:NULL"`
-	ParentID *uint `json:"parentId" gorm:"default:NULL"`
+	// ParentID uint `json:"parentID,omitempty" gorm:"default:NULL"`
+	ParentID *uint `json:"parentID" gorm:"default:NULL"`
 
 	Code string `json:"code" gorm:"type:varchar(255);default:null;"` // tea, coffe, china
 	URL string `json:"url"gorm:"type:varchar(255);default:null;"`
@@ -31,7 +31,7 @@ type ProductGroup struct {
 	MetaDescription string `json:"metaDescription" gorm:"type:varchar(255);default:null;"`
 
 	WebSite WebSite `json:"webSite" `
-	ParentGroup *ProductGroup `json:"-"` // if has parentId
+	ParentGroup *ProductGroup `json:"-"` // if has parentID
 	// ProductCards ProductCard `json:"productCards" gorm:"many2many:product_group_product_cards"`
 	ProductCards []ProductCard `json:"productCards"`
 	// Products []Product `json:"products" gorm:"many2many:product_group_products"`
@@ -51,11 +51,7 @@ func (productGroup *ProductGroup) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
-func (ProductGroup) TableName() string {
-	return "product_groups"
-}
-
-func (productGroup ProductGroup) getId() uint {
+func (productGroup ProductGroup) getID() uint {
 	return productGroup.ID
 }
 
@@ -101,12 +97,12 @@ func (productGroup *ProductGroup) update(input map[string]interface{}) error {
 
 func (productGroup ProductGroup) delete () error {
 
-	accountId, err2 := GetAccountIdByWebSiteId(productGroup.WebSiteID)
+	accountID, err2 := GetAccountIDByWebSiteID(productGroup.WebSiteID)
 
 	if err := db.Model(ProductGroup{}).Where("id = ?", productGroup.ID).Delete(productGroup).Error; err != nil { return err }
 
 	if err2 != nil {
-		event.AsyncFire(Event{}.ProductGroupDeleted(accountId, productGroup.ID))
+		event.AsyncFire(Event{}.ProductGroupDeleted(accountID, productGroup.ID))
 	}
 
 	return nil
@@ -131,8 +127,8 @@ func (webSite WebSite) CreateProductGroup(input ProductGroup) (*ProductGroup, er
 	return productGroup, nil
 }
 
-func (webSite WebSite) GetProductGroup(groupId uint) (*ProductGroup, error) {
-	group, err := ProductGroup{}.get(groupId)
+func (webSite WebSite) GetProductGroup(groupID uint) (*ProductGroup, error) {
+	group, err := ProductGroup{}.get(groupID)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +212,7 @@ func (account Account) GetProductGroups() ([]ProductGroup, error) {
 }
 
 /*func (account Account) GetProductGroupByRouteName(routeName uint) (*ProductGroup, error) {
-	group, err := ProductGroup{}.get(groupId)
+	group, err := ProductGroup{}.get(groupID)
 	if err != nil {
 		return nil, err
 	}
@@ -224,8 +220,8 @@ func (account Account) GetProductGroups() ([]ProductGroup, error) {
 	return group, nil
 }*/
 
-func (webSite WebSite) UpdateProductGroup(groupId uint, input map[string]interface{}) (*ProductGroup, error) {
-	productGroup, err := webSite.GetProductGroup(groupId)
+func (webSite WebSite) UpdateProductGroup(groupID uint, input map[string]interface{}) (*ProductGroup, error) {
+	productGroup, err := webSite.GetProductGroup(groupID)
 	if err != nil {
 		return nil, err
 	}
@@ -262,10 +258,10 @@ func (webSite WebSite) UpdateProductGroup(groupId uint, input map[string]interfa
 	return productGroup, nil
 }
 
-func (webSite WebSite) DeleteProductGroup(groupId uint) error {
+func (webSite WebSite) DeleteProductGroup(groupID uint) error {
 
 	// включает в себя проверку принадлежности к аккаунту
-	productGroup, err := webSite.GetProductGroup(groupId)
+	productGroup, err := webSite.GetProductGroup(groupID)
 	if err != nil {
 		return err
 	}

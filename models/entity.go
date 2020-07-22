@@ -9,17 +9,17 @@ import (
 
 type Entity interface {
 
-	GetId() uint
-	setId(id uint)
-	GetAccountId() uint
-	setAccountId(id uint)
+	GetID() uint
+	setID(id uint)
+	GetAccountID() uint
+	setAccountID(id uint)
 
 	// CRUD model
 	create() (Entity, error)
 	get (id uint) (Entity, error)
 	load () error
-	getList(accountId uint, order string) ([]Entity, uint, error)
-	getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error)
+	getList(accountID uint, order string) ([]Entity, uint, error)
+	getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error)
 	update(input map[string]interface{}) error
 	delete() error
 
@@ -42,7 +42,7 @@ func Get(v Entity) error {
 }
 
 func (account Account) CreateEntity(input Entity) (Entity, error) {
-	input.setAccountId(account.ID)
+	input.setAccountID(account.ID)
 	return input.create()
 }
 
@@ -53,7 +53,7 @@ func (account Account) GetEntity(model Entity, id uint) (Entity, error) {
 		return nil, err
 	}
 
-	if entity.GetAccountId() != account.ID {
+	if entity.GetAccountID() != account.ID {
 		if !entity.systemEntity() {
 			return nil, errors.New("Модель принадлежит другому аккаунту")
 		}
@@ -66,7 +66,7 @@ func (account Account) GetEntity(model Entity, id uint) (Entity, error) {
 func (account Account) LoadEntity(entity Entity, primaryKey ...uint) error {
 
 	if len(primaryKey) > 0 {
-		entity.setId(primaryKey[0])
+		entity.setID(primaryKey[0])
 	}
 	
 	// Загружаем по ссылке
@@ -76,7 +76,7 @@ func (account Account) LoadEntity(entity Entity, primaryKey ...uint) error {
 	}
 
 	// Проверяем принадлежность к аккаунту
-	if entity.GetAccountId() != account.ID {
+	if entity.GetAccountID() != account.ID {
 		if !entity.systemEntity() {
 			return errors.New("Модель принадлежит другому аккаунту")
 		}
@@ -95,7 +95,7 @@ func (account Account) GetPaginationListEntity(model Entity, offset, limit int, 
 }
 
 func (account Account) UpdateEntity(entity Entity, input map[string]interface{}) error {
-	if entity.GetAccountId() != account.ID {
+	if entity.GetAccountID() != account.ID {
 		return utils.Error{Message: "Объект принадлежит другому аккаунту"}
 	}
 
@@ -103,7 +103,7 @@ func (account Account) UpdateEntity(entity Entity, input map[string]interface{})
 }
 
 func (account Account) DeleteEntity(entity Entity) error {
-	if entity.GetAccountId() != account.ID {
+	if entity.GetAccountID() != account.ID {
 		return utils.Error{Message: "Объект принадлежит другому аккаунту"}
 	}
 	

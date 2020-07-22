@@ -13,22 +13,22 @@ func DeliveryGetListByShop(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
-	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
+	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashID}.)
 
 	account, err = utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке webSiteId"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке webSiteID"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
-	// webSite, err := account.GetShop(webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
+	// webSite, err := account.GetShop(webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
 		return
@@ -46,14 +46,14 @@ func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке webSiteId"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке webSiteID"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -88,14 +88,14 @@ func DeliveryListOptions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return

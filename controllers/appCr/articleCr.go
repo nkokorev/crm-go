@@ -45,13 +45,13 @@ func ArticleGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	articleId, err := utilsCr.GetUINTVarFromRequest(r, "articleId")
+	articleID, err := utilsCr.GetUINTVarFromRequest(r, "articleID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID статьи"))
 		return
 	}
 
-	article, err := account.GetArticle(articleId)
+	article, err := account.GetArticle(articleID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -104,7 +104,7 @@ func ArticleUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	articleId, err := utilsCr.GetUINTVarFromRequest(r, "articleId")
+	articleID, err := utilsCr.GetUINTVarFromRequest(r, "articleID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID товара"))
 		return
@@ -118,8 +118,8 @@ func ArticleUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//card, err := account.UpdateProduct(productId, input.Product)
-	article, err := account.UpdateArticle(articleId, input)
+	//card, err := account.UpdateProduct(productID, input.Product)
+	article, err := account.UpdateArticle(articleID, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -140,14 +140,14 @@ func ArticleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	articleId, err := utilsCr.GetUINTVarFromRequest(r, "articleId")
+	articleID, err := utilsCr.GetUINTVarFromRequest(r, "articleID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID товара"))
 		return
 	}
 
 
-	if err = account.DeleteArticle(articleId); err != nil {
+	if err = account.DeleteArticle(articleID); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении карточки товара"))
 		return
 	}

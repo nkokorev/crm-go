@@ -20,7 +20,7 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	issuerAccount := r.Context().Value("issuerAccount").(*models.Account)
 	
-	userId := r.Context().Value("userId").(uint)
+	userID := r.Context().Value("userID").(uint)
 
 	acc := struct {
 		models.Account
@@ -35,7 +35,7 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Ищем пользователя, только в контексте signed-аккаунта
-	user, err := issuerAccount.GetUser(userId)
+	user, err := issuerAccount.GetUser(userID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Пользователь не существует"))
 		return
@@ -48,7 +48,7 @@ func AccountCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 1. создаем jwt-token для аутентификации пользователя
-	//token, err := (models.JWT{UserID:userId, AccountID:acc.ID}).CreateCryptoToken()
+	//token, err := (models.JWT{UserID:userID, AccountID:acc.ID}).CreateCryptoToken()
 	expiresAt := time.Now().UTC().Add(time.Minute * 20).Unix()
 
 	claims := models.JWT{
@@ -80,7 +80,7 @@ func AccountUpdate(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 
-	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "accountHashId")
+	hashID, ok := utilsCr.GetSTRVarFromRequest(r, "accountHashID")
 	if !ok {
 		u.Respond(w, u.MessageError(nil, "Ошибка в обработке ID аккаунта"))
 		return
@@ -88,7 +88,7 @@ func AccountUpdate(w http.ResponseWriter, r *http.Request)  {
 
 	// 2. Проверяем hashID изменяемого аккаунта, совпадает ли он с авторизацией.
 	// Из одного аккаунта (НЕ RatusCRM) нельзя изменить другой 
-	if !account.IsMainAccount() && account.HashID != hashId {
+	if !account.IsMainAccount() && account.HashID != hashID {
 		u.Respond(w, u.MessageError(err, "Ошибка доступа к аккаунту"))
 		return
 	}
@@ -111,7 +111,7 @@ func AccountUpdate(w http.ResponseWriter, r *http.Request)  {
 	u.Respond(w, resp)
 }
 
-// Возвращает профиль аккаунта, указанного в переменной .../{hashId}/...
+// Возвращает профиль аккаунта, указанного в переменной .../{hashID}/...
 func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 	
 	// Аккаунт, в котором происходит авторизация: issuerAccount
@@ -121,13 +121,13 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "accountHashId")
-	if !ok || hashId == "" {
-		u.Respond(w, u.MessageError(nil, "Не удалось получить hashId аккаунта"))
+	hashID, ok := utilsCr.GetSTRVarFromRequest(r, "accountHashID")
+	if !ok || hashID == "" {
+		u.Respond(w, u.MessageError(nil, "Не удалось получить hashID аккаунта"))
 		return
 	}
 
-	account, err := models.GetAccountByHash(hashId)
+	account, err := models.GetAccountByHash(hashID)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(nil, "Не удалось найти аккаунт"))
 		return
@@ -149,11 +149,11 @@ func AccountAuthUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Получаем token для пользователя
-	if r.Context().Value("userId") == nil {
+	if r.Context().Value("userID") == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Не удалось получить user id"}))
 		return
 	}
-	userID := r.Context().Value("userId").(uint)
+	userID := r.Context().Value("userID").(uint)
 	user, err := account.GetUser(userID)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка обновления ключа авторизации.."}))

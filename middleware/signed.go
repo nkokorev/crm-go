@@ -8,9 +8,9 @@ import (
 	"net/http"
 )
 
-//Тут собраны посредники определяющие issuerAccountId и добавляющие его в контекст
+//Тут собраны посредники определяющие issuerAccountID и добавляющие его в контекст
 
-// Add to Context(r) issuerAccountId (= 1, Ratus CRM)
+// Add to Context(r) issuerAccountID (= 1, Ratus CRM)
 func AddContextMainAccount(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +23,7 @@ func AddContextMainAccount(next http.Handler) http.Handler {
 
 		// For future
 		r = r.WithContext(context.WithValue(r.Context(), "issuer", "app"))
-		r = r.WithContext(context.WithValue(r.Context(), "issuerAccountId", issuerAccount.ID))
+		r = r.WithContext(context.WithValue(r.Context(), "issuerAccountID", issuerAccount.ID))
 		r = r.WithContext(context.WithValue(r.Context(), "issuerAccount", issuerAccount))
 
 		next.ServeHTTP(w, r)
@@ -31,19 +31,19 @@ func AddContextMainAccount(next http.Handler) http.Handler {
 
 }
 
-// Вставляет в контекст issuerAccountId из hashId (раскрытие issuer account)
-func ContextMuxVarAccountHashId(next http.Handler) http.Handler {
+// Вставляет в контекст issuerAccountID из hashID (раскрытие issuer account)
+func ContextMuxVarAccountHashID(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		accountHashId := mux.Vars(r)["accountHashId"] // защищаемся от парсинга / спама
+		accountHashID := mux.Vars(r)["accountHashID"] // защищаемся от парсинга / спама
 
-		if len(accountHashId) != 12 {
+		if len(accountHashID) != 12 {
 			u.Respond(w, u.MessageError(nil, "The hashID length must be 12 symbols"))
 			return
 		}
 		
-		issuerAccount, err := models.GetAccountByHash(accountHashId)
+		issuerAccount, err := models.GetAccountByHash(accountHashID)
 		if err != nil {
 			u.Respond(w, u.MessageError(nil, "An account with the specified hash ID was not found"))
 			return
@@ -51,7 +51,7 @@ func ContextMuxVarAccountHashId(next http.Handler) http.Handler {
 
 
 		r = r.WithContext(context.WithValue(r.Context(), "auth", "ui/api"))
-		r = r.WithContext(context.WithValue(r.Context(), "accountId", issuerAccount.ID))
+		r = r.WithContext(context.WithValue(r.Context(), "accountID", issuerAccount.ID))
 		r = r.WithContext(context.WithValue(r.Context(), "account", issuerAccount))
 		
 		next.ServeHTTP(w, r)

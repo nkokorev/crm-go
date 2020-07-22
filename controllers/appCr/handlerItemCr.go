@@ -51,14 +51,14 @@ func HandlerItemGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	handlerItemId, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemId")
+	handlerItemID, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemID")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке handlerItem Item Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке handlerItem Item ID"))
 		return
 	}
 
 	var handlerItem models.HandlerItem
-	err = account.LoadEntity(&handlerItem, handlerItemId)
+	err = account.LoadEntity(&handlerItem, handlerItemID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить handlerItem item"))
 		return
@@ -192,14 +192,14 @@ func HandlerItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	handlerItemId, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemId")
+	handlerItemID, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemID")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке handlerItem Item Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке handlerItem Item ID"))
 		return
 	}
 
 	var handlerItem models.HandlerItem
-	err = account.LoadEntity(&handlerItem, handlerItemId)
+	err = account.LoadEntity(&handlerItem, handlerItemID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -236,14 +236,14 @@ func HandlerItemDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	handlerItemId, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemId")
+	handlerItemID, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
 	var handlerItem models.HandlerItem
-	err = account.LoadEntity(&handlerItem, handlerItemId)
+	err = account.LoadEntity(&handlerItem, handlerItemID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return

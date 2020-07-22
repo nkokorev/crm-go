@@ -20,7 +20,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 
 	var input struct {
 		models.User
-		RoleId uint `json:"roleId"`
+		RoleID uint `json:"roleID"`
 		Password string `json:"password"`
 	}
 
@@ -30,7 +30,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var role models.Role
-	if err = account.LoadEntity(&role, input.RoleId); err != nil {
+	if err = account.LoadEntity(&role, input.RoleID); err != nil {
 		u.Respond(w, u.MessageError(err, "Роль пользователя не найдена!"))
 		return
 	}
@@ -61,13 +61,13 @@ func UserGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := utilsCr.GetUINTVarFromRequest(r, "userId")
+	userID, err := utilsCr.GetUINTVarFromRequest(r, "userID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID"))
 		return
 	}
 
-	user, err := account.GetUser(userId)
+	user, err := account.GetUser(userID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти пользователя"))
 		return
@@ -178,7 +178,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := utilsCr.GetUINTVarFromRequest(r, "userId")
+	userID, err := utilsCr.GetUINTVarFromRequest(r, "userID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID"))
 		return
@@ -191,17 +191,17 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Если обновляются роли, удаляем из общего массива input и потом отдельно обновляем
-	var roleId float64
-	var apiRoleId64 float64 = -1
+	var roleID float64
+	var apiRoleID64 float64 = -1
 	var role models.Role
 
-	/*if roleIdStr, ok := input["roleId"]; ok {
-		roleId, ok = roleIdStr.(float64)
+	/*if roleIDStr, ok := input["roleID"]; ok {
+		roleID, ok = roleIDStr.(float64)
 		if !ok {
-			roleId = 0
+			roleID = 0
 		} else {
 			// 1. Получаем роль, которую надо назначить. Если роль вне аккаунта и не системная, получим ошибку
-			rolePtr, err := account.GetRole(uint(roleId))
+			rolePtr, err := account.GetRole(uint(roleID))
 			if err != nil {
 				u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя"))
 				return
@@ -216,7 +216,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	delete(input, "roleId")*/
+	delete(input, "roleID")*/
 
 	if _role, ok := input["_role"]; ok {
 
@@ -226,20 +226,20 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		roleIdVar, ok := mRole["id"]
+		roleIDVar, ok := mRole["id"]
 		if !ok {
 			u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя: id роли не опознана"))
 			return
 		}
 
-		roleId64, ok := roleIdVar.(float64)
+		roleID64, ok := roleIDVar.(float64)
 		if !ok {
 			u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя: id роли не читается"))
 			return
 		}
 
 		// 1. Получаем роль, которую надо назначить. Если роль вне аккаунта и не системная, получим ошибку
-		rolePtr, err := account.GetRole(uint(roleId64))
+		rolePtr, err := account.GetRole(uint(roleID64))
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя"))
 			return
@@ -251,23 +251,23 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 
 		role = *rolePtr
-		roleId = roleId64
+		roleID = roleID64
 	}
 
 
-	if apiRoleIdI, ok := input["roleId"]; ok {
-		if _apiRoleId64, ok := apiRoleIdI.(float64); ok {
-			apiRoleId64 = _apiRoleId64
+	if apiRoleIDI, ok := input["roleID"]; ok {
+		if _apiRoleID64, ok := apiRoleIDI.(float64); ok {
+			apiRoleID64 = _apiRoleID64
 		}
 	}
 
 	delete(input, "_role")
-	delete(input, "roleId")
+	delete(input, "roleID")
 	delete(input, "accountUser")
 
 	// Обновляем данные пользователя
 
-	user, err := account.UpdateUser(userId, input)
+	user, err := account.UpdateUser(userID, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Пользователь не найден"))
 		return
@@ -276,7 +276,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 
 	// Обновляем роль пользователя, если она изменилась
 	currentRole, err := account.GetUserRole(*user)
-	if err == nil && roleId > 0 && (currentRole.ID != uint(roleId)){
+	if err == nil && roleID > 0 && (currentRole.ID != uint(roleID)){
 
 		_, err = account.SetUserRole(user, role)
 		if err != nil {
@@ -285,12 +285,12 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}  else {
 
-		 if apiRoleId64 > 0 {
+		 if apiRoleID64 > 0 {
 			 currentRole2, err := account.GetUserRole(*user)
-			 if err == nil && (currentRole2.ID != uint(apiRoleId64)){
+			 if err == nil && (currentRole2.ID != uint(apiRoleID64)){
 
 			 	// получаем роль 2
-				 rolePtr, err := account.GetRole(uint(apiRoleId64))
+				 rolePtr, err := account.GetRole(uint(apiRoleID64))
 				 if err != nil {
 					 u.Respond(w, u.MessageError(err, "Ошибка в обновлении роли пользователя"))
 					 return
@@ -323,7 +323,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 // Удаляет пользователя из аккаунта
-// Если issuerId = accountId, то может быть применен запрос на удаление пользователя 
+// Если issuerID = accountID, то может быть применен запрос на удаление пользователя
 func UserRemoveFromAccount(w http.ResponseWriter, r *http.Request) {
 	
 	account, err := utilsCr.GetWorkAccount(w, r)
@@ -331,13 +331,13 @@ func UserRemoveFromAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := utilsCr.GetUINTVarFromRequest(r, "userId")
+	userID, err := utilsCr.GetUINTVarFromRequest(r, "userID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID"))
 		return
 	}
 
-	user, err := account.GetUser(userId)
+	user, err := account.GetUser(userID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Пользователь не найден"))
 		return

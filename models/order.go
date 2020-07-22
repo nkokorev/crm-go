@@ -3,39 +3,50 @@ package models
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
-	"time"
 )
 
 type Order struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
-	AccountID uint `json:"accountId" gorm:"index,not null"` // аккаунт-владелец ключа
+	AccountID uint `json:"accountID" gorm:"index,not null"` // аккаунт-владелец ключа
 
-	// Описание заказа, может быть видно пользователю
-	Description string 	`json:"description" gorm:"type:varchar(255);default:''"`
+	Description string 	`json:"description" gorm:"type:varchar(255);"`
+	/*// Описание заказа, может быть видно пользователю
+	Name		string 	`json:"name" gorm:"type:varchar(255);"` // Имя заказа
 
+
+	// Источник (канал) заказа: "Заказ из корзины", "Заказ по телефону", "Пропущенный звонок", "Письмо.."
+	OrderSourceID string	`json:"orderSourceID"`
+
+	// Юр.лицо / Физ.лицо
+	Type	string `json:"type"`
+
+	// Магазин (сайт) с которого пришел заказ. НЕ может быть null.
+	WebSiteID 	uint	`json:"webSiteID"`
+	
 	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	UpdatedAt time.Time `json:"updatedAt"`*/
 }
 
 // ############# Entity interface #############
-func (order Order) GetId() uint { return order.ID }
-func (order *Order) setId(id uint) { order.ID = id }
-func (order Order) GetAccountId() uint { return order.AccountID }
-func (order *Order) setAccountId(id uint) { order.AccountID = id }
+func (order Order) GetID() uint { return order.ID }
+func (order *Order) setID(id uint) { order.ID = id }
+func (order Order) GetAccountID() uint { return order.AccountID }
+func (order *Order) setAccountID(id uint) { order.AccountID = id }
 func (Order) systemEntity() bool { return false }
 
 // ############# Entity interface #############
 
 func (Order) PgSqlCreate() {
-	db.CreateTable(&Order{})
+	if !db.HasTable(&Order{}) {
+		db.CreateTable(&Order{})
+	}
 	db.Model(&Order{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	
+	// fmt.Println("Щквук!")
 }
 func (order *Order) BeforeCreate(scope *gorm.Scope) error {
 	order.ID = 0
 	return nil
-}
-func (Order) TableName() string {
-	return "web_hooks"
 }
 
 // ######### CRUD Functions ############
@@ -73,35 +84,35 @@ func (order *Order) load() error {
 	return nil
 }
 
-func (Order) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (Order) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 
-	webHooks := make([]Order,0)
+	orders := make([]Order,0)
 	var total uint
 
-	err := db.Model(&Order{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
-		Find(&webHooks).Error
+	err := db.Model(&Order{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
+		Find(&orders).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&Order{}).Where("account_id = ?", accountId).Count(&total).Error
+	err = db.Model(&Order{}).Where("account_id = ?", accountID).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(webHooks))
-	for i,_ := range webHooks {
-		entities[i] = &webHooks[i]
+	entities := make([]Entity,len(orders))
+	for i,_ := range orders {
+		entities[i] = &orders[i]
 	}
 
 	return entities, total, nil
 }
 
-func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (Order) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
-	webHooks := make([]Order,0)
+	orders := make([]Order,0)
 	var total uint
 
 	// if need to search
@@ -110,15 +121,15 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Order{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
+		err := db.Model(&Order{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+			Find(&orders, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
 		err = db.Model(&Order{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountID, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -126,23 +137,23 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 
 	} else {
 
-		err := db.Model(&Order{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&webHooks).Error
+		err := db.Model(&Order{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+			Find(&orders).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Order{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&Order{}).Where("account_id = ?", accountID).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(webHooks))
-	for i,_ := range webHooks {
-		entities[i] = &webHooks[i]
+	entities := make([]Entity,len(orders))
+	for i,_ := range orders {
+		entities[i] = &orders[i]
 	}
 
 	return entities, total, nil

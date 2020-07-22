@@ -13,7 +13,7 @@ import (
 type DeliveryRussianPost struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
 	AccountID 	uint	`json:"-" gorm:"index,not null"` // аккаунт-владелец ключа
-	WebSiteId		uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	WebSiteID		uint 	`json:"webSiteID" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
 	Code 		string	`json:"code" gorm:"type:varchar(16);default:'russianPost';"` // Для идентификации во фронтенде
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // активен ли способ доставки
@@ -46,11 +46,11 @@ func (DeliveryRussianPost) PgSqlCreate() {
 }
 
 // ############# Entity interface #############
-func (deliveryRussianPost DeliveryRussianPost) GetId() uint { return deliveryRussianPost.ID }
-func (deliveryRussianPost *DeliveryRussianPost) setId(id uint) { deliveryRussianPost.ID = id }
-func (deliveryRussianPost DeliveryRussianPost) GetAccountId() uint { return deliveryRussianPost.AccountID }
-func (deliveryRussianPost *DeliveryRussianPost) setAccountId(id uint) { deliveryRussianPost.AccountID = id }
-func (deliveryRussianPost *DeliveryRussianPost) setShopId(webSiteId uint) { deliveryRussianPost.WebSiteId = webSiteId }
+func (deliveryRussianPost DeliveryRussianPost) GetID() uint { return deliveryRussianPost.ID }
+func (deliveryRussianPost *DeliveryRussianPost) setID(id uint) { deliveryRussianPost.ID = id }
+func (deliveryRussianPost DeliveryRussianPost) GetAccountID() uint { return deliveryRussianPost.AccountID }
+func (deliveryRussianPost *DeliveryRussianPost) setAccountID(id uint) { deliveryRussianPost.AccountID = id }
+func (deliveryRussianPost *DeliveryRussianPost) setShopID(webSiteID uint) { deliveryRussianPost.WebSiteID = webSiteID }
 func (deliveryRussianPost DeliveryRussianPost) systemEntity() bool { return false }
 
 func (deliveryRussianPost DeliveryRussianPost) GetCode() string {
@@ -59,7 +59,6 @@ func (deliveryRussianPost DeliveryRussianPost) GetCode() string {
 // ############# Entity interface #############
 
 // ###### GORM Functional #######
-func (DeliveryRussianPost) TableName() string { return "delivery_russian_post" }
 func (deliveryRussianPost *DeliveryRussianPost) BeforeCreate(scope *gorm.Scope) error {
 	deliveryRussianPost.ID = 0
 	return nil
@@ -98,20 +97,20 @@ func (deliveryRussianPost *DeliveryRussianPost) load() error {
 	return nil
 }
 
-func (DeliveryRussianPost) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (DeliveryRussianPost) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 
 	deliveryRussianPosts := make([]DeliveryRussianPost,0)
 	var total uint
 
 	// if need to search
-	err := db.Model(&DeliveryRussianPost{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+	err := db.Model(&DeliveryRussianPost{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
 		Find(&deliveryRussianPosts).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&DeliveryRussianPost{}).Where("account_id = ?", accountId).Count(&total).Error
+	err = db.Model(&DeliveryRussianPost{}).Where("account_id = ?", accountID).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -125,7 +124,7 @@ func (DeliveryRussianPost) getList(accountId uint, sortBy string) ([]Entity, uin
 	return entities, total, nil
 }
 
-func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (DeliveryRussianPost) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	deliveryRussianPosts := make([]DeliveryRussianPost,0)
 	var total uint
@@ -136,7 +135,7 @@ func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, 
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&DeliveryRussianPost{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&DeliveryRussianPost{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Find(&deliveryRussianPosts, "name ILIKE ? OR code ILIKE ? OR postal_code_from ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -144,7 +143,7 @@ func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, 
 
 		// Определяем total
 		err = db.Model(&DeliveryRussianPost{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR postal_code_from ILIKE ?", accountId, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR postal_code_from ILIKE ?", accountID, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -152,14 +151,14 @@ func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, 
 
 	} else {
 
-		err := db.Model(&DeliveryRussianPost{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&DeliveryRussianPost{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Find(&deliveryRussianPosts).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&DeliveryRussianPost{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&DeliveryRussianPost{}).Where("account_id = ?", accountID).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}

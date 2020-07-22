@@ -44,14 +44,14 @@ func WebSiteGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке webSite Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке webSite ID"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
 		return
@@ -63,7 +63,7 @@ func WebSiteGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func WebSiteListGet(w http.ResponseWriter, r *http.Request) {
-	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
+	// 1. Получаем рабочий аккаунт (автома. сверка с {hashID}.)
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
@@ -94,7 +94,7 @@ func WebSiteListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
-	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
+	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashID}.)
 
 	account, err = utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -158,14 +158,14 @@ func WebSiteUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -178,7 +178,7 @@ func WebSiteUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// webSite, err := account.UpdateWebSite(webSiteId, &input.WebSite)
+	// webSite, err := account.UpdateWebSite(webSiteID, &input.WebSite)
 	err = account.UpdateEntity(&webSite, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
@@ -198,14 +198,14 @@ func WebSiteDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
 		return
@@ -231,14 +231,14 @@ func EmailBoxCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -272,14 +272,14 @@ func EmailBoxGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emailBoxId, err := utilsCr.GetUINTVarFromRequest(r, "emailBoxId")
+	emailBoxID, err := utilsCr.GetUINTVarFromRequest(r, "emailBoxID")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке webSite Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке webSite ID"))
 		return
 	}
 
 	var emailBox models.EmailBox
-	err = account.LoadEntity(&emailBox, emailBoxId)
+	err = account.LoadEntity(&emailBox, emailBoxID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить почтовый ящик"))
 		return
@@ -292,7 +292,7 @@ func EmailBoxGet(w http.ResponseWriter, r *http.Request) {
 
 // без учета сайта
 func EmailBoxFullListGet(w http.ResponseWriter, r *http.Request) {
-	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
+	// 1. Получаем рабочий аккаунт (автома. сверка с {hashID}.)
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
@@ -321,20 +321,20 @@ func EmailBoxFullListGet(w http.ResponseWriter, r *http.Request) {
 
 // Загружает весь список почтовых ящиков. Пагинации нет.
 func EmailBoxListGet(w http.ResponseWriter, r *http.Request) {
-	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
+	// 1. Получаем рабочий аккаунт (автома. сверка с {hashID}.)
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -369,13 +369,13 @@ func EmailBoxUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emailBoxId, err := utilsCr.GetUINTVarFromRequest(r, "emailBoxId")
+	emailBoxID, err := utilsCr.GetUINTVarFromRequest(r, "emailBoxID")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке emailBoxId Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке emailBoxID ID"))
 		return
 	}
 	var emailBox models.EmailBox
-	err = account.LoadEntity(&emailBox, emailBoxId)
+	err = account.LoadEntity(&emailBox, emailBoxID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить почтовый ящик"))
 		return
@@ -407,13 +407,13 @@ func EmailBoxDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emailBoxId, err := utilsCr.GetUINTVarFromRequest(r, "emailBoxId")
+	emailBoxID, err := utilsCr.GetUINTVarFromRequest(r, "emailBoxID")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке emailBoxId Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке emailBoxID ID"))
 		return
 	}
 	var emailBox models.EmailBox
-	err = account.LoadEntity(&emailBox, emailBoxId)
+	err = account.LoadEntity(&emailBox, emailBoxID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить почтовый ящик"))
 		return

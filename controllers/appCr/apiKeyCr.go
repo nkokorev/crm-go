@@ -65,13 +65,13 @@ func ApiKeyGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apiKeyId, err := utilsCr.GetUINTVarFromRequest(r, "apiKeyId")
+	apiKeyID, err := utilsCr.GetUINTVarFromRequest(r, "apiKeyID")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID"))
 		return
 	}
 
-	apiKey, err := account.ApiKeyGet(apiKeyId)
+	apiKey, err := account.ApiKeyGet(apiKeyID)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"emailTemplates":"Не удалось получить ключ"}}))
 		return

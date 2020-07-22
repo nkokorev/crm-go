@@ -35,14 +35,14 @@ func TestUserVerificationType_Create(t *testing.T) {
 	}
 }
 
-func TestGetUserVerificationTypeById(t *testing.T) {
+func TestGetUserVerificationTypeByID(t *testing.T) {
 	uvt, err := UserVerificationMethod{Name: "TestDelete", Tag:utils.RandStringBytesMaskImprSrcUnsafe(5, false)}.Create()
 	if err != nil {
 		t.Fatalf("Cant create ver %v", err)
 	}
 	defer uvt.Delete()
 
-	uvtF, err := GetUserVerificationTypeById(uvt.ID)
+	uvtF, err := GetUserVerificationTypeByID(uvt.ID)
 	if err !=nil {
 		t.Fatalf("Cant find ver type by id %v", err)
 	}
@@ -77,7 +77,7 @@ func TestUserVerificationType_Delete(t *testing.T) {
 	defer uvt.Delete()
 
 	// убеждаемся, что код верфикации есть
-	_, err = GetUserVerificationTypeById(uvt.ID)
+	_, err = GetUserVerificationTypeByID(uvt.ID)
 	if err !=nil {
 		t.Fatalf("Cant find ver type by id %v", err)
 	}
@@ -87,7 +87,7 @@ func TestUserVerificationType_Delete(t *testing.T) {
 	}
 
 	// убеждаемся, что кода верфикации нет
-	_, err = GetUserVerificationTypeById(uvt.ID)
+	_, err = GetUserVerificationTypeByID(uvt.ID)
 	if err ==nil {
 		t.Fatalf("Нашли код, хотя он должен был быть удален")
 	}

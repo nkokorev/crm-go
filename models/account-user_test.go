@@ -25,9 +25,9 @@ func TestAccountUser_create(t *testing.T)  {
     }
 
     testAUser_1 := AccountUser{
-        AccountId:account.ID,
-        UserId:user.ID,
-        RoleId:role.ID,
+        AccountID:account.ID,
+        UserID:user.ID,
+        RoleID:role.ID,
     }
 
     aUser, err := testAUser_1.create();
@@ -43,19 +43,19 @@ func TestAccountUser_create(t *testing.T)  {
 
     // а вот эти ниже не должны создаться
     testAUser_2 := AccountUser{
-        AccountId: 373464,
-        UserId:user.ID,
-        RoleId:role.ID,
+        AccountID: 373464,
+        UserID:user.ID,
+        RoleID:role.ID,
     }
     testAUser_3 := AccountUser{
-        AccountId: account.ID,
-        UserId:547854733,
-        RoleId:role.ID,
+        AccountID: account.ID,
+        UserID:547854733,
+        RoleID:role.ID,
     }
     testAUser_4 := AccountUser{
-        AccountId: account.ID,
-        UserId:user.ID,
-        RoleId:33423,
+        AccountID: account.ID,
+        UserID:user.ID,
+        RoleID:33423,
     }
 
     aUser_2, err := testAUser_2.create();
@@ -114,7 +114,7 @@ func TestAccountUser_update(t *testing.T)  {
         t.Fatalf("Не удалось получить роль: %v\n", err)
     }
 
-    aUser.RoleId = role.ID
+    aUser.RoleID = role.ID
     if err := aUser.update(&aUser); err != nil {
         t.Fatalf("Не удалось обновить данные в aUser: %v\n", err)
     }
@@ -125,7 +125,7 @@ func TestAccountUser_update(t *testing.T)  {
         t.Fatalf("Пользователь не был создан или добавлен в аккаунт: %v\n", err)
     }
 
-    if aUser.RoleId != role.ID {
+    if aUser.RoleID != role.ID {
         t.Fatal("Данные aUser с ролью НЕ обновились!")
     }
 }

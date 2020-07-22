@@ -10,7 +10,7 @@ import (
 type DeliveryCourier struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
 	AccountID 	uint	`json:"-" gorm:"index,not null"` // аккаунт-владелец ключа
-	WebSiteId		uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	WebSiteID		uint 	`json:"webSiteID" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
 	Code 		string	`json:"code" gorm:"type:varchar(16);default:'courier';"` // Для идентификации во фронтенде
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // активен ли способ доставки
@@ -32,11 +32,11 @@ func (DeliveryCourier) PgSqlCreate() {
 }
 
 // ############# Entity interface #############
-func (deliveryCourier DeliveryCourier) GetId() uint { return deliveryCourier.ID }
-func (deliveryCourier *DeliveryCourier) setId(id uint) { deliveryCourier.ID = id }
-func (deliveryCourier DeliveryCourier) GetAccountId() uint { return deliveryCourier.AccountID }
-func (deliveryCourier *DeliveryCourier) setAccountId(id uint) { deliveryCourier.AccountID = id }
-func (deliveryCourier *DeliveryCourier) setShopId(webSiteId uint) { deliveryCourier.WebSiteId = webSiteId }
+func (deliveryCourier DeliveryCourier) GetID() uint { return deliveryCourier.ID }
+func (deliveryCourier *DeliveryCourier) setID(id uint) { deliveryCourier.ID = id }
+func (deliveryCourier DeliveryCourier) GetAccountID() uint { return deliveryCourier.AccountID }
+func (deliveryCourier *DeliveryCourier) setAccountID(id uint) { deliveryCourier.AccountID = id }
+func (deliveryCourier *DeliveryCourier) setShopID(webSiteID uint) { deliveryCourier.WebSiteID = webSiteID }
 func (DeliveryCourier) systemEntity() bool { return false }
 
 func (deliveryCourier DeliveryCourier) GetCode() string {
@@ -80,19 +80,19 @@ func (deliveryCourier *DeliveryCourier) load() error {
 	}
 	return nil
 }
-func (DeliveryCourier) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (DeliveryCourier) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 
 	deliveryCouriers := make([]DeliveryCourier,0)
 	var total uint
 
-	err := db.Model(&DeliveryCourier{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+	err := db.Model(&DeliveryCourier{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
 		Find(&deliveryCouriers).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&DeliveryCourier{}).Where("account_id = ?", accountId).Count(&total).Error
+	err = db.Model(&DeliveryCourier{}).Where("account_id = ?", accountID).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -105,7 +105,7 @@ func (DeliveryCourier) getList(accountId uint, sortBy string) ([]Entity, uint, e
 
 	return entities, total, nil
 }
-func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (DeliveryCourier) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	deliveryCouriers := make([]DeliveryCourier,0)
 	var total uint
@@ -116,7 +116,7 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&DeliveryCourier{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&DeliveryCourier{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Find(&deliveryCouriers, "name ILIKE ? OR code ILIKE ? OR price ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -124,7 +124,7 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 
 		// Определяем total
 		err = db.Model(&DeliveryCourier{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR price ILIKE ?", accountId, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR price ILIKE ?", accountID, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -132,14 +132,14 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 
 	} else {
 
-		err := db.Model(&DeliveryCourier{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&DeliveryCourier{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Find(&deliveryCouriers).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&DeliveryCourier{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&DeliveryCourier{}).Where("account_id = ?", accountID).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}

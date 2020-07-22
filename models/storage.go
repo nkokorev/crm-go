@@ -15,7 +15,7 @@ import (
 type Storage struct {
 
 	ID     		uint   	`json:"id" gorm:"primary_key"`
-	HashID 		string 	`json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
+	HashID 		string 	`json:"hashID" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	OwnerID   	uint	//`json:"-"`   // ?? gorm:"association_foreignkey:ID"
@@ -23,8 +23,8 @@ type Storage struct {
 
 	//Product		Product	`json:"-" gorm:"polymorphic:Owner;"`
 
-	//ProductId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of products
-	//EmailId 	uint	`json:"emailId" gorm:"type:int;default:null;"` // id of email template
+	//ProductID 	uint	`json:"productID" gorm:"type:int;default:null;"` // id of products
+	//EmailID 	uint	`json:"emailID" gorm:"type:int;default:null;"` // id of email template
 
 	Priority 	int		`json:"priority" gorm:"type:int;default:null;"` // Порядок отображения (часто нужно файлам)
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // выводить ли где-то это изображение или нет
@@ -133,11 +133,11 @@ func (Storage) get(id uint) (*Storage, error)  {
 	return &fs, nil
 }
 
-func (Storage) getByHashId(hashId string) (*Storage, error)  {
+func (Storage) getByHashID(hashID string) (*Storage, error)  {
 
 	fs := Storage{}
 
-	err := db.First(&fs, "hash_id = ?", hashId).Error
+	err := db.First(&fs, "hash_id = ?", hashID).Error
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +146,8 @@ func (Storage) getByHashId(hashId string) (*Storage, error)  {
 
 func (fs *Storage) update(input map[string]interface{}) error {
 	// fmt.Println(input)
-	// return db.Model(fs).Omit("id", "hashId", "account_id","created_at", "updated_at").Updates(structs.Map(input)).Error
-	return db.Model(fs).Omit("id", "hashId", "account_id","created_at", "updated_at").Updates(input).Error
+	// return db.Model(fs).Omit("id", "hashID", "account_id","created_at", "updated_at").Updates(structs.Map(input)).Error
+	return db.Model(fs).Omit("id", "hashID", "account_id","created_at", "updated_at").Updates(input).Error
 }
 
 func (fs Storage) Delete () error {
@@ -155,7 +155,7 @@ func (fs Storage) Delete () error {
 }
 
 // ########### ACCOUNT FUNCTIONAL ###########
-// func (account Account) StorageCreateFile(fs *Storage, ownerId *uint, ownerType *string) (*Storage, error) {
+// func (account Account) StorageCreateFile(fs *Storage, ownerID *uint, ownerType *string) (*Storage, error) {
 func (account Account) StorageCreateFile(fs *Storage) (*Storage, error) {
 	// check disk space
 	used, err := account.StorageDiskSpaceUsed()
@@ -192,9 +192,9 @@ func (account Account) StorageGet(id uint) (*Storage, error) {
 	return fs, nil
 }
 
-func (account Account) StorageGetByHashId(hashId string) (*Storage, error) {
+func (account Account) StorageGetByHashID(hashID string) (*Storage, error) {
 
-	fs, err := (Storage{}).getByHashId(hashId)
+	fs, err := (Storage{}).getByHashID(hashID)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +221,7 @@ func (account Account) StorageGetFiles(limit, offset int) ([]Storage, error) {
 	return files, nil
 }
 
-func (account Account) StorageGetList(offset, limit uint, search string, ownerId *uint, ownerType *string) ([]Storage, uint, error) {
+func (account Account) StorageGetList(offset, limit uint, search string, ownerID *uint, ownerType *string) ([]Storage, uint, error) {
 
 	files := make([]Storage,0)
 
@@ -233,9 +233,9 @@ func (account Account) StorageGetList(offset, limit uint, search string, ownerId
 		search = "%"+search+"%"
 
 		// Выборку по файлам
-		if *ownerId > 0 {
+		if *ownerID > 0 {
 			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
-				Where("account_id = ? AND owner_id = ? AND owner_type = ?", account.ID, ownerId, ownerType).
+				Where("account_id = ? AND owner_id = ? AND owner_type = ?", account.ID, ownerID, ownerType).
 				Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
 		} else {
 			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
@@ -254,9 +254,9 @@ func (account Account) StorageGetList(offset, limit uint, search string, ownerId
 		}
 
 		// Выборку по файлам
-		if *ownerId > 0 {
+		if *ownerID > 0 {
 			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).Order("id").
-				Find(&files, "account_id = ? AND owner_id = ? AND owner_type = ?", account.ID, ownerId, ownerType).Error
+				Find(&files, "account_id = ? AND owner_id = ? AND owner_type = ?", account.ID, ownerID, ownerType).Error
 		} else {
 			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
 				Find(&files, "account_id = ?", account.ID).Error
@@ -269,8 +269,8 @@ func (account Account) StorageGetList(offset, limit uint, search string, ownerId
 	}
 	
 	var total uint
-	if *ownerId > 0 {
-		err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutDataURL()).Where("account_id = ? AND owner_id = ?", account.ID, ownerId).Count(&total).Error
+	if *ownerID > 0 {
+		err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutDataURL()).Where("account_id = ? AND owner_id = ?", account.ID, ownerID).Count(&total).Error
 	} else {
 		err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutDataURL()).Where("account_id = ?", account.ID).Count(&total).Error
 	}
@@ -296,9 +296,9 @@ func (account Account) StorageUpdateFile(file *Storage, input map[string]interfa
 	return nil
 }
 
-func (account Account) StorageDeleteFile(fileId uint) error {
+func (account Account) StorageDeleteFile(fileID uint) error {
 
-	file, err := account.StorageGet(fileId)
+	file, err := account.StorageGet(fileID)
 	if err != nil {
 		return err
 	}
@@ -334,9 +334,9 @@ func (account Account) StorageDiskSpaceUsed() (uint, error) {
 	return sum, nil
 }
 
-func (Account) StorageGetPublicByHashId(hashId string) (*Storage, error) {
+func (Account) StorageGetPublicByHashID(hashID string) (*Storage, error) {
 
-	fs, err := (Storage{}).getByHashId(hashId)
+	fs, err := (Storage{}).getByHashID(hashID)
 	if err != nil {
 		return nil, err
 	}
@@ -347,7 +347,7 @@ func (Account) StorageGetPublicByHashId(hashId string) (*Storage, error) {
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 
 func (account Account) CallWebHookCreated(fs Storage) {
-	// fmt.Println("Id: ", fs.ID)
+	// fmt.Println("ID: ", fs.ID)
 	// fmt.Println("Name: ", fs.Name)
 	// fmt.Println("OwnerType: ", fs.OwnerType)
 	switch fs.OwnerType {

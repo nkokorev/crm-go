@@ -44,14 +44,14 @@ func EventListenerGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventListenerId, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerId")
+	eventListenerID, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerID")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке web site Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке web site ID"))
 		return
 	}
 
 	var eventListener models.EventListener
-	err = account.LoadEntity(&eventListener, eventListenerId)
+	err = account.LoadEntity(&eventListener, eventListenerID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -124,14 +124,14 @@ func EventListenerUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventListenerId, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerId")
+	eventListenerID, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
 	var eventListener models.EventListener
-	err = account.LoadEntity(&eventListener, eventListenerId)
+	err = account.LoadEntity(&eventListener, eventListenerID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -162,14 +162,14 @@ func EventListenerDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventListenerId, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerId")
+	eventListenerID, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
 		return
 	}
 
 	var eventListener models.EventListener
-	err = account.LoadEntity(&eventListener, eventListenerId)
+	err = account.LoadEntity(&eventListener, eventListenerID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return

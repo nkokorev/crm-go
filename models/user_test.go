@@ -8,8 +8,8 @@ func TestUser_create(t *testing.T) {
 	// see: TestAccount_UserCreate in account_test.go
 }
 
-func TestUser_getUserById(t *testing.T)  {
-	account, err := Account{Name: "TestAccount_getUserById"}.create()
+func TestUser_getUserByID(t *testing.T)  {
+	account, err := Account{Name: "TestAccount_getUserByID"}.create()
 	if err != nil {
 		t.Fatalf("Не удалось создать тестовый аккаунт: %v", err)
 	}
@@ -17,7 +17,7 @@ func TestUser_getUserById(t *testing.T)  {
 
 	user := User{
 		IssuerAccountID:account.ID,
-		Username:"TestUser_getUserById",
+		Username:"TestUser_getUserByID",
 	}
 	u, err := user.create()
 	if err !=nil {
@@ -35,7 +35,7 @@ func TestUser_hardDelete(t *testing.T)  {
 
 	testUser := &User{
 		IssuerAccountID:account.ID,
-		Username:"TestUser_getUserById",
+		Username:"TestUser_getUserByID",
 	}
 	user, err := testUser.create()
 	if err !=nil {
@@ -45,7 +45,7 @@ func TestUser_hardDelete(t *testing.T)  {
 		t.Fatalf("Не удалось удалить пользователя, %v", err)
 	}
 	// проверяем, что пользователя нет
-	_, err = getUserById(user.ID)
+	_, err = getUserByID(user.ID)
 	if err == nil {
 		t.Fatalf("Пользователь на самом деле не удалился")
 	}
@@ -61,7 +61,7 @@ func TestUser_softDelete(t *testing.T)  {
 
 	testUser := &User{
 		IssuerAccountID:account.ID,
-		Username:"TestUser_getUserById",
+		Username:"TestUser_getUserByID",
 	}
 	user, err := testUser.create()
 	if err !=nil {
@@ -74,13 +74,13 @@ func TestUser_softDelete(t *testing.T)  {
 	}
 
 	// проверяем, что пользователя нет
-	_, err = getUserById(user.ID)
+	_, err = getUserByID(user.ID)
 	if err == nil {
 		t.Fatalf("Пользователь на самом деле не удалился")
 	}
 
 	// а вот тут пользователь должен был найтись
-	fUser, err := getUnscopedUserById(user.ID)
+	fUser, err := getUnscopedUserByID(user.ID)
 	if err != nil {
 		t.Fatalf("Пользователь должен был найтись")
 	}

@@ -11,7 +11,7 @@ import (
 type ApiKey struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
 	Token string `json:"token" gorm:"unique_index;not null;"` // ID
-	AccountID uint `json:"accountId" gorm:"index,not null"` // аккаунт-владелец ключа
+	AccountID uint `json:"accountID" gorm:"index,not null"` // аккаунт-владелец ключа
 
 	Name string `json:"name" gorm:"type:varchar(255);default:'New api key';"` // имя ключа "Для сайта", "Для CRM"
 	Enabled bool `json:"enabled" gorm:"type:bool;default:true"` // активен ли ключ
@@ -74,11 +74,11 @@ func GetApiKeyByToken(token string) (*ApiKey, error) {
 	return ApiKey{}.getByToken(token)
 }
 
-func (ApiKey) getList(accountId uint) ([]ApiKey, error) {
+func (ApiKey) getList(accountID uint) ([]ApiKey, error) {
 
 	apiKeys := make([]ApiKey,0)
 
-	err := db.Find(&apiKeys, "account_id = ?", accountId).Error
+	err := db.Find(&apiKeys, "account_id = ?", accountID).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}

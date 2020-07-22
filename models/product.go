@@ -17,6 +17,7 @@ const (
 	ProductTypeCommodity    ProductType = "commodity"
 	ProductTypeService      ProductType = "service"
 )
+
 /*
 Продукт - как единица товара или услуги. То что потом в чеке у пользователя.
 Продукт может быть как шт., упак., так и сборным из других товаров.
@@ -46,10 +47,10 @@ type Product struct {
 	RetailDiscount 			float64 `json:"retailDiscount" gorm:"type:numeric;default:0"` // розничная фактическая скидка
 
 	ProductType 			ProductType `json:"productType" gorm:"type:varchar(12);default:'commodity';"`// товар или услуга ? [вид номенклатуры]
-	UnitMeasurementID 		uint	`json:"unitMeasurementId" gorm:"type:int;default:1;"` // тип измерения
+	UnitMeasurementID 		uint	`json:"unitMeasurementID" gorm:"type:int;default:1;"` // тип измерения
 	UnitMeasurement 		UnitMeasurement // Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 	
-	// ProductGroupsId uint `json:"productGroupsId"` // группа товара
+	// ProductGroupsID uint `json:"productGroupsID"` // группа товара
 	// ProductGroups []ProductGroup `json:"productGroups" gorm:"many2many:product_group_products"`
 
 	ShortDescription string 	`json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
@@ -84,7 +85,7 @@ func (product *Product) BeforeCreate(scope *gorm.Scope) error {
 }
 
 // ######### INTERFACE EVENT Functions ############
-func (product Product) GetId() uint {
+func (product Product) GetID() uint {
 	return product.ID
 }
 // ######### END OF INTERFAe Functions ############
@@ -114,11 +115,11 @@ func (Product) get(id uint) (*Product, error) {
 	return &product, nil
 }
 
-func (Product) getList(accountId uint) ([]Product, error) {
+func (Product) getList(accountID uint) ([]Product, error) {
 
 	products := make([]Product,0)
 
-	err := db.Model(&Product{}).Preload("ProductCards").Find(&products, "account_id = ?", accountId).Error
+	err := db.Model(&Product{}).Preload("ProductCards").Find(&products, "account_id = ?", accountID).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
@@ -167,8 +168,8 @@ func (account Account) CreateProduct(input Product) (*Product, error) {
 	return product, nil
 }
 
-func (account Account) GetProduct(productId uint) (*Product, error) {
-	product, err := Product{}.get(productId)
+func (account Account) GetProduct(productID uint) (*Product, error) {
+	product, err := Product{}.get(productID)
 	if err != nil {
 		return nil, err
 	}
@@ -239,9 +240,9 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 	return products, total, nil
 }
 
-func (account Account) UpdateProduct(productId uint, input map[string]interface{}) (*Product, error) {
+func (account Account) UpdateProduct(productID uint, input map[string]interface{}) (*Product, error) {
 
-	product, err := account.GetProduct(productId)
+	product, err := account.GetProduct(productID)
 	if err != nil {
 		return nil, err
 	}
@@ -269,10 +270,10 @@ func (account Account) UpdateProduct(productId uint, input map[string]interface{
 
 }
 
-func (account Account) DeleteProduct(productId uint) error {
+func (account Account) DeleteProduct(productID uint) error {
 
 	// включает в себя проверку принадлежности к аккаунту
-	product, err := account.GetProduct(productId)
+	product, err := account.GetProduct(productID)
 	if err != nil {
 		return err
 	}

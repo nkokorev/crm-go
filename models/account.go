@@ -23,7 +23,7 @@ const (
 
 type Account struct {
 	ID     uint   `json:"id" gorm:"primary_key"`
-	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
+	HashID string `json:"hashID" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
 
 	// данные аккаунта
 	Name    string `json:"name" gorm:"type:varchar(255)"`
@@ -198,9 +198,9 @@ func (account Account) IsMainAccount() bool {
 	return account.ID == 1 && account.Name == "RatusCRM" && account.Type == "main"
 }
 
-func GetAccountByHash(hashId string) (*Account, error) {
+func GetAccountByHash(hashID string) (*Account, error) {
 	var account Account
-	err := db.Model(&Account{}).First(&account, "hash_id = ?", hashId).Error
+	err := db.Model(&Account{}).First(&account, "hash_id = ?", hashID).Error
 	return &account, err
 }
 
@@ -302,9 +302,9 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 }
 
 // Возвращает пользователя везде, кроме главного аккаунта
-func (account Account) GetUser(userId uint) (*User, error) {
+func (account Account) GetUser(userID uint) (*User, error) {
 
-	user, err := User{}.get(userId)
+	user, err := User{}.get(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -319,19 +319,19 @@ func (account Account) GetUser(userId uint) (*User, error) {
 	return user, nil
 }
 
-func (account Account) GetUserWithAUser(userId uint) (*User, error) {
+func (account Account) GetUserWithAUser(userID uint) (*User, error) {
 
 	var user User
 
 	if err := db.Preload("AccountUser", func(db *gorm.DB) *gorm.DB {
 		return db.Where("account_id = ?", account.ID).Select(AccountUser{}.SelectArrayWithoutBigObject())
-	}).First(&user, userId).Error; err != nil { return nil, err }
+	}).First(&user, userID).Error; err != nil { return nil, err }
 
 	return &user, nil
 }
 
-func (account Account) GetUserByHashId(hashId string) (*User, error) {
-	user, err := User{}.getByHashId(hashId)
+func (account Account) GetUserByHashID(hashID string) (*User, error) {
+	user, err := User{}.getByHashID(hashID)
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +358,7 @@ func (account Account) GetUserByUsername(username string) (*User, error) {
 		return nil, utils.Error{Message: "Пользователь не найден"}
 	}
 
-	if !account.AccessUserById(user.ID) {
+	if !account.AccessUserByID(user.ID) {
 		return nil, utils.Error{Message: "Пользователь не найден"}
 	}
 
@@ -385,7 +385,7 @@ func (account Account) GetUserForAuthAppByUsername(username string) (*User, erro
 
 	} else {
 		// Если это не RatusCRM аккаунт, то проверяем через AccountUser есть ли его ID
-		if !account.AccessUserById(user.ID) {
+		if !account.AccessUserByID(user.ID) {
 			return nil, utils.Error{Message: "Пользователь не найден"}
 		}
 	}
@@ -530,7 +530,7 @@ func (account Account) ExistAccountUser(user User) bool {
 }
 
 // Если пользователь не найден - вернет gorm.ErrRecordNotFound
-func (account Account) GetAccountUser(userId uint) (*AccountUser, error) {
+func (account Account) GetAccountUser(userID uint) (*AccountUser, error) {
 
 	aUser := AccountUser{}
 
@@ -539,7 +539,7 @@ func (account Account) GetAccountUser(userId uint) (*AccountUser, error) {
 	}
 
 	err := db.Model(&AccountUser{}).
-		Where("account_id = ? AND user_id = ?", account.ID, userId).
+		Where("account_id = ? AND user_id = ?", account.ID, userID).
 		Preload("Role").
 		Preload("Account").
 		Preload("User").
@@ -614,7 +614,7 @@ func (account Account) AppendUser(user User, role Role) (*AccountUser, error) {
 
 		acs = *_asc
 
-		event.AsyncFire(Event{}.UserAppendedToAccount(account.ID, acs.UserId, acs.RoleId))
+		event.AsyncFire(Event{}.UserAppendedToAccount(account.ID, acs.UserID, acs.RoleID))
 	}
 
 	return &acs, nil
@@ -623,7 +623,7 @@ func (account Account) AppendUser(user User, role Role) (*AccountUser, error) {
 // !!!!!! ### Выше функции покрытые тестами ### !!!!!!!!!!1
 
 // Ищет пользователя, авторизует и в случае успеха возвращает пользователя и jwt-token. issuerAccount - место, где берутся коды
-// в app.ratuscrm.com контекст - RatusCRM, accountId = 1
+// в app.ratuscrm.com контекст - RatusCRM, accountID = 1
 func (account Account) AuthorizationUserByUsername(username, password string, onceLogin,rememberChoice bool, issuerAccount *Account) (*User, string, error) {
 
 	var e utils.Error
@@ -648,9 +648,9 @@ func (account Account) AuthorizationUserByUsername(username, password string, on
 
 
 	/*if rememberChoice {
-		user.DefaultAccountHashId = account.HashID
+		user.DefaultAccountHashID = account.HashID
 		updateData := struct {
-			DefaultAccountHashId string
+			DefaultAccountHashID string
 		}{account.HashID}
 		if err := user.update(&updateData); err != nil {
 			return nil, "", errors.New("Не удалось авторизовать пользователя")
@@ -666,10 +666,10 @@ func (account Account) AuthorizationUserByUsername(username, password string, on
 }
 
 // проверяет, имеет ли указанный пользователь доступ к аккаунту
-func (account Account) AccessUserById(userId uint) bool {
-	if userId < 1 {return false}
+func (account Account) AccessUserByID(userID uint) bool {
+	if userID < 1 {return false}
 	// fmt.Printf("issuer_account_id = %v AND email = %v\n", account.ID, email)
-	return !db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.ID, userId).First(&AccountUser{}).RecordNotFound()
+	return !db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.ID, userID).First(&AccountUser{}).RecordNotFound()
 }
 
 // *** New functions ****
@@ -714,13 +714,13 @@ func (account Account) ValidationUserRegReqFields(input User) error {
 	}
 }
 
-func (account Account) IsVerifiedUser(userId uint) (bool, error) {
-	user, err := account.GetUser(userId)
+func (account Account) IsVerifiedUser(userID uint) (bool, error) {
+	user, err := account.GetUser(userID)
 	if err != nil {
 		return false, utils.Error{Message: "Пользователь не найден"}
 	}
 
-	methods, err := GetUserVerificationTypeById(account.UserVerificationMethodID)
+	methods, err := GetUserVerificationTypeByID(account.UserVerificationMethodID)
 	if err != nil {
 		return false, err
 	}
@@ -827,7 +827,7 @@ func (account Account) UpdateUserRole(user *User, role Role) error {
 		return err
 	}
 
-	err = aUser.update(map[string]interface{}{"roleId":role.ID})
+	err = aUser.update(map[string]interface{}{"roleID":role.ID})
 	if err != nil {
 		return err
 	}
@@ -841,11 +841,11 @@ func (account Account) SetUserRole(user *User, role Role) (*AccountUser, error) 
 		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
 	}
 
-	aUser := AccountUser{AccountId: account.ID, RoleId: role.ID, UserId: user.ID}
+	aUser := AccountUser{AccountID: account.ID, RoleID: role.ID, UserID: user.ID}
 
 	err := db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.ID, user.ID).
 		FirstOrCreate(&aUser).
-		Updates(map[string]interface{}{"roleId":role.ID}).Find(&aUser).Error
+		Updates(map[string]interface{}{"roleID":role.ID}).Find(&aUser).Error
 	if err != nil {
 		fmt.Println("Ошибка: ", err)
 		return nil, err
@@ -858,7 +858,7 @@ func (account Account) SetUserRole(user *User, role Role) (*AccountUser, error) 
 func (account Account) AuthUserByEmail(email, password string) (jwt string, err error) {
 
 	// 1. Находим пользователя по email
-	//user := GetUserById
+	//user := GetUserByID
 
 	// 2. Проверяем пароль
 
@@ -871,7 +871,7 @@ func (account Account) AuthUserByEmail(email, password string) (jwt string, err 
 }
 
 // выдает пользователю JWT-токен
-func (account Account) getUserJwt(userId uint) (jwt string, err error) {
+func (account Account) getUserJwt(userID uint) (jwt string, err error) {
 	return "", nil
 }
 
@@ -1012,14 +1012,14 @@ func (account Account) AuthorizationUser(user User, rememberChoice bool, issuerA
 	}
 
 	// Запоминаем аккаунт для будущих входов
-	// user.DefaultAccountHashId = account.HashID
+	// user.DefaultAccountHashID = account.HashID
 
 	/*updateData := struct {
-		DefaultAccountHashId string
+		DefaultAccountHashID string
 	}{}
 
 	if rememberChoice {
-		updateData.DefaultAccountHashId = account.HashID
+		updateData.DefaultAccountHashID = account.HashID
 	} else {
 		//updateData.DefaultAccountID = 0
 	}

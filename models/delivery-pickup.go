@@ -9,7 +9,7 @@ import (
 type DeliveryPickup struct {
 	ID     		uint   	`json:"id" gorm:"primary_key"`
 	AccountID 	uint	`json:"-" gorm:"index,not null"` // аккаунт-владелец ключа
-	WebSiteId		uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	WebSiteID		uint 	`json:"webSiteID" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
 	Code 		string	`json:"code" gorm:"type:varchar(16);default:'pickup';"` // Для идентификации во фронтенде
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // активен ли способ доставки
@@ -31,11 +31,11 @@ func (DeliveryPickup) PgSqlCreate() {
 }
 
 // ############# Entity interface #############
-func (deliveryPickup DeliveryPickup) GetId() uint { return deliveryPickup.ID }
-func (deliveryPickup *DeliveryPickup) setId(id uint) { deliveryPickup.ID = id }
-func (deliveryPickup DeliveryPickup) GetAccountId() uint { return deliveryPickup.AccountID }
-func (deliveryPickup *DeliveryPickup) setAccountId(id uint) { deliveryPickup.AccountID = id }
-func (deliveryPickup *DeliveryPickup) setShopId(webSiteId uint) { deliveryPickup.WebSiteId = webSiteId }
+func (deliveryPickup DeliveryPickup) GetID() uint { return deliveryPickup.ID }
+func (deliveryPickup *DeliveryPickup) setID(id uint) { deliveryPickup.ID = id }
+func (deliveryPickup DeliveryPickup) GetAccountID() uint { return deliveryPickup.AccountID }
+func (deliveryPickup *DeliveryPickup) setAccountID(id uint) { deliveryPickup.AccountID = id }
+func (deliveryPickup *DeliveryPickup) setShopID(webSiteID uint) { deliveryPickup.WebSiteID = webSiteID }
 func (DeliveryPickup) systemEntity() bool { return false }
 
 func (deliveryPickup DeliveryPickup) GetCode() string {
@@ -45,7 +45,6 @@ func (deliveryPickup DeliveryPickup) GetCode() string {
 
 
 // ###### GORM Functional #######
-// func (DeliveryPickup) TableName() string { return "delivery_pickups" }
 func (deliveryPickup *DeliveryPickup) BeforeCreate(scope *gorm.Scope) error {
 	deliveryPickup.ID = 0
 	return nil
@@ -85,19 +84,19 @@ func (deliveryPickup *DeliveryPickup) load() error {
 	return nil
 }
 
-func (DeliveryPickup) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (DeliveryPickup) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 
 	deliveryPickups := make([]DeliveryPickup,0)
 	var total uint
 
-	err := db.Model(&DeliveryPickup{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+	err := db.Model(&DeliveryPickup{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
 		Find(&deliveryPickups).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&DeliveryPickup{}).Where("account_id = ?", accountId).Count(&total).Error
+	err = db.Model(&DeliveryPickup{}).Where("account_id = ?", accountID).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -110,7 +109,7 @@ func (DeliveryPickup) getList(accountId uint, sortBy string) ([]Entity, uint, er
 
 	return entities, total, nil
 }
-func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (DeliveryPickup) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	deliveryPickups := make([]DeliveryPickup,0)
 	var total uint
@@ -121,7 +120,7 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortB
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&DeliveryPickup{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&DeliveryPickup{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Find(&deliveryPickups, "name ILIKE ? OR code ILIKE ? OR price ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -129,7 +128,7 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortB
 
 		// Определяем total
 		err = db.Model(&DeliveryPickup{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR price ILIKE ?", accountId, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR price ILIKE ?", accountID, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -137,14 +136,14 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortB
 
 	} else {
 
-		err := db.Model(&DeliveryPickup{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&DeliveryPickup{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Find(&deliveryPickups).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&DeliveryPickup{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&DeliveryPickup{}).Where("account_id = ?", accountID).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}

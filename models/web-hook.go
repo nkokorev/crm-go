@@ -14,7 +14,7 @@ import (
 type WebHookType = string
 
 type WebHookEventObject interface {
-	getId() uint
+	getID() uint
 }
 
 const (
@@ -63,16 +63,20 @@ type WebHook struct {
 }
 
 // ############# Entity interface #############
-func (webHook WebHook) GetId() uint { return webHook.ID }
-func (webHook *WebHook) setId(id uint) { webHook.ID = id }
-func (webHook WebHook) GetAccountId() uint { return webHook.AccountID }
-func (webHook *WebHook) setAccountId(id uint) { webHook.AccountID = id }
+func (webHook WebHook) GetID() uint { return webHook.ID }
+func (webHook *WebHook) setID(id uint) { webHook.ID = id }
+func (webHook WebHook) GetAccountID() uint { return webHook.AccountID }
+func (webHook *WebHook) setAccountID(id uint) { webHook.AccountID = id }
 func (WebHook) systemEntity() bool { return false }
 
 // ############# Entity interface #############
 
 func (WebHook) PgSqlCreate() {
-	db.CreateTable(&WebHook{})
+
+	if !db.HasTable(&WebHook{}) {
+		db.CreateTable(&WebHook{})
+	}
+
 	db.Model(&WebHook{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }
 func (webHook *WebHook) BeforeCreate(scope *gorm.Scope) error {
@@ -115,19 +119,19 @@ func (webHook *WebHook) load() error {
 	return nil
 }
 
-func (WebHook) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (WebHook) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 
 	webHooks := make([]WebHook,0)
 	var total uint
 
-	err := db.Model(&WebHook{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountId).
+	err := db.Model(&WebHook{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
 		Find(&webHooks).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&WebHook{}).Where("account_id = ?", accountId).Count(&total).Error
+	err = db.Model(&WebHook{}).Where("account_id = ?", accountID).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -141,7 +145,7 @@ func (WebHook) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return entities, total, nil
 }
 
-func (WebHook) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (WebHook) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	webHooks := make([]WebHook,0)
 	var total uint
@@ -152,7 +156,7 @@ func (WebHook) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&WebHook{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&WebHook{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -160,7 +164,7 @@ func (WebHook) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 		// Определяем total
 		err = db.Model(&WebHook{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountID, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -168,14 +172,14 @@ func (WebHook) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 
-		err := db.Model(&WebHook{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&WebHook{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
 			Find(&webHooks).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&WebHook{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&WebHook{}).Where("account_id = ?", accountID).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}

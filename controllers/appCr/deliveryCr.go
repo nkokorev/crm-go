@@ -17,14 +17,14 @@ func DeliveryCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -55,14 +55,14 @@ func DeliveryGetListByShop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -85,14 +85,14 @@ func DeliveryGetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -131,14 +131,14 @@ func DeliveryUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -171,14 +171,14 @@ func DeliveryDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	webSiteID, err := utilsCr.GetUINTVarFromRequest(r, "webSiteID")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID магазина"))
 		return
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return

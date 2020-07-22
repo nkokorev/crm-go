@@ -7,14 +7,14 @@ type Delivery interface {
 	CalculateDelivery(deliveryData DeliveryData) (*DeliveryData, error) // weight в кг
 	checkMaxWeight(deliveryData DeliveryData) error // проверяет макс вес
 
-	setShopId(uint)
+	setShopID(uint)
 }
 
 type DeliveryRequest struct {
 
 	// Список товаров в корзине
 	Cart map[string]struct{
-		ProductId 	uint `json:"productId"` // id product
+		ProductID 	uint `json:"productID"` // id product
 		Count 		uint `json:"count"`      // число позиций
 	} `json:"cart"`
 
@@ -22,7 +22,7 @@ type DeliveryRequest struct {
 	DeliveryMethod struct{
 		ID 		uint 	`json:"id"` 	// id доставки в ее таблице
 		Code 	string 	`json:"code"`	// code по которому можно понять что за таблица
-		WebSiteId 	uint 	`json:"webSiteId"` // на всякий случай
+		WebSiteID 	uint 	`json:"webSiteID"` // на всякий случай
 	} `json:"deliveryMethod"`
 
 	// Данные для расчета доставки

@@ -13,8 +13,8 @@ import (
 
 type User struct {
 	ID        	uint `json:"id" gorm:"primary_key"`
-	HashID string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
-	IssuerAccountID uint `json:"issuerAccountId" gorm:"index;not null"`
+	HashID string `json:"hashID" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
+	IssuerAccountID uint `json:"issuerAccountID" gorm:"index;not null"`
 	
 	Username 	string `json:"username" gorm:"type:varchar(255);unique_index;default:null;"` // уникальный, т.к. через него вход в главный аккаунт
 	Email 		string `json:"email" gorm:"type:varchar(255);index;default:null;"`
@@ -33,7 +33,7 @@ type User struct {
 
 	EnabledAuthFromApp	bool	`json:"enabledAuthFromApp" gorm:"type:bool;default:false;"` // Разрешен ли вход, через app.ratuscrm.com
 
-	DefaultAccountId uint `json:"defaultAccountId" gorm:"type:varchar(12);default:null;"` // указывает какой аккаунт по дефолту загружать
+	DefaultAccountID uint `json:"defaultAccountID" gorm:"type:varchar(12);default:null;"` // указывает какой аккаунт по дефолту загружать
 	InvitedUserID uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
 
 	// Верификация, сброс пароля и т.д.
@@ -53,7 +53,7 @@ type User struct {
 
 type UserAndRole struct {
 	User
-	RoleId uint `json:"roleId"`
+	RoleID uint `json:"roleID"`
 }
 
 func (User) PgSqlCreate() {
@@ -111,11 +111,11 @@ func (User) get(id uint) (*User, error) {
 	}
 	return &user, nil
 }
-/*func (User) getWithAUser(accountId, id uint) (*User, error) {
+/*func (User) getWithAUser(accountID, id uint) (*User, error) {
 	user := User{}
 
 	err := db.Preload("AccountUser", func(db *gorm.DB) *gorm.DB {
-		return db.Where("account_id = ?", accountId).Select(AccountUser{}.SelectArrayWithoutBigObject())
+		return db.Where("account_id = ?", accountID).Select(AccountUser{}.SelectArrayWithoutBigObject())
 	}).First(&user, id).Error
 	if err != nil {
 		return nil, err
@@ -131,10 +131,10 @@ func (user *User) load() error {
 	return nil
 }
 
-func (User) getByHashId(hashId string) (*User, error) {
+func (User) getByHashID(hashID string) (*User, error) {
 	user := User{}
 
-	err := db.First(&user, "hash_id = ?", hashId).Error
+	err := db.First(&user, "hash_id = ?", hashID).Error
 	if err != nil {
 		return nil, err
 	}
@@ -164,15 +164,15 @@ func (user User) delete () error {
 	return db.Model(&User{}).Where("id = ?", user.ID).Delete(user).Error
 }
 
-func getUserById(userId uint) (*User,error) {
+func getUserByID(userID uint) (*User,error) {
 	user := User{}
-	err := db.Model(&User{}).First(&user, userId).Error
+	err := db.Model(&User{}).First(&user, userID).Error
 	return &user, err
 }
 
-func getUnscopedUserById(userId uint) (*User,error) {
+func getUnscopedUserByID(userID uint) (*User,error) {
 	user := User{}
-	err := db.Model(&User{}).Unscoped().First(&user, userId).Error
+	err := db.Model(&User{}).Unscoped().First(&user, userID).Error
 	return &user, err
 }
 
@@ -180,10 +180,10 @@ func getUnscopedUserById(userId uint) (*User,error) {
 
 // ######### ACCOUNT @@
 
-func (account Account) UpdateUser(userId uint, input map[string]interface{}) (*User, error) {
+func (account Account) UpdateUser(userID uint, input map[string]interface{}) (*User, error) {
 
 	// Проверка не нужна, т.к. поиск пользователя ее уже имеет
-	user, err := account.GetUser(userId)
+	user, err := account.GetUser(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -196,9 +196,9 @@ func (account Account) UpdateUser(userId uint, input map[string]interface{}) (*U
 	return user, err
 }
 // осуществляет поиск по ID
-func (account Account) GetUserById (userId uint) (*User, error) {
+func (account Account) GetUserByID (userID uint) (*User, error) {
 
-	user, err := User{}.get(userId)
+	user, err := User{}.get(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +257,7 @@ func (user User) DepersonalizedDataMap() *map[string]interface{} {
 	delete(userMap, "ID")
 	delete(userMap, "IssuerAccountID")
 	delete(userMap, "Password")
-	delete(userMap, "DefaultAccountHashId")
+	delete(userMap, "DefaultAccountHashID")
 	delete(userMap, "InvitedUserID")
 	delete(userMap, "EmailVerifiedAt")
 	delete(userMap, "PhoneVerifiedAt")

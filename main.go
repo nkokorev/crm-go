@@ -22,10 +22,9 @@ func main() {
 
 	pool.DB().SetConnMaxLifetime(0)
 	pool.DB().SetMaxIdleConns(10)
-	pool.DB().SetMaxOpenConns(10)
+	pool.DB().SetMaxOpenConns(100)
 
 	// base.RefreshTablesPart_I()
-	// base.RefreshTablesPart_II()
 	// base.UploadTestDataPart_I()
 	// base.LoadImagesAiroClimate(13)
 	// base.LoadArticlesAiroClimate()
@@ -38,9 +37,9 @@ func main() {
 	base.RefreshTablesPart_IV()
 	base.UploadTestDataPart_IV()
 
-	if err := (models.EventListener{}).ReloadEventHandlers(); err != nil {
+	/*if err := (models.EventListener{}).ReloadEventHandlers(); err != nil {
 		log.Fatal(fmt.Sprintf("Не удалось зарегистрировать EventHandler: %v", err))
-	}
+	}*/
 
 	models.RunHttpServer(routes.Handlers())
 	// controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
@@ -97,10 +96,7 @@ func SendMail() error {
 		return err
 	}
 
-	/*user, err := acc.GetUserById(2)
-	if err != nil {
-		return err
-	}*/
+	
 
 	// 4. Отправляем шаблон из MailBox
 	// err = et.Send(*mb, models.User{Email: "aix27249@yandex.ru"}, "Тест return path")

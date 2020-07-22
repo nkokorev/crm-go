@@ -13,11 +13,11 @@ import (
 * ### Auth by JWT ###
 
 	Любой jwt имеет в своем составе информацию о пользователе и аккаунте, выдавшим ключ (issuer).
-	userId - id пользователя, на имя которого выписан ключ
-	accountId - id аккаунта, в котором пользователь авторизован
+	userID - id пользователя, на имя которого выписан ключ
+	accountID - id аккаунта, в котором пользователь авторизован
 */
 
-// проверяет валидность 32-символьного api-ключа. Вставляет в контекст accountId && account
+// проверяет валидность 32-символьного api-ключа. Вставляет в контекст accountID && account
 func BearerAuthentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -79,13 +79,13 @@ func BearerAuthentication(next http.Handler) http.Handler {
 		// имеет смысл, т.к. все запросы быдут связаны с аккаунтом
 		r = r.WithContext(context.WithValue(r.Context(), "issuer", "api"))
 		r = r.WithContext(context.WithValue(r.Context(), "account", account))
-		r = r.WithContext(context.WithValue(r.Context(), "accountId", account.ID))
+		r = r.WithContext(context.WithValue(r.Context(), "accountID", account.ID))
 
 		next.ServeHTTP(w, r) //proceed in the middleware chain!
 	})
 }
 
-// Требует авторизации по User, а также вставляет в контекст userId && user
+// Требует авторизации по User, а также вставляет в контекст userID && user
 func JwtCheckUserAuthentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -140,7 +140,7 @@ func JwtCheckUserAuthentication(next http.Handler) http.Handler {
 			return
 		}
 
-		account, err := utilsCr.GetAccountByHashId(w,r)
+		account, err := utilsCr.GetAccountByHashID(w,r)
 		if err != nil {
 			return
 		}
@@ -152,14 +152,14 @@ func JwtCheckUserAuthentication(next http.Handler) http.Handler {
 			return
 		}
 
-		r = r.WithContext(context.WithValue(r.Context(), "userId", tk.UserID))
+		r = r.WithContext(context.WithValue(r.Context(), "userID", tk.UserID))
 		r = r.WithContext(context.WithValue(r.Context(), "user", user))
 
 		next.ServeHTTP(w, r) //proceed in the middleware chain!
 	})
 }
 
-// Полная проверка User & Account авторизация + проверка доступа. Вставляет userId && user, accountId && account
+// Полная проверка User & Account авторизация + проверка доступа. Вставляет userID && user, accountID && account
 func JwtCheckFullAuthentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -195,7 +195,7 @@ func JwtCheckFullAuthentication(next http.Handler) http.Handler {
 		// Собираем вторую часть строки "Bearer kSDkfslfds390d2w...."
 		tokenPart := splitted[1] //Grab the token part, what we are truly interested in
 
-		// AccountId? UserId? - собираем из токена
+		// AccountID? UserID? - собираем из токена
 		//tk := &models.JWT{}
 
 		// Парсим в tk токен со всеми данными
@@ -248,12 +248,12 @@ func JwtCheckFullAuthentication(next http.Handler) http.Handler {
 
 		// fmt.Println("JwtFullAuthentication")
 		// fmt.Printf("Context Account: %v\n",  account.Name)
-		// fmt.Printf("userId: %v\n", user.Name)
+		// fmt.Printf("userID: %v\n", user.Name)
 
 		r = r.WithContext(context.WithValue(r.Context(), "issuer", "ui-api"))
-		r = r.WithContext(context.WithValue(r.Context(), "userId", tk.UserID))
+		r = r.WithContext(context.WithValue(r.Context(), "userID", tk.UserID))
 		r = r.WithContext(context.WithValue(r.Context(), "user", user))
-		r = r.WithContext(context.WithValue(r.Context(), "accountId", tk.AccountID))
+		r = r.WithContext(context.WithValue(r.Context(), "accountID", tk.AccountID))
 		r = r.WithContext(context.WithValue(r.Context(), "account", account))
 
 		next.ServeHTTP(w, r) //proceed in the middleware chain!

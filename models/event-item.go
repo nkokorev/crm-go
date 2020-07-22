@@ -31,10 +31,10 @@ func (eventItem *EventItem) BeforeCreate(scope *gorm.Scope) error {
 }
 
 // ############# Entity interface #############
-func (eventItem EventItem) GetId() uint { return eventItem.ID }
-func (eventItem *EventItem) setId(id uint) { eventItem.ID = id }
-func (eventItem EventItem) GetAccountId() uint { return eventItem.AccountID }
-func (eventItem *EventItem) setAccountId(id uint) { eventItem.AccountID = id }
+func (eventItem EventItem) GetID() uint { return eventItem.ID }
+func (eventItem *EventItem) setID(id uint) { eventItem.ID = id }
+func (eventItem EventItem) GetAccountID() uint { return eventItem.AccountID }
+func (eventItem *EventItem) setAccountID(id uint) { eventItem.AccountID = id }
 func (EventItem) systemEntity() bool { return true }
 
 // ############# Entity interface #############
@@ -72,19 +72,19 @@ func (eventItem *EventItem) load() error {
 	return nil
 }
 
-func (EventItem) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (EventItem) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 
 	eventItems := make([]EventItem,0)
 	var total uint
 
-	err := db.Model(&EventItem{}).Limit(1000).Order(sortBy).Where( "account_id IN (?)", []uint{1, accountId}).
+	err := db.Model(&EventItem{}).Limit(1000).Order(sortBy).Where( "account_id IN (?)", []uint{1, accountID}).
 		Find(&eventItems).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&EventItem{}).Where( "account_id IN (?)", []uint{1, accountId}).Count(&total).Error
+	err = db.Model(&EventItem{}).Where( "account_id IN (?)", []uint{1, accountID}).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -98,7 +98,7 @@ func (EventItem) getList(accountId uint, sortBy string) ([]Entity, uint, error) 
 	return entities, total, nil
 }
 
-func (EventItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (EventItem) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	eventItems := make([]EventItem,0)
 	var total uint
@@ -109,7 +109,7 @@ func (EventItem) getPaginationList(accountId uint, offset, limit int, sortBy, se
 
 		err := db.Model(&EventItem{}).
 			Order(sortBy).Offset(offset).Limit(limit).
-			Where("account_id IN (?)", []uint{1, accountId}).
+			Where("account_id IN (?)", []uint{1, accountID}).
 			Find(&eventItems, "name ILIKE ? OR description ILIKE ?",search,search).Error
 		if err != nil {
 			return nil, 0, err
@@ -117,7 +117,7 @@ func (EventItem) getPaginationList(accountId uint, offset, limit int, sortBy, se
 
 		// Определяем total
 		err = db.Model(&EventItem{}).
-			Where("account_id IN (?) AND name ILIKE ? OR description ILIKE ?", []uint{1, accountId}, search,search).
+			Where("account_id IN (?) AND name ILIKE ? OR description ILIKE ?", []uint{1, accountID}, search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -127,14 +127,14 @@ func (EventItem) getPaginationList(accountId uint, offset, limit int, sortBy, se
 	} else {
 		err := db.Model(&EventItem{}).
 			Order(sortBy).Offset(offset).Limit(limit).
-			Where("account_id IN (?)", []uint{1, accountId}).
+			Where("account_id IN (?)", []uint{1, accountID}).
 			Find(&eventItems).Error
 		if err != nil {
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&EventItem{}).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
+		err = db.Model(&EventItem{}).Where("account_id IN (?)", []uint{1, accountID}).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}

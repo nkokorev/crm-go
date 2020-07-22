@@ -22,7 +22,7 @@ func GetIssuerAccount(w http.ResponseWriter, r *http.Request) (*models.Account, 
 
 	if issuerAccount.ID < 1 {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
-		return nil, errors.New("Id of issuer account is zero!")
+		return nil, errors.New("ID of issuer account is zero!")
 	}
 
 	return issuerAccount,nil
@@ -56,20 +56,20 @@ func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, er
 
 	if account.ID < 1 {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
-		return nil, errors.New("Id of issuer account is zero!")
+		return nil, errors.New("ID of issuer account is zero!")
 	}
 
-	// Если не API проверяем в строке рабочий accountHashId
+	// Если не API проверяем в строке рабочий accountHashID
 	if r.Context().Value("issuer") == "app" ||  r.Context().Value("issuer") == "ui-api" {
 
-		hashId, ok := GetSTRVarFromRequest(r,"accountHashId")
+		hashID, ok := GetSTRVarFromRequest(r,"accountHashID")
 		if !ok {
 			u.Respond(w, u.MessageError(u.Error{Message: "Ошибка hash id code of account"}))
 			return nil, errors.New("Ошибка hash id code of account")
 		}
 
-		if account.HashID != hashId {
-		// if !strings.Contains(account.HashID, hashId) {
+		if account.HashID != hashID {
+		// if !strings.Contains(account.HashID, hashID) {
 			u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
 			return nil, errors.New("Вы авторизованы в другом аккаунте")
 		}
@@ -77,15 +77,15 @@ func GetWorkAccount(w http.ResponseWriter, r *http.Request) (*models.Account, er
 
 	return account, nil
 }
-func GetAccountByHashId(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
+func GetAccountByHashID(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
 
-	accountHashId, ok := GetSTRVarFromRequest(r,"accountHashId")
+	accountHashID, ok := GetSTRVarFromRequest(r,"accountHashID")
 	if !ok {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка hash id code of account"}))
 		return nil, errors.New("Ошибка hash id code of account")
 	}
 
-	account, err := models.GetAccountByHash(accountHashId)
+	account, err := models.GetAccountByHash(accountHashID)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка hash id code of account"}))
 		return nil, errors.New("Ошибка hash id code of account")
@@ -94,7 +94,7 @@ func GetAccountByHashId(w http.ResponseWriter, r *http.Request) (*models.Account
 	return account, nil
 }
 
-func GetWorkAccountCheckHashIdOLD(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
+func GetWorkAccountCheckHashIDOLD(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
 
 	if r.Context().Value("account") == nil {
 		u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
@@ -114,21 +114,21 @@ func GetWorkAccountCheckHashIdOLD(w http.ResponseWriter, r *http.Request) (*mode
 		return nil, errors.New("Account nil pointer")
 	}
 
-	// получаем переменную из строки запрос URL: {hashId}
-	hashId, ok := GetSTRVarFromRequest(r,"accountHashId")
+	// получаем переменную из строки запрос URL: {hashID}
+	hashID, ok := GetSTRVarFromRequest(r,"accountHashID")
 	if !ok {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка hash id code of account"}))
 		return nil, errors.New("Ошибка hash id code of account")
 	}
 
-	if account.HashID != hashId {
+	if account.HashID != hashID {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
 		return nil, errors.New("Вы авторизованы в другом аккаунте")
 	}
 
 	if account.ID < 1 {
 		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
-		return nil, errors.New("Id of issuer account is zero!")
+		return nil, errors.New("ID of issuer account is zero!")
 	}
 
 	return account, nil
@@ -142,16 +142,16 @@ func GetUINTVarFromRequest(r *http.Request, key string) (uint, error) {
 		return 0, errors.New("Не верно указан account ID")
 	}
 
-	accountIdParse, err := strconv.ParseUint(strVar, 10, 64)
+	accountIDParse, err := strconv.ParseUint(strVar, 10, 64)
 	if err != nil {
 		return 0, errors.New("Не верно указан account ID")
 	}
 
-	if accountIdParse < 1 {
+	if accountIDParse < 1 {
 		return 0, errors.New("Не верно указан account ID")
 	}
 
-	return uint(accountIdParse), nil
+	return uint(accountIDParse), nil
 }
 
 func GetSTRVarFromRequest(r *http.Request, name string) (string, bool) {

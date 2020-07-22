@@ -268,8 +268,8 @@ func TestAccount_CreateUser(t *testing.T) {
 	}
 }
 
-func TestAccount_GetUserById(t *testing.T) {
-	account, err := Account{Name: "TestAccount_GetUserById"}.create()
+func TestAccount_GetUserByID(t *testing.T) {
+	account, err := Account{Name: "TestAccount_GetUserByID"}.create()
 	if err != nil {
 		t.Fatalf("Не удалось создать тестовый аккаунт: %v", err)
 	}
@@ -281,7 +281,7 @@ func TestAccount_GetUserById(t *testing.T) {
 	}
 	defer user.hardDelete()
 
-	userF, err := account.GetUserById(user.ID)
+	userF, err := account.GetUserByID(user.ID)
 	if err != nil {
 		t.Fatalf("Не удалось найти пользователя, %v", err)
 	}
@@ -293,7 +293,7 @@ func TestAccount_GetUserById(t *testing.T) {
 }
 
 func TestAccount_GetUserByUsername(t *testing.T) {
-	account, err := Account{Name: "TestAccount_GetUserById"}.create()
+	account, err := Account{Name: "TestAccount_GetUserByID"}.create()
 	if err != nil {
 		t.Fatalf("Не удалось создать тестовый аккаунт: %v", err)
 	}
@@ -317,7 +317,7 @@ func TestAccount_GetUserByUsername(t *testing.T) {
 }
 
 func TestAccount_GetUserByEmail(t *testing.T) {
-	account, err := Account{Name: "TestAccount_GetUserById"}.create()
+	account, err := Account{Name: "TestAccount_GetUserByID"}.create()
 	if err != nil {
 		t.Fatalf("Не удалось создать тестовый аккаунт: %v", err)
 	}

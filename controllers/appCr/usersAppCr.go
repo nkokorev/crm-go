@@ -155,7 +155,7 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-// Обработка создания пользователя в рамках /{accountId}/
+// Обработка создания пользователя в рамках /{accountID}/
 // Не подходит для создания пользователя в рамках UI/API т.к. не делает проверку соотвествующих переменных
 func UserRegistration(w http.ResponseWriter, r *http.Request) {
 
@@ -476,13 +476,13 @@ func UserAccountsGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashId, ok := utilsCr.GetSTRVarFromRequest(r,"hashId")
+	hashID, ok := utilsCr.GetSTRVarFromRequest(r,"hashID")
 	if !ok {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
 
-	user, err := account.GetUserByHashId(hashId)
+	user, err := account.GetUserByHashID(hashID)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти пользователя"))
 	}

@@ -11,9 +11,9 @@ import (
 // Карточка "товара" в магазине в котором могут быть разные торговые предложения
 type ProductCard struct {
 	ID     				uint `json:"id" gorm:"primary_key"`
-	AccountID 			uint `json:"-" gorm:"type:int;index;not null;"` // потребуется, если productGroupId == null
+	AccountID 			uint `json:"-" gorm:"type:int;index;not null;"` // потребуется, если productGroupID == null
 	WebSiteID 			uint `json:"webSiteID" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
-	ProductGroupID 		*uint `json:"productGroupId" gorm:"type:int;index;default:NULL;"` // группа товаров, категория товаров
+	ProductGroupID 		*uint `json:"productGroupID" gorm:"type:int;index;default:NULL;"` // группа товаров, категория товаров
 
 	Enabled 			bool 	`json:"enabled" gorm:"type:bool;default:true"` // активна ли карточка товара
 	URL 				string `json:"url" gorm:"type:varchar(255);"` // идентификатор страницы (products/syao-chzhun )
@@ -50,11 +50,8 @@ func (productCard *ProductCard) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
-func (ProductCard) TableName() string {
-	return "product_cards"
-}
 
-func (productCard ProductCard) getId() uint {
+func (productCard ProductCard) getID() uint {
 	return productCard.ID
 }
 
@@ -81,11 +78,11 @@ func (ProductCard) get(id uint) (*ProductCard, error) {
 	return &card, nil
 }
 
-func (ProductCard) getByAccount(id, accountId uint) (*ProductCard, error) {
+func (ProductCard) getByAccount(id, accountID uint) (*ProductCard, error) {
 
 	card := ProductCard{}
 
-	if err := db.Preload("Products").First(&card, "id = ? AND account_id = ?", id, accountId).Error; err != nil {
+	if err := db.Preload("Products").First(&card, "id = ? AND account_id = ?", id, accountID).Error; err != nil {
 		return nil, err
 	}
 
@@ -105,11 +102,11 @@ func (ProductCard) getListByShop(webSiteID uint) ([]ProductCard, error) {
 	
 }
 
-func (ProductCard) getListByAccount(accountId uint) ([]ProductCard, error) {
+func (ProductCard) getListByAccount(accountID uint) ([]ProductCard, error) {
 
 	cards := make([]ProductCard,0)
 
-	err := db.Preload("Products").Find(&cards, "account_id = ?", accountId).Error
+	err := db.Preload("Products").Find(&cards, "account_id = ?", accountID).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
@@ -154,8 +151,8 @@ func (webSite WebSite) CreateProductCard(input ProductCard, group *ProductGroup)
 
 }
 
-func (webSite WebSite) GetProductCard(cardId uint) (*ProductCard, error) {
-	return ProductCard{}.get(cardId)
+func (webSite WebSite) GetProductCard(cardID uint) (*ProductCard, error) {
+	return ProductCard{}.get(cardID)
 }
 
 func (webSite WebSite) GetProductCardList(offset, limit int, search string, products bool) ([]ProductCard, uint, error) {
@@ -204,10 +201,10 @@ func (webSite WebSite) GetProductCardList(offset, limit int, search string, prod
 	return cards, total, nil
 }
 
-func (webSite WebSite) DeleteProductCard(cardId uint) error {
+func (webSite WebSite) DeleteProductCard(cardID uint) error {
 
 	// включает в себя проверку принадлежности к аккаунту
-	card, err := webSite.GetProductCard(cardId)
+	card, err := webSite.GetProductCard(cardID)
 	if err != nil {
 		return err
 	}
@@ -233,16 +230,16 @@ func (account Account) CreateProductCard(input ProductCard) (*ProductCard, error
 	return productCard, nil
 }
 
-func (account Account) GetProductCard(cardId uint) (*ProductCard, error) {
-	return ProductCard{}.getByAccount(cardId, account.ID)
+func (account Account) GetProductCard(cardID uint) (*ProductCard, error) {
+	return ProductCard{}.getByAccount(cardID, account.ID)
 }
 
 func (account Account) GetProductCards() ([]ProductCard, error) {
 	return ProductCard{}.getListByAccount(account.ID)
 }
 
-func (account Account) UpdateProductCard(cardId uint, input map[string]interface{}) (*ProductCard, error) {
-	productCard, err := account.GetProductCard(cardId)
+func (account Account) UpdateProductCard(cardID uint, input map[string]interface{}) (*ProductCard, error) {
+	productCard, err := account.GetProductCard(cardID)
 	if err != nil {
 		return nil, err
 	}
@@ -259,10 +256,10 @@ func (account Account) UpdateProductCard(cardId uint, input map[string]interface
 	return productCard, nil
 }
 
-func (account Account) DeleteProductCard(cardId uint) error {
+func (account Account) DeleteProductCard(cardID uint) error {
 
 	// включает в себя проверку принадлежности к аккаунту
-	productCard, err := account.GetProductCard(cardId)
+	productCard, err := account.GetProductCard(cardID)
 	if err != nil {
 		return err
 	}
