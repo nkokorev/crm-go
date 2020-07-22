@@ -120,6 +120,8 @@ type Payment struct {
 	// Данные о распределении денег {account_id:"", amount:"", status:"[waiting_for_capture, succeeded, canceled]"}
 	Transfers	Transfers	`json:"_transfers"`
 
+	ConfirmationUrl	string	`json:"confirmation_url" gorm:"type:varchar(255);"`
+
 	// #### Внутренние данные #####
 
 
