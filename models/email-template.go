@@ -94,7 +94,7 @@ func (EmailTemplate) get(id uint) (Entity, error) {
 }
 func (et *EmailTemplate) load() error {
 
-	err := db.First(et).Error
+	err := db.First(et, et.ID).Error
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (EmailTemplate) getList(accountID uint, sortBy string) ([]Entity, uint, err
 	emailTemplates := make([]EmailTemplate,0)
 	var total uint
 
-	err := db.Model(&EmailTemplate{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Model(&EmailTemplate{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
 		Select(EmailTemplate{}.SelectArrayWithoutData()).Find(&emailTemplates).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err

@@ -178,7 +178,7 @@ func (fs *Storage) load() error {
 		return utils.Error{Message: "Невозможно загрузить Storage - не указан  ID"}
 	}
 
-	err := db.First(fs).Error
+	err := db.First(fs,fs.ID).Error
 	if err != nil {
 		return err
 	}

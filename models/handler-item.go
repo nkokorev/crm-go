@@ -73,7 +73,7 @@ func (HandlerItem) get(id uint) (Entity, error) {
 
 func (obItem *HandlerItem) load() error {
 
-	err := db.First(obItem).Error
+	err := db.First(obItem,obItem.ID).Error
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (HandlerItem) getList(accountID uint, sortBy string) ([]Entity, uint, error
 	obItems := make([]HandlerItem,0)
 	var total uint
 
-	err := db.Model(&HandlerItem{}).Limit(1000).Order(sortBy).Where( "account_id IN (?)", []uint{1, accountID}).
+	err := db.Model(&HandlerItem{}).Limit(100).Order(sortBy).Where( "account_id IN (?)", []uint{1, accountID}).
 		Find(&obItems).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err

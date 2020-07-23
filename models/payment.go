@@ -188,7 +188,7 @@ func (payment *Payment) load() error {
 		return utils.Error{Message: "Невозможно загрузить Payment - не указан  ID"}
 	}
 
-	err := db.First(payment).Error
+	err := db.First(payment,payment.ID).Error
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func (Payment) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 	webHooks := make([]Payment,0)
 	var total uint
 
-	err := db.Model(&Payment{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Model(&Payment{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
 		Find(&webHooks).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err

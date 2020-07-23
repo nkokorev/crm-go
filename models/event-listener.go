@@ -80,7 +80,7 @@ func (EventListener) get(id uint) (Entity, error) {
 }
 func (eventListener *EventListener) load() error {
 
-	err := db.Preload("Event").Preload("Handler").First(eventListener).Error
+	err := db.Preload("Event").Preload("Handler").First(eventListener, eventListener.ID).Error
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func (EventListener) getList(accountID uint, sortBy string) ([]Entity, uint, err
 	eventListeners := make([]EventListener,0)
 	var total uint
 
-	err := db.Model(&EventListener{}).Preload("Event").Preload("Handler").Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Model(&EventListener{}).Preload("Event").Preload("Handler").Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
 		Find(&eventListeners).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err

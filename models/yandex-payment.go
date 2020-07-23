@@ -93,7 +93,7 @@ func (yandexPayment *YandexPayment) load() error {
 		return utils.Error{Message: "Невозможно загрузить YandexPayment - не указан  ID"}
 	}
 
-	err := db.First(yandexPayment).Error
+	err := db.First(yandexPayment,yandexPayment.ID).Error
 	if err != nil {
 		return err
 	}

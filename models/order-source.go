@@ -40,13 +40,12 @@ func (orderSource *OrderSource) BeforeCreate(scope *gorm.Scope) error {
 
 // ######### CRUD Functions ############
 func (orderSource OrderSource) create() (Entity, error)  {
-	// if err := db.Create(&orderSource).Find(&orderSource, orderSource.ID).Error; err != nil {
-	wb := orderSource
-	if err := db.Create(&wb).Error; err != nil {
+	_orderSource := orderSource
+	if err := db.Create(&_orderSource).Error; err != nil {
 		return nil, err
 	}
 
-	var entity Entity = &wb
+	var entity Entity = &_orderSource
 
 	return entity, nil
 }
@@ -66,7 +65,7 @@ func (orderSource *OrderSource) load() error {
 		return utils.Error{Message: "Невозможно загрузить OrderSource - не указан  ID"}
 	}
 
-	err := db.First(orderSource).Error
+	err := db.First(orderSource, orderSource.ID).Error
 	if err != nil {
 		return err
 	}
@@ -78,7 +77,7 @@ func (OrderSource) getList(accountID uint, sortBy string) ([]Entity, uint, error
 	orderSources := make([]OrderSource,0)
 	var total uint
 
-	err := db.Model(&OrderSource{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Model(&OrderSource{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
 		Find(&orderSources).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err

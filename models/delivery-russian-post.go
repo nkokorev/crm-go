@@ -90,7 +90,7 @@ func (DeliveryRussianPost) get(id uint) (Entity, error) {
 
 func (deliveryRussianPost *DeliveryRussianPost) load() error {
 
-	err := db.First(deliveryRussianPost).Error
+	err := db.First(deliveryRussianPost, deliveryRussianPost.ID).Error
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func (DeliveryRussianPost) getList(accountID uint, sortBy string) ([]Entity, uin
 	var total uint
 
 	// if need to search
-	err := db.Model(&DeliveryRussianPost{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Model(&DeliveryRussianPost{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
 		Find(&deliveryRussianPosts).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err

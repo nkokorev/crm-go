@@ -112,7 +112,7 @@ func (webHook *WebHook) load() error {
 		return utils.Error{Message: "Невозможно загрузить WebHook - не указан  ID"}
 	}
 
-	err := db.First(webHook).Error
+	err := db.First(webHook,webHook.ID).Error
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (WebHook) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 	webHooks := make([]WebHook,0)
 	var total uint
 
-	err := db.Model(&WebHook{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Model(&WebHook{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
 		Find(&webHooks).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err

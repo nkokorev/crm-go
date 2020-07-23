@@ -77,7 +77,7 @@ func (DeliveryPickup) get(id uint) (Entity, error) {
 
 func (deliveryPickup *DeliveryPickup) load() error {
 
-	err := db.First(deliveryPickup).Error
+	err := db.First(deliveryPickup, deliveryPickup.ID).Error
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (DeliveryPickup) getList(accountID uint, sortBy string) ([]Entity, uint, er
 	deliveryPickups := make([]DeliveryPickup,0)
 	var total uint
 
-	err := db.Model(&DeliveryPickup{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Model(&DeliveryPickup{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
 		Find(&deliveryPickups).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err

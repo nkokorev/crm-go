@@ -60,11 +60,10 @@ func (account Account) GetEntity(model Entity, id uint) (Entity, error) {
 	return entity, nil
 }
 
-func (account Account) LoadEntity(entity Entity, primaryKey ...uint) error {
+func (account Account) LoadEntity(entity Entity, primaryKey uint) error {
 
-	if len(primaryKey) > 0 {
-		entity.setID(primaryKey[0])
-	}
+	// На всякий случай
+	entity.setID(primaryKey)
 	
 	// Загружаем по ссылке
 	err := entity.load()

@@ -81,7 +81,7 @@ func (order *Order) load() error {
 		return utils.Error{Message: "Невозможно загрузить Order - не указан  ID"}
 	}
 
-	err := db.First(order).Error
+	err := db.First(order, order.ID).Error
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (Order) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 	orders := make([]Order,0)
 	var total uint
 
-	err := db.Model(&Order{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Model(&Order{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
 		Find(&orders).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err

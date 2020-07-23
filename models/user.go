@@ -124,7 +124,7 @@ func (User) get(id uint) (*User, error) {
 }*/
 func (user *User) load() error {
 
-	err := db.Model(user).Preload("Roles").First(user).Error
+	err := db.Model(user).Preload("Roles").First(user,user.ID).Error
 	if err != nil {
 		return err
 	}

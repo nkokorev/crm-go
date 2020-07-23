@@ -142,7 +142,7 @@ func (EmailNotification) getList(accountID uint, sortBy string) ([]Entity, uint,
 	emailNotifications := make([]EmailNotification,0)
 	var total uint
 
-	err := db.Model(&EmailNotification{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).Preload("EmailTemplate").Preload("EmailBox").
+	err := db.Model(&EmailNotification{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountID).Preload("EmailTemplate").Preload("EmailBox").
 		Find(&emailNotifications).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err

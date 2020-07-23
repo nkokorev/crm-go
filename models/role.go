@@ -126,7 +126,7 @@ func (Role) get(id uint) (Entity, error) {
 
 func (role *Role) load() error {
 
-	err := db.First(role).Error
+	err := db.First(role,role.ID).Error
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func (Role) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 	roles := make([]Role,0)
 	var total uint
 
-	err := db.Model(&Role{}).Order(sortBy).Limit(1000).
+	err := db.Model(&Role{}).Order(sortBy).Limit(100).
 		Where("account_id IN (?)", []uint{1, accountID}).
 		Find(&roles).Error
 	if err != nil {

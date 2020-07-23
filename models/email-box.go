@@ -70,7 +70,7 @@ func (emailBox *EmailBox) load() error {
 	if emailBox.ID < 1 {
 		return utils.Error{Message: "Невозможно загрузить EmailBox - не указан  ID"}
 	}
-	err := db.Preload("WebSite").First(emailBox).Error
+	err := db.Preload("WebSite").First(emailBox, emailBox.ID).Error
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (EmailBox) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 	webHooks := make([]EmailBox,0)
 	var total uint
 
-	err := db.Model(&EmailBox{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Model(&EmailBox{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
 		Find(&webHooks).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
@@ -107,7 +107,7 @@ func (EmailBox) getListByWebSite(accountID uint, webSiteID uint, sortBy string) 
 
 	emailBoxes := make([]EmailBox,0)
 
-	err := db.Model(&EmailBox{}).Limit(1000).Order(sortBy).Where( "account_id = ? AND web_site_id = ?", accountID, webSiteID).
+	err := db.Model(&EmailBox{}).Limit(100).Order(sortBy).Where( "account_id = ? AND web_site_id = ?", accountID, webSiteID).
 		Find(&emailBoxes).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, err

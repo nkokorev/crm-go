@@ -85,7 +85,7 @@ func (WebSite) get(id uint) (Entity, error) {
 
 func (webSite *WebSite) load() error {
 
-	err := db.Preload("EmailBoxes").First(webSite).Error
+	err := db.Preload("EmailBoxes").First(webSite,webSite.ID).Error
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func (WebSite) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 	webSites := make([]WebSite,0)
 	var total uint
 
-	err := db.Model(&WebSite{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Model(&WebSite{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
 		Preload("EmailBoxes").Find(&webSites).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err

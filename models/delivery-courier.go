@@ -74,7 +74,7 @@ func (DeliveryCourier) get(id uint) (Entity, error) {
 }
 func (deliveryCourier *DeliveryCourier) load() error {
 
-	err := db.First(deliveryCourier).Error
+	err := db.First(deliveryCourier, deliveryCourier.ID).Error
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (DeliveryCourier) getList(accountID uint, sortBy string) ([]Entity, uint, e
 	deliveryCouriers := make([]DeliveryCourier,0)
 	var total uint
 
-	err := db.Model(&DeliveryCourier{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Model(&DeliveryCourier{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
 		Find(&deliveryCouriers).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err

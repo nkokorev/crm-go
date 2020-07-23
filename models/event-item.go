@@ -65,7 +65,7 @@ func (EventItem) get(id uint) (Entity, error) {
 
 func (eventItem *EventItem) load() error {
 
-	err := db.First(eventItem).Error
+	err := db.First(eventItem, eventItem.ID).Error
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (EventItem) getList(accountID uint, sortBy string) ([]Entity, uint, error) 
 	eventItems := make([]EventItem,0)
 	var total uint
 
-	err := db.Model(&EventItem{}).Limit(1000).Order(sortBy).Where( "account_id IN (?)", []uint{1, accountID}).
+	err := db.Model(&EventItem{}).Limit(100).Order(sortBy).Where( "account_id IN (?)", []uint{1, accountID}).
 		Find(&eventItems).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
