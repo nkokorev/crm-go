@@ -68,7 +68,6 @@ func (yandexPayment *YandexPayment) BeforeCreate(scope *gorm.Scope) error {
 
 // ######### CRUD Functions ############
 func (yandexPayment YandexPayment) create() (Entity, error)  {
-	// if err := db.Create(&yandexPayment).Find(&yandexPayment, yandexPayment.ID).Error; err != nil {
 	wb := yandexPayment
 	if err := db.Create(&wb).Error; err != nil {
 		return nil, err
@@ -102,29 +101,7 @@ func (yandexPayment *YandexPayment) load() error {
 }
 
 func (YandexPayment) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
-
-	webHooks := make([]YandexPayment,0)
-	var total uint
-
-	err := db.Model(&YandexPayment{}).Limit(1000).Order(sortBy).Where( "account_id = ?", accountID).
-		Find(&webHooks).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&YandexPayment{}).Where("account_id = ?", accountID).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(webHooks))
-	for i,_ := range webHooks {
-		entities[i] = &webHooks[i]
-	}
-
-	return entities, total, nil
+	return  YandexPayment{}.getPaginationList(accountID, 0, 100, sortBy, "")
 }
 
 func (YandexPayment) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {

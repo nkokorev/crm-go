@@ -94,11 +94,7 @@ func WebHookExecute(w http.ResponseWriter, r *http.Request) {
 
 func WebHookListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
-	var account *models.Account
-	var err error
-	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashID}.)
-
-	account, err = utilsCr.GetWorkAccount(w,r)
+	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}

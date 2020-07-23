@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
@@ -64,7 +63,7 @@ func (fs *Storage) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
-func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
+/*func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
 
 	if len(fs.OwnerType) > 0 {
 		account, err := GetAccount(fs.AccountID)
@@ -73,19 +72,19 @@ func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
 		}
 	}
 	return
-}
+}*/
 
-func (fs *Storage) AfterCreate(tx *gorm.DB) (err error) {
+/*func (fs *Storage) AfterCreate(tx *gorm.DB) (err error) {
 
 	if fs.OwnerType != "" {
 
 		account, err := GetAccount(fs.AccountID)
 		if err == nil {
-			account.CallWebHookCreated(*fs)
+			account.CallEventByStorageCreated(*fs)
 		}
 	}
 	return
-}
+}*/
 
 func (fs *Storage) AfterFind() (err error) {
 
@@ -94,12 +93,12 @@ func (fs *Storage) AfterFind() (err error) {
 	AppEnv := os.Getenv("APP_ENV")
 	crmHost := ""
 	switch AppEnv {
-		case "local":
-			crmHost = "http://cdn.crm.local"
-		case "public":
-			crmHost = "https://cdn.ratuscrm.com"
-		default:
-			crmHost = "https://cdn.ratuscrm.com"
+	case "local":
+		crmHost = "http://cdn.crm.local"
+	case "public":
+		crmHost = "https://cdn.ratuscrm.com"
+	default:
+		crmHost = "https://cdn.ratuscrm.com"
 	}
 
 	switch fs.OwnerType {
@@ -117,14 +116,46 @@ func (fs *Storage) AfterFind() (err error) {
 	return nil
 }
 
-func (fs *Storage) create() (*Storage, error)  {
-	err := db.Create(fs).First(fs).Error
-	return fs, err
+// ############# Entity interface #############
+func (fs Storage) GetID() uint { return fs.ID }
+func (fs *Storage) setID(id uint) { fs.ID = id }
+func (fs Storage) GetAccountID() uint { return fs.AccountID }
+func (fs *Storage) setAccountID(id uint) { fs.AccountID = id }
+func (Storage) systemEntity() bool { return false }
+// ############# Entity interface #############
+
+
+// ######### CRUD Functions ############
+func (fs Storage) create() (Entity, error)  {
+
+	// 1. Получаем Аккаунт
+	account, err := GetAccount(fs.AccountID); if err != nil {
+		return nil, err
+	}
+
+	used, err := account.StorageDiskSpaceUsed()
+	if err != nil {
+		return nil, err
+	}
+
+	if (account.DiskSpaceAvailable - used) < fs.Size {
+		return nil, utils.Error{Message: "Нехватка дискового пространства"}
+	}
+
+	file := fs
+	if err := db.Create(&file).Error; err != nil {
+		return nil, err
+	}
+
+	account.CallEventByStorageCreated(file)
+
+	var entity Entity = &file
+
+	return entity, nil
 }
+func (Storage) get(id uint) (Entity, error) {
 
-func (Storage) get(id uint) (*Storage, error)  {
-
-	fs := Storage{}
+	var fs Storage
 
 	err := db.First(&fs, id).Error
 	if err != nil {
@@ -132,7 +163,6 @@ func (Storage) get(id uint) (*Storage, error)  {
 	}
 	return &fs, nil
 }
-
 func (Storage) getByHashID(hashID string) (*Storage, error)  {
 
 	fs := Storage{}
@@ -143,175 +173,114 @@ func (Storage) getByHashID(hashID string) (*Storage, error)  {
 	}
 	return &fs, nil
 }
+func (fs *Storage) load() error {
+	if fs.ID < 1 {
+		return utils.Error{Message: "Невозможно загрузить Storage - не указан  ID"}
+	}
 
-func (fs *Storage) update(input map[string]interface{}) error {
-	// fmt.Println(input)
-	// return db.Model(fs).Omit("id", "hashID", "account_id","created_at", "updated_at").Updates(structs.Map(input)).Error
-	return db.Model(fs).Omit("id", "hashID", "account_id","created_at", "updated_at").Updates(input).Error
-}
-
-func (fs Storage) Delete () error {
-	return db.Model(Storage{}).Where("id = ?", fs.ID).Delete(fs).Error
-}
-
-// ########### ACCOUNT FUNCTIONAL ###########
-// func (account Account) StorageCreateFile(fs *Storage, ownerID *uint, ownerType *string) (*Storage, error) {
-func (account Account) StorageCreateFile(fs *Storage) (*Storage, error) {
-	// check disk space
-	used, err := account.StorageDiskSpaceUsed()
+	err := db.First(fs).Error
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	if (account.DiskSpaceAvailable - used) < fs.Size {
-		return nil, utils.Error{Message: "Нехватка дискового пространства"}
-	}
-	
-	fs.AccountID = account.ID
-	file, err := fs.create()
-	if err != nil {
-		return nil, err
-	}
-
-	// account.CallWebHookCreated(*fs)
-
-	return file, nil
+	return nil
 }
 
-func (account Account) StorageGet(id uint) (*Storage, error) {
-
-	fs, err := (Storage{}).get(id)
-	if err != nil {
-		return nil, err
-	}
-
-	if fs.AccountID != account.ID {
-		return nil, errors.New("Шаблон принадлежит другому аккаунту")
-	}
-
-	return fs, nil
+func (Storage) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
+	return Storage{}.getPaginationList(accountID,0,100,sortBy,"")
 }
 
-func (account Account) StorageGetByHashID(hashID string) (*Storage, error) {
-
-	fs, err := (Storage{}).getByHashID(hashID)
-	if err != nil {
-		return nil, err
-	}
-
-	if fs.AccountID != account.ID {
-		return nil, errors.New("Шаблон принадлежит другому аккаунту")
-	}
-
-	return fs, nil
-}
-
-func (account Account) StorageGetFiles(limit, offset int) ([]Storage, error) {
-
-	var files []Storage
-
-	err := db.Limit(limit).Offset(offset).
-		Find(&files, "account_id = ?", account.ID).Error
-
-	if err != nil && err != gorm.ErrRecordNotFound {
-		fmt.Println("Ошибка получения списка файлов")
-		return nil, err
-	}
-
-	return files, nil
-}
-
-func (account Account) StorageGetList(offset, limit uint, search string, ownerID *uint, ownerType *string) ([]Storage, uint, error) {
+func (Storage) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	files := make([]Storage,0)
+	var total uint
 
-	var err error
-	
+	// if need to search
 	if len(search) > 0 {
 
 		// string pattern
 		search = "%"+search+"%"
 
-		// Выборку по файлам
-		if *ownerID > 0 {
-			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
-				Where("account_id = ? AND owner_id = ? AND owner_type = ?", account.ID, ownerID, ownerType).
-				Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
-		} else {
-			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
-				Where("account_id = ?", account.ID).
-				Find(&files, "name ILIKE ? OR short_description ILIKE ? OR description ILIKE ?" , search,search,search).Error
-		}
-
-		// correction not found res
+		err := db.Model(&Storage{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+			Find(&files, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
+		// Определяем total
+		err = db.Model(&Storage{}).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountID, search,search,search).
+			Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+
 	} else {
-		if offset < 0 || limit < 0 {
-			return nil, 0, errors.New("Offset or limit is wrong")
-		}
 
-		// Выборку по файлам
-		if *ownerID > 0 {
-			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).Order("id").
-				Find(&files, "account_id = ? AND owner_id = ? AND owner_type = ?", account.ID, ownerID, ownerType).Error
-		} else {
-			err = db.Model(&Storage{}).Limit(limit).Offset(offset).Select(Storage{}.SelectArrayWithoutDataURL()).
-				Find(&files, "account_id = ?", account.ID).Error
-		}
-
-		// correction not found res
+		err := db.Model(&Storage{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+			Find(&files).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
-	}
-	
-	var total uint
-	if *ownerID > 0 {
-		err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutDataURL()).Where("account_id = ? AND owner_id = ?", account.ID, ownerID).Count(&total).Error
-	} else {
-		err = db.Model(&Storage{}).Select(Storage{}.SelectArrayWithoutDataURL()).Where("account_id = ?", account.ID).Count(&total).Error
-	}
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема"}
+
+		// Определяем total
+		err = db.Model(&Storage{}).Where("account_id = ?", accountID).Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
 	}
 
-	return files, total, nil
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(files))
+	for i,_ := range files {
+		entities[i] = &files[i]
+	}
+
+	return entities, total, nil
 }
 
-func (account Account) StorageUpdateFile(file *Storage, input map[string]interface{}) error {
+func (Storage) getByEvent(eventName string) (*Storage, error) {
 
-	if file.AccountID != account.ID {
-		return errors.New("Файл принадлежит другому аккаунту")
+	wh := Storage{}
+
+	if err := db.First(&wh, "event_type = ?", eventName).Error; err != nil {
+		return nil, err
 	}
 
-	if err := file.update(input); err != nil {
-		return err
-	}
-
-	account.CallWebHookUpdated(*file)
-
-	return nil
+	return &wh, nil
 }
 
-func (account Account) StorageDeleteFile(fileID uint) error {
-
-	file, err := account.StorageGet(fileID)
+func (fs *Storage) update(input map[string]interface{}) error {
+	err := db.Set("gorm:association_autoupdate", false).
+		Model(fs).Where("id", fs.ID).Omit("id", "hashID", "account_id","created_at").Updates(input).Error;
 	if err != nil {
 		return err
 	}
 
-	if err := file.Delete(); err != nil {
-		return err
+	account, err := GetAccount(fs.AccountID); if err == nil {
+		account.CallEventByStorageUpdated(*fs)
 	}
-
-	account.CallWebHookDeleted(*file)
 
 	return nil
 }
 
+func (fs Storage) delete () error {
+	if err := db.Model(Storage{}).Where("id = ?", fs.ID).Delete(fs).Error; err != nil {
+		return err
+	}
+
+	// Вызываем обновление emit events
+	account, err := GetAccount(fs.AccountID); if err == nil {
+		account.CallEventByStorageDeletes(fs)
+	}
+
+	return nil
+}
+// ######### END CRUD Functions ############
+
+
+// ########### ACCOUNT FUNCTIONAL ###########
+
+// Возвращает объем использованного диска в КБ
 func (account Account) StorageDiskSpaceUsed() (uint, error) {
 	var sum,count uint
 
@@ -334,6 +303,20 @@ func (account Account) StorageDiskSpaceUsed() (uint, error) {
 	return sum, nil
 }
 
+func (account Account) StorageGetByHashID(hashID string) (*Storage, error) {
+
+	fs, err := (Storage{}).getByHashID(hashID)
+	if err != nil {
+		return nil, err
+	}
+
+	if fs.AccountID != account.ID {
+		return nil, errors.New("Шаблон принадлежит другому аккаунту")
+	}
+
+	return fs, nil
+}
+
 func (Account) StorageGetPublicByHashID(hashID string) (*Storage, error) {
 
 	fs, err := (Storage{}).getByHashID(hashID)
@@ -343,33 +326,83 @@ func (Account) StorageGetPublicByHashID(hashID string) (*Storage, error) {
 	
 	return fs, nil
 }
+func (account Account) GetStoragePaginationListByOwner(offset, limit int, sortBy, search string, ownerID uint, ownerType string) ([]Entity, uint, error) {
+
+	if ownerType == "" {
+		return  Storage{}.getPaginationList(account.ID, offset, limit, sortBy, search)
+	}
+
+
+	files := make([]Storage,0)
+	var total uint
+
+	// if need to search
+	if len(search) > 0 {
+
+		// string pattern
+		search = "%"+search+"%"
+
+		err := db.Model(&Storage{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", account.ID).
+			Find(&files, "name ILIKE ? OR code ILIKE ? OR description ILIKE ? AND owner_id = ? AND owner_type = ?", search,search,search, ownerID, ownerType).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = db.Model(&Storage{}).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ? AND owner_id = ? AND owner_type = ?", account.ID, search,search,search, ownerID, ownerType).
+			Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+
+	} else {
+
+		err := db.Model(&Storage{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ? AND owner_id = ? AND owner_type = ?", account.ID, ownerID, ownerType).
+			Find(&files).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = db.Model(&Storage{}).Where("account_id = ? AND owner_id = ? AND owner_type = ?", account.ID, ownerID, ownerType).Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(files))
+	for i,_ := range files {
+		entities[i] = &files[i]
+	}
+
+	return entities, total, nil
+}
 
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 
-func (account Account) CallWebHookCreated(fs Storage) {
-	// fmt.Println("ID: ", fs.ID)
-	// fmt.Println("Name: ", fs.Name)
-	// fmt.Println("OwnerType: ", fs.OwnerType)
+func (account Account) CallEventByStorageCreated(fs Storage) {
 	switch fs.OwnerType {
 	case "products":
 		event.AsyncFire(Event{}.ProductUpdated(account.ID, fs.OwnerID))
-		// go account.CallWebHookIfExist(EventArticleUpdated, Product{ID: fs.OwnerID})
 	case "articles":
 		event.AsyncFire(Event{}.ArticleUpdated(account.ID, fs.OwnerID))
-		// go account.CallWebHookIfExist(EventArticleUpdated, Article{ID: fs.OwnerID})
+	default:
+		event.AsyncFire(Event{}.StorageCreated(account.ID, fs.OwnerID))
 	}
 }
-func (account Account) CallWebHookUpdated(fs Storage) {
+func (account Account) CallEventByStorageUpdated(fs Storage) {
 	switch fs.OwnerType {
 	case "products":
 		event.AsyncFire(Event{}.ProductUpdated(account.ID, fs.OwnerID))
-		// go account.CallWebHookIfExist(EventProductUpdated, Product{ID: fs.OwnerID})
 	case "articles":
 		event.AsyncFire(Event{}.ArticleUpdated(account.ID, fs.OwnerID))
-		// go account.CallWebHookIfExist(EventArticleUpdated, Article{ID: fs.OwnerID})
+	default:
+		event.AsyncFire(Event{}.StorageUpdated(account.ID, fs.OwnerID))
 	}
 }
-func (account Account) CallWebHookDeleted(fs Storage) {
+func (account Account) CallEventByStorageDeletes(fs Storage) {
 	switch fs.OwnerType {
 	case "products":
 		event.AsyncFire(Event{}.ProductDeleted(account.ID, fs.OwnerID))
@@ -377,6 +410,8 @@ func (account Account) CallWebHookDeleted(fs Storage) {
 	case "articles":
 		event.AsyncFire(Event{}.ArticleDeleted(account.ID, fs.OwnerID))
 		// go account.CallWebHookIfExist(EventArticleUpdated, Article{ID: fs.OwnerID})
+	default:
+		event.AsyncFire(Event{}.StorageDeleted(account.ID, fs.OwnerID))
 	}
 }
 
@@ -386,31 +421,32 @@ func (Storage) SelectArrayWithoutDataURL() []string {
 	fields = utils.RemoveKey(fields, "Data")
 	return utils.ToLowerSnakeCaseArr(fields)
 }
-/*
-func (Storage) SelectArrayWithoutData() []string {
-	fields := structs.Names(&Storage{}) //.(map[string]string)
-	fields = utils.RemoveKey(fields, "Data")
-	//fields = utils.RemoveKey(fields, "URL")
-	return utils.ToLowerSnakeCaseArr(fields)
-}
 
-func (Storage) SelectArrayWithoutDataURL() []string {
-	fields := structs.Names(&Storage{}) //.(map[string]string)
-	fields = utils.RemoveKey(fields, "Data")
-	fields = utils.RemoveKey(fields, "URL")
-	return utils.ToLowerSnakeCaseArr(fields)
-}*/
-
-
-func (product Product) AppendAssociationImage(fs Storage) error {
+// Для работы со связанными моделями
+/*func (product Product) AppendAssociationImage(fs Storage) error {
 	if err := db.Model(&product).Association("Images").Append(fs).Error; err != nil {
+		return err
+	}
+	return nil
+}*/
+func (product Product) AppendAssociationImage(fs Entity) error {
+	file,ok := fs.(*Storage)
+	if !ok {
+		return utils.Error{Message: "Не возможно добавить изображение продукту"}
+	}
+	if err := db.Model(&product).Association("Images").Append(file).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (article Article) AppendAssociationImage(fs Storage) error {
-	if err := db.Model(&article).Association("Image").Append(fs).Error; err != nil {
+func (article Article) AppendAssociationImage(fs Entity) error {
+	file, ok := fs.(*Storage)
+	if !ok {
+		return utils.Error{Message: "Не возможно добавить изображение продукту"}
+	}
+
+	if err := db.Model(&article).Association("Image").Append(file).Error; err != nil {
 		return err
 	}
 	return nil

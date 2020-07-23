@@ -1411,7 +1411,7 @@ func UploadTestDataPart_III() {
 			EmailBoxID: &num6,
 		},
 		{
-			Enabled: true, Delay: 0, Name:"*Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateID: &numOne, SendingToFixedAddresses: true,
+			Enabled: false, Delay: 0, Name:"*Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateID: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-marketing.ru"})},
 			EmailBoxID: &num7,
 		},
@@ -1473,12 +1473,13 @@ func LoadImagesAiroClimate(count int)  {
 				Size: uint(file.Size()),
 				Priority: 0,
 			}
-			file, err := account.StorageCreateFile(&fs)
+			// file, err := account.StorageCreateFile(&fs)
+			file, err := account.CreateEntity(&fs)
 			if err != nil {
 				log.Fatalf("unable to create file: %v", err)
 			}
 
-			err = (models.Product{ID: uint(index)}).AppendAssociationImage(*file)
+			err = (models.Product{ID: uint(index)}).AppendAssociationImage(file)
 			if err != nil {
 				log.Fatalf("Error: %v", err)
 			}

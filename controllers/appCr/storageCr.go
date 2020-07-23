@@ -24,12 +24,14 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 
 	err = r.ParseMultipartForm(32 << 20) // 32Mb
 	if err != nil {
+		fmt.Println(err)
 		u.Respond(w, u.MessageError(u.Error{Message:"Слишком большой файл. Максимум 32 Mb."}))
 		return
 	}
 
 	file, header, err := r.FormFile("file")
 	if err != nil {
+		fmt.Println(err)
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка парсинга"}))
 		return
 	}
@@ -113,21 +115,23 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		// OwnerType: ownerType,
 	}
 
-	_fl, err := account.StorageCreateFile(&fs)
+	fileEntity, err := account.CreateEntity(&fs)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Сервер не может обработать запрос")) // что это?)
 		return
 	}
 
+	_fl, ok := fileEntity.(*models.Storage)
+
 	switch ownerType {
 	case "products":
-		err = (models.Product{ID: ownerID}).AppendAssociationImage(*_fl)
+		err = (models.Product{ID: ownerID}).AppendAssociationImage(_fl)
 		if err != nil {
 			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска продуктадля загрузки изображения"}))
 			return
 		}
 	case "articles":
-		err = (models.Article{ID: ownerID}).AppendAssociationImage(*_fl)
+		err = (models.Article{ID: ownerID}).AppendAssociationImage(_fl)
 		if err != nil {
 			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска статьи для загрузки изображения"}))
 			return
@@ -161,7 +165,8 @@ func StorageGetFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fs, err := account.StorageGet(fileID)
+	var file models.Storage
+	err = account.LoadEntity(&file, fileID)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Получения списка"}))
 		return
@@ -174,7 +179,7 @@ func StorageGetFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "Storage get file")
-	resp["file"] = *fs
+	resp["file"] = file
 	resp["diskSpaceUsed"] = diskSpaceUsed
 	u.Respond(w, resp)
 }
@@ -192,39 +197,47 @@ func StorageGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fs, err := account.StorageGet(fileID)
+	var file models.Storage
+	err = account.LoadEntity(&file,fileID)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Получения списка"}))
 		return
 	}
 
 	resp := u.Message(true, "Storage get file")
-	resp["file"] = *fs
+	resp["file"] = file
 	u.Respond(w, resp)
 }
 
 func StorageGetListPagination(w http.ResponseWriter, r *http.Request) {
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
 
 	// 2. Узнаем, какой список нужен
-	limit, ok := utilsCr.GetQueryUINTVarFromGET(r, "limit")
-	if !ok || limit < 1 {
-		limit = 100
+	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
+	if !ok {
+		limit = 25
 	}
-	offset, ok := utilsCr.GetQueryUINTVarFromGET(r, "offset")
+	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
 	if !ok || offset < 0 {
 		offset = 0
+	}
+	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
+	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
+	if !ok {
+		sortBy = ""
+	}
+	if sortDesc {
+		sortBy += " desc"
 	}
 	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
 	if !ok {
 		search = ""
 	}
 
-	///
+	// personal type
 	ownerID, ok := utilsCr.GetQueryUINTVarFromGET(r, "ownerID")
 	if !ok || ownerID < 1 {
 		ownerID = 0
@@ -236,9 +249,12 @@ func StorageGetListPagination(w http.ResponseWriter, r *http.Request) {
 	
 	// without Data (body of file)
 	// todo тут надо тип файлов дописать
-	files, total, err := account.StorageGetList(offset, limit, search, &ownerID, &ownerType)
+	var total uint = 0
+	files := make([]models.Entity,0)
+
+	files, total, err = account.GetStoragePaginationListByOwner(offset, limit, sortBy, search, ownerID, ownerType)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка получения списка файлов"}))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
 		return
 	}
 
@@ -270,17 +286,13 @@ func StorageUpdateFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fs, err := account.StorageGet(fileID)
-	if err != nil || fs == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
+	var file models.Storage
+	err = account.LoadEntity(&file,fileID)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Получения списка"}))
 		return
 	}
-
-	// 2. Get JSON-request
-	/*input := struct {
-		models.Storage
-	}{}*/
-
+	
 	var input map[string]interface{}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -288,14 +300,15 @@ func StorageUpdateFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.StorageUpdateFile(fs, input)
+	err = account.UpdateEntity(&file,input)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка во время обновления данных файла"))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка обновления файла"}))
 		return
 	}
 
+
 	resp := u.Message(true, "Storage file saved")
-	resp["file"] = *fs
+	resp["file"] = file
 	u.Respond(w, resp)
 }
 
@@ -314,9 +327,16 @@ func StorageDeleteFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.StorageDeleteFile(fileID)
+	var file models.Storage
+	err = account.LoadEntity(&file,fileID)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Произошла ошибка во время удаления"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Получения списка"}))
+		return
+	}
+
+	err = account.DeleteEntity(&file)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка удаления файла"))
 		return
 	}
 
@@ -351,61 +371,6 @@ func StorageDiskSpaceUsed(w http.ResponseWriter, r *http.Request) {
 
 
 
-
-// Example OLD  function
-func StorageStore(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	// r.ParseMultipartForm(4096)
-	// v := r.FormValue("file")
-	// r.ParseMultipartForm(32 << 20) // limit your max input length!
-
-	file, header, err := r.FormFile("file")
-	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка парсинга"}))
-		return
-	}
-
-	var buf bytes.Buffer
-	defer file.Close()
-
-	// 12 Kb = 12022
-	// size := float64(0)	// Mb
-	// size =  float64(header.Size)/float64(1024)
-	fmt.Printf("Size: %d bytes\n", header.Size)
-	fmt.Println("Header: ", header.Header)
-	fmt.Println("Content-Type: ", header.Header.Get("Content-Type"))
-	fmt.Println("File name: ", header.Filename)
-
-	// name := strings.Split(header.Filename, ".")
-	// fmt.Printf("File name: %s\n", name[0])
-	// Copy the file data to my buffer
-	_, err = io.Copy(&buf, file);
-	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка сохранения файла"}))
-		return
-	}
-
-	fs := models.Storage{
-		Name: header.Filename,
-		Data: buf.Bytes(),
-		MIME: header.Header.Get("Content-Type"),
-	}
-	_, err = account.StorageCreateFile(&fs)
-	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка создания файла"}))
-		return
-	}
-
-
-	resp := u.Message(true, "File is save!")
-	u.Respond(w, resp)
-}
 
 // ### FOR CDN ###
 func StorageCDNGet(w http.ResponseWriter, r *http.Request) {
