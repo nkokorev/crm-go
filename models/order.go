@@ -231,8 +231,8 @@ func (order *Order) RetailPriceCalculation () error {
 	sum := float64(0)
 
 	if len(order.Products) < 1 {
-		order.Cart.Value = 0
-		order.Cart.Count = 0
+		// order.Cart.Value = 0
+		// order.Cart.Count = 0
 		return nil
 	}
 	// fmt.Println(order.Products)
@@ -251,8 +251,8 @@ func (order *Order) RetailPriceCalculation () error {
 	}
 
 	// fmt.Println(sum)
-	order.Cart.Value = sum
-	order.Cart.Count = len(order.Products)
+	// order.Cart.Value = sum
+	// order.Cart.Count = len(order.Products)
 
 	return nil
 }
