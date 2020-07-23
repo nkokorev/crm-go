@@ -6,13 +6,17 @@ import (
 	"time"
 )
 
-// Внутренние комментарии менеджеров / ответственных
-type OrderComment struct {
+// Корзины товаров
+type Cart struct {
 	
 	Id     		uint   	`json:"id" gorm:"primary_key"`
 	AccountId 	uint	`json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
-	UserId 		uint	`json:"userId" gorm:"index;not null"`
-	User	User	`json:"user"`
+
+	ProductId	uint    // позиции товаров
+	Number		uint	// число товаров
+
+
+	Products 		[]Product `json:"products" gorm:"many2many:orders_products;preload"`
 
 	Description string 	`json:"description" gorm:"type:varchar(255);"` // Описание назначения канала
 	ManagersComments string `json:"description" gorm:"type:varchar(255);"`
@@ -22,26 +26,26 @@ type OrderComment struct {
 }
 
 // ############# Entity interface #############
-func (orderComment OrderComment) GetId() uint { return orderComment.Id }
-func (orderComment *OrderComment) setId(id uint) { orderComment.Id = id }
-func (orderComment OrderComment) GetAccountId() uint { return orderComment.AccountId }
-func (orderComment *OrderComment) setAccountId(id uint) { orderComment.AccountId = id }
-func (orderComment OrderComment) SystemEntity() bool { return orderComment.AccountId == 1 }
+func (orderComment Cart) GetId() uint { return orderComment.Id }
+func (orderComment *Cart) setId(id uint) { orderComment.Id = id }
+func (orderComment Cart) GetAccountId() uint { return orderComment.AccountId }
+func (orderComment *Cart) setAccountId(id uint) { orderComment.AccountId = id }
+func (orderComment Cart) SystemEntity() bool { return orderComment.AccountId == 1 }
 
 // ############# Entity interface #############
 
-func (OrderComment) PgSqlCreate() {
-	db.CreateTable(&OrderComment{})
-	db.Model(&OrderComment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+func (Cart) PgSqlCreate() {
+	db.CreateTable(&Cart{})
+	db.Model(&Cart{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	
 }
-func (orderComment *OrderComment) BeforeCreate(scope *gorm.Scope) error {
+func (orderComment *Cart) BeforeCreate(scope *gorm.Scope) error {
 	orderComment.Id = 0
 	return nil
 }
 
 // ######### CRUD Functions ############
-func (orderComment OrderComment) create() (Entity, error)  {
+func (orderComment Cart) create() (Entity, error)  {
 	_orderChannel := orderComment
 	if err := db.Create(&_orderChannel).Error; err != nil {
 		return nil, err
@@ -52,9 +56,9 @@ func (orderComment OrderComment) create() (Entity, error)  {
 	return entity, nil
 }
 
-func (OrderComment) get(id uint) (Entity, error) {
+func (Cart) get(id uint) (Entity, error) {
 
-	var orderComment OrderComment
+	var orderComment Cart
 
 	err := db.First(&orderComment, id).Error
 	if err != nil {
@@ -62,9 +66,9 @@ func (OrderComment) get(id uint) (Entity, error) {
 	}
 	return &orderComment, nil
 }
-func (orderComment *OrderComment) load() error {
+func (orderComment *Cart) load() error {
 	if orderComment.Id < 1 {
-		return utils.Error{Message: "Невозможно загрузить OrderComment - не указан  Id"}
+		return utils.Error{Message: "Невозможно загрузить Cart - не указан  Id"}
 	}
 
 	err := db.First(orderComment, orderComment.Id).Error
@@ -74,14 +78,14 @@ func (orderComment *OrderComment) load() error {
 	return nil
 }
 
-func (OrderComment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (Cart) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
-	return OrderComment{}.getPaginationList(accountId, 0,100,sortBy,"")
+	return Cart{}.getPaginationList(accountId, 0,100,sortBy,"")
 }
 
-func (OrderComment) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (Cart) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
-	orderChannels := make([]OrderComment,0)
+	orderChannels := make([]Cart,0)
 	var total uint
 
 	// if need to search
@@ -90,14 +94,14 @@ func (OrderComment) getPaginationList(accountId uint, offset, limit int, sortBy,
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&OrderComment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&Cart{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orderChannels, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&OrderComment{}).
+		err = db.Model(&Cart{}).
 			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -106,14 +110,14 @@ func (OrderComment) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 	} else {
 
-		err := db.Model(&OrderComment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&Cart{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orderChannels).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&OrderComment{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&Cart{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -128,13 +132,13 @@ func (OrderComment) getPaginationList(accountId uint, offset, limit int, sortBy,
 	return entities, total, nil
 }
 
-func (orderComment *OrderComment) update(input map[string]interface{}) error {
+func (orderComment *Cart) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).
 		Model(orderComment).Omit("id", "account_id").Updates(input).Error
 }
 
-func (orderComment OrderComment) delete () error {
-	return db.Model(OrderComment{}).Where("id = ?", orderComment.Id).Delete(orderComment).Error
+func (orderComment Cart) delete () error {
+	return db.Model(Cart{}).Where("id = ?", orderComment.Id).Delete(orderComment).Error
 }
 // ######### END CRUD Functions ############
 

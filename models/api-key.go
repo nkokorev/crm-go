@@ -11,7 +11,7 @@ import (
 type ApiKey struct {
 	Id     uint   `json:"id" gorm:"primary_key"`
 	Token string `json:"token" gorm:"unique_index;not null;"` // Id
-	AccountId uint `json:"accountId" gorm:"index,not null"` // аккаунт-владелец ключа
+	AccountId uint `json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
 
 	Name string `json:"name" gorm:"type:varchar(255);default:'New api key';"` // имя ключа "Для сайта", "Для CRM"
 	Enabled bool `json:"enabled" gorm:"type:bool;default:true"` // активен ли ключ

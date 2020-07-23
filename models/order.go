@@ -1,17 +1,17 @@
 package models
 
 import (
-	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
+	"log"
 	"time"
 )
 
-type orderType = string
-
 type Order struct {
 	Id     		uint   	`json:"id" gorm:"primary_key"`
-	AccountId 	uint 	`json:"accountId" gorm:"index,not null"` // аккаунт-владелец ключа
+	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
+	AccountId 	uint 	`json:"accountId" gorm:"type:int;index;not null"` // аккаунт-владелец ключа
 
 	// Комментарий клиента к заказу
 	CustomerComment string	`json:"customerComment" gorm:"type:varchar(255);"`
@@ -20,23 +20,45 @@ type Order struct {
 	Comments	[]OrderComment `json:"comments"`
 
 	// Ответственный менеджер
-	UserId 		uint	`json:"userId" gorm:"index,not null"`
-	User		User	`json:"user"`
+	ManagerId 	uint	`json:"managerId" gorm:"type:int;not null"`
+	Manager		User	`json:"manager"`
 
 	////// Данные заказа ///////
+
 	Individual	bool `json:"individual" gorm:"type:bool;default:true;not null;"` // Физ.лицо - true, Юрлицо - false
 
 	// Магазин (сайт) с которого пришел заказ. НЕ может быть null.
 	WebSiteId 	uint	`json:"webSiteId" gorm:"type:int;not null;"`
 	WebSite		WebSite	`json:"webSite"`
 
+	// Данные клиента
+	ClientId 	uint	`json:"clientId" gorm:"type:int;not null"`
+	Client		User	`json:"client"`
+
+	// Данные компании-заказчика
+	CompanyId 	uint	`json:"companyId" gorm:"type:int;not null"`
+	Company		User	`json:"company"`
+
 	// Способ (канал) заказа: "Заказ из корзины", "Заказ по телефону", "Пропущенный звонок", "Письмо.."
 	OrderChannelId 	uint	`json:"orderChannelId" gorm:"type:int;not null;"`
 	OrderChannel 	OrderChannel `json:"orderChannel"`
 
+	// Состав заказа
+	Products 		[]Product `json:"products" gorm:"many2many:orders_products;preload"`
+	// Cart	CartOrder	`json:"_cart" gorm:"-"`
+
+	// Товар Id,
+	Cart	postgres.Jsonb `json:"cart" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+
 	CreatedAt time.Time 	`json:"createdAt"`
 	UpdatedAt time.Time 	`json:"updatedAt"`
 	DeletedAt *time.Time 	`json:"deletedAt"`
+}
+
+type CartOrder struct {
+	ProductId	uint    `json:"productId"`   // id продуктов
+	Number		int		`json:"number"`		// число товаров
+	Value		float64	`json:"value"`      // Общая стоимость корзины
 }
 
 // ############# Entity interface #############
@@ -58,6 +80,29 @@ func (Order) PgSqlCreate() {
 }
 func (order *Order) BeforeCreate(scope *gorm.Scope) error {
 	order.Id = 0
+
+	// Создаем PublicId внутри магазина
+	lastIdx := uint(0)
+	var ord Order
+
+	err := db.Where("account_id = ?", order.AccountId).Select("public_id").Last(&ord).Error;
+	if err != nil && err != gorm.ErrRecordNotFound { return err}
+	if err == gorm.ErrRecordNotFound {
+		lastIdx = 0
+	} else {
+		lastIdx = ord.PublicId
+	}
+	order.PublicId = lastIdx + 1
+
+	return nil
+}
+func (order *Order)  AfterFind() (err error) {
+
+	// 1. Делаем подсчет стоимости заказа
+	if err := order.RetailPriceCalculation(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -77,7 +122,7 @@ func (Order) get(id uint) (Entity, error) {
 
 	var order Order
 
-	err := db.Preload("User").Preload("WebSite").Preload("OrderChannel").First(&order, id).Error
+	err := db.Preload("Products").Preload("Manager").Preload("WebSite").Preload("OrderChannel").First(&order, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -85,13 +130,13 @@ func (Order) get(id uint) (Entity, error) {
 }
 func (order *Order) load() error {
 
+
 	if order.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить Order - не указан  Id"}
 	}
 
-	err := db.Preload("User").Preload("WebSite").Preload("OrderChannel").First(order, order.Id).Error
+	err := db.Preload("Products").Preload("Manager").Preload("WebSite").Preload("OrderChannel").First(order, order.Id).Error
 	if err != nil {
-		fmt.Println("Ja!")
 		return err
 	}
 
@@ -102,6 +147,8 @@ func (Order) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 }
 func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
+	utils.TimeTrack(time.Now(), "Load")
+	
 	orders := make([]Order,0)
 	var total uint
 
@@ -111,7 +158,7 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Order{}).Preload("WebSite").Preload("OrderChannel").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&Order{}).Preload("Products").Preload("Manager").Preload("WebSite").Preload("OrderChannel").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders, "customer_comment ILIKE ?", search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -127,7 +174,7 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 
 	} else {
 
-		err := db.Model(&Order{}).Limit(limit).Preload("WebSite").Preload("OrderChannel").Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&Order{}).Limit(limit).Preload("Products").Preload("Manager").Preload("WebSite").Preload("OrderChannel").Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -153,9 +200,15 @@ func (order *Order) update(input map[string]interface{}) error {
 
 	delete(input,"webSite")
 	delete(input,"orderChannel")
+	delete(input,"comments")
+	delete(input,"manager")
+	delete(input,"products")
+	delete(input,"company")
+	delete(input,"client")
+	delete(input,"_cart")
 
 	return db.Set("gorm:association_autoupdate", false).
-		Model(order).Preload("User").Preload("WebSite").Preload("OrderChannel").Omit("id", "account_id").Updates(input).Error
+		Model(order).Preload("Products").Preload("Manager").Preload("WebSite").Preload("OrderChannel").Omit("id", "account_id").Updates(input).Error
 }
 
 func (order Order) delete () error {
@@ -165,4 +218,41 @@ func (order Order) delete () error {
 
 
 // ########## Work function ############
+func (order *Order) AppendProducts (products []Product) error {
+	if err := db.Model(order).Association("Products").Replace(products).Error; err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func (order *Order) RetailPriceCalculation () error {
+
+	sum := float64(0)
+
+	if len(order.Products) < 1 {
+		order.Cart.Value = 0
+		order.Cart.Count = 0
+		return nil
+	}
+	// fmt.Println(order.Products)
+	// sum := float64(0)
+
+	var arrProducts = make([]uint, 0)
+	for _,v := range order.Products {
+		arrProducts = append(arrProducts, v.Id)
+	}
+
+	// err := db.Table("products").Where("account_id = ? AND id IN (?)", order.AccountId, order.Products).Select("sum(retail_price)").Row().Scan(&sum)
+	err := db.Table("products").Where("account_id = ? AND id IN (?)", order.AccountId, arrProducts).Select("sum(retail_price)").Row().Scan(&sum)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	// fmt.Println(sum)
+	order.Cart.Value = sum
+	order.Cart.Count = len(order.Products)
+
+	return nil
+}

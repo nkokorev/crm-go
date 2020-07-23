@@ -9,7 +9,7 @@ import (
 
 type OrderChannel struct {
 	Id     uint   `json:"id" gorm:"primary_key"`
-	AccountId uint `json:"accountId" gorm:"index,not null"` // аккаунт-владелец ключа
+	AccountId uint `json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
 
 	Name		string 	`json:"name" gorm:"type:varchar(255);not null;"` // "Заказ из корзины", "Заказ по телефону", "Пропущенный звонок", "Письмо.."
 	Description string 	`json:"description" gorm:"type:varchar(255);"` // Описание назначения канала
@@ -34,15 +34,15 @@ func (OrderChannel) PgSqlCreate() {
 	db.Model(&OrderChannel{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 
 	orderChannels := []OrderChannel {
+		{Name:   "Оффлайн",		Description: "-"},
+		{Name:   "По телефону",	Description: "-"},
+		{Name:   "Пропущенный звонок",	Description: "-"},
 		{Name:   "Через корзину",	Description: "-"},
 		{Name:   "В один клик",		Description: "Экспресс заказ"},
 		{Name:   "Запрос на понижение цены",	Description: "-"},
 		{Name:   "Заявка с посадочной страницы",Description: "-"},
 		{Name:   "Мессенджеры",	Description: "-"},
 		{Name:   "Онлайн-консультант",Description: "-"},
-		{Name:   "Оффлайн",		Description: "-"},
-		{Name:   "По телефону",	Description: "-"},
-		{Name:   "Пропущенный звонок",	Description: "-"},
 		{Name:   "Мобильное приложение",Description: "-"},
 	}
 

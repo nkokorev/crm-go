@@ -7,46 +7,6 @@ import (
 	"time"
 )
 
-//Объект платежа - кто-то, что-то вам заплатил. Или хочет заплатить. Или должен...
-type Amount struct {
-	Value 	float64	`json:"value" gorm:"type:numeric;default:0"`
-	Currency 	string 	`json:"currency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
-}
-
-type PaymentMethod struct {
-	Type 	string `json:"type" gorm:"type:varchar(32);"`
-}
-
-type Confirmation struct {
-	Type 	string `json:"type" gorm:"type:varchar(32);"` // embedded, redirect, external, qr
-	ReturnUrl 	string `json:"return_url" gorm:"type:varchar(255);"`
-}
-
-type Recipient struct {
-	AccountId	string	`json:"account_id" gorm:"type:varchar(32);default:''"` // Идентификатор магазина в Яндекс.Кассе.
-	GatewayId	string	`json:"gateway_id" gorm:"type:varchar(32);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
-}
-
-type CancellationDetails struct {
-	Party	string	`json:"party" gorm:"type:varchar(32);default:''"` 
-	Reason	string	`json:"reason" gorm:"type:varchar(32);default:''"`
-}
-type AuthorizationDetails struct {
-	// Retrieval Reference Number — уникальный идентификатор транзакции в системе эмитента. Используется при оплате банковской картой.
-	Rrn	string	`json:"rrn" gorm:"type:varchar(32);default:''"`
-
-	// Код авторизации банковской карты. Выдается эмитентом и подтверждает проведение авторизации.
-	AuthCode	string	`json:"authCode" gorm:"type:varchar(50);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
-}
-type Transfers struct {
-	// Retrieval Reference Number — уникальный идентификатор транзакции в системе эмитента. Используется при оплате банковской картой.
-	AccountId	string	`json:"account_id" gorm:"type:varchar(32);default:''"`
-
-	// Код авторизации банковской карты. Выдается эмитентом и подтверждает проведение авторизации.
-	Amount	Amount	`json:"amount" ` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
-	Status	string	`json:"status" gorm:"type:varchar(50);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
-}
-
 type Payment struct {
 	
 	Id     		uint   	`json:"id" gorm:"primary_key"`
@@ -130,8 +90,8 @@ type Payment struct {
 	// таблица или тип объекта: [yandex_payment,cash, ...] // тут надо бы доработать список
 	OwnerType	string `json:"ownerType" gorm:"type:varchar(255);default:''"`
 
+	// ID заказа в RatusCRM
 	OrderId	uint	`json:"orderId" gorm:"type:int"` // Id заказа в системе
-	// таблица или тип объекта: [yandex_payment,cash, ...] // тут надо бы доработать список
 
 	ExternalCapturedAt 	time.Time  `json:"externalCapturedAt"` // Время подтверждения платежа, UTC
 	ExternalExpiresAt 	time.Time  `json:"externalExpiresAt"`  // Время, до которого вы можете бесплатно отменить или подтвердить платеж.
@@ -141,6 +101,46 @@ type Payment struct {
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 	DeletedAt *time.Time `json:"-" sql:"index"`
+}
+
+//Объект платежа - кто-то, что-то вам заплатил. Или хочет заплатить. Или должен...
+type Amount struct {
+	Value 	float64	`json:"value" gorm:"type:numeric;default:0"`
+	Currency 	string 	`json:"currency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
+}
+
+type PaymentMethod struct {
+	Type 	string `json:"type" gorm:"type:varchar(32);"`
+}
+
+type Confirmation struct {
+	Type 	string `json:"type" gorm:"type:varchar(32);"` // embedded, redirect, external, qr
+	ReturnUrl 	string `json:"return_url" gorm:"type:varchar(255);"`
+}
+
+type Recipient struct {
+	AccountId	string	`json:"account_id" gorm:"type:varchar(32);default:''"` // Идентификатор магазина в Яндекс.Кассе.
+	GatewayId	string	`json:"gateway_id" gorm:"type:varchar(32);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+}
+
+type CancellationDetails struct {
+	Party	string	`json:"party" gorm:"type:varchar(32);default:''"`
+	Reason	string	`json:"reason" gorm:"type:varchar(32);default:''"`
+}
+type AuthorizationDetails struct {
+	// Retrieval Reference Number — уникальный идентификатор транзакции в системе эмитента. Используется при оплате банковской картой.
+	Rrn	string	`json:"rrn" gorm:"type:varchar(32);default:''"`
+
+	// Код авторизации банковской карты. Выдается эмитентом и подтверждает проведение авторизации.
+	AuthCode	string	`json:"authCode" gorm:"type:varchar(50);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+}
+type Transfers struct {
+	// Retrieval Reference Number — уникальный идентификатор транзакции в системе эмитента. Используется при оплате банковской картой.
+	AccountId	string	`json:"account_id" gorm:"type:varchar(32);default:''"`
+
+	// Код авторизации банковской карты. Выдается эмитентом и подтверждает проведение авторизации.
+	Amount	Amount	`json:"amount" ` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+	Status	string	`json:"status" gorm:"type:varchar(50);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
 }
 
 // ############# Entity interface #############

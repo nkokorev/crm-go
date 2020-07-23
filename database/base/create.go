@@ -1638,6 +1638,11 @@ func LoadProductCategoryDescriptionAiroClimate()  {
 func RefreshTablesPart_IV() {
 	pool := models.GetPool()
 
+	err := pool.Exec("drop table if exists orders_products").Error
+	if err != nil {
+		log.Fatalf("Cant create tables -1: %v", err)
+		return
+	}
 	pool.DropTableIfExists(models.OrderComment{},models.OrderChannel{},models.Order{}, models.Payment{},models.YandexPayment{})
 
 	// А теперь создаем
@@ -1657,27 +1662,31 @@ func UploadTestDataPart_IV()  {
 	}
 
 	// Создаем заказ (Order)
-	entity, err := airoAccount.CreateEntity(
-		&models.Order{
-			CustomerComment: "Привезти с 10 до 12:00, контакт Светлана.",
-			Individual: true,
-			WebSiteId: 5,
-			OrderChannelId: 1,
-			UserId: 2,
-		})
-	if err != nil {
-		log.Fatalf("Не удалось создать заказ: ", err)
+	for i := 0; i < 5; i++ {
+		entity, err := airoAccount.CreateEntity(
+			&models.Order{
+				CustomerComment: "Привезти с 10 до 12:00, контакт Светлана.",
+				Individual: true,
+				WebSiteId: 5,
+				OrderChannelId: 1,
+				ManagerId: 2,
+			})
+		if err != nil {
+			log.Fatalf("Не удалось создать заказ: ", err)
+		}
+
+		var order models.Order
+		if err = airoAccount.LoadEntity(&order, entity.GetId()); err != nil {
+			log.Fatalf("Не удалось найти заказ: ", err)
+		}
+
+		if err := order.AppendProducts([]models.Product{
+			{Id: 15},{Id: 3},{Id: 5},{Id: 8},
+		}); err != nil {
+			log.Fatal(err)
+		}
 	}
 
-	fmt.Println("Order is created! 1")
-
-	var order models.Order
-	if err = airoAccount.LoadEntity(&order, entity.GetId()); err != nil {
-		log.Fatalf("Не удалось найти заказ: ", err)
-	}
-
-
-	fmt.Println("Order is created!")
 
 	// Создаем способ оплаты YandexPayment
 	entityPayment, err := airoAccount.CreateEntity(
