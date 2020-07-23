@@ -327,13 +327,15 @@ func StorageDeleteFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
+
 	var file models.Storage
 	err = account.LoadEntity(&file,fileID)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Получения списка"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Не удалось найти файл"}))
 		return
 	}
-
+	
 	err = account.DeleteEntity(&file)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка удаления файла"))

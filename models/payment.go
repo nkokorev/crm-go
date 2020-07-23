@@ -148,7 +148,7 @@ func (payment Payment) GetID() uint { return payment.ID }
 func (payment *Payment) setID(id uint) { payment.ID = id }
 func (payment Payment) GetAccountID() uint { return payment.AccountID }
 func (payment *Payment) setAccountID(id uint) { payment.AccountID = id }
-func (Payment) systemEntity() bool { return false }
+func (Payment) SystemEntity() bool { return false }
 // ############# Entity interface #############
 
 func (Payment) PgSqlCreate() {

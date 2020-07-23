@@ -51,7 +51,7 @@ func (deliveryRussianPost *DeliveryRussianPost) setID(id uint) { deliveryRussian
 func (deliveryRussianPost DeliveryRussianPost) GetAccountID() uint { return deliveryRussianPost.AccountID }
 func (deliveryRussianPost *DeliveryRussianPost) setAccountID(id uint) { deliveryRussianPost.AccountID = id }
 func (deliveryRussianPost *DeliveryRussianPost) setShopID(webSiteID uint) { deliveryRussianPost.WebSiteID = webSiteID }
-func (deliveryRussianPost DeliveryRussianPost) systemEntity() bool { return false }
+func (deliveryRussianPost DeliveryRussianPost) SystemEntity() bool { return false }
 
 func (deliveryRussianPost DeliveryRussianPost) GetCode() string {
 	return deliveryRussianPost.Code

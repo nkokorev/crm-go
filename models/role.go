@@ -78,9 +78,7 @@ func (role Role) GetID() uint { return role.ID }
 func (role *Role) setID(id uint) { role.ID = id }
 func (role Role) GetAccountID() uint { return role.AccountID }
 func (role *Role) setAccountID(id uint) { role.AccountID = id }
-func (role Role) systemEntity() bool {
-	return role.AccountID == 1
-}
+func (role Role) SystemEntity() bool { return role.AccountID == 1 }
 // ############# Entity interface #############
 
 func (role Role) create() (Entity, error)  {

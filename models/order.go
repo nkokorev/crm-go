@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"time"
 )
 
 type Order struct {
@@ -10,21 +11,24 @@ type Order struct {
 	AccountID uint `json:"accountID" gorm:"index,not null"` // аккаунт-владелец ключа
 
 	Description string 	`json:"description" gorm:"type:varchar(255);"`
-	/*// Описание заказа, может быть видно пользователю
+	// Описание заказа, может быть видно пользователю
 	Name		string 	`json:"name" gorm:"type:varchar(255);"` // Имя заказа
 
-
-	// Источник (канал) заказа: "Заказ из корзины", "Заказ по телефону", "Пропущенный звонок", "Письмо.."
-	OrderSourceID string	`json:"orderSourceID"`
-
+	////// Данные заказа ///////
 	// Юр.лицо / Физ.лицо
 	Type	string `json:"type"`
 
 	// Магазин (сайт) с которого пришел заказ. НЕ может быть null.
 	WebSiteID 	uint	`json:"webSiteID"`
+	WebSite	WebSite
+
+	// Способ (канал) заказа: "Заказ из корзины", "Заказ по телефону", "Пропущенный звонок", "Письмо.."
+	OrderSourceID string	`json:"orderSourceID"`
+	OrderSource	OrderSource `json:"orderSource"`
 	
 	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`*/
+	UpdatedAt time.Time `json:"updatedAt"`
+	DeletedAt *time.Time `json:"deletedAt"`
 }
 
 // ############# Entity interface #############
@@ -32,7 +36,7 @@ func (order Order) GetID() uint { return order.ID }
 func (order *Order) setID(id uint) { order.ID = id }
 func (order Order) GetAccountID() uint { return order.AccountID }
 func (order *Order) setAccountID(id uint) { order.AccountID = id }
-func (Order) systemEntity() bool { return false }
+func (Order) SystemEntity() bool { return false }
 
 // ############# Entity interface #############
 

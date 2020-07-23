@@ -201,4 +201,10 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashID}/email-notifications/{emailNotificationID}", appCr.EmailNotificationDelete).Methods(http.MethodDelete, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashID}/email-notifications/{emailNotificationID}/execute", appCr.EmailNotificationExecute).Methods(http.MethodGet, http.MethodOptions)
 
+	// ### Order Items ###
+	rAuthFull.HandleFunc("/accounts/{accountHashID}/orders", appCr.OrderCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashID}/orders", appCr.OrderGetListPagination).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashID}/orders/{orderID:[0-9]+}", appCr.OrderGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashID}/orders/{orderID:[0-9]+}", appCr.OrderUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashID}/orders/{orderID:[0-9]+}", appCr.OrderDelete).Methods(http.MethodDelete, http.MethodOptions)
 }

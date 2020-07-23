@@ -3,7 +3,6 @@ package models
 import (
 	"errors"
 	"fmt"
-	"github.com/nkokorev/crm-go/utils"
 	"reflect"
 )
 
@@ -24,7 +23,7 @@ type Entity interface {
 	delete() error
 
 	// AppendAssociationMethod(options Entity)
-	systemEntity() bool
+	SystemEntity() bool
 
 }
 
@@ -53,11 +52,9 @@ func (account Account) GetEntity(model Entity, id uint) (Entity, error) {
 		return nil, err
 	}
 
-	if entity.GetAccountID() != account.ID {
-		if !entity.systemEntity() {
-			return nil, errors.New("Модель принадлежит другому аккаунту")
-		}
-
+	// Тут надо бы показать, что она системная
+	if entity.GetAccountID() != account.ID && !entity.SystemEntity() {
+		return nil, errors.New("Модель принадлежит другому аккаунту")
 	}
 
 	return entity, nil
@@ -76,11 +73,8 @@ func (account Account) LoadEntity(entity Entity, primaryKey ...uint) error {
 	}
 
 	// Проверяем принадлежность к аккаунту
-	if entity.GetAccountID() != account.ID {
-		if !entity.systemEntity() {
-			return errors.New("Модель принадлежит другому аккаунту")
-		}
-
+	if entity.GetAccountID() != account.ID && !entity.SystemEntity() {
+		return errors.New("Модель принадлежит другому аккаунту")
 	}
 
 	return nil
@@ -95,16 +89,16 @@ func (account Account) GetPaginationListEntity(model Entity, offset, limit int, 
 }
 
 func (account Account) UpdateEntity(entity Entity, input map[string]interface{}) error {
-	if entity.GetAccountID() != account.ID {
-		return utils.Error{Message: "Объект принадлежит другому аккаунту"}
+	if entity.GetAccountID() != account.ID && !entity.SystemEntity() {
+		return errors.New("Модель принадлежит другому аккаунту")
 	}
 
 	return entity.update(input)
 }
 
 func (account Account) DeleteEntity(entity Entity) error {
-	if entity.GetAccountID() != account.ID {
-		return utils.Error{Message: "Объект принадлежит другому аккаунту"}
+	if entity.GetAccountID() != account.ID && !entity.SystemEntity() {
+		return errors.New("Модель принадлежит другому аккаунту")
 	}
 	
 	return entity.delete()

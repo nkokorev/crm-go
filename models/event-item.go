@@ -35,7 +35,7 @@ func (eventItem EventItem) GetID() uint { return eventItem.ID }
 func (eventItem *EventItem) setID(id uint) { eventItem.ID = id }
 func (eventItem EventItem) GetAccountID() uint { return eventItem.AccountID }
 func (eventItem *EventItem) setAccountID(id uint) { eventItem.AccountID = id }
-func (EventItem) systemEntity() bool { return true }
+func (eventItem EventItem) SystemEntity() bool { return eventItem.AccountID == 1 }
 
 // ############# Entity interface #############
 

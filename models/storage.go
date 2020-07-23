@@ -121,7 +121,7 @@ func (fs Storage) GetID() uint { return fs.ID }
 func (fs *Storage) setID(id uint) { fs.ID = id }
 func (fs Storage) GetAccountID() uint { return fs.AccountID }
 func (fs *Storage) setAccountID(id uint) { fs.AccountID = id }
-func (Storage) systemEntity() bool { return false }
+func (Storage) SystemEntity() bool { return false }
 // ############# Entity interface #############
 
 
@@ -251,7 +251,7 @@ func (Storage) getByEvent(eventName string) (*Storage, error) {
 
 func (fs *Storage) update(input map[string]interface{}) error {
 	err := db.Set("gorm:association_autoupdate", false).
-		Model(fs).Where("id", fs.ID).Omit("id", "hashID", "account_id","created_at").Updates(input).Error;
+		Model(fs).Omit("id", "hashID", "account_id","created_at").Updates(input).Error;
 	if err != nil {
 		return err
 	}

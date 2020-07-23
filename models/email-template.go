@@ -57,7 +57,7 @@ func (emailTemplate EmailTemplate) GetID() uint { return emailTemplate.ID }
 func (emailTemplate *EmailTemplate) setID(id uint) { emailTemplate.ID = id }
 func (emailTemplate EmailTemplate) GetAccountID() uint { return emailTemplate.AccountID }
 func (emailTemplate *EmailTemplate) setAccountID(id uint) { emailTemplate.AccountID = id }
-func (EmailTemplate) systemEntity() bool { return false }
+func (EmailTemplate) SystemEntity() bool { return false }
 func (emailTemplate EmailTemplate) GetData() string { return emailTemplate.HTMLData }
 // ############# Entity interface #############
 

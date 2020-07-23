@@ -45,9 +45,7 @@ func (webSite WebSite) GetID() uint { return webSite.ID }
 func (webSite *WebSite) setID(id uint) { webSite.ID = id }
 func (webSite WebSite) GetAccountID() uint { return webSite.AccountID }
 func (webSite *WebSite) setAccountID(id uint) { webSite.AccountID = id }
-func (webSite WebSite) systemEntity() bool {
-	return false
-}
+func (webSite WebSite) SystemEntity() bool { return false }
 // ############# END Of Entity interface #############
 
 func (webSite *WebSite) BeforeCreate(scope *gorm.Scope) error {

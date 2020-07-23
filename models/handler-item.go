@@ -41,7 +41,9 @@ func (obItem HandlerItem) GetID() uint { return obItem.ID }
 func (obItem *HandlerItem) setID(id uint) { obItem.ID = id }
 func (obItem HandlerItem) GetAccountID() uint { return obItem.AccountID }
 func (obItem *HandlerItem) setAccountID(id uint) { obItem.AccountID = id }
-func (HandlerItem) systemEntity() bool { return true }
+
+// Всегда системный
+func (handlerItem HandlerItem) SystemEntity() bool { return handlerItem.AccountID == 1 }
 
 // ############# Entity interface #############
 

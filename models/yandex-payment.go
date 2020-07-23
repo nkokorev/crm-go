@@ -51,7 +51,7 @@ func (yandexPayment YandexPayment) GetID() uint { return yandexPayment.ID }
 func (yandexPayment *YandexPayment) setID(id uint) { yandexPayment.ID = id }
 func (yandexPayment YandexPayment) GetAccountID() uint { return yandexPayment.AccountID }
 func (yandexPayment *YandexPayment) setAccountID(id uint) { yandexPayment.AccountID = id }
-func (YandexPayment) systemEntity() bool { return false }
+func (YandexPayment) SystemEntity() bool { return false }
 
 // ############# Entity interface #############
 

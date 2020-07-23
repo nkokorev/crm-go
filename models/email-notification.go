@@ -57,7 +57,7 @@ func (emailNotification EmailNotification) GetID() uint { return emailNotificati
 func (emailNotification *EmailNotification) setID(id uint) { emailNotification.ID = id }
 func (emailNotification EmailNotification) GetAccountID() uint { return emailNotification.AccountID }
 func (emailNotification *EmailNotification) setAccountID(id uint) { emailNotification.AccountID = id }
-func (EmailNotification) systemEntity() bool { return false }
+func (EmailNotification) SystemEntity() bool { return false }
 
 // ############# Entity interface #############
 

@@ -37,7 +37,7 @@ func (emailBox EmailBox) GetID() uint { return emailBox.ID }
 func (emailBox *EmailBox) setID(id uint) { emailBox.ID = id }
 func (emailBox EmailBox) GetAccountID() uint { return emailBox.AccountID }
 func (emailBox *EmailBox) setAccountID(id uint) { emailBox.AccountID = id }
-func (EmailBox) systemEntity() bool { return false }
+func (EmailBox) SystemEntity() bool { return false }
 
 // ############# Entity interface #############
 func (emailBox EmailBox) create() (Entity, error)  {

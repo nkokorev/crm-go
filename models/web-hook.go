@@ -67,7 +67,7 @@ func (webHook WebHook) GetID() uint { return webHook.ID }
 func (webHook *WebHook) setID(id uint) { webHook.ID = id }
 func (webHook WebHook) GetAccountID() uint { return webHook.AccountID }
 func (webHook *WebHook) setAccountID(id uint) { webHook.AccountID = id }
-func (WebHook) systemEntity() bool { return false }
+func (WebHook) SystemEntity() bool { return false }
 
 // ############# Entity interface #############
 

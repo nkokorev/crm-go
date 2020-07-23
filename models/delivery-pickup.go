@@ -36,7 +36,7 @@ func (deliveryPickup *DeliveryPickup) setID(id uint) { deliveryPickup.ID = id }
 func (deliveryPickup DeliveryPickup) GetAccountID() uint { return deliveryPickup.AccountID }
 func (deliveryPickup *DeliveryPickup) setAccountID(id uint) { deliveryPickup.AccountID = id }
 func (deliveryPickup *DeliveryPickup) setShopID(webSiteID uint) { deliveryPickup.WebSiteID = webSiteID }
-func (DeliveryPickup) systemEntity() bool { return false }
+func (DeliveryPickup) SystemEntity() bool { return false }
 
 func (deliveryPickup DeliveryPickup) GetCode() string {
 	return deliveryPickup.Code

@@ -54,7 +54,7 @@ func (eventListener EventListener) GetID() uint { return eventListener.ID }
 func (eventListener *EventListener) setID(id uint) { eventListener.ID = id }
 func (eventListener EventListener) GetAccountID() uint { return eventListener.AccountID }
 func (eventListener *EventListener) setAccountID(id uint) { eventListener.AccountID = id }
-func (eventListener EventListener) systemEntity() bool { return false }
+func (eventListener EventListener) SystemEntity() bool { return false }
 // ############# END Of Entity interface #############
 
 func (eventListener EventListener) create() (Entity, error)  {
