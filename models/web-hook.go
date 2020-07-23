@@ -14,7 +14,7 @@ import (
 type WebHookType = string
 
 type WebHookEventObject interface {
-	getID() uint
+	getId() uint
 }
 
 const (
@@ -47,8 +47,8 @@ const (
 )
 
 type WebHook struct {
-	ID     		uint   	`json:"id" gorm:"primary_key"`
-	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
+	Id     		uint   	`json:"id" gorm:"primary_key"`
+	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя вебхука
 	
@@ -63,10 +63,10 @@ type WebHook struct {
 }
 
 // ############# Entity interface #############
-func (webHook WebHook) GetID() uint { return webHook.ID }
-func (webHook *WebHook) setID(id uint) { webHook.ID = id }
-func (webHook WebHook) GetAccountID() uint { return webHook.AccountID }
-func (webHook *WebHook) setAccountID(id uint) { webHook.AccountID = id }
+func (webHook WebHook) GetId() uint { return webHook.Id }
+func (webHook *WebHook) setId(id uint) { webHook.Id = id }
+func (webHook WebHook) GetAccountId() uint { return webHook.AccountId }
+func (webHook *WebHook) setAccountId(id uint) { webHook.AccountId = id }
 func (WebHook) SystemEntity() bool { return false }
 
 // ############# Entity interface #############
@@ -80,13 +80,13 @@ func (WebHook) PgSqlCreate() {
 	db.Model(&WebHook{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }
 func (webHook *WebHook) BeforeCreate(scope *gorm.Scope) error {
-	webHook.ID = 0
+	webHook.Id = 0
 	return nil
 }
 
 // ######### CRUD Functions ############
 func (webHook WebHook) create() (Entity, error)  {
-	// if err := db.Create(&webHook).Find(&webHook, webHook.ID).Error; err != nil {
+	// if err := db.Create(&webHook).Find(&webHook, webHook.Id).Error; err != nil {
 	wb := webHook
 	if err := db.Create(&wb).Error; err != nil {
 		return nil, err
@@ -108,30 +108,30 @@ func (WebHook) get(id uint) (Entity, error) {
 	return &webHook, nil
 }
 func (webHook *WebHook) load() error {
-	if webHook.ID < 1 {
-		return utils.Error{Message: "Невозможно загрузить WebHook - не указан  ID"}
+	if webHook.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить WebHook - не указан  Id"}
 	}
 
-	err := db.First(webHook,webHook.ID).Error
+	err := db.First(webHook,webHook.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (WebHook) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
+func (WebHook) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
 	webHooks := make([]WebHook,0)
 	var total uint
 
-	err := db.Model(&WebHook{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Model(&WebHook{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
 		Find(&webHooks).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&WebHook{}).Where("account_id = ?", accountID).Count(&total).Error
+	err = db.Model(&WebHook{}).Where("account_id = ?", accountId).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -145,7 +145,7 @@ func (WebHook) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 	return entities, total, nil
 }
 
-func (WebHook) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (WebHook) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	webHooks := make([]WebHook,0)
 	var total uint
@@ -156,7 +156,7 @@ func (WebHook) getPaginationList(accountID uint, offset, limit int, sortBy, sear
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&WebHook{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+		err := db.Model(&WebHook{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -164,7 +164,7 @@ func (WebHook) getPaginationList(accountID uint, offset, limit int, sortBy, sear
 
 		// Определяем total
 		err = db.Model(&WebHook{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountID, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -172,14 +172,14 @@ func (WebHook) getPaginationList(accountID uint, offset, limit int, sortBy, sear
 
 	} else {
 
-		err := db.Model(&WebHook{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+		err := db.Model(&WebHook{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webHooks).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&WebHook{}).Where("account_id = ?", accountID).Count(&total).Error
+		err = db.Model(&WebHook{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -210,7 +210,7 @@ func (webHook *WebHook) update(input map[string]interface{}) error {
 }
 
 func (webHook WebHook) delete () error {
-	return db.Model(WebHook{}).Where("id = ?", webHook.ID).Delete(webHook).Error
+	return db.Model(WebHook{}).Where("id = ?", webHook.Id).Delete(webHook).Error
 }
 // ######### END CRUD Functions ############
 

@@ -7,7 +7,7 @@ import (
 
 // this is CRM settings. If json - public, else - private
 type CrmSetting struct {
-	ID uint `json:"-"`
+	Id uint `json:"-"`
 
 	// Глобальные настройки
 	ApiEnabled bool `json:"apiEnabled" gorm:"default:true;not null"` // влючен ли API интерфейс для аккаунтов

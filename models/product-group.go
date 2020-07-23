@@ -8,11 +8,11 @@ import (
 )
 
 type ProductGroup struct {
-	ID     uint   `json:"id" gorm:"primary_key"`
-	WebSiteID uint `json:"webSiteID" gorm:"type:int;index;not null;"` // магазин, к которому относится данная группа
-	// AccountID uint `json:"-" gorm:"type:int;index;not null;"` // хз хз
-	// ParentID uint `json:"parentID,omitempty" gorm:"default:NULL"`
-	ParentID *uint `json:"parentID" gorm:"default:NULL"`
+	Id     uint   `json:"id" gorm:"primary_key"`
+	WebSiteId uint `json:"webSiteId" gorm:"type:int;index;not null;"` // магазин, к которому относится данная группа
+	// AccountId uint `json:"-" gorm:"type:int;index;not null;"` // хз хз
+	// ParentId uint `json:"parentId,omitempty" gorm:"default:NULL"`
+	ParentId *uint `json:"parentId" gorm:"default:NULL"`
 
 	Code string `json:"code" gorm:"type:varchar(255);default:null;"` // tea, coffe, china
 	URL string `json:"url"gorm:"type:varchar(255);default:null;"`
@@ -31,7 +31,7 @@ type ProductGroup struct {
 	MetaDescription string `json:"metaDescription" gorm:"type:varchar(255);default:null;"`
 
 	WebSite WebSite `json:"webSite" `
-	ParentGroup *ProductGroup `json:"-"` // if has parentID
+	ParentGroup *ProductGroup `json:"-"` // if has parentId
 	// ProductCards ProductCard `json:"productCards" gorm:"many2many:product_group_product_cards"`
 	ProductCards []ProductCard `json:"productCards"`
 	// Products []Product `json:"products" gorm:"many2many:product_group_products"`
@@ -47,19 +47,19 @@ func (ProductGroup) PgSqlCreate() {
 }
 
 func (productGroup *ProductGroup) BeforeCreate(scope *gorm.Scope) error {
-	productGroup.ID = 0
+	productGroup.Id = 0
 	return nil
 }
 
-func (productGroup ProductGroup) getID() uint {
-	return productGroup.ID
+func (productGroup ProductGroup) getId() uint {
+	return productGroup.Id
 }
 
 // ######### CRUD Functions ############
 func (productGroup ProductGroup) create() (*ProductGroup, error)  {
 	
-	if productGroup.WebSiteID < 1 {
-		return nil, utils.Error{Message: "Необходимо указать ID магазина"}
+	if productGroup.WebSiteId < 1 {
+		return nil, utils.Error{Message: "Необходимо указать Id магазина"}
 	}
 
 	var productGroupNew = productGroup
@@ -71,7 +71,7 @@ func (productGroup ProductGroup) create() (*ProductGroup, error)  {
 		return nil, err
 	}
 
-	event.AsyncFire(Event{}.ProductGroupCreated(productGroupNew.WebSite.AccountID, productGroupNew.ID))
+	event.AsyncFire(Event{}.ProductGroupCreated(productGroupNew.WebSite.AccountId, productGroupNew.Id))
 	
 	return &productGroupNew, nil
 }
@@ -90,19 +90,19 @@ func (ProductGroup) get(id uint) (*ProductGroup, error) {
 func (productGroup *ProductGroup) update(input map[string]interface{}) error {
 	if err :=  db.Model(productGroup).Omit("id").Updates(input).Preload("WebSite").Find(productGroup).Error; err != nil { return err }
 
-	event.AsyncFire(Event{}.ProductGroupUpdated(productGroup.WebSite.AccountID, productGroup.ID))
+	event.AsyncFire(Event{}.ProductGroupUpdated(productGroup.WebSite.AccountId, productGroup.Id))
 
 	return nil
 }
 
 func (productGroup ProductGroup) delete () error {
 
-	accountID, err2 := GetAccountIDByWebSiteID(productGroup.WebSiteID)
+	accountId, err2 := GetAccountIdByWebSiteId(productGroup.WebSiteId)
 
-	if err := db.Model(ProductGroup{}).Where("id = ?", productGroup.ID).Delete(productGroup).Error; err != nil { return err }
+	if err := db.Model(ProductGroup{}).Where("id = ?", productGroup.Id).Delete(productGroup).Error; err != nil { return err }
 
 	if err2 != nil {
-		event.AsyncFire(Event{}.ProductGroupDeleted(accountID, productGroup.ID))
+		event.AsyncFire(Event{}.ProductGroupDeleted(accountId, productGroup.Id))
 	}
 
 	return nil
@@ -112,23 +112,23 @@ func (productGroup ProductGroup) delete () error {
 
 // ######### SHOP Functions ############
 func (webSite WebSite) CreateProductGroup(input ProductGroup) (*ProductGroup, error) {
-	input.WebSiteID = webSite.ID
+	input.WebSiteId = webSite.Id
 
 	productGroup, err := input.create()
 	if err != nil {
 		return nil, err
 	}
 
-	/*account, err := GetAccount(webSite.AccountID)
+	/*account, err := GetAccount(webSite.AccountId)
 	if err == nil && account != nil {
-		event.AsyncFire(Event{}.ProductGroupCreated(account.ID, productGroup.ID))
+		event.AsyncFire(Event{}.ProductGroupCreated(account.Id, productGroup.Id))
 	}*/
 
 	return productGroup, nil
 }
 
-func (webSite WebSite) GetProductGroup(groupID uint) (*ProductGroup, error) {
-	group, err := ProductGroup{}.get(groupID)
+func (webSite WebSite) GetProductGroup(groupId uint) (*ProductGroup, error) {
+	group, err := ProductGroup{}.get(groupId)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (webSite WebSite) GetProductGroupList() ([]ProductGroup, error) {
 
 	groups := make([]ProductGroup,0)
 
-	err := db.Model(&webSite).Where("web_site_id = ?", webSite.ID).Association("ProductGroups").Find(&groups).Error
+	err := db.Model(&webSite).Where("web_site_id = ?", webSite.Id).Association("ProductGroups").Find(&groups).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (webSite WebSite) GetProductGroupsPaginationList(offset, limit int, search 
 		err := db.Model(&webSite).
 			Limit(limit).
 			Offset(offset).
-			Where("web_site_id = ?", webSite.ID).
+			Where("web_site_id = ?", webSite.Id).
 			Where("code ILIKE ? OR url ILIKE ? OR name ILIKE ? OR short_description ILIKE ? OR description ILIKE ? OR meta_title ILIKE ? OR meta_keywords ILIKE ? OR meta_description ILIKE ?" , search,search,search,search,search,search,search,search).
 			Association("ProductGroups").
 			Find(&productGroups).Error
@@ -179,7 +179,7 @@ func (webSite WebSite) GetProductGroupsPaginationList(offset, limit int, search 
 		err := db.Model(&webSite).
 			Limit(limit).
 			Offset(offset).
-			Where("web_site_id = ?", webSite.ID).
+			Where("web_site_id = ?", webSite.Id).
 			Association("ProductGroups").
 			Find(&productGroups).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -187,7 +187,7 @@ func (webSite WebSite) GetProductGroupsPaginationList(offset, limit int, search 
 		}
 	}
 
-	total := db.Model(&webSite).Where("web_site_id = ?", webSite.ID).Association("ProductGroups").Count()
+	total := db.Model(&webSite).Where("web_site_id = ?", webSite.Id).Association("ProductGroups").Count()
 
 	/*if err := db.Model(&webSite).Association("ProductGroups").Find(&groups).Error; err != nil {
 		return nil, err
@@ -202,7 +202,7 @@ func (account Account) GetProductGroups() ([]ProductGroup, error) {
 
 	err := db.Model(&ProductGroup{}).
 		Joins("LEFT JOIN web_sites ON product_groups.web_site_id = web_sites.id").
-		Where("account_id = ?", account.ID).
+		Where("account_id = ?", account.Id).
 		Find(&groups).Error;
 	if err != nil {
 		return nil, err
@@ -212,7 +212,7 @@ func (account Account) GetProductGroups() ([]ProductGroup, error) {
 }
 
 /*func (account Account) GetProductGroupByRouteName(routeName uint) (*ProductGroup, error) {
-	group, err := ProductGroup{}.get(groupID)
+	group, err := ProductGroup{}.get(groupId)
 	if err != nil {
 		return nil, err
 	}
@@ -220,8 +220,8 @@ func (account Account) GetProductGroups() ([]ProductGroup, error) {
 	return group, nil
 }*/
 
-func (webSite WebSite) UpdateProductGroup(groupID uint, input map[string]interface{}) (*ProductGroup, error) {
-	productGroup, err := webSite.GetProductGroup(groupID)
+func (webSite WebSite) UpdateProductGroup(groupId uint, input map[string]interface{}) (*ProductGroup, error) {
+	productGroup, err := webSite.GetProductGroup(groupId)
 	if err != nil {
 		return nil, err
 	}
@@ -230,18 +230,18 @@ func (webSite WebSite) UpdateProductGroup(groupID uint, input map[string]interfa
 	/*m := structs.Map(input)
 
 	// todo: 
-	if m["WebSiteID"] != webSite.ID {
-	   acc, err := GetAccount(webSite.AccountID)
+	if m["WebSiteId"] != webSite.Id {
+	   acc, err := GetAccount(webSite.AccountId)
 	   if err != nil {
 		   return nil, utils.Error{Message: "Не удалось получить аккаунт"}
 	   }
-		if !acc.ExistShop(group.WebSiteID) {
+		if !acc.ExistShop(group.WebSiteId) {
 			return nil, utils.Error{Message: "Указанный магазин принадлежит другому аккаунту"}
 		}
 	}
 
 	// если меняется родитель
-	if m["ParentID"] != group.ParentID {
+	if m["ParentId"] != group.ParentId {
 		// todo: 
 	}*/
 
@@ -250,7 +250,7 @@ func (webSite WebSite) UpdateProductGroup(groupID uint, input map[string]interfa
 		return nil, err
 	}
 
-	/*account, err := GetAccount(webSite.AccountID)
+	/*account, err := GetAccount(webSite.AccountId)
 	if err == nil && account != nil {
 		go account.CallWebHookIfExist(EventProductGroupUpdated, productGroup)
 	}*/
@@ -258,10 +258,10 @@ func (webSite WebSite) UpdateProductGroup(groupID uint, input map[string]interfa
 	return productGroup, nil
 }
 
-func (webSite WebSite) DeleteProductGroup(groupID uint) error {
+func (webSite WebSite) DeleteProductGroup(groupId uint) error {
 
 	// включает в себя проверку принадлежности к аккаунту
-	productGroup, err := webSite.GetProductGroup(groupID)
+	productGroup, err := webSite.GetProductGroup(groupId)
 	if err != nil {
 		return err
 	}
@@ -278,14 +278,14 @@ func (webSite WebSite) DeleteProductGroup(groupID uint) error {
 
 // ######### ProductGroup Functions ############
 func (productGroup ProductGroup) CreateChild(input ProductGroup) (*ProductGroup, error) {
-	input.ParentID = &productGroup.ID
-	input.WebSiteID = productGroup.WebSiteID
+	input.ParentId = &productGroup.Id
+	input.WebSiteId = productGroup.WebSiteId
 	return input.create()
 }
 
 // Создает и добавляет продукт в категорию товаров
 func (productGroup ProductGroup) CreateProductCard(_c *ProductCard) (*ProductCard, error) {
- 	_c.ProductGroupID = &productGroup.ID
+ 	_c.ProductGroupId = &productGroup.Id
 	return _c.create()
 }
 /*func (group ProductGroup) CreateAndAppendProductCard(card *ProductCard) error {

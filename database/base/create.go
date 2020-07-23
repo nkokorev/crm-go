@@ -184,7 +184,6 @@ func UploadTestDataPart_I() {
 			Name:"Никита",
 			Surname:"Кокорев",
 			Patronymic:"Романович",
-			//DefaultAccountID:null,
 			EmailVerifiedAt:&timeNow,
 			},
 		*roleOwnerMain,
@@ -203,7 +202,6 @@ func UploadTestDataPart_I() {
 			Name:"Никита",
 			Surname:"Кокорев",
 			Patronymic:"Романович",
-			//DefaultAccountID:null,
 			EmailVerifiedAt:&timeNow,
 		},
 		*roleAdminMain,
@@ -215,13 +213,13 @@ func UploadTestDataPart_I() {
 	// 3. Создаем домен для главного аккаунта
 	_webSiteMain, err := mAcc.CreateEntity(&models.WebSite{
 		Hostname: "ratuscrm.com",
-		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4dksLEYhARII4b77fe403uCJhD8x5Rddp9aUJCg1vby7d6QLOpP7uXpXKVLXxaxQcX7Kjw2kGzlvx7N+d2tToZ8+T3SUadZxLOLYDYkwalkP3vhmA3cMuhpRrwOgWzDqSWsDfXgr4w+p1BmNbScpBYCwCrRQ7B12/EXioNcioCQIDAQAB`,
+		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4dksLEYhARII4b77fe403uCJhD8x5Rddp9aUJCg1vby7d6QLOpP7uXpXKVLXxaxQcX7Kjw2kGzlvx7N+d2tToZ8+T3SUadZxLOLYDYkwalkP3vhmA3cMuhpRrwOgWzDqSWsDfXgr4w+p1BmNbScpBYCwCrRQ7B12/EXioNcioCQIdAQAB`,
 		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
 MIICXQIBAAKBgQDB8BPdNbNwi3LA6VMp8BbOGKNrV1PxYZsxp6LvTSK9EgJcRIMw
 C+Uc1GgnvcTNksF5GviVYcy2az/e8ACLvcKI6Lb1gUhk10SHIRcb5boK/Li9aOUu
-F5ndGzzg0aBzsG2P0us+tkgFOTjc5MuBdlKOzraLegRbfL5MWUWe5SS3FQIDAQAB
+F5ndGzzg0aBzsG2P0us+tkgFOTjc5MuBdlKOzraLegRbfL5MWUWe5SS3FQIdAQAB
 AoGANIXli1Jg34kUsgQ+3qvEMVrg31BOTqAlnMQOz4pvbw8yjnSLpvaBvVYVQzYU
-16v4M+lHC4XqIDlZmfIb47yns12ASHSoFUzPeUioRu9oWxaOlcHSqWkZBg5miEuM
+16v4M+lHC4XqIdlZmfIb47yns12ASHSoFUzPeUioRu9oWxaOlcHSqWkZBg5miEuM
 pCgRrHG9eO3hoa3etgNTKzAUzqS5NhI2F4JXacHgJaQDT30CQQDuyOJfmTFzAz8I
 d0IPNjdyuaoLB7Vtzf9b3ihALJx6pvogM7ZcEAgDRlYLfuONMfrsLm3VqNhuMnaX
 O4iMyEbnAkEAz+t6qcosS/+J5MOvNQM0yFMLOdvAaJFVg019TSxc4Bp+DWIfUQXf
@@ -304,7 +302,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 		UiApiUserRegistrationInvitationOnly: false,
 		UiApiUserRegistrationRequiredFields: pq.StringArray{"email, phone, name"}, // !! хз хз
 		UiApiUserEmailDeepValidation:        true, // хз
-		UserVerificationMethodID:            dvc.ID,
+		UserVerificationMethodId:            dvc.Id,
 		UiApiEnabledLoginNotVerifiedUser:    true, // really?
 		VisibleToClients:                    false,
 	})
@@ -434,11 +432,11 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	// 2. Создаем домен для синдиката
 	_webSiteSynd, err := accSyndicAd.CreateEntity(&models.WebSite{
 		Hostname: "syndicad.com",
-		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDEwBDUBhnVcb+wPoyj6UrobwhKp0bIMzl9znfS127PdLqeGEyxCGy6CTT7coAturzb2dw33e3OhzzOvvBjnzSamRfpAj3vuBiSWtykS4JH17EN/4+ABtf7VOqfRWwB7F80VJ+3/Xv7TzkmNcAg+ksgDzk//BCXfcVFfx56Jxf7mQIDAQAB`,
+		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDEwBDUBhnVcb+wPoyj6UrobwhKp0bIMzl9znfS127PdLqeGEyxCGy6CTT7coAturzb2dw33e3OhzzOvvBjnzSamRfpAj3vuBiSWtykS4JH17EN/4+ABtf7VOqfRWwB7F80VJ+3/Xv7TzkmNcAg+ksgDzk//BCXfcVFfx56Jxf7mQIdAQAB`,
 		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
 MIICWwIBAAKBgQDEwBDUBhnVcb+wPoyj6UrobwhKp0bIMzl9znfS127PdLqeGEyx
 CGy6CTT7coAturzb2dw33e3OhzzOvvBjnzSamRfpAj3vuBiSWtykS4JH17EN/4+A
-Btf7VOqfRWwB7F80VJ+3/Xv7TzkmNcAg+ksgDzk//BCXfcVFfx56Jxf7mQIDAQAB
+Btf7VOqfRWwB7F80VJ+3/Xv7TzkmNcAg+ksgDzk//BCXfcVFfx56Jxf7mQIdAQAB
 AoGAIR9YdelFBhrtM2WEVb/bnX+7vJ2mm+OLxTMyFuuvuvsiw6TBnHgXncYZBk/D
 Zm9uhfCKU1loRIGd6gxY+dx+hVCFHh4tyQ+xvb+siTsDO3VXhHCq+XZpstDanrS0
 kEjDPx95QYgJ3taG55Agu2Ql/cgevyFevOhXUPrZ6lStdcUCQQDxpSPUywPgOas5
@@ -608,12 +606,10 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			Name: "Сайт по продаже бактерицидных рециркуляторов", Address: "г. Москва, р-н Текстильщики", Email: "info@airoclimate.ru", Phone: "+7 (4832) 77-03-73",
 			Hostname: "airoclimate.ru",
 			URL: "https://airoclimate.ru",
-			DKIMPublicRSAKey: `-----BEGIN PUBLIC KEY-----
-MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDFS3EibqbaeWQvH8+2CRw5ijKV
+			DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDFS3EibqbaeWQvH8+2CRw5ijKV
 1UOoR1Uzi/wNjOIlAxQJfBnocmLtmLVcpTW/ZmjES6iV2e3WkOICzgxLT44UlXFj
 Fox0sQ+qWzKAFjz5SWWZ2vTFrMicGweps48TQ+L9ZX6yRIxuJQGN0uGd0MH49Wzc
-+kOepVTv5oxkqAUjFQIDAQAB
------END PUBLIC KEY-----`,
++kOepVTv5oxkqAUjFQIDAQAB`,
 			DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
 MIICXgIBAAKBgQDFS3EibqbaeWQvH8+2CRw5ijKV1UOoR1Uzi/wNjOIlAxQJfBno
 cmLtmLVcpTW/ZmjES6iV2e3WkOICzgxLT44UlXFjFox0sQ+qWzKAFjz5SWWZ2vTF
@@ -748,7 +744,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 
 	// 6. Создаем карточки товара
 	cards := []models.ProductCard{
-		{ID: 0, URL: "airo-dez-adjustable-black", 	Label:"Рециркулятор AIRO-DEZ черный с регулировкой", Breadcrumb: "Рециркулятор AIRO-DEZ черный с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ черный с регулировкой",
+		{Id: 0, URL: "airo-dez-adjustable-black", 	Label:"Рециркулятор AIRO-DEZ черный с регулировкой", Breadcrumb: "Рециркулятор AIRO-DEZ черный с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ черный с регулировкой",
 			SwitchProducts: postgres.Jsonb{
 				RawMessage: utils.MapToRawJson(map[string]interface{}{
 					"color":"черный",
@@ -769,20 +765,20 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 					"grossWeight": 5.5, // Брутто, кг
 				}),
 			}},
-		{ID: 0, URL: "airo-dez-black", 				Label:"Рециркулятор AIRO-DEZ черный", Breadcrumb: "Рециркулятор AIRO-DEZ черный", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ черный"},
-		{ID: 0, URL: "airo-dez-adjustable-white", 	Label:"Рециркулятор AIRO-DEZ белый с регулировкой", Breadcrumb: "Рециркулятор AIRO-DEZ белый с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ белый с регулировкой"},
-		{ID: 0, URL: "airo-dez-white", 				Label:"Рециркулятор AIRO-DEZ белый", Breadcrumb: "Рециркулятор AIRO-DEZ белый",MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ белый"},
-		{ID: 0, URL: "airo-dez-compact", 			Label: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", Breadcrumb: "Мобильный аиродезинфектор AIRO-DEZ COMPACT",MetaTitle: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", },
+		{Id: 0, URL: "airo-dez-black", 				Label:"Рециркулятор AIRO-DEZ черный", Breadcrumb: "Рециркулятор AIRO-DEZ черный", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ черный"},
+		{Id: 0, URL: "airo-dez-adjustable-white", 	Label:"Рециркулятор AIRO-DEZ белый с регулировкой", Breadcrumb: "Рециркулятор AIRO-DEZ белый с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ белый с регулировкой"},
+		{Id: 0, URL: "airo-dez-white", 				Label:"Рециркулятор AIRO-DEZ белый", Breadcrumb: "Рециркулятор AIRO-DEZ белый",MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ белый"},
+		{Id: 0, URL: "airo-dez-compact", 			Label: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", Breadcrumb: "Мобильный аиродезинфектор AIRO-DEZ COMPACT",MetaTitle: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", },
 
-		{ID: 0, URL: "airo-dezpuf",			Label: "Бактерицидная камера пуф AIRO-DEZPUF", Breadcrumb: "Бактерицидная камера пуф AIRO-DEZPUF",MetaTitle: "Бактерицидная камера пуф AIRO-DEZPUF"},
-		{ID: 0, URL: "airo-dezpuf-wenge", 	Label: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге", Breadcrumb: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге",MetaTitle: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"},
+		{Id: 0, URL: "airo-dezpuf",			Label: "Бактерицидная камера пуф AIRO-DEZPUF", Breadcrumb: "Бактерицидная камера пуф AIRO-DEZPUF",MetaTitle: "Бактерицидная камера пуф AIRO-DEZPUF"},
+		{Id: 0, URL: "airo-dezpuf-wenge", 	Label: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге", Breadcrumb: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге",MetaTitle: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"},
 		
-		{ID: 0, URL: "airo-dezbox", 		Label: "Бактерицидная камера AIRO-DEZBOX", Breadcrumb: "Бактерицидная камера AIRO-DEZBOX",MetaTitle: "Бактерицидная камера AIRO-DEZBOX", },
-		{ID: 0, URL: "airo-dezbox-white", 	Label: "Бактерицидная камера AIRO-DEZBOX белая",Breadcrumb: "Бактерицидная камера AIRO-DEZBOX белая", MetaTitle: "Бактерицидная камера AIRO-DEZBOX белая", },
-		{ID: 0, URL: "airo-deztumb", 		Label: "Тумба облучатель бактерицидный AIRO-DEZTUMB", Breadcrumb: "Тумба облучатель бактерицидный AIRO-DEZTUMB",MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB", },
-		{ID: 0, URL: "airo-deztumb-big", 	Label: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", Breadcrumb: "Тумба облучатель бактерицидный AIRO-DEZTUMB big",MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", },
+		{Id: 0, URL: "airo-dezbox", 		Label: "Бактерицидная камера AIRO-DEZBOX", Breadcrumb: "Бактерицидная камера AIRO-DEZBOX",MetaTitle: "Бактерицидная камера AIRO-DEZBOX", },
+		{Id: 0, URL: "airo-dezbox-white", 	Label: "Бактерицидная камера AIRO-DEZBOX белая",Breadcrumb: "Бактерицидная камера AIRO-DEZBOX белая", MetaTitle: "Бактерицидная камера AIRO-DEZBOX белая", },
+		{Id: 0, URL: "airo-deztumb", 		Label: "Тумба облучатель бактерицидный AIRO-DEZTUMB", Breadcrumb: "Тумба облучатель бактерицидный AIRO-DEZTUMB",MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB", },
+		{Id: 0, URL: "airo-deztumb-big", 	Label: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", Breadcrumb: "Тумба облучатель бактерицидный AIRO-DEZTUMB big",MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", },
 
-		{ID: 0, URL: "airo-deztumb-pine", 	Label: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина",Breadcrumb: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", MetaTitle: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", },
+		{Id: 0, URL: "airo-deztumb-pine", 	Label: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина",Breadcrumb: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", MetaTitle: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", },
 
 	}
 
@@ -793,7 +789,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZ с регулировкой черный"), //,
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности черный", ShortName: "Рециркулятор AIRO-DEZ черный",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
 			RetailPrice: 19500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -821,7 +817,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZ черный"),
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ черный", ShortName: "Рециркулятор AIRO-DEZ черный",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -849,7 +845,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZ с регулировкой белый"),
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности белый",  ShortName: "Рециркулятор AIRO-DEZ белый",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
 			RetailPrice: 19500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -877,7 +873,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZ белый"),
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ",  ShortName: "Рециркулятор AIRO-DEZ белый",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -905,7 +901,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZ COMPACT"),
 			Name:"Мобильный аиродезинфектор AIRO-DEZ COMPACT",  ShortName: "Аиродезинфектор AIRO-DEZ COMPACT",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
 			RetailPrice: 39000.00, RetailDiscount: 3000,
 			ShortDescription: "",
 			Description: "",
@@ -935,7 +931,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZPUF"),
 			Name:"Бактерицидная камера пуф AIRO-DEZPUF",  ShortName: "Камера пуф AIRO-DEZPUF",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
 			RetailPrice: 11000.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -964,7 +960,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZPUF венге"),
 			Name:"Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге",  ShortName: "Камера AIRO-DEZBOX",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
 			RetailPrice: 12000.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -994,7 +990,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZBOX"),
 			Name:"Бактерицидная камера AIRO-DEZBOX",  ShortName: "Камера AIRO-DEZBOX",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
 			RetailPrice: 7800.00, RetailDiscount: 800,
 			ShortDescription: "",
 			Description: "",
@@ -1023,7 +1019,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZBOX белая"),
 			Name:"Бактерицидная камера AIRO-DEZBOX белая",  ShortName: "Камера AIRO-DEZBOX белая",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
 			RetailPrice: 7800.00, RetailDiscount: 800,
 			ShortDescription: "",
 			Description: "",
@@ -1052,7 +1048,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZTUMB"),
 			Name:"Тумба облучатель бактерицидный AIRO-DEZTUMB",  ShortName: "Бактерицидная тумба AIRO-DEZTUMB",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -1081,7 +1077,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIROTUMB big"),
 			Name:"Тумба облучатель бактерицидный AIRO-DEZTUMB big",  ShortName: "Облучатель AIROTUMB big",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -1111,7 +1107,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZTUMB касцина"),
 			Name:"Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина",  ShortName: "Бактерицидная тумба AIRO-DEZTUMB",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementID: 1,
+			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -1148,7 +1144,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		} else {
 			group = groupAiro2
 		}
-		_, err = webSiteAiro.CreateProductWithCardAndGroup(products[i], cards[i], &group.ID)
+		_, err = webSiteAiro.CreateProductWithCardAndGroup(products[i], cards[i], &group.Id)
 		if err != nil {
 			log.Fatal("Не удалось создать Product для airoClimat: ", err)
 		}
@@ -1290,23 +1286,23 @@ func UploadTestDataPart_III() {
 
 	els := []models.EventListener {
 		// товар
-		{Name: "Добавление товара на сайт", EventID: 6, HandlerID: 2, EntityID: 3, Enabled: true},
-		{Name: "Обновление товара на сайте", EventID: 7, HandlerID: 2, EntityID: 3, Enabled: true},
-		{Name: "Обновление товара на сайте", EventID: 8, HandlerID: 2, EntityID: 6, Enabled: true},
+		{Name: "Добавление товара на сайт", EventId: 6, HandlerId: 2, EntityId: 3, Enabled: true},
+		{Name: "Обновление товара на сайте", EventId: 7, HandlerId: 2, EntityId: 3, Enabled: true},
+		{Name: "Обновление товара на сайте", EventId: 8, HandlerId: 2, EntityId: 6, Enabled: true},
 
 		// Карточки товара
-		{Name: "Обновление карточек товара", EventID: 9, HandlerID: 2, EntityID: 8, Enabled: true},
-		{Name: "Обновление карточек товара", EventID: 10, HandlerID: 2, EntityID: 9, Enabled: true},
-		{Name: "Обновление карточек товара", EventID: 11, HandlerID: 2, EntityID: 10, Enabled: true},
+		{Name: "Обновление карточек товара", EventId: 9, HandlerId: 2, EntityId: 8, Enabled: true},
+		{Name: "Обновление карточек товара", EventId: 10, HandlerId: 2, EntityId: 9, Enabled: true},
+		{Name: "Обновление карточек товара", EventId: 11, HandlerId: 2, EntityId: 10, Enabled: true},
 
 		// Магазин (WebSite)
-		{Name: "Обновление данных магазина", EventID: 16, HandlerID: 2, EntityID: 2, Enabled: true},
-		{Name: "Обновление данных магазина", EventID: 17, HandlerID: 2, EntityID: 3, Enabled: true},
+		{Name: "Обновление данных магазина", EventId: 16, HandlerId: 2, EntityId: 2, Enabled: true},
+		{Name: "Обновление данных магазина", EventId: 17, HandlerId: 2, EntityId: 3, Enabled: true},
 
 		// Статьи
-		{Name: "Обновление статей на сайте", EventID: 21, HandlerID: 2, EntityID: 16, Enabled: true},
-		{Name: "Обновление статей на сайте", EventID: 22, HandlerID: 2, EntityID: 17, Enabled: true},
-		{Name: "Обновление статей на сайте", EventID: 23, HandlerID: 2, EntityID: 18, Enabled: true},
+		{Name: "Обновление статей на сайте", EventId: 21, HandlerId: 2, EntityId: 16, Enabled: true},
+		{Name: "Обновление статей на сайте", EventId: 22, HandlerId: 2, EntityId: 17, Enabled: true},
+		{Name: "Обновление статей на сайте", EventId: 23, HandlerId: 2, EntityId: 18, Enabled: true},
 
 	}
 	for i := range els {
@@ -1338,27 +1334,27 @@ func UploadTestDataPart_III() {
 		{Name: "Delete webSite", Code: models.EventShopDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/web-sites", HttpMethod: http.MethodDelete},
 
 		// Product
-		{Name: "Create product", Code: models.EventProductCreated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productID}}", HttpMethod: http.MethodPost},
-		{Name: "Update product", Code: models.EventProductUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productID}}", HttpMethod: http.MethodPatch},
-		{Name: "Delete product", Code: models.EventProductDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productID}}", HttpMethod: http.MethodDelete},
+		{Name: "Create product", Code: models.EventProductCreated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productId}}", HttpMethod: http.MethodPost},
+		{Name: "Update product", Code: models.EventProductUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productId}}", HttpMethod: http.MethodPatch},
+		{Name: "Delete product", Code: models.EventProductDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productId}}", HttpMethod: http.MethodDelete},
 		{Name: "Upload all products", Code: models.EventProductsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/products", HttpMethod: http.MethodGet},
 
 		// ProductCard
-		{Name: "Create product card", Code: models.EventProductCardCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.productCardID}}", HttpMethod: http.MethodPost},
-		{Name: "Update product card", Code: models.EventProductCardUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.productCardID}}", HttpMethod: http.MethodPatch},
-		{Name: "Delete product card", Code: models.EventProductCardDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.productCardID}}", HttpMethod: http.MethodDelete},
+		{Name: "Create product card", Code: models.EventProductCardCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.productCardId}}", HttpMethod: http.MethodPost},
+		{Name: "Update product card", Code: models.EventProductCardUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.productCardId}}", HttpMethod: http.MethodPatch},
+		{Name: "Delete product card", Code: models.EventProductCardDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards/{{.productCardId}}", HttpMethod: http.MethodDelete},
 		{Name: "Upload all product cards", Code: models.EventProductCardsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards", HttpMethod: http.MethodGet},
 
 		// Groups
-		{Name: "Create product group", Code: models.EventProductGroupCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupID}}", HttpMethod: http.MethodPost},
-		{Name: "Update product group", Code: models.EventProductGroupUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupID}}", HttpMethod: http.MethodPatch},
-		{Name: "Delete product group", Code: models.EventProductGroupDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupID}}", HttpMethod: http.MethodDelete},
+		{Name: "Create product group", Code: models.EventProductGroupCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupId}}", HttpMethod: http.MethodPost},
+		{Name: "Update product group", Code: models.EventProductGroupUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupId}}", HttpMethod: http.MethodPatch},
+		{Name: "Delete product group", Code: models.EventProductGroupDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupId}}", HttpMethod: http.MethodDelete},
 		{Name: "Upload all product groups", Code: models.EventProductGroupsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups", HttpMethod: http.MethodGet},
 
 		// Articles
-		{Name: "Create article", Code: models.EventArticleCreated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleID}}", HttpMethod: http.MethodPost},
-		{Name: "Update article", Code: models.EventArticleUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleID}}", HttpMethod: http.MethodPatch},
-		{Name: "Delete article", Code: models.EventArticleDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleID}}", HttpMethod: http.MethodDelete},
+		{Name: "Create article", Code: models.EventArticleCreated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleId}}", HttpMethod: http.MethodPost},
+		{Name: "Update article", Code: models.EventArticleUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleId}}", HttpMethod: http.MethodPatch},
+		{Name: "Delete article", Code: models.EventArticleDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleId}}", HttpMethod: http.MethodDelete},
 		{Name: "Upload all articles", Code: models.EventArticlesUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/articles", HttpMethod: http.MethodGet},
 
 	}
@@ -1398,22 +1394,22 @@ func UploadTestDataPart_III() {
 	num7 := uint(7)
 	emailNotifications := []models.EmailNotification {
 		{
-			Enabled: false, Delay: 0, Name:"Новый заказ", Description: "Оповещение менеджеров о новом заказе", EmailTemplateID: &numOne, SendingToFixedAddresses: true,
+			Enabled: false, Delay: 0, Name:"Новый заказ", Description: "Оповещение менеджеров о новом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-marketing.ru"})},
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{2,6,7})},
-			EmailBoxID: &num5,
+			EmailBoxId: &num5,
 
 		},
 		{
-			Enabled: false, Delay: 0, Name:"Ваш заказ получен!", Description: "Информирование клиента о принятом заказе", EmailTemplateID: &numOne, SendingToFixedAddresses: true,
+			Enabled: false, Delay: 0, Name:"Ваш заказ получен!", Description: "Информирование клиента о принятом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"mex388@gmail.com"})},
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{7})},
-			EmailBoxID: &num6,
+			EmailBoxId: &num6,
 		},
 		{
-			Enabled: false, Delay: 0, Name:"*Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateID: &numOne, SendingToFixedAddresses: true,
+			Enabled: false, Delay: 0, Name:"*Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-marketing.ru"})},
-			EmailBoxID: &num7,
+			EmailBoxId: &num7,
 		},
 
 	}
@@ -1479,7 +1475,7 @@ func LoadImagesAiroClimate(count int)  {
 				log.Fatalf("unable to create file: %v", err)
 			}
 
-			err = (models.Product{ID: uint(index)}).AppendAssociationImage(file)
+			err = (models.Product{Id: uint(index)}).AppendAssociationImage(file)
 			if err != nil {
 				log.Fatalf("Error: %v", err)
 			}
@@ -1578,12 +1574,12 @@ func LoadProductDescriptionAiroClimate()  {
 
 		// fmt.Println("article:", file.Name())
 		split := strings.Split(file.Name(), ".")
-		fileID, err := strconv.ParseUint(split[0], 10, 64)
+		fileId, err := strconv.ParseUint(split[0], 10, 64)
 		if err != nil {
 			log.Fatalf("unable to read id file name: %v", err)
 		}
 		
-		_, err = account.UpdateProduct(uint(fileID), map[string]interface{}{"Description":string(body)})
+		_, err = account.UpdateProduct(uint(fileId), map[string]interface{}{"Description":string(body)})
 		if err != nil {
 			log.Fatalf("unable to update product: %v", err)
 		}
@@ -1642,9 +1638,11 @@ func LoadProductCategoryDescriptionAiroClimate()  {
 func RefreshTablesPart_IV() {
 	pool := models.GetPool()
 
-	pool.DropTableIfExists(models.Order{}, models.Payment{},models.YandexPayment{})
+	pool.DropTableIfExists(models.OrderComment{},models.OrderChannel{},models.Order{}, models.Payment{},models.YandexPayment{})
 
 	// А теперь создаем
+	models.OrderComment{}.PgSqlCreate()
+	models.OrderChannel{}.PgSqlCreate()
 	models.Order{}.PgSqlCreate()
 	models.YandexPayment{}.PgSqlCreate()
 	models.Payment{}.PgSqlCreate()
@@ -1658,12 +1656,34 @@ func UploadTestDataPart_IV()  {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
+	// Создаем заказ (Order)
+	entity, err := airoAccount.CreateEntity(
+		&models.Order{
+			CustomerComments: "Привезти с 10 до 12:00, контакт Светлана.",
+			Individual: true,
+			WebSiteId: 5,
+			OrderChannelId: 1,
+		})
+	if err != nil {
+		log.Fatalf("Не удалось создать заказ: ", err)
+	}
+
+	fmt.Println("Order is created! 1")
+
+	var order models.Order
+	if err = airoAccount.LoadEntity(&order, entity.GetId()); err != nil {
+		log.Fatalf("Не удалось найти заказ: ", err)
+	}
+
+
+	fmt.Println("Order is created!")
+
 	// Создаем способ оплаты YandexPayment
 	entityPayment, err := airoAccount.CreateEntity(
 		&models.YandexPayment{
 			Name:   "Прием платежей через интернет-магазин airoclimate.ru",
 			ApiKey: "test_f56EEL_m2Ky7CJnnRjSpb4JLMhiGoGD3X6ScMHGPruM",
-			ShopID: "730509",
+			ShopId: "730509",
 			URL: "https://ui.api.ratuscrm.com/yandex-payment/dasdasdsa/notifications",
 			ReturnUrl: "https://airoclimate.ru/payment-return",
 			Enabled: true,
@@ -1675,19 +1695,11 @@ func UploadTestDataPart_IV()  {
 		log.Fatalf("Не удалось создать entityPayment: ", err)
 	}
 	var yandexPayment models.YandexPayment
-	if err = airoAccount.LoadEntity(&yandexPayment,entityPayment.GetID()); err != nil {
+	if err = airoAccount.LoadEntity(&yandexPayment,entityPayment.GetId()); err != nil {
 		log.Fatalf("Не удалось найти entityPayment: ", err)
 	}
 
-	// Создаем заказ (Order)
-	entity, err := airoAccount.CreateEntity(&models.Order{Description: "Заказ товаров в магазине AiroClimate"})
-	if err != nil {
-		log.Fatalf("Не удалось создать заказ: ", err)
-	}
-	var order models.Order
-	if err = airoAccount.LoadEntity(&order,entity.GetID()); err != nil {
-		log.Fatalf("Не удалось найти заказ: ", err)
-	}
+
 
 	///////////////
 

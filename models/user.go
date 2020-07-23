@@ -12,9 +12,9 @@ import (
 )
 
 type User struct {
-	ID        	uint `json:"id" gorm:"primary_key"`
-	HashID string `json:"hashID" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
-	IssuerAccountID uint `json:"issuerAccountID" gorm:"index;not null"`
+	Id        	uint `json:"id" gorm:"primary_key"`
+	HashId string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	IssuerAccountId uint `json:"issuerAccountId" gorm:"index;not null"`
 	
 	Username 	string `json:"username" gorm:"type:varchar(255);unique_index;default:null;"` // уникальный, т.к. через него вход в главный аккаунт
 	Email 		string `json:"email" gorm:"type:varchar(255);index;default:null;"`
@@ -33,8 +33,8 @@ type User struct {
 
 	EnabledAuthFromApp	bool	`json:"enabledAuthFromApp" gorm:"type:bool;default:false;"` // Разрешен ли вход, через app.ratuscrm.com
 
-	DefaultAccountID uint `json:"defaultAccountID" gorm:"type:varchar(12);default:null;"` // указывает какой аккаунт по дефолту загружать
-	InvitedUserID uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
+	DefaultAccountId uint `json:"defaultAccountId" gorm:"type:varchar(12);default:null;"` // указывает какой аккаунт по дефолту загружать
+	InvitedUserId uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
 
 	// Верификация, сброс пароля и т.д.
 	EmailVerifiedAt *time.Time `json:"emailVerifiedAt" gorm:"default:null"` // дата подтверждения email-а (автоматически проставляется, если методом верфикации пользователя был подтвержден email)
@@ -53,7 +53,7 @@ type User struct {
 
 type UserAndRole struct {
 	User
-	RoleID uint `json:"roleID"`
+	RoleId uint `json:"roleId"`
 }
 
 func (User) PgSqlCreate() {
@@ -66,8 +66,8 @@ func (User) PgSqlCreate() {
 }
 
 func (user *User) BeforeCreate(scope *gorm.Scope) (err error) {
-	user.ID = 0
-	user.HashID = strings.ToLower(u.RandStringBytesMaskImprSrcUnsafe(12, true))
+	user.Id = 0
+	user.HashId = strings.ToLower(u.RandStringBytesMaskImprSrcUnsafe(12, true))
 	// user.CreatedAt = time.Now().UTC()
 	return nil
 }
@@ -97,7 +97,7 @@ func (user User) create () (*User, error) {
 		return nil, err
 	}
 
-	event.AsyncFire(Event{}.UserCreated(user.IssuerAccountID, userReturn.ID))
+	event.AsyncFire(Event{}.UserCreated(user.IssuerAccountId, userReturn.Id))
 
 	return &userReturn, nil
 }
@@ -111,11 +111,11 @@ func (User) get(id uint) (*User, error) {
 	}
 	return &user, nil
 }
-/*func (User) getWithAUser(accountID, id uint) (*User, error) {
+/*func (User) getWithAUser(accountId, id uint) (*User, error) {
 	user := User{}
 
 	err := db.Preload("AccountUser", func(db *gorm.DB) *gorm.DB {
-		return db.Where("account_id = ?", accountID).Select(AccountUser{}.SelectArrayWithoutBigObject())
+		return db.Where("account_id = ?", accountId).Select(AccountUser{}.SelectArrayWithoutBigObject())
 	}).First(&user, id).Error
 	if err != nil {
 		return nil, err
@@ -124,17 +124,17 @@ func (User) get(id uint) (*User, error) {
 }*/
 func (user *User) load() error {
 
-	err := db.Model(user).Preload("Roles").First(user,user.ID).Error
+	err := db.Model(user).Preload("Roles").First(user,user.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (User) getByHashID(hashID string) (*User, error) {
+func (User) getByHashId(hashId string) (*User, error) {
 	user := User{}
 
-	err := db.First(&user, "hash_id = ?", hashID).Error
+	err := db.First(&user, "hash_id = ?", hashId).Error
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func (user *User) update (input map[string]interface{}) error {
 		 return err
 	}
 	
-	// event.AsyncFire(Event{}.UserUpdated(user.IssuerAccountID, user.ID))
+	// event.AsyncFire(Event{}.UserUpdated(user.IssuerAccountId, user.Id))
 
 	return nil
 }
@@ -161,18 +161,18 @@ func (user *User) save () error {
 }
 
 func (user User) delete () error {
-	return db.Model(&User{}).Where("id = ?", user.ID).Delete(user).Error
+	return db.Model(&User{}).Where("id = ?", user.Id).Delete(user).Error
 }
 
-func getUserByID(userID uint) (*User,error) {
+func getUserById(userId uint) (*User,error) {
 	user := User{}
-	err := db.Model(&User{}).First(&user, userID).Error
+	err := db.Model(&User{}).First(&user, userId).Error
 	return &user, err
 }
 
-func getUnscopedUserByID(userID uint) (*User,error) {
+func getUnscopedUserById(userId uint) (*User,error) {
 	user := User{}
-	err := db.Model(&User{}).Unscoped().First(&user, userID).Error
+	err := db.Model(&User{}).Unscoped().First(&user, userId).Error
 	return &user, err
 }
 
@@ -180,10 +180,10 @@ func getUnscopedUserByID(userID uint) (*User,error) {
 
 // ######### ACCOUNT @@
 
-func (account Account) UpdateUser(userID uint, input map[string]interface{}) (*User, error) {
+func (account Account) UpdateUser(userId uint, input map[string]interface{}) (*User, error) {
 
 	// Проверка не нужна, т.к. поиск пользователя ее уже имеет
-	user, err := account.GetUser(userID)
+	user, err := account.GetUser(userId)
 	if err != nil {
 		return nil, err
 	}
@@ -191,21 +191,21 @@ func (account Account) UpdateUser(userID uint, input map[string]interface{}) (*U
 	err = user.update(input)
 	if err != nil { return nil, err }
 
-	event.AsyncFire(Event{}.UserUpdated(account.ID, user.ID))
+	event.AsyncFire(Event{}.UserUpdated(account.Id, user.Id))
 
 	return user, err
 }
-// осуществляет поиск по ID
-func (account Account) GetUserByID (userID uint) (*User, error) {
+// осуществляет поиск по Id
+func (account Account) GetUserById (userId uint) (*User, error) {
 
-	user, err := User{}.get(userID)
+	user, err := User{}.get(userId)
 	if err != nil {
 		return nil, err
 	}
 
 	// Проверим, что пользователь имеет доступ к аккаунта
 	aUser := AccountUser{}
-	if db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.ID, user.ID).RecordNotFound() {
+	if db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.Id, user.Id).RecordNotFound() {
 		return nil, errors.New("Пользователь не найден")
 	}
 
@@ -217,7 +217,7 @@ func (user *User) Get () error {
 		return db.Order(("accaunts.id DESC"))
 	}).Find(user).Error*/
 
-	//return db.Preload("Account").First(user,user.ID).Error
+	//return db.Preload("Account").First(user,user.Id).Error
 	//db.Set("gorm:auto_preload", true)
 	return db.Preload("Accounts").First(user).Error
 }
@@ -236,7 +236,7 @@ func (User) GetByUsername (username string) (*User, error) {
 }
 
 func (user User) Exist() bool {
-	return !db.Unscoped().First(&User{}, user.ID).RecordNotFound()
+	return !db.Unscoped().First(&User{}, user.Id).RecordNotFound()
 }
 
 func (User) ExistEmail(email string) bool {
@@ -254,11 +254,11 @@ func (user User) DepersonalizedDataMap() *map[string]interface{} {
 	structs.FillMap(user, userMap)
 
 	// 2.1 очищаем данные пользователя
-	delete(userMap, "ID")
-	delete(userMap, "IssuerAccountID")
+	delete(userMap, "Id")
+	delete(userMap, "IssuerAccountId")
 	delete(userMap, "Password")
-	delete(userMap, "DefaultAccountHashID")
-	delete(userMap, "InvitedUserID")
+	delete(userMap, "DefaultAccountHashId")
+	delete(userMap, "InvitedUserId")
 	delete(userMap, "EmailVerifiedAt")
 	delete(userMap, "PhoneVerifiedAt")
 	delete(userMap, "PasswordResetAt")
@@ -381,7 +381,7 @@ func (user *User) RecoveryPasswordSendEmail() error {
 
 // Загружает список аккаунтов...
 func (user *User) LoadAccounts() error {
-	if user.ID < 1 {
+	if user.Id < 1 {
 		return errors.New("Внутрення ошибка из-за загрузки доступных аккаунтов")
 	}
 	return db.Preload("Accounts").First(&user).Error
@@ -399,7 +399,7 @@ func (user User) AccountList() ([]AcoountUserAuth, error) {
 
 	aUsers := make([]AcoountUserAuth,0)
 
-	err := db.Model(&AccountUser{}).Preload("Role").Preload("Account").Find(&aUsers, "user_id = ?", user.ID).Error;
+	err := db.Model(&AccountUser{}).Preload("Role").Preload("Account").Find(&aUsers, "user_id = ?", user.Id).Error;
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, errors.New("Не удалось загрузить данные пользователя")
 	}
@@ -409,7 +409,7 @@ func (user User) AccountList() ([]AcoountUserAuth, error) {
 
 // проверяет доступ и возвращает данные аккаунта
 func (user *User) GetAccount(account *Account) error {
-	return db.Model(user).Where("user_id = ?", user.ID).Association("Accounts").Find(account).Error
+	return db.Model(user).Where("user_id = ?", user.Id).Association("Accounts").Find(account).Error
 }
 
 // Только пользователь RatusCRM может создавать новые аккаунты
@@ -446,7 +446,7 @@ func (user User) CreateAccount(input Account) (*Account,error) {
 func (user *User) DeleteAccount(a *Account) error {
 
 	// 1. Проверяем доступ "= проверяем права на удаление аккаунта"
-	if db.Model(user).Where("account_id = ?", a.ID).Association("Accounts").Count() == 0 {
+	if db.Model(user).Where("account_id = ?", a.Id).Association("Accounts").Count() == 0 {
 		return errors.New("Account not exist or your have't permissions for this account")
 	}
 
@@ -465,7 +465,7 @@ func (user *User) DeleteAccount(a *Account) error {
 func (user *User) CreateInviteForUser (email string, sendMail bool) error {
 
 	// 1. Создаем токен для нового пользователя
-	eat := &EmailAccessToken{DestinationEmail: email, OwnerID:user.ID, ActionType: "invite-user"}
+	eat := &EmailAccessToken{DestinationEmail: email, OwnerId:user.Id, ActionType: "invite-user"}
 	err := eat.Create()
 	if err != nil {
 		return u.Error{Message:"Не удалось создать приглашение"}

@@ -7,9 +7,9 @@ import (
 )
 
 type EmailBox struct {
-	ID     		uint   	`json:"id" gorm:"primary_key"`
-	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
-	WebSiteID uint `json:"webSiteID" gorm:"type:int;not null;"` // какой сайт обязательно!
+	Id     		uint   	`json:"id" gorm:"primary_key"`
+	AccountId uint `json:"-" gorm:"type:int;index;not null;"`
+	WebSiteId uint `json:"webSiteId" gorm:"type:int;not null;"` // какой сайт обязательно!
 	
 	Default bool `json:"default" gorm:"type:bool;default:false"` // является ли дефолтным почтовым ящиком для домена
 	Allowed bool `json:"allowed" gorm:"type:bool;default:true"` // прошел ли проверку домен на право отправлять с него почту
@@ -28,15 +28,15 @@ func (EmailBox) PgSqlCreate() {
 	db.Model(&EmailBox{}).AddForeignKey("web_site_id", "web_sites(id)", "CASCADE", "CASCADE")
 }
 func (emailBox *EmailBox) BeforeCreate(scope *gorm.Scope) error {
-	emailBox.ID = 0
+	emailBox.Id = 0
 	return nil
 }
 
 // ############# Entity interface #############
-func (emailBox EmailBox) GetID() uint { return emailBox.ID }
-func (emailBox *EmailBox) setID(id uint) { emailBox.ID = id }
-func (emailBox EmailBox) GetAccountID() uint { return emailBox.AccountID }
-func (emailBox *EmailBox) setAccountID(id uint) { emailBox.AccountID = id }
+func (emailBox EmailBox) GetId() uint { return emailBox.Id }
+func (emailBox *EmailBox) setId(id uint) { emailBox.Id = id }
+func (emailBox EmailBox) GetAccountId() uint { return emailBox.AccountId }
+func (emailBox *EmailBox) setAccountId(id uint) { emailBox.AccountId = id }
 func (EmailBox) SystemEntity() bool { return false }
 
 // ############# Entity interface #############
@@ -67,29 +67,29 @@ func (EmailBox) get(id uint) (Entity, error) {
 }
 func (emailBox *EmailBox) load() error {
 
-	if emailBox.ID < 1 {
-		return utils.Error{Message: "Невозможно загрузить EmailBox - не указан  ID"}
+	if emailBox.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить EmailBox - не указан  Id"}
 	}
-	err := db.Preload("WebSite").First(emailBox, emailBox.ID).Error
+	err := db.Preload("WebSite").First(emailBox, emailBox.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (EmailBox) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
+func (EmailBox) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
 	webHooks := make([]EmailBox,0)
 	var total uint
 
-	err := db.Model(&EmailBox{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Model(&EmailBox{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
 		Find(&webHooks).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&EmailBox{}).Where("account_id = ?", accountID).Count(&total).Error
+	err = db.Model(&EmailBox{}).Where("account_id = ?", accountId).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -103,11 +103,11 @@ func (EmailBox) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 	return entities, total, nil
 }
 
-func (EmailBox) getListByWebSite(accountID uint, webSiteID uint, sortBy string) ([]EmailBox, error) {
+func (EmailBox) getListByWebSite(accountId uint, webSiteId uint, sortBy string) ([]EmailBox, error) {
 
 	emailBoxes := make([]EmailBox,0)
 
-	err := db.Model(&EmailBox{}).Limit(100).Order(sortBy).Where( "account_id = ? AND web_site_id = ?", accountID, webSiteID).
+	err := db.Model(&EmailBox{}).Limit(100).Order(sortBy).Where( "account_id = ? AND web_site_id = ?", accountId, webSiteId).
 		Find(&emailBoxes).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, err
@@ -116,7 +116,7 @@ func (EmailBox) getListByWebSite(accountID uint, webSiteID uint, sortBy string) 
 	return emailBoxes, nil
 }
 
-func (EmailBox) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	webHooks := make([]EmailBox,0)
 	var total uint
@@ -127,7 +127,7 @@ func (EmailBox) getPaginationList(accountID uint, offset, limit int, sortBy, sea
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&EmailBox{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+		err := db.Model(&EmailBox{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webHooks, "name ILIKE ? OR box ILIKE ?", search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -135,7 +135,7 @@ func (EmailBox) getPaginationList(accountID uint, offset, limit int, sortBy, sea
 
 		// Определяем total
 		err = db.Model(&EmailBox{}).
-			Where("account_id = ? AND name ILIKE ? OR box ILIKE ?", accountID, search,search).
+			Where("account_id = ? AND name ILIKE ? OR box ILIKE ?", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -143,14 +143,14 @@ func (EmailBox) getPaginationList(accountID uint, offset, limit int, sortBy, sea
 
 	} else {
 
-		err := db.Model(&EmailBox{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+		err := db.Model(&EmailBox{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webHooks).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&EmailBox{}).Where("account_id = ?", accountID).Count(&total).Error
+		err = db.Model(&EmailBox{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -170,7 +170,7 @@ func (emailBox *EmailBox) update(input map[string]interface{}) error {
 }
 
 func (emailBox EmailBox) delete () error {
-	return db.Model(EmailBox{}).Where("id = ?", emailBox.ID).Delete(emailBox).Error
+	return db.Model(EmailBox{}).Where("id = ?", emailBox.Id).Delete(emailBox).Error
 }
 
 

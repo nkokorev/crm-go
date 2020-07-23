@@ -8,22 +8,22 @@ import (
 	"net/http"
 )
 
-//Тут собраны посредники определяющие issuerAccountID и добавляющие его в контекст
+//Тут собраны посредники определяющие issuerAccountId и добавляющие его в контекст
 
-// Add to Context(r) issuerAccountID (= 1, Ratus CRM)
+// Add to Context(r) issuerAccountId (= 1, Ratus CRM)
 func AddContextMainAccount(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		issuerAccount, err := models.GetMainAccount() // RatusCRM
 		if err != nil {
-			u.Respond(w, u.MessageError(nil, "An account with the specified hash ID was not found"))
+			u.Respond(w, u.MessageError(nil, "An account with the specified hash Id was not found"))
 			return
 		}
 
 		// For future
 		r = r.WithContext(context.WithValue(r.Context(), "issuer", "app"))
-		r = r.WithContext(context.WithValue(r.Context(), "issuerAccountID", issuerAccount.ID))
+		r = r.WithContext(context.WithValue(r.Context(), "issuerAccountId", issuerAccount.Id))
 		r = r.WithContext(context.WithValue(r.Context(), "issuerAccount", issuerAccount))
 
 		next.ServeHTTP(w, r)
@@ -31,27 +31,27 @@ func AddContextMainAccount(next http.Handler) http.Handler {
 
 }
 
-// Вставляет в контекст issuerAccountID из hashID (раскрытие issuer account)
-func ContextMuxVarAccountHashID(next http.Handler) http.Handler {
+// Вставляет в контекст issuerAccountId из hashId (раскрытие issuer account)
+func ContextMuxVarAccountHashId(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		accountHashID := mux.Vars(r)["accountHashID"] // защищаемся от парсинга / спама
+		accountHashId := mux.Vars(r)["accountHashId"] // защищаемся от парсинга / спама
 
-		if len(accountHashID) != 12 {
-			u.Respond(w, u.MessageError(nil, "The hashID length must be 12 symbols"))
+		if len(accountHashId) != 12 {
+			u.Respond(w, u.MessageError(nil, "The hashId length must be 12 symbols"))
 			return
 		}
 		
-		issuerAccount, err := models.GetAccountByHash(accountHashID)
+		issuerAccount, err := models.GetAccountByHash(accountHashId)
 		if err != nil {
-			u.Respond(w, u.MessageError(nil, "An account with the specified hash ID was not found"))
+			u.Respond(w, u.MessageError(nil, "An account with the specified hash Id was not found"))
 			return
 		}
 
 
 		r = r.WithContext(context.WithValue(r.Context(), "auth", "ui/api"))
-		r = r.WithContext(context.WithValue(r.Context(), "accountID", issuerAccount.ID))
+		r = r.WithContext(context.WithValue(r.Context(), "accountId", issuerAccount.Id))
 		r = r.WithContext(context.WithValue(r.Context(), "account", issuerAccount))
 		
 		next.ServeHTTP(w, r)

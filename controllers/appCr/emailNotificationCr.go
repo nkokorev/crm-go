@@ -42,14 +42,14 @@ func EmailNotificationGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emailNotificationID, err := utilsCr.GetUINTVarFromRequest(r, "emailNotificationID")
+	emailNotificationId, err := utilsCr.GetUINTVarFromRequest(r, "emailNotificationId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID emailNotification"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailNotification"))
 		return
 	}
 
 	var emailNotification models.EmailNotification
-	err = account.LoadEntity(&emailNotification, emailNotificationID)
+	err = account.LoadEntity(&emailNotification, emailNotificationId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -67,14 +67,14 @@ func EmailNotificationExecute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emailNotificationID, err := utilsCr.GetUINTVarFromRequest(r, "emailNotificationID")
+	emailNotificationId, err := utilsCr.GetUINTVarFromRequest(r, "emailNotificationId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID emailNotification"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailNotification"))
 		return
 	}
 
 	var emailNotification models.EmailNotification
-	err = account.LoadEntity(&emailNotification, emailNotificationID)
+	err = account.LoadEntity(&emailNotification, emailNotificationId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти вебхук"))
 		return
@@ -149,9 +149,9 @@ func EmailNotificationUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emailNotificationID, err := utilsCr.GetUINTVarFromRequest(r, "emailNotificationID")
+	emailNotificationId, err := utilsCr.GetUINTVarFromRequest(r, "emailNotificationId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id"))
 		return
 	}
 
@@ -163,7 +163,7 @@ func EmailNotificationUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var emailNotification models.EmailNotification
-	if err = account.LoadEntity(&emailNotification, emailNotificationID); err != nil {
+	if err = account.LoadEntity(&emailNotification, emailNotificationId); err != nil {
 		u.Respond(w, u.MessageError(err, "Уведомление не найдено"))
 		return
 	}
@@ -185,14 +185,14 @@ func EmailNotificationDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emailNotificationID, err := utilsCr.GetUINTVarFromRequest(r, "emailNotificationID")
+	emailNotificationId, err := utilsCr.GetUINTVarFromRequest(r, "emailNotificationId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id"))
 		return
 	}
 
 	var emailNotification models.EmailNotification
-	if err = account.LoadEntity(&emailNotification, emailNotificationID); err != nil {
+	if err = account.LoadEntity(&emailNotification, emailNotificationId); err != nil {
 		u.Respond(w, u.MessageError(err, "Уведомление не найдено"))
 		return
 	}

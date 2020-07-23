@@ -1,9 +1,9 @@
 package models
 
 type WebHookHistory struct {
-	ID     		uint   	`json:"id" gorm:"primary_key"`
-	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
-	WebHookID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
+	Id     		uint   	`json:"id" gorm:"primary_key"`
+	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
+	WebHookId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Status 		bool 	`json:"enabled" gorm:"type:bool;default:true"` // успешен ли вызо
 }

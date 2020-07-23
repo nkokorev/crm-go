@@ -8,7 +8,7 @@ import (
 
 //UserVerificationMethod - верификация пользователя
 type UserVerificationMethod struct {
-	ID uint	`json:"id" gorm:"primary_key"`
+	Id uint	`json:"id" gorm:"primary_key"`
 	Name string `json:"name" gorm:"type:varchar(255)"` // Регистрация по email, ...
 	Tag string `json:"tag" gorm:"type:varchar(50);unique;not null;"`// email, phone, email-phone - одна из заранее определенных констант!
 	Description string `json:"description" gorm:"type:varchar(255);default:null;"`// краткое описание
@@ -54,7 +54,7 @@ func (uvt UserVerificationMethod) Create () (*UserVerificationMethod, error) {
 	return &uvt, nil
 }
 
-func GetUserVerificationTypeByID(id uint) (*UserVerificationMethod, error) {
+func GetUserVerificationTypeById(id uint) (*UserVerificationMethod, error) {
 	uvt := UserVerificationMethod{}
 	err := db.First(&uvt,id).Error
 	if err == gorm.ErrRecordNotFound {
@@ -70,6 +70,6 @@ func GetUserVerificationTypeByCode(tag string) (*UserVerificationMethod, error) 
 }
 
 func (uvt UserVerificationMethod) Delete() error {
-	return db.Model(&UserVerificationMethod{}).Where("id = ?", uvt.ID).Delete(uvt).Error
+	return db.Model(&UserVerificationMethod{}).Where("id = ?", uvt.Id).Delete(uvt).Error
 }
 

@@ -23,9 +23,9 @@ import (
 // Template of email body message
 type EmailTemplate struct {
 
-	ID     uint   `json:"id" gorm:"primary_key"`
-	HashID string `json:"hashID" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
-	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
+	Id     uint   `json:"id" gorm:"primary_key"`
+	HashId string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	AccountId uint `json:"-" gorm:"type:int;index;not null;"`
 
 	Name 		string	`json:"name" gorm:"type:varchar(255);not null"` // inside name of mail
 	Description	string 	`json:"description" gorm:"type:varchar(255);default:''"` // краткое назначение письма
@@ -53,17 +53,17 @@ func (EmailTemplate) PgSqlCreate() {
 }
 
 // ############# Entity interface #############
-func (emailTemplate EmailTemplate) GetID() uint { return emailTemplate.ID }
-func (emailTemplate *EmailTemplate) setID(id uint) { emailTemplate.ID = id }
-func (emailTemplate EmailTemplate) GetAccountID() uint { return emailTemplate.AccountID }
-func (emailTemplate *EmailTemplate) setAccountID(id uint) { emailTemplate.AccountID = id }
+func (emailTemplate EmailTemplate) GetId() uint { return emailTemplate.Id }
+func (emailTemplate *EmailTemplate) setId(id uint) { emailTemplate.Id = id }
+func (emailTemplate EmailTemplate) GetAccountId() uint { return emailTemplate.AccountId }
+func (emailTemplate *EmailTemplate) setAccountId(id uint) { emailTemplate.AccountId = id }
 func (EmailTemplate) SystemEntity() bool { return false }
 func (emailTemplate EmailTemplate) GetData() string { return emailTemplate.HTMLData }
 // ############# Entity interface #############
 
 func (et *EmailTemplate) BeforeCreate(scope *gorm.Scope) error {
-	et.ID = 0
-	et.HashID = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
+	et.Id = 0
+	et.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	et.CreatedAt = time.Now().UTC()
 
 	return nil
@@ -94,36 +94,36 @@ func (EmailTemplate) get(id uint) (Entity, error) {
 }
 func (et *EmailTemplate) load() error {
 
-	err := db.First(et, et.ID).Error
+	err := db.First(et, et.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (EmailTemplate) getByHashID(hashID string) (*EmailTemplate, error) {
+func (EmailTemplate) getByHashId(hashId string) (*EmailTemplate, error) {
 	et := EmailTemplate{}
 
-	err := db.First(&et, "hash_id = ?", hashID).Error
+	err := db.First(&et, "hash_id = ?", hashId).Error
 	if err != nil {
 		return nil, err
 	}
 	return &et, nil
 }
 
-func (EmailTemplate) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
+func (EmailTemplate) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
 	emailTemplates := make([]EmailTemplate,0)
 	var total uint
 
-	err := db.Model(&EmailTemplate{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Model(&EmailTemplate{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
 		Select(EmailTemplate{}.SelectArrayWithoutData()).Find(&emailTemplates).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&EmailTemplate{}).Where("account_id = ?", accountID).Count(&total).Error
+	err = db.Model(&EmailTemplate{}).Where("account_id = ?", accountId).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -136,7 +136,7 @@ func (EmailTemplate) getList(accountID uint, sortBy string) ([]Entity, uint, err
 
 	return entities, total, nil
 }
-func (EmailTemplate) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	emailTemplates := make([]EmailTemplate,0)
 	var total uint
@@ -147,7 +147,7 @@ func (EmailTemplate) getPaginationList(accountID uint, offset, limit int, sortBy
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&EmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+		err := db.Model(&EmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Select(EmailTemplate{}.SelectArrayWithoutData()).
 			Find(&emailTemplates, "hash_id ILIKE ? OR name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -156,7 +156,7 @@ func (EmailTemplate) getPaginationList(accountID uint, offset, limit int, sortBy
 
 		// Определяем total
 		err = db.Model(&EmailTemplate{}).
-			Where("account_id = ? AND hash_id ILIKE ? OR name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", accountID, search,search,search,search).
+			Where("account_id = ? AND hash_id ILIKE ? OR name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", accountId, search,search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -164,7 +164,7 @@ func (EmailTemplate) getPaginationList(accountID uint, offset, limit int, sortBy
 
 	} else {
 
-		err := db.Model(&EmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+		err := db.Model(&EmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Select(EmailTemplate{}.SelectArrayWithoutData()).
 			Find(&emailTemplates).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -172,7 +172,7 @@ func (EmailTemplate) getPaginationList(accountID uint, offset, limit int, sortBy
 		}
 
 		// Определяем total
-		err = db.Model(&EmailTemplate{}).Where("account_id = ?", accountID).Count(&total).Error
+		err = db.Model(&EmailTemplate{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -188,7 +188,7 @@ func (EmailTemplate) getPaginationList(accountID uint, offset, limit int, sortBy
 }
 
 func (et *EmailTemplate) update(input map[string]interface{}) error {
-	// return db.Model(&EmailTemplate{}).Where("id = ?", et.ID).Omit("id", "account_id").Update(input).Error
+	// return db.Model(&EmailTemplate{}).Where("id = ?", et.Id).Omit("id", "account_id").Update(input).Error
 
 	input = utils.FixJSONB_String(input, []string{"jsonData"})
 
@@ -197,24 +197,24 @@ func (et *EmailTemplate) update(input map[string]interface{}) error {
 
 
 func (et EmailTemplate) delete () error {
-	return db.Model(EmailTemplate{}).Where("id = ?", et.ID).Delete(et).Error
+	return db.Model(EmailTemplate{}).Where("id = ?", et.Id).Delete(et).Error
 }
 // ########### ACCOUNT FUNCTIONAL ###########
 
-func (account Account) EmailTemplateGetByHashID(hashID string) (*EmailTemplate, error) {
-	et, err := (EmailTemplate{}).getByHashID(hashID)
+func (account Account) EmailTemplateGetByHashId(hashId string) (*EmailTemplate, error) {
+	et, err := (EmailTemplate{}).getByHashId(hashId)
 	if err != nil {
 		return nil, err
 	}
 
-	if et.AccountID != account.ID {
+	if et.AccountId != account.Id {
 		return nil, errors.New("Шаблон принадлежит другому аккаунту")
 	}
 
 	return et, nil
 }
-func (Account) EmailTemplateGetSharedByHashID(hashID string) (*EmailTemplate, error) {
-	et, err := (EmailTemplate{}).getByHashID(hashID)
+func (Account) EmailTemplateGetSharedByHashId(hashId string) (*EmailTemplate, error) {
+	et, err := (EmailTemplate{}).getByHashId(hashId)
 	if err != nil {
 		return nil, err
 	}
@@ -295,9 +295,9 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string) error {
 	headers["MIME-Version"] = "1.0" // имя SMTP сервера
 	headers["Content-Type"] = "text/html; charset=UTF-8"
 	headers["Content-Transfer-Encoding"] = "quoted-printable" // имя SMTP сервера
-	headers["Feedback-ID"] = "1324078:20488:trust:54854"
+	headers["Feedback-Id"] = "1324078:20488:trust:54854"
 	// Идентификатор представляет собой 32-битное число в диапазоне от 1 до 2147483647, либо строку длиной до 40 символов, состоящую из латинских букв, цифр и символов ".-_".
-	headers["Message-ID"] = "1001" // номер сообщения (внутренний номер)
+	headers["Message-Id"] = "1001" // номер сообщения (внутренний номер)
 	headers["Received"] = "RatusCRM"
 	// headers["Return-Path"] = "<smtp@rus-marketing.ru>"
 
@@ -365,7 +365,7 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string) error {
 
 	// from
 	// err = client.Mail(from.GetMailAddress().Address)
-	err = client.Mail("userID.abuse.@ratuscrm.com")
+	err = client.Mail("userId.abuse.@ratuscrm.com")
 	if err != nil {
 		log.Fatal("Почтовый адрес не может принять почту")
 	}
@@ -401,7 +401,7 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string) error {
 
 func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, vData *ViewData) error {
 
-	if from.WebSite.ID <1 {
+	if from.WebSite.Id <1 {
 		log.Println("EmailTemplate: Не удалось определить WebSite")
 		return utils.Error{Message: "Не удалось определить WebSite"}
 	}
@@ -429,9 +429,9 @@ func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, 
 	headers["MIME-Version"] = "1.0" // имя SMTP сервера
 	headers["Content-Type"] = "text/html; charset=UTF-8"
 	headers["Content-Transfer-Encoding"] = "quoted-printable" // имя SMTP сервера
-	headers["Feedback-ID"] = "1324078:20488:trust:54854"
+	headers["Feedback-Id"] = "1324078:20488:trust:54854"
 	// Идентификатор представляет собой 32-битное число в диапазоне от 1 до 2147483647, либо строку длиной до 40 символов, состоящую из латинских букв, цифр и символов ".-_".
-	headers["Message-ID"] = "1001" // номер сообщения (внутренний номер)
+	headers["Message-Id"] = "1001" // номер сообщения (внутренний номер)
 	headers["Received"] = "RatusCRM"
 	// headers["Return-Path"] = "<smtp@rus-marketing.ru>"
 
@@ -538,7 +538,7 @@ func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, 
 
 func (et EmailTemplate) SendChannel(emailBox EmailBox, toEmail string, subject string, inputData map[string]interface{}) error {
 	
-	account, _ := GetAccount(et.AccountID)
+	account, _ := GetAccount(et.AccountId)
 	data, err := et.PrepareViewData(inputData)
 	if err != nil || data == nil {
 		return errors.New("Ошибка сбора данных для шаблона")
@@ -591,9 +591,9 @@ func (et EmailTemplate) SendChannel(emailBox EmailBox, toEmail string, subject s
 	headers["MIME-Version"] = "1.0" // имя SMTP сервера
 	headers["Content-Type"] = "text/html; charset=UTF-8"
 	headers["Content-Transfer-Encoding"] = "quoted-printable" // имя SMTP сервера
-	headers["Feedback-ID"] = "1324078:20488:trust:54854"
+	headers["Feedback-Id"] = "1324078:20488:trust:54854"
 	// Идентификатор представляет собой 32-битное число в диапазоне от 1 до 2147483647, либо строку длиной до 40 символов, состоящую из латинских букв, цифр и символов ".-_".
-	headers["Message-ID"] = "1001" // номер сообщения (внутренний номер)
+	headers["Message-Id"] = "1001" // номер сообщения (внутренний номер)
 	headers["Received"] = "RatusCRM"
 	// headers["Return-Path"] = "<smtp@rus-marketing.ru>"
 
@@ -659,7 +659,7 @@ func (et EmailTemplate) SendChannel(emailBox EmailBox, toEmail string, subject s
 
 	// from
 	// err = client.Mail(from.GetMailAddress().Address)
-	err = client.Mail("userID.abuse.@ratuscrm.com")
+	err = client.Mail("userId.abuse.@ratuscrm.com")
 	if err != nil {
 		log.Fatal("Почтовый адрес не может принять почту")
 	}

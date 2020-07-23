@@ -14,7 +14,7 @@ type EmailAccessToken struct {
 	Token 	string `json:"token"` // json:"token"
 	ActionType 	string `json:"actionType"` // json:"verification, recover (username, password, email), join to account"
 	DestinationEmail string `json:"destinationEmail"` // куда отправлять email и для какого емейла был предназначен токен. Не может быть <null>, только целевые приглашения.
-	OwnerID 	uint `json:"ownerID"` // userID - создатель токена (может быть self)
+	OwnerId 	uint `json:"ownerId"` // userId - создатель токена (может быть self)
 	NotificationCount uint `json:"notificationCount"` // число успешных уведомлений
 	NotificationAt time.Time `json:"notificationAt"` // время ПОСЛЕДНЕГО уведомления
 	CreatedAt time.Time `json:"createdAt"`
@@ -63,7 +63,7 @@ func (eat EmailAccessToken) Expired() bool  {
 // ### CRUD function
 func (eat *EmailAccessToken) Create() error {
 
-	if eat.OwnerID <= 0 {
+	if eat.OwnerId <= 0 {
 		return errors.New("Необходимо указать владельца токена")
 	}
 
@@ -74,7 +74,7 @@ func (eat *EmailAccessToken) Create() error {
 	eat.Token = strings.ToLower(ksuid.New().String())
 
 	// todo debug
-	/*if uat.OwnerID == 4 {
+	/*if uat.OwnerId == 4 {
 		uat.Token = "1ukyryxpfprxpy17i4ldlrz9kg3"
 	}*/
 
@@ -129,7 +129,7 @@ func (eat *EmailAccessToken) UserEmailVerificationConfirm (user *User) error {
 	}
 
 	// 4. Проверяем связанность кода и пользователя по owner_id = user_id AND destination_email = user_email.
-	if err := db.First(user, "id = ? AND email = ?", eat.OwnerID, eat.DestinationEmail).Error; err != nil || &user == nil {
+	if err := db.First(user, "id = ? AND email = ?", eat.OwnerId, eat.DestinationEmail).Error; err != nil || &user == nil {
 		return u.Error{Message:"Проверочный код предназначен для другого пользователя"}
 	}
 
@@ -173,7 +173,7 @@ func (eat *EmailAccessToken) UserEmailVerificationConfirm (user *User) error {
 	}
 
 	// 4. Проверяем связанность токена и пользователя по owner_id = user_id AND destination_email = user_email.
-	if err := db.First(user, "id = ? AND email = ?", eat.OwnerID, eat.DestinationEmail).Error; err != nil || &user == nil {
+	if err := db.First(user, "id = ? AND email = ?", eat.OwnerId, eat.DestinationEmail).Error; err != nil || &user == nil {
 		return u.Error{Message:"Проверочный код предназначен для другого пользователя"}
 	}
 
@@ -184,7 +184,7 @@ func (eat *EmailAccessToken) UserEmailVerificationConfirm (user *User) error {
 func (EmailAccessToken) UserDeletePasswordReset(user *User) {
 
 	// Удаляем токен, если находим
-	if !db.Delete(EmailAccessToken{},"(owner_id = ? OR destination_email = ?) AND action_type = ?", user.ID, user.Email, EmailTokenType.USER_EMAIL_RESET_PASSWORD).RecordNotFound() {
+	if !db.Delete(EmailAccessToken{},"(owner_id = ? OR destination_email = ?) AND action_type = ?", user.Id, user.Email, EmailTokenType.USER_EMAIL_RESET_PASSWORD).RecordNotFound() {
 		// log.Fatal()...
 	}
 }
@@ -195,11 +195,11 @@ func (EmailAccessToken) UserDeletePasswordReset(user *User) {
 func (eat *EmailAccessToken) CreateInviteVerificationToken(user *User) error {
 
 	// Надо понять, создавать новый или использовать существующий
-	if !db.First(eat,"owner_id = ? AND destination_email = ? AND action_type = ?", user.ID, user.Email, EmailTokenType.USER_EMAIL_INVITE_VERIFICATION).RecordNotFound() {
+	if !db.First(eat,"owner_id = ? AND destination_email = ? AND action_type = ?", user.Id, user.Email, EmailTokenType.USER_EMAIL_INVITE_VERIFICATION).RecordNotFound() {
 		return nil
 	}
 
-	eat.OwnerID = user.ID
+	eat.OwnerId = user.Id
 	eat.DestinationEmail = user.Email
 	eat.ActionType = EmailTokenType.USER_EMAIL_INVITE_VERIFICATION
 	eat.NotificationCount = 0
@@ -212,11 +212,11 @@ func (eat *EmailAccessToken) CreateInviteVerificationToken(user *User) error {
 func (eat *EmailAccessToken) CreateResetPasswordToken(user *User) error {
 
 	// Надо понять, создавать новый или использовать существующий
-	if !db.First(eat,"owner_id = ? AND destination_email = ? AND action_type = ?", user.ID, user.Email, EmailTokenType.USER_EMAIL_RESET_PASSWORD).RecordNotFound() {
+	if !db.First(eat,"owner_id = ? AND destination_email = ? AND action_type = ?", user.Id, user.Email, EmailTokenType.USER_EMAIL_RESET_PASSWORD).RecordNotFound() {
 		return nil
 	}
 
-	eat.OwnerID = user.ID
+	eat.OwnerId = user.Id
 	eat.DestinationEmail = user.Email
 	eat.ActionType = EmailTokenType.USER_EMAIL_RESET_PASSWORD
 	eat.NotificationCount = 0

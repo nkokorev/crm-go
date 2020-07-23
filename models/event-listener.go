@@ -10,15 +10,15 @@ import (
 
 // Связывает Event с собственными функциями Handler
 type EventListener struct {
-	ID     		uint   	`json:"id" gorm:"primary_key"`
-	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
+	Id     		uint   	`json:"id" gorm:"primary_key"`
+	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name        string   `json:"name" gorm:"type:varchar(255);"` // для чего ?
 	
-	EventID		uint `json:"eventID" gorm:"type:int;"` // аналог EventName
-	HandlerID	uint `json:"handlerID" gorm:"type:int;"` // аналог EventName
+	EventId		uint `json:"eventId" gorm:"type:int;"` // аналог EventName
+	HandlerId	uint `json:"handlerId" gorm:"type:int;"` // аналог EventName
 
-	EntityID	uint 	`json:"entityID" gorm:"type:int;"` // ID целевого entity
+	EntityId	uint 	`json:"entityId" gorm:"type:int;"` // Id целевого entity
 	// EntityType	string 	`json:"entityType" gorm:"type:varchar(50);default:''"` // таблица / Объект
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false"`
@@ -45,15 +45,15 @@ func (EventListener) PgSqlCreate() {
 }
 
 func (eventListener *EventListener) BeforeCreate(scope *gorm.Scope) error {
-	eventListener.ID = 0
+	eventListener.Id = 0
 	return nil
 }
 
 // ############# Entity interface #############
-func (eventListener EventListener) GetID() uint { return eventListener.ID }
-func (eventListener *EventListener) setID(id uint) { eventListener.ID = id }
-func (eventListener EventListener) GetAccountID() uint { return eventListener.AccountID }
-func (eventListener *EventListener) setAccountID(id uint) { eventListener.AccountID = id }
+func (eventListener EventListener) GetId() uint { return eventListener.Id }
+func (eventListener *EventListener) setId(id uint) { eventListener.Id = id }
+func (eventListener EventListener) GetAccountId() uint { return eventListener.AccountId }
+func (eventListener *EventListener) setAccountId(id uint) { eventListener.AccountId = id }
 func (eventListener EventListener) SystemEntity() bool { return false }
 // ############# END Of Entity interface #############
 
@@ -80,7 +80,7 @@ func (EventListener) get(id uint) (Entity, error) {
 }
 func (eventListener *EventListener) load() error {
 
-	err := db.Preload("Event").Preload("Handler").First(eventListener, eventListener.ID).Error
+	err := db.Preload("Event").Preload("Handler").First(eventListener, eventListener.Id).Error
 	if err != nil {
 		return err
 	}
@@ -99,30 +99,30 @@ func (EventListener) getAllAccountsList() ([]EventListener, error) {
 	
 	return eventListeners, nil
 }
-func (EventListener) getEnabledByName(accountID uint, eventName string) ([]EventListener, error) {
+func (EventListener) getEnabledByName(accountId uint, eventName string) ([]EventListener, error) {
 
 	eventListeners := make([]EventListener,0)
 
-	err := db.Find(&eventListeners, "account_id = ? AND event_name = ?", accountID, eventName).Error
+	err := db.Find(&eventListeners, "account_id = ? AND event_name = ?", accountId, eventName).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
 
 	return eventListeners, nil
 }
-func (EventListener) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
+func (EventListener) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
 	eventListeners := make([]EventListener,0)
 	var total uint
 
-	err := db.Model(&EventListener{}).Preload("Event").Preload("Handler").Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Model(&EventListener{}).Preload("Event").Preload("Handler").Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
 		Find(&eventListeners).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&EventListener{}).Where("account_id = ?", accountID).Count(&total).Error
+	err = db.Model(&EventListener{}).Where("account_id = ?", accountId).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -135,7 +135,7 @@ func (EventListener) getList(accountID uint, sortBy string) ([]Entity, uint, err
 
 	return entities, total, nil
 }
-func (EventListener) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	type EventListenerSearch struct {
 		EventListener
@@ -152,7 +152,7 @@ func (EventListener) getPaginationList(accountID uint, offset, limit int, sortBy
 
 		err := db.Table("event_listeners").Model(&EventListener{}).
 			Joins("LEFT JOIN event_items ON event_items.id = event_listeners.event_id").Select("event_items.name as e_name, event_listeners.*").
-			Limit(limit).Offset(offset).Order(sortBy).Where( "event_listeners.account_id = ?", accountID).Preload("Event").Preload("Handler").
+			Limit(limit).Offset(offset).Order(sortBy).Where( "event_listeners.account_id = ?", accountId).Preload("Event").Preload("Handler").
 			Find(&eventListeners, "event_listeners.name ILIKE ? OR event_items.name ILIKE ?", search,search).Error
 		
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -162,7 +162,7 @@ func (EventListener) getPaginationList(accountID uint, offset, limit int, sortBy
 		// Определяем total
 		err = db.Table("event_listeners").
 			Joins("LEFT JOIN event_items ON event_items.id = event_listeners.event_id").Select("event_items.name as e_name, event_items.description as e_desc, event_listeners.*").
-			Where( "event_listeners.account_id = ? AND event_listeners.name ILIKE ? OR event_items.name ILIKE ?", accountID, search,search).
+			Where( "event_listeners.account_id = ? AND event_listeners.name ILIKE ? OR event_items.name ILIKE ?", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -170,14 +170,14 @@ func (EventListener) getPaginationList(accountID uint, offset, limit int, sortBy
 
 	} else {
 
-		err := db.Table("event_listeners").Model(&EventListener{}).Preload("Event").Preload("Handler").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+		err := db.Table("event_listeners").Model(&EventListener{}).Preload("Event").Preload("Handler").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&eventListeners).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Table("event_listeners").Model(&EventListener{}).Where("account_id = ?", accountID).Count(&total).Error
+		err = db.Table("event_listeners").Model(&EventListener{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -205,7 +205,7 @@ func (eventListener *EventListener) update(input map[string]interface{}) error {
 	return nil
 }
 func (eventListener EventListener) delete () error {
-	if err := db.Model(EventListener{}).Where("id = ?", eventListener.ID).Delete(eventListener).Error; err != nil {return err}
+	if err := db.Model(EventListener{}).Where("id = ?", eventListener.Id).Delete(eventListener).Error; err != nil {return err}
 
 	go EventListener{}.ReloadEventHandlers()
 

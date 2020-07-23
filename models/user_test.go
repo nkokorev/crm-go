@@ -8,16 +8,16 @@ func TestUser_create(t *testing.T) {
 	// see: TestAccount_UserCreate in account_test.go
 }
 
-func TestUser_getUserByID(t *testing.T)  {
-	account, err := Account{Name: "TestAccount_getUserByID"}.create()
+func TestUser_getUserById(t *testing.T)  {
+	account, err := Account{Name: "TestAccount_getUserById"}.create()
 	if err != nil {
 		t.Fatalf("Не удалось создать тестовый аккаунт: %v", err)
 	}
 	defer account.HardDelete()
 
 	user := User{
-		IssuerAccountID:account.ID,
-		Username:"TestUser_getUserByID",
+		IssuerAccountId:account.Id,
+		Username:"TestUser_getUserById",
 	}
 	u, err := user.create()
 	if err !=nil {
@@ -34,8 +34,8 @@ func TestUser_hardDelete(t *testing.T)  {
 	defer account.HardDelete()
 
 	testUser := &User{
-		IssuerAccountID:account.ID,
-		Username:"TestUser_getUserByID",
+		IssuerAccountId:account.Id,
+		Username:"TestUser_getUserById",
 	}
 	user, err := testUser.create()
 	if err !=nil {
@@ -45,7 +45,7 @@ func TestUser_hardDelete(t *testing.T)  {
 		t.Fatalf("Не удалось удалить пользователя, %v", err)
 	}
 	// проверяем, что пользователя нет
-	_, err = getUserByID(user.ID)
+	_, err = getUserById(user.Id)
 	if err == nil {
 		t.Fatalf("Пользователь на самом деле не удалился")
 	}
@@ -60,8 +60,8 @@ func TestUser_softDelete(t *testing.T)  {
 	defer account.HardDelete()
 
 	testUser := &User{
-		IssuerAccountID:account.ID,
-		Username:"TestUser_getUserByID",
+		IssuerAccountId:account.Id,
+		Username:"TestUser_getUserById",
 	}
 	user, err := testUser.create()
 	if err !=nil {
@@ -74,19 +74,19 @@ func TestUser_softDelete(t *testing.T)  {
 	}
 
 	// проверяем, что пользователя нет
-	_, err = getUserByID(user.ID)
+	_, err = getUserById(user.Id)
 	if err == nil {
 		t.Fatalf("Пользователь на самом деле не удалился")
 	}
 
 	// а вот тут пользователь должен был найтись
-	fUser, err := getUnscopedUserByID(user.ID)
+	fUser, err := getUnscopedUserById(user.Id)
 	if err != nil {
 		t.Fatalf("Пользователь должен был найтись")
 	}
 
-	if fUser.ID != user.ID {
-		t.Fatalf("ID пользователей не совпадают")
+	if fUser.Id != user.Id {
+		t.Fatalf("Id пользователей не совпадают")
 	}
 
 }

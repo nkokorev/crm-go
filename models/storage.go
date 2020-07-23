@@ -13,17 +13,17 @@ import (
 
 type Storage struct {
 
-	ID     		uint   	`json:"id" gorm:"primary_key"`
-	HashID 		string 	`json:"hashID" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
-	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
+	Id     		uint   	`json:"id" gorm:"primary_key"`
+	HashId 		string 	`json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	OwnerID   	uint	//`json:"-"`   // ?? gorm:"association_foreignkey:ID"
+	OwnerId   	uint	//`json:"-"`   // ?? gorm:"association_foreignkey:Id"
 	OwnerType	string	//`json:"ownerType" gorm:"type:varchar(80);column:owner_type"`
 
 	//Product		Product	`json:"-" gorm:"polymorphic:Owner;"`
 
-	//ProductID 	uint	`json:"productID" gorm:"type:int;default:null;"` // id of products
-	//EmailID 	uint	`json:"emailID" gorm:"type:int;default:null;"` // id of email template
+	//ProductId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of products
+	//EmailId 	uint	`json:"emailId" gorm:"type:int;default:null;"` // id of email template
 
 	Priority 	int		`json:"priority" gorm:"type:int;default:null;"` // Порядок отображения (часто нужно файлам)
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // выводить ли где-то это изображение или нет
@@ -57,8 +57,8 @@ func (Storage) TableName() string {
 }
 
 func (fs *Storage) BeforeCreate(scope *gorm.Scope) error {
-	fs.ID = 0
-	fs.HashID = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
+	fs.Id = 0
+	fs.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	fs.CreatedAt = time.Now().UTC()
 	return nil
 }
@@ -66,7 +66,7 @@ func (fs *Storage) BeforeCreate(scope *gorm.Scope) error {
 /*func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
 
 	if len(fs.OwnerType) > 0 {
-		account, err := GetAccount(fs.AccountID)
+		account, err := GetAccount(fs.AccountId)
 		if err == nil {
 			account.CallWebHookUpdated(*fs)
 		}
@@ -78,7 +78,7 @@ func (fs *Storage) BeforeCreate(scope *gorm.Scope) error {
 
 	if fs.OwnerType != "" {
 
-		account, err := GetAccount(fs.AccountID)
+		account, err := GetAccount(fs.AccountId)
 		if err == nil {
 			account.CallEventByStorageCreated(*fs)
 		}
@@ -103,24 +103,24 @@ func (fs *Storage) AfterFind() (err error) {
 
 	switch fs.OwnerType {
 	case "Product":
-		fs.URL = crmHost + "/products/images/" + fs.HashID
+		fs.URL = crmHost + "/products/images/" + fs.HashId
 	case "EmailTemplate":
-		fs.URL = crmHost + "/emails/images/" + fs.HashID
+		fs.URL = crmHost + "/emails/images/" + fs.HashId
 		//...
 	case "Article":
 		//..
 	default:
-		fs.URL = crmHost + "/public/" + fs.HashID
+		fs.URL = crmHost + "/public/" + fs.HashId
 	}
 
 	return nil
 }
 
 // ############# Entity interface #############
-func (fs Storage) GetID() uint { return fs.ID }
-func (fs *Storage) setID(id uint) { fs.ID = id }
-func (fs Storage) GetAccountID() uint { return fs.AccountID }
-func (fs *Storage) setAccountID(id uint) { fs.AccountID = id }
+func (fs Storage) GetId() uint { return fs.Id }
+func (fs *Storage) setId(id uint) { fs.Id = id }
+func (fs Storage) GetAccountId() uint { return fs.AccountId }
+func (fs *Storage) setAccountId(id uint) { fs.AccountId = id }
 func (Storage) SystemEntity() bool { return false }
 // ############# Entity interface #############
 
@@ -129,7 +129,7 @@ func (Storage) SystemEntity() bool { return false }
 func (fs Storage) create() (Entity, error)  {
 
 	// 1. Получаем Аккаунт
-	account, err := GetAccount(fs.AccountID); if err != nil {
+	account, err := GetAccount(fs.AccountId); if err != nil {
 		return nil, err
 	}
 
@@ -163,33 +163,33 @@ func (Storage) get(id uint) (Entity, error) {
 	}
 	return &fs, nil
 }
-func (Storage) getByHashID(hashID string) (*Storage, error)  {
+func (Storage) getByHashId(hashId string) (*Storage, error)  {
 
 	fs := Storage{}
 
-	err := db.First(&fs, "hash_id = ?", hashID).Error
+	err := db.First(&fs, "hash_id = ?", hashId).Error
 	if err != nil {
 		return nil, err
 	}
 	return &fs, nil
 }
 func (fs *Storage) load() error {
-	if fs.ID < 1 {
-		return utils.Error{Message: "Невозможно загрузить Storage - не указан  ID"}
+	if fs.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить Storage - не указан  Id"}
 	}
 
-	err := db.First(fs,fs.ID).Error
+	err := db.First(fs,fs.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (Storage) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
-	return Storage{}.getPaginationList(accountID,0,100,sortBy,"")
+func (Storage) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+	return Storage{}.getPaginationList(accountId,0,100,sortBy,"")
 }
 
-func (Storage) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (Storage) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	files := make([]Storage,0)
 	var total uint
@@ -200,7 +200,7 @@ func (Storage) getPaginationList(accountID uint, offset, limit int, sortBy, sear
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Storage{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+		err := db.Model(&Storage{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&files, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -208,7 +208,7 @@ func (Storage) getPaginationList(accountID uint, offset, limit int, sortBy, sear
 
 		// Определяем total
 		err = db.Model(&Storage{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountID, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -216,14 +216,14 @@ func (Storage) getPaginationList(accountID uint, offset, limit int, sortBy, sear
 
 	} else {
 
-		err := db.Model(&Storage{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+		err := db.Model(&Storage{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&files).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Storage{}).Where("account_id = ?", accountID).Count(&total).Error
+		err = db.Model(&Storage{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -251,12 +251,12 @@ func (Storage) getByEvent(eventName string) (*Storage, error) {
 
 func (fs *Storage) update(input map[string]interface{}) error {
 	err := db.Set("gorm:association_autoupdate", false).
-		Model(fs).Omit("id", "hashID", "account_id","created_at").Updates(input).Error;
+		Model(fs).Omit("id", "hashId", "account_id","created_at").Updates(input).Error;
 	if err != nil {
 		return err
 	}
 
-	account, err := GetAccount(fs.AccountID); if err == nil {
+	account, err := GetAccount(fs.AccountId); if err == nil {
 		account.CallEventByStorageUpdated(*fs)
 	}
 
@@ -264,12 +264,12 @@ func (fs *Storage) update(input map[string]interface{}) error {
 }
 
 func (fs Storage) delete () error {
-	if err := db.Model(Storage{}).Where("id = ?", fs.ID).Delete(fs).Error; err != nil {
+	if err := db.Model(Storage{}).Where("id = ?", fs.Id).Delete(fs).Error; err != nil {
 		return err
 	}
 
 	// Вызываем обновление emit events
-	account, err := GetAccount(fs.AccountID); if err == nil {
+	account, err := GetAccount(fs.AccountId); if err == nil {
 		account.CallEventByStorageDeletes(fs)
 	}
 
@@ -286,7 +286,7 @@ func (account Account) StorageDiskSpaceUsed() (uint, error) {
 
 	sum = 0
 	count = 0
-	err := db.Table("storage").Where("account_id = ?", account.ID).Count(&count).Error
+	err := db.Table("storage").Where("account_id = ?", account.Id).Count(&count).Error
 	if err != nil {
 		return 0, err
 	}
@@ -295,7 +295,7 @@ func (account Account) StorageDiskSpaceUsed() (uint, error) {
 		return 0, nil
 	}
 
-	err = db.Table("storage").Where("account_id = ?", account.ID).Select("sum(size)").Row().Scan(&sum)
+	err = db.Table("storage").Where("account_id = ?", account.Id).Select("sum(size)").Row().Scan(&sum)
 	if err != nil {
 		return 0, err
 	}
@@ -303,33 +303,33 @@ func (account Account) StorageDiskSpaceUsed() (uint, error) {
 	return sum, nil
 }
 
-func (account Account) StorageGetByHashID(hashID string) (*Storage, error) {
+func (account Account) StorageGetByHashId(hashId string) (*Storage, error) {
 
-	fs, err := (Storage{}).getByHashID(hashID)
+	fs, err := (Storage{}).getByHashId(hashId)
 	if err != nil {
 		return nil, err
 	}
 
-	if fs.AccountID != account.ID {
+	if fs.AccountId != account.Id {
 		return nil, errors.New("Шаблон принадлежит другому аккаунту")
 	}
 
 	return fs, nil
 }
 
-func (Account) StorageGetPublicByHashID(hashID string) (*Storage, error) {
+func (Account) StorageGetPublicByHashId(hashId string) (*Storage, error) {
 
-	fs, err := (Storage{}).getByHashID(hashID)
+	fs, err := (Storage{}).getByHashId(hashId)
 	if err != nil {
 		return nil, err
 	}
 	
 	return fs, nil
 }
-func (account Account) GetStoragePaginationListByOwner(offset, limit int, sortBy, search string, ownerID uint, ownerType string) ([]Entity, uint, error) {
+func (account Account) GetStoragePaginationListByOwner(offset, limit int, sortBy, search string, ownerId uint, ownerType string) ([]Entity, uint, error) {
 
 	if ownerType == "" {
-		return  Storage{}.getPaginationList(account.ID, offset, limit, sortBy, search)
+		return  Storage{}.getPaginationList(account.Id, offset, limit, sortBy, search)
 	}
 
 
@@ -342,15 +342,15 @@ func (account Account) GetStoragePaginationListByOwner(offset, limit int, sortBy
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Storage{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", account.ID).
-			Find(&files, "name ILIKE ? OR code ILIKE ? OR description ILIKE ? AND owner_id = ? AND owner_type = ?", search,search,search, ownerID, ownerType).Error
+		err := db.Model(&Storage{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", account.Id).
+			Find(&files, "name ILIKE ? OR code ILIKE ? OR description ILIKE ? AND owner_id = ? AND owner_type = ?", search,search,search, ownerId, ownerType).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
 		err = db.Model(&Storage{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ? AND owner_id = ? AND owner_type = ?", account.ID, search,search,search, ownerID, ownerType).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ? AND owner_id = ? AND owner_type = ?", account.Id, search,search,search, ownerId, ownerType).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -358,14 +358,14 @@ func (account Account) GetStoragePaginationListByOwner(offset, limit int, sortBy
 
 	} else {
 
-		err := db.Model(&Storage{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ? AND owner_id = ? AND owner_type = ?", account.ID, ownerID, ownerType).
+		err := db.Model(&Storage{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ? AND owner_id = ? AND owner_type = ?", account.Id, ownerId, ownerType).
 			Find(&files).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Storage{}).Where("account_id = ? AND owner_id = ? AND owner_type = ?", account.ID, ownerID, ownerType).Count(&total).Error
+		err = db.Model(&Storage{}).Where("account_id = ? AND owner_id = ? AND owner_type = ?", account.Id, ownerId, ownerType).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -385,33 +385,33 @@ func (account Account) GetStoragePaginationListByOwner(offset, limit int, sortBy
 func (account Account) CallEventByStorageCreated(fs Storage) {
 	switch fs.OwnerType {
 	case "products":
-		event.AsyncFire(Event{}.ProductUpdated(account.ID, fs.OwnerID))
+		event.AsyncFire(Event{}.ProductUpdated(account.Id, fs.OwnerId))
 	case "articles":
-		event.AsyncFire(Event{}.ArticleUpdated(account.ID, fs.OwnerID))
+		event.AsyncFire(Event{}.ArticleUpdated(account.Id, fs.OwnerId))
 	default:
-		event.AsyncFire(Event{}.StorageCreated(account.ID, fs.OwnerID))
+		event.AsyncFire(Event{}.StorageCreated(account.Id, fs.OwnerId))
 	}
 }
 func (account Account) CallEventByStorageUpdated(fs Storage) {
 	switch fs.OwnerType {
 	case "products":
-		event.AsyncFire(Event{}.ProductUpdated(account.ID, fs.OwnerID))
+		event.AsyncFire(Event{}.ProductUpdated(account.Id, fs.OwnerId))
 	case "articles":
-		event.AsyncFire(Event{}.ArticleUpdated(account.ID, fs.OwnerID))
+		event.AsyncFire(Event{}.ArticleUpdated(account.Id, fs.OwnerId))
 	default:
-		event.AsyncFire(Event{}.StorageUpdated(account.ID, fs.OwnerID))
+		event.AsyncFire(Event{}.StorageUpdated(account.Id, fs.OwnerId))
 	}
 }
 func (account Account) CallEventByStorageDeletes(fs Storage) {
 	switch fs.OwnerType {
 	case "products":
-		event.AsyncFire(Event{}.ProductDeleted(account.ID, fs.OwnerID))
-		// go account.CallWebHookIfExist(EventArticleUpdated, Product{ID: fs.OwnerID})
+		event.AsyncFire(Event{}.ProductDeleted(account.Id, fs.OwnerId))
+		// go account.CallWebHookIfExist(EventArticleUpdated, Product{Id: fs.OwnerId})
 	case "articles":
-		event.AsyncFire(Event{}.ArticleDeleted(account.ID, fs.OwnerID))
-		// go account.CallWebHookIfExist(EventArticleUpdated, Article{ID: fs.OwnerID})
+		event.AsyncFire(Event{}.ArticleDeleted(account.Id, fs.OwnerId))
+		// go account.CallWebHookIfExist(EventArticleUpdated, Article{Id: fs.OwnerId})
 	default:
-		event.AsyncFire(Event{}.StorageDeleted(account.ID, fs.OwnerID))
+		event.AsyncFire(Event{}.StorageDeleted(account.Id, fs.OwnerId))
 	}
 }
 

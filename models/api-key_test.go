@@ -17,7 +17,7 @@ func TestGetApiKey(t *testing.T) {
 
 	defer key.delete()
 
-	sKey, err := account.ApiKeyGet(key.ID)
+	sKey, err := account.ApiKeyGet(key.Id)
 	if err != nil {
 		t.Fatalf("Не удалось найти APiKey: %v", err)
 	}
@@ -39,7 +39,7 @@ func TestApiKey_delete(t *testing.T) {
 	}
 
 	// убеждаем, что сначала он его находит
-	sKey, err := account.ApiKeyGet(key.ID)
+	sKey, err := account.ApiKeyGet(key.Id)
 	if err != nil || sKey == nil {
 		t.Fatal("Ошибка с поиском ApiKey - он должен был найтись")
 	}
@@ -50,7 +50,7 @@ func TestApiKey_delete(t *testing.T) {
 		t.Fatalf("Не удалось удалить ApiKey")
 	}
 
-	_, err = account.ApiKeyGet(key.ID)
+	_, err = account.ApiKeyGet(key.Id)
 	if err == nil {
 		t.Fatal("Найден apiKey, который был удален")
 	}
@@ -67,14 +67,14 @@ func TestApiKey_update(t *testing.T) {
 	// Проверим, что новые данные сохраняются и не сохраняются лишние
 	key.Name = utils.RandStringBytes(10) // должно сработать
 	key.Enabled = !key.Enabled // должно сработать
-	key.AccountID = key.AccountID + 1 // НЕ должно сработать
+	key.AccountId = key.AccountId + 1 // НЕ должно сработать
 	key.Token = utils.RandStringBytes(10) // НЕ должно сработать
 
 	if err := key.update(*key); err !=nil {
 		t.Fatalf("Не удалось обновить ApiKey")
 	}
 
-	sKey, err := account.ApiKeyGet(key.ID)
+	sKey, err := account.ApiKeyGet(key.Id)
 	if err != nil {
 		t.Fatal("Не удалось найти ApiKey после update")
 	}
@@ -85,8 +85,8 @@ func TestApiKey_update(t *testing.T) {
 	if sKey.Enabled != key.Enabled {
 		t.Fatal("Удалось обновлением изменить Enabled у ApiKey")
 	}
-	if sKey.AccountID != account.ID {
-		t.Fatal("Удалось обновлением изменить AccountID у ApiKey")
+	if sKey.AccountId != account.Id {
+		t.Fatal("Удалось обновлением изменить AccountId у ApiKey")
 	}
 }
 

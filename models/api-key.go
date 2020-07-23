@@ -9,9 +9,9 @@ import (
 )
 
 type ApiKey struct {
-	ID     uint   `json:"id" gorm:"primary_key"`
-	Token string `json:"token" gorm:"unique_index;not null;"` // ID
-	AccountID uint `json:"accountID" gorm:"index,not null"` // аккаунт-владелец ключа
+	Id     uint   `json:"id" gorm:"primary_key"`
+	Token string `json:"token" gorm:"unique_index;not null;"` // Id
+	AccountId uint `json:"accountId" gorm:"index,not null"` // аккаунт-владелец ключа
 
 	Name string `json:"name" gorm:"type:varchar(255);default:'New api key';"` // имя ключа "Для сайта", "Для CRM"
 	Enabled bool `json:"enabled" gorm:"type:bool;default:true"` // активен ли ключ
@@ -29,7 +29,7 @@ func (ApiKey) PgSqlCreate() {
 
 func (apiKey *ApiKey) BeforeCreate(scope *gorm.Scope) error {
 
-	apiKey.ID = 0
+	apiKey.Id = 0
 
 	// 5c0511936507b48cbbf245cd080b9d2f - MailChimp
 	// ekll44e6s2ro8g0hc0j5yx560e2a6zku - RatusCRM
@@ -74,11 +74,11 @@ func GetApiKeyByToken(token string) (*ApiKey, error) {
 	return ApiKey{}.getByToken(token)
 }
 
-func (ApiKey) getList(accountID uint) ([]ApiKey, error) {
+func (ApiKey) getList(accountId uint) ([]ApiKey, error) {
 
 	apiKeys := make([]ApiKey,0)
 
-	err := db.Find(&apiKeys, "account_id = ?", accountID).Error
+	err := db.Find(&apiKeys, "account_id = ?", accountId).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (ApiKey) getList(accountID uint) ([]ApiKey, error) {
 }
 
 func (apiKey ApiKey) delete () error {
-	return db.Model(ApiKey{}).Where("id = ?", apiKey.ID).Delete(apiKey).Error
+	return db.Model(ApiKey{}).Where("id = ?", apiKey.Id).Delete(apiKey).Error
 }
 
 func (apiKey *ApiKey) update(input map[string]interface{}) error {
@@ -101,7 +101,7 @@ func (apiKey *ApiKey) update(input map[string]interface{}) error {
 // ########### ACCOUNT FUNCTIONAL ###########
 
 func (account Account) ApiKeyCreate(input ApiKey) (*ApiKey, error) {
-	input.AccountID = account.ID
+	input.AccountId = account.Id
 	return ApiKey{}.create(input)
 }
 
@@ -111,7 +111,7 @@ func (account Account) ApiKeyGet(id uint) (*ApiKey, error) {
 		return nil, err
 	}
 
-	if apiKey.AccountID != account.ID {
+	if apiKey.AccountId != account.Id {
 		return nil, errors.New("ApiKey не принадлежит аккаунту")
 	}
 
@@ -124,7 +124,7 @@ func (account Account) ApiKeyGetByToken(token string) (*ApiKey, error) {
 		return nil, err
 	}
 
-	if apiKey.AccountID != account.ID {
+	if apiKey.AccountId != account.Id {
 		return nil, errors.New("ApiKey не принадлежит аккаунту")
 	}
 
@@ -133,7 +133,7 @@ func (account Account) ApiKeyGetByToken(token string) (*ApiKey, error) {
 
 func (account Account) ApiKeysList() ([]ApiKey, error) {
 
-	keyList, err := ApiKey{}.getList(account.ID)
+	keyList, err := ApiKey{}.getList(account.Id)
 	if err != nil {
 		return nil, errors.New("Не удалось получить список")
 	}
@@ -147,7 +147,7 @@ func (account Account) ApiKeyUpdate(id uint, input map[string]interface{}) (*Api
 		return nil, err
 	}
 
-	if account.ID != apiKey.AccountID {
+	if account.Id != apiKey.AccountId {
 		return nil, utils.Error{Message: "Ключ принадлежит другому аккаунту"}
 	}
 

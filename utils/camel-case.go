@@ -6,7 +6,7 @@ import (
 )
 
 var uppercaseAcronym = map[string]bool{
-	"ID": true,
+	"Id": true,
 }
 
 var matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")

@@ -49,14 +49,14 @@ func EmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emailTemplateID, err := utilsCr.GetUINTVarFromRequest(r, "emailTemplateID")
+	emailTemplateId, err := utilsCr.GetUINTVarFromRequest(r, "emailTemplateId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
 	var emailTemplate models.EmailTemplate
-	if err := account.LoadEntity(&emailTemplate,emailTemplateID); err != nil {
+	if err := account.LoadEntity(&emailTemplate,emailTemplateId); err != nil {
 		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
 		return
 	}
@@ -128,14 +128,14 @@ func EmailTemplateUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emailTemplateID, err := utilsCr.GetUINTVarFromRequest(r, "emailTemplateID")
+	emailTemplateId, err := utilsCr.GetUINTVarFromRequest(r, "emailTemplateId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
 	var emailTemplate models.EmailTemplate
-	if err := account.LoadEntity(&emailTemplate, emailTemplateID); err != nil {
+	if err := account.LoadEntity(&emailTemplate, emailTemplateId); err != nil {
 		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
 		return
 	}
@@ -166,14 +166,14 @@ func EmailTemplateDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emailTemplateID, err := utilsCr.GetUINTVarFromRequest(r, "emailTemplateID")
+	emailTemplateId, err := utilsCr.GetUINTVarFromRequest(r, "emailTemplateId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
 	var emailTemplate models.EmailTemplate
-	if err := account.LoadEntity(&emailTemplate, emailTemplateID); err != nil {
+	if err := account.LoadEntity(&emailTemplate, emailTemplateId); err != nil {
 		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
 		return
 	}
@@ -201,13 +201,13 @@ func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashID, ok := utilsCr.GetSTRVarFromRequest(r, "emailTemplateHashID")
+	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "emailTemplateHashId")
 	if !ok {
-		u.Respond(w, u.MessageError(nil, "Ошибка в обработке ID шаблона"))
+		u.Respond(w, u.MessageError(nil, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	template, err := account.EmailTemplateGetByHashID(hashID)
+	template, err := account.EmailTemplateGetByHashId(hashId)
 	if err != nil || template == nil {
 		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
 		return
@@ -215,8 +215,8 @@ func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
 
 	// 2. Get JSON-request
 	input := &struct {
-		UserID uint `json:"userID"`
-		EmailBoxID uint `json:"emailBoxID"` // emailBoxID
+		UserId uint `json:"userId"`
+		EmailBoxId uint `json:"emailBoxId"` // emailBoxId
 		Subject string 	`json:"subject"`
 	}{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -224,16 +224,16 @@ func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := account.GetUser(input.UserID)
+	user, err := account.GetUser(input.UserId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID пользователя"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id пользователя"))
 		return
 	}
 
 	var ebox models.EmailBox
-	err = account.LoadEntity(&ebox, input.EmailBoxID)
+	err = account.LoadEntity(&ebox, input.EmailBoxId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID Email box"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id Email box"))
 		return
 	}
 
@@ -252,13 +252,13 @@ func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
 // ### --- Public function --- ###
 func EmailTemplatePreviewGetHTML(w http.ResponseWriter, r *http.Request) {
 
-	hashID, ok := utilsCr.GetSTRVarFromRequest(r, "emailTemplateHashID")
+	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "emailTemplateHashId")
 	if !ok {
-		u.Respond(w, u.MessageError(nil, "Ошибка в обработке ID шаблона"))
+		u.Respond(w, u.MessageError(nil, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	template, err := (models.Account{}).EmailTemplateGetSharedByHashID(hashID)
+	template, err := (models.Account{}).EmailTemplateGetSharedByHashId(hashId)
 	if err != nil || template == nil {
 		w.Header().Set("Content-Type", "text/html;charset=UTF-8")
 		w.Write([]byte(`<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Шаблон не может быть отображен</title></head><body><h4 style="color:#5f5f5f;">Данный шаблон не может быть отображен.</h4></body></html>`))
@@ -289,13 +289,13 @@ func EmailTemplatePreviewGetHTML(w http.ResponseWriter, r *http.Request) {
 
 func EmailTemplatePreviewGetRawHTML(w http.ResponseWriter, r *http.Request) {
 
-	hashID, ok := utilsCr.GetSTRVarFromRequest(r, "emailTemplateHashID")
+	hashId, ok := utilsCr.GetSTRVarFromRequest(r, "emailTemplateHashId")
 	if !ok {
-		u.Respond(w, u.MessageError(nil, "Ошибка в обработке ID шаблона"))
+		u.Respond(w, u.MessageError(nil, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	template, err := (models.Account{}).EmailTemplateGetSharedByHashID(hashID)
+	template, err := (models.Account{}).EmailTemplateGetSharedByHashId(hashId)
 	if err != nil || template == nil {
 		w.Header().Set("Content-Type", "text/html;charset=UTF-8")
 		w.Write(errorHTMLPage("Данный шаблон не может быть отображен"))

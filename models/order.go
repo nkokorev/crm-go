@@ -1,41 +1,45 @@
 package models
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"time"
 )
 
-type Order struct {
-	ID     uint   `json:"id" gorm:"primary_key"`
-	AccountID uint `json:"accountID" gorm:"index,not null"` // аккаунт-владелец ключа
+type orderType = string
 
-	Description string 	`json:"description" gorm:"type:varchar(255);"`
-	// Описание заказа, может быть видно пользователю
-	Name		string 	`json:"name" gorm:"type:varchar(255);"` // Имя заказа
+type Order struct {
+	Id     		uint   	`json:"id" gorm:"primary_key"`
+	AccountId 	uint 	`json:"accountId" gorm:"index,not null"` // аккаунт-владелец ключа
+
+	// Комментарий клиента к заказу
+	CustomerComments string	`json:"description" gorm:"type:varchar(255);"`
+
+	// Комментарии к заказу
+	Comments	[]OrderComment `json:"comments"`
 
 	////// Данные заказа ///////
-	// Юр.лицо / Физ.лицо
-	Type	string `json:"type"`
+	Individual	bool `json:"individual" gorm:"type:bool;default:true;not null;"` // Физ.лицо - true, Юрлицо - false
 
 	// Магазин (сайт) с которого пришел заказ. НЕ может быть null.
-	WebSiteID 	uint	`json:"webSiteID"`
-	WebSite	WebSite
+	WebSiteId 	uint	`json:"webSiteId" gorm:"type:int;not null;"`
+	WebSite		WebSite	`json:"webSite"`
 
 	// Способ (канал) заказа: "Заказ из корзины", "Заказ по телефону", "Пропущенный звонок", "Письмо.."
-	OrderSourceID string	`json:"orderSourceID"`
-	OrderSource	OrderSource `json:"orderSource"`
-	
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	DeletedAt *time.Time `json:"deletedAt"`
+	OrderChannelId 	uint	`json:"orderChannelId" gorm:"type:int;not null;"`
+	OrderChannel 	OrderChannel `json:"orderChannel"`
+
+	CreatedAt time.Time 	`json:"createdAt"`
+	UpdatedAt time.Time 	`json:"updatedAt"`
+	DeletedAt *time.Time 	`json:"deletedAt"`
 }
 
 // ############# Entity interface #############
-func (order Order) GetID() uint { return order.ID }
-func (order *Order) setID(id uint) { order.ID = id }
-func (order Order) GetAccountID() uint { return order.AccountID }
-func (order *Order) setAccountID(id uint) { order.AccountID = id }
+func (order Order) GetId() uint { return order.Id }
+func (order *Order) setId(id uint) { order.Id = id }
+func (order Order) GetAccountId() uint { return order.AccountId }
+func (order *Order) setAccountId(id uint) { order.AccountId = id }
 func (Order) SystemEntity() bool { return false }
 
 // ############# Entity interface #############
@@ -49,13 +53,13 @@ func (Order) PgSqlCreate() {
 	// fmt.Println("Щквук!")
 }
 func (order *Order) BeforeCreate(scope *gorm.Scope) error {
-	order.ID = 0
+	order.Id = 0
 	return nil
 }
 
 // ######### CRUD Functions ############
 func (order Order) create() (Entity, error)  {
-	// if err := db.Create(&order).Find(&order, order.ID).Error; err != nil {
+	// if err := db.Create(&order).Find(&order, order.Id).Error; err != nil {
 	wb := order
 	if err := db.Create(&wb).Error; err != nil {
 		return nil, err
@@ -65,42 +69,43 @@ func (order Order) create() (Entity, error)  {
 
 	return entity, nil
 }
-
 func (Order) get(id uint) (Entity, error) {
 
 	var order Order
 
-	err := db.First(&order, id).Error
+	err := db.Preload("WebSite").Preload("OrderChannel").First(&order, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &order, nil
 }
 func (order *Order) load() error {
-	if order.ID < 1 {
-		return utils.Error{Message: "Невозможно загрузить Order - не указан  ID"}
+
+	if order.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить Order - не указан  Id"}
 	}
 
-	err := db.First(order, order.ID).Error
+	err := db.Preload("WebSite").Preload("OrderChannel").First(order, order.Id).Error
 	if err != nil {
+		fmt.Println("Ja!")
 		return err
 	}
+
 	return nil
 }
-
-func (Order) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
+func (Order) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
 	orders := make([]Order,0)
 	var total uint
 
-	err := db.Model(&Order{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountID).
+	err := db.Preload("WebSite").Preload("OrderChannel").Model(&Order{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
 		Find(&orders).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&Order{}).Where("account_id = ?", accountID).Count(&total).Error
+	err = db.Preload("WebSite").Preload("OrderChannel").Model(&Order{}).Where("account_id = ?", accountId).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -113,8 +118,7 @@ func (Order) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 
 	return entities, total, nil
 }
-
-func (Order) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	orders := make([]Order,0)
 	var total uint
@@ -125,7 +129,7 @@ func (Order) getPaginationList(accountID uint, offset, limit int, sortBy, search
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Order{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+		err := db.Model(&Order{}).Preload("WebSite").Preload("OrderChannel").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -133,7 +137,7 @@ func (Order) getPaginationList(accountID uint, offset, limit int, sortBy, search
 
 		// Определяем total
 		err = db.Model(&Order{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountID, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -141,14 +145,14 @@ func (Order) getPaginationList(accountID uint, offset, limit int, sortBy, search
 
 	} else {
 
-		err := db.Model(&Order{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+		err := db.Model(&Order{}).Limit(limit).Preload("WebSite").Preload("OrderChannel").Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Order{}).Where("account_id = ?", accountID).Count(&total).Error
+		err = db.Model(&Order{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -163,24 +167,17 @@ func (Order) getPaginationList(accountID uint, offset, limit int, sortBy, search
 	return entities, total, nil
 }
 
-func (Order) getByEvent(eventName string) (*Order, error) {
-
-	wh := Order{}
-
-	if err := db.First(&wh, "event_type = ?", eventName).Error; err != nil {
-		return nil, err
-	}
-
-	return &wh, nil
-}
-
 func (order *Order) update(input map[string]interface{}) error {
+
+	delete(input,"webSite")
+	delete(input,"orderChannel")
+
 	return db.Set("gorm:association_autoupdate", false).
-		Model(order).Where("id", order.ID).Omit("id", "account_id").Updates(input).Error
+		Model(order).Preload("WebSite").Preload("OrderChannel").Omit("id", "account_id").Updates(input).Error
 }
 
 func (order Order) delete () error {
-	return db.Model(Order{}).Where("id = ?", order.ID).Delete(order).Error
+	return db.Model(Order{}).Where("id = ?", order.Id).Delete(order).Error
 }
 // ######### END CRUD Functions ############
 

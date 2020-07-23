@@ -11,7 +11,7 @@ func TestAccountUser_create(t *testing.T)  {
         account.HardDelete()
     }()
 
-    user, err := account.CreateUser(User{Username: "TestAccountUser_create324", Phone: "88251001233", InvitedUserID:1}, RoleAuthor)
+    user, err := account.CreateUser(User{Username: "TestAccountUser_create324", Phone: "88251001233", InvitedUserId:1}, RoleAuthor)
     if err !=nil {
         t.Fatalf("Не удалось создать пользователя %v", err)
     }
@@ -25,9 +25,9 @@ func TestAccountUser_create(t *testing.T)  {
     }
 
     testAUser_1 := AccountUser{
-        AccountID:account.ID,
-        UserID:user.ID,
-        RoleID:role.ID,
+        AccountId:account.Id,
+        UserId:user.Id,
+        RoleId:role.Id,
     }
 
     aUser, err := testAUser_1.create();
@@ -43,19 +43,19 @@ func TestAccountUser_create(t *testing.T)  {
 
     // а вот эти ниже не должны создаться
     testAUser_2 := AccountUser{
-        AccountID: 373464,
-        UserID:user.ID,
-        RoleID:role.ID,
+        AccountId: 373464,
+        UserId:user.Id,
+        RoleId:role.Id,
     }
     testAUser_3 := AccountUser{
-        AccountID: account.ID,
-        UserID:547854733,
-        RoleID:role.ID,
+        AccountId: account.Id,
+        UserId:547854733,
+        RoleId:role.Id,
     }
     testAUser_4 := AccountUser{
-        AccountID: account.ID,
-        UserID:user.ID,
-        RoleID:33423,
+        AccountId: account.Id,
+        UserId:user.Id,
+        RoleId:33423,
     }
 
     aUser_2, err := testAUser_2.create();
@@ -87,7 +87,7 @@ func TestAccountUser_update(t *testing.T)  {
         account.HardDelete()
     }()
 
-    user, err := account.CreateUser(User{Username: "TestAccountUser_update", Phone: "88251001248", InvitedUserID:1}, RoleAdmin)
+    user, err := account.CreateUser(User{Username: "TestAccountUser_update", Phone: "88251001248", InvitedUserId:1}, RoleAdmin)
     if err !=nil {
         t.Fatalf("Не удалось создать пользователя %v", err)
     }
@@ -114,7 +114,7 @@ func TestAccountUser_update(t *testing.T)  {
         t.Fatalf("Не удалось получить роль: %v\n", err)
     }
 
-    aUser.RoleID = role.ID
+    aUser.RoleId = role.Id
     if err := aUser.update(&aUser); err != nil {
         t.Fatalf("Не удалось обновить данные в aUser: %v\n", err)
     }
@@ -125,7 +125,7 @@ func TestAccountUser_update(t *testing.T)  {
         t.Fatalf("Пользователь не был создан или добавлен в аккаунт: %v\n", err)
     }
 
-    if aUser.RoleID != role.ID {
+    if aUser.RoleId != role.Id {
         t.Fatal("Данные aUser с ролью НЕ обновились!")
     }
 }
@@ -140,7 +140,7 @@ func TestAccountUser_delete(t *testing.T) {
         account.HardDelete()
     }()
 
-    user, err := account.CreateUser(User{Username: "TestAccountUser_delete", Phone: "88251009876", InvitedUserID:1}, RoleAuthor)
+    user, err := account.CreateUser(User{Username: "TestAccountUser_delete", Phone: "88251009876", InvitedUserId:1}, RoleAuthor)
     if err !=nil {
         t.Fatalf("Не удалось создать пользователя %v", err)
     }

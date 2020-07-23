@@ -6,9 +6,9 @@ type RatusCRM struct {
 }
 
 // Разрешение пользователю другого аккаунта входить через https://app.ratuscrm.com/login
-func (RatusCRM) AllowedUserLoginCRM(userID uint) error {
+func (RatusCRM) AllowedUserLoginCRM(userId uint) error {
 
-	user, err := getUserByID(userID)
+	user, err := getUserById(userId)
 	if err != nil {
 		return err
 	}

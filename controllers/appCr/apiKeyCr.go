@@ -65,13 +65,13 @@ func ApiKeyGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apiKeyID, err := utilsCr.GetUINTVarFromRequest(r, "apiKeyID")
+	apiKeyId, err := utilsCr.GetUINTVarFromRequest(r, "apiKeyId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id"))
 		return
 	}
 
-	apiKey, err := account.ApiKeyGet(apiKeyID)
+	apiKey, err := account.ApiKeyGet(apiKeyId)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в обработке запроса", Errors: map[string]interface{}{"emailTemplates":"Не удалось получить ключ"}}))
 		return
@@ -92,7 +92,7 @@ func ApiKeyUpdate(w http.ResponseWriter, r *http.Request) {
 
 	idApiKey, err := utilsCr.GetUINTVarFromRequest(r, "id")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
@@ -126,7 +126,7 @@ func ApiKeyDelete(w http.ResponseWriter, r *http.Request) {
 
 	idApiKey, err := utilsCr.GetUINTVarFromRequest(r, "id")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 

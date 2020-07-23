@@ -8,9 +8,9 @@ import (
 
 // M<>M
 type AccountUser struct {
-	AccountID uint	`json:"accountID" gorm:"type:int;index;not null;"`
-	UserID uint	`json:"userID" gorm:"type:int;index;not null;"`
-	RoleID uint	`json:"roleID" gorm:"type:int;not null;"`
+	AccountId uint	`json:"accountId" gorm:"type:int;index;not null;"`
+	UserId uint	`json:"userId" gorm:"type:int;index;not null;"`
+	RoleId uint	`json:"roleId" gorm:"type:int;not null;"`
 
 	User    User    `json:"-"  gorm:"preload:true"`
 
@@ -41,23 +41,23 @@ func (aUser AccountUser) create () (*AccountUser, error) {
 	var e utils.Error
 
 	// more Validate!
-	if aUser.AccountID < 1 {
-		e.AddErrors("accountID", "Необходимо указать принадлежность к аккаунту")
+	if aUser.AccountId < 1 {
+		e.AddErrors("accountId", "Необходимо указать принадлежность к аккаунту")
 	}
-	if aUser.UserID < 1 {
-		e.AddErrors("userID", "Необходимо указать принадлежность к пользователю")
+	if aUser.UserId < 1 {
+		e.AddErrors("userId", "Необходимо указать принадлежность к пользователю")
 	}
-	if aUser.RoleID < 1 {
-		e.AddErrors("roleID", "Необходимо указать роль пользователя")
+	if aUser.RoleId < 1 {
+		e.AddErrors("roleId", "Необходимо указать роль пользователя")
 	}
 	
-	if  !(Account{}).Exist(aUser.AccountID) {
+	if  !(Account{}).Exist(aUser.AccountId) {
 		return nil, errors.New("Аккаунт, в рамках которого создается пользователь, не существует!")
 	}
-	if  !(User{ID: aUser.UserID}).Exist() {
+	if  !(User{Id: aUser.UserId}).Exist() {
 		return nil, errors.New("Аккаунт, в рамках которого создается пользователь, не существует!")
 	}
-	if  !(Role{ID: aUser.RoleID}).Exist() {
+	if  !(Role{Id: aUser.RoleId}).Exist() {
 		return nil, errors.New("Аккаунт, в рамках которого создается пользователь, не существует!")
 	}
 
@@ -74,17 +74,17 @@ func (aUser AccountUser) create () (*AccountUser, error) {
 }
 
 func (aUser *AccountUser) update (input interface{}) error {
-	return db.Model(AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountID, aUser.UserID).
+	return db.Model(AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).
 		Updates(input).Preload("Account").Preload("User").Preload("Role").First(aUser).Error
 }
 
 
 func (aUser *AccountUser) delete() error {
 	
-	if aUser.AccountID < 1 || aUser.UserID < 1 || aUser.RoleID <1 {
+	if aUser.AccountId < 1 || aUser.UserId < 1 || aUser.RoleId <1 {
 		return errors.New("Не возможно удалить пользователя, т.к. не верные входящие данные")
 	}
-	return db.Model(AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountID, aUser.UserID).Delete(aUser).Error
+	return db.Model(AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).Delete(aUser).Error
 }
 
 func (AccountUser) SelectArrayWithoutBigObject() []string {

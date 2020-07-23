@@ -51,14 +51,14 @@ func HandlerItemGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	handlerItemID, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemID")
+	handlerItemId, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке handlerItem Item ID"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке handlerItem Item Id"))
 		return
 	}
 
 	var handlerItem models.HandlerItem
-	err = account.LoadEntity(&handlerItem, handlerItemID)
+	err = account.LoadEntity(&handlerItem, handlerItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить handlerItem item"))
 		return
@@ -192,14 +192,14 @@ func HandlerItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	handlerItemID, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemID")
+	handlerItemId, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке handlerItem Item ID"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке handlerItem Item Id"))
 		return
 	}
 
 	var handlerItem models.HandlerItem
-	err = account.LoadEntity(&handlerItem, handlerItemID)
+	err = account.LoadEntity(&handlerItem, handlerItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -236,14 +236,14 @@ func HandlerItemDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	handlerItemID, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemID")
+	handlerItemId, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
 	var handlerItem models.HandlerItem
-	err = account.LoadEntity(&handlerItem, handlerItemID)
+	err = account.LoadEntity(&handlerItem, handlerItemId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return

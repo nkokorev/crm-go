@@ -8,17 +8,17 @@ import (
 
 type Entity interface {
 
-	GetID() uint
-	setID(id uint)
-	GetAccountID() uint
-	setAccountID(id uint)
+	GetId() uint
+	setId(id uint)
+	GetAccountId() uint
+	setAccountId(id uint)
 
 	// CRUD model
 	create() (Entity, error)
 	get (id uint) (Entity, error)
 	load () error
-	getList(accountID uint, order string) ([]Entity, uint, error)
-	getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error)
+	getList(accountId uint, order string) ([]Entity, uint, error)
+	getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error)
 	update(input map[string]interface{}) error
 	delete() error
 
@@ -29,7 +29,7 @@ type Entity interface {
 
 func Get(v Entity) error {
 
-	// id := v.getID()
+	// id := v.getId()
 
 	r := reflect.TypeOf(v)
 
@@ -41,7 +41,7 @@ func Get(v Entity) error {
 }
 
 func (account Account) CreateEntity(input Entity) (Entity, error) {
-	input.setAccountID(account.ID)
+	input.setAccountId(account.Id)
 	return input.create()
 }
 
@@ -53,7 +53,7 @@ func (account Account) GetEntity(model Entity, id uint) (Entity, error) {
 	}
 
 	// Тут надо бы показать, что она системная
-	if entity.GetAccountID() != account.ID && !entity.SystemEntity() {
+	if entity.GetAccountId() != account.Id && !entity.SystemEntity() {
 		return nil, errors.New("Модель принадлежит другому аккаунту")
 	}
 
@@ -63,7 +63,7 @@ func (account Account) GetEntity(model Entity, id uint) (Entity, error) {
 func (account Account) LoadEntity(entity Entity, primaryKey uint) error {
 
 	// На всякий случай
-	entity.setID(primaryKey)
+	entity.setId(primaryKey)
 	
 	// Загружаем по ссылке
 	err := entity.load()
@@ -72,7 +72,7 @@ func (account Account) LoadEntity(entity Entity, primaryKey uint) error {
 	}
 
 	// Проверяем принадлежность к аккаунту
-	if entity.GetAccountID() != account.ID && !entity.SystemEntity() {
+	if entity.GetAccountId() != account.Id && !entity.SystemEntity() {
 		return errors.New("Модель принадлежит другому аккаунту")
 	}
 
@@ -80,15 +80,15 @@ func (account Account) LoadEntity(entity Entity, primaryKey uint) error {
 }
 
 func (account Account) GetListEntity(model Entity, order string) ([]Entity, uint, error) {
-	return model.getList(account.ID, order)
+	return model.getList(account.Id, order)
 }
 
 func (account Account) GetPaginationListEntity(model Entity, offset, limit int, order string, search string) ([]Entity, uint, error) {
-	return model.getPaginationList(account.ID, offset, limit, order, search)
+	return model.getPaginationList(account.Id, offset, limit, order, search)
 }
 
 func (account Account) UpdateEntity(entity Entity, input map[string]interface{}) error {
-	if entity.GetAccountID() != account.ID && !entity.SystemEntity() {
+	if entity.GetAccountId() != account.Id && !entity.SystemEntity() {
 		return errors.New("Модель принадлежит другому аккаунту")
 	}
 
@@ -96,7 +96,7 @@ func (account Account) UpdateEntity(entity Entity, input map[string]interface{})
 }
 
 func (account Account) DeleteEntity(entity Entity) error {
-	if entity.GetAccountID() != account.ID && !entity.SystemEntity() {
+	if entity.GetAccountId() != account.Id && !entity.SystemEntity() {
 		return errors.New("Модель принадлежит другому аккаунту")
 	}
 	

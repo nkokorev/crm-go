@@ -12,9 +12,9 @@ import (
 
 //Token struct declaration
 type JWT struct {
-	UserID uint // id of user
-	AccountID uint // id of work account
-	IssuerAccountID uint // ID of issuer account
+	UserId uint // id of user
+	AccountId uint // id of work account
+	IssuerAccountId uint // Id of issuer account
 	jwt.StandardClaims
 }
 

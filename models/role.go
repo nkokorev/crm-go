@@ -30,10 +30,10 @@ const (
 )
 
 type Role struct {
-	ID     uint   `json:"id" gorm:"primary_key"`
-	AccountID uint `json:"accountID" gorm:"type:int;index;not null;"` // у системных ролей = 1. Из-под RatusCRM аккаунта их можно изменять.
+	Id     uint   `json:"id" gorm:"primary_key"`
+	AccountId uint `json:"accountId" gorm:"type:int;index;not null;"` // у системных ролей = 1. Из-под RatusCRM аккаунта их можно изменять.
 
-	// IssuerAccountID uint       `json:"issuerAccountID" gorm:"index;not null;default:1"`
+	// IssuerAccountId uint       `json:"issuerAccountId" gorm:"index;not null;default:1"`
 	Tag             AccessRole `json:"tag" gorm:"type:varchar(32);not null;"`	// client, admin, manager, ...
 	Type            roleType   `json:"type" gorm:"type:varchar(3);not null;"`	// gui / api
 	Name            string     `json:"name" gorm:"type:varchar(255);not null;"` // "Владелец аккаунта", "Администратор", "Менеджер" ...
@@ -42,16 +42,16 @@ type Role struct {
 }
 
 var systemRoles = []Role{
-	{ AccountID: 1, Name: "Владелец аккаунта",Tag: RoleOwner, 	Type: roleTypeGui,	Description: "Доступ ко всем данным и функционалу аккаунта."},
-	{ AccountID: 1, Name: "Администратор", 	Tag: RoleAdmin, 	Type: roleTypeGui,	Description: "Доступ ко всем данным и функционалу аккаунта. Не может удалить аккаунт или менять владельца аккаунта."},
-	{ AccountID: 1, Name: "Менеджер", 		Tag: RoleManager, 	Type: roleTypeGui,	Description: "Не может добавлять пользователей, менять биллинговую информацию и систему ролей."},
-	{ AccountID: 1, Name: "Маркетолог", 		Tag: RoleMarketer, 	Type: roleTypeGui,	Description: "Читает все клиентские данные, может изменять все что касается маркетинга, но не заказы или склады."},
-	{ AccountID: 1, Name: "Автор", 			Tag: RoleAuthor, 	Type: roleTypeGui,	Description: "Может создавать контент: писать статьи, письма, описания к товарам и т.д."},
-	{ AccountID: 1, Name: "Наблюдатель", 		Tag: RoleViewer, 	Type: roleTypeGui,	Description: "The Viewer can view reports in the account"},
-	{ AccountID: 1, Name: "Клиент", 			Tag: RoleClient, 	Type: roleTypeGui,	Description: "Стандартная роль для всех клиентов"},
-	{ AccountID: 1, Name: "Full Access", 		Tag: RoleFullAccess, Type: roleTypeApi,	Description: "Доступ ко всем функциям API"},
-	{ AccountID: 1, Name: "Site Access", 		Tag: RoleSiteAccess, Type: roleTypeApi,	Description: "Доступ к аккаунту через API, необходимый для интеграции с сайтом"},
-	{ AccountID: 1, Name: "Read Access", 		Tag: RoleReadAccess, Type: roleTypeApi,	Description: "Доступ к чтению основной информации об аккаунте."},
+	{ AccountId: 1, Name: "Владелец аккаунта",Tag: RoleOwner, 	Type: roleTypeGui,	Description: "Доступ ко всем данным и функционалу аккаунта."},
+	{ AccountId: 1, Name: "Администратор", 	Tag: RoleAdmin, 	Type: roleTypeGui,	Description: "Доступ ко всем данным и функционалу аккаунта. Не может удалить аккаунт или менять владельца аккаунта."},
+	{ AccountId: 1, Name: "Менеджер", 		Tag: RoleManager, 	Type: roleTypeGui,	Description: "Не может добавлять пользователей, менять биллинговую информацию и систему ролей."},
+	{ AccountId: 1, Name: "Маркетолог", 		Tag: RoleMarketer, 	Type: roleTypeGui,	Description: "Читает все клиентские данные, может изменять все что касается маркетинга, но не заказы или склады."},
+	{ AccountId: 1, Name: "Автор", 			Tag: RoleAuthor, 	Type: roleTypeGui,	Description: "Может создавать контент: писать статьи, письма, описания к товарам и т.д."},
+	{ AccountId: 1, Name: "Наблюдатель", 		Tag: RoleViewer, 	Type: roleTypeGui,	Description: "The Viewer can view reports in the account"},
+	{ AccountId: 1, Name: "Клиент", 			Tag: RoleClient, 	Type: roleTypeGui,	Description: "Стандартная роль для всех клиентов"},
+	{ AccountId: 1, Name: "Full Access", 		Tag: RoleFullAccess, Type: roleTypeApi,	Description: "Доступ ко всем функциям API"},
+	{ AccountId: 1, Name: "Site Access", 		Tag: RoleSiteAccess, Type: roleTypeApi,	Description: "Доступ к аккаунту через API, необходимый для интеграции с сайтом"},
+	{ AccountId: 1, Name: "Read Access", 		Tag: RoleReadAccess, Type: roleTypeApi,	Description: "Доступ к чтению основной информации об аккаунте."},
 }
 
 func (Role) PgSqlCreate() {
@@ -68,24 +68,24 @@ func (Role) PgSqlCreate() {
 	}
 }
 func (role *Role) BeforeCreate(scope *gorm.Scope) error {
-	role.ID = 0
+	role.Id = 0
 	return nil
 }
 
 
 // ############# Entity interface #############
-func (role Role) GetID() uint { return role.ID }
-func (role *Role) setID(id uint) { role.ID = id }
-func (role Role) GetAccountID() uint { return role.AccountID }
-func (role *Role) setAccountID(id uint) { role.AccountID = id }
-func (role Role) SystemEntity() bool { return role.AccountID == 1 }
+func (role Role) GetId() uint { return role.Id }
+func (role *Role) setId(id uint) { role.Id = id }
+func (role Role) GetAccountId() uint { return role.AccountId }
+func (role *Role) setAccountId(id uint) { role.AccountId = id }
+func (role Role) SystemEntity() bool { return role.AccountId == 1 }
 // ############# Entity interface #############
 
 func (role Role) create() (Entity, error)  {
 
 	// Validate
-	if role.AccountID < 1 {
-		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleIssuerAccountID":"Необходимо указать выпускающий аккаунт!"}}
+	if role.AccountId < 1 {
+		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleIssuerAccountId":"Необходимо указать выпускающий аккаунт!"}}
 	}
 	if len([]rune(role.Tag)) > 32 || len([]rune(role.Tag)) < 3 {
 		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleTag":"Тип должен быть от 3 до 32 символов!"}}
@@ -126,27 +126,27 @@ func (Role) get(id uint) (Entity, error) {
 
 func (role *Role) load() error {
 
-	err := db.First(role,role.ID).Error
+	err := db.First(role,role.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (Role) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
+func (Role) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
 	roles := make([]Role,0)
 	var total uint
 
 	err := db.Model(&Role{}).Order(sortBy).Limit(100).
-		Where("account_id IN (?)", []uint{1, accountID}).
+		Where("account_id IN (?)", []uint{1, accountId}).
 		Find(&roles).Error
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// Определяем total
-	err = db.Model(&Role{}).Where("account_id IN (?)", []uint{1, accountID}).Count(&total).Error
+	err = db.Model(&Role{}).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 	}
@@ -159,7 +159,7 @@ func (Role) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
 
 	return entities, total, nil
 }
-func (Role) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	roles := make([]Role,0)
 	var total uint
@@ -170,7 +170,7 @@ func (Role) getPaginationList(accountID uint, offset, limit int, sortBy, search 
 
 		err := db.Model(&Role{}).
 			Order(sortBy).Offset(offset).Limit(limit).
-			Where("account_id IN (?)", []uint{1, accountID}).
+			Where("account_id IN (?)", []uint{1, accountId}).
 			Find(&roles, "tag ILIKE ? OR type ILIKE ? OR name ILIKE ? OR description ILIKE ?", search,search,search,search).Error
 		if err != nil {
 			return nil, 0, err
@@ -178,7 +178,7 @@ func (Role) getPaginationList(accountID uint, offset, limit int, sortBy, search 
 
 		// Определяем total
 		err = db.Model(&Role{}).
-			Where("account_id IN (?) AND tag ILIKE ? OR type ILIKE ? OR name ILIKE ? OR description ILIKE ?", []uint{1, accountID}, search,search,search,search).
+			Where("account_id IN (?) AND tag ILIKE ? OR type ILIKE ? OR name ILIKE ? OR description ILIKE ?", []uint{1, accountId}, search,search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -188,14 +188,14 @@ func (Role) getPaginationList(accountID uint, offset, limit int, sortBy, search 
 	} else {
 		err := db.Model(&Role{}).
 			Order(sortBy).Offset(offset).Limit(limit).
-			Where("account_id IN (?)", []uint{1, accountID}).
+			Where("account_id IN (?)", []uint{1, accountId}).
 			Find(&roles).Error
 		if err != nil {
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Role{}).Where("account_id IN (?)", []uint{1, accountID}).Count(&total).Error
+		err = db.Model(&Role{}).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -216,22 +216,22 @@ func (role *Role) update(input map[string]interface{}) error {
 }
 
 func (role Role) delete () error {
-	return db.Model(Role{}).Where("id = ?", role.ID).Delete(role).Error
+	return db.Model(Role{}).Where("id = ?", role.Id).Delete(role).Error
 }
 
 ////////////
 
 func (role Role) IsOwner () bool {
-	return role.Tag == "owner" && role.AccountID == 1
+	return role.Tag == "owner" && role.AccountId == 1
 }
 func (role Role) IsAdmin () bool {
-	return role.Tag == "admin" && role.AccountID == 1
+	return role.Tag == "admin" && role.AccountId == 1
 }
 
 // Получаем роль либо системную или в акаунте. Как правило, первое.
-func (account Account) GetRole (roleID uint) (*Role, error) {
+func (account Account) GetRole (roleId uint) (*Role, error) {
 	var role Role
-	err := db.Where("account_id IN (?) AND id = ?", []uint{1, account.ID}, roleID).First(&role).Error
+	err := db.Where("account_id IN (?) AND id = ?", []uint{1, account.Id}, roleId).First(&role).Error
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +240,7 @@ func (account Account) GetRole (roleID uint) (*Role, error) {
 
 func (account Account) GetRoleByTag (tag AccessRole) (*Role, error) {
 	var role Role
-	err := db.Where("account_id IN (?) AND tag = ?", []uint{1, account.ID}, tag).First(&role).Error
+	err := db.Where("account_id IN (?) AND tag = ?", []uint{1, account.Id}, tag).First(&role).Error
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func (account Account) GetRoleByTag (tag AccessRole) (*Role, error) {
 func (account Account) GetRoleList() ([]Role, error) {
 	roles := make([]Role, 0)
 
-	err := db.Find(&roles, "account_id IN (?)", []uint{1, account.ID}).Error
+	err := db.Find(&roles, "account_id IN (?)", []uint{1, account.Id}).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
@@ -263,7 +263,7 @@ func (account Account) GetRoleList() ([]Role, error) {
 
 // хз
 func (role Role) Exist() bool {
-	return !db.Model(&Role{}).Unscoped().First(&Role{}, role.ID).RecordNotFound()
+	return !db.Model(&Role{}).Unscoped().First(&Role{}, role.Id).RecordNotFound()
 }
 
 // хз хз хз 

@@ -44,14 +44,14 @@ func OrderGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orderID, err := utilsCr.GetUINTVarFromRequest(r, "orderID")
+	orderId, err := utilsCr.GetUINTVarFromRequest(r, "orderId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке web site ID"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке web site Id"))
 		return
 	}
 
 	var order models.Order
-	err = account.LoadEntity(&order, orderID)
+	err = account.LoadEntity(&order, orderId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -115,14 +115,14 @@ func OrderUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orderID, err := utilsCr.GetUINTVarFromRequest(r, "orderID")
+	orderId, err := utilsCr.GetUINTVarFromRequest(r, "orderId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
 	var order models.Order
-	err = account.LoadEntity(&order, orderID)
+	err = account.LoadEntity(&order, orderId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -153,14 +153,14 @@ func OrderDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orderID, err := utilsCr.GetUINTVarFromRequest(r, "orderID")
+	orderId, err := utilsCr.GetUINTVarFromRequest(r, "orderId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
 	var order models.Order
-	err = account.LoadEntity(&order, orderID)
+	err = account.LoadEntity(&order, orderId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return

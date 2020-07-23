@@ -98,7 +98,7 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		input.User.InvitedUserID = emailToken.OwnerID
+		input.User.InvitedUserId = emailToken.OwnerId
 
 		defer func() {
 			if user != nil {
@@ -130,13 +130,13 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 	// todo add user to account
 
 	// 2. создаем jwt-token для аутентификации пользователя
-	//token, err := (models.JWT{UserID:user.ID}).CreateCryptoToken()
+	//token, err := (models.JWT{UserId:user.Id}).CreateCryptoToken()
 	expiresAt := time.Now().UTC().Add(time.Minute * 60).Unix()
 
 	claims := models.JWT{
-		user.ID,
-		account.ID,
-		user.IssuerAccountID,
+		user.Id,
+		account.Id,
+		user.IssuerAccountId,
 		jwt.StandardClaims{
 			ExpiresAt: expiresAt,
 			Issuer:    "AppServer",
@@ -155,7 +155,7 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-// Обработка создания пользователя в рамках /{accountID}/
+// Обработка создания пользователя в рамках /{accountId}/
 // Не подходит для создания пользователя в рамках UI/API т.к. не делает проверку соотвествующих переменных
 func UserRegistration(w http.ResponseWriter, r *http.Request) {
 
@@ -203,7 +203,7 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		input.User.InvitedUserID = emailToken.OwnerID
+		input.User.InvitedUserId = emailToken.OwnerId
 
 		defer func() {
 			if input.User != nil {
@@ -271,7 +271,7 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err = issuerAccount.GetUserWithAUser(user.ID)
+	user, err = issuerAccount.GetUserWithAUser(user.Id)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка авторизации пользователя!"))
 		return
@@ -410,9 +410,9 @@ func UserRecoveryPasswordSendMail(w http.ResponseWriter, r *http.Request) {
 // Отправка email-кода верификации для новых пользователей.
 func UserSendEmailInviteVerification(w http.ResponseWriter, r *http.Request) {
 
-	userID := r.Context().Value("user_id").(uint)
+	userId := r.Context().Value("user_id").(uint)
 
-	user := models.User{ID: userID}
+	user := models.User{Id: userId}
 	if err := user.Get(); err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти пользователя")) // вообще тут нужен релогин
 		return
@@ -449,15 +449,15 @@ func UserSendEmailInviteVerification(w http.ResponseWriter, r *http.Request) {
 
 func UserGetProfile(w http.ResponseWriter, r *http.Request) {
 
-	userID := r.Context().Value("user_id").(uint)
+	userId := r.Context().Value("user_id").(uint)
 
-	/*userID, err := u.GetFromRequestUINT(r, "user_id")
+	/*userId, err := u.GetFromRequestUINT(r, "user_id")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при входе в аккаунт"))
 		return
 	}*/
 
-	user := models.User{ID: userID}
+	user := models.User{Id: userId}
 	if err := user.Get(); err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти пользователя")) // вообще тут нужен релогин
 		return
@@ -476,13 +476,13 @@ func UserAccountsGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashID, ok := utilsCr.GetSTRVarFromRequest(r,"hashID")
+	hashId, ok := utilsCr.GetSTRVarFromRequest(r,"hashId")
 	if !ok {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
 
-	user, err := account.GetUserByHashID(hashID)
+	user, err := account.GetUserByHashId(hashId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти пользователя"))
 	}
@@ -504,14 +504,14 @@ func UserAccountsGet(w http.ResponseWriter, r *http.Request) {
  */
 func UserLoginInAccount(w http.ResponseWriter, r *http.Request) {
 
-	accountID, err := u.GetFromRequestUINT(r, "account_id")
+	accountId, err := u.GetFromRequestUINT(r, "account_id")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при входе в аккаунт"))
 		return
 	}
-	userID := r.Context().Value("user_id").(uint)
+	userId := r.Context().Value("user_id").(uint)
 
-	user := models.User{ID: userID}
+	user := models.User{Id: userId}
 
 	// 1. Проверяем, что пользователь действителен и существует
 	if err := user.Get(); err != nil {
@@ -520,13 +520,13 @@ func UserLoginInAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Пробуем войти в аккаунт, возможно много ограничений (доступ, оплата и т.д.)
-	/*token, err := user.LoginInAccount(accountID);
+	/*token, err := user.LoginInAccount(accountId);
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось войти в аккаунт"))
 		return
 	}*/
 
-	acc := models.Account{ID: accountID}
+	acc := models.Account{Id: accountId}
 	if err := user.GetAccount(&acc); err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось войти в аккаунт"))
 		return

@@ -2,9 +2,9 @@ package models
 
 // Список товаров на складе
 type StockProduct struct {
-	ID uint	`json:"id"`
-	AccountID uint `json:"-"`
-	ProductID uint `json:"productID"`
+	Id uint	`json:"id"`
+	AccountId uint `json:"-"`
+	ProductId uint `json:"productId"`
 
 
 	Product Product `json:"-"`

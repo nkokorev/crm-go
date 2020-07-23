@@ -9,8 +9,8 @@ import (
 
 // Физический склад с набором методов
 type Stock struct {
-	ID uint	`json:"id"`
-	AccountID uint `json:"-"`
+	Id uint	`json:"id"`
+	AccountId uint `json:"-"`
 
 	Code string `json:"code" gorm:"default:NULL"`
 	Name string `json:"name"`
@@ -22,9 +22,9 @@ type Stock struct {
 
 func (stock *Stock) Create () error {
 
-	// чекаем на всякий случай ID аккаунта
-	if stock.AccountID < 1 {
-		return errors.New("Необходимо указать Account ID")
+	// чекаем на всякий случай Id аккаунта
+	if stock.AccountId < 1 {
+		return errors.New("Необходимо указать Account Id")
 	}
 
 	if stock.Name == "" {
@@ -40,15 +40,15 @@ func (stock *Stock) Create () error {
 
 func (stock *Stock) Get() error {
 
-	// чекаем на всякий случай ID аккаунта
-	if stock.AccountID < 1 {
-		return errors.New("Необходимо указать accountID")
+	// чекаем на всякий случай Id аккаунта
+	if stock.AccountId < 1 {
+		return errors.New("Необходимо указать accountId")
 	}
 
-	err := db.Model(Stock{}).Where("id = ? AND account_id = ?", stock.ID, stock.AccountID).First(stock).Error;
+	err := db.Model(Stock{}).Where("id = ? AND account_id = ?", stock.Id, stock.AccountId).First(stock).Error;
 
 	if err != nil && err == gorm.ErrRecordNotFound {
-		return utils.Error{Message:fmt.Sprintf("Указанный склад с id = %v не найден.", stock.ID)}
+		return utils.Error{Message:fmt.Sprintf("Указанный склад с id = %v не найден.", stock.Id)}
 	}
 	return err
 }
@@ -61,22 +61,22 @@ func (Stock) GetAll(account_id uint) (stocks []Stock, err error) {
 
 func (stock *Stock) Save() error {
 
-	// чекаем на всякий случай ID аккаунта, в контексте которого происходит выполнение
-	if stock.AccountID < 1 {
+	// чекаем на всякий случай Id аккаунта, в контексте которого происходит выполнение
+	if stock.AccountId < 1 {
 		return utils.Error{Message:"Непредвиденная ошибка синхронизации с аккаунтом"}
 	}
 
 	// проверяем, что нет совпадающих значений, исключая текущее значение stock
-	if  stock.Code != "" && !db.Unscoped().First(&Stock{},"account_id = ? AND code = ? AND id != ?", stock.AccountID, stock.Code, stock.ID).RecordNotFound() {
+	if  stock.Code != "" && !db.Unscoped().First(&Stock{},"account_id = ? AND code = ? AND id != ?", stock.AccountId, stock.Code, stock.Id).RecordNotFound() {
 		return utils.Error{Message:"Ошибки при обновлении данных склада", Errors: map[string]interface{} {"code":"Повторяющиеся значение параметра"} }
 	}
 
 	// обновляем данные
-	err :=  db.Model(Stock{}).Where("id = ? AND account_id = ?", stock.ID, stock.AccountID).Omit("id", "account_id").
-		Save(stock).Find(stock, "id = ?", stock.ID).Error
+	err :=  db.Model(Stock{}).Where("id = ? AND account_id = ?", stock.Id, stock.AccountId).Omit("id", "account_id").
+		Save(stock).Find(stock, "id = ?", stock.Id).Error
 
 	if err != nil && err == gorm.ErrRecordNotFound {
-		return errors.New(fmt.Sprintf("Ошибка при сохранении: склада не найден id  = %v", stock.ID))
+		return errors.New(fmt.Sprintf("Ошибка при сохранении: склада не найден id  = %v", stock.Id))
 	}
 
 	return err
@@ -84,46 +84,46 @@ func (stock *Stock) Save() error {
 
 func (stock *Stock) Update(input interface{}) error {
 
-	// чекаем на всякий случай ID аккаунта, в контексте которого происходит выполнение
-	if stock.AccountID < 1 {
+	// чекаем на всякий случай Id аккаунта, в контексте которого происходит выполнение
+	if stock.AccountId < 1 {
 		return utils.Error{Message:"Непредвиденная ошибка синхронизации с аккаунтом"}
 	}
 
 	// проверяем, что нет совпадающих значений, исключая текущее значение stock
 	newCode := input.(map[string]interface{})["code"]
-	if  newCode != nil && !db.Unscoped().First(&Stock{},"account_id = ? AND code = ? AND id != ?", stock.AccountID, newCode, stock.ID).RecordNotFound() {
+	if  newCode != nil && !db.Unscoped().First(&Stock{},"account_id = ? AND code = ? AND id != ?", stock.AccountId, newCode, stock.Id).RecordNotFound() {
 		return utils.Error{Message:"Ошибки при обновлении данных склада", Errors: map[string]interface{} {"code":"Повторяющиеся значение параметра"} }
 	}
 
 	// обновляем данные
-	err :=  db.Model(Stock{}).Where("id = ? AND account_id = ?", stock.ID, stock.AccountID).Omit("id", "account_id").
-		Updates(input).Find(stock, "id = ?", stock.ID).Error
+	err :=  db.Model(Stock{}).Where("id = ? AND account_id = ?", stock.Id, stock.AccountId).Omit("id", "account_id").
+		Updates(input).Find(stock, "id = ?", stock.Id).Error
 
 	if err != nil && err == gorm.ErrRecordNotFound {
-		return utils.Error{Message:fmt.Sprintf("Невозможно обновить склад, указанный id = %v не найден.", stock.ID)}
+		return utils.Error{Message:fmt.Sprintf("Невозможно обновить склад, указанный id = %v не найден.", stock.Id)}
 	}
 	return err
 }
 
 func (stock *Stock) Delete() error {
 
-	// чекаем на всякий случай ID аккаунта, в контексте которого происходит выполнение
-	if stock.AccountID < 1 {
+	// чекаем на всякий случай Id аккаунта, в контексте которого происходит выполнение
+	if stock.AccountId < 1 {
 		return utils.Error{Message:"Непредвиденная ошибка синхронизации с аккаунтом"}
 	}
 
-	if stock.ID < 1 {
-		return utils.Error{Message:"Неуказан ID удаляемого склада"}
+	if stock.Id < 1 {
+		return utils.Error{Message:"Неуказан Id удаляемого склада"}
 	}
 
 	// удаляем данные. Если объект не будет найден - ошибки не будет.
-	return db.Model(Stock{}).Where("id = ? AND account_id = ?", stock.ID, stock.AccountID).Delete(stock).Error
+	return db.Model(Stock{}).Where("id = ? AND account_id = ?", stock.Id, stock.AccountId).Delete(stock).Error
 }
 
 func (stock Stock) ExistCode() bool {
-	return !db.Unscoped().First(&Stock{},"account_id = ? AND code = ?", stock.AccountID, stock.Code).RecordNotFound()
+	return !db.Unscoped().First(&Stock{},"account_id = ? AND code = ?", stock.AccountId, stock.Code).RecordNotFound()
 }
 
 func (stock Stock) Exist() bool {
-	return !db.Unscoped().First(&Stock{},"id = ? AND account_id = ?", stock.ID, stock.AccountID).RecordNotFound()
+	return !db.Unscoped().First(&Stock{},"id = ? AND account_id = ?", stock.Id, stock.AccountId).RecordNotFound()
 }

@@ -6,7 +6,7 @@ import (
 )
 
 type UnitMeasurement struct {
-	ID     uint   `json:"id" gorm:"primary_key"`
+	Id     uint   `json:"id" gorm:"primary_key"`
 
 	Name 		string `json:"name" gorm:"type:varchar(128);"` // штука, коробка, комплект, киллограмм, грамм,
 	ShotName 	string `json:"name" gorm:"type:varchar(128);"` // шт., кор., компл., кг, гр,
@@ -43,7 +43,7 @@ func (UnitMeasurement) PgSqlCreate() {
 }
 
 func (um *UnitMeasurement) BeforeCreate(scope *gorm.Scope) error {
-	um.ID = 0
+	um.Id = 0
 	return nil
 }
 
@@ -87,6 +87,6 @@ func (ut *UnitMeasurement) update(input map[string]interface{}) error {
 }
 
 func (ut UnitMeasurement) delete () error {
-	return db.Model(UnitMeasurement{}).Where("id = ?", ut.ID).Delete(ut).Error
+	return db.Model(UnitMeasurement{}).Where("id = ?", ut.Id).Delete(ut).Error
 }
 // ######### END CRUD Functions ############

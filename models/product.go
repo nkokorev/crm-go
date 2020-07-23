@@ -27,8 +27,8 @@ const (
 */
 
 type Product struct {
-	ID     uint   `json:"id" gorm:"primary_key"`
-	AccountID uint `json:"-" gorm:"type:int;index;not null;"`
+	Id     uint   `json:"id" gorm:"primary_key"`
+	AccountId uint `json:"-" gorm:"type:int;index;not null;"`
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // можно ли продавать товар и выводить в карточки
 	Name 		string `json:"name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
@@ -47,10 +47,10 @@ type Product struct {
 	RetailDiscount 			float64 `json:"retailDiscount" gorm:"type:numeric;default:0"` // розничная фактическая скидка
 
 	ProductType 			ProductType `json:"productType" gorm:"type:varchar(12);default:'commodity';"`// товар или услуга ? [вид номенклатуры]
-	UnitMeasurementID 		uint	`json:"unitMeasurementID" gorm:"type:int;default:1;"` // тип измерения
+	UnitMeasurementId 		uint	`json:"unitMeasurementId" gorm:"type:int;default:1;"` // тип измерения
 	UnitMeasurement 		UnitMeasurement // Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 	
-	// ProductGroupsID uint `json:"productGroupsID"` // группа товара
+	// ProductGroupsId uint `json:"productGroupsId"` // группа товара
 	// ProductGroups []ProductGroup `json:"productGroups" gorm:"many2many:product_group_products"`
 
 	ShortDescription string 	`json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
@@ -80,13 +80,13 @@ func (Product) PgSqlCreate() {
 }
 
 func (product *Product) BeforeCreate(scope *gorm.Scope) error {
-	product.ID = 0
+	product.Id = 0
 	return nil
 }
 
 // ######### INTERFACE EVENT Functions ############
-func (product Product) GetID() uint {
-	return product.ID
+func (product Product) GetId() uint {
+	return product.Id
 }
 // ######### END OF INTERFAe Functions ############
 
@@ -95,7 +95,7 @@ func (product Product) create() (*Product, error)  {
 	var newProduct = product
 	if err := db.Create(&newProduct).First(&newProduct).Error; err != nil { return nil, err }
 
-	event.AsyncFire(Event{}.ProductCreated(newProduct.AccountID, newProduct.ID))
+	event.AsyncFire(Event{}.ProductCreated(newProduct.AccountId, newProduct.Id))
 	return &newProduct, nil
 }
 
@@ -115,11 +115,11 @@ func (Product) get(id uint) (*Product, error) {
 	return &product, nil
 }
 
-func (Product) getList(accountID uint) ([]Product, error) {
+func (Product) getList(accountId uint) ([]Product, error) {
 
 	products := make([]Product,0)
 
-	err := db.Model(&Product{}).Preload("ProductCards").Find(&products, "account_id = ?", accountID).Error
+	err := db.Model(&Product{}).Preload("ProductCards").Find(&products, "account_id = ?", accountId).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
@@ -133,17 +133,17 @@ func (product *Product) update(input map[string]interface{}) error {
 		return err
 	}
 
-	event.AsyncFire(Event{}.ProductUpdated(product.AccountID, product.ID))
+	event.AsyncFire(Event{}.ProductUpdated(product.AccountId, product.Id))
 
 	return nil
 }
 
 func (product Product) delete () error {
-	if err := db.Model(Product{}).Where("id = ?", product.ID).Delete(product).Error; err != nil {
+	if err := db.Model(Product{}).Where("id = ?", product.Id).Delete(product).Error; err != nil {
 		return err
 	}
 	
-	event.AsyncFire(Event{}.ProductDeleted(product.AccountID, product.ID))
+	event.AsyncFire(Event{}.ProductDeleted(product.AccountId, product.Id))
 
 	return nil
 }
@@ -151,7 +151,7 @@ func (product Product) delete () error {
 
 // ######### ACCOUNT Functions ############
 func (account Account) CreateProduct(input Product) (*Product, error) {
-	input.AccountID = account.ID
+	input.AccountId = account.Id
 	
 	if input.ExistSKU() {
 		return nil, utils.Error{Message: "Повторение данных SKU", Errors: map[string]interface{}{"sku":"Товар с таким SKU уже есть"}}
@@ -168,13 +168,13 @@ func (account Account) CreateProduct(input Product) (*Product, error) {
 	return product, nil
 }
 
-func (account Account) GetProduct(productID uint) (*Product, error) {
-	product, err := Product{}.get(productID)
+func (account Account) GetProduct(productId uint) (*Product, error) {
+	product, err := Product{}.get(productId)
 	if err != nil {
 		return nil, err
 	}
 
-	if account.ID != product.AccountID {
+	if account.Id != product.AccountId {
 		return nil, utils.Error{Message: "Товар принадлежит другому аккаунту"}
 	}
 
@@ -200,7 +200,7 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 			Limit(limit).
 			Offset(offset).
 			Order("id").
-			Where("account_id = ?", account.ID).
+			Where("account_id = ?", account.Id).
 			Find(&products, "name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?", search,search,search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -208,7 +208,7 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 
 		// Определяем total
 		err = db.Model(&Product{}).
-			Where("account_id = ? AND name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?", account.ID, search,search,search,search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?", account.Id, search,search,search,search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -224,14 +224,14 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 			Preload("Images", func(db *gorm.DB) *gorm.DB {
 				return db.Select(Storage{}.SelectArrayWithoutDataURL())
 			}).
-			Limit(limit).Offset(offset).Order("id").Find(&products, "account_id = ?", account.ID).Error
+			Limit(limit).Offset(offset).Order("id").Find(&products, "account_id = ?", account.Id).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Product{}).Where("account_id = ?", account.ID).Count(&total).Error
+		err = db.Model(&Product{}).Where("account_id = ?", account.Id).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -240,14 +240,14 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 	return products, total, nil
 }
 
-func (account Account) UpdateProduct(productID uint, input map[string]interface{}) (*Product, error) {
+func (account Account) UpdateProduct(productId uint, input map[string]interface{}) (*Product, error) {
 
-	product, err := account.GetProduct(productID)
+	product, err := account.GetProduct(productId)
 	if err != nil {
 		return nil, err
 	}
 
-	if account.ID != product.AccountID {
+	if account.Id != product.AccountId {
 		return nil, utils.Error{Message: "Товар принадлежит другому аккаунту"}
 	}
 
@@ -270,10 +270,10 @@ func (account Account) UpdateProduct(productID uint, input map[string]interface{
 
 }
 
-func (account Account) DeleteProduct(productID uint) error {
+func (account Account) DeleteProduct(productId uint) error {
 
 	// включает в себя проверку принадлежности к аккаунту
-	product, err := account.GetProduct(productID)
+	product, err := account.GetProduct(productId)
 	if err != nil {
 		return err
 	}
@@ -288,11 +288,11 @@ func (account Account) DeleteProduct(productID uint) error {
 
 // ########## SELF FUNCTIONAL ############
 func (product Product) ExistSKU() bool {
-	return !db.Unscoped().First(&Product{},"account_id = ? AND sku = ?", product.AccountID, product.SKU).RecordNotFound()
+	return !db.Unscoped().First(&Product{},"account_id = ? AND sku = ?", product.AccountId, product.SKU).RecordNotFound()
 }
 
 func (product Product) ExistModel() bool {
-	return !db.Unscoped().First(&Product{},"account_id = ? AND model = ?", product.AccountID, product.Model).RecordNotFound()
+	return !db.Unscoped().First(&Product{},"account_id = ? AND model = ?", product.AccountId, product.Model).RecordNotFound()
 }
 
 func (product Product) AddAttr() error {

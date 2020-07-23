@@ -36,7 +36,7 @@ func SendTestMessage() error {
 	//email.SetTo("mail-test@ratus-dev.ru")
 	//email.SetTo("mex388@mail.ru")
 	//email.SetReturnPath("abuse@mta1@ratuscrm.com")
-	//email.SetMessageID("jd7dhds73h3738")
+	//email.SetMessageId("jd7dhds73h3738")
 
 	e.From = mail.Address{Name: "RatusCRM", Address: "info@ratuscrm.com"}
 
@@ -62,7 +62,7 @@ func SendTestMessage() error {
 		return err
 	}
 
-	fmt.Printf("ID: %s Resp: %s\n", id, resp)
+	fmt.Printf("Id: %s Resp: %s\n", id, resp)
 
 	return nil
 }

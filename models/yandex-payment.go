@@ -13,11 +13,9 @@ import (
 )
 
 type YandexPayment struct {
-	ID     		uint   	`json:"id" gorm:"primary_key"`
-	HashID 		string `json:"hashID" gorm:"type:varchar(12);unique_index;not null;"` // публичный ID для защиты от спама/парсинга
-	
-	AccountID 	uint 	`json:"-" gorm:"type:int;index;not null;"`
-
+	Id     		uint   	`json:"id" gorm:"primary_key"`
+	HashId 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя интеграции магазина "<name>"
 
@@ -25,7 +23,7 @@ type YandexPayment struct {
 
 	// Для авторизации Basic Auth: username:password
 	ApiKey	string	`json:"apiKey" gorm:"type:varchar(128);"` // ApiKey от яндекс кассы
-	ShopID	string	`json:"shopID" gorm:"type:int;"` // shop id от яндекс кассы
+	ShopId	string	`json:"shopId" gorm:"type:int;"` // shop id от яндекс кассы
 
 	// URL для уведомлений со стороны Я.Кассы.
 	URL		string 	`json:"url" gorm:"type:varchar(255);"`
@@ -47,10 +45,10 @@ type YandexPayment struct {
 }
 
 // ############# Entity interface #############
-func (yandexPayment YandexPayment) GetID() uint { return yandexPayment.ID }
-func (yandexPayment *YandexPayment) setID(id uint) { yandexPayment.ID = id }
-func (yandexPayment YandexPayment) GetAccountID() uint { return yandexPayment.AccountID }
-func (yandexPayment *YandexPayment) setAccountID(id uint) { yandexPayment.AccountID = id }
+func (yandexPayment YandexPayment) GetId() uint { return yandexPayment.Id }
+func (yandexPayment *YandexPayment) setId(id uint) { yandexPayment.Id = id }
+func (yandexPayment YandexPayment) GetAccountId() uint { return yandexPayment.AccountId }
+func (yandexPayment *YandexPayment) setAccountId(id uint) { yandexPayment.AccountId = id }
 func (YandexPayment) SystemEntity() bool { return false }
 
 // ############# Entity interface #############
@@ -60,8 +58,8 @@ func (YandexPayment) PgSqlCreate() {
 	db.Model(&YandexPayment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }
 func (yandexPayment *YandexPayment) BeforeCreate(scope *gorm.Scope) error {
-	yandexPayment.ID = 0
-	yandexPayment.HashID = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
+	yandexPayment.Id = 0
+	yandexPayment.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	return nil
 }
 
@@ -89,22 +87,22 @@ func (YandexPayment) get(id uint) (Entity, error) {
 	return &yandexPayment, nil
 }
 func (yandexPayment *YandexPayment) load() error {
-	if yandexPayment.ID < 1 {
-		return utils.Error{Message: "Невозможно загрузить YandexPayment - не указан  ID"}
+	if yandexPayment.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить YandexPayment - не указан  Id"}
 	}
 
-	err := db.First(yandexPayment,yandexPayment.ID).Error
+	err := db.First(yandexPayment,yandexPayment.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (YandexPayment) getList(accountID uint, sortBy string) ([]Entity, uint, error) {
-	return  YandexPayment{}.getPaginationList(accountID, 0, 100, sortBy, "")
+func (YandexPayment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+	return  YandexPayment{}.getPaginationList(accountId, 0, 100, sortBy, "")
 }
 
-func (YandexPayment) getPaginationList(accountID uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (YandexPayment) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	webHooks := make([]YandexPayment,0)
 	var total uint
@@ -115,7 +113,7 @@ func (YandexPayment) getPaginationList(accountID uint, offset, limit int, sortBy
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&YandexPayment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+		err := db.Model(&YandexPayment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -123,7 +121,7 @@ func (YandexPayment) getPaginationList(accountID uint, offset, limit int, sortBy
 
 		// Определяем total
 		err = db.Model(&YandexPayment{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountID, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -131,14 +129,14 @@ func (YandexPayment) getPaginationList(accountID uint, offset, limit int, sortBy
 
 	} else {
 
-		err := db.Model(&YandexPayment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountID).
+		err := db.Model(&YandexPayment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webHooks).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&YandexPayment{}).Where("account_id = ?", accountID).Count(&total).Error
+		err = db.Model(&YandexPayment{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -166,11 +164,11 @@ func (YandexPayment) getByEvent(eventName string) (*YandexPayment, error) {
 
 func (yandexPayment *YandexPayment) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).
-		Model(yandexPayment).Where("id", yandexPayment.ID).Omit("id", "account_id").Updates(input).Error
+		Model(yandexPayment).Where("id", yandexPayment.Id).Omit("id", "account_id").Updates(input).Error
 }
 
 func (yandexPayment YandexPayment) delete () error {
-	return db.Model(YandexPayment{}).Where("id = ?", yandexPayment.ID).Delete(yandexPayment).Error
+	return db.Model(YandexPayment{}).Where("id = ?", yandexPayment.Id).Delete(yandexPayment).Error
 }
 // ######### END CRUD Functions ############
 
@@ -180,23 +178,23 @@ func (yandexPayment YandexPayment) delete () error {
 func (yandexPayment YandexPayment) CreatePaymentByOrder(order Order) (*Payment, error) {
 
 	_p := Payment {
-		AccountID: yandexPayment.AccountID,
+		AccountId: yandexPayment.AccountId,
 		Paid: false,
 		Amount: Amount{Value: float64(12),Currency: "RUB"},
-		Description:  fmt.Sprintf("Заказ №%v в магазине AiroCliamte", order.ID),  // Видит клиент
+		Description:  fmt.Sprintf("Заказ №%v в магазине AiroCliamte", order.Id),  // Видит клиент
 		PaymentMethod: PaymentMethod{Type: "bank_card"},
 		Confirmation: Confirmation{Type: "redirect", ReturnUrl: yandexPayment.ReturnUrl},
 
 		// Чтобы понять какой платеж был оплачен!!!
 		Metadata: postgres.Jsonb{ RawMessage: utils.MapToRawJson(map[string]interface{}{
-			"orderID":order.ID,
-			"accountID":yandexPayment.AccountID,
+			"orderId":order.Id,
+			"accountId":yandexPayment.AccountId,
 		})},
 		SavePaymentMethod: yandexPayment.SavePaymentMethod,
-		OwnerID: yandexPayment.ID,
+		OwnerId: yandexPayment.Id,
 		Capture: yandexPayment.Capture,
 		OwnerType: "yandex_payment",
-		OrderID: order.ID,
+		OrderId: order.Id,
 	}
 
 	// создаем внутри платеж
@@ -242,7 +240,7 @@ func (yandexPayment YandexPayment) ExternalCreate(payment *Payment) error {
 
 	request.Header.Set("Idempotence-Key", uuidV4.String())
 	request.Header.Set("Content-Type", "application/json")
-	request.SetBasicAuth(yandexPayment.ShopID, yandexPayment.ApiKey)
+	request.SetBasicAuth(yandexPayment.ShopId, yandexPayment.ApiKey)
 
 	// Делаем вызов
 	client := &http.Client{}

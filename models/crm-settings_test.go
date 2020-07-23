@@ -10,8 +10,8 @@ func TestGetCrmSettings(t *testing.T) {
 		t.Fatalf("Не удалось загрузить настройки crm-системы: %v", err)
 	}
 
-	if settings.ID != 1 {
-		t.Fatalf("ID у строки настроек не равен 1: , %v", settings)
+	if settings.Id != 1 {
+		t.Fatalf("Id у строки настроек не равен 1: , %v", settings)
 	}
 }
 

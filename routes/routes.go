@@ -36,7 +36,7 @@ func Handlers() *mux.Router {
 	// Mount all root point of routes
 	rApp := r.Host("app." + crmHost).PathPrefix("/ui-api").Subrouter() // APP [app.ratuscrm.com/ui-api]
 	rApi := r.Host("api." + crmHost).Subrouter() // API [api.ratuscrm.com]
-	rUiApi := r.Host("ui.api." + crmHost).PathPrefix("/accounts/{accountHashID:[a-z0-9]+}").Subrouter() // UI/API [ui.api.ratuscrm.com]
+	rUiApi := r.Host("ui.api." + crmHost).PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter() // UI/API [ui.api.ratuscrm.com]
 	rCDN := r.Host("cdn." + crmHost).Subrouter() // API [cdn.ratuscrm.com]
 	rTracking := r.Host("tracking." + crmHost).Subrouter() // API [tracking.ratuscrm.com]
 	rMTA1 := r.Host("mta1." + crmHost).Subrouter() // API [mta1.ratuscrm.com]
@@ -69,18 +69,18 @@ func Handlers() *mux.Router {
 		2. middleware.CheckAppUiApiStatus - проверяет статус App UI/API в настройках GUI RatusCRM
 		3. middleware.CheckUiApiStatus - проверяет статус Public UI/API для всех аккаунтов
 
-		4. middleware.ContextMuxVarAccount - Вставляет в контекст issuerAccountID из hashAccountID (раскрытие issuer account) && issuerAccount
-		5. middleware.ContextMainAccount - устанавливает в контекст issuerAccountID = 1 && issuerAccount
+		4. middleware.ContextMuxVarAccount - Вставляет в контекст issuerAccountId из hashAccountId (раскрытие issuer account) && issuerAccount
+		5. middleware.ContextMainAccount - устанавливает в контекст issuerAccountId = 1 && issuerAccount
 
-	  	6. middleware.BearerAuthentication - читает с проверкой JWT, проверяет статус API в аккаунте. Дополняет контекст accountID && account
-		7. middleware.JwtUserAuthentication - проверяет JWT и устанавливает в контекст userID & user
-		8. middleware.JwtFullAuthentication - проверяет JWT и устанавливает в контекст userID & user, accountID && account
+	  	6. middleware.BearerAuthentication - читает с проверкой JWT, проверяет статус API в аккаунте. Дополняет контекст accountId && account
+		7. middleware.JwtUserAuthentication - проверяет JWT и устанавливает в контекст userId & user
+		8. middleware.JwtFullAuthentication - проверяет JWT и устанавливает в контекст userId & user, accountId && account
 
 	******************************************************************************************************************/
 	rApi.Use	(middleware.CorsAPIAccessControl, 		middleware.CheckApiStatus, 		middleware.BearerAuthentication)
 	rApp.Use	(middleware.CheckAppUiApiStatus,	middleware.AddContextMainAccount)
-	// rUiApi.Use	(middleware.CorsAccessControl, 		middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccountHashID)
-	rUiApi.Use	(middleware.CorsAccessControl, 		middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccountHashID)
+	// rUiApi.Use	(middleware.CorsAccessControl, 		middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccountHashId)
+	rUiApi.Use	(middleware.CorsAccessControl, 		middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccountHashId)
 
 	// RouteHandlers
 	AppRoutes(rApp)

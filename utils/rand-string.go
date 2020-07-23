@@ -13,7 +13,6 @@ import (
 //const letterBytes = "1234567890abcdefghijklmnopqrstuvwxyz"
 const letterBytesChar = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const letterBytesNum = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const LENGTH_HASH_ID  = 8
 
 
 func RandStringBytes(n int) string {

@@ -44,14 +44,14 @@ func EventListenerGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventListenerID, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerID")
+	eventListenerId, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке web site ID"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке web site Id"))
 		return
 	}
 
 	var eventListener models.EventListener
-	err = account.LoadEntity(&eventListener, eventListenerID)
+	err = account.LoadEntity(&eventListener, eventListenerId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -124,14 +124,14 @@ func EventListenerUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventListenerID, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerID")
+	eventListenerId, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
 	var eventListener models.EventListener
-	err = account.LoadEntity(&eventListener, eventListenerID)
+	err = account.LoadEntity(&eventListener, eventListenerId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -162,14 +162,14 @@ func EventListenerDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventListenerID, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerID")
+	eventListenerId, err := utilsCr.GetUINTVarFromRequest(r, "eventListenerId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке ID шаблона"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
 	var eventListener models.EventListener
-	err = account.LoadEntity(&eventListener, eventListenerID)
+	err = account.LoadEntity(&eventListener, eventListenerId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
