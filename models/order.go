@@ -14,10 +14,14 @@ type Order struct {
 	AccountId 	uint 	`json:"accountId" gorm:"index,not null"` // аккаунт-владелец ключа
 
 	// Комментарий клиента к заказу
-	CustomerComments string	`json:"description" gorm:"type:varchar(255);"`
+	CustomerComment string	`json:"customerComment" gorm:"type:varchar(255);"`
 
 	// Комментарии к заказу
 	Comments	[]OrderComment `json:"comments"`
+
+	// Ответственный менеджер
+	UserId 		uint	`json:"userId" gorm:"index,not null"`
+	User		User	`json:"user"`
 
 	////// Данные заказа ///////
 	Individual	bool `json:"individual" gorm:"type:bool;default:true;not null;"` // Физ.лицо - true, Юрлицо - false
@@ -73,7 +77,7 @@ func (Order) get(id uint) (Entity, error) {
 
 	var order Order
 
-	err := db.Preload("WebSite").Preload("OrderChannel").First(&order, id).Error
+	err := db.Preload("User").Preload("WebSite").Preload("OrderChannel").First(&order, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +89,7 @@ func (order *Order) load() error {
 		return utils.Error{Message: "Невозможно загрузить Order - не указан  Id"}
 	}
 
-	err := db.Preload("WebSite").Preload("OrderChannel").First(order, order.Id).Error
+	err := db.Preload("User").Preload("WebSite").Preload("OrderChannel").First(order, order.Id).Error
 	if err != nil {
 		fmt.Println("Ja!")
 		return err
@@ -94,29 +98,7 @@ func (order *Order) load() error {
 	return nil
 }
 func (Order) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-
-	orders := make([]Order,0)
-	var total uint
-
-	err := db.Preload("WebSite").Preload("OrderChannel").Model(&Order{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
-		Find(&orders).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Preload("WebSite").Preload("OrderChannel").Model(&Order{}).Where("account_id = ?", accountId).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(orders))
-	for i,_ := range orders {
-		entities[i] = &orders[i]
-	}
-
-	return entities, total, nil
+	return Order{}.getPaginationList(accountId, 0,100,sortBy,"")
 }
 func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
@@ -130,14 +112,14 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 		search = "%"+search+"%"
 
 		err := db.Model(&Order{}).Preload("WebSite").Preload("OrderChannel").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&orders, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
+			Find(&orders, "customer_comment ILIKE ?", search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
 		err = db.Model(&Order{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
+			Where("account_id = ? AND customer_comment ILIKE ?", accountId, search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -173,7 +155,7 @@ func (order *Order) update(input map[string]interface{}) error {
 	delete(input,"orderChannel")
 
 	return db.Set("gorm:association_autoupdate", false).
-		Model(order).Preload("WebSite").Preload("OrderChannel").Omit("id", "account_id").Updates(input).Error
+		Model(order).Preload("User").Preload("WebSite").Preload("OrderChannel").Omit("id", "account_id").Updates(input).Error
 }
 
 func (order Order) delete () error {

@@ -33,17 +33,19 @@ func (OrderChannel) PgSqlCreate() {
 	}
 	db.Model(&OrderChannel{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 
-	orderChannels := []OrderChannel{
+	orderChannels := []OrderChannel {
 		{Name:   "Через корзину",	Description: "-"},
 		{Name:   "В один клик",		Description: "Экспресс заказ"},
-		{Name:   "Запрос на понижение цены",Description: "-"},
-		{Name:   "Мессенджеры",Description: "-"},
+		{Name:   "Запрос на понижение цены",	Description: "-"},
+		{Name:   "Заявка с посадочной страницы",Description: "-"},
+		{Name:   "Мессенджеры",	Description: "-"},
 		{Name:   "Онлайн-консультант",Description: "-"},
-		{Name:   "Оффлайн",Description: "-"},
-		{Name:   "По телефону",Description: "-"},
-		{Name:   "Пропущенный звонок",Description: "-"},
-		{Name:   "Пропущенный звонок",Description: "-"},
+		{Name:   "Оффлайн",		Description: "-"},
+		{Name:   "По телефону",	Description: "-"},
+		{Name:   "Пропущенный звонок",	Description: "-"},
+		{Name:   "Мобильное приложение",Description: "-"},
 	}
+
 	for i := range(orderChannels) {
 		_, err := Account{Id: 1}.CreateEntity(&orderChannels[i])
 		if err != nil {
@@ -92,29 +94,7 @@ func (orderChannel *OrderChannel) load() error {
 }
 
 func (OrderChannel) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-
-	orderChannels := make([]OrderChannel,0)
-	var total uint
-
-	err := db.Model(&OrderChannel{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
-		Find(&orderChannels).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&OrderChannel{}).Where("account_id = ?", accountId).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(orderChannels))
-	for i,_ := range orderChannels {
-		entities[i] = &orderChannels[i]
-	}
-
-	return entities, total, nil
+	return OrderChannel{}.getPaginationList(accountId, 0,100,sortBy,"")
 }
 
 func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
@@ -129,14 +109,14 @@ func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy,
 		search = "%"+search+"%"
 
 		err := db.Model(&OrderChannel{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&orderChannels, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
+			Find(&orderChannels, "name ILIKE ? OR description ILIKE ?", search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
 		err = db.Model(&OrderChannel{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR description ILIKE ?", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -144,14 +124,14 @@ func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 	} else {
 
-		err := db.Model(&OrderChannel{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&OrderChannel{}).Limit(limit).Offset(offset).Order(sortBy).Where("account_id IN (?)", []uint{1, accountId}).
 			Find(&orderChannels).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&OrderChannel{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&OrderChannel{}).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}

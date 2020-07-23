@@ -12,6 +12,7 @@ type OrderComment struct {
 	Id     		uint   	`json:"id" gorm:"primary_key"`
 	AccountId 	uint	`json:"accountId" gorm:"index,not null"` // аккаунт-владелец ключа
 	UserId 		uint	`json:"userId" gorm:"index,not null"`
+	User	User	`json:"user"`
 
 	Description string 	`json:"description" gorm:"type:varchar(255);"` // Описание назначения канала
 	ManagersComments string `json:"description" gorm:"type:varchar(255);"`
@@ -75,28 +76,7 @@ func (orderComment *OrderComment) load() error {
 
 func (OrderComment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
-	orderChannels := make([]OrderComment,0)
-	var total uint
-
-	err := db.Model(&OrderComment{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
-		Find(&orderChannels).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&OrderComment{}).Where("account_id = ?", accountId).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(orderChannels))
-	for i,_ := range orderChannels {
-		entities[i] = &orderChannels[i]
-	}
-
-	return entities, total, nil
+	return OrderComment{}.getPaginationList(accountId, 0,100,sortBy,"")
 }
 
 func (OrderComment) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {

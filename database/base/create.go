@@ -1659,10 +1659,11 @@ func UploadTestDataPart_IV()  {
 	// Создаем заказ (Order)
 	entity, err := airoAccount.CreateEntity(
 		&models.Order{
-			CustomerComments: "Привезти с 10 до 12:00, контакт Светлана.",
+			CustomerComment: "Привезти с 10 до 12:00, контакт Светлана.",
 			Individual: true,
 			WebSiteId: 5,
 			OrderChannelId: 1,
+			UserId: 2,
 		})
 	if err != nil {
 		log.Fatalf("Не удалось создать заказ: ", err)
