@@ -2,7 +2,6 @@ package models
 
 import (
 	"github.com/jinzhu/gorm"
-	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
 	"time"
@@ -44,22 +43,25 @@ type Order struct {
 	OrderChannel 	OrderChannel `json:"orderChannel"`
 
 	// Состав заказа
-	Products 		[]Product `json:"products" gorm:"many2many:orders_products;preload"`
-	// Cart	CartOrder	`json:"_cart" gorm:"-"`
+	// Products 		[]Product `json:"products" gorm:"many2many:orders_products;preload"`
+	// Cart	Cart		`json:"cart"`
+	CartItems	[]CartItem		`json:"cartItems"`
+	// !!! фиксируем стоимость заказа в момент заказа!!!
+	AmountValue	float64	`json:"amountValue"`
 
-	// Товар Id,
-	Cart	postgres.Jsonb `json:"cart" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	// { productId:"",count:"",total:""}
+	// Cart	postgres.Jsonb `json:"cart" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 
 	CreatedAt time.Time 	`json:"createdAt"`
 	UpdatedAt time.Time 	`json:"updatedAt"`
 	DeletedAt *time.Time 	`json:"deletedAt"`
 }
 
-type CartOrder struct {
+/*type CartOrder struct {
 	ProductId	uint    `json:"productId"`   // id продуктов
 	Number		int		`json:"number"`		// число товаров
 	Value		float64	`json:"value"`      // Общая стоимость корзины
-}
+}*/
 
 // ############# Entity interface #############
 func (order Order) GetId() uint { return order.Id }

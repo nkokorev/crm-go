@@ -3,49 +3,46 @@ package models
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
-	"time"
 )
 
 // Корзины товаров
-type Cart struct {
+type CartItem struct {
 	
 	Id     		uint   	`json:"id" gorm:"primary_key"`
 	AccountId 	uint	`json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
+	OrderId 	uint	`json:"orderId" gorm:"index;not null"` // заказ, к которому относится корзина
 
 	ProductId	uint    // позиции товаров
 	Number		uint	// число товаров
 
+	Product 	Product `json:"product" gorm:"preload:false"`
+	Order	 	Product `json:"product" gorm:"preload:false"`
 
-	Products 		[]Product `json:"products" gorm:"many2many:orders_products;preload"`
-
-	Description string 	`json:"description" gorm:"type:varchar(255);"` // Описание назначения канала
-	ManagersComments string `json:"description" gorm:"type:varchar(255);"`
-	
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	// CreatedAt time.Time `json:"createdAt"`
+	// UpdatedAt time.Time `json:"updatedAt"`
 }
 
 // ############# Entity interface #############
-func (orderComment Cart) GetId() uint { return orderComment.Id }
-func (orderComment *Cart) setId(id uint) { orderComment.Id = id }
-func (orderComment Cart) GetAccountId() uint { return orderComment.AccountId }
-func (orderComment *Cart) setAccountId(id uint) { orderComment.AccountId = id }
-func (orderComment Cart) SystemEntity() bool { return orderComment.AccountId == 1 }
+func (orderComment CartItem) GetId() uint { return orderComment.Id }
+func (orderComment *CartItem) setId(id uint) { orderComment.Id = id }
+func (orderComment CartItem) GetAccountId() uint { return orderComment.AccountId }
+func (orderComment *CartItem) setAccountId(id uint) { orderComment.AccountId = id }
+func (orderComment CartItem) SystemEntity() bool { return orderComment.AccountId == 1 }
 
 // ############# Entity interface #############
 
-func (Cart) PgSqlCreate() {
-	db.CreateTable(&Cart{})
-	db.Model(&Cart{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+func (CartItem) PgSqlCreate() {
+	db.CreateTable(&CartItem{})
+	db.Model(&CartItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	
 }
-func (orderComment *Cart) BeforeCreate(scope *gorm.Scope) error {
+func (orderComment *CartItem) BeforeCreate(scope *gorm.Scope) error {
 	orderComment.Id = 0
 	return nil
 }
 
 // ######### CRUD Functions ############
-func (orderComment Cart) create() (Entity, error)  {
+func (orderComment CartItem) create() (Entity, error)  {
 	_orderChannel := orderComment
 	if err := db.Create(&_orderChannel).Error; err != nil {
 		return nil, err
@@ -56,9 +53,9 @@ func (orderComment Cart) create() (Entity, error)  {
 	return entity, nil
 }
 
-func (Cart) get(id uint) (Entity, error) {
+func (CartItem) get(id uint) (Entity, error) {
 
-	var orderComment Cart
+	var orderComment CartItem
 
 	err := db.First(&orderComment, id).Error
 	if err != nil {
@@ -66,9 +63,9 @@ func (Cart) get(id uint) (Entity, error) {
 	}
 	return &orderComment, nil
 }
-func (orderComment *Cart) load() error {
+func (orderComment *CartItem) load() error {
 	if orderComment.Id < 1 {
-		return utils.Error{Message: "Невозможно загрузить Cart - не указан  Id"}
+		return utils.Error{Message: "Невозможно загрузить CartItem - не указан  Id"}
 	}
 
 	err := db.First(orderComment, orderComment.Id).Error
@@ -78,14 +75,14 @@ func (orderComment *Cart) load() error {
 	return nil
 }
 
-func (Cart) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (CartItem) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
-	return Cart{}.getPaginationList(accountId, 0,100,sortBy,"")
+	return CartItem{}.getPaginationList(accountId, 0,100,sortBy,"")
 }
 
-func (Cart) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
-	orderChannels := make([]Cart,0)
+	orderChannels := make([]CartItem,0)
 	var total uint
 
 	// if need to search
@@ -94,14 +91,14 @@ func (Cart) getPaginationList(accountId uint, offset, limit int, sortBy, search 
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Cart{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&CartItem{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orderChannels, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Cart{}).
+		err = db.Model(&CartItem{}).
 			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -110,14 +107,14 @@ func (Cart) getPaginationList(accountId uint, offset, limit int, sortBy, search 
 
 	} else {
 
-		err := db.Model(&Cart{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&CartItem{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orderChannels).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Cart{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&CartItem{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -132,13 +129,13 @@ func (Cart) getPaginationList(accountId uint, offset, limit int, sortBy, search 
 	return entities, total, nil
 }
 
-func (orderComment *Cart) update(input map[string]interface{}) error {
+func (orderComment *CartItem) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).
 		Model(orderComment).Omit("id", "account_id").Updates(input).Error
 }
 
-func (orderComment Cart) delete () error {
-	return db.Model(Cart{}).Where("id = ?", orderComment.Id).Delete(orderComment).Error
+func (orderComment CartItem) delete () error {
+	return db.Model(CartItem{}).Where("id = ?", orderComment.Id).Delete(orderComment).Error
 }
 // ######### END CRUD Functions ############
 
