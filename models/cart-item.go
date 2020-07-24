@@ -23,11 +23,11 @@ type CartItem struct {
 }
 
 // ############# Entity interface #############
-func (orderComment CartItem) GetId() uint { return orderComment.Id }
-func (orderComment *CartItem) setId(id uint) { orderComment.Id = id }
-func (orderComment CartItem) GetAccountId() uint { return orderComment.AccountId }
-func (orderComment *CartItem) setAccountId(id uint) { orderComment.AccountId = id }
-func (orderComment CartItem) SystemEntity() bool { return orderComment.AccountId == 1 }
+func (cartItem CartItem) GetId() uint { return cartItem.Id }
+func (cartItem *CartItem) setId(id uint) { cartItem.Id = id }
+func (cartItem CartItem) GetAccountId() uint { return cartItem.AccountId }
+func (cartItem *CartItem) setAccountId(id uint) { cartItem.AccountId = id }
+func (cartItem CartItem) SystemEntity() bool { return cartItem.AccountId == 1 }
 
 // ############# Entity interface #############
 
@@ -36,14 +36,14 @@ func (CartItem) PgSqlCreate() {
 	db.Model(&CartItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	
 }
-func (orderComment *CartItem) BeforeCreate(scope *gorm.Scope) error {
-	orderComment.Id = 0
+func (cartItem *CartItem) BeforeCreate(scope *gorm.Scope) error {
+	cartItem.Id = 0
 	return nil
 }
 
 // ######### CRUD Functions ############
-func (orderComment CartItem) create() (Entity, error)  {
-	_orderChannel := orderComment
+func (cartItem CartItem) create() (Entity, error)  {
+	_orderChannel := cartItem
 	if err := db.Create(&_orderChannel).Error; err != nil {
 		return nil, err
 	}
@@ -55,20 +55,20 @@ func (orderComment CartItem) create() (Entity, error)  {
 
 func (CartItem) get(id uint) (Entity, error) {
 
-	var orderComment CartItem
+	var cartItem CartItem
 
-	err := db.First(&orderComment, id).Error
+	err := db.First(&cartItem, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &orderComment, nil
+	return &cartItem, nil
 }
-func (orderComment *CartItem) load() error {
-	if orderComment.Id < 1 {
+func (cartItem *CartItem) load() error {
+	if cartItem.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить CartItem - не указан  Id"}
 	}
 
-	err := db.First(orderComment, orderComment.Id).Error
+	err := db.First(cartItem, cartItem.Id).Error
 	if err != nil {
 		return err
 	}
@@ -129,13 +129,13 @@ func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 	return entities, total, nil
 }
 
-func (orderComment *CartItem) update(input map[string]interface{}) error {
+func (cartItem *CartItem) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).
-		Model(orderComment).Omit("id", "account_id").Updates(input).Error
+		Model(cartItem).Omit("id", "account_id").Updates(input).Error
 }
 
-func (orderComment CartItem) delete () error {
-	return db.Model(CartItem{}).Where("id = ?", orderComment.Id).Delete(orderComment).Error
+func (cartItem CartItem) delete () error {
+	return db.Model(CartItem{}).Where("id = ?", cartItem.Id).Delete(cartItem).Error
 }
 // ######### END CRUD Functions ############
 
