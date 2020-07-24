@@ -47,6 +47,7 @@ type Order struct {
 	// Cart	Cart		`json:"cart"`
 	CartItems	[]CartItem		`json:"cartItems"`
 	// !!! фиксируем стоимость заказа в момент заказа!!!
+	// возможно нужно внести внутренний expiredAt, т.е. до какого момента действует указанная цена
 	AmountValue	float64	`json:"amountValue"`
 
 	// { productId:"",count:"",total:""}
