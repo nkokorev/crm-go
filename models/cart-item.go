@@ -13,11 +13,13 @@ type CartItem struct {
 	OrderId 	uint	`json:"orderId" gorm:"index;not null"` // заказ, к которому относится корзина
 
 	ProductId	uint    // Id позиции товара
-	ProductDescription	string `json:"productDescription" gorm:"type:varchar(128);not null;"`
+	Description	string `json:"description" gorm:"type:varchar(128);not null;"`
 	Quantity	int		`json:"quantity" gorm:"type:int;not null;"`// число ед. товара
 
 	// value / currency
-	Amount	Amount	`json:"amount"`
+	// Amount	Amount	`json:"amount"`
+	AmountId  uint	`json:"amountId" gorm:"type:int;not null;"`
+	Amount  Amount	`json:"amount"`
 
 	// Ставка НДС
 	VatCode	uint	`json:"vat_code"`
@@ -34,7 +36,7 @@ func (cartItem CartItem) GetId() uint { return cartItem.Id }
 func (cartItem *CartItem) setId(id uint) { cartItem.Id = id }
 func (cartItem CartItem) GetAccountId() uint { return cartItem.AccountId }
 func (cartItem *CartItem) setAccountId(id uint) { cartItem.AccountId = id }
-func (cartItem CartItem) SystemEntity() bool { return cartItem.AccountId == 1 }
+func (cartItem CartItem) SystemEntity() bool { return false; }
 
 // ############# Entity interface #############
 

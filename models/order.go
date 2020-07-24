@@ -30,8 +30,8 @@ type Order struct {
 	WebSite		WebSite	`json:"webSite"`
 
 	// Данные клиента
-	ClientId 	uint	`json:"clientId" gorm:"type:int;not null"`
-	Client		User	`json:"client"`
+	CustomerId 	uint	`json:"customerId" gorm:"type:int;not null"`
+	Customer	User	`json:"customer"`
 
 	// Данные компании-заказчика
 	CompanyId 	uint	`json:"companyId" gorm:"type:int;not null"`
@@ -42,12 +42,13 @@ type Order struct {
 	OrderChannel 	OrderChannel `json:"orderChannel"`
 
 	// Состав заказа
-	// CartItems 		[]Product `json:"products" gorm:"many2many:orders_products;preload"`
-	// Cart	Cart		`json:"cart"`
 	CartItems	[]CartItem		`json:"cartItems"`
 	// !!! фиксируем стоимость заказа в момент заказа!!!
 	// возможно нужно внести внутренний expiredAt, т.е. до какого момента действует указанная цена
-	AmountValue	float64	`json:"amountValue"`
+	AmountId  uint	`json:"amountId" gorm:"type:int;not null;"`
+	Amount  Amount	`json:"amount"`
+
+	// AmountValue	float64	`json:"amountValue"`
 
 	// { productId:"",count:"",total:""}
 	// Cart	postgres.Jsonb `json:"cart" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
@@ -56,12 +57,6 @@ type Order struct {
 	UpdatedAt time.Time 	`json:"updatedAt"`
 	DeletedAt *time.Time 	`json:"deletedAt"`
 }
-
-/*type CartOrder struct {
-	ProductId	uint    `json:"productId"`   // id продуктов
-	Number		int		`json:"number"`		// число товаров
-	Value		float64	`json:"value"`      // Общая стоимость корзины
-}*/
 
 // ############# Entity interface #############
 func (order Order) GetId() uint { return order.Id }
@@ -124,7 +119,7 @@ func (Order) get(id uint) (Entity, error) {
 
 	var order Order
 
-	err := db.Preload("CartItems").Preload("Manager").Preload("WebSite").Preload("OrderChannel").First(&order, id).Error
+	err := db.Preload("Amount").Preload("CartItems").Preload("Manager").Preload("WebSite").Preload("OrderChannel").First(&order, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +132,7 @@ func (order *Order) load() error {
 		return utils.Error{Message: "Невозможно загрузить Order - не указан  Id"}
 	}
 
-	err := db.Preload("CartItems").Preload("Manager").Preload("WebSite").Preload("OrderChannel").First(order, order.Id).Error
+	err := db.Preload("Amount").Preload("CartItems").Preload("Manager").Preload("WebSite").Preload("OrderChannel").First(order, order.Id).Error
 	if err != nil {
 		return err
 	}
@@ -160,7 +155,8 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Order{}).Preload("CartItems").Preload("Manager").Preload("WebSite").Preload("OrderChannel").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&Order{}).Preload("Amount").Preload("CartItems").Preload("Manager").Preload("WebSite").Preload("OrderChannel").
+			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders, "customer_comment ILIKE ?", search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -176,7 +172,8 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 
 	} else {
 
-		err := db.Model(&Order{}).Limit(limit).Preload("CartItems").Preload("Manager").Preload("WebSite").Preload("OrderChannel").Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&Order{}).Limit(limit).Preload("CartItems").Preload("Amount").Preload("Manager").Preload("WebSite").Preload("OrderChannel").
+			Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -210,7 +207,7 @@ func (order *Order) update(input map[string]interface{}) error {
 	delete(input,"cartItems")
 
 	return db.Set("gorm:association_autoupdate", false).
-		Model(order).Preload("CartItems").Preload("Manager").Preload("WebSite").Preload("OrderChannel").Omit("id", "account_id").Updates(input).Error
+		Model(order).Preload("Amount").Preload("CartItems").Preload("Manager").Preload("WebSite").Preload("OrderChannel").Omit("id", "account_id").Updates(input).Error
 }
 
 func (order Order) delete () error {

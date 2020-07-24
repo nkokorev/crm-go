@@ -1643,9 +1643,18 @@ func RefreshTablesPart_IV() {
 		log.Fatalf("Cant create tables -1: %v", err)
 		return
 	}
-	pool.DropTableIfExists(models.CartItem{}, models.PaymentSubject{},models.OrderComment{},models.OrderChannel{},models.Order{}, models.Payment{},models.YandexPayment{})
+	pool.DropTableIfExists(
+		models.PaymentAmount{},
+		models.CartItem{},
+		models.PaymentSubject{},
+		models.OrderComment{},
+		models.OrderChannel{},
+		models.Order{},
+		models.Payment{},
+		models.YandexPayment{})
 
 	// А теперь создаем
+	models.PaymentAmount{}.PgSqlCreate()
 	models.CartItem{}.PgSqlCreate()
 	models.PaymentSubject{}.PgSqlCreate()
 	models.OrderComment{}.PgSqlCreate()
@@ -1672,6 +1681,7 @@ func UploadTestDataPart_IV()  {
 				WebSiteId: 5,
 				OrderChannelId: 1,
 				ManagerId: 2,
+				Amount: models.PaymentAmount{AccountId: airoAccount.Id, Value: 20.01, Currency: "RUB"},
 			})
 		if err != nil {
 			log.Fatalf("Не удалось создать заказ: ", err)

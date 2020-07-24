@@ -24,17 +24,20 @@ type Payment struct {
 	// объем платежа по факту
 	// AmountValue 	float64	`json:"amountValue" gorm:"type:numeric;default:0"`
 	// AmountCurrency 	string 	`json:"amountCurrency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
-	Amount  Amount	`json:"amount" gorm:"type:JSONB;"`
+	AmountId  uint	`json:"amountId" gorm:"type:int;not null;"`
+	Amount  Amount	`json:"amount"`
 
 	// Каков "приход" за вычетом комиссии посредника.
 	// IncomeValue 	float64 `json:"incomeValue" gorm:"type:numeric;default:0"`
 	// IncomeCurrency 	string 	`json:"incomeCurrency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
+	IncomeAmountId  uint	`json:"incomeAmountId" gorm:"type:int;not null;"`
 	IncomeAmount  Amount	`json:"income_amount"`
 
 	// Сумма, которая вернулась пользователю. Присутствует, если у этого платежа есть успешные возвраты.
 	Refundable 				bool 	`json:"refundable" gorm:"type:bool;default:false;"` // Возможность провести возврат по API
 	// RefundedAmountValue 	float64	`json:"refundedAmountValue" gorm:"type:numeric;default:0"`
 	// RefundedAmountCurrency 	string 	`json:"refundedAmountCurrency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
+	RefundedAmountId  uint	`json:"refundedAmountId" gorm:"type:int;not null;"`
 	RefundedAmount  Amount	`json:"refunded_amount"`
 
 	// описание транзакции, которую в Я.Кассе пользователь увидит при оплате
@@ -103,12 +106,6 @@ type Payment struct {
 	DeletedAt *time.Time `json:"-" sql:"index"`
 }
 
-//Объект платежа - кто-то, что-то вам заплатил. Или хочет заплатить. Или должен...
-type Amount struct {
-	Value 	float64	`json:"value" gorm:"type:numeric;default:0"`
-	Currency 	string 	`json:"currency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
-}
-
 type PaymentMethod struct {
 	Type 	string `json:"type" gorm:"type:varchar(32);"`
 }
@@ -139,7 +136,9 @@ type Transfers struct {
 	AccountId	string	`json:"account_id" gorm:"type:varchar(32);default:''"`
 
 	// Код авторизации банковской карты. Выдается эмитентом и подтверждает проведение авторизации.
-	Amount	Amount	`json:"amount" ` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+
+	// Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+	Amount	PaymentAmount	`json:"amount"`
 	Status	string	`json:"status" gorm:"type:varchar(50);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
 }
 

@@ -26,7 +26,7 @@ func (orderComment OrderComment) GetId() uint { return orderComment.Id }
 func (orderComment *OrderComment) setId(id uint) { orderComment.Id = id }
 func (orderComment OrderComment) GetAccountId() uint { return orderComment.AccountId }
 func (orderComment *OrderComment) setAccountId(id uint) { orderComment.AccountId = id }
-func (orderComment OrderComment) SystemEntity() bool { return orderComment.AccountId == 1 }
+func (orderComment OrderComment) SystemEntity() bool { return false; }
 
 // ############# Entity interface #############
 
