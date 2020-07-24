@@ -85,7 +85,7 @@ func (product Product) GetId() uint {
 // ######### CRUD Functions ############
 func (product Product) create() (*Product, error)  {
 	var newProduct = product
-	if err := db.Create(&newProduct).First(&newProduct).Error; err != nil { return nil, err }
+	if err := db.Create(&newProduct).Preload("PaymentSubject").First(&newProduct).Error; err != nil { return nil, err }
 
 	event.AsyncFire(Event{}.ProductCreated(newProduct.AccountId, newProduct.Id))
 	return &newProduct, nil
@@ -98,7 +98,7 @@ func (Product) get(id uint) (*Product, error) {
 	//if err := db.Model(&product).Preload("ProductCards").First(&product, id).Error; err != nil {
 	//	return nil, err
 	//}
-	if err := db.Model(&product).Preload("Images", func(db *gorm.DB) *gorm.DB {
+	if err := db.Model(&product).Preload("PaymentSubject").Preload("Images", func(db *gorm.DB) *gorm.DB {
 		return db.Select(Storage{}.SelectArrayWithoutDataURL())
 	}).First(&product, id).Error; err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ func (Product) getList(accountId uint) ([]Product, error) {
 
 	products := make([]Product,0)
 
-	err := db.Model(&Product{}).Preload("ProductCards").Find(&products, "account_id = ?", accountId).Error
+	err := db.Model(&Product{}).Preload("PaymentSubject").Preload("ProductCards").Find(&products, "account_id = ?", accountId).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
@@ -120,12 +120,18 @@ func (Product) getList(accountId uint) ([]Product, error) {
 }
 
 func (product *Product) update(input map[string]interface{}) error {
-	err := db.Set("gorm:association_autoupdate", false).Model(product).Omit("id", "account_id").Updates(input).Error
+	delete(input, "PaymentSubject")
+	delete(input, "UnitMeasurement")
+	delete(input, "Images")
+	delete(input, "ProductCards")
+	
+	err := db.Set("gorm:association_autoupdate", false).
+		Model(&Product{}).Where("id = ?", product.Id).Omit("id", "account_id").Updates(input).Error
 	if err != nil {
 		return err
 	}
 
-	event.AsyncFire(Event{}.ProductUpdated(product.AccountId, product.Id))
+	// event.AsyncFire(Event{}.ProductUpdated(product.AccountId, product.Id))
 
 	return nil
 }
@@ -185,6 +191,7 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 		search = "%"+search+"%"
 
 		err := db.Model(&Product{}).
+			Preload("PaymentSubject").
 			Preload("ProductCards").
 			Preload("Images", func(db *gorm.DB) *gorm.DB {
 				return db.Select(Storage{}.SelectArrayWithoutDataURL())
@@ -212,6 +219,7 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 		}
 
 		err := db.Model(&Product{}).
+			Preload("PaymentSubject").
 			Preload("ProductCards").
 			Preload("Images", func(db *gorm.DB) *gorm.DB {
 				return db.Select(Storage{}.SelectArrayWithoutDataURL())
