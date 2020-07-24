@@ -789,7 +789,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZ с регулировкой черный"), //,
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности черный", ShortName: "Рециркулятор AIRO-DEZ черный",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1,
 			RetailPrice: 19500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -817,7 +817,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZ черный"),
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ черный", ShortName: "Рециркулятор AIRO-DEZ черный",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -845,7 +845,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZ с регулировкой белый"),
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности белый",  ShortName: "Рециркулятор AIRO-DEZ белый",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1,
 			RetailPrice: 19500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -873,7 +873,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZ белый"),
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ",  ShortName: "Рециркулятор AIRO-DEZ белый",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -901,7 +901,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZ COMPACT"),
 			Name:"Мобильный аиродезинфектор AIRO-DEZ COMPACT",  ShortName: "Аиродезинфектор AIRO-DEZ COMPACT",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1,
 			RetailPrice: 39000.00, RetailDiscount: 3000,
 			ShortDescription: "",
 			Description: "",
@@ -931,7 +931,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZPUF"),
 			Name:"Бактерицидная камера пуф AIRO-DEZPUF",  ShortName: "Камера пуф AIRO-DEZPUF",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1,
 			RetailPrice: 11000.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -960,7 +960,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZPUF венге"),
 			Name:"Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге",  ShortName: "Камера AIRO-DEZBOX",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1,
 			RetailPrice: 12000.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -990,7 +990,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZBOX"),
 			Name:"Бактерицидная камера AIRO-DEZBOX",  ShortName: "Камера AIRO-DEZBOX",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1,
 			RetailPrice: 7800.00, RetailDiscount: 800,
 			ShortDescription: "",
 			Description: "",
@@ -1019,7 +1019,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZBOX белая"),
 			Name:"Бактерицидная камера AIRO-DEZBOX белая",  ShortName: "Камера AIRO-DEZBOX белая",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1,
 			RetailPrice: 7800.00, RetailDiscount: 800,
 			ShortDescription: "",
 			Description: "",
@@ -1048,7 +1048,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZTUMB"),
 			Name:"Тумба облучатель бактерицидный AIRO-DEZTUMB",  ShortName: "Бактерицидная тумба AIRO-DEZTUMB",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -1077,7 +1077,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIROTUMB big"),
 			Name:"Тумба облучатель бактерицидный AIRO-DEZTUMB big",  ShortName: "Облучатель AIROTUMB big",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -1107,7 +1107,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZTUMB касцина"),
 			Name:"Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина",  ShortName: "Бактерицидная тумба AIRO-DEZTUMB",
-			ProductType: models.ProductTypeCommodity, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -1643,9 +1643,11 @@ func RefreshTablesPart_IV() {
 		log.Fatalf("Cant create tables -1: %v", err)
 		return
 	}
-	pool.DropTableIfExists(models.OrderComment{},models.OrderChannel{},models.Order{}, models.Payment{},models.YandexPayment{})
+	pool.DropTableIfExists(models.CartItem{}, models.PaymentSubject{},models.OrderComment{},models.OrderChannel{},models.Order{}, models.Payment{},models.YandexPayment{})
 
 	// А теперь создаем
+	models.CartItem{}.PgSqlCreate()
+	models.PaymentSubject{}.PgSqlCreate()
 	models.OrderComment{}.PgSqlCreate()
 	models.OrderChannel{}.PgSqlCreate()
 	models.Order{}.PgSqlCreate()

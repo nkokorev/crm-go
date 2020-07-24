@@ -11,13 +11,6 @@ import (
 	"log"
 )
 
-type ProductType = string
-
-const (
-	ProductTypeCommodity    ProductType = "commodity"
-	ProductTypeService      ProductType = "service"
-)
-
 /*
 Продукт - как единица товара или услуги. То что потом в чеке у пользователя.
 Продукт может быть как шт., упак., так и сборным из других товаров.
@@ -41,18 +34,17 @@ type Product struct {
 
 	// Base properties
 	RetailPrice 			float64 `json:"retailPrice" gorm:"type:numeric;default:0"` // розничная цена
-	//RetailPrice 			decimal.Decimal `json:"retailPrice" gorm:"type:decimal(20,8);default:0"` // розничная цена
 	WholesalePrice 			float64 `json:"wholesalePrice" gorm:"type:numeric;default:0"` // оптовая цена
 	PurchasePrice 			float64 `json:"purchasePrice" gorm:"type:numeric;default:0"` // закупочная цена
 	RetailDiscount 			float64 `json:"retailDiscount" gorm:"type:numeric;default:0"` // розничная фактическая скидка
 
-	ProductType 			ProductType `json:"productType" gorm:"type:varchar(12);default:'commodity';"`// товар или услуга ? [вид номенклатуры]
+	// Признак предмета расчета
+	PaymentSubjectId	uint	`json:"paymentSubjectId" gorm:"type:int;not null;"`// товар или услуга ? [вид номенклатуры]
+	PaymentSubject 		PaymentSubject `json:"paymentSubject"`
+
 	UnitMeasurementId 		uint	`json:"unitMeasurementId" gorm:"type:int;default:1;"` // тип измерения
 	UnitMeasurement 		UnitMeasurement // Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 	
-	// ProductGroupsId uint `json:"productGroupsId"` // группа товара
-	// ProductGroups []ProductGroup `json:"productGroups" gorm:"many2many:product_group_products"`
-
 	ShortDescription string 	`json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 	Description 	string 		`json:"description" gorm:"type:text;"` // pgsql: text
 

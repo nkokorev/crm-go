@@ -3,7 +3,6 @@ package models
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
-	"log"
 	"time"
 )
 
@@ -43,7 +42,7 @@ type Order struct {
 	OrderChannel 	OrderChannel `json:"orderChannel"`
 
 	// Состав заказа
-	// Products 		[]Product `json:"products" gorm:"many2many:orders_products;preload"`
+	// CartItems 		[]Product `json:"products" gorm:"many2many:orders_products;preload"`
 	// Cart	Cart		`json:"cart"`
 	CartItems	[]CartItem		`json:"cartItems"`
 	// !!! фиксируем стоимость заказа в момент заказа!!!
@@ -125,7 +124,7 @@ func (Order) get(id uint) (Entity, error) {
 
 	var order Order
 
-	err := db.Preload("Products").Preload("Manager").Preload("WebSite").Preload("OrderChannel").First(&order, id).Error
+	err := db.Preload("CartItems").Preload("Manager").Preload("WebSite").Preload("OrderChannel").First(&order, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +137,7 @@ func (order *Order) load() error {
 		return utils.Error{Message: "Невозможно загрузить Order - не указан  Id"}
 	}
 
-	err := db.Preload("Products").Preload("Manager").Preload("WebSite").Preload("OrderChannel").First(order, order.Id).Error
+	err := db.Preload("CartItems").Preload("Manager").Preload("WebSite").Preload("OrderChannel").First(order, order.Id).Error
 	if err != nil {
 		return err
 	}
@@ -161,7 +160,7 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Order{}).Preload("Products").Preload("Manager").Preload("WebSite").Preload("OrderChannel").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&Order{}).Preload("CartItems").Preload("Manager").Preload("WebSite").Preload("OrderChannel").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders, "customer_comment ILIKE ?", search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -177,7 +176,7 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 
 	} else {
 
-		err := db.Model(&Order{}).Limit(limit).Preload("Products").Preload("Manager").Preload("WebSite").Preload("OrderChannel").Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&Order{}).Limit(limit).Preload("CartItems").Preload("Manager").Preload("WebSite").Preload("OrderChannel").Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -208,10 +207,10 @@ func (order *Order) update(input map[string]interface{}) error {
 	delete(input,"products")
 	delete(input,"company")
 	delete(input,"client")
-	delete(input,"_cart")
+	delete(input,"cartItems")
 
 	return db.Set("gorm:association_autoupdate", false).
-		Model(order).Preload("Products").Preload("Manager").Preload("WebSite").Preload("OrderChannel").Omit("id", "account_id").Updates(input).Error
+		Model(order).Preload("CartItems").Preload("Manager").Preload("WebSite").Preload("OrderChannel").Omit("id", "account_id").Updates(input).Error
 }
 
 func (order Order) delete () error {
@@ -222,7 +221,7 @@ func (order Order) delete () error {
 
 // ########## Work function ############
 func (order *Order) AppendProducts (products []Product) error {
-	if err := db.Model(order).Association("Products").Replace(products).Error; err != nil {
+	if err := db.Model(order).Association("CartItems").Replace(products).Error; err != nil {
 		return err
 	}
 
@@ -231,31 +230,26 @@ func (order *Order) AppendProducts (products []Product) error {
 
 func (order *Order) RetailPriceCalculation () error {
 
-	sum := float64(0)
+	/*sum := float64(0)
 
-	if len(order.Products) < 1 {
-		// order.Cart.Value = 0
-		// order.Cart.Count = 0
+	if len(order.CartItems) < 1 {
 		return nil
 	}
-	// fmt.Println(order.Products)
-	// sum := float64(0)
 
 	var arrProducts = make([]uint, 0)
-	for _,v := range order.Products {
+	for _,v := range order.CartItems {
 		arrProducts = append(arrProducts, v.Id)
 	}
 
-	// err := db.Table("products").Where("account_id = ? AND id IN (?)", order.AccountId, order.Products).Select("sum(retail_price)").Row().Scan(&sum)
 	err := db.Table("products").Where("account_id = ? AND id IN (?)", order.AccountId, arrProducts).Select("sum(retail_price)").Row().Scan(&sum)
 	if err != nil {
 		log.Fatal(err)
 		return err
-	}
+	}*/
 
 	// fmt.Println(sum)
 	// order.Cart.Value = sum
-	// order.Cart.Count = len(order.Products)
+	// order.Cart.Count = len(order.CartItems)
 
 	return nil
 }

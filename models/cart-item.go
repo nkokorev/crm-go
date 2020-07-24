@@ -12,8 +12,15 @@ type CartItem struct {
 	AccountId 	uint	`json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
 	OrderId 	uint	`json:"orderId" gorm:"index;not null"` // заказ, к которому относится корзина
 
-	ProductId	uint    // позиции товаров
-	Number		uint	// число товаров
+	ProductId	uint    // Id позиции товара
+	ProductDescription	string `json:"productDescription" gorm:"type:varchar(128);not null;"`
+	Quantity	int		`json:"quantity" gorm:"type:int;not null;"`// число ед. товара
+
+	// value / currency
+	Amount	Amount	`json:"amount"`
+
+	// Ставка НДС
+	VatCode	uint	`json:"vat_code"`
 
 	Product 	Product `json:"product" gorm:"preload:false"`
 	Order	 	Product `json:"product" gorm:"preload:false"`
@@ -76,7 +83,6 @@ func (cartItem *CartItem) load() error {
 }
 
 func (CartItem) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-
 	return CartItem{}.getPaginationList(accountId, 0,100,sortBy,"")
 }
 
@@ -85,7 +91,6 @@ func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 	orderChannels := make([]CartItem,0)
 	var total uint
 
-	// if need to search
 	if len(search) > 0 {
 
 		// string pattern
@@ -119,8 +124,7 @@ func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
 	}
-
-	// Преобразуем полученные данные
+	
 	entities := make([]Entity,len(orderChannels))
 	for i,_ := range orderChannels {
 		entities[i] = &orderChannels[i]
