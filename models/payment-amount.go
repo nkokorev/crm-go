@@ -6,7 +6,7 @@ import (
 )
 
 //Объект платежа - кто-то, что-то вам заплатил. Или хочет заплатить. Или должен...
-type Amount = PaymentAmount
+
 type PaymentAmount struct {
 	
 	Id     		uint   	`json:"id" gorm:"primary_key"`
@@ -24,7 +24,7 @@ func (paymentAmount PaymentAmount) GetId() uint { return paymentAmount.Id }
 func (paymentAmount *PaymentAmount) setId(id uint) { paymentAmount.Id = id }
 func (paymentAmount PaymentAmount) GetAccountId() uint { return paymentAmount.AccountId }
 func (paymentAmount *PaymentAmount) setAccountId(id uint) { paymentAmount.AccountId = id }
-func (paymentAmount PaymentAmount) SystemEntity() bool { return false; }
+func (paymentAmount PaymentAmount) SystemEntity() bool { return false }
 
 // ############# Entity interface #############
 
@@ -127,7 +127,10 @@ func (paymentAmount *PaymentAmount) update(input map[string]interface{}) error {
 }
 
 func (paymentAmount PaymentAmount) delete () error {
-	return db.Model(PaymentAmount{}).Where("id = ?", paymentAmount.Id).Delete(paymentAmount).Error
+	return db.Where("id = ?", paymentAmount.Id).Delete(paymentAmount).Error
+}
+func (PaymentAmount) deletes (paymentsIds []uint) error {
+	return db.Where("id IN (?)", paymentsIds).Delete(&PaymentAmount{}).Error
 }
 // ######### END CRUD Functions ############
 

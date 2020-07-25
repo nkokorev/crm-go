@@ -46,7 +46,7 @@ type Order struct {
 	// !!! фиксируем стоимость заказа в момент заказа!!!
 	// возможно нужно внести внутренний expiredAt, т.е. до какого момента действует указанная цена
 	AmountId  uint	`json:"amountId" gorm:"type:int;not null;"`
-	Amount  Amount	`json:"amount"`
+	Amount  	PaymentAmount	`json:"amount"`
 
 	// AmountValue	float64	`json:"amountValue"`
 
@@ -58,21 +58,14 @@ type Order struct {
 	DeletedAt *time.Time 	`json:"deletedAt"`
 }
 
-// ############# Entity interface #############
-func (order Order) GetId() uint { return order.Id }
-func (order *Order) setId(id uint) { order.Id = id }
-func (order Order) GetAccountId() uint { return order.AccountId }
-func (order *Order) setAccountId(id uint) { order.AccountId = id }
-func (Order) SystemEntity() bool { return false }
-
-// ############# Entity interface #############
 
 func (Order) PgSqlCreate() {
 	if !db.HasTable(&Order{}) {
 		db.CreateTable(&Order{})
 	}
 	db.Model(&Order{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	
+	db.Model(&Order{}).AddForeignKey("amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
+
 	// fmt.Println("Щквук!")
 }
 func (order *Order) BeforeCreate(scope *gorm.Scope) error {
@@ -102,6 +95,16 @@ func (order *Order)  AfterFind() (err error) {
 
 	return nil
 }
+
+// ############# Entity interface #############
+func (order Order) GetId() uint { return order.Id }
+func (order *Order) setId(id uint) { order.Id = id }
+func (order Order) GetAccountId() uint { return order.AccountId }
+func (order *Order) setAccountId(id uint) { order.AccountId = id }
+func (Order) SystemEntity() bool { return false }
+
+// ############# Entity interface #############
+
 
 // ######### CRUD Functions ############
 func (order Order) create() (Entity, error)  {
@@ -211,7 +214,12 @@ func (order *Order) update(input map[string]interface{}) error {
 }
 
 func (order Order) delete () error {
-	return db.Model(Order{}).Where("id = ?", order.Id).Delete(order).Error
+
+	if err := order.Amount.delete(); err != nil {
+		return err
+	}
+
+	return db.Where("id = ?", order.Id).Delete(order).Error
 }
 // ######### END CRUD Functions ############
 

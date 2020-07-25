@@ -25,32 +25,27 @@ type Payment struct {
 	// AmountValue 	float64	`json:"amountValue" gorm:"type:numeric;default:0"`
 	// AmountCurrency 	string 	`json:"amountCurrency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
 	AmountId  uint	`json:"amountId" gorm:"type:int;not null;"`
-	Amount  Amount	`json:"amount"`
+	Amount  PaymentAmount	`json:"amount"`
 
 	// Каков "приход" за вычетом комиссии посредника.
 	// IncomeValue 	float64 `json:"incomeValue" gorm:"type:numeric;default:0"`
 	// IncomeCurrency 	string 	`json:"incomeCurrency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
 	IncomeAmountId  uint	`json:"incomeAmountId" gorm:"type:int;not null;"`
-	IncomeAmount  Amount	`json:"income_amount"`
+	IncomeAmount  PaymentAmount	`json:"income_amount"`
 
 	// Сумма, которая вернулась пользователю. Присутствует, если у этого платежа есть успешные возвраты.
 	Refundable 				bool 	`json:"refundable" gorm:"type:bool;default:false;"` // Возможность провести возврат по API
-	// RefundedAmountValue 	float64	`json:"refundedAmountValue" gorm:"type:numeric;default:0"`
-	// RefundedAmountCurrency 	string 	`json:"refundedAmountCurrency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
 	RefundedAmountId  uint	`json:"refundedAmountId" gorm:"type:int;not null;"`
-	RefundedAmount  Amount	`json:"refunded_amount"`
+	RefundedAmount  PaymentAmount	`json:"refunded_amount"`
 
 	// описание транзакции, которую в Я.Кассе пользователь увидит при оплате
 	Description 	string 	`json:"description" gorm:"type:varchar(255);default:''"`
 
 	// Получатель платежа на стороне Сервиса. В Яндекс кассе это магазин и канал внутри я.кассы.
 	// Нужен, если вы разделяете потоки платежей в рамках одного аккаунта или создаете платеж в адрес другого аккаунта.
-	// RecipientAccountId	string	`json:"recipientAccountId" gorm:"type:varchar(255);default:''"` // Идентификатор магазина в Яндекс.Кассе.
-	// RecipientGatewayId	string	`json:"recipientGatewayId" gorm:"type:varchar(255);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
 	Recipient	Recipient `json:"_recipient"`
 
 	// Способ оплаты платежа = {type:"bank_card", id:"", saved:true, card:""}. Может быть и другой платеж, в зависимости от OwnerType
-	// PaymentMethod	postgres.Jsonb	`json:"paymentMethod" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 	PaymentMethod	PaymentMethod	`json:"payment_method_data"`
 
 	// Сохранение платежных данных (с их помощью можно проводить повторные безакцептные списания ).
@@ -61,8 +56,6 @@ type Payment struct {
 
 
 	// Способ подтверждения платежа. Присутствует, когда платеж ожидает подтверждения от пользователя
-	// Object = {type:"", confirmation_token:""}
-	// Confirmation	postgres.Jsonb	`json:"confirmation" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 	Confirmation	Confirmation	`json:"confirmation" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 
 	// Статус доставки данных для чека в онлайн-кассу (pending, succeeded или canceled).
@@ -104,6 +97,18 @@ type Payment struct {
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 	DeletedAt *time.Time `json:"-" sql:"index"`
+}
+
+func (Payment) PgSqlCreate() {
+	db.CreateTable(&Payment{})
+	db.Model(&Payment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Model(&Payment{}).AddForeignKey("amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
+	db.Model(&Payment{}).AddForeignKey("income_amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
+	db.Model(&Payment{}).AddForeignKey("refunded_amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
+}
+func (payment *Payment) BeforeCreate(scope *gorm.Scope) error {
+	payment.Id = 0
+	return nil
 }
 
 type PaymentMethod struct {
@@ -149,15 +154,6 @@ func (payment Payment) GetAccountId() uint { return payment.AccountId }
 func (payment *Payment) setAccountId(id uint) { payment.AccountId = id }
 func (Payment) SystemEntity() bool { return false }
 // ############# Entity interface #############
-
-func (Payment) PgSqlCreate() {
-	db.CreateTable(&Payment{})
-	db.Model(&Payment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-}
-func (payment *Payment) BeforeCreate(scope *gorm.Scope) error {
-	payment.Id = 0
-	return nil
-}
 
 // ######### CRUD Functions ############
 func (payment Payment) create() (Entity, error)  {
@@ -285,6 +281,16 @@ func (payment *Payment) update(input map[string]interface{}) error {
 }
 
 func (payment Payment) delete () error {
-	return db.Model(Payment{}).Where("id = ?", payment.Id).Delete(payment).Error
+
+	var idx = make([]uint,0)
+	idx = append(idx,payment.AccountId)
+	idx = append(idx,payment.IncomeAmountId)
+	idx = append(idx,payment.RefundedAmountId)
+
+	if err := (PaymentAmount{}).deletes(idx); err != nil {
+	  return err
+	}
+
+	return db.Where("id = ?", payment.Id).Delete(payment).Error
 }
 // ######### END CRUD Functions ############

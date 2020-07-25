@@ -18,8 +18,8 @@ type CartItem struct {
 
 	// value / currency
 	// Amount	Amount	`json:"amount"`
-	AmountId  uint	`json:"amountId" gorm:"type:int;not null;"`
-	Amount  Amount	`json:"amount"`
+	AmountId  	uint	`json:"amountId" gorm:"type:int;not null;"`
+	Amount  	PaymentAmount	`json:"amount"`
 
 	// Ставка НДС
 	VatCode	uint	`json:"vat_code"`
@@ -31,6 +31,17 @@ type CartItem struct {
 	// UpdatedAt time.Time `json:"updatedAt"`
 }
 
+func (CartItem) PgSqlCreate() {
+	db.CreateTable(&CartItem{})
+	db.Model(&CartItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Model(&CartItem{}).AddForeignKey("amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
+
+}
+func (cartItem *CartItem) BeforeCreate(scope *gorm.Scope) error {
+	cartItem.Id = 0
+	return nil
+}
+
 // ############# Entity interface #############
 func (cartItem CartItem) GetId() uint { return cartItem.Id }
 func (cartItem *CartItem) setId(id uint) { cartItem.Id = id }
@@ -40,15 +51,6 @@ func (cartItem CartItem) SystemEntity() bool { return false; }
 
 // ############# Entity interface #############
 
-func (CartItem) PgSqlCreate() {
-	db.CreateTable(&CartItem{})
-	db.Model(&CartItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	
-}
-func (cartItem *CartItem) BeforeCreate(scope *gorm.Scope) error {
-	cartItem.Id = 0
-	return nil
-}
 
 // ######### CRUD Functions ############
 func (cartItem CartItem) create() (Entity, error)  {
@@ -141,7 +143,11 @@ func (cartItem *CartItem) update(input map[string]interface{}) error {
 }
 
 func (cartItem CartItem) delete () error {
-	return db.Model(CartItem{}).Where("id = ?", cartItem.Id).Delete(cartItem).Error
+	if err := cartItem.Amount.delete(); err != nil {
+		return err
+	}
+	
+	return db.Where("id = ?", cartItem.Id).Delete(cartItem).Error
 }
 // ######### END CRUD Functions ############
 

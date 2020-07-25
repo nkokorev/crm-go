@@ -1644,14 +1644,17 @@ func RefreshTablesPart_IV() {
 		return
 	}
 	pool.DropTableIfExists(
-		models.PaymentAmount{},
+
 		models.CartItem{},
 		models.PaymentSubject{},
 		models.OrderComment{},
 		models.OrderChannel{},
 		models.Order{},
 		models.Payment{},
-		models.YandexPayment{})
+		models.PaymentAmount{},
+		models.YandexPayment{},
+		)
+
 
 	// А теперь создаем
 	models.PaymentAmount{}.PgSqlCreate()

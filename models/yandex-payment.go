@@ -44,14 +44,6 @@ type YandexPayment struct {
 	Capture	bool	`json:"capture" gorm:"type:bool;default:true"`
 }
 
-// ############# Entity interface #############
-func (yandexPayment YandexPayment) GetId() uint { return yandexPayment.Id }
-func (yandexPayment *YandexPayment) setId(id uint) { yandexPayment.Id = id }
-func (yandexPayment YandexPayment) GetAccountId() uint { return yandexPayment.AccountId }
-func (yandexPayment *YandexPayment) setAccountId(id uint) { yandexPayment.AccountId = id }
-func (YandexPayment) SystemEntity() bool { return false }
-
-// ############# Entity interface #############
 
 func (YandexPayment) PgSqlCreate() {
 	db.CreateTable(&YandexPayment{})
@@ -62,6 +54,17 @@ func (yandexPayment *YandexPayment) BeforeCreate(scope *gorm.Scope) error {
 	yandexPayment.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	return nil
 }
+
+
+
+// ############# Entity interface #############
+func (yandexPayment YandexPayment) GetId() uint { return yandexPayment.Id }
+func (yandexPayment *YandexPayment) setId(id uint) { yandexPayment.Id = id }
+func (yandexPayment YandexPayment) GetAccountId() uint { return yandexPayment.AccountId }
+func (yandexPayment *YandexPayment) setAccountId(id uint) { yandexPayment.AccountId = id }
+func (YandexPayment) SystemEntity() bool { return false }
+
+// ############# Entity interface #############
 
 
 // ######### CRUD Functions ############
@@ -180,7 +183,7 @@ func (yandexPayment YandexPayment) CreatePaymentByOrder(order Order) (*Payment, 
 	_p := Payment {
 		AccountId: yandexPayment.AccountId,
 		Paid: false,
-		Amount: Amount{Value: float64(12),Currency: "RUB"},
+		Amount: PaymentAmount{Value: float64(12),Currency: "RUB"},
 		Description:  fmt.Sprintf("Заказ №%v в магазине AiroCliamte", order.Id),  // Видит клиент
 		PaymentMethod: PaymentMethod{Type: "bank_card"},
 		Confirmation: Confirmation{Type: "redirect", ReturnUrl: yandexPayment.ReturnUrl},
