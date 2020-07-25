@@ -13,19 +13,18 @@ type CartItem struct {
 	OrderId 	uint	`json:"orderId" gorm:"index;not null"` // заказ, к которому относится корзина
 
 	ProductId	uint    // Id позиции товара
-	Description	string `json:"description" gorm:"type:varchar(128);not null;"`
+	Description	string 	`json:"description" gorm:"type:varchar(128);not null;"`
 	Quantity	int		`json:"quantity" gorm:"type:int;not null;"`// число ед. товара
 
 	// value / currency
-	// Amount	Amount	`json:"amount"`
-	AmountId  	uint	`json:"amountId" gorm:"type:int;not null;"`
+	AmountId  	uint			`json:"amountId" gorm:"type:int;not null;"`
 	Amount  	PaymentAmount	`json:"amount"`
 
 	// Ставка НДС
 	VatCode	uint	`json:"vat_code"`
 
-	Product 	Product `json:"product" gorm:"preload:false"`
-	Order	 	Product `json:"product" gorm:"preload:false"`
+	Product Product `json:"product" `
+	Order	Order `json:"order" gorm:"preload:false"`
 
 	// CreatedAt time.Time `json:"createdAt"`
 	// UpdatedAt time.Time `json:"updatedAt"`
@@ -39,6 +38,7 @@ func (CartItem) PgSqlCreate() {
 }
 func (cartItem *CartItem) BeforeCreate(scope *gorm.Scope) error {
 	cartItem.Id = 0
+	cartItem.Amount.AccountId = cartItem.AccountId
 	return nil
 }
 
@@ -48,12 +48,15 @@ func (cartItem *CartItem) setId(id uint) { cartItem.Id = id }
 func (cartItem CartItem) GetAccountId() uint { return cartItem.AccountId }
 func (cartItem *CartItem) setAccountId(id uint) { cartItem.AccountId = id }
 func (cartItem CartItem) SystemEntity() bool { return false; }
-
-// ############# Entity interface #############
+// ############# End of Entity interface #############
 
 
 // ######### CRUD Functions ############
 func (cartItem CartItem) create() (Entity, error)  {
+
+	// fix id
+	cartItem.Amount.AccountId = cartItem.AccountId
+	
 	_orderChannel := cartItem
 	if err := db.Create(&_orderChannel).Error; err != nil {
 		return nil, err
@@ -68,7 +71,7 @@ func (CartItem) get(id uint) (Entity, error) {
 
 	var cartItem CartItem
 
-	err := db.First(&cartItem, id).Error
+	err := db.Preload("Amount").Preload("Product").Preload("Product.PaymentSubject").First(&cartItem, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +82,7 @@ func (cartItem *CartItem) load() error {
 		return utils.Error{Message: "Невозможно загрузить CartItem - не указан  Id"}
 	}
 
-	err := db.First(cartItem, cartItem.Id).Error
+	err := db.Preload("Amount").Preload("Product").Preload("Product.PaymentSubject").First(cartItem, cartItem.Id).Error
 	if err != nil {
 		return err
 	}
@@ -100,7 +103,7 @@ func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&CartItem{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&CartItem{}).Preload("Amount").Preload("Product").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orderChannels, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -116,7 +119,7 @@ func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 
 	} else {
 
-		err := db.Model(&CartItem{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&CartItem{}).Preload("Amount").Preload("Product").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orderChannels).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err

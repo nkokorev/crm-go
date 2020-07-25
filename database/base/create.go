@@ -1685,6 +1685,16 @@ func UploadTestDataPart_IV()  {
 				OrderChannelId: 1,
 				ManagerId: 2,
 				Amount: models.PaymentAmount{AccountId: airoAccount.Id, Value: 20.01, Currency: "RUB"},
+				CartItems: []models.CartItem{
+					{
+						AccountId: airoAccount.Id, ProductId: 1,Description: "...", Quantity: 1,
+						Amount: models.PaymentAmount{AccountId: airoAccount.Id, Value: 20.01, Currency: "RUB"},
+					},
+					{
+						AccountId: airoAccount.Id, ProductId: 5,Description: "...", Quantity: 2,
+						Amount: models.PaymentAmount{AccountId: airoAccount.Id, Value: 20.01, Currency: "RUB"},
+					},
+				},
 			})
 		if err != nil {
 			log.Fatalf("Не удалось создать заказ: ", err)
@@ -1695,13 +1705,12 @@ func UploadTestDataPart_IV()  {
 			log.Fatalf("Не удалось найти заказ: ", err)
 		}
 
-		if err := order.AppendProducts([]models.Product{
+		/*if err := order.AppendProducts([]models.Product{
 			{Id: 15},{Id: 3},{Id: 5},{Id: 8},
 		}); err != nil {
 			log.Fatal(err)
-		}
+		}*/
 	}
-
 
 	// Создаем способ оплаты YandexPayment
 	entityPayment, err := airoAccount.CreateEntity(

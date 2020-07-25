@@ -8,34 +8,6 @@ import (
 	"net/http"
 )
 
-func PaymentCreate(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	// Get JSON-request
-	var input struct{
-		models.Payment
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}
-
-	payment, err := account.CreateEntity(&input.Payment)
-	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
-		return
-	}
-
-	resp := u.Message(true, "POST Payment Created")
-	resp["payment"] = payment
-	u.Respond(w, resp)
-}
 
 func PaymentGet(w http.ResponseWriter, r *http.Request) {
 
@@ -142,34 +114,5 @@ func PaymentUpdate(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "PATCH Payment Update")
 	resp["payment"] = payment
-	u.Respond(w, resp)
-}
-
-func PaymentDelete(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	paymentId, err := utilsCr.GetUINTVarFromRequest(r, "paymentId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
-		return
-	}
-
-	var payment models.Payment
-	err = account.LoadEntity(&payment, paymentId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
-		return
-	}
-	if err = account.DeleteEntity(&payment); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
-		return
-	}
-
-	resp := u.Message(true, "DELETE Payment Successful")
 	u.Respond(w, resp)
 }

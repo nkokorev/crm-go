@@ -216,11 +216,9 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/order-channels/{orderChannelId:[0-9]+}", appCr.OrderChannelDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### Payments ###
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/payments", appCr.PaymentCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payments", appCr.PaymentGetListPagination).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payments/{paymentId:[0-9]+}", appCr.PaymentGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payments/{paymentId:[0-9]+}", appCr.PaymentUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/payments/{paymentId:[0-9]+}", appCr.PaymentDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### Payment Subject Items ###
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-subjects", appCr.PaymentSubjectCreate).Methods(http.MethodPost, http.MethodOptions)
