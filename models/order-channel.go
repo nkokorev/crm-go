@@ -94,6 +94,13 @@ func (orderChannel *OrderChannel) load() error {
 	return nil
 }
 
+// Специальная функция *** NOT Entity ***
+func (OrderChannel) getByCode(accountId uint, code string) (*OrderChannel, error) {
+	var orderChannel OrderChannel
+	err := db.First(&orderChannel,"account_id IN (?) AND code = ?", []uint{1, accountId}, code).Error
+	return &orderChannel, err
+}
+
 func (OrderChannel) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return OrderChannel{}.getPaginationList(accountId, 0,100,sortBy,"")
 }
@@ -160,3 +167,6 @@ func (orderChannel OrderChannel) delete () error {
 
 // ########## Work function ############
 
+func (account Account) GetOrderChannelByCode(code string) (*OrderChannel, error){
+	return OrderChannel{}.getByCode(account.Id, code)
+}

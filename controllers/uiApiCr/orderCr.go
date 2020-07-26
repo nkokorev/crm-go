@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
+	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
+	"log"
 	"net/http"
 )
 
@@ -16,7 +18,7 @@ import (
 
 type CreateOrderForm struct {
 	// Факт существующего пользователя
-	UserHashId		string	`json:"userHashId"`
+	CustomerHashId		string	`json:"customerHashId"`
 
 	// Object для создания нового пользователя (альтернатива)
 	// Если окажется, что персональные данные заняты - заказ будет приписан существующему (?)
@@ -28,7 +30,7 @@ type CreateOrderForm struct {
 	CompanyHashId			string	`json:"companyHashId"`
 	
 	// hashId персонального менеджера (если такой есть)
-	PersonalManagerHashId	string	`json:"personalManagerHashId"`
+	ManagerHashId	string	`json:"managerHashId"`
 
 	// ID магазина, от имени которого создается заявка
 	WebSiteId 		uint	`json:"webSiteId"`
@@ -43,7 +45,7 @@ type CreateOrderForm struct {
 
 	// передается по Code, т.к. ID может поменяться.
 	// todo: !!!	сделать настройки для каждого канала по принятым заявкам	!!!
-	OrderChannel 	string 	`json:"orderChannel"`
+	OrderChannelCode	string 	`json:"orderChannel"`
 
 	// Выбирается канал доставки, а также все необходимые данные
 	// todo: для каждого канала сделать доступным метод доставки (по умолчанию: все)
@@ -51,11 +53,6 @@ type CreateOrderForm struct {
 	
 	// Собственно, сама корзина
 	Cart []CartData `json:"cart"`
-	/*Cart map[string]struct{
-		ProductId 	uint `json:"productId"` // id product
-		Count 		uint `json:"count"`      // число позиций
-	} `json:"cart"`*/
-
 }
 
 // todo: список обязательных полей - дело настроек OrderSettings
@@ -88,17 +85,134 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get JSON-request
-	/*var input struct{
-		models.Order
-	}*/
+	// Читаем вход
 	var input CreateOrderForm
-
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		fmt.Println(err)
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		u.Respond(w, u.MessageError(err, "Ошибка в запросе: проверьте обязательные поля и типы переменных"))
 		return
 	}
+
+	// 0.
+
+	// 1.X
+	var order models.Order
+
+	
+	// 1. Получаем список продуктов и считаем вес
+	var cartItems []models.CartItem
+	for _,v := range input.Cart {
+		// 1.1 Получаем продукт
+		product, err := account.GetProduct(v.ProductId)
+		if err != nil {
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска ответственного менеджера", Errors: map[string]interface{}{"managerHashId":"Не удалось найти менеджера"}}))
+			return
+		}
+
+		// 1.2 Если продукт недоступен к заказу
+		if !product.Enabled {
+			u.Respond(w, u.MessageError(u.Error{Message:fmt.Sprintf("Заказ содержит продукты недоступные к заказу: %v", product.Name), Errors: map[string]interface{}{"cart":"Не корректный список продуктов"}}))
+			return
+		}
+
+
+
+		// 1.3 Считаем цену
+
+		// Расчет цены с учетом скидок
+		ProductCost := product.RetailPrice - product.RetailDiscount
+
+		cartItems = append(cartItems, models.CartItem{
+			AccountId: account.Id,
+			ProductId: product.Id,
+			Description: product.Name,
+			Quantity: v.Quantity,
+			Amount: models.PaymentAmount{Value: ProductCost,Currency: "RUB"},
+			VatCode: product.VatCodeId,
+			// OrderId: order.Id,
+		})
+	}
+
+	// 2. Считаем вес
+
+	// 3. Находим тип доставки
+
+	// 4. Определяем стоимость доставки
+
+	// 5. Находим канал заявки
+	if input.OrderChannelCode == "" {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска источника заявки", Errors: map[string]interface{}{"orderChannel":"Необходимо указать канал заявки"}}))
+		return
+	}
+	orderChannel, err := account.GetOrderChannelByCode(input.OrderChannelCode)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска источника заявки", Errors: map[string]interface{}{"orderChannel":"канал не найден"}}))
+		return
+	}
+
+	// 1. Создаем / находим пользователя
+	var customer models.User
+	if input.CustomerHashId != "" {
+		// Если ищем пользователя среди существующих
+		user, err := account.GetUserByHashId(input.CustomerHashId)
+		if err != nil || user == nil {
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска пользователя", Errors: map[string]interface{}{"customerHashId":"Не удалось найти пользователя"}}))
+			return
+		}
+		customer = *user
+	} else {
+		// Если необходимо создать пользователя
+
+		// 1.2 Создаем нового пользователя
+		customer.Email = input.Customer.Email
+		customer.Phone = input.Customer.Phone
+		customer.Name = input.Customer.Name
+		customer.Surname = input.Customer.Surname
+		customer.Patronymic = input.Customer.Patronymic
+
+		// 1.3 Роль - клиент
+		role, err := account.GetRoleByTag(models.RoleClient)
+		if err != nil {
+			log.Fatalf("Не удалось найти аккаунт: %v", err)
+		}
+
+		// 2. Создаем пользователя
+		_user, err := account.CreateUser(customer, *role)
+		if err != nil {
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка создания пользователя"}))
+			return
+		}
+
+		customer = *_user
+	}
+
+	// выше создан пользователь
+	// 2. Создаем / находим менеджера
+	var manager models.User
+	if input.ManagerHashId != "" {
+		// Если ищем пользователя среди существующих
+		_manager, err := account.GetUserByHashId(input.ManagerHashId)
+		if err != nil || _manager == nil {
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска ответственного менеджера", Errors: map[string]interface{}{"managerHashId":"Не удалось найти менеджера"}}))
+			return
+
+		}
+		manager = *_manager
+	}
+
+	// 3. Создаем / находим компанию
+	if input.CompanyHashId != "" {
+		// todo создание / поиск компании
+		fmt.Println("Поиск компании..")
+	}
+
+	fmt.Println(orderChannel,manager, order)
+
+
+
+
+
+
+
 
 /*	order, err := account.CreateEntity(&input.Order)
 	if err != nil {

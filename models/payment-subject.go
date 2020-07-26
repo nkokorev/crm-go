@@ -21,7 +21,7 @@ func (paymentSubject PaymentSubject) GetId() uint { return paymentSubject.Id }
 func (paymentSubject *PaymentSubject) setId(id uint) { paymentSubject.Id = id }
 func (paymentSubject PaymentSubject) GetAccountId() uint { return paymentSubject.AccountId }
 func (paymentSubject *PaymentSubject) setAccountId(id uint) { paymentSubject.AccountId = id }
-func (paymentSubject PaymentSubject) SystemEntity() bool { return false; }
+func (paymentSubject PaymentSubject) SystemEntity() bool { return paymentSubject.AccountId == 1 }
 
 // ############# Entity interface #############
 

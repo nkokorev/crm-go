@@ -42,6 +42,9 @@ type Product struct {
 	PaymentSubjectId	uint	`json:"paymentSubjectId" gorm:"type:int;not null;"`// товар или услуга ? [вид номенклатуры]
 	PaymentSubject 		PaymentSubject `json:"paymentSubject"`
 
+	VatCodeId	uint	`json:"vatCodeId" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
+	VatCode		VatCode	`json:"vatCode"`
+
 	UnitMeasurementId 		uint	`json:"unitMeasurementId" gorm:"type:int;default:1;"` // тип измерения
 	UnitMeasurement 		UnitMeasurement // Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 	
@@ -85,7 +88,7 @@ func (product Product) GetId() uint {
 // ######### CRUD Functions ############
 func (product Product) create() (*Product, error)  {
 	var newProduct = product
-	if err := db.Create(&newProduct).Preload("PaymentSubject").First(&newProduct).Error; err != nil { return nil, err }
+	if err := db.Create(&newProduct).Preload("VatCode").Preload("PaymentSubject").First(&newProduct).Error; err != nil { return nil, err }
 
 	event.AsyncFire(Event{}.ProductCreated(newProduct.AccountId, newProduct.Id))
 	return &newProduct, nil
@@ -98,7 +101,7 @@ func (Product) get(id uint) (*Product, error) {
 	//if err := db.Model(&product).Preload("ProductCards").First(&product, id).Error; err != nil {
 	//	return nil, err
 	//}
-	if err := db.Model(&product).Preload("PaymentSubject").Preload("Images", func(db *gorm.DB) *gorm.DB {
+	if err := db.Model(&product).Preload("VatCode").Preload("PaymentSubject").Preload("Images", func(db *gorm.DB) *gorm.DB {
 		return db.Select(Storage{}.SelectArrayWithoutDataURL())
 	}).First(&product, id).Error; err != nil {
 		return nil, err
@@ -131,7 +134,7 @@ func (product *Product) update(input map[string]interface{}) error {
 		return err
 	}
 
-	// event.AsyncFire(Event{}.ProductUpdated(product.AccountId, product.Id))
+	event.AsyncFire(Event{}.ProductUpdated(product.AccountId, product.Id))
 
 	return nil
 }
@@ -191,6 +194,7 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 		search = "%"+search+"%"
 
 		err := db.Model(&Product{}).
+			Preload("VatCode").
 			Preload("PaymentSubject").
 			Preload("ProductCards").
 			Preload("Images", func(db *gorm.DB) *gorm.DB {
@@ -219,6 +223,7 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 		}
 
 		err := db.Model(&Product{}).
+			Preload("VatCode").
 			Preload("PaymentSubject").
 			Preload("ProductCards").
 			Preload("Images", func(db *gorm.DB) *gorm.DB {

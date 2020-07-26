@@ -14,7 +14,7 @@ type CartItem struct {
 
 	ProductId	uint 	`json:"productId"`// Id позиции товара
 	Description	string 	`json:"description" gorm:"type:varchar(128);not null;"`
-	Quantity	int		`json:"quantity" gorm:"type:int;not null;"`// число ед. товара
+	Quantity	uint	`json:"quantity" gorm:"type:int;not null;"`// число ед. товара
 
 	// Фиксируем стоимость 
 	AmountId  	uint			`json:"amountId" gorm:"type:int;not null;"`
@@ -23,7 +23,7 @@ type CartItem struct {
 	// Ставка НДС
 	VatCode	uint	`json:"vat_code"`
 
-	Product Product `json:"product" `
+	Product Product `json:"product"`
 	Order	Order `json:"order" gorm:"preload:false"`
 
 	// CreatedAt time.Time `json:"createdAt"`

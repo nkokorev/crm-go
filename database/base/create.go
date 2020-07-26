@@ -69,7 +69,9 @@ func RefreshTablesPart_I() {
 	pool := models.GetPool()
 
 	// not there
-	pool.DropTableIfExists(models.Order{}, models.Payment{},models.YandexPayment{})
+
+
+	pool.DropTableIfExists(models.OrderChannel{}, models.PaymentSubject{},models.VatCode{},models.Order{},models.PaymentAmount{}, models.Payment{},models.YandexPayment{})
 
 
 	pool.DropTableIfExists(models.Product{}, models.ProductCard{}, models.ProductGroup{})
@@ -122,6 +124,14 @@ func RefreshTablesPart_I() {
 
 	// Уведомления
 	models.EmailNotification{}.PgSqlCreate()
+
+	models.YandexPayment{}.PgSqlCreate()
+	models.PaymentAmount{}.PgSqlCreate()
+	models.Payment{}.PgSqlCreate()
+	models.Order{}.PgSqlCreate()
+	models.VatCode{}.PgSqlCreate()
+	models.PaymentSubject{}.PgSqlCreate()
+	models.OrderChannel{}.PgSqlCreate()
 }
 
 
@@ -789,7 +799,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZ с регулировкой черный"), //,
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности черный", ShortName: "Рециркулятор AIRO-DEZ черный",
-			PaymentSubjectId: 1, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 19500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -817,7 +827,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZ черный"),
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ черный", ShortName: "Рециркулятор AIRO-DEZ черный",
-			PaymentSubjectId: 1, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -845,7 +855,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZ с регулировкой белый"),
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности белый",  ShortName: "Рециркулятор AIRO-DEZ белый",
-			PaymentSubjectId: 1, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 19500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -873,7 +883,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZ белый"),
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ",  ShortName: "Рециркулятор AIRO-DEZ белый",
-			PaymentSubjectId: 1, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -901,7 +911,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZ COMPACT"),
 			Name:"Мобильный аиродезинфектор AIRO-DEZ COMPACT",  ShortName: "Аиродезинфектор AIRO-DEZ COMPACT",
-			PaymentSubjectId: 1, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 39000.00, RetailDiscount: 3000,
 			ShortDescription: "",
 			Description: "",
@@ -931,7 +941,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZPUF"),
 			Name:"Бактерицидная камера пуф AIRO-DEZPUF",  ShortName: "Камера пуф AIRO-DEZPUF",
-			PaymentSubjectId: 1, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 11000.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -960,7 +970,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZPUF венге"),
 			Name:"Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге",  ShortName: "Камера AIRO-DEZBOX",
-			PaymentSubjectId: 1, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 12000.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -990,7 +1000,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZBOX"),
 			Name:"Бактерицидная камера AIRO-DEZBOX",  ShortName: "Камера AIRO-DEZBOX",
-			PaymentSubjectId: 1, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 7800.00, RetailDiscount: 800,
 			ShortDescription: "",
 			Description: "",
@@ -1019,7 +1029,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZBOX белая"),
 			Name:"Бактерицидная камера AIRO-DEZBOX белая",  ShortName: "Камера AIRO-DEZBOX белая",
-			PaymentSubjectId: 1, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 7800.00, RetailDiscount: 800,
 			ShortDescription: "",
 			Description: "",
@@ -1048,7 +1058,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZTUMB"),
 			Name:"Тумба облучатель бактерицидный AIRO-DEZTUMB",  ShortName: "Бактерицидная тумба AIRO-DEZTUMB",
-			PaymentSubjectId: 1, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -1077,7 +1087,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIROTUMB big"),
 			Name:"Тумба облучатель бактерицидный AIRO-DEZTUMB big",  ShortName: "Облучатель AIROTUMB big",
-			PaymentSubjectId: 1, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -1107,7 +1117,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: ToStringPointer("AIRO-DEZTUMB касцина"),
 			Name:"Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина",  ShortName: "Бактерицидная тумба AIRO-DEZTUMB",
-			PaymentSubjectId: 1, UnitMeasurementId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -1647,6 +1657,7 @@ func RefreshTablesPart_IV() {
 
 		models.CartItem{},
 		models.PaymentSubject{},
+		models.VatCode{},
 		models.OrderComment{},
 		models.OrderChannel{},
 		models.Order{},
@@ -1660,6 +1671,7 @@ func RefreshTablesPart_IV() {
 	models.PaymentAmount{}.PgSqlCreate()
 	models.CartItem{}.PgSqlCreate()
 	models.PaymentSubject{}.PgSqlCreate()
+	models.VatCode{}.PgSqlCreate()
 	models.OrderComment{}.PgSqlCreate()
 	models.OrderChannel{}.PgSqlCreate()
 	models.Order{}.PgSqlCreate()
