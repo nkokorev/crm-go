@@ -156,19 +156,21 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	// 4. Определяем стоимость доставки
 	totalCost, weight, err := webSite.CalculateDelivery(models.DeliveryRequest{
 		Cart: input.Cart,
-		DeliveryData: models.DeliveryData{
+		DeliveryData: models.DeliveryData {
 			Id: input.Delivery.Id,
 			Code: input.Delivery.Code,
 			PostalCode: input.Delivery.PostalCode,
 			Address: input.Delivery.Address,
 		}})
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка расчета стоимости доставки"}))
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Ошибка расчета стоимости доставки"))
 		return
 
 	}
 
-		fmt.Println("Стоимость доставки: ",totalCost,weight )
+		fmt.Println("Стоимость доставки: ",totalCost )
+		fmt.Println("Вес: ",weight )
 
 	return
 	

@@ -312,7 +312,6 @@ func (webSite WebSite) CalculateDelivery(deliveryRequest DeliveryRequest) (total
 		return 0, 0,err
 	}
 
-	fmt.Println("deliveryRequest.Cart: ", deliveryRequest.Cart)
 	// проходим циклом по продуктам и складываем их общий вес
 	for _,v := range deliveryRequest.Cart {
 		// 1. Получаем продукт
@@ -324,24 +323,18 @@ func (webSite WebSite) CalculateDelivery(deliveryRequest DeliveryRequest) (total
 		// todo: 'что есть вес?'
 		// _w, err := product.GetAttribute(deliveryRequest.DeliveryData.ProductWeightKey)
 		_w, err := product.GetAttribute(product.WeightKey)
-		fmt.Println("product.WeightKey: ",product.WeightKey)
-		fmt.Println("_w: ", _w)
 		wg, ok := _w.(float64)
 		if !ok {
 			fmt.Println("Не учитываем вес!")
 			continue
 		}
 		weight += wg * float64(v.Quantity)
-		fmt.Println("weight : +=", weight)
 	}
 
 	// 2. Проверяем максимальный вес
 	if err := delivery.checkMaxWeight(weight); err != nil {
-		fmt.Println("Ошибка макс веса", err)
 		return 0, 0,err
 	}
-
-	fmt.Println("Вес товара: ", weight)
 
 	// 3. Проводим расчет стоимости доставки
 	totalCost, err = delivery.CalculateDelivery(deliveryRequest.DeliveryData, weight)
