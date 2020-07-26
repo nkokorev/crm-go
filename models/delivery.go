@@ -3,6 +3,8 @@ package models
 type Delivery interface {
 	Entity
 	GetCode() string
+	GetName() string
+	GetVatCode() VatCode
 
 	CalculateDelivery(deliveryData DeliveryData, weight float64) (float64, error) // weight в кг
 	checkMaxWeight(weight float64) error // проверяет макс вес

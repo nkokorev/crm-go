@@ -50,11 +50,8 @@ type Order struct {
 	CartItems	[]CartItem		`json:"cartItems"`
 
 	// Данные о доставке
-	DeliveryId 		uint	`json:"deliveryId" gorm:"type:int;not null;"`
-	DeliveryCode	string 	`json:"deliveryCode" gorm:"type:varchar(32);"`
-	DeliveryAddress	string 	`json:"deliveryAddress" gorm:"type:varchar(32);"`
-	DeliveryPostalCode	string 	`json:"deliveryPostalCode" gorm:"type:varchar(32);"`
-	Delivery		Delivery	`json:"delivery" gorm:"-"` // << preload
+	// DeliveryOrderId	uint	`json:"deliveryOrderId" gorm:"type:int;not null;"`
+	// DeliveryOrder	DeliveryOrder	`json:"deliveryOrder"`
 
 	CreatedAt time.Time 	`json:"createdAt"`
 	UpdatedAt time.Time 	`json:"updatedAt"`

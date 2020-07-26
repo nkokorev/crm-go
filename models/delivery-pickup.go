@@ -19,6 +19,13 @@ type DeliveryPickup struct {
 	AddressRequired	bool	`json:"addressRequired" gorm:"type:bool;default:false"` // Требуется ли адрес доставки
 	PostalCodeRequired	bool	`json:"postalCodeRequired" gorm:"type:bool;default:false"` // Требуется ли индекс в адресе доставки
 
+	// Признак предмета расчета
+	PaymentSubjectId	uint	`json:"paymentSubjectId" gorm:"type:int;not null;"`//
+	PaymentSubject 		PaymentSubject `json:"paymentSubject"`
+
+	VatCodeId	uint	`json:"vatCodeId" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
+	VatCode		VatCode	`json:"vatCode"`
+
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 }
@@ -169,7 +176,10 @@ func (deliveryPickup DeliveryPickup) delete () error {
 // ########## End of CRUD Entity interface ###########
 
 func (deliveryPickup DeliveryPickup) GetName () string {
-	return "Почта России"
+	return deliveryPickup.Name
+}
+func (deliveryPickup DeliveryPickup) GetVatCode () VatCode {
+	return deliveryPickup.VatCode
 }
 
 func (deliveryPickup DeliveryPickup) CalculateDelivery(deliveryData DeliveryData, weight float64) (float64, error) {

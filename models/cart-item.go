@@ -13,7 +13,7 @@ type CartItem struct {
 	AccountId 	uint	`json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
 	OrderId 	uint	`json:"orderId" gorm:"index;not null"` // заказ, к которому относится корзина
 
-	ProductId	uint 	`json:"productId"`// Id позиции товара
+	ProductId	uint 	`json:"productId" gorm:"type:int;default:null;"`// Id позиции товара
 	Description	string 	`json:"description" gorm:"type:varchar(128);not null;"`
 	Quantity	uint	`json:"quantity" gorm:"type:int;not null;"`// число ед. товара
 

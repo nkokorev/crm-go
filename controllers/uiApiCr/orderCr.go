@@ -65,10 +65,13 @@ type Customer struct {
 	Patronymic 	string `json:"patronymic"`
 }
 
-
-
 func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 
+	// Итоговая стоимость заказа
+	var totalCost float64
+	totalCurrency := "RUB"
+	totalCost = 0
+	
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
@@ -82,16 +85,15 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 0. Получаем магазин из контекста
+	// 1. Получаем магазин из контекста
 	var webSite models.WebSite
 	if err := account.LoadEntity(&webSite, input.WebSiteId); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в запросе: проверьте id магазина"))
 		return
 	}
 
-	// 1. Создаем список продуктов, считаем вес и общую стоимость
+	// 2. Создаем список продуктов, считаем стоимость каждого 
 	var cartItems []models.CartItem
-
 	for _,v := range input.Cart {
 		
 		// 1.1 Получаем продукт
@@ -110,13 +112,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		// 1.3 Считаем цену товара с учетом скидок
 		ProductCost := product.RetailPrice - product.RetailDiscount
 
-		// 1.4 считаем вес
-		/*_w, err := product.GetAttribute(product.WeightKey)
-		wg, ok := _w.(float64)
-		if !ok { continue }
-		weight += wg * float64(v.Quantity)*/
-
-		// 1.5 Формируем и добавляем Cart Item в общий список
+		// 1.4 Формируем и добавляем Cart Item в общий список
 		cartItems = append(cartItems, models.CartItem{
 			AccountId: account.Id,
 			ProductId: product.Id,
@@ -126,10 +122,12 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 			VatCode: product.VatCodeId,
 			// OrderId: order.Id,
 		})
-	}
 
+		// 1.5 Считаем общую стоимость заказа
+		totalCost += ProductCost * float64(v.Quantity)
+	}
 	
-	/*// 3. Находим тип доставки
+	// 3. Находим тип доставки
 	if  input.Delivery.Code == "" ||  input.Delivery.Id < 1 {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в определении типа доставки", Errors: map[string]interface{}{"delivery":"не указан тип доставки или id"}}))
 		return
@@ -139,15 +137,9 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в определении типа доставки", Errors: map[string]interface{}{"delivery":"тип доставки или id указаны не верно"}}))
 		return
 	}
-
-	// Проверяем максимальный вес
-	if err := delivery.checkMaxWeight(deliveryRequest.DeliveryData); err != nil {
-		fmt.Println("Ошибка макс веса", err)
-		return nil, err
-	}*/
-
+	
 	// 4. Определяем стоимость доставки
-	totalCost, weight, err := webSite.CalculateDelivery(models.DeliveryRequest{
+	deliveryCost, _, err := webSite.CalculateDelivery(models.DeliveryRequest{
 		Cart: input.Cart,
 		DeliveryData: models.DeliveryData {
 			Id: input.Delivery.Id,
@@ -156,17 +148,24 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 			Address: input.Delivery.Address,
 		}})
 	if err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Ошибка расчета стоимости доставки"))
 		return
-
 	}
 
-		fmt.Println("Стоимость доставки: ",totalCost )
-		fmt.Println("Вес: ",weight )
-
-	return
+	// 4.2. Находим соответствующую услугу
 	
+	// 4.1. Добавляем в список заказа - доставку
+	cartItems = append(cartItems, models.CartItem{
+		AccountId: account.Id,
+		Description: delivery.GetName(),
+		Quantity: 1,
+		Amount: models.PaymentAmount{Value: deliveryCost, Currency: "RUB"},
+		VatCode: delivery.GetVatCode().YandexCode,
+	})
+
+	// 4.2 Добавляем стоимость доставки к общей стоимости
+	totalCost += totalCost
+
 	// 5. Находим канал заявки
 	if input.OrderChannelCode == "" {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска источника заявки", Errors: map[string]interface{}{"orderChannel":"Необходимо указать канал заявки"}}))
@@ -178,7 +177,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 1. Создаем / находим пользователя
+	// 6. Создаем / находим пользователя
 	var customer models.User
 	if input.CustomerHashId != "" {
 		// Если ищем пользователя среди существующих
@@ -215,7 +214,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// выше создан пользователь
-	// 2. Создаем / находим менеджера
+	// 7. Создаем / находим менеджера
 	var manager models.User
 	if input.ManagerHashId != "" {
 		// Если ищем пользователя среди существующих
@@ -228,14 +227,35 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		manager = *_manager
 	}
 
-	// 3. Создаем / находим компанию
+	// 8. Создаем / находим компанию
 	if input.CompanyHashId != "" {
 		// todo создание / поиск компании
 		fmt.Println("Поиск компании..")
 	}
 
-	// 1.X
+	//////////////////////
+
+
+	// 9. Создаем заказ
 	var order models.Order
+
+	order.CustomerComment = input.CustomerComment
+	order.ManagerId = manager.Id
+	order.Individual = input.Individual
+	order.WebSiteId = webSite.Id
+	order.CustomerId = customer.Id
+	// order.CompanyId = CompanyId.Id
+	order.OrderChannelId = orderChannel.Id
+	order.Amount = models.PaymentAmount{Value: totalCost, Currency: totalCurrency, AccountId: account.Id}
+	order.CartItems = cartItems
+
+	// fmt.Println(order)
+
+	resp := u.Message(true, "POST Order Created")
+	resp["order"] = input
+	u.Respond(w, resp)
+
+	return
 
 	fmt.Println(orderChannel,manager, order)
 
@@ -252,7 +272,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}*/
 
-	resp := u.Message(true, "POST Order Created")
-	resp["order"] = input
+	// resp := u.Message(true, "POST Order Created")
+	// resp["order"] = input
 	u.Respond(w, resp)
 }

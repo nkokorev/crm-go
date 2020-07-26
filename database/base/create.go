@@ -1192,6 +1192,7 @@ func UploadTestDataPart_II() {
 			PostalCodeFrom: "109390",
 			MailCategory: "ORDINARY",
 			MailType: "POSTAL_PARCEL",
+			PaymentSubjectId: 10, // Платеж
 			MaxWeight: 20.0,
 			Fragile: false,
 			WithElectronicNotice: true,
@@ -1205,7 +1206,7 @@ func UploadTestDataPart_II() {
 		log.Fatalf("Не удалось добавить метод доставки в магазин: %v\n", err)
 	}
 
-	entityPickup, err := accountAiro.CreateEntity(&models.DeliveryPickup{Name: "Самовывоз из г. Москва, м. Текстильщики", Enabled: true,})
+	entityPickup, err := accountAiro.CreateEntity(&models.DeliveryPickup{Name: "Самовывоз из г. Москва, м. Текстильщики", Enabled: true,PaymentSubjectId: 10})
 	if err != nil {
 		log.Fatalf("Не удалось получить entityPickup: %v", err)
 	}
@@ -1219,6 +1220,7 @@ func UploadTestDataPart_II() {
 			Enabled: true,
 			Price: 500,
 			MaxWeight: 40.0,
+			PaymentSubjectId: 10,
 		})
 	if err != nil {
 		log.Fatalf("Не удалось получить entityCourier: %v", err)

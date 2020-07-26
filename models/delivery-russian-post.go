@@ -34,6 +34,13 @@ type DeliveryRussianPost struct {
 	AddressRequired	bool	`json:"addressRequired" gorm:"type:bool;default:true"` // Требуется ли адрес доставки
 	PostalCodeRequired	bool	`json:"postalCodeRequired" gorm:"type:bool;default:true"` // Требуется ли индекс в адресе доставки
 
+	// Признак предмета расчета
+	PaymentSubjectId	uint	`json:"paymentSubjectId" gorm:"type:int;not null;"`//
+	PaymentSubject 		PaymentSubject `json:"paymentSubject"`
+
+	VatCodeId	uint	`json:"vatCodeId" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
+	VatCode		VatCode	`json:"vatCode"`
+
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 }
@@ -265,4 +272,11 @@ func (deliveryRussianPost DeliveryRussianPost) checkMaxWeight(weight float64) er
 	}
 
 	return nil
+}
+
+func (deliveryRussianPost DeliveryRussianPost) GetName () string {
+	return deliveryRussianPost.Name
+}
+func (deliveryRussianPost DeliveryRussianPost) GetVatCode () VatCode {
+	return deliveryRussianPost.VatCode
 }

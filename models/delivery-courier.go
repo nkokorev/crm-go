@@ -22,6 +22,13 @@ type DeliveryCourier struct {
 	AddressRequired	bool	`json:"addressRequired" gorm:"type:bool;default:true"` // Требуется ли адрес доставки
 	PostalCodeRequired	bool	`json:"postalCodeRequired" gorm:"type:bool;default:false"` // Требуется ли индекс в адресе доставки
 
+	// Признак предмета расчета
+	PaymentSubjectId	uint	`json:"paymentSubjectId" gorm:"type:int;not null;"`//
+	PaymentSubject 		PaymentSubject `json:"paymentSubject"`
+
+	VatCodeId	uint	`json:"vatCodeId" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
+	VatCode		VatCode	`json:"vatCode"`
+
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 }
@@ -163,8 +170,12 @@ func (deliveryCourier DeliveryCourier) delete () error {
 // ########## End of CRUD Entity interface ###########
 
 func (deliveryCourier DeliveryCourier) GetName () string {
-	return "Доставка курьером"
+	return deliveryCourier.Name
 }
+func (deliveryCourier DeliveryCourier) GetVatCode () VatCode {
+	return deliveryCourier.VatCode
+}
+
 func (deliveryCourier DeliveryCourier) CalculateDelivery(deliveryData DeliveryData, weight float64) (float64, error) {
 	return  deliveryCourier.Price, nil
 	// deliveryData.TotalCost = deliveryCourier.Price
