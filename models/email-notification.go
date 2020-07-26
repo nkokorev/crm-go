@@ -138,29 +138,7 @@ func (emailNotification *EmailNotification) load() error {
 
 
 func (EmailNotification) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-
-	emailNotifications := make([]EmailNotification,0)
-	var total uint
-
-	err := db.Model(&EmailNotification{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).Preload("EmailTemplate").Preload("EmailBox").
-		Find(&emailNotifications).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&EmailNotification{}).Where("account_id = ?", accountId).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(emailNotifications))
-	for i,_ := range emailNotifications {
-		entities[i] = &emailNotifications[i]
-	}
-
-	return entities, total, nil
+	return EmailNotification{}.getPaginationList(accountId, 0, 100, sortBy, "")
 }
 
 func (EmailNotification) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {

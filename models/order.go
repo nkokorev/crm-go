@@ -22,7 +22,6 @@ type Order struct {
 	Manager		User	`json:"manager"`
 
 	////// Данные заказа ///////
-
 	Individual	bool 	`json:"individual" gorm:"type:bool;default:true;not null;"` // Физ.лицо - true, Юрлицо - false
 
 	// Магазин (сайт) с которого пришел заказ. НЕ может быть null.
@@ -41,12 +40,19 @@ type Order struct {
 	OrderChannelId 	uint	`json:"orderChannelId" gorm:"type:int;not null;"`
 	OrderChannel 	OrderChannel `json:"orderChannel"`
 
-	// Состав заказа
-	CartItems	[]CartItem		`json:"cartItems"`
-
 	// Фиксируем стоимость заказа
 	AmountId  	uint	`json:"amountId" gorm:"type:int;not null;"`
 	Amount		PaymentAmount	`json:"amount"`
+
+	// Состав заказа
+	CartItems	[]CartItem		`json:"cartItems"`
+
+	// Данные о доставке
+	DeliveryId 		uint	`json:"deliveryId" gorm:"type:int;not null;"`
+	DeliveryCode	string 	`json:"deliveryCode" gorm:"type:varchar(32);"`
+	DeliveryAddress	string 	`json:"deliveryAddress" gorm:"type:varchar(32);"`
+	DeliveryPostalCode	string 	`json:"deliveryPostalCode" gorm:"type:varchar(32);"`
+	Delivery		Delivery	`json:"delivery"` // << preload
 
 	CreatedAt time.Time 	`json:"createdAt"`
 	UpdatedAt time.Time 	`json:"updatedAt"`

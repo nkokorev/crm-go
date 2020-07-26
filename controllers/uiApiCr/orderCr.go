@@ -92,9 +92,6 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	// 1. Создаем список продуктов, считаем вес и общую стоимость
 	var cartItems []models.CartItem
 
-	// вес посылки для расчета стоимости доставки
-	// var weight = float64(0)
-	
 	for _,v := range input.Cart {
 		
 		// 1.1 Получаем продукт
@@ -131,10 +128,6 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// return
-
-	// 1.X
-	var order models.Order
 	
 	/*// 3. Находим тип доставки
 	if  input.Delivery.Code == "" ||  input.Delivery.Id < 1 {
@@ -240,6 +233,9 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		// todo создание / поиск компании
 		fmt.Println("Поиск компании..")
 	}
+
+	// 1.X
+	var order models.Order
 
 	fmt.Println(orderChannel,manager, order)
 
