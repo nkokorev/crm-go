@@ -393,33 +393,52 @@ func (account Account) GetUserForAuthAppByUsername(username string) (*User, erro
 	return user, err
 }
 
+// todo переписать функции
 func (account Account) GetUserByEmail(email string) (*User, error) {
 	if email == "" {
 		return nil, gorm.ErrRecordNotFound
 	}
 
-	user := User{}
+	var user User
 
-	err := db.Model(&User{}).Where("issuer_account_id = ? AND email = ?", account.Id, email).First(&user).Error
+	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+		Select("account_users.account_id, users.*").
+		Where("account_users.account_id = ? AND users.email = ?", account.Id, email).
+		First(&user).Error
+	if err != nil {
+		return nil, err
+	}
 
 	return &user, err
 }
 
-func (account Account) GetUserByPhone(phone, region string) (*User, error) {
+// todo переписать функции
+func (account Account) GetUserByPhone(phone string, regions... string) (*User, error) {
+	
 	if phone == "" {
 		return nil, gorm.ErrRecordNotFound
 	}
 
-	if region == "" {
-		region = "RU"
+	region := "RU"
+	if len(regions) > 0 {
+		region = regions[0]
 	}
 
-	phone, _ = utils.ParseE164Phone(phone, region)
+	_phone, _ := utils.ParseE164Phone(phone, region)
 
-	user := User{}
+	// fmt.Println("Phone: ", _phone)
+	// fmt.Println("region: ", region)
+	var user User
 
-	err := db.Model(&User{}).Where("issuer_account_id = ? AND phone = ?", account.Id, phone).First(&user).Error
-
+	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+		Select("account_users.account_id, users.*").
+		Where("account_users.account_id = ? AND phone = ? AND phone_region = ?", account.Id, _phone, region).
+		First(&user).Error
+	if err != nil {
+		fmt.Println("Пользователь не найден по телефону! ", err)
+		return nil, err
+	}
+	
 	return &user, err
 }
 

@@ -178,7 +178,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 6. Создаем / находим пользователя
-	var customer models.User
+	var customer *models.User
 	if input.CustomerHashId != "" {
 		// Если ищем пользователя среди существующих
 		user, err := account.GetUserByHashId(input.CustomerHashId)
@@ -186,31 +186,50 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска пользователя", Errors: map[string]interface{}{"customerHashId":"Не удалось найти пользователя"}}))
 			return
 		}
-		customer = *user
+		customer = user
 	} else {
 		// Если необходимо создать пользователя
 
-		// 1.2 Создаем нового пользователя
-		customer.Email = input.Customer.Email
-		customer.Phone = input.Customer.Phone
-		customer.Name = input.Customer.Name
-		customer.Surname = input.Customer.Surname
-		customer.Patronymic = input.Customer.Patronymic
+		// 6.1 Проверяем, есть ли пользователь с такими контактными данными в существующем аккаунте
+		userByEmail, errEmail := account.GetUserByEmail(input.Customer.Email)
+		userByPhone, errPhone := account.GetUserByPhone(input.Customer.Phone, "RU")
 
-		// 1.3 Роль - клиент
-		role, err := account.GetRoleByTag(models.RoleClient)
-		if err != nil {
-			log.Fatalf("Не удалось найти аккаунт: %v", err)
+		if errPhone == nil {
+			customer = userByPhone
+			fmt.Println("По телефону!")
+		}
+		if errEmail == nil {
+			customer = userByEmail
+			fmt.Println("По email!")
 		}
 
-		// 2. Создаем пользователя
-		_user, err := account.CreateUser(customer, *role)
-		if err != nil {
-			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка создания пользователя"}))
-			return
-		}
+		if customer == nil {
+			var _customer models.User
+			_customer.Email = input.Customer.Email
+			_customer.Phone = input.Customer.Phone
 
-		customer = *_user
+			_customer.Name = input.Customer.Name
+			_customer.Surname = input.Customer.Surname
+			_customer.Patronymic = input.Customer.Patronymic
+
+			// 1.3 Роль - клиент
+			role, err := account.GetRoleByTag(models.RoleClient)
+			if err != nil {
+				log.Fatalf("Не удалось найти аккаунт: %v", err)
+			}
+
+			// 2. Создаем пользователя
+			user, err := account.CreateUser(_customer, *role)
+			if err != nil {
+				u.Respond(w, u.MessageError(u.Error{Message:"Ошибка создания пользователя"}))
+				return
+			}
+
+			customer = user
+		}
+		
+		fmt.Println("Пользователь найден: ", customer)
+
 	}
 
 	// выше создан пользователь

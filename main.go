@@ -34,8 +34,8 @@ func main() {
 	// base.UploadTestDataPart_III()
 
 	// yandex payment
-	base.RefreshTablesPart_IV()
-	base.UploadTestDataPart_IV()
+	// base.RefreshTablesPart_IV()
+	// base.UploadTestDataPart_IV()
 
 	if err := (models.EventListener{}).ReloadEventHandlers(); err != nil {
 		log.Fatal(fmt.Sprintf("Не удалось зарегистрировать EventHandler: %v", err))
