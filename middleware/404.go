@@ -9,8 +9,17 @@ func NotFoundHandler () http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-		//w.WriteHeader(http.StatusOK)
-		u.Respond(w, u.Message(false, "Запрашиваемый объект не найден"))
+		u.Respond(w, u.Message(false, "Не найден вызываемый URL"))
+		return
+	});
+
+}
+
+func NotFoundMethod () http.Handler {
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		u.Respond(w, u.Message(false, "HTTP-метод указан не верно"))
 		return
 	});
 

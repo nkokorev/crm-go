@@ -14,7 +14,7 @@ type Order struct {
 	// Комментарий клиента к заказу
 	CustomerComment string	`json:"customerComment" gorm:"type:varchar(255);"`
 
-	// Комментарии к заказу
+	// Комментарии менеджеров к заказу
 	Comments	[]OrderComment `json:"comments"`
 
 	// Ответственный менеджер
@@ -66,7 +66,7 @@ func (Order) PgSqlCreate() {
 func (order *Order) BeforeCreate(scope *gorm.Scope) error {
 	order.Id = 0
 
-	// 1. Рассчитываем PublicId внутри магазина
+	// 1. Рассчитываем PublicId (#id заказа) внутри аккаунта
 	lastIdx := uint(0)
 	var ord Order
 

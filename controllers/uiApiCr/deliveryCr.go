@@ -77,7 +77,6 @@ func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-// func DeliveryAvailableMethodsGetList(w http.ResponseWriter, r *http.Request) {
 func DeliveryListOptions(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account

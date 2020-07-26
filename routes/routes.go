@@ -93,6 +93,7 @@ func Handlers() *mux.Router {
 
 	// ### 404 (^_^) ###
 	r.NotFoundHandler = middleware.NotFoundHandler()
+	r.MethodNotAllowedHandler = middleware.NotFoundMethod()
 
 	return r
 }

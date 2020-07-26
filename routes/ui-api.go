@@ -16,7 +16,7 @@ import (
 * rUiApi - маршруты без проверки JWT
 * rUiApiAuth - маршрут с проверкой JWT, а также на совпадение {accountId} с accountId указаном в токене
  */
-//var UiApiRoutes = func (rFree, rUiApiAuthFull *mux.Router) {
+// ... /accountHashId}/...
 var UiApiRoutes = func (rFree *mux.Router) {
 
 	// rFree.HandleFunc("/users", appCr.UserRegistration).Methods(http.MethodPost, http.MethodOptions)
@@ -36,5 +36,12 @@ var UiApiRoutes = func (rFree *mux.Router) {
 
 	// вставляется hashId магазина, а не id - чтобы защититься от атак.
 	rFree.HandleFunc("/yandex-payment/{yandexPaymentHashId:[0-9]+}/notifications/", uiApiCr.DeliveryListOptions).Methods(http.MethodGet, http.MethodOptions)
+
+	// rFree.HandleFunc("/orders/1234", appCr.OrderCreate).Methods(http.MethodPost, http.MethodOptions)
+	rFree.HandleFunc("/orders", uiApiCr.UiApiOrderCreate).Methods(http.MethodPost, http.MethodOptions)
+
+
+	// rFree.NotFoundHandler = NotFoundHandler()
+	// rFree.MethodNotAllowedHandler = NotFoundHandler()
 
 }
