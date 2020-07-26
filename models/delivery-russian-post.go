@@ -184,6 +184,9 @@ func (deliveryRussianPost DeliveryRussianPost) delete () error {
 // ########## End of CRUD Entity interface ###########
 func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData DeliveryData) (*DeliveryData, error) {
 
+	if deliveryData.Weight == 0 {
+		return nil, utils.Error{Message: "Ошибка расчета стоимости доставки: отсутствует вес товара"}
+	}
 	// базовые данные для запроса в api почта россиии
 	url := "https://otpravka-api.pochta.ru/1.0/tariff"
 	Authorization := "AccessToken " + deliveryRussianPost.AccessToken
@@ -257,8 +260,6 @@ func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData De
 
 func (deliveryRussianPost DeliveryRussianPost) checkMaxWeight(deliveryData DeliveryData) error {
 	// проверяем максимальную массу:
-	fmt.Println("deliveryData.Weight: ", deliveryData.Weight)
-	fmt.Println("deliveryRussianPost.MaxWeight: ", deliveryRussianPost.MaxWeight)
 	if deliveryData.Weight > deliveryRussianPost.MaxWeight {
 		return utils.Error{Message: fmt.Sprintf("Превышен максимальный вес посылки в %vкг.", deliveryRussianPost.MaxWeight)}
 	}

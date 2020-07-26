@@ -66,6 +66,8 @@ func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check - проверяем данные.
+
 	deliveryData, err := webSite.CalculateDelivery(input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка расчета стоимости доставки"))

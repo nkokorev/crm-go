@@ -11,6 +11,7 @@ type OrderChannel struct {
 	Id     uint   `json:"id" gorm:"primary_key"`
 	AccountId uint `json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
 
+	Code		string	`json:"code" gorm:"type:varchar(32);unique;not null;"`
 	Name		string 	`json:"name" gorm:"type:varchar(255);not null;"` // "Заказ из корзины", "Заказ по телефону", "Пропущенный звонок", "Письмо.."
 	Description string 	`json:"description" gorm:"type:varchar(255);"` // Описание назначения канала
 	
@@ -34,16 +35,16 @@ func (OrderChannel) PgSqlCreate() {
 	db.Model(&OrderChannel{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 
 	orderChannels := []OrderChannel {
-		{Name:   "Оффлайн",		Description: "-"},
-		{Name:   "По телефону",	Description: "-"},
-		{Name:   "Пропущенный звонок",	Description: "-"},
-		{Name:   "Через корзину",	Description: "-"},
-		{Name:   "В один клик",		Description: "Экспресс заказ"},
-		{Name:   "Запрос на понижение цены",	Description: "-"},
-		{Name:   "Заявка с посадочной страницы",Description: "-"},
-		{Name:   "Мессенджеры",	Description: "-"},
-		{Name:   "Онлайн-консультант",Description: "-"},
-		{Name:   "Мобильное приложение",Description: "-"},
+		{Code:"offline", Name:   "Оффлайн",		Description: "-"},
+		{Code:"phone", 			Name:   "По телефону",	Description: "-"},
+		{Code:"missed_call", 	Name:   "Пропущенный звонок",	Description: "-"},
+		{Code:"through_the_basket", Name:   "Через корзину",	Description: "-"},
+		{Code:"with_one_click", 	Name:   "В один клик",		Description: "Экспресс заказ"},
+		{Code:"request_to_lower_the_price", 	Name:   "Запрос на понижение цены",	Description: "-"},
+		{Code:"request_from_the_landing_page",	Name:   "Заявка с посадочной страницы",Description: "-"},
+		{Code:"messenger", 			Name:   "Мессенджеры",	Description: "-"},
+		{Code:"online_assistant", 	Name:   "Онлайн-консультант",Description: "-"},
+		{Code:"mobile_apps", Name:   "Мобильное приложение",Description: "-"},
 	}
 
 	for i := range(orderChannels) {

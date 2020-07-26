@@ -17,7 +17,7 @@ type Order struct {
 	// Комментарии менеджеров к заказу
 	Comments	[]OrderComment `json:"comments"`
 
-	// Ответственный менеджер
+	// Ответственный менеджер, назначается внутри системы
 	ManagerId 	uint	`json:"managerId" gorm:"type:int;not null"`
 	Manager		User	`json:"manager"`
 

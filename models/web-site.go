@@ -317,8 +317,16 @@ func (webSite WebSite) CalculateDelivery(deliveryRequest DeliveryRequest) (*Deli
 		return nil, err
 	}
 
-	// 1. Расчет веса посылки
+
+
+	// 1. Необходимость расчета веса посылки
 	if deliveryRequest.DeliveryData.NeedToCalculateWeight {
+
+		// проверяем переданную массу
+		/*if deliveryRequest.DeliveryData.Weight == 0 {
+			return nil, utils.Error{Message: "Ошибка расчета стоимости доставки: ошибка в указанной массе товара"}
+		}*/
+
 		var weight float64
 		weight = 0
 
@@ -335,8 +343,10 @@ func (webSite WebSite) CalculateDelivery(deliveryRequest DeliveryRequest) (*Deli
 			if !ok {
 				continue
 			}
-			weight += wg * float64(v.Count)
+			weight += wg * float64(v.Quantity)
 		}
+
+		// fmt.Println("weight: ", weight)
 
 		deliveryRequest.DeliveryData.Weight = weight
 	}
