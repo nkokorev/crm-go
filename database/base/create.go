@@ -69,9 +69,15 @@ func RefreshTablesPart_I() {
 	pool := models.GetPool()
 
 	// not there
+	err := pool.Exec("drop table if exists orders_products, payment_methods_web_sites, payment_methods_payments").Error
+	if err != nil {
+		log.Fatal(err)
+	}
 
 
-	pool.DropTableIfExists(models.DeliveryOrder{}, models.OrderChannel{}, models.PaymentSubject{},models.VatCode{},models.Order{},models.PaymentAmount{}, models.Payment{},models.YandexPayment{})
+	pool.DropTableIfExists(models.PaymentMethod{}, models.DeliveryOrder{}, models.OrderChannel{}, models.Order{}, models.Payment{},
+	models.YandexPayment{},models.PaymentAmount{})
+	// pool.DropTableIfExists(models.PaymentMethod{}, models.DeliveryOrder{}, models.OrderChannel{}, models.PaymentSubject{},models.VatCode{},models.Order{}, models.Payment{},models.YandexPayment{},models.PaymentAmount{})
 
 
 	pool.DropTableIfExists(models.Product{}, models.ProductCard{}, models.ProductGroup{})
@@ -79,6 +85,7 @@ func RefreshTablesPart_I() {
 	pool.DropTableIfExists(models.WebHook{}, models.EventListener{}, models.EventItem{},models.HandlerItem{}, models.DeliveryPickup{}, models.DeliveryRussianPost{}, models.DeliveryCourier{})
 
 	pool.DropTableIfExists(models.Article{}, models.Storage{}, models.UnitMeasurement{}, models.ApiKey{}, models.AccountUser{}, models.User{})
+	pool.DropTableIfExists(models.VatCode{}, models.PaymentSubject{})
 	pool.DropTableIfExists(models.Role{}, models.UserVerificationMethod{}, models.Account{}, models.CrmSetting{})
 
 
@@ -109,9 +116,7 @@ func RefreshTablesPart_I() {
 	models.ProductCard{}.PgSqlCreate()
 	models.Product{}.PgSqlCreate()
 
-	models.DeliveryRussianPost{}.PgSqlCreate()
-	models.DeliveryPickup{}.PgSqlCreate()
-	models.DeliveryCourier{}.PgSqlCreate()
+
 
 
 
@@ -132,8 +137,14 @@ func RefreshTablesPart_I() {
 	models.Order{}.PgSqlCreate()
 	models.DeliveryOrder{}.PgSqlCreate()
 	models.VatCode{}.PgSqlCreate()
-	models.PaymentSubject{}.PgSqlCreate()
+
 	models.OrderChannel{}.PgSqlCreate()
+	models.PaymentMethod{}.PgSqlCreate()
+	models.PaymentSubject{}.PgSqlCreate()
+
+	models.DeliveryRussianPost{}.PgSqlCreate()
+	models.DeliveryPickup{}.PgSqlCreate()
+	models.DeliveryCourier{}.PgSqlCreate()
 }
 
 
@@ -639,17 +650,25 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 -----END RSA PRIVATE KEY-----
 `,
 			DKIMSelector: "dk1",
+			/*PaymentMethods: []models.PaymentMethod{
+				{AccountId: 1, Id: 1},{AccountId: 1, Id: 3},{AccountId: 1, Id: 2},
+			},*/
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать WebSite для airoClimat: ", err)
 		return
 	}
-
 	webSiteAiro, ok := airoShopE.(*models.WebSite)
 	if !ok {
 		log.Fatal("Не удалось преобразовать WebSite для airoClimat: ", err)
 		return
 	}
+	if err := webSiteAiro.AppendPaymentMethods([]models.PaymentMethod{
+		{AccountId: 1, Id: 1},{AccountId: 1, Id: 3},{AccountId: 1, Id: 2},
+	}); err != nil {
+		log.Fatal(err)
+	}
+
 	// 3. Добавляем почтовые ящики
 	_, err = webSiteAiro.CreateEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "AIRO Climate", Box: "info"})
 	if err != nil {
@@ -1652,7 +1671,7 @@ func LoadProductCategoryDescriptionAiroClimate()  {
 func RefreshTablesPart_IV() {
 	pool := models.GetPool()
 
-	err := pool.Exec("drop table if exists orders_products").Error
+	err := pool.Exec("drop table if exists orders_products, payment_methods_web_sites, payment_methods_payments").Error
 	if err != nil {
 		log.Fatalf("Cant create tables -1: %v", err)
 		return
@@ -1661,24 +1680,31 @@ func RefreshTablesPart_IV() {
 
 
 		models.CartItem{},
-		models.PaymentSubject{},
-		models.VatCode{},
+
+
 		models.OrderComment{},
 		models.OrderChannel{},
+
 		models.DeliveryOrder{},
+		models.PaymentMethod{},
 		models.Order{},
 		models.Payment{},
 		models.PaymentAmount{},
 		models.YandexPayment{},
+
+
+		// models.VatCode{},
+		// models.PaymentSubject{},
 		)
 
 
 	// А теперь создаем
 
 	models.PaymentAmount{}.PgSqlCreate()
+	models.PaymentMethod{}.PgSqlCreate()
 	models.CartItem{}.PgSqlCreate()
-	models.PaymentSubject{}.PgSqlCreate()
-	models.VatCode{}.PgSqlCreate()
+	// models.PaymentSubject{}.PgSqlCreate()
+	// models.VatCode{}.PgSqlCreate()
 	models.OrderComment{}.PgSqlCreate()
 	models.OrderChannel{}.PgSqlCreate()
 	models.Order{}.PgSqlCreate()

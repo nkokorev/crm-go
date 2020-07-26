@@ -27,7 +27,7 @@ type YandexPayment struct {
 
 	// URL для уведомлений со стороны Я.Кассы.
 	URL		string 	`json:"url" gorm:"type:varchar(255);"`
-	EnabledIncomingNotifications 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // обрабатывать ли уведомления от Я.Кассы.
+	EnabledIncomingNotifications 	bool 	`json:"enabledIncomingNotifications" gorm:"type:bool;default:true"` // обрабатывать ли уведомления от Я.Кассы.
 	// ####### Внутренние данные ####### //
 
 	// Возврат после платежа или отмена для пользователя
@@ -185,7 +185,7 @@ func (yandexPayment YandexPayment) CreatePaymentByOrder(order Order) (*Payment, 
 		Paid: false,
 		Amount: PaymentAmount{Value: float64(12),Currency: "RUB"},
 		Description:  fmt.Sprintf("Заказ №%v в магазине AiroCliamte", order.Id),  // Видит клиент
-		PaymentMethod: PaymentMethod{Type: "bank_card"},
+		PaymentMethod: PaymentMethod{Code: "bank_card"},
 		Confirmation: Confirmation{Type: "redirect", ReturnUrl: yandexPayment.ReturnUrl},
 
 		// Чтобы понять какой платеж был оплачен!!!

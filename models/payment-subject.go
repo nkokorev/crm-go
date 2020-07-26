@@ -8,7 +8,6 @@ import (
 
 // Признак предмета расчета
 type PaymentSubject struct {
-	
 	Id     		uint   	`json:"id" gorm:"primary_key"`
 	AccountId 	uint	`json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
 

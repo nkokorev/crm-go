@@ -53,6 +53,8 @@ type CreateOrderForm struct {
 	
 	// Собственно, сама корзина
 	Cart []models.CartData `json:"cart"`
+
+	PaymentMethodCode string `json:"paymentMethod"`
 }
 
 // todo: список обязательных полей - дело настроек OrderSettings
@@ -177,6 +179,17 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 6. Находим способ оплаты
+	if input.PaymentMethodCode == "" {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска способа оплаты", Errors: map[string]interface{}{"paymentMethodCode":"Необходимо указать способ оплаты"}}))
+		return
+	}
+	paymentMethod, err := account.GetPaymentMethodByCode(input.PaymentMethodCode)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска способа оплаты", Errors: map[string]interface{}{"orderChannel":"Способ оплаты не найден"}}))
+		return
+	}
+
 	// 6. Создаем / находим пользователя
 	var customer *models.User
 	if input.CustomerHashId != "" {
@@ -263,13 +276,28 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	_order.OrderChannelId = orderChannel.Id
 	_order.Amount = models.PaymentAmount{Value: totalCost, Currency: totalCurrency, AccountId: account.Id}
 	_order.CartItems = cartItems
+	_order.PaymentMethodId = paymentMethod.Id
 
 
+	// Создаем order
 	order, err := account.CreateEntity(&_order)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
 		return
 	}
+
+	// Создаем платеж в Я.Кассе
+	switch paymentMethod.Code {
+	case "online":
+		// todo: берем яндекс кассу для всех способом оплаты
+		 
+		_, err = yandexPayment.CreatePaymentByOrder(order)
+		if err != nil {
+			log.Fatalf("Не удалось создать заказ в системе: ", err)
+		}
+	}
+
+
 
 	resp := u.Message(true, "POST Order Created")
 	resp["order"] = order

@@ -54,7 +54,6 @@ type Payment struct {
 	// Автоматический прием  поступившего платежа. Со стороны Я.Кассы
 	Capture	bool	`json:"capture" gorm:"type:bool;default:true"`
 
-
 	// Способ подтверждения платежа. Присутствует, когда платеж ожидает подтверждения от пользователя
 	Confirmation	Confirmation	`json:"confirmation" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 
@@ -76,10 +75,10 @@ type Payment struct {
 	// Данные о распределении денег {account_id:"", amount:"", status:"[waiting_for_capture, succeeded, canceled]"}
 	Transfers	Transfers	`json:"_transfers"`
 
+	// URL на который переадресуется пользователь
 	ConfirmationUrl	string	`json:"confirmation_url" gorm:"type:varchar(255);"`
 
 	// #### Внутренние данные #####
-
 
 	// Внутренний Id объекта типа платежа Яндекс.Касса, кэш или у другого посредника.
 	OwnerId	uint	`json:"ownerId" gorm:"type:int"` // Id в
@@ -92,6 +91,8 @@ type Payment struct {
 	ExternalCapturedAt 	time.Time  `json:"externalCapturedAt"` // Время подтверждения платежа, UTC
 	ExternalExpiresAt 	time.Time  `json:"externalExpiresAt"`  // Время, до которого вы можете бесплатно отменить или подтвердить платеж.
 	ExternalCreatedAt 	time.Time  `json:"externalCreatedAt"`  // Время создания заказа, UTC
+
+	PaymentMethods 	[]PaymentMethod `json:"paymentMethods" gorm:"many2many:payment_methods_payments;preload"` // доступные почтовые ящики с которых можно отправлять
 
 	// Внутреннее время
 	CreatedAt time.Time  `json:"createdAt"`
@@ -111,9 +112,9 @@ func (payment *Payment) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
-type PaymentMethod struct {
+/*type PaymentMethod struct {
 	Type 	string `json:"type" gorm:"type:varchar(32);"`
-}
+}*/
 
 type Confirmation struct {
 	Type 	string `json:"type" gorm:"type:varchar(32);"` // embedded, redirect, external, qr
@@ -294,3 +295,26 @@ func (payment Payment) delete () error {
 	return db.Where("id = ?", payment.Id).Delete(payment).Error
 }
 // ######### END CRUD Functions ############
+
+
+func (payment Payment) AppendPaymentMethods(paymentMethods []PaymentMethod) error {
+	if err := db.Model(&payment).Association("PaymentMethods").Append(paymentMethods).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func (payment Payment) ReplacePaymentMethods(paymentMethods []PaymentMethod) error {
+	if err := db.Model(&payment).Association("PaymentMethods").Replace(paymentMethods).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func (payment Payment) RemovePaymentMethods(paymentMethods []PaymentMethod) error {
+	if err := db.Model(&payment).Association("PaymentMethods").Delete(paymentMethods).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
