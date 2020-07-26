@@ -49,10 +49,10 @@ type CreateOrderForm struct {
 
 	// Выбирается канал доставки, а также все необходимые данные
 	// todo: для каждого канала сделать доступным метод доставки (по умолчанию: все)
-	Delivery 	DeliveryData	`json:"delivery"`
+	Delivery 	models.DeliveryData	`json:"delivery"`
 	
 	// Собственно, сама корзина
-	Cart []CartData `json:"cart"`
+	Cart []models.CartData `json:"cart"`
 }
 
 // todo: список обязательных полей - дело настроек OrderSettings
@@ -64,17 +64,7 @@ type Customer struct {
 	Surname 	string `json:"surname" `
 	Patronymic 	string `json:"patronymic"`
 }
-type DeliveryData struct {
-	Id 		uint 	`json:"id"` 	// id доставки в ее таблице
-	Code 	string 	`json:"code"`
-	
-	Address		string 	`json:"address"` 		// адрес доставки
-	PostalCode	string 	`json:"postalCode"`
-}
-type CartData struct {
-	ProductId 	uint	`json:"productId"`	// id product
-	Quantity	uint	`json:"quantity"`	// число позиций
-}
+
 
 
 func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
@@ -92,15 +82,21 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 0.
+	// 0. Получаем магазин из контекста
+	var webSite models.WebSite
+	if err := account.LoadEntity(&webSite, input.WebSiteId); err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в запросе: проверьте id магазина"))
+		return
+	}
 
-	// 1.X
-	var order models.Order
-
-	
-	// 1. Получаем список продуктов и считаем вес
+	// 1. Создаем список продуктов, считаем вес и общую стоимость
 	var cartItems []models.CartItem
+
+	// вес посылки для расчета стоимости доставки
+	// var weight = float64(0)
+	
 	for _,v := range input.Cart {
+		
 		// 1.1 Получаем продукт
 		product, err := account.GetProduct(v.ProductId)
 		if err != nil {
@@ -114,30 +110,68 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-
-
-		// 1.3 Считаем цену
-
-		// Расчет цены с учетом скидок
+		// 1.3 Считаем цену товара с учетом скидок
 		ProductCost := product.RetailPrice - product.RetailDiscount
 
+		// 1.4 считаем вес
+		/*_w, err := product.GetAttribute(product.WeightKey)
+		wg, ok := _w.(float64)
+		if !ok { continue }
+		weight += wg * float64(v.Quantity)*/
+
+		// 1.5 Формируем и добавляем Cart Item в общий список
 		cartItems = append(cartItems, models.CartItem{
 			AccountId: account.Id,
 			ProductId: product.Id,
 			Description: product.Name,
 			Quantity: v.Quantity,
-			Amount: models.PaymentAmount{Value: ProductCost,Currency: "RUB"},
+			Amount: models.PaymentAmount{Value: ProductCost, Currency: "RUB"},
 			VatCode: product.VatCodeId,
 			// OrderId: order.Id,
 		})
 	}
 
-	// 2. Считаем вес
+	// return
 
-	// 3. Находим тип доставки
+	// 1.X
+	var order models.Order
+	
+	/*// 3. Находим тип доставки
+	if  input.Delivery.Code == "" ||  input.Delivery.Id < 1 {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в определении типа доставки", Errors: map[string]interface{}{"delivery":"не указан тип доставки или id"}}))
+		return
+	}
+	delivery, err := webSite.GetDelivery(input.Delivery.Code, input.Delivery.Id)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в определении типа доставки", Errors: map[string]interface{}{"delivery":"тип доставки или id указаны не верно"}}))
+		return
+	}
+
+	// Проверяем максимальный вес
+	if err := delivery.checkMaxWeight(deliveryRequest.DeliveryData); err != nil {
+		fmt.Println("Ошибка макс веса", err)
+		return nil, err
+	}*/
 
 	// 4. Определяем стоимость доставки
+	totalCost, weight, err := webSite.CalculateDelivery(models.DeliveryRequest{
+		Cart: input.Cart,
+		DeliveryData: models.DeliveryData{
+			Id: input.Delivery.Id,
+			Code: input.Delivery.Code,
+			PostalCode: input.Delivery.PostalCode,
+			Address: input.Delivery.Address,
+		}})
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка расчета стоимости доставки"}))
+		return
 
+	}
+
+		fmt.Println("Стоимость доставки: ",totalCost,weight )
+
+	return
+	
 	// 5. Находим канал заявки
 	if input.OrderChannelCode == "" {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска источника заявки", Errors: map[string]interface{}{"orderChannel":"Необходимо указать канал заявки"}}))

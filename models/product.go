@@ -57,6 +57,14 @@ type Product struct {
 	// Attributes []EavAttribute `json:"attributes" gorm:"many2many:product_eav_attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	//Attributes []EavAttribute `json:"attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	Attributes 		postgres.Jsonb `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+
+	// todo: можно изменить и сделать свойства товара
+	// ключ для расчета веса продукта
+	WeightKey 		string `json:"weightKey" gorm:"type:varchar(32);default:'grossWeight'"`
+
+	// Нужно ли считать вес для расчета доставки у данного продукта
+	// ConsiderWeight	bool	`json:"considerWeight" gorm:"type:bool;default:false"`
+
 	// Attributes 		PropertyMap `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 	// Reviews []Review // Product reviews (отзывы на товар - с рейтингом(?))
 	// Questions []question // вопросы по товару

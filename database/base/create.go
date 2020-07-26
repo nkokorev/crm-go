@@ -801,8 +801,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности черный", ShortName: "Рециркулятор AIRO-DEZ черный",
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 19500.00, RetailDiscount: 1000,
-			ShortDescription: "",
-			Description: "",
+			ShortDescription: "",Description: "",
+			WeightKey: "grossWeight",
 			Attributes: postgres.Jsonb{
 				RawMessage: utils.MapToRawJson(map[string]interface{}{
 					"color":"черный",

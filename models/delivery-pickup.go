@@ -172,12 +172,12 @@ func (deliveryPickup DeliveryPickup) GetName () string {
 	return "Почта России"
 }
 
-func (deliveryPickup DeliveryPickup) CalculateDelivery(deliveryData DeliveryData) (*DeliveryData, error) {
-	deliveryData.TotalCost = 0
-	return &deliveryData, nil
+func (deliveryPickup DeliveryPickup) CalculateDelivery(deliveryData DeliveryData, weight float64) (float64, error) {
+	return deliveryPickup.Price, nil
+	// deliveryData.TotalCost = 0
 }
 
-func (deliveryPickup DeliveryPickup) checkMaxWeight(deliveryData DeliveryData) error {
+func (deliveryPickup DeliveryPickup) checkMaxWeight(weight float64) error {
 	return nil
 }
 

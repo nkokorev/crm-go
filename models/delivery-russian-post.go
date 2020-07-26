@@ -182,10 +182,10 @@ func (deliveryRussianPost DeliveryRussianPost) delete () error {
 }
 
 // ########## End of CRUD Entity interface ###########
-func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData DeliveryData) (*DeliveryData, error) {
+func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData DeliveryData, weight float64) (float64, error) {
 
-	if deliveryData.Weight == 0 {
-		return nil, utils.Error{Message: "Ошибка расчета стоимости доставки: отсутствует вес товара"}
+	if weight == 0 {
+		return 0, utils.Error{Message: "Ошибка расчета стоимости доставки: отсутствует вес товара"}
 	}
 	// базовые данные для запроса в api почта россиии
 	url := "https://otpravka-api.pochta.ru/1.0/tariff"
@@ -198,7 +198,7 @@ func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData De
 		"index-to": 	deliveryData.PostalCode,
 		"mail-category":deliveryRussianPost.MailCategory,
 		"mail-type":deliveryRussianPost.MailType,
-		"mass": deliveryData.Weight * float64(1000), // масса в граммах (*1000)
+		"mass": weight * float64(1000), // масса в граммах (*1000)
 		/*"dimension": map[string]interface{}{
 			"height": 90, // в см.
 			"length": 30, // в см.
@@ -214,7 +214,7 @@ func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData De
 	client := &http.Client{}
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(rawJson))
 	if err != nil {
-		return nil, utils.Error{Message: "Ошибка связи с сервисом Почты России"}
+		return 0, utils.Error{Message: "Ошибка связи с сервисом Почты России"}
 	}
 
 	request.Header.Set("Authorization", Authorization)
@@ -223,44 +223,44 @@ func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData De
 
 	response, err := client.Do(request)
 	if err != nil {
-		return nil, utils.Error{Message: "Ошибка связи с сервисом Почты России"}
+		return 0, utils.Error{Message: "Ошибка связи с сервисом Почты России"}
 	}
 	defer response.Body.Close()
 
 	// 1. Сначала узнаем статус запроса
-	if response.Status == "400 Bad Request" {
-
-		var input struct {
-			Desc string `json:"desc"`
-		}
-
-		if err := json.NewDecoder(response.Body).Decode(&input); err != nil {
-			return nil, err
-		}
-
-		return nil, utils.Error{Message: input.Desc}
-
-	} else {
-
+	if response.StatusCode == 200 {
 		var input struct {
 			TotalRate float64 `json:"total-rate"`
 			TotalVat float64 `json:"total-vat"`
 		}
 
 		if err := json.NewDecoder(response.Body).Decode(&input); err != nil {
-			return nil, utils.Error{Message: "Ошибка данных со стороны Почты России"}
+			return 0, utils.Error{Message: "Ошибка данных со стороны Почты России"}
 		}
 
-		deliveryData.TotalCost = input.TotalRate / 100 // т.е. в копейках
-		return &deliveryData, nil
+		return float64(input.TotalRate / 100), nil // т.е. в копейках
+		// deliveryData.TotalCost = input.TotalRate / 100 // т.е. в копейках
+		// return &deliveryData, nil
+
+	} else {
+		var input struct {
+			Desc string `json:"desc"`
+		}
+
+		if err := json.NewDecoder(response.Body).Decode(&input); err != nil {
+			return 0, err
+		}
+
+		return 0, utils.Error{Message: input.Desc}
 	}
 
-	return nil, utils.Error{Message: "Ошибка расчета стоимости"}
+
+	return 0, utils.Error{Message: "Ошибка расчета стоимости"}
 }
 
-func (deliveryRussianPost DeliveryRussianPost) checkMaxWeight(deliveryData DeliveryData) error {
+func (deliveryRussianPost DeliveryRussianPost) checkMaxWeight(weight float64) error {
 	// проверяем максимальную массу:
-	if deliveryData.Weight > deliveryRussianPost.MaxWeight {
+	if weight > deliveryRussianPost.MaxWeight {
 		return utils.Error{Message: fmt.Sprintf("Превышен максимальный вес посылки в %vкг.", deliveryRussianPost.MaxWeight)}
 	}
 

@@ -165,14 +165,14 @@ func (deliveryCourier DeliveryCourier) delete () error {
 func (deliveryCourier DeliveryCourier) GetName () string {
 	return "Доставка курьером"
 }
-func (deliveryCourier DeliveryCourier) CalculateDelivery(deliveryData DeliveryData) (*DeliveryData, error) {
-
-	deliveryData.TotalCost = deliveryCourier.Price
-	return &deliveryData, nil
+func (deliveryCourier DeliveryCourier) CalculateDelivery(deliveryData DeliveryData, weight float64) (float64, error) {
+	return  deliveryCourier.Price, nil
+	// deliveryData.TotalCost = deliveryCourier.Price
+	// return &deliveryData, nil
 }
-func (deliveryCourier DeliveryCourier) checkMaxWeight(deliveryData DeliveryData) error {
+func (deliveryCourier DeliveryCourier) checkMaxWeight(weight float64) error {
 	// проверяем максимальную массу:
-	if deliveryData.Weight > deliveryCourier.MaxWeight {
+	if weight > deliveryCourier.MaxWeight {
 		return utils.Error{Message: fmt.Sprintf("Превышен максимальный вес посылки в %vкг.", deliveryCourier.MaxWeight)}
 	}
 

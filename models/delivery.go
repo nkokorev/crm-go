@@ -4,8 +4,8 @@ type Delivery interface {
 	Entity
 	GetCode() string
 
-	CalculateDelivery(deliveryData DeliveryData) (*DeliveryData, error) // weight в кг
-	checkMaxWeight(deliveryData DeliveryData) error // проверяет макс вес
+	CalculateDelivery(deliveryData DeliveryData, weight float64) (float64, error) // weight в кг
+	checkMaxWeight(weight float64) error // проверяет макс вес
 
 	setShopId(uint)
 }
@@ -13,24 +13,26 @@ type Delivery interface {
 type DeliveryRequest struct {
 
 	// Список товаров в корзине
-	Cart map[string]struct{
+	/*Cart map[string]struct{
 		ProductId 	uint `json:"productId"` // id product
 		Quantity 		uint `json:"quantity"`      // число позиций
-	} `json:"cart"`
+	} `json:"cart"`*/
+	Cart []CartData `json:"cart"`
+
+	DeliveryData	DeliveryData `json:"deliveryData"`
 
 	// Метод доставки
-	DeliveryMethod struct {
+	/*DeliveryMethod struct {
 		Id 		uint 	`json:"id"` 	// id доставки в ее таблице
 		Code 	string 	`json:"code"`	// code по которому можно понять что за таблица
 		WebSiteId 	uint 	`json:"webSiteId"` // на всякий случай
 	} `json:"deliveryMethod"`
 
-	// Данные для расчета доставки
-	DeliveryData DeliveryData `json:"deliveryData"`
+	DeliveryData DeliveryData `json:"deliveryData"`*/
 
 }
 // Данные для расчета доставки
-type DeliveryData struct {
+/*type DeliveryData struct {
 	
 	Address		string 	`json:"address"` 		// адрес доставки
 	PostalCode	string 	`json:"postalCode"` 	// Почтовый индекс доставки для расчета
@@ -40,4 +42,16 @@ type DeliveryData struct {
 
 	NeedToCalculateWeight 	bool  `json:"needToCalculateWeight"`	// необходимость расчета веса посылки
 	ProductWeightKey 		string `json:"productWeightKey"` //  ключ для расчета веса продуктов в их атрибутах grossWeight
+}*/
+
+type DeliveryData struct {
+	Id 		uint 	`json:"id"` 	// id доставки в ее таблице
+	Code 	string 	`json:"code"`
+
+	Address		string 	`json:"address"` 		// адрес доставки
+	PostalCode	string 	`json:"postalCode"`
+}
+type CartData struct {
+	ProductId 	uint	`json:"productId"`	// id product
+	Quantity	uint	`json:"quantity"`	// число позиций
 }

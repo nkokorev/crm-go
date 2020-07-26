@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"time"
 )
 
 // Корзины товаров
@@ -26,8 +27,8 @@ type CartItem struct {
 	Product Product `json:"product"`
 	Order	Order `json:"order" gorm:"preload:false"`
 
-	// CreatedAt time.Time `json:"createdAt"`
-	// UpdatedAt time.Time `json:"updatedAt"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 func (CartItem) PgSqlCreate() {
