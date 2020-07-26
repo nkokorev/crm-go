@@ -36,6 +36,8 @@ type DeliveryCourier struct {
 func (DeliveryCourier) PgSqlCreate() {
 	db.CreateTable(&DeliveryCourier{})
 	db.Model(&DeliveryCourier{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Model(&DeliveryCourier{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "CASCADE", "CASCADE")
+	db.Model(&DeliveryCourier{}).AddForeignKey("vat_code_id", "vat_codes(id)", "CASCADE", "CASCADE")
 }
 
 // ############# Entity interface #############

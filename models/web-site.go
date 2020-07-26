@@ -273,6 +273,7 @@ func (webSite WebSite) AppendDeliveryMethod(entity Entity) error {
 	return entity.update(map[string]interface{}{"web_site_id":webSite.Id})
 }
 
+// todo: пофиксить выпуск публичного ключа через UI / API
 func (webSite WebSite) GetDeliveryMethods() []Delivery {
 	// Находим все необходимые методы
 	var posts []DeliveryRussianPost
@@ -289,7 +290,6 @@ func (webSite WebSite) GetDeliveryMethods() []Delivery {
 	if err := db.Model(&DeliveryPickup{}).Find(&pickups, "account_id = ? AND web_site_id = ?", webSite.AccountId, webSite.Id).Error; err != nil {
 		return nil
 	}
-
 
 	deliveries := make([]Delivery, len(posts)+len(pickups)+len(couriers))
 	for i,_ := range posts {

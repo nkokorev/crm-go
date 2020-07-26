@@ -194,6 +194,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		userByEmail, errEmail := account.GetUserByEmail(input.Customer.Email)
 		userByPhone, errPhone := account.GetUserByPhone(input.Customer.Phone, "RU")
 
+		// todo: подсовывать ли данные существующим клиентам или нет ? - вывести в настройки
 		if errPhone == nil {
 			customer = userByPhone
 			fmt.Println("По телефону!")
@@ -202,7 +203,6 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 			customer = userByEmail
 			fmt.Println("По email!")
 		}
-
 		if customer == nil {
 			var _customer models.User
 			_customer.Email = input.Customer.Email
@@ -227,12 +227,9 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 
 			customer = user
 		}
-		
-		fmt.Println("Пользователь найден: ", customer)
 
 	}
 
-	// выше создан пользователь
 	// 7. Создаем / находим менеджера
 	var manager models.User
 	if input.ManagerHashId != "" {
@@ -254,44 +251,27 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 
 	//////////////////////
 
-
 	// 9. Создаем заказ
-	var order models.Order
+	var _order models.Order
 
-	order.CustomerComment = input.CustomerComment
-	order.ManagerId = manager.Id
-	order.Individual = input.Individual
-	order.WebSiteId = webSite.Id
-	order.CustomerId = customer.Id
+	_order.CustomerComment = input.CustomerComment
+	_order.ManagerId = manager.Id
+	_order.Individual = input.Individual
+	_order.WebSiteId = webSite.Id
+	_order.CustomerId = customer.Id
 	// order.CompanyId = CompanyId.Id
-	order.OrderChannelId = orderChannel.Id
-	order.Amount = models.PaymentAmount{Value: totalCost, Currency: totalCurrency, AccountId: account.Id}
-	order.CartItems = cartItems
+	_order.OrderChannelId = orderChannel.Id
+	_order.Amount = models.PaymentAmount{Value: totalCost, Currency: totalCurrency, AccountId: account.Id}
+	_order.CartItems = cartItems
 
-	// fmt.Println(order)
+
+	order, err := account.CreateEntity(&_order)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
+		return
+	}
 
 	resp := u.Message(true, "POST Order Created")
-	resp["order"] = input
-	u.Respond(w, resp)
-
-	return
-
-	fmt.Println(orderChannel,manager, order)
-
-
-
-
-
-
-
-
-/*	order, err := account.CreateEntity(&input.Order)
-	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
-		return
-	}*/
-
-	// resp := u.Message(true, "POST Order Created")
-	// resp["order"] = input
+	resp["order"] = order
 	u.Respond(w, resp)
 }
