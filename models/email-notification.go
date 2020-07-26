@@ -136,11 +136,9 @@ func (emailNotification *EmailNotification) load() error {
 	return nil
 }
 
-
 func (EmailNotification) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return EmailNotification{}.getPaginationList(accountId, 0, 100, sortBy, "")
 }
-
 func (EmailNotification) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	emailNotifications := make([]EmailNotification,0)

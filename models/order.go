@@ -40,6 +40,8 @@ type Order struct {
 	OrderChannelId 	uint	`json:"orderChannelId" gorm:"type:int;not null;"`
 	OrderChannel 	OrderChannel `json:"orderChannel"`
 
+	//	Способ оплаты
+
 	// Фиксируем стоимость заказа
 	AmountId  	uint	`json:"amountId" gorm:"type:int;not null;"`
 	Amount		PaymentAmount	`json:"amount"`
@@ -52,7 +54,7 @@ type Order struct {
 	DeliveryCode	string 	`json:"deliveryCode" gorm:"type:varchar(32);"`
 	DeliveryAddress	string 	`json:"deliveryAddress" gorm:"type:varchar(32);"`
 	DeliveryPostalCode	string 	`json:"deliveryPostalCode" gorm:"type:varchar(32);"`
-	Delivery		Delivery	`json:"delivery"` // << preload
+	Delivery		Delivery	`json:"delivery" gorm:"-"` // << preload
 
 	CreatedAt time.Time 	`json:"createdAt"`
 	UpdatedAt time.Time 	`json:"updatedAt"`

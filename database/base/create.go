@@ -71,7 +71,7 @@ func RefreshTablesPart_I() {
 	// not there
 
 
-	pool.DropTableIfExists(models.OrderChannel{}, models.PaymentSubject{},models.VatCode{},models.Order{},models.PaymentAmount{}, models.Payment{},models.YandexPayment{})
+	pool.DropTableIfExists(models.DeliveryOrder{}, models.OrderChannel{}, models.PaymentSubject{},models.VatCode{},models.Order{},models.PaymentAmount{}, models.Payment{},models.YandexPayment{})
 
 
 	pool.DropTableIfExists(models.Product{}, models.ProductCard{}, models.ProductGroup{})
@@ -125,10 +125,12 @@ func RefreshTablesPart_I() {
 	// Уведомления
 	models.EmailNotification{}.PgSqlCreate()
 
+
 	models.YandexPayment{}.PgSqlCreate()
 	models.PaymentAmount{}.PgSqlCreate()
 	models.Payment{}.PgSqlCreate()
 	models.Order{}.PgSqlCreate()
+	models.DeliveryOrder{}.PgSqlCreate()
 	models.VatCode{}.PgSqlCreate()
 	models.PaymentSubject{}.PgSqlCreate()
 	models.OrderChannel{}.PgSqlCreate()
@@ -1655,11 +1657,13 @@ func RefreshTablesPart_IV() {
 	}
 	pool.DropTableIfExists(
 
+
 		models.CartItem{},
 		models.PaymentSubject{},
 		models.VatCode{},
 		models.OrderComment{},
 		models.OrderChannel{},
+		models.DeliveryOrder{},
 		models.Order{},
 		models.Payment{},
 		models.PaymentAmount{},
@@ -1668,6 +1672,7 @@ func RefreshTablesPart_IV() {
 
 
 	// А теперь создаем
+
 	models.PaymentAmount{}.PgSqlCreate()
 	models.CartItem{}.PgSqlCreate()
 	models.PaymentSubject{}.PgSqlCreate()
@@ -1675,6 +1680,7 @@ func RefreshTablesPart_IV() {
 	models.OrderComment{}.PgSqlCreate()
 	models.OrderChannel{}.PgSqlCreate()
 	models.Order{}.PgSqlCreate()
+	models.DeliveryOrder{}.PgSqlCreate()
 	models.YandexPayment{}.PgSqlCreate()
 	models.Payment{}.PgSqlCreate()
 }
