@@ -48,6 +48,22 @@ func (paymentOption *PaymentOption) BeforeCreate(scope *gorm.Scope) error {
 	paymentOption.Id = 0
 	return nil
 }
+func (paymentOption *PaymentOption) AfterFind() (err error) {
+
+	switch paymentOption.OwnerType {
+	case "payment_yandexes":
+		var paymentYandex PaymentYandex
+		if err := db.First(&paymentYandex, paymentOption.OwnerId).Error; err != nil { return err}
+		paymentOption.PaymentMethod = &paymentYandex
+	case "chashe":
+		// todo: тут что-то еще
+		// var paymentYandex PaymentYandex
+		// if err := db.First(&paymentYandex, paymentOption.OwnerId).Error; err != nil { return err}
+		// paymentOption.PaymentMethod = &paymentYandex
+	}
+
+	return nil
+}
 
 // ######### CRUD Functions ############
 func (paymentOption PaymentOption) create() (Entity, error)  {

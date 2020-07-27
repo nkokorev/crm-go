@@ -176,12 +176,14 @@ func (paymentYandex PaymentYandex) delete () error {
 
 // ########## Work function ############
 
-func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order) (*Payment, error) {
+func (paymentYandex PaymentYandex) CreatePayment(order Order) (*Payment, error) {
 
 	_p := Payment {
 		AccountId: paymentYandex.AccountId,
 		Paid: false,
-		Amount: PaymentAmount{Value: float64(12),Currency: "RUB"},
+		Amount: order.Amount,
+		IncomeAmount: order.Amount,
+		RefundedAmount: PaymentAmount{AccountId: order.AccountId, Value: float64(0), Currency: "RUB"},
 		Description:  fmt.Sprintf("Заказ №%v в магазине AiroCliamte", order.Id),  // Видит клиент
 		PaymentMethodData: PaymentMethodData{Type: "bank_card"}, // вообще еще вопрос
 		Confirmation: Confirmation{Type: "redirect", ReturnUrl: paymentYandex.ReturnUrl},
@@ -197,6 +199,8 @@ func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order) (*Payment, 
 		OwnerType: "yandex_payment",
 		OrderId: order.Id,
 	}
+
+	fmt.Println("Создаем платеж: ", _p)
 
 	// создаем внутри платеж
 	entity, err := _p.create()
@@ -284,6 +288,13 @@ func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 		}
 
 		fmt.Println("confirmation: ", confirmation.ConfirmationUrl)
+
+
+		payment.ConfirmationUrl = confirmation.ConfirmationUrl
+		if err := payment.update(map[string]interface{}{"ConfirmationUrl":confirmation.ConfirmationUrl}); err != nil {
+			return err
+		}
+
 /*
 		_confirmation_url, ok := responseRequest["confirmation_url"]; if !ok {
 			return utils.Error{Message: "Ответ от Яндекса не содержит confirmation_url."}
@@ -303,9 +314,6 @@ func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 	} else {
 		return utils.Error{Message: fmt.Sprintf("Ответ сервера Яндекс.Кассы: %v", response.StatusCode)}
 	}
-
-
-
 
 	// todo: тут мы создаем payment, если все хорошо
 

@@ -30,8 +30,8 @@ type Payment struct {
 	// Каков "приход" за вычетом комиссии посредника.
 	// IncomeValue 	float64 `json:"incomeValue" gorm:"type:numeric;default:0"`
 	// IncomeCurrency 	string 	`json:"incomeCurrency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
-	IncomeAmountId  uint	`json:"incomeAmountId" gorm:"type:int;not null;"`
-	IncomeAmount  PaymentAmount	`json:"income_amount"`
+	IncomeAmountId  uint	`json:"incomeAmountId" gorm:"type:int;"`
+	IncomeAmount  	PaymentAmount	`json:"income_amount"`
 
 	// Сумма, которая вернулась пользователю. Присутствует, если у этого платежа есть успешные возвраты.
 	Refundable 				bool 	`json:"refundable" gorm:"type:bool;default:false;"` // Возможность провести возврат по API
@@ -278,7 +278,7 @@ func (Payment) getByEvent(eventName string) (*Payment, error) {
 }
 
 func (payment *Payment) update(input map[string]interface{}) error {
-	return db.Model(payment).Where("id", payment.Id).Omit("id", "account_id").Updates(input).Error
+	return db.Model(payment).Omit("id", "account_id").Updates(input).Error
 }
 
 func (payment Payment) delete () error {

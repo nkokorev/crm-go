@@ -1,7 +1,6 @@
 package uiApiCr
 
 import (
-	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -27,9 +26,6 @@ func PaymentOptionGetList(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
 	}
-
-	// fmt.Println(webSite)
-	fmt.Println("webSite: ", webSite.PaymentOptions)
 
 	resp := u.Message(true, "GET PaymentOption List")
 	resp["paymentOptions"] = webSite.PaymentOptions

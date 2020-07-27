@@ -282,13 +282,24 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 
 
 	// Создаем order
-	order, err := account.CreateEntity(&_order)
+	orderEntity, err := account.CreateEntity(&_order)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
 		return
 	}
 
+	order, ok := orderEntity.(*models.Order)
+	if !ok {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время конвертации заказа"}))
+		return
+	}
+
 	// Создаем платеж в Я.Кассе
+	payment, err := paymentOption.CreatePayment(*order)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания платежа"}))
+		return
+	}
 	/*switch paymentMethod.Code {
 	case "online":
 		// todo: берем яндекс кассу для всех способом оплаты
@@ -300,8 +311,11 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	}*/
 
 
+	fmt.Println("ConfirmationUrl: ", payment.ConfirmationUrl)
+
 
 	resp := u.Message(true, "POST Order Created")
 	resp["order"] = order
+	resp["payment"] = payment
 	u.Respond(w, resp)
 }
