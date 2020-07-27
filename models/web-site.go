@@ -32,7 +32,7 @@ type WebSite struct {
 	Deliveries 		[]Delivery  `json:"deliveries" gorm:"-"`// `gorm:"polymorphic:Owner;"`
 	ProductGroups 	[]ProductGroup `json:"productGroups"`
 	EmailBoxes 		[]EmailBox `json:"emailBoxes"` // доступные почтовые ящики с которых можно отправлять
-	PaymentMethods 	[]PaymentMethod `json:"paymentMethods" gorm:"many2many:payment_methods_web_sites;preload"` // доступные почтовые ящики с которых можно отправлять
+	PaymentOptions 	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_web_sites;preload"` // доступные почтовые ящики с которых можно отправлять
 }
 
 func (WebSite) PgSqlCreate() {
@@ -65,7 +65,7 @@ func (webSite WebSite) create() (Entity, error)  {
 
 	wb := webSite
 	
-	if err := db.Create(&wb).Preload("PaymentMethods").Preload("EmailBoxes").First(&wb, wb.Id).Error; err != nil {
+	if err := db.Create(&wb).Preload("PaymentOptions").Preload("EmailBoxes").First(&wb, wb.Id).Error; err != nil {
 		return nil, err
 	}
 
@@ -86,7 +86,7 @@ func (WebSite) get(id uint) (Entity, error) {
 
 func (webSite *WebSite) load() error {
 
-	err := db.Preload("PaymentMethods").Preload("EmailBoxes").First(webSite,webSite.Id).Error
+	err := db.Preload("PaymentOptions").Preload("EmailBoxes").First(webSite,webSite.Id).Error
 	if err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ func (WebSite) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	var total uint
 
 	err := db.Model(&WebSite{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
-		Preload("PaymentMethods").Preload("EmailBoxes").Find(&webSites).Error
+		Preload("PaymentOptions").Preload("EmailBoxes").Find(&webSites).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, 0, err
 	}
@@ -132,7 +132,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		search = "%"+search+"%"
 
 		err := db.Model(&WebSite{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("PaymentMethods").Preload("EmailBoxes").
+			Preload("PaymentOptions").Preload("EmailBoxes").
 			Find(&webSites, "name ILIKE ? OR address ILIKE ? OR email ILIKE ? OR phone ILIKE ?", search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -149,7 +149,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 	} else {
 
 		err := db.Model(&WebSite{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("PaymentMethods").Preload("EmailBoxes").
+			Preload("PaymentOptions").Preload("EmailBoxes").
 			Find(&webSites).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -172,7 +172,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 }
 
 func (webSite *WebSite) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(webSite).Omit("id", "account_id").Updates(input).Preload("PaymentMethods").Preload("EmailBoxes").First(webSite,webSite.Id).Error
+	return db.Set("gorm:association_autoupdate", false).Model(webSite).Omit("id", "account_id").Updates(input).Preload("PaymentOptions").Preload("EmailBoxes").First(webSite,webSite.Id).Error
 }
 
 func (webSite WebSite) delete () error {
@@ -497,22 +497,22 @@ func (webSite WebSite) GetEmailBoxList(sortBy string) ([]EmailBox, error) {
 	return EmailBox{}.getListByWebSite(webSite.AccountId, webSite.Id, sortBy)
 }
 
-func (webSite WebSite) AppendPaymentMethods(paymentMethods []PaymentMethod) error {
-	if err := db.Model(&webSite).Association("PaymentMethods").Append(paymentMethods).Error; err != nil {
+func (webSite WebSite) AppendPaymentOptions(paymentOptions []PaymentOption) error {
+	if err := db.Model(&webSite).Association("PaymentOptions").Append(paymentOptions).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
-func (webSite WebSite) ReplacePaymentMethods(paymentMethods []PaymentMethod) error {
-	if err := db.Model(&webSite).Association("PaymentMethods").Replace(paymentMethods).Error; err != nil {
+func (webSite WebSite) ReplacePaymentOptions(paymentOptions []PaymentOption) error {
+	if err := db.Model(&webSite).Association("PaymentOptions").Replace(paymentOptions).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
-func (webSite WebSite) RemovePaymentMethods(paymentMethods []PaymentMethod) error {
-	if err := db.Model(&webSite).Association("PaymentMethods").Delete(paymentMethods).Error; err != nil {
+func (webSite WebSite) RemovePaymentOptions(paymentOptions []PaymentOption) error {
+	if err := db.Model(&webSite).Association("PaymentOptions").Delete(paymentOptions).Error; err != nil {
 		return err
 	}
 

@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func PaymentMethodCreate(w http.ResponseWriter, r *http.Request) {
+func PaymentOptionCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -16,14 +16,9 @@ func PaymentMethodCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !account.IsMainAccount() {
-		u.Respond(w, u.MessageError(u.Error{Message:"У вас нет прав на создание/изменение объектов этого типа"}))
-		return
-	}
-
 	// Get JSON-request
 	var input struct{
-		models.PaymentMethod
+		models.PaymentOption
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -31,43 +26,43 @@ func PaymentMethodCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	paymentMethod, err := account.CreateEntity(&input.PaymentMethod)
+	paymentOption, err := account.CreateEntity(&input.PaymentOption)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
 		return
 	}
 
-	resp := u.Message(true, "POST PaymentMethod Created")
-	resp["paymentMethod"] = paymentMethod
+	resp := u.Message(true, "POST PaymentOption Created")
+	resp["paymentOption"] = paymentOption
 	u.Respond(w, resp)
 }
 
-func PaymentMethodGet(w http.ResponseWriter, r *http.Request) {
+func PaymentOptionGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	paymentMethodId, err := utilsCr.GetUINTVarFromRequest(r, "paymentMethodId")
+	paymentOptionId, err := utilsCr.GetUINTVarFromRequest(r, "paymentOptionId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке web site Id"))
 		return
 	}
 
-	var paymentMethod models.PaymentMethod
-	err = account.LoadEntity(&paymentMethod, paymentMethodId)
+	var paymentOption models.PaymentOption
+	err = account.LoadEntity(&paymentOption, paymentOptionId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
 	}
 
-	resp := u.Message(true, "GET PaymentMethod")
-	resp["paymentMethod"] = paymentMethod
+	resp := u.Message(true, "GET PaymentOption")
+	resp["paymentOption"] = paymentOption
 	u.Respond(w, resp)
 }
 
-func PaymentMethodGetListPagination(w http.ResponseWriter, r *http.Request) {
+func PaymentOptionGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
@@ -98,21 +93,21 @@ func PaymentMethodGetListPagination(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var total uint = 0
-	paymentMethods := make([]models.Entity,0)
+	paymentOptions := make([]models.Entity,0)
 	
-	paymentMethods, total, err = account.GetPaginationListEntity(&models.PaymentMethod{}, offset, limit, sortBy, search)
+	paymentOptions, total, err = account.GetPaginationListEntity(&models.PaymentOption{}, offset, limit, sortBy, search)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
-	resp := u.Message(true, "GET PaymentMethod Pagination List")
+	resp := u.Message(true, "GET PaymentOption Pagination List")
 	resp["total"] = total
-	resp["paymentMethods"] = paymentMethods
+	resp["paymentOptions"] = paymentOptions
 	u.Respond(w, resp)
 }
 
-func PaymentMethodUpdate(w http.ResponseWriter, r *http.Request) {
+func PaymentOptionUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -120,19 +115,14 @@ func PaymentMethodUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !account.IsMainAccount() {
-		u.Respond(w, u.MessageError(u.Error{Message:"У вас нет прав на создание/изменение объектов этого типа"}))
-		return
-	}
-
-	paymentMethodId, err := utilsCr.GetUINTVarFromRequest(r, "paymentMethodId")
+	paymentOptionId, err := utilsCr.GetUINTVarFromRequest(r, "paymentOptionId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	var paymentMethod models.PaymentMethod
-	err = account.LoadEntity(&paymentMethod, paymentMethodId)
+	var paymentOption models.PaymentOption
+	err = account.LoadEntity(&paymentOption, paymentOptionId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return
@@ -144,18 +134,18 @@ func PaymentMethodUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&paymentMethod, input)
+	err = account.UpdateEntity(&paymentOption, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH PaymentMethod Update")
-	resp["paymentMethod"] = paymentMethod
+	resp := u.Message(true, "PATCH PaymentOption Update")
+	resp["paymentOption"] = paymentOption
 	u.Respond(w, resp)
 }
 
-func PaymentMethodDelete(w http.ResponseWriter, r *http.Request) {
+func PaymentOptionDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -163,28 +153,23 @@ func PaymentMethodDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !account.IsMainAccount() {
-		u.Respond(w, u.MessageError(u.Error{Message:"У вас нет прав на создание/изменение объектов этого типа"}))
-		return
-	}
-
-	paymentMethodId, err := utilsCr.GetUINTVarFromRequest(r, "paymentMethodId")
+	paymentOptionId, err := utilsCr.GetUINTVarFromRequest(r, "paymentOptionId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	var paymentMethod models.PaymentMethod
-	err = account.LoadEntity(&paymentMethod, paymentMethodId)
+	var paymentOption models.PaymentOption
+	err = account.LoadEntity(&paymentOption, paymentOptionId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
-	if err = account.DeleteEntity(&paymentMethod); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
+	if err = account.DeleteEntity(&paymentOption); err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении опции"))
 		return
 	}
 
-	resp := u.Message(true, "DELETE PaymentMethod Successful")
+	resp := u.Message(true, "DELETE PaymentOption Successful")
 	u.Respond(w, resp)
 }

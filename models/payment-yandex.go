@@ -12,14 +12,14 @@ import (
 	"strings"
 )
 
-type YandexPayment struct {
+type PaymentYandex struct {
 	Id     		uint   	`json:"id" gorm:"primary_key"`
 	HashId 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя интеграции магазина "<name>"
 
-	// ####### API YandexPayment ####### //
+	// ####### API PaymentYandex ####### //
 
 	// Для авторизации Basic Auth: username:password
 	ApiKey	string	`json:"apiKey" gorm:"type:varchar(128);"` // ApiKey от яндекс кассы
@@ -42,34 +42,32 @@ type YandexPayment struct {
 
 	// Автоматический прием  поступившего платежа. Со стороны Я.Кассы
 	Capture	bool	`json:"capture" gorm:"type:bool;default:true"`
+
+	PaymentOption   PaymentOption `gorm:"polymorphic:Owner;"`
 }
 
-
-func (YandexPayment) PgSqlCreate() {
-	db.CreateTable(&YandexPayment{})
-	db.Model(&YandexPayment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+func (PaymentYandex) PgSqlCreate() {
+	db.CreateTable(&PaymentYandex{})
+	db.Model(&PaymentYandex{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }
-func (yandexPayment *YandexPayment) BeforeCreate(scope *gorm.Scope) error {
-	yandexPayment.Id = 0
-	yandexPayment.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
+func (paymentYandex *PaymentYandex) BeforeCreate(scope *gorm.Scope) error {
+	paymentYandex.Id = 0
+	paymentYandex.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	return nil
 }
-
-
-
 // ############# Entity interface #############
-func (yandexPayment YandexPayment) GetId() uint { return yandexPayment.Id }
-func (yandexPayment *YandexPayment) setId(id uint) { yandexPayment.Id = id }
-func (yandexPayment YandexPayment) GetAccountId() uint { return yandexPayment.AccountId }
-func (yandexPayment *YandexPayment) setAccountId(id uint) { yandexPayment.AccountId = id }
-func (YandexPayment) SystemEntity() bool { return false }
+func (paymentYandex PaymentYandex) GetId() uint { return paymentYandex.Id }
+func (paymentYandex *PaymentYandex) setId(id uint) { paymentYandex.Id = id }
+func (paymentYandex PaymentYandex) GetAccountId() uint { return paymentYandex.AccountId }
+func (paymentYandex *PaymentYandex) setAccountId(id uint) { paymentYandex.AccountId = id }
+func (PaymentYandex) SystemEntity() bool { return false }
 
 // ############# Entity interface #############
 
 
 // ######### CRUD Functions ############
-func (yandexPayment YandexPayment) create() (Entity, error)  {
-	wb := yandexPayment
+func (paymentYandex PaymentYandex) create() (Entity, error)  {
+	wb := paymentYandex
 	if err := db.Create(&wb).Error; err != nil {
 		return nil, err
 	}
@@ -79,35 +77,35 @@ func (yandexPayment YandexPayment) create() (Entity, error)  {
 	return entity, nil
 }
 
-func (YandexPayment) get(id uint) (Entity, error) {
+func (PaymentYandex) get(id uint) (Entity, error) {
 
-	var yandexPayment YandexPayment
+	var paymentYandex PaymentYandex
 
-	err := db.First(&yandexPayment, id).Error
+	err := db.First(&paymentYandex, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &yandexPayment, nil
+	return &paymentYandex, nil
 }
-func (yandexPayment *YandexPayment) load() error {
-	if yandexPayment.Id < 1 {
-		return utils.Error{Message: "Невозможно загрузить YandexPayment - не указан  Id"}
+func (paymentYandex *PaymentYandex) load() error {
+	if paymentYandex.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить PaymentYandex - не указан  Id"}
 	}
 
-	err := db.First(yandexPayment,yandexPayment.Id).Error
+	err := db.First(paymentYandex,paymentYandex.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (YandexPayment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return  YandexPayment{}.getPaginationList(accountId, 0, 100, sortBy, "")
+func (PaymentYandex) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+	return  PaymentYandex{}.getPaginationList(accountId, 0, 100, sortBy, "")
 }
 
-func (YandexPayment) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
-	webHooks := make([]YandexPayment,0)
+	paymentYandexs := make([]PaymentYandex,0)
 	var total uint
 
 	// if need to search
@@ -116,14 +114,14 @@ func (YandexPayment) getPaginationList(accountId uint, offset, limit int, sortBy
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&YandexPayment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
+		err := db.Model(&PaymentYandex{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&paymentYandexs, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&YandexPayment{}).
+		err = db.Model(&PaymentYandex{}).
 			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -132,31 +130,31 @@ func (YandexPayment) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	} else {
 
-		err := db.Model(&YandexPayment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&webHooks).Error
+		err := db.Model(&PaymentYandex{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&paymentYandexs).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&YandexPayment{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&PaymentYandex{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(webHooks))
-	for i,_ := range webHooks {
-		entities[i] = &webHooks[i]
+	entities := make([]Entity,len(paymentYandexs))
+	for i,_ := range paymentYandexs {
+		entities[i] = &paymentYandexs[i]
 	}
 
 	return entities, total, nil
 }
 
-func (YandexPayment) getByEvent(eventName string) (*YandexPayment, error) {
+func (PaymentYandex) getByEvent(eventName string) (*PaymentYandex, error) {
 
-	wh := YandexPayment{}
+	wh := PaymentYandex{}
 
 	if err := db.First(&wh, "event_type = ?", eventName).Error; err != nil {
 		return nil, err
@@ -165,37 +163,37 @@ func (YandexPayment) getByEvent(eventName string) (*YandexPayment, error) {
 	return &wh, nil
 }
 
-func (yandexPayment *YandexPayment) update(input map[string]interface{}) error {
+func (paymentYandex *PaymentYandex) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).
-		Model(yandexPayment).Where("id", yandexPayment.Id).Omit("id", "account_id").Updates(input).Error
+		Model(paymentYandex).Where("id", paymentYandex.Id).Omit("id", "account_id").Updates(input).Error
 }
 
-func (yandexPayment YandexPayment) delete () error {
-	return db.Model(YandexPayment{}).Where("id = ?", yandexPayment.Id).Delete(yandexPayment).Error
+func (paymentYandex PaymentYandex) delete () error {
+	return db.Model(PaymentYandex{}).Where("id = ?", paymentYandex.Id).Delete(paymentYandex).Error
 }
 // ######### END CRUD Functions ############
 
 
 // ########## Work function ############
 
-func (yandexPayment YandexPayment) CreatePaymentByOrder(order Order) (*Payment, error) {
+func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order) (*Payment, error) {
 
 	_p := Payment {
-		AccountId: yandexPayment.AccountId,
+		AccountId: paymentYandex.AccountId,
 		Paid: false,
 		Amount: PaymentAmount{Value: float64(12),Currency: "RUB"},
 		Description:  fmt.Sprintf("Заказ №%v в магазине AiroCliamte", order.Id),  // Видит клиент
-		PaymentMethod: PaymentMethod{Code: "bank_card"},
-		Confirmation: Confirmation{Type: "redirect", ReturnUrl: yandexPayment.ReturnUrl},
+		PaymentMethodData: PaymentMethodData{Type: "bank_card"}, // вообще еще вопрос
+		Confirmation: Confirmation{Type: "redirect", ReturnUrl: paymentYandex.ReturnUrl},
 
 		// Чтобы понять какой платеж был оплачен!!!
 		Metadata: postgres.Jsonb{ RawMessage: utils.MapToRawJson(map[string]interface{}{
 			"orderId":order.Id,
-			"accountId":yandexPayment.AccountId,
+			"accountId":paymentYandex.AccountId,
 		})},
-		SavePaymentMethod: yandexPayment.SavePaymentMethod,
-		OwnerId: yandexPayment.Id,
-		Capture: yandexPayment.Capture,
+		SavePaymentMethod: paymentYandex.SavePaymentMethod,
+		OwnerId: paymentYandex.Id,
+		Capture: paymentYandex.Capture,
 		OwnerType: "yandex_payment",
 		OrderId: order.Id,
 	}
@@ -208,7 +206,7 @@ func (yandexPayment YandexPayment) CreatePaymentByOrder(order Order) (*Payment, 
 	payment := entity.(*Payment)
 
 	// Вызываем Yandex для созданного платежа
-	err = yandexPayment.ExternalCreate(payment)
+	err = paymentYandex.ExternalCreate(payment)
 	if err != nil {
 		return nil, err
 	}
@@ -216,10 +214,8 @@ func (yandexPayment YandexPayment) CreatePaymentByOrder(order Order) (*Payment, 
 	return payment, nil
 }
 
-func (yandexPayment YandexPayment) ExternalCreate(payment *Payment) error {
+func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 
-	fmt.Println("Вызываем yandex payment")
-	
 	url := "https://payment.yandex.net/api/v3/payments"
 
 	// Собираем JSON данные
@@ -243,7 +239,7 @@ func (yandexPayment YandexPayment) ExternalCreate(payment *Payment) error {
 
 	request.Header.Set("Idempotence-Key", uuidV4.String())
 	request.Header.Set("Content-Type", "application/json")
-	request.SetBasicAuth(yandexPayment.ShopId, yandexPayment.ApiKey)
+	request.SetBasicAuth(paymentYandex.ShopId, paymentYandex.ApiKey)
 
 	// Делаем вызов
 	client := &http.Client{}
@@ -312,6 +308,15 @@ func (yandexPayment YandexPayment) ExternalCreate(payment *Payment) error {
 
 
 	// todo: тут мы создаем payment, если все хорошо
+
+	return nil
+}
+
+
+func (paymentYandex PaymentYandex) SetPaymentOption(paymentOption PaymentOption) error {
+	if err := db.Model(&paymentYandex).Association("PaymentOption").Append(paymentOption).Error; err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -54,7 +54,8 @@ type CreateOrderForm struct {
 	// Собственно, сама корзина
 	Cart []models.CartData `json:"cart"`
 
-	PaymentMethodCode string `json:"paymentMethod"`
+	// Способ оплаты PaymentOptions          // online, cashe..
+	PaymentOptionsCode string `json:"paymentOption"`
 }
 
 // todo: список обязательных полей - дело настроек OrderSettings
@@ -83,6 +84,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	// Читаем вход
 	var input CreateOrderForm
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Ошибка в запросе: проверьте обязательные поля и типы переменных"))
 		return
 	}
@@ -180,11 +182,11 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 6. Находим способ оплаты
-	if input.PaymentMethodCode == "" {
+	if input.PaymentOptionsCode == "" {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска способа оплаты", Errors: map[string]interface{}{"paymentMethodCode":"Необходимо указать способ оплаты"}}))
 		return
 	}
-	paymentMethod, err := account.GetPaymentMethodByCode(input.PaymentMethodCode)
+	paymentOption, err := account.GetPaymentOptionByCode(input.PaymentOptionsCode)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска способа оплаты", Errors: map[string]interface{}{"orderChannel":"Способ оплаты не найден"}}))
 		return
@@ -276,7 +278,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	_order.OrderChannelId = orderChannel.Id
 	_order.Amount = models.PaymentAmount{Value: totalCost, Currency: totalCurrency, AccountId: account.Id}
 	_order.CartItems = cartItems
-	_order.PaymentMethodId = paymentMethod.Id
+	_order.PaymentOptionId = paymentOption.Id
 
 
 	// Создаем order
@@ -287,7 +289,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Создаем платеж в Я.Кассе
-	switch paymentMethod.Code {
+	/*switch paymentMethod.Code {
 	case "online":
 		// todo: берем яндекс кассу для всех способом оплаты
 		 
@@ -295,7 +297,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatalf("Не удалось создать заказ в системе: ", err)
 		}
-	}
+	}*/
 
 
 

@@ -2,7 +2,6 @@ package routes
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/nkokorev/crm-go/controllers/appCr"
 	"github.com/nkokorev/crm-go/controllers/uiApiCr"
 	"net/http"
 )
@@ -35,7 +34,7 @@ var UiApiRoutes = func (rFree *mux.Router) {
 	// Адрес для вебхуков от Яндекс.Кассы. Код ответа 200 в случае обработки.
 	// rFree.HandleFunc("/payments/yandex-payment/{yandexPayment:[0-9]+}/notifications/", uiApiCr.DeliveryListOptions).Methods(http.MethodGet, http.MethodOptions)
 
-	rFree.HandleFunc("/web-sites/{webSiteId:[0-9]+}/payment-methods", appCr.PaymentMethodGetListPagination).Methods(http.MethodGet, http.MethodOptions)
+	rFree.HandleFunc("/web-sites/{webSiteId:[0-9]+}/payment-options", uiApiCr.PaymentOptionGetList).Methods(http.MethodGet, http.MethodOptions)
 
 	// вставляется hashId магазина, а не id - чтобы защититься от атак.
 	rFree.HandleFunc("/yandex-payment/{yandexPaymentHashId:[0-9]+}/notifications/", uiApiCr.DeliveryListOptions).Methods(http.MethodGet, http.MethodOptions)

@@ -171,6 +171,6 @@ func (account Account) GetOrderChannelByCode(code string) (*OrderChannel, error)
 	return OrderChannel{}.getByCode(account.Id, code)
 }
 
-func (account Account) GetPaymentMethodByCode(code string) (*PaymentMethod, error){
-	return PaymentMethod{}.getByCode(account.Id, code)
+func (account Account) GetPaymentOptionByCode(code string) (*PaymentOption, error){
+	return PaymentOption{}.getByCode(account.Id, code)
 }

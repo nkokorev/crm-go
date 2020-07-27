@@ -46,7 +46,7 @@ type Payment struct {
 	Recipient	Recipient `json:"_recipient"`
 
 	// Способ оплаты платежа = {type:"bank_card", id:"", saved:true, card:""}. Может быть и другой платеж, в зависимости от OwnerType
-	PaymentMethod	PaymentMethod	`json:"payment_method_data"`
+	PaymentMethodData	PaymentMethodData	`json:"payment_method_data"`
 
 	// Сохранение платежных данных (с их помощью можно проводить повторные безакцептные списания ).
 	SavePaymentMethod 	bool 	`json:"savePaymentMethod" gorm:"type:bool;default:false"`
@@ -92,7 +92,8 @@ type Payment struct {
 	ExternalExpiresAt 	time.Time  `json:"externalExpiresAt"`  // Время, до которого вы можете бесплатно отменить или подтвердить платеж.
 	ExternalCreatedAt 	time.Time  `json:"externalCreatedAt"`  // Время создания заказа, UTC
 
-	PaymentMethods 	[]PaymentMethod `json:"paymentMethods" gorm:"many2many:payment_methods_payments;preload"` // доступные почтовые ящики с которых можно отправлять
+	//
+	PaymentOptions 	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_payments;preload"`
 
 	// Внутреннее время
 	CreatedAt time.Time  `json:"createdAt"`
@@ -111,10 +112,6 @@ func (payment *Payment) BeforeCreate(scope *gorm.Scope) error {
 	payment.Id = 0
 	return nil
 }
-
-/*type PaymentMethod struct {
-	Type 	string `json:"type" gorm:"type:varchar(32);"`
-}*/
 
 type Confirmation struct {
 	Type 	string `json:"type" gorm:"type:varchar(32);"` // embedded, redirect, external, qr
@@ -146,6 +143,9 @@ type Transfers struct {
 	// Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
 	Amount	PaymentAmount	`json:"amount"`
 	Status	string	`json:"status" gorm:"type:varchar(50);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+}
+type PaymentMethodData struct {
+	Type string `json:"type"`
 }
 
 // ############# Entity interface #############
@@ -296,23 +296,22 @@ func (payment Payment) delete () error {
 }
 // ######### END CRUD Functions ############
 
-
-func (payment Payment) AppendPaymentMethods(paymentMethods []PaymentMethod) error {
-	if err := db.Model(&payment).Association("PaymentMethods").Append(paymentMethods).Error; err != nil {
+func (payment Payment) AppendPaymentOptions(paymentOptions []PaymentOption) error {
+	if err := db.Model(&payment).Association("PaymentOptions").Append(paymentOptions).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
-func (payment Payment) ReplacePaymentMethods(paymentMethods []PaymentMethod) error {
-	if err := db.Model(&payment).Association("PaymentMethods").Replace(paymentMethods).Error; err != nil {
+func (payment Payment) ReplacePaymentOptions(paymentOptions []PaymentOption) error {
+	if err := db.Model(&payment).Association("PaymentOptions").Replace(paymentOptions).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
-func (payment Payment) RemovePaymentMethods(paymentMethods []PaymentMethod) error {
-	if err := db.Model(&payment).Association("PaymentMethods").Delete(paymentMethods).Error; err != nil {
+func (payment Payment) RemovePaymentOptions(paymentOptions []PaymentOption) error {
+	if err := db.Model(&payment).Association("PaymentOptions").Delete(paymentOptions).Error; err != nil {
 		return err
 	}
 

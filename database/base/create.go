@@ -75,8 +75,8 @@ func RefreshTablesPart_I() {
 	}
 
 
-	pool.DropTableIfExists(models.PaymentMethod{}, models.DeliveryOrder{}, models.OrderChannel{}, models.Order{}, models.Payment{},
-	models.YandexPayment{},models.PaymentAmount{})
+	pool.DropTableIfExists(models.PaymentOption{}, models.DeliveryOrder{}, models.OrderChannel{}, models.Order{}, models.Payment{},
+	models.PaymentAmount{},models.PaymentAmount{})
 	// pool.DropTableIfExists(models.PaymentMethod{}, models.DeliveryOrder{}, models.OrderChannel{}, models.PaymentSubject{},models.VatCode{},models.Order{}, models.Payment{},models.YandexPayment{},models.PaymentAmount{})
 
 
@@ -131,7 +131,7 @@ func RefreshTablesPart_I() {
 	models.EmailNotification{}.PgSqlCreate()
 
 
-	models.YandexPayment{}.PgSqlCreate()
+	models.PaymentAmount{}.PgSqlCreate()
 	models.PaymentAmount{}.PgSqlCreate()
 	models.Payment{}.PgSqlCreate()
 	models.Order{}.PgSqlCreate()
@@ -139,7 +139,7 @@ func RefreshTablesPart_I() {
 	models.VatCode{}.PgSqlCreate()
 
 	models.OrderChannel{}.PgSqlCreate()
-	models.PaymentMethod{}.PgSqlCreate()
+	models.PaymentOption{}.PgSqlCreate()
 	models.PaymentSubject{}.PgSqlCreate()
 
 	models.DeliveryRussianPost{}.PgSqlCreate()
@@ -663,11 +663,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		log.Fatal("Не удалось преобразовать WebSite для airoClimat: ", err)
 		return
 	}
-	if err := webSiteAiro.AppendPaymentMethods([]models.PaymentMethod{
-		{AccountId: 1, Id: 1},{AccountId: 1, Id: 3},{AccountId: 1, Id: 2},
-	}); err != nil {
-		log.Fatal(err)
-	}
+
 
 	// 3. Добавляем почтовые ящики
 	_, err = webSiteAiro.CreateEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "AIRO Climate", Box: "info"})
@@ -1686,12 +1682,11 @@ func RefreshTablesPart_IV() {
 		models.OrderChannel{},
 
 		models.DeliveryOrder{},
-		models.PaymentMethod{},
+		models.PaymentOption{},
 		models.Order{},
 		models.Payment{},
 		models.PaymentAmount{},
-		models.YandexPayment{},
-
+		models.PaymentYandex{},
 
 		// models.VatCode{},
 		// models.PaymentSubject{},
@@ -1701,7 +1696,7 @@ func RefreshTablesPart_IV() {
 	// А теперь создаем
 
 	models.PaymentAmount{}.PgSqlCreate()
-	models.PaymentMethod{}.PgSqlCreate()
+	models.PaymentOption{}.PgSqlCreate()
 	models.CartItem{}.PgSqlCreate()
 	// models.PaymentSubject{}.PgSqlCreate()
 	// models.VatCode{}.PgSqlCreate()
@@ -1709,17 +1704,48 @@ func RefreshTablesPart_IV() {
 	models.OrderChannel{}.PgSqlCreate()
 	models.Order{}.PgSqlCreate()
 	models.DeliveryOrder{}.PgSqlCreate()
-	models.YandexPayment{}.PgSqlCreate()
+	models.PaymentYandex{}.PgSqlCreate()
 	models.Payment{}.PgSqlCreate()
 }
 
 func UploadTestDataPart_IV()  {
 
-	// 1. Получаем главный аккаунт
+	// 1. Получаем AiroClimate аккаунт
 	airoAccount, err := models.GetAccount(5)
 	if err != nil {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
+
+	// Создаем методы оплаты
+	paymentOptions := []models.PaymentOption {
+		{Name:   "Оплата при получении",	Code: "cash"},
+		{Name:   "Онлайн-оплата картой",	Code: "online"},
+		// {Name:   "Покупка в кредит",		Code: "credit"},
+	}
+	for i := range(paymentOptions) {
+		_, err := models.Account{Id: airoAccount.Id}.CreateEntity(&paymentOptions[i])
+		if err != nil {
+			log.Fatalf("Не удалось создать paymentMethods: ", err)
+		}
+	}
+
+	var paymentOnline models.PaymentOption
+	if err := airoAccount.LoadEntity(&paymentOnline, 2); err != nil {
+		log.Fatal(err)
+	}
+
+/////////
+	var webSite models.WebSite
+	if err := airoAccount.LoadEntity(&webSite, 5); err != nil { log.Fatal(err)}
+
+	if err := webSite.AppendPaymentOptions([]models.PaymentOption{
+		{AccountId: 5, Id: 1},{AccountId: 5, Id: 2},
+	}); err != nil {
+		log.Fatal(err)
+	}
+	////////////
+
+
 
 	// Создаем заказ (Order)
 	for i := 0; i < 5; i++ {
@@ -1760,7 +1786,7 @@ func UploadTestDataPart_IV()  {
 
 	// Создаем способ оплаты YandexPayment
 	entityPayment, err := airoAccount.CreateEntity(
-		&models.YandexPayment{
+		&models.PaymentYandex{
 			Name:   "Прием платежей через интернет-магазин airoclimate.ru",
 			ApiKey: "test_f56EEL_m2Ky7CJnnRjSpb4JLMhiGoGD3X6ScMHGPruM",
 			ShopId: "730509",
@@ -1774,9 +1800,13 @@ func UploadTestDataPart_IV()  {
 	if err != nil {
 		log.Fatalf("Не удалось создать entityPayment: ", err)
 	}
-	var yandexPayment models.YandexPayment
+	var yandexPayment models.PaymentYandex
 	if err = airoAccount.LoadEntity(&yandexPayment,entityPayment.GetId()); err != nil {
 		log.Fatalf("Не удалось найти entityPayment: ", err)
+	}
+
+	if err := yandexPayment.SetPaymentOption(paymentOnline); err != nil {
+		log.Fatal(err)
 	}
 
 
