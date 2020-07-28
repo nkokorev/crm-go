@@ -76,7 +76,7 @@ func RefreshTablesPart_I() {
 
 
 	pool.DropTableIfExists(models.PaymentOption{}, models.DeliveryOrder{}, models.OrderChannel{}, models.Order{}, models.Payment{},
-	models.PaymentAmount{},models.PaymentAmount{})
+	models.PaymentAmount{})
 	// pool.DropTableIfExists(models.PaymentMethod{}, models.DeliveryOrder{}, models.OrderChannel{}, models.PaymentSubject{},models.VatCode{},models.Order{}, models.Payment{},models.YandexPayment{},models.PaymentAmount{})
 
 
@@ -88,8 +88,7 @@ func RefreshTablesPart_I() {
 	pool.DropTableIfExists(models.VatCode{}, models.PaymentSubject{})
 	pool.DropTableIfExists(models.Role{}, models.UserVerificationMethod{}, models.Account{}, models.CrmSetting{})
 
-
-
+	
 	models.CrmSetting{}.PgSqlCreate()
 
 	models.UserVerificationMethod{}.PgSqlCreate()
@@ -104,8 +103,6 @@ func RefreshTablesPart_I() {
 	models.Storage{}.PgSqlCreate()
 	models.Article{}.PgSqlCreate()
 
-
-
 	/////////////////////
 
 	models.WebSite{}.PgSqlCreate()
@@ -117,13 +114,9 @@ func RefreshTablesPart_I() {
 	models.Product{}.PgSqlCreate()
 
 
-
-
-
 	models.HandlerItem{}.PgSqlCreate()
 	models.EventItem{}.PgSqlCreate()
 	models.EventListener{}.PgSqlCreate()
-
 
 	models.WebHook{}.PgSqlCreate()
 
@@ -131,7 +124,6 @@ func RefreshTablesPart_I() {
 	models.EmailNotification{}.PgSqlCreate()
 
 
-	models.PaymentAmount{}.PgSqlCreate()
 	models.PaymentAmount{}.PgSqlCreate()
 	models.Payment{}.PgSqlCreate()
 	models.Order{}.PgSqlCreate()
@@ -1821,4 +1813,9 @@ func UploadTestDataPart_IV()  {
 	}*/
 
     fmt.Println("Закза создан: ")
+}
+
+func Migrate_I() {
+	pool := models.GetPool()
+	pool.AutoMigrate(&models.User{})
 }

@@ -32,6 +32,7 @@ type User struct {
 	// Account 	Account `json:"account" gorm:"preload" sql:"-"`
 
 	EnabledAuthFromApp	bool	`json:"enabledAuthFromApp" gorm:"type:bool;default:false;"` // Разрешен ли вход, через app.ratuscrm.com
+	Subscribed	bool	`json:"subscribed" gorm:"type:bool;default:true;"` // Есть ли подписка на общее рассылки.
 
 	DefaultAccountId uint `json:"defaultAccountId" gorm:"type:varchar(12);default:null;"` // указывает какой аккаунт по дефолту загружать
 	InvitedUserId uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
