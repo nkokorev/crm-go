@@ -201,8 +201,6 @@ func (paymentYandex PaymentYandex) CreatePayment(order Order) (*Payment, error) 
 		OrderId: order.Id,
 	}
 
-	fmt.Println("Создаем платеж: ", _p)
-
 	// создаем внутри платеж
 	entity, err := _p.create()
 	if err != nil {
@@ -221,25 +219,25 @@ func (paymentYandex PaymentYandex) CreatePayment(order Order) (*Payment, error) 
 
 func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 
+	fmt.Println("Создаем внешний платеж")
 	url := "https://payment.yandex.net/api/v3/payments"
 
 	// Собираем JSON данные
 	body, err := json.Marshal(payment)
 	if err != nil {
-		return err;
+		return utils.Error{Message: "Не удалось разобрать JSON платежа", Errors: map[string]interface{}{"paymentOption":err.Error()}}
 	}
-	fmt.Println("Request: ", string(body))
 
 	uuidV4, err := uuid.NewV4()
 	if err != nil {
-		fmt.Printf("Something went wrong: %s", err)
-		return utils.Error{Message: "Не удалось создать UUID для создания платежа"}
+		return utils.Error{Message: "Не удалось создать UUID для создания платежа", Errors: map[string]interface{}{"paymentOption":err.Error()}}
 	}
 
 	// crate new request
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
-		return utils.Error{Message: "Не удалось создать http-запрос для создания платежа"}
+		return utils.Error{Message: "Не удалось создать http-запрос для создания платежа",
+			Errors: map[string]interface{}{"paymentOption":err.Error()}}
 	}
 
 	request.Header.Set("Idempotence-Key", uuidV4.String())
@@ -250,26 +248,31 @@ func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		return utils.Error{Message: fmt.Sprintf("Ошибка запроса для Yandex кассы: %v", err)}
+		return utils.Error{Message: fmt.Sprintf("Ошибка запроса для Yandex кассы: %v", err),
+			Errors: map[string]interface{}{"paymentOption":err.Error()}}
 	}
 	defer response.Body.Close()
 
-	// fmt.Println("======= Код ответа: ", response.Status)
-	// fmt.Println("======= Запрос Body: ", response.Body)
-	fmt.Println("========================")
 
 	if response.StatusCode == 200 {
-		// var responseRequest Payment
+
 		var responseRequest map[string]interface{}
 		if err := json.NewDecoder(response.Body).Decode(&responseRequest); err != nil {
-			return utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы: %v", err)}
+			return utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы: %v", err),
+					Errors: map[string]interface{}{"paymentOption":err.Error()}}
 		}
 
-		/*	if err = payment.update(responseRequest); err != nil {
-			fmt.Println(err)
-			return utils.Error{Message: "Ошибка сохранения responseRequest от Яндекс кассы"}
-		}*/
-		// fmt.Println(responseRequest)
+		fmt.Println(responseRequest)
+
+		if err = payment.update(map[string]interface{}{
+			"externalId":responseRequest["id"],
+			"externalCreatedAt":responseRequest["created_at"],
+			"paid":responseRequest["paid"],
+			"status":responseRequest["status"],
+			"test":responseRequest["test"],
+		}); err != nil {
+			return utils.Error{Message: "Ошибка сохранения responseRequest от Яндекс кассы",Errors: map[string]interface{}{"paymentOption":err.Error()}}
+		}
 
 		var confirmation struct {
 			Type 	string `json:"type" gorm:"type:varchar(32);"` // embedded, redirect, external, qr
@@ -279,44 +282,23 @@ func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 
 		jsonString, err := json.Marshal(responseRequest["confirmation"])
 		if err != nil {
-			return utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы 1: %v", err)}
+			return utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы 1: %v", err),
+					Errors: map[string]interface{}{"paymentOption":err.Error()}}
 		}
-
-		// fmt.Println("jsonString: ",string(jsonString))
 
 		if err := json.NewDecoder(bytes.NewBuffer(jsonString)).Decode(&confirmation); err != nil {
-			return utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы: %v", err)}
+			return utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы: %v", err),
+					Errors: map[string]interface{}{"paymentOption":err.Error()}}
 		}
-
-		fmt.Println("confirmation: ", confirmation.ConfirmationUrl)
-
 
 		payment.ConfirmationUrl = confirmation.ConfirmationUrl
 		if err := payment.update(map[string]interface{}{"ConfirmationUrl":confirmation.ConfirmationUrl}); err != nil {
 			return err
 		}
 
-/*
-		_confirmation_url, ok := responseRequest["confirmation_url"]; if !ok {
-			return utils.Error{Message: "Ответ от Яндекса не содержит confirmation_url."}
-		}
-
-		confirmation_url, ok := _confirmation_url.(string); if !ok {
-			return utils.Error{Message: "Ответ от Яндекса не содержит confirmation_url в нужном формате."}
-		}
-
-		if err := payment.update(map[string]interface{}{"confirmation_url":confirmation_url}); err != nil {
-			return utils.Error{Message: "Ошибка сохранения confirmation_url"}
-		}
-
-		fmt.Println("confirmation_url: ", confirmation_url)*/
-		// fmt.Println("Обработанный ответ: ", responseRequest)
-		// fmt.Println("Обновленный payment: ", payment)
 	} else {
-		return utils.Error{Message: fmt.Sprintf("Ответ сервера Яндекс.Кассы: %v", response.StatusCode)}
+		return utils.Error{Message: fmt.Sprintf("Ответ сервера Яндекс.Кассы: %v", response.StatusCode),Errors: map[string]interface{}{"paymentOption":"Проблема с сервером Яндекс.Кассы"}}
 	}
-
-	// todo: тут мы создаем payment, если все хорошо
 
 	return nil
 }

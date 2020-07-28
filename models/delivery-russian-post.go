@@ -92,7 +92,7 @@ func (DeliveryRussianPost) get(id uint) (Entity, error) {
 
 	var deliveryRussianPost DeliveryRussianPost
 
-	err := db.First(&deliveryRussianPost, id).Error
+	err := db.Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").First(&deliveryRussianPost, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (DeliveryRussianPost) get(id uint) (Entity, error) {
 
 func (deliveryRussianPost *DeliveryRussianPost) load() error {
 
-	err := db.First(deliveryRussianPost, deliveryRussianPost.Id).Error
+	err := db.Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").First(deliveryRussianPost, deliveryRussianPost.Id).Error
 	if err != nil {
 		return err
 	}
@@ -109,30 +109,7 @@ func (deliveryRussianPost *DeliveryRussianPost) load() error {
 }
 
 func (DeliveryRussianPost) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-
-	deliveryRussianPosts := make([]DeliveryRussianPost,0)
-	var total uint
-
-	// if need to search
-	err := db.Model(&DeliveryRussianPost{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
-		Find(&deliveryRussianPosts).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&DeliveryRussianPost{}).Where("account_id = ?", accountId).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(deliveryRussianPosts))
-	for i,_ := range deliveryRussianPosts {
-		entities[i] = &deliveryRussianPosts[i]
-	}
-
-	return entities, total, nil
+	return DeliveryRussianPost{}.getPaginationList(accountId, 0, 100, sortBy, "")
 }
 
 func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
@@ -146,7 +123,7 @@ func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, 
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&DeliveryRussianPost{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&DeliveryRussianPost{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryRussianPosts, "name ILIKE ? OR code ILIKE ? OR postal_code_from ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -162,7 +139,7 @@ func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, 
 
 	} else {
 
-		err := db.Model(&DeliveryRussianPost{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&DeliveryRussianPost{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryRussianPosts).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -185,7 +162,8 @@ func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, 
 }
 
 func (deliveryRussianPost *DeliveryRussianPost) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(deliveryRussianPost).Omit("id", "account_id").Updates(input).Error
+	return db.Set("gorm:association_autoupdate", false).Model(deliveryRussianPost).
+		Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").Omit("id", "account_id").Updates(input).Error
 }
 
 func (deliveryRussianPost DeliveryRussianPost) delete () error {
@@ -272,7 +250,9 @@ func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData De
 func (deliveryRussianPost DeliveryRussianPost) checkMaxWeight(weight float64) error {
 	// проверяем максимальную массу:
 	if weight > deliveryRussianPost.MaxWeight {
-		return utils.Error{Message: fmt.Sprintf("Превышен максимальный вес посылки в %vкг.", deliveryRussianPost.MaxWeight)}
+		// return utils.Error{Message: fmt.Sprintf("Превышен максимальный вес посылки в %vкг.", deliveryRussianPost.MaxWeight)}
+		return utils.Error{Message: fmt.Sprintf("Превышен максимальный вес посылки в %vкг.", deliveryRussianPost.MaxWeight),
+			Errors: map[string]interface{}{"delivery":fmt.Sprintf("Превышен максимальный вес посылки в %vкг.", deliveryRussianPost.MaxWeight)}}
 	}
 
 	return nil
@@ -291,4 +271,14 @@ func (deliveryRussianPost DeliveryRussianPost) AppendPaymentOptions(paymentOptio
 	}
 
 	return nil
+}
+func (deliveryRussianPost DeliveryRussianPost) RemovePaymentOptions(paymentOptions []PaymentOption) error  {
+	if err := db.Model(&deliveryRussianPost).Association("PaymentOptions").Delete(paymentOptions).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func (deliveryRussianPost DeliveryRussianPost) ExistPaymentOption(paymentOptions PaymentOption) bool  {
+	return db.Model(&deliveryRussianPost).Where("payment_options.id = ?", paymentOptions.Id).Association("PaymentOptions").Find(&PaymentOption{}).Count() > 0
 }

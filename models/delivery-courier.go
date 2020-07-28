@@ -78,7 +78,7 @@ func (DeliveryCourier) get(id uint) (Entity, error) {
 
 	var deliveryCourier DeliveryCourier
 
-	err := db.First(&deliveryCourier, id).Error
+	err := db.Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").First(&deliveryCourier, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (DeliveryCourier) get(id uint) (Entity, error) {
 }
 func (deliveryCourier *DeliveryCourier) load() error {
 
-	err := db.First(deliveryCourier, deliveryCourier.Id).Error
+	err := db.Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").First(deliveryCourier, deliveryCourier.Id).Error
 	if err != nil {
 		return err
 	}
@@ -94,28 +94,7 @@ func (deliveryCourier *DeliveryCourier) load() error {
 }
 func (DeliveryCourier) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
-	deliveryCouriers := make([]DeliveryCourier,0)
-	var total uint
-
-	err := db.Model(&DeliveryCourier{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
-		Find(&deliveryCouriers).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&DeliveryCourier{}).Where("account_id = ?", accountId).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(deliveryCouriers))
-	for i,_ := range deliveryCouriers {
-		entities[i] = &deliveryCouriers[i]
-	}
-
-	return entities, total, nil
+	return DeliveryCourier{}.getPaginationList(accountId, 0, 100, sortBy, "")
 }
 func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
@@ -128,7 +107,7 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&DeliveryCourier{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&DeliveryCourier{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryCouriers, "name ILIKE ? OR code ILIKE ? OR price ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -144,7 +123,7 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 
 	} else {
 
-		err := db.Model(&DeliveryCourier{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&DeliveryCourier{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryCouriers).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -166,7 +145,8 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 	return entities, total, nil
 }
 func (deliveryCourier *DeliveryCourier) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(deliveryCourier).Omit("id", "account_id").Updates(input).Error
+	return db.Set("gorm:association_autoupdate", false).Model(deliveryCourier).
+		Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").Omit("id", "account_id").Updates(input).Error
 }
 func (deliveryCourier DeliveryCourier) delete () error {
 	return db.Model(DeliveryCourier{}).Where("id = ?", deliveryCourier.Id).Delete(deliveryCourier).Error
@@ -201,4 +181,14 @@ func (deliveryCourier DeliveryCourier) AppendPaymentOptions(paymentOptions []Pay
 	}
 
 	return nil
+}
+func (deliveryCourier DeliveryCourier) RemovePaymentOptions(paymentOptions []PaymentOption) error  {
+	if err := db.Model(&deliveryCourier).Association("PaymentOptions").Delete(paymentOptions).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func (deliveryCourier DeliveryCourier) ExistPaymentOption(paymentOptions PaymentOption) bool  {
+	return db.Model(&deliveryCourier).Where("payment_options.id = ?", paymentOptions.Id).Association("PaymentOptions").Find(&PaymentOption{}).Count() > 0
 }

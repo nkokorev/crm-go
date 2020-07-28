@@ -11,6 +11,8 @@ type Delivery interface {
 
 	setShopId(uint)
 	AppendPaymentOptions(paymentOptions []PaymentOption) error
+	RemovePaymentOptions(paymentOptions []PaymentOption) error
+	ExistPaymentOption(paymentOptions PaymentOption) bool
 }
 
 type DeliveryRequest struct {

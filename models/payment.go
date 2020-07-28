@@ -13,7 +13,7 @@ type Payment struct {
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Идентификатор платежа в Яндекс.Кассе или у другого посредника.
-	ExternalId	uint	`json:"externalId" gorm:"type:int;index;default:null"`
+	ExternalId	string	`json:"externalId" gorm:"type:varchar(128);index;default:null"`
 
 	// статус платежа:  [pending, waiting_for_capture, succeeded и canceled]
 	Status	string	`json:"status" gorm:"type:varchar(32);not null"`
@@ -278,6 +278,7 @@ func (Payment) getByEvent(eventName string) (*Payment, error) {
 
 func (payment *Payment) update(input map[string]interface{}) error {
 	return db.Model(payment).Omit("id", "account_id").Updates(input).Error
+	// return db.Model(Payment{}).Where("id = ?", payment.Id).Omit("id", "account_id").Updates(input).Error
 }
 
 func (payment Payment) delete () error {

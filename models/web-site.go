@@ -278,17 +278,20 @@ func (webSite WebSite) AppendDeliveryMethod(entity Entity) error {
 func (webSite WebSite) GetDeliveryMethods() []Delivery {
 	// Находим все необходимые методы
 	var posts []DeliveryRussianPost
-	if err := db.Model(&DeliveryRussianPost{}).Find(&posts, "account_id = ? AND web_site_id = ?", webSite.AccountId, webSite.Id).Error; err != nil {
+	if err := db.Model(&DeliveryRussianPost{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").
+		Find(&posts, "account_id = ? AND web_site_id = ?", webSite.AccountId, webSite.Id).Error; err != nil {
 		return nil
 	}
 
 	var couriers []DeliveryCourier
-	if err := db.Model(&DeliveryCourier{}).Find(&couriers, "account_id = ? AND web_site_id = ?", webSite.AccountId, webSite.Id).Error; err != nil {
+	if err := db.Model(&DeliveryCourier{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").
+		Find(&couriers, "account_id = ? AND web_site_id = ?", webSite.AccountId, webSite.Id).Error; err != nil {
 		return nil
 	}
 
 	var pickups []DeliveryPickup
-	if err := db.Model(&DeliveryPickup{}).Find(&pickups, "account_id = ? AND web_site_id = ?", webSite.AccountId, webSite.Id).Error; err != nil {
+	if err := db.Model(&DeliveryPickup{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").
+		Find(&pickups, "account_id = ? AND web_site_id = ?", webSite.AccountId, webSite.Id).Error; err != nil {
 		return nil
 	}
 
@@ -334,7 +337,7 @@ func (webSite WebSite) CalculateDelivery(deliveryRequest DeliveryRequest) (total
 
 	// 2. Проверяем максимальный вес
 	if err := delivery.checkMaxWeight(weight); err != nil {
-		return 0, 0,err
+		return 0, 0, err
 	}
 
 	// 3. Проводим расчет стоимости доставки

@@ -6,6 +6,7 @@ import (
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
+	"github.com/ttacon/libphonenumber"
 	"log"
 	"net/http"
 )
@@ -70,6 +71,15 @@ type Customer struct {
 
 func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 
+	/*u.Respond(w, u.MessageError(u.Error{Message:"Указанный тип оплаты не поддерживает данный тип доставки",
+		Errors: map[string]interface{}{
+		"phone":"Указанный номер телефона занят",
+		"email":"Обязательно нужно указать",
+		"surname":"А где фамилия?",
+		"name":"Укажите имя",
+		}}))
+	return*/
+
 	// Итоговая стоимость заказа
 	var totalCost float64
 	totalCurrency := "RUB"
@@ -89,6 +99,11 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := validateOrder(input); err != nil {
+		u.Respond(w, u.MessageError(err))
+		return
+	}
+
 	// 1. Получаем магазин из контекста
 	var webSite models.WebSite
 	if err := account.LoadEntity(&webSite, input.WebSiteId); err != nil {
@@ -96,7 +111,39 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Создаем список продуктов, считаем стоимость каждого 
+	// 6. Находим способ оплаты
+	if input.PaymentOptionsCode == "" {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска способа оплаты", Errors: map[string]interface{}{"paymentMethodCode":"Необходимо указать способ оплаты"}}))
+		return
+	}
+	paymentOption, err := account.GetPaymentOptionByCode(input.PaymentOptionsCode)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска способа оплаты", Errors: map[string]interface{}{"orderChannel":"Способ оплаты не найден"}}))
+		return
+	}
+
+	// fmt.Println(paymentOption.Code)
+	// fmt.Println(paymentOption.Id)
+
+	// 3. Находим тип доставки
+	if  input.Delivery.Code == "" ||  input.Delivery.Id < 1 {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в определении типа доставки", Errors: map[string]interface{}{"delivery":"не указан тип доставки или id"}}))
+		return
+	}
+	delivery, err := webSite.GetDelivery(input.Delivery.Code, input.Delivery.Id)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в определении типа доставки", Errors: map[string]interface{}{"delivery":"тип доставки или id указаны не верно"}}))
+		return
+	}
+
+	// Проверяем тип доставки и способ оплаты
+	if !delivery.ExistPaymentOption(*paymentOption) {
+		u.Respond(w, u.MessageError(u.Error{Message:"Указанный тип оплаты не поддерживает данный тип доставки",
+			Errors: map[string]interface{}{"paymentOption":"Указанный тип оплаты не поддерживает данный тип доставки"}}))
+		return
+	}
+
+	// 2. Создаем список продуктов, считаем стоимость каждого
 	var cartItems []models.CartItem
 	for _,v := range input.Cart {
 		
@@ -131,16 +178,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		totalCost += ProductCost * float64(v.Quantity)
 	}
 	
-	// 3. Находим тип доставки
-	if  input.Delivery.Code == "" ||  input.Delivery.Id < 1 {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в определении типа доставки", Errors: map[string]interface{}{"delivery":"не указан тип доставки или id"}}))
-		return
-	}
-	delivery, err := webSite.GetDelivery(input.Delivery.Code, input.Delivery.Id)
-	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в определении типа доставки", Errors: map[string]interface{}{"delivery":"тип доставки или id указаны не верно"}}))
-		return
-	}
+
 	
 	// 4. Определяем стоимость доставки
 	deliveryCost, _, err := webSite.CalculateDelivery(models.DeliveryRequest{
@@ -152,9 +190,12 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 			Address: input.Delivery.Address,
 		}})
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка расчета стоимости доставки"))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка расчета стоимости доставки", Errors: map[string]interface{}{"delivery":err.Error()}}))
+		// u.Respond(w, u.MessageError(err, "Ошибка расчета стоимости доставки"))
 		return
 	}
+
+
 
 	// 4.2. Находим соответствующую услугу
 	
@@ -181,16 +222,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 6. Находим способ оплаты
-	if input.PaymentOptionsCode == "" {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска способа оплаты", Errors: map[string]interface{}{"paymentMethodCode":"Необходимо указать способ оплаты"}}))
-		return
-	}
-	paymentOption, err := account.GetPaymentOptionByCode(input.PaymentOptionsCode)
-	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска способа оплаты", Errors: map[string]interface{}{"orderChannel":"Способ оплаты не найден"}}))
-		return
-	}
+
 
 	// 6. Создаем / находим пользователя
 	var customer *models.User
@@ -212,11 +244,9 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		// todo: подсовывать ли данные существующим клиентам или нет ? - вывести в настройки
 		if errPhone == nil {
 			customer = userByPhone
-			fmt.Println("По телефону!")
 		}
 		if errEmail == nil {
 			customer = userByEmail
-			fmt.Println("По email!")
 		}
 		if customer == nil {
 			var _customer models.User
@@ -305,4 +335,37 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	resp["order"] = order
 	resp["payment"] = payment
 	u.Respond(w, resp)
+}
+
+func validateOrder(input CreateOrderForm) error {
+	var e u.Error
+	// Проверяем данные
+	if input.Customer.Phone == "" {
+		e.AddErrors("phone", "Укажите свой контактный телефон")
+	} else {
+		_, err := libphonenumber.Parse(input.Customer.Phone , "RU")
+		if err != nil {
+			e.AddErrors("phone", err.Error())
+		}
+	}
+
+	if input.Customer.Email == "" {
+		e.AddErrors("email", "Необходимо указать email")
+	} else {
+		if err := u.EmailDeepValidation(input.Customer.Email); err != nil {
+			e.AddErrors("email", err.Error())
+		}
+	}
+
+	if input.Customer.Name == "" {
+		e.AddErrors("name", "Укажите имя получателя товара")
+	}
+
+	if e.HasErrors() {
+		e.Message = "Проверьте правильность заполнения формы"
+		return e
+	}
+
+	return nil
+	
 }

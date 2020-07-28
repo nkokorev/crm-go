@@ -15,10 +15,11 @@ type PaymentCash struct {
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя интеграции магазина "<name>"
+	Description 		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание метода оплаты
 
 	// Включен ли данный способ оплаты
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"`
-	Description 		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
+
 	
 	PaymentOption   PaymentOption `gorm:"polymorphic:Owner;"`
 }

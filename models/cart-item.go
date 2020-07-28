@@ -35,6 +35,7 @@ func (CartItem) PgSqlCreate() {
 	db.CreateTable(&CartItem{})
 	db.Model(&CartItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Model(&CartItem{}).AddForeignKey("amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
+	db.Model(&CartItem{}).AddForeignKey("order_id", "orders(id)", "CASCADE", "CASCADE")
 
 }
 func (cartItem *CartItem) BeforeCreate(scope *gorm.Scope) error {

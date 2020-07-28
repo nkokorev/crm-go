@@ -79,7 +79,7 @@ func (DeliveryPickup) get(id uint) (Entity, error) {
 
 	var deliveryPickup DeliveryPickup
 
-	err := db.First(&deliveryPickup, id).Error
+	err := db.Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").First(&deliveryPickup, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (DeliveryPickup) get(id uint) (Entity, error) {
 
 func (deliveryPickup *DeliveryPickup) load() error {
 
-	err := db.First(deliveryPickup, deliveryPickup.Id).Error
+	err := db.Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").First(deliveryPickup, deliveryPickup.Id).Error
 	if err != nil {
 		return err
 	}
@@ -96,29 +96,7 @@ func (deliveryPickup *DeliveryPickup) load() error {
 }
 
 func (DeliveryPickup) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-
-	deliveryPickups := make([]DeliveryPickup,0)
-	var total uint
-
-	err := db.Model(&DeliveryPickup{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
-		Find(&deliveryPickups).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&DeliveryPickup{}).Where("account_id = ?", accountId).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(deliveryPickups))
-	for i,_ := range deliveryPickups {
-		entities[i] = &deliveryPickups[i]
-	}
-
-	return entities, total, nil
+	return DeliveryPickup{}.getPaginationList(accountId, 0, 100, sortBy, "")
 }
 func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
@@ -131,7 +109,7 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortB
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&DeliveryPickup{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&DeliveryPickup{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryPickups, "name ILIKE ? OR code ILIKE ? OR price ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -147,7 +125,7 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortB
 
 	} else {
 
-		err := db.Model(&DeliveryPickup{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&DeliveryPickup{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryPickups).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -170,7 +148,9 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortB
 }
 
 func (deliveryPickup *DeliveryPickup) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(deliveryPickup).Omit("id", "account_id").Updates(input).Error
+	return db.Set("gorm:association_autoupdate", false).Model(deliveryPickup).
+		Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").
+		Omit("id", "account_id").Updates(input).Error
 }
 
 func (deliveryPickup DeliveryPickup) delete () error {
@@ -201,4 +181,14 @@ func (deliveryPickup DeliveryPickup) AppendPaymentOptions(paymentOptions []Payme
 	}
 
 	return nil
+}
+func (deliveryPickup DeliveryPickup) RemovePaymentOptions(paymentOptions []PaymentOption) error  {
+	if err := db.Model(&deliveryPickup).Association("PaymentOptions").Delete(paymentOptions).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func (deliveryPickup DeliveryPickup) ExistPaymentOption(paymentOptions PaymentOption) bool  {
+	return db.Model(&deliveryPickup).Where("payment_options.id = ?", paymentOptions.Id).Association("PaymentOptions").Find(&PaymentOption{}).Count() > 0
 }

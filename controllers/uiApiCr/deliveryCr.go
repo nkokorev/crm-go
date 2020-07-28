@@ -28,7 +28,6 @@ func DeliveryGetListByShop(w http.ResponseWriter, r *http.Request) {
 
 	var webSite models.WebSite
 	err = account.LoadEntity(&webSite, webSiteId)
-	// webSite, err := account.GetShop(webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
 		return
@@ -71,6 +70,7 @@ func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 	totalCost, weight, err := webSite.CalculateDelivery(input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка расчета стоимости доставки"))
+		// u.Respond(w, u.MessageError(u.Error{Message:"Ошибка расчета стоимости доставки", Errors: map[string]interface{}{"delivery":err.Error()}}))
 		return
 	}
 

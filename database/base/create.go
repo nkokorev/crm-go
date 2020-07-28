@@ -1686,12 +1686,13 @@ func RefreshTablesPart_IV() {
 
 	models.PaymentAmount{}.PgSqlCreate()
 	models.PaymentOption{}.PgSqlCreate()
-	models.CartItem{}.PgSqlCreate()
+
 	// models.PaymentSubject{}.PgSqlCreate()
 	// models.VatCode{}.PgSqlCreate()
 	models.OrderComment{}.PgSqlCreate()
 	models.OrderChannel{}.PgSqlCreate()
 	models.Order{}.PgSqlCreate()
+	models.CartItem{}.PgSqlCreate()
 	models.DeliveryOrder{}.PgSqlCreate()
 	models.PaymentCash{}.PgSqlCreate()
 	models.PaymentYandex{}.PgSqlCreate()
@@ -1783,16 +1784,24 @@ func UploadTestDataPart_IV()  {
 		log.Fatalf("Не удалось найти paymentCash: ", err)
 	}
 
-	if err := _paymentCash.SetPaymentOption(paymentOnline); err != nil {
+	if err := _paymentCash.SetPaymentOption(paymentCash); err != nil {
 		log.Fatal(err)
 	}
 
 	deliveries := webSite.GetDeliveryMethods()
-	for i := range(deliveries) {
-		if err := deliveries[i].AppendPaymentOptions([]models.PaymentOption{paymentCash, paymentOnline}); err != nil {
-			fmt.Println(err)
-			return
+	for i,v := range(deliveries) {
+		if v.GetCode() == "russianPost" {
+			if err := deliveries[i].AppendPaymentOptions([]models.PaymentOption{paymentOnline}); err != nil {
+				fmt.Println(err)
+				return
+			}
+		} else {
+			if err := deliveries[i].AppendPaymentOptions([]models.PaymentOption{paymentCash, paymentOnline}); err != nil {
+				fmt.Println(err)
+				return
+			}
 		}
+
 	}
 
 
