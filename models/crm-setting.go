@@ -28,6 +28,7 @@ type CrmSetting struct {
 func (CrmSetting) PgSqlCreate() error {
 
 	// 1. Создаем таблицу и настройки в pgSql
+	// db.AutoMigrate(&CrmSetting{})
 	db.CreateTable(&CrmSetting{})
 	if !db.Model(&CrmSetting{}).First(&CrmSetting{}, "id = 1").RecordNotFound() {
 		return errors.New("Настройки CRM уже загружены!")

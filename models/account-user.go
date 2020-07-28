@@ -25,8 +25,8 @@ type AccountUser struct {
 func (AccountUser) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
-	db.DropTableIfExists(&AccountUser{})
-	db.CreateTable(&AccountUser{})
+	// db.DropTableIfExists(&AccountUser{})
+	db.AutoMigrate(&AccountUser{})
 
 	db.Exec("ALTER TABLE account_users \n    ADD CONSTRAINT account_users_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT account_users_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    ADD CONSTRAINT account_users_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\ncreate unique index uix_account_users_account_id_user_id_role_id ON account_users (account_id,user_id,role_id);\n")
 }

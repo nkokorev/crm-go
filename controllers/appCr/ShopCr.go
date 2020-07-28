@@ -214,7 +214,6 @@ func ProductGroupUpdate(w http.ResponseWriter, r *http.Request) {
 	var input map[string]interface{}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
@@ -435,7 +434,6 @@ func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) 
 
 func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Println("ss")
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
@@ -454,7 +452,6 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 	}{}*/
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
@@ -521,7 +518,6 @@ func ProductCreate(w http.ResponseWriter, r *http.Request) {
 
 	product, err := account.CreateProduct(input.Product)
 	if err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Ошибка во время создания продукта"))
 		return
 	}
@@ -609,7 +605,6 @@ func ProductUpdate(w http.ResponseWriter, r *http.Request) {
 	}{}*/
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}

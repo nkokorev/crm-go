@@ -276,7 +276,6 @@ func EmailTemplatePreviewGetHTML(w http.ResponseWriter, r *http.Request) {
 
 	html, err := template.GetHTML(vData)
 	if err != nil {
-		fmt.Println(err)
 		w.Header().Set("Content-Type", "text/html;charset=UTF-8")
 		w.Write(errorHTMLPage("Ошибка получения HTML из шаблона"))
 		return

@@ -345,7 +345,7 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string) error {
 
 	mx, err := net.LookupMX(host)
 	if err != nil {
-		log.Fatal("Не найдена MX-запись")
+		return err
 	}
 
 	//addr := fmt.Sprintf("%s:%d", mx[0].Host, 25)
@@ -353,47 +353,53 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string) error {
 
 	client, err := smtp.Dial(addr)
 	if err != nil {
-		log.Fatalf("DialTimeout fail: %v", mx[0].Host)
+		// log.Fatalf("DialTimeout fail: %v", mx[0].Host)
+		fmt.Printf("DialTimeout fail: %v", mx[0].Host)
+		return err
+
 	}
 
 	if err = client.StartTLS(&tls.Config {
 		InsecureSkipVerify: true,
 		ServerName: host,
 	}); err != nil {
-		log.Fatalf("client.StartTLS fail: %v", err)
+		fmt.Printf("client.StartTLS fail: %v", err)
+		return err
 	}
 
 	// from
 	// err = client.Mail(from.GetMailAddress().Address)
 	err = client.Mail("userId.abuse.@ratuscrm.com")
 	if err != nil {
-		log.Fatal("Почтовый адрес не может принять почту")
+		fmt.Printf("Почтовый адрес не может принять почту")
+		return err
 	}
 
 	err = client.Rcpt(user.Email)
 	if err != nil {
-		log.Fatal("Похоже, почтовый адрес не сущесвует")
+		fmt.Printf("Похоже, почтовый адрес не сущесвует")
+		return err
 	}
 
 	wc, err := client.Data()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	_, err = wc.Write(email)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	err = wc.Close()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	// Send the QUIT command and close the connection.
 	err = client.Quit()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	return nil
@@ -474,7 +480,6 @@ func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, 
 
 	email := []byte(message)
 	if err := dkim.Sign(&email, options); err != nil {
-		fmt.Println(err)
 		return errors.New("Cant sign async")
 	}
 

@@ -2,7 +2,6 @@ package appCr
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -28,7 +27,6 @@ func ArticleCreate(w http.ResponseWriter, r *http.Request) {
 
 	article, err := account.CreateArticle(input.Article)
 	if err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Ошибка во время создания продукта"))
 		return
 	}
@@ -99,7 +97,6 @@ func ArticleUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
-		// fmt.Println(err)
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}
@@ -113,7 +110,6 @@ func ArticleUpdate(w http.ResponseWriter, r *http.Request) {
 	var input map[string]interface{}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
@@ -135,7 +131,6 @@ func ArticleDelete(w http.ResponseWriter, r *http.Request) {
 	
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
-		// fmt.Println(err)
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
 		return
 	}

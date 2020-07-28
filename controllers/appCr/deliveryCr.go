@@ -147,7 +147,6 @@ func DeliveryUpdate(w http.ResponseWriter, r *http.Request) {
 	var input map[string]interface{}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
@@ -187,7 +186,6 @@ func DeliveryDelete(w http.ResponseWriter, r *http.Request) {
 	var input map[string]interface{}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}

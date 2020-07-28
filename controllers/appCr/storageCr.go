@@ -24,14 +24,12 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 
 	err = r.ParseMultipartForm(32 << 20) // 32Mb
 	if err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(u.Error{Message:"Слишком большой файл. Максимум 32 Mb."}))
 		return
 	}
 
 	file, header, err := r.FormFile("file")
 	if err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка парсинга"}))
 		return
 	}
@@ -407,7 +405,6 @@ func ArticleRawPreviewCDNGet(w http.ResponseWriter, r *http.Request) {
 
 	article, err := (models.Account{}).GetArticleSharedByHashId(hashId)
 	if err != nil {
-		fmt.Println("fdsfds", err)
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}

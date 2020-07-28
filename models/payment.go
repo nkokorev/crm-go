@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
@@ -96,6 +97,7 @@ type Payment struct {
 	PaymentOptions 	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_payments;preload"`
 
 	// Внутреннее время
+	PaidAt time.Time  `json:"paidAt"`
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 	DeletedAt *time.Time `json:"-" sql:"index"`
@@ -174,6 +176,15 @@ func (Payment) get(id uint) (Entity, error) {
 	var payment Payment
 
 	err := db.First(&payment, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &payment, nil
+}
+func (Payment) getByExternalId(externalId string) (*Payment, error) {
+	payment := Payment{}
+
+	err := db.First(&payment, "external_id = ?", externalId).Error
 	if err != nil {
 		return nil, err
 	}
@@ -317,4 +328,17 @@ func (payment Payment) RemovePaymentOptions(paymentOptions []PaymentOption) erro
 	}
 
 	return nil
+}
+
+func (account Account) GetPaymentByExternalId(externalId string) (*Payment, error) {
+	payment, err := (Payment{}).getByExternalId(externalId)
+	if err != nil {
+		return nil, err
+	}
+
+	if payment.AccountId != account.Id {
+		return nil, errors.New("Объект принадлежит другому аккаунту")
+	}
+
+	return payment, nil
 }

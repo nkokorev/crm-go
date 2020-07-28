@@ -94,7 +94,6 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	// Читаем вход
 	var input CreateOrderForm
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Ошибка в запросе: проверьте обязательные поля и типы переменных"))
 		return
 	}

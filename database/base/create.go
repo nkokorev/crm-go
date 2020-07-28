@@ -1562,7 +1562,7 @@ func LoadArticlesAiroClimate()  {
 		}
 
 		fmt.Println("article:", article.Name)
-		
+
 	}
 }
 
@@ -1792,12 +1792,10 @@ func UploadTestDataPart_IV()  {
 	for i,v := range(deliveries) {
 		if v.GetCode() == "russianPost" {
 			if err := deliveries[i].AppendPaymentOptions([]models.PaymentOption{paymentOnline}); err != nil {
-				fmt.Println(err)
 				return
 			}
 		} else {
 			if err := deliveries[i].AppendPaymentOptions([]models.PaymentOption{paymentCash, paymentOnline}); err != nil {
-				fmt.Println(err)
 				return
 			}
 		}

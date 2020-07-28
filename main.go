@@ -34,8 +34,8 @@ func main() {
 	// base.UploadTestDataPart_III()
 
 	// yandex payment
-	base.RefreshTablesPart_IV()
-	base.UploadTestDataPart_IV()
+	// base.RefreshTablesPart_IV()
+	// base.UploadTestDataPart_IV()
 	
 	// base.Migrate_I()
 

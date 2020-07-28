@@ -81,6 +81,7 @@ func (Account) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&Account{})
+	// db.AutoMigrate(&Account{})
 
 	// 2. Создаем Главный аккаунт через спец. функцию
 	_, err := CreateMainAccount()
