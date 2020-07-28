@@ -6,7 +6,7 @@ import (
 	"github.com/nkokorev/crm-go/utils"
 )
 
-// Системные методы оплаты        payment option,
+// Методы оплаты        payment option,
 type PaymentOption struct {
 	
 	Id     		uint   	`json:"id" gorm:"primary_key"`
@@ -24,6 +24,10 @@ type PaymentOption struct {
 
 	WebSites	[]WebSite `json:"webSites" gorm:"many2many:payment_options_web_sites;preload"`
 	Payments	[]Payment `json:"payments" gorm:"many2many:payment_options_payments;preload"`
+
+	DeliveryPickUps 	[]DeliveryPickup  `json:"deliveryPickUps" gorm:"many2many:payment_options_delivery_pickups;preload"`
+	DeliveryCouriers 	[]DeliveryCourier  `json:"deliveryCouriers" gorm:"many2many:payment_options_delivery_couriers;preload"`
+	DeliveryRussianPosts 	[]DeliveryRussianPost  `json:"deliveryRussianPosts" gorm:"many2many:payment_options_delivery_russian_posts;preload"`
 
 	PaymentMethod	`json:"-" gorm:"-"`
 	// Доступен ли данный способ платежей
@@ -55,11 +59,10 @@ func (paymentOption *PaymentOption) AfterFind() (err error) {
 		var paymentYandex PaymentYandex
 		if err := db.First(&paymentYandex, paymentOption.OwnerId).Error; err != nil { return err}
 		paymentOption.PaymentMethod = &paymentYandex
-	case "chashe":
-		// todo: тут что-то еще
-		// var paymentYandex PaymentYandex
-		// if err := db.First(&paymentYandex, paymentOption.OwnerId).Error; err != nil { return err}
-		// paymentOption.PaymentMethod = &paymentYandex
+	case "payment_cashes":
+		var paymentCash PaymentCash
+		if err := db.First(&paymentCash, paymentOption.OwnerId).Error; err != nil { return err}
+		paymentOption.PaymentMethod = &paymentCash
 	}
 
 	return nil
@@ -168,4 +171,11 @@ func (PaymentOption) getByCode(accountId uint, code string) (*PaymentOption, err
 	return &paymentOption, err
 }
 
+func (paymentOption PaymentOption) AppendDeliveryCourier(deliveryCourier DeliveryCourier) error {
+	if err := db.Model(&paymentOption).Association("DeliveryCouriers").Append(deliveryCourier).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
 

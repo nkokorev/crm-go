@@ -80,10 +80,9 @@ type Payment struct {
 
 	// #### Внутренние данные #####
 
-	// Внутренний Id объекта типа платежа Яндекс.Касса, кэш или у другого посредника.
-	OwnerId	uint	`json:"ownerId" gorm:"type:int"` // Id в
-	// таблица или тип объекта: [yandex_payment,cash, ...] // тут надо бы доработать список
-	OwnerType	string `json:"ownerType" gorm:"type:varchar(255);default:''"`
+	// Объекты для определения типа платежа внутри CRM: yandex, chase ..
+	OwnerId	uint	`json:"ownerId" gorm:"type:int;not null;"` // Id в
+	OwnerType	string `json:"ownerType" gorm:"type:varchar(255);not null;"`
 
 	// ID заказа в RatusCRM
 	OrderId	uint	`json:"orderId" gorm:"type:int"` // Id заказа в системе

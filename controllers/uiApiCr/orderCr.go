@@ -300,19 +300,6 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания платежа"}))
 		return
 	}
-	/*switch paymentMethod.Code {
-	case "online":
-		// todo: берем яндекс кассу для всех способом оплаты
-		 
-		_, err = yandexPayment.CreatePaymentByOrder(order)
-		if err != nil {
-			log.Fatalf("Не удалось создать заказ в системе: ", err)
-		}
-	}*/
-
-
-	fmt.Println("ConfirmationUrl: ", payment.ConfirmationUrl)
-
 
 	resp := u.Message(true, "POST Order Created")
 	resp["order"] = order

@@ -41,6 +41,9 @@ type DeliveryRussianPost struct {
 	VatCodeId	uint	`json:"vatCodeId" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
 	VatCode		VatCode	`json:"vatCode"`
 
+	// Разрешенные методы оплаты для данного типа доставки
+	PaymentOptions	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_delivery_russian_posts;preload"`
+
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 }
@@ -280,4 +283,12 @@ func (deliveryRussianPost DeliveryRussianPost) GetName () string {
 }
 func (deliveryRussianPost DeliveryRussianPost) GetVatCode () VatCode {
 	return deliveryRussianPost.VatCode
+}
+
+func (deliveryRussianPost DeliveryRussianPost) AppendPaymentOptions(paymentOptions []PaymentOption) error  {
+	if err := db.Model(&deliveryRussianPost).Association("PaymentOptions").Append(paymentOptions).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -1659,17 +1659,15 @@ func LoadProductCategoryDescriptionAiroClimate()  {
 func RefreshTablesPart_IV() {
 	pool := models.GetPool()
 
-	err := pool.Exec("drop table if exists orders_products, payment_methods_web_sites, payment_methods_payments").Error
+	err := pool.Exec("drop table if exists payment_options_delivery_pickups, payment_options_delivery_couriers, payment_options_delivery_russian_posts, " +
+		"orders_products, payment_methods_web_sites, payment_methods_payments").Error
 	if err != nil {
 		log.Fatalf("Cant create tables -1: %v", err)
 		return
 	}
 	pool.DropTableIfExists(
 
-
 		models.CartItem{},
-
-
 		models.OrderComment{},
 		models.OrderChannel{},
 
@@ -1679,9 +1677,8 @@ func RefreshTablesPart_IV() {
 		models.Payment{},
 		models.PaymentAmount{},
 		models.PaymentYandex{},
+		models.PaymentCash{},
 
-		// models.VatCode{},
-		// models.PaymentSubject{},
 		)
 
 
@@ -1696,8 +1693,12 @@ func RefreshTablesPart_IV() {
 	models.OrderChannel{}.PgSqlCreate()
 	models.Order{}.PgSqlCreate()
 	models.DeliveryOrder{}.PgSqlCreate()
+	models.PaymentCash{}.PgSqlCreate()
 	models.PaymentYandex{}.PgSqlCreate()
 	models.Payment{}.PgSqlCreate()
+
+	pool.AutoMigrate(&models.DeliveryPickup{},&models.DeliveryCourier{},&models.DeliveryRussianPost{})
+
 }
 
 func UploadTestDataPart_IV()  {
@@ -1721,6 +1722,11 @@ func UploadTestDataPart_IV()  {
 		}
 	}
 
+	var paymentCash models.PaymentOption
+	if err := airoAccount.LoadEntity(&paymentCash, 1); err != nil {
+		log.Fatal(err)
+	}
+
 	var paymentOnline models.PaymentOption
 	if err := airoAccount.LoadEntity(&paymentOnline, 2); err != nil {
 		log.Fatal(err)
@@ -1736,45 +1742,6 @@ func UploadTestDataPart_IV()  {
 		log.Fatal(err)
 	}
 	////////////
-
-
-
-	// Создаем заказ (Order)
-	for i := 0; i < 5; i++ {
-		entity, err := airoAccount.CreateEntity(
-			&models.Order{
-				CustomerComment: "Привезти с 10 до 12:00, контакт Светлана.",
-				Individual: true,
-				WebSiteId: 5,
-				OrderChannelId: 1,
-				ManagerId: 2,
-				Amount: models.PaymentAmount{AccountId: airoAccount.Id, Value: 20.01, Currency: "RUB"},
-				CartItems: []models.CartItem{
-					{
-						AccountId: airoAccount.Id, ProductId: 1,Description: "...", Quantity: 1,
-						Amount: models.PaymentAmount{AccountId: airoAccount.Id, Value: 20.01, Currency: "RUB"},
-					},
-					{
-						AccountId: airoAccount.Id, ProductId: 5,Description: "...", Quantity: 2,
-						Amount: models.PaymentAmount{AccountId: airoAccount.Id, Value: 20.01, Currency: "RUB"},
-					},
-				},
-			})
-		if err != nil {
-			log.Fatalf("Не удалось создать заказ: ", err)
-		}
-
-		var order models.Order
-		if err = airoAccount.LoadEntity(&order, entity.GetId()); err != nil {
-			log.Fatalf("Не удалось найти заказ: ", err)
-		}
-
-		/*if err := order.AppendProducts([]models.Product{
-			{Id: 15},{Id: 3},{Id: 5},{Id: 8},
-		}); err != nil {
-			log.Fatal(err)
-		}*/
-	}
 
 	// Создаем способ оплаты YandexPayment
 	entityPayment, err := airoAccount.CreateEntity(
@@ -1792,13 +1759,40 @@ func UploadTestDataPart_IV()  {
 	if err != nil {
 		log.Fatalf("Не удалось создать entityPayment: ", err)
 	}
-	var yandexPayment models.PaymentYandex
-	if err = airoAccount.LoadEntity(&yandexPayment,entityPayment.GetId()); err != nil {
+	var _paymentYandex models.PaymentYandex
+	if err = airoAccount.LoadEntity(&_paymentYandex,entityPayment.GetId()); err != nil {
 		log.Fatalf("Не удалось найти entityPayment: ", err)
 	}
 
-	if err := yandexPayment.SetPaymentOption(paymentOnline); err != nil {
+	if err := _paymentYandex.SetPaymentOption(paymentOnline); err != nil {
 		log.Fatal(err)
+	}
+
+	// Создаем способ оплаты PaymentCash
+	entityPayment2, err := airoAccount.CreateEntity(
+		&models.PaymentCash{
+			Name:   "Прием платежей через в интернет-магазине airoclimate.ru",
+			Enabled: true,
+			Description: "Наличный способ оплаты при самовывозе",
+		})
+	if err != nil {
+		log.Fatalf("Не удалось создать entityPayment: ", err)
+	}
+	var _paymentCash models.PaymentCash
+	if err = airoAccount.LoadEntity(&_paymentCash,entityPayment2.GetId()); err != nil {
+		log.Fatalf("Не удалось найти paymentCash: ", err)
+	}
+
+	if err := _paymentCash.SetPaymentOption(paymentOnline); err != nil {
+		log.Fatal(err)
+	}
+
+	deliveries := webSite.GetDeliveryMethods()
+	for i := range(deliveries) {
+		if err := deliveries[i].AppendPaymentOptions([]models.PaymentOption{paymentCash, paymentOnline}); err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 
 
@@ -1806,13 +1800,8 @@ func UploadTestDataPart_IV()  {
 	///////////////
 
 
-	// Отправляем
-/*	_, err = yandexPayment.CreatePaymentByOrder(order)
-	if err != nil {
-		log.Fatalf("Не удалось создать заказ в системе: ", err)
-	}*/
 
-    fmt.Println("Закза создан: ")
+    fmt.Println("Объекты созданы создан: ")
 }
 
 func Migrate_I() {

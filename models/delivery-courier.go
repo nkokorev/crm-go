@@ -29,6 +29,9 @@ type DeliveryCourier struct {
 	VatCodeId	uint	`json:"vatCodeId" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
 	VatCode		VatCode	`json:"vatCode"`
 
+	// Разрешенные методы оплаты для данного типа доставки
+	PaymentOptions	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_delivery_couriers;preload"`
+
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 }
@@ -192,3 +195,10 @@ func (deliveryCourier DeliveryCourier) checkMaxWeight(weight float64) error {
 	return nil
 }
 
+func (deliveryCourier DeliveryCourier) AppendPaymentOptions(paymentOptions []PaymentOption) error  {
+	if err := db.Model(&deliveryCourier).Association("PaymentOptions").Append(paymentOptions).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

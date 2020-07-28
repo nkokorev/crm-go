@@ -10,6 +10,7 @@ type Delivery interface {
 	checkMaxWeight(weight float64) error // проверяет макс вес
 
 	setShopId(uint)
+	AppendPaymentOptions(paymentOptions []PaymentOption) error
 }
 
 type DeliveryRequest struct {

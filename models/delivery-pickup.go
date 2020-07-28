@@ -26,6 +26,9 @@ type DeliveryPickup struct {
 	VatCodeId	uint	`json:"vatCodeId" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
 	VatCode		VatCode	`json:"vatCode"`
 
+	// Разрешенные методы оплаты для данного типа доставки
+	PaymentOptions	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_delivery_pickups;preload"`
+
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 }
@@ -192,3 +195,10 @@ func (deliveryPickup DeliveryPickup) checkMaxWeight(weight float64) error {
 	return nil
 }
 
+func (deliveryPickup DeliveryPickup) AppendPaymentOptions(paymentOptions []PaymentOption) error  {
+	if err := db.Model(&deliveryPickup).Association("PaymentOptions").Append(paymentOptions).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

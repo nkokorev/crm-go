@@ -195,8 +195,9 @@ func (paymentYandex PaymentYandex) CreatePayment(order Order) (*Payment, error) 
 		})},
 		SavePaymentMethod: paymentYandex.SavePaymentMethod,
 		OwnerId: paymentYandex.Id,
+		OwnerType: "payment_yandexes",
 		Capture: paymentYandex.Capture,
-		OwnerType: "yandex_payment",
+
 		OrderId: order.Id,
 	}
 
