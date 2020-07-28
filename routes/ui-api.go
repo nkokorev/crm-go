@@ -36,8 +36,8 @@ var UiApiRoutes = func (rFree *mux.Router) {
 
 	rFree.HandleFunc("/web-sites/{webSiteId:[0-9]+}/payment-options", uiApiCr.PaymentOptionGetList).Methods(http.MethodGet, http.MethodOptions)
 
-	// вставляется hashId магазина, а не id - чтобы защититься от атак.
-	rFree.HandleFunc("/yandex-payment/{yandexPaymentHashId:[0-9]+}/notifications/", uiApiCr.DeliveryListOptions).Methods(http.MethodGet, http.MethodOptions)
+	// URL для яндекса: вставляется hashId магазина, а не id - чтобы защититься от атак.
+	rFree.HandleFunc("/yandex-payment/{paymentYandexHashId:[0-9]+}/web-hooks/", uiApiCr.PaymentYandexWebHook).Methods(http.MethodPost, http.MethodOptions)
 
 	rFree.HandleFunc("/orders", uiApiCr.UiApiOrderCreate).Methods(http.MethodPost, http.MethodOptions)
 

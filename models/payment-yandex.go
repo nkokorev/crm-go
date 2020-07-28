@@ -3,6 +3,7 @@ package models
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
@@ -82,6 +83,15 @@ func (PaymentYandex) get(id uint) (Entity, error) {
 	var paymentYandex PaymentYandex
 
 	err := db.First(&paymentYandex, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &paymentYandex, nil
+}
+func (PaymentYandex) getByHashId(hashId string) (*PaymentYandex, error) {
+	paymentYandex := PaymentYandex{}
+
+	err := db.First(&paymentYandex, "hash_id = ?", hashId).Error
 	if err != nil {
 		return nil, err
 	}
@@ -307,4 +317,17 @@ func (paymentYandex PaymentYandex) SetPaymentOption(paymentOption PaymentOption)
 	}
 
 	return nil
+}
+
+func (account Account) GetPaymentYandexByHashId(hashId string) (*PaymentYandex, error) {
+	paymentYandex, err := (PaymentYandex{}).getByHashId(hashId)
+	if err != nil {
+		return nil, err
+	}
+
+	if paymentYandex.AccountId != account.Id {
+		return nil, errors.New("Объект принадлежит другому аккаунту")
+	}
+
+	return paymentYandex, nil
 }
