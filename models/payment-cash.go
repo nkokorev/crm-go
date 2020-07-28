@@ -17,10 +17,9 @@ type PaymentCash struct {
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя интеграции магазина "<name>"
 	Description 		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание метода оплаты
 
-	// Включен ли данный способ оплаты
+	// Включен ли данный способ оплаты ??
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"`
 
-	
 	PaymentOption   PaymentOption `gorm:"polymorphic:Owner;"`
 }
 

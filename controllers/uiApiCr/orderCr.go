@@ -122,9 +122,6 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// fmt.Println(paymentOption.Code)
-	// fmt.Println(paymentOption.Id)
-
 	// 3. Находим тип доставки
 	if  input.Delivery.Code == "" ||  input.Delivery.Id < 1 {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в определении типа доставки", Errors: map[string]interface{}{"delivery":"не указан тип доставки или id"}}))
@@ -142,7 +139,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 			Errors: map[string]interface{}{"paymentOption":"Указанный тип оплаты не поддерживает данный тип доставки"}}))
 		return
 	}
-
+	
 	// 2. Создаем список продуктов, считаем стоимость каждого
 	var cartItems []models.CartItem
 	for _,v := range input.Cart {
@@ -177,9 +174,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		// 1.5 Считаем общую стоимость заказа
 		totalCost += ProductCost * float64(v.Quantity)
 	}
-	
 
-	
 	// 4. Определяем стоимость доставки
 	deliveryCost, _, err := webSite.CalculateDelivery(models.DeliveryRequest{
 		Cart: input.Cart,
@@ -195,8 +190,6 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
-
 	// 4.2. Находим соответствующую услугу
 	
 	// 4.1. Добавляем в список заказа - доставку
@@ -209,7 +202,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// 4.2 Добавляем стоимость доставки к общей стоимости
-	totalCost += totalCost
+	totalCost += deliveryCost
 
 	// 5. Находим канал заявки
 	if input.OrderChannelCode == "" {
@@ -221,8 +214,6 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска источника заявки", Errors: map[string]interface{}{"orderChannel":"канал не найден"}}))
 		return
 	}
-
-
 
 	// 6. Создаем / находим пользователя
 	var customer *models.User

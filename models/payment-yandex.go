@@ -219,7 +219,6 @@ func (paymentYandex PaymentYandex) CreatePayment(order Order) (*Payment, error) 
 
 func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 
-	fmt.Println("Создаем внешний платеж")
 	url := "https://payment.yandex.net/api/v3/payments"
 
 	// Собираем JSON данные
@@ -261,8 +260,6 @@ func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 			return utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы: %v", err),
 					Errors: map[string]interface{}{"paymentOption":err.Error()}}
 		}
-
-		fmt.Println(responseRequest)
 
 		if err = payment.update(map[string]interface{}{
 			"externalId":responseRequest["id"],

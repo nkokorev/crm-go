@@ -16,7 +16,7 @@ type Payment struct {
 	ExternalId	string	`json:"externalId" gorm:"type:varchar(128);index;default:null"`
 
 	// статус платежа:  [pending, waiting_for_capture, succeeded и canceled]
-	Status	string	`json:"status" gorm:"type:varchar(32);not null"`
+	Status	string	`json:"status" gorm:"type:varchar(32);default:'pending'"`
 	Paid 	bool 		`json:"paid" gorm:"type:bool;default:false;"` // признак оплаты платежа, для быстрой выборки
 
 	Test 	bool 		`json:"test" gorm:"type:bool;default:false;"` // признак тестовой платежа
@@ -86,6 +86,7 @@ type Payment struct {
 
 	// ID заказа в RatusCRM
 	OrderId	uint	`json:"orderId" gorm:"type:int"` // Id заказа в системе
+	// Order Order		`json:"order"`
 
 	ExternalCapturedAt 	time.Time  `json:"externalCapturedAt"` // Время подтверждения платежа, UTC
 	ExternalExpiresAt 	time.Time  `json:"externalExpiresAt"`  // Время, до которого вы можете бесплатно отменить или подтвердить платеж.
