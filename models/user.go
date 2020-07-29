@@ -72,6 +72,14 @@ func (user *User) BeforeCreate(scope *gorm.Scope) (err error) {
 	// user.CreatedAt = time.Now().UTC()
 	return nil
 }
+func (user *User) AfterCreate(scope *gorm.Scope) (error) {
+	event.AsyncFire(Event{}.UserCreated(user.IssuerAccountId, user.Id))
+	return nil
+}
+func (user *User) AfterUpdate(tx *gorm.DB) (err error) {
+	event.AsyncFire(Event{}.UserUpdated(user.IssuerAccountId, user.Id))
+	return nil
+}
 
 
 func (user User) create () (*User, error) {
@@ -98,7 +106,7 @@ func (user User) create () (*User, error) {
 		return nil, err
 	}
 
-	event.AsyncFire(Event{}.UserCreated(user.IssuerAccountId, userReturn.Id))
+	// event.AsyncFire(Event{}.UserCreated(user.IssuerAccountId, userReturn.Id))
 
 	return &userReturn, nil
 }

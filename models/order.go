@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"time"
 )
@@ -10,19 +11,16 @@ type Order struct {
 	Id     		uint   	`json:"id" gorm:"primary_key"`
 	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
 	AccountId 	uint 	`json:"accountId" gorm:"type:int;index;not null"` // аккаунт-владелец ключа
-
-	// Комментарий клиента к заказу
-	CustomerComment string	`json:"customerComment" gorm:"type:varchar(255);"`
-
-	// Комментарии менеджеров к заказу
-	Comments	[]OrderComment `json:"comments"`
-
+	
 	// Ответственный менеджер, назначается внутри системы
 	ManagerId 	uint	`json:"managerId" gorm:"type:int;not null"`
 	Manager		User	`json:"manager"`
 
 	////// Данные заказа ///////
 	Individual	bool 	`json:"individual" gorm:"type:bool;default:true;not null;"` // Физ.лицо - true, Юрлицо - false
+
+	// Комментарий клиента к заказу
+	CustomerComment string	`json:"customerComment" gorm:"type:varchar(255);"`
 
 	// Магазин (сайт) с которого пришел заказ. НЕ может быть null.
 	WebSiteId 	uint	`json:"webSiteId" gorm:"type:int;not null;"`
@@ -56,6 +54,13 @@ type Order struct {
 	DeliveryOrderId	*uint	`json:"deliveryOrderId" gorm:"type:int;"`
 	DeliveryOrder	*DeliveryOrder	`json:"deliveryOrder"`
 
+	// Комментарии менеджеров к заказу
+	Comments	[]OrderComment `json:"comments"`
+
+	// Статус заказа
+	OrderStatusId  	uint	`json:"orderStatusId" gorm:"type:int;not null;"`
+	OrderStatus		OrderStatus	`json:"orderStatus"`
+
 	CreatedAt time.Time 	`json:"createdAt"`
 	UpdatedAt time.Time 	`json:"updatedAt"`
 	DeletedAt *time.Time 	`json:"deletedAt"`
@@ -67,6 +72,9 @@ func (Order) PgSqlCreate() {
 	}
 	db.Model(&Order{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Model(&Order{}).AddForeignKey("amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
+	db.Model(&Order{}).AddForeignKey("order_channel_id", "order_channels(id)", "CASCADE", "CASCADE")
+	db.Model(&Order{}).AddForeignKey("delivery_order_id", "delivery_orders(id)", "CASCADE", "CASCADE")
+	db.Model(&Order{}).AddForeignKey("order_status_id", "order_statuses(id)", "CASCADE", "CASCADE")
 
 	// fmt.Println("Щквук!")
 }
@@ -92,15 +100,15 @@ func (order *Order) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 func (order *Order) AfterCreate(scope *gorm.Scope) (error) {
-
-	switch order.PaymentOption.Code {
-	case "online":
-	// создаем платеж
-		// Отправляем
-
-	
-	}
-	
+	event.AsyncFire(Event{}.OrderCreated(order.AccountId, order.Id))
+	return nil
+}
+func (order *Order) AfterUpdate(tx *gorm.DB) (err error) {
+	event.AsyncFire(Event{}.OrderUpdated(order.AccountId, order.Id))
+	return nil
+}
+func (order *Order) AfterDelete(tx *gorm.DB) (err error) {
+	event.AsyncFire(Event{}.OrderDeleted(order.AccountId, order.Id))
 	return nil
 }
 

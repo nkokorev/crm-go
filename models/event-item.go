@@ -27,7 +27,7 @@ func (EventItem) PgSqlCreate() {
 
 	mainAccount, err := GetMainAccount()
 	if err != nil {
-		log.Fatal("Не удалось найти главный аккаунт для событий")
+		log.Println("Не удалось найти главный аккаунт для событий")
 	}
 	eventItems := []EventItem{
 		{Name: "Пользователь создан", 	Code: "UserCreated", Enabled: true, Description: "Создание пользователя в текущем аккаунте. Сам пользователь на момент вызова не имеет доступа к аккаунту (если вообще будет)."},
@@ -64,7 +64,8 @@ func (EventItem) PgSqlCreate() {
 		{Name: "Статья создана", 	Code: "ArticleCreated", Enabled: true, Description: "В системе создана новая статья."},
 		{Name: "Статья обновлена", 	Code: "ArticleUpdated", Enabled: true, Description: "Какие-то данные статьи были изменены. Учитываются также и смежные данные, вроде изображений и видео."},
 		{Name: "Статья удалена", 	Code: "ArticleDeleted", Enabled: true, Description: "Статья со смежными данными удалена из системы."},
-		          //////////////////
+
+		////////////////// new 29.08.2020
 		          
 		{Name: "Заказ создан", 	Code: "OrderCreated", Enabled: true, Description: "Создан новый заказ. В контексте глобальный id заказа."},
 		{Name: "Заказ обновлен", 	Code: "OrderUpdated", Enabled: true, Description: "Какие-то данные заказа были изменены. В контексте глобальный id заказа."},
