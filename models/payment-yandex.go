@@ -197,6 +197,19 @@ func (paymentYandex PaymentYandex) CreatePayment(order Order) (*Payment, error) 
 		Description:  fmt.Sprintf("Заказ №%v в магазине AiroCliamte", order.Id),  // Видит клиент
 		PaymentMethodData: PaymentMethodData{Type: "bank_card"}, // вообще еще вопрос
 		Confirmation: Confirmation{Type: "redirect", ReturnUrl: paymentYandex.ReturnUrl},
+		Receipt: Receipt{
+			Customer: Customer{
+				Email: order.Customer.Email,
+				Phone: order.Customer.Phone,
+				FullName: order.Customer.Name + " " + order.Customer.Surname,
+			},
+			Items: order.CartItems,
+			Email: order.Customer.Email,
+			Phone: order.Customer.Phone,
+		},
+		/*Recipient: Recipient{
+			AccountId: paymentYandex.ShopId,
+		},*/
 
 		// Чтобы понять какой платеж был оплачен!!!
 		Metadata: postgres.Jsonb{ RawMessage: utils.MapToRawJson(map[string]interface{}{
@@ -229,10 +242,32 @@ func (paymentYandex PaymentYandex) CreatePayment(order Order) (*Payment, error) 
 
 func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 
+	sendData := struct{
+		Amount PaymentAmount `json:"amount"`
+		PaymentMethodData PaymentMethodData `json:"payment_method_data"`
+		SavePaymentMethod 	bool 	`json:"save_payment_method"`
+		Capture	bool	`json:"capture" `
+		Confirmation	Confirmation	`json:"confirmation"`
+		Description 	string 	`json:"description"`
+		Metadata	postgres.Jsonb	`json:"metadata"`
+		Receipt Receipt `json:"receipt"`
+
+	}{
+		Amount: payment.Amount,
+		PaymentMethodData: payment.PaymentMethodData,
+		SavePaymentMethod: payment.SavePaymentMethod,
+		Capture: payment.Capture,
+		Confirmation: payment.Confirmation,
+		Description: payment.Description,
+		Metadata: payment.Metadata,
+		Receipt: payment.Receipt,
+	}
+
+
 	url := "https://payment.yandex.net/api/v3/payments"
 
 	// Собираем JSON данные
-	body, err := json.Marshal(payment)
+	body, err := json.Marshal(sendData)
 	if err != nil {
 		return utils.Error{Message: "Не удалось разобрать JSON платежа", Errors: map[string]interface{}{"paymentOption":err.Error()}}
 	}
@@ -304,6 +339,12 @@ func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 		}
 
 	} else {
+		var responseRequest map[string]interface{}
+		if err := json.NewDecoder(response.Body).Decode(&responseRequest); err != nil {
+			return utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы: %v", err),
+				Errors: map[string]interface{}{"paymentOption":err.Error()}}
+		}
+		fmt.Println(responseRequest)
 		return utils.Error{Message: fmt.Sprintf("Ответ сервера Яндекс.Кассы: %v", response.StatusCode),Errors: map[string]interface{}{"paymentOption":"Проблема с сервером Яндекс.Кассы"}}
 	}
 

@@ -189,14 +189,13 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4.2. Находим соответствующую услугу
-	
 	// 4.1. Добавляем в список заказа - доставку
+	deliveryAmount := models.PaymentAmount{AccountId: account.Id, Value: deliveryCost, Currency: "RUB"}
 	cartItems = append(cartItems, models.CartItem{
 		AccountId: account.Id,
 		Description: delivery.GetName(),
 		Quantity: 1,
-		Amount: models.PaymentAmount{Value: deliveryCost, Currency: "RUB"},
+		Amount: deliveryAmount,
 		VatCode: delivery.GetVatCode().YandexCode,
 	})
 
@@ -300,7 +299,6 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	_order.CartItems = cartItems
 	_order.PaymentOptionId = paymentOption.Id
 
-
 	// Создаем order
 	orderEntity, err := account.CreateEntity(&_order)
 	if err != nil {
@@ -317,7 +315,14 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	// Создаем платеж в Я.Кассе
 	payment, err := paymentOption.CreatePayment(*order)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания платежа"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания платежа", Errors: map[string]interface{}{"payment":err.Error()}}))
+		return
+	}
+
+	// Создаем доставку
+	_, err = delivery.CreateDeliveryOrder(input.Delivery, deliveryAmount, *order)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания доставки", Errors: map[string]interface{}{"delivery":err.Error()}}))
 		return
 	}
 

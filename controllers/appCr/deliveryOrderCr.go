@@ -8,8 +8,7 @@ import (
 	"net/http"
 )
 
-// Ui / API there!
-func OrderCreate(w http.ResponseWriter, r *http.Request) {
+func DeliveryOrderCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -19,7 +18,7 @@ func OrderCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Get JSON-request
 	var input struct{
-		models.Order
+		models.DeliveryOrder
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -27,43 +26,43 @@ func OrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, err := account.CreateEntity(&input.Order)
+	deliveryOrder, err := account.CreateEntity(&input.DeliveryOrder)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
 		return
 	}
 
-	resp := u.Message(true, "POST Order Created")
-	resp["order"] = order
+	resp := u.Message(true, "POST DeliveryOrder Created")
+	resp["deliveryOrder"] = deliveryOrder
 	u.Respond(w, resp)
 }
 
-func OrderGet(w http.ResponseWriter, r *http.Request) {
+func DeliveryOrderGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	orderId, err := utilsCr.GetUINTVarFromRequest(r, "orderId")
+	deliveryOrderId, err := utilsCr.GetUINTVarFromRequest(r, "deliveryOrderId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке web site Id"))
 		return
 	}
 
-	var order models.Order
-	err = account.LoadEntity(&order, orderId)
+	var deliveryOrder models.DeliveryOrder
+	err = account.LoadEntity(&deliveryOrder, deliveryOrderId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
 	}
 
-	resp := u.Message(true, "GET Order")
-	resp["order"] = order
+	resp := u.Message(true, "GET DeliveryOrder")
+	resp["deliveryOrder"] = deliveryOrder
 	u.Respond(w, resp)
 }
 
-func OrderGetListPagination(w http.ResponseWriter, r *http.Request) {
+func DeliveryOrderGetListPagination(w http.ResponseWriter, r *http.Request) {
 	
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
@@ -96,19 +95,19 @@ func OrderGetListPagination(w http.ResponseWriter, r *http.Request) {
 	var total uint = 0
 	orders := make([]models.Entity,0)
 	
-	orders, total, err = account.GetPaginationListEntity(&models.Order{}, offset, limit, sortBy, search)
+	orders, total, err = account.GetPaginationListEntity(&models.DeliveryOrder{}, offset, limit, sortBy, search)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
-	resp := u.Message(true, "GET Order Pagination List")
+	resp := u.Message(true, "GET DeliveryOrder Pagination List")
 	resp["total"] = total
 	resp["orders"] = orders
 	u.Respond(w, resp)
 }
 
-func OrderUpdate(w http.ResponseWriter, r *http.Request) {
+func DeliveryOrderUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -116,14 +115,14 @@ func OrderUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orderId, err := utilsCr.GetUINTVarFromRequest(r, "orderId")
+	deliveryOrderId, err := utilsCr.GetUINTVarFromRequest(r, "deliveryOrderId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	var order models.Order
-	err = account.LoadEntity(&order, orderId)
+	var deliveryOrder models.DeliveryOrder
+	err = account.LoadEntity(&deliveryOrder, deliveryOrderId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -135,18 +134,18 @@ func OrderUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&order, input)
+	err = account.UpdateEntity(&deliveryOrder, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH Order Update")
-	resp["order"] = order
+	resp := u.Message(true, "PATCH DeliveryOrder Update")
+	resp["deliveryOrder"] = deliveryOrder
 	u.Respond(w, resp)
 }
 
-func OrderDelete(w http.ResponseWriter, r *http.Request) {
+func DeliveryOrderDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -154,23 +153,23 @@ func OrderDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orderId, err := utilsCr.GetUINTVarFromRequest(r, "orderId")
+	deliveryOrderId, err := utilsCr.GetUINTVarFromRequest(r, "deliveryOrderId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	var order models.Order
-	err = account.LoadEntity(&order, orderId)
+	var deliveryOrder models.DeliveryOrder
+	err = account.LoadEntity(&deliveryOrder, deliveryOrderId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
 	}
-	if err = account.DeleteEntity(&order); err != nil {
+	if err = account.DeleteEntity(&deliveryOrder); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
 		return
 	}
 
-	resp := u.Message(true, "DELETE Order Successful")
+	resp := u.Message(true, "DELETE DeliveryOrder Successful")
 	u.Respond(w, resp)
 }

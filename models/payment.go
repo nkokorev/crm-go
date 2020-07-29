@@ -44,7 +44,9 @@ type Payment struct {
 
 	// Получатель платежа на стороне Сервиса. В Яндекс кассе это магазин и канал внутри я.кассы.
 	// Нужен, если вы разделяете потоки платежей в рамках одного аккаунта или создаете платеж в адрес другого аккаунта.
-	Recipient	Recipient `json:"_recipient"`
+	Recipient	Recipient `json:"recipient"`
+
+	Receipt	Receipt `json:"receipt"`
 
 	// Способ оплаты платежа = {type:"bank_card", id:"", saved:true, card:""}. Может быть и другой платеж, в зависимости от OwnerType
 	PaymentMethodData	PaymentMethodData	`json:"payment_method_data"`
@@ -120,9 +122,26 @@ type Confirmation struct {
 	ReturnUrl 	string `json:"return_url" gorm:"type:varchar(255);"`
 }
 
+type Customer struct {
+	FullName	string	`json:"full_name"`
+	Inn	string	`json:"inn"`
+	Email	string	`json:"email"`
+	Phone	string	`json:"phone"`
+}
+
+// Получатель платежа
 type Recipient struct {
-	AccountId	string	`json:"account_id" gorm:"type:varchar(32);default:''"` // Идентификатор магазина в Яндекс.Кассе.
-	GatewayId	string	`json:"gateway_id" gorm:"type:varchar(32);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+	AccountId string	`json:"account_id" gorm:"type:varchar(32);default:''"` // Идентификатор магазина в Яндекс.Кассе.
+	GatewayId string	`json:"gateway_id" gorm:"type:varchar(32);default:''"` // Идентификатор субаккаунта - для разделения потоков платежей в рамках одного аккаунта.
+}
+
+type Receipt struct {
+	Customer  Customer
+	Items	[]CartItem `json:"items"`
+	// TaxSystemCode int `json:"tax_system_code"`
+	Email	string	`json:"email"`
+	Phone	string	`json:"phone"`
+	AccountId string	`json:"account_id" gorm:"type:varchar(32);default:''"` // Идентификатор магазина в Яндекс.Кассе.
 }
 
 type CancellationDetails struct {

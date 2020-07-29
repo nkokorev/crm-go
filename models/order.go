@@ -53,8 +53,8 @@ type Order struct {
 	Payment	Payment	`json:"payment"`
 
 	// Данные о доставке
-	// DeliveryOrderId	uint	`json:"deliveryOrderId" gorm:"type:int;not null;"`
-	// DeliveryOrder	DeliveryOrder	`json:"deliveryOrder"`
+	DeliveryOrderId	*uint	`json:"deliveryOrderId" gorm:"type:int;"`
+	DeliveryOrder	*DeliveryOrder	`json:"deliveryOrder"`
 
 	CreatedAt time.Time 	`json:"createdAt"`
 	UpdatedAt time.Time 	`json:"updatedAt"`
@@ -101,15 +101,6 @@ func (order *Order) AfterCreate(scope *gorm.Scope) (error) {
 	
 	}
 	
-	return nil
-}
-func (order *Order)  AfterFind() (err error) {
-
-	// 1. Делаем подсчет стоимости заказа
-	if err := order.RetailPriceCalculation(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -250,28 +241,3 @@ func (order *Order) AppendProducts (products []Product) error {
 	return nil
 }
 
-func (order *Order) RetailPriceCalculation () error {
-
-	/*sum := float64(0)
-
-	if len(order.CartItems) < 1 {
-		return nil
-	}
-
-	var arrProducts = make([]uint, 0)
-	for _,v := range order.CartItems {
-		arrProducts = append(arrProducts, v.Id)
-	}
-
-	err := db.Table("products").Where("account_id = ? AND id IN (?)", order.AccountId, arrProducts).Select("sum(retail_price)").Row().Scan(&sum)
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}*/
-
-	// fmt.Println(sum)
-	// order.Cart.Value = sum
-	// order.Cart.Count = len(order.CartItems)
-
-	return nil
-}

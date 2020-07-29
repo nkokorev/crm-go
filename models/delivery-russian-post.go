@@ -282,3 +282,20 @@ func (deliveryRussianPost DeliveryRussianPost) RemovePaymentOptions(paymentOptio
 func (deliveryRussianPost DeliveryRussianPost) ExistPaymentOption(paymentOptions PaymentOption) bool  {
 	return db.Model(&deliveryRussianPost).Where("payment_options.id = ?", paymentOptions.Id).Association("PaymentOptions").Find(&PaymentOption{}).Count() > 0
 }
+
+func (deliveryRussianPost DeliveryRussianPost) CreateDeliveryOrder(deliveryData DeliveryData, amount PaymentAmount,order Order) (Entity, error)  {
+	deliveryOrder := DeliveryOrder{
+		AccountId: deliveryRussianPost.AccountId,
+		OrderId:   order.Id,
+		CustomerId: order.CustomerId,
+		WebSiteId: order.WebSiteId,
+		Code:  deliveryRussianPost.Code,
+		MethodId: deliveryRussianPost.Id,
+		Address: deliveryData.Address,
+		PostalCode: deliveryData.PostalCode,
+		Amount: amount,
+	}
+
+	return deliveryOrder.create()
+
+}

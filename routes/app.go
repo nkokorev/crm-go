@@ -240,4 +240,10 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/vat-codes/{vatCodeId:[0-9]+}", appCr.VatCodeGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/vat-codes/{vatCodeId:[0-9]+}", appCr.VatCodeUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/vat-codes/{vatCodeId:[0-9]+}", appCr.VatCodeDelete).Methods(http.MethodDelete, http.MethodOptions)
+
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/delivery-orders", appCr.DeliveryOrderCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/delivery-orders", appCr.DeliveryOrderGetListPagination).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/delivery-orders/{deliveryOrderId:[0-9]+}", appCr.DeliveryOrderGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/delivery-orders/{deliveryOrderId:[0-9]+}", appCr.DeliveryOrderUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/delivery-orders/{deliveryOrderId:[0-9]+}", appCr.DeliveryOrderDelete).Methods(http.MethodDelete, http.MethodOptions)
 }

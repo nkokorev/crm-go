@@ -192,3 +192,20 @@ func (deliveryPickup DeliveryPickup) RemovePaymentOptions(paymentOptions []Payme
 func (deliveryPickup DeliveryPickup) ExistPaymentOption(paymentOptions PaymentOption) bool  {
 	return db.Model(&deliveryPickup).Where("payment_options.id = ?", paymentOptions.Id).Association("PaymentOptions").Find(&PaymentOption{}).Count() > 0
 }
+
+func (deliveryPickup DeliveryPickup) CreateDeliveryOrder(deliveryData DeliveryData, amount PaymentAmount, order Order) (Entity, error)  {
+	deliveryOrder := DeliveryOrder{
+		AccountId: deliveryPickup.AccountId,
+		OrderId:   order.Id,
+		CustomerId: order.CustomerId,
+		WebSiteId: order.WebSiteId,
+		Code:  deliveryPickup.Code,
+		MethodId: deliveryPickup.Id,
+		Address: deliveryData.Address,
+		PostalCode: deliveryData.PostalCode,
+		Amount: amount,
+	}
+
+	return deliveryOrder.create()
+
+}

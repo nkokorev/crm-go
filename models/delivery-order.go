@@ -8,6 +8,7 @@ import (
 
 type DeliveryOrder struct {
 	Id     			uint   	`json:"id" gorm:"primary_key"`
+	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
 	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Данные заказа
@@ -25,9 +26,14 @@ type DeliveryOrder struct {
 	// Тело заказа
 	Code	string 	`json:"deliveryCode" gorm:"type:varchar(32);"`
 	MethodId 		uint	`json:"methodId" gorm:"type:int;not null;"`
+
 	Address	string 	`json:"deliveryAddress" gorm:"type:varchar(32);"`
 	PostalCode	string 	`json:"deliveryPostalCode" gorm:"type:varchar(32);"`
 	Delivery	Delivery	`json:"delivery" gorm:"-"` // << preload
+
+	// Фиксируем стоимость
+	AmountId  	uint			`json:"amountId" gorm:"type:int;not null;"`
+	Amount  	PaymentAmount	`json:"amount"`
 
 	CreatedAt 		time.Time `json:"createdAt"`
 	UpdatedAt 		time.Time `json:"updatedAt"`
@@ -49,17 +55,29 @@ func (DeliveryOrder) PgSqlCreate() {
 }
 func (deliveryOrder *DeliveryOrder) BeforeCreate(scope *gorm.Scope) error {
 	deliveryOrder.Id = 0
+
+	lastIdx := uint(0)
+	var ord DeliveryOrder
+
+	err := db.Where("account_id = ?", deliveryOrder.AccountId).Select("public_id").Last(&ord).Error;
+	if err != nil && err != gorm.ErrRecordNotFound { return err}
+	if err == gorm.ErrRecordNotFound {
+		lastIdx = 0
+	} else {
+		lastIdx = ord.PublicId
+	}
+	deliveryOrder.PublicId = lastIdx + 1
+
 	return nil
 }
 func (deliveryOrder *DeliveryOrder) AfterFind() (err error) {
 
-	delivery, err := WebSite{Id: deliveryOrder.WebSiteId}.GetDelivery(deliveryOrder.Code, deliveryOrder.MethodId)
-	if err != nil {
-		return err
+	delivery, err := Account{Id: deliveryOrder.AccountId}.GetDeliveryByCode(deliveryOrder.Code, deliveryOrder.MethodId)
+	if err == nil {
+		deliveryOrder.Delivery = delivery
+		return
 	}
 
-	deliveryOrder.Delivery = delivery
-	
 	return nil
 }
 
@@ -81,7 +99,7 @@ func (DeliveryOrder) get(id uint) (Entity, error) {
 
 	var deliveryOrder DeliveryOrder
 
-	err := db.Preload("Order").Preload("Customer").First(&deliveryOrder, id).Error
+	err := db.Preload("WebSite").Preload("Amount").Preload("Order").Preload("Customer").First(&deliveryOrder, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +107,7 @@ func (DeliveryOrder) get(id uint) (Entity, error) {
 }
 func (deliveryOrder *DeliveryOrder) load() error {
 
-	err := db.Preload("Order").Preload("Customer").First(deliveryOrder, deliveryOrder.Id).Error
+	err := db.Preload("WebSite").Preload("Amount").Preload("Order").Preload("Customer").First(deliveryOrder, deliveryOrder.Id).Error
 	if err != nil {
 		return err
 	}
@@ -112,7 +130,7 @@ func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy
 		search = "%"+search+"%"
 
 		err := db.Model(&DeliveryOrder{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("Order").Preload("Customer").
+			Preload("WebSite").Preload("Amount").Preload("Order").Preload("Customer").
 			Find(&deliveryOrders, "name ILIKE ? OR description ILIKE ?", search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -130,7 +148,7 @@ func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy
 	} else {
 
 		err := db.Model(&DeliveryOrder{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("Order").Preload("Customer").
+			Preload("WebSite").Preload("Amount").Preload("Order").Preload("Customer").
 			Find(&deliveryOrders).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -166,7 +184,7 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}) error {
 		return err
 	}
 
-	err := db.Preload("Order").Preload("Customer").First(deliveryOrder, deliveryOrder.Id).Error
+	err := db.Preload("WebSite").Preload("Amount").Preload("Order").Preload("Customer").First(deliveryOrder, deliveryOrder.Id).Error
 	if err != nil {
 		return err
 	}

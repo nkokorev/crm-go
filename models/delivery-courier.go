@@ -192,3 +192,20 @@ func (deliveryCourier DeliveryCourier) RemovePaymentOptions(paymentOptions []Pay
 func (deliveryCourier DeliveryCourier) ExistPaymentOption(paymentOptions PaymentOption) bool  {
 	return db.Model(&deliveryCourier).Where("payment_options.id = ?", paymentOptions.Id).Association("PaymentOptions").Find(&PaymentOption{}).Count() > 0
 }
+
+func (deliveryCourier DeliveryCourier) CreateDeliveryOrder(deliveryData DeliveryData, amount PaymentAmount, order Order) (Entity, error)  {
+	deliveryOrder := DeliveryOrder{
+		AccountId: deliveryCourier.AccountId,
+		OrderId:   order.Id,
+		CustomerId: order.CustomerId,
+		WebSiteId: order.WebSiteId,
+		Code:  deliveryCourier.Code,
+		MethodId: deliveryCourier.Id,
+		Address: deliveryData.Address,
+		PostalCode: deliveryData.PostalCode,
+		Amount: amount,
+	}
+
+	return deliveryOrder.create()
+
+}
