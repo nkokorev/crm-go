@@ -138,3 +138,20 @@ func (Event) DeliveryOrderCanceled(accountId uint, deliveryOrderId uint) event.E
 	return event.NewBasic("DeliveryOrderCanceled", map[string]interface{}{"accountId":accountId, "deliveryOrderId":deliveryOrderId})
 }
 
+// ######### Payment #########
+func (Event) PaymentCreated(accountId uint, paymentId uint) event.Event {
+	return event.NewBasic("PaymentCreated", map[string]interface{}{"accountId":accountId, "paymentId":paymentId})
+}
+func (Event) PaymentUpdated(accountId uint, paymentId uint) event.Event {
+	return event.NewBasic("PaymentUpdated", map[string]interface{}{"accountId":accountId, "paymentId":paymentId})
+}
+func (Event) PaymentDeleted(accountId uint, paymentId uint) event.Event {
+	return event.NewBasic("PaymentDeleted", map[string]interface{}{"accountId":accountId, "paymentId":paymentId})
+}
+func (Event) PaymentCompleted(accountId uint, paymentId uint) event.Event {
+	return event.NewBasic("PaymentCompleted", map[string]interface{}{"accountId":accountId, "paymentId":paymentId})
+}
+func (Event) PaymentCanceled(accountId uint, paymentId uint) event.Event {
+	return event.NewBasic("PaymentCanceled", map[string]interface{}{"accountId":accountId, "paymentId":paymentId})
+}
+

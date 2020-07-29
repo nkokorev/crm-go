@@ -76,7 +76,13 @@ func (EventItem) PgSqlCreate() {
 		{Name: "Задание на доставку обновлены", Code: "DeliveryOrderUpdated", Enabled: true, Description: "Какие-то данные по заказу обновились. В контексте глобальный id заказа."},
 		{Name: "Доставка удалена", 		Code: "DeliveryOrderDeleted", Enabled: true, Description: "Задание на доставку удалено из системы. В контексте глобальный id заказа."},
 		{Name: "Доставка выполнена", 	Code: "DeliveryOrderCompleted", Enabled: true, Description: "Задание на доставку успешно завершено. В контексте глобальный id заказа."},
-		{Name: "Доставка отменена", 	Code: "DeliveryOrderCanceled", Enabled: true, Description: "Задание на доставку отмеено по каким-то причинам. В контексте глобальный id заказа."},
+		{Name: "Доставка отменена", 	Code: "DeliveryOrderCanceled", Enabled: true, Description: "Задание на доставку отменено по каким-то причинам. В контексте глобальный id заказа."},
+
+		{Name: "Создан платеж", 	Code: "PaymentCreated", Enabled: true, Description: "Создан объект - платеж (payment). В контексте глобальный id доставки."},
+		{Name: "Платеж обновлен", Code: "PaymentUpdated", Enabled: true, Description: "Какие-то данные платежа изменены. В контексте глобальный id заказа."},
+		{Name: "Платеж удален", 		Code: "PaymentDeleted", Enabled: true, Description: "Объект платеж удален из системы. В контексте глобальный id заказа."},
+		{Name: "Платеж оплачен", 	Code: "PaymentCompleted", Enabled: true, Description: "По платежному поручению поступили средства. Любой из видов расчета: нал/безнал. В контексте глобальный id заказа."},
+		{Name: "Платеж отменен", 	Code: "PaymentCanceled", Enabled: true, Description: "Платеж отменен по каким-то причинам. В контексте глобальный id заказа."},
 	}
 	for _,v := range eventItems {
 		_, err = mainAccount.CreateEntity(&v)
