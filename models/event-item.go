@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"log"
 	"time"
 )
 
@@ -23,6 +24,66 @@ type EventItem struct {
 func (EventItem) PgSqlCreate() {
 	db.CreateTable(&EventItem{})
 	db.Model(&EventItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+
+	mainAccount, err := GetMainAccount()
+	if err != nil {
+		log.Fatal("Не удалось найти главный аккаунт для событий")
+	}
+	eventItems := []EventItem{
+		{Name: "Пользователь создан", 	Code: "UserCreated", Enabled: true, Description: "Создание пользователя в текущем аккаунте. Сам пользователь на момент вызова не имеет доступа к аккаунту (если вообще будет)."},
+		{Name: "Пользователь обновлен", Code: "UserUpdated", Enabled: true, Description: "Какие-то данные в учетной записи пользователя обновились."},
+		{Name: "Пользователь удален", 	Code: "UserDeleted", Enabled: true, Description: "Учетная запись пользователя удалена из системы RatusCRM."},
+
+		{Name: "Пользователь добавлен в аккаунт", Code: "UserAppendedToAccount", Enabled: true, Description: "Пользователь получил доступ в текущий аккаунт с какой-то конкретно ролью."},
+		{Name: "Пользователь удален из аккаунта", Code: "UserRemovedFromAccount", Enabled: true, Description: "У пользователя больше нет доступа к вашей системе из-под своей учетной записи."},
+
+		{Name: "Пользователь создан", 	Code: "UserSubscribed", Enabled: true, Description: "Пользователь подписался на рассылки. Технически, скорее всего, его 'подписали' через API или GUI интерфейсы."},
+		{Name: "Пользователь обновлен", Code: "UserUnsubscribed", Enabled: true, Description: "Пользователь отписался от всех рассылок, кроме системных уведомлений."},
+		{Name: "Пользователь удален", 	Code: "UserUpdateSubscribeStatus", Enabled: true, Description: "У пользователя обновился статус подписки."},
+
+		{Name: "Товар создан", 		Code: "ProductCreated", Enabled: true, Description: "Создан новый товар или услуга."},
+		{Name: "Товар обновлен", 	Code: "ProductUpdated", Enabled: true, Description: "Данные товара или услуга были обновлены. Сюда также входит обновление связанных данных: изображений, описаний, видео."},
+		{Name: "Товар удален", 		Code: "ProductDeleted", Enabled: true, Description: "Товар или услуга удалены из системы со всеми связанными данными."},
+
+		{Name: "Карточка товара создана", 	Code: "ProductCardCreated", Enabled: true, Description: "Карточка товара создана в системе"},
+		{Name: "Карточка товара обновлена", Code: "ProductCardUpdated", Enabled: true, Description: "Данные карточки товара успешно обновлены."},
+		{Name: "Карточка товара удалена", 	Code: "ProductCardDeleted", Enabled: true, Description: "Карточка товара удалена из системы"},
+
+		{Name: "Раздел сайта создан", 	Code: "ProductGroupCreated", Enabled: true, Description: "Создан новый раздел, категория или страница на сайте."},
+		{Name: "Раздел сайта обновлен", Code: "ProductGroupUpdated", Enabled: true, Description: "Данные раздела или категории сайта успешно обновлены."},
+		{Name: "Раздел сайта удален", 	Code: "ProductGroupDeleted", Enabled: true, Description: "Раздел сайта или категория удалена из системы"},
+
+		{Name: "Сайт создан", 	Code: "WebSiteCreated", Enabled: true, Description: "Создан новый сайт или магазин."},
+		{Name: "Сайт обновлен", Code: "WebSiteUpdated", Enabled: true, Description: "Персональные данные сайта или магазина были успешно обновлены."},
+		{Name: "Сайт удален", 	Code: "WebSiteDeleted", Enabled: true, Description: "Сайт или магазин удален из системы."},
+
+		{Name: "Файл создан", 	Code: "StorageCreated", Enabled: true, Description: "В системе создан новый файл."},
+		{Name: "Файл обновлен", Code: "StorageUpdated", Enabled: true, Description: "Какие-то данные файла успешно изменены."},
+		{Name: "Файл удален", 	Code: "StorageDeleted", Enabled: true, Description: "Файл удален из системы."},
+
+		{Name: "Статья создана", 	Code: "ArticleCreated", Enabled: true, Description: "В системе создана новая статья."},
+		{Name: "Статья обновлена", 	Code: "ArticleUpdated", Enabled: true, Description: "Какие-то данные статьи были изменены. Учитываются также и смежные данные, вроде изображений и видео."},
+		{Name: "Статья удалена", 	Code: "ArticleDeleted", Enabled: true, Description: "Статья со смежными данными удалена из системы."},
+		          //////////////////
+		          
+		{Name: "Заказ создан", 	Code: "OrderCreated", Enabled: true, Description: "Создан новый заказ. В контексте глобальный id заказа."},
+		{Name: "Заказ обновлен", 	Code: "OrderUpdated", Enabled: true, Description: "Какие-то данные заказа были изменены. В контексте глобальный id заказа."},
+		{Name: "Заказ удален", 	Code: "OrderDeleted", Enabled: true, Description: "Заказ удален из системы. В контексте глобальный id заказа."},
+		{Name: "Заказ выполнен", 	Code: "OrderCompleted", Enabled: true, Description: "Заказ выполнен успешно. В контексте глобальный id заказа."},
+		{Name: "Заказ отменен", 	Code: "OrderCanceled", Enabled: true, Description: "Заказ отменен по каким-то причинам. В контексте глобальный id заказа."},
+
+		{Name: "Создано задание на доставку", 	Code: "DeliveryOrderCreated", Enabled: true, Description: "В системе зарегистрировано новое задание на доставку. Это может быть и самовывоз и доставка Почтой России. В контексте, указан глобальный id доставки."},
+		{Name: "Задание на доставку обновлены", Code: "DeliveryOrderUpdated", Enabled: true, Description: "Какие-то данные по заказу обновились. В контексте глобальный id заказа."},
+		{Name: "Доставка удалена", 		Code: "DeliveryOrderDeleted", Enabled: true, Description: "Задание на доставку удалено из системы. В контексте глобальный id заказа."},
+		{Name: "Доставка выполнена", 	Code: "DeliveryOrderCompleted", Enabled: true, Description: "Задание на доставку успешно завершено. В контексте глобальный id заказа."},
+		{Name: "Доставка отменена", 	Code: "DeliveryOrderCanceled", Enabled: true, Description: "Задание на доставку отмеено по каким-то причинам. В контексте глобальный id заказа."},
+	}
+	for _,v := range eventItems {
+		_, err = mainAccount.CreateEntity(&v)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 func (eventItem *EventItem) BeforeCreate(scope *gorm.Scope) error {

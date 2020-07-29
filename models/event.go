@@ -8,7 +8,7 @@ import (
 // При добавлении нового события - внести в список EventItem!!!
 type Event struct {}
 
-
+// ######### User #########
 func (Event) UserCreated(accountId uint, userId uint) event.Event {
 	return event.NewBasic("UserCreated", map[string]interface{}{"accountId":accountId, "userId":userId})
 }
@@ -91,3 +91,50 @@ func (Event) WebSiteUpdated(accountId, webSiteId uint) event.Event {
 func (Event) WebSiteDeleted(accountId, webSiteId uint) event.Event {
 	return event.NewBasic("WebSiteDeleted", map[string]interface{}{"accountId":accountId, "webSiteId":webSiteId})
 }
+
+
+// ######### Email Marketing #########
+func (Event) UserSubscribed(accountId uint, userId uint) event.Event {
+	return event.NewBasic("UserSubscribed", map[string]interface{}{"accountId":accountId, "userId":userId})
+}
+func (Event) UserUnsubscribed(accountId uint, userId uint) event.Event {
+	return event.NewBasic("UserUnsubscribed", map[string]interface{}{"accountId":accountId, "userId":userId})
+}
+func (Event) UserUpdateSubscribeStatus(accountId uint, userId uint) event.Event {
+	return event.NewBasic("UserUpdateSubscribeStatus", map[string]interface{}{"accountId":accountId, "userId":userId})
+}
+
+// ######### Order #########
+func (Event) OrderCreated(accountId uint, orderId uint) event.Event {
+	return event.NewBasic("OrderCreated", map[string]interface{}{"accountId":accountId, "orderId":orderId})
+}
+func (Event) OrderUpdated(accountId uint, orderId uint) event.Event {
+	return event.NewBasic("OrderUpdated", map[string]interface{}{"accountId":accountId, "orderId":orderId})
+}
+func (Event) OrderDeleted(accountId uint, orderId uint) event.Event {
+	return event.NewBasic("OrderDeleted", map[string]interface{}{"accountId":accountId, "orderId":orderId})
+}
+func (Event) OrderCompleted(accountId uint, orderId uint) event.Event {
+	return event.NewBasic("OrderCompleted", map[string]interface{}{"accountId":accountId, "orderId":orderId})
+}
+func (Event) OrderCanceled(accountId uint, orderId uint) event.Event {
+	return event.NewBasic("OrderCanceled", map[string]interface{}{"accountId":accountId, "orderId":orderId})
+}
+
+// ######### DeliveryOrder #########
+func (Event) DeliveryOrderCreated(accountId uint, deliveryOrderId uint) event.Event {
+	return event.NewBasic("DeliveryOrderCreated", map[string]interface{}{"accountId":accountId, "deliveryOrderId":deliveryOrderId})
+}
+func (Event) DeliveryOrderUpdated(accountId uint, deliveryOrderId uint) event.Event {
+	return event.NewBasic("DeliveryOrderUpdated", map[string]interface{}{"accountId":accountId, "deliveryOrderId":deliveryOrderId})
+}
+func (Event) DeliveryOrderDeleted(accountId uint, deliveryOrderId uint) event.Event {
+	return event.NewBasic("DeliveryOrderDeleted", map[string]interface{}{"accountId":accountId, "deliveryOrderId":deliveryOrderId})
+}
+func (Event) DeliveryOrderCompleted(accountId uint, deliveryOrderId uint) event.Event {
+	return event.NewBasic("DeliveryOrderCompleted", map[string]interface{}{"accountId":accountId, "deliveryOrderId":deliveryOrderId})
+}
+func (Event) DeliveryOrderCanceled(accountId uint, deliveryOrderId uint) event.Event {
+	return event.NewBasic("DeliveryOrderCanceled", map[string]interface{}{"accountId":accountId, "deliveryOrderId":deliveryOrderId})
+}
+

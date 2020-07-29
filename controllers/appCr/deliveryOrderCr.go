@@ -16,11 +16,9 @@ func DeliveryOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get JSON-request
-	var input struct{
+	var input struct {
 		models.DeliveryOrder
 	}
-
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
