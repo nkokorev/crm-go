@@ -75,7 +75,7 @@ func RefreshTablesPart_I() {
 	}
 
 
-	pool.DropTableIfExists(models.PaymentOption{}, models.DeliveryOrder{}, models.OrderChannel{}, models.OrderStatus{}, models.Order{}, models.Payment{},
+	pool.DropTableIfExists(models.PaymentOption{}, models.DeliveryOrder{}, models.DeliveryStatus{},models.OrderChannel{},  models.Order{}, models.OrderStatus{},models.Payment{},
 	models.PaymentAmount{})
 	// pool.DropTableIfExists(models.PaymentMethod{}, models.DeliveryOrder{}, models.OrderChannel{}, models.PaymentSubject{},models.VatCode{},models.Order{}, models.Payment{},models.YandexPayment{},models.PaymentAmount{})
 
@@ -135,6 +135,7 @@ func RefreshTablesPart_I() {
 	models.PaymentOption{}.PgSqlCreate()
 	models.PaymentSubject{}.PgSqlCreate()
 
+	models.DeliveryStatus{}.PgSqlCreate()
 	models.DeliveryRussianPost{}.PgSqlCreate()
 	models.DeliveryPickup{}.PgSqlCreate()
 	models.DeliveryCourier{}.PgSqlCreate()
@@ -1614,6 +1615,7 @@ func RefreshTablesPart_IV() {
 		models.OrderChannel{},
 
 		models.DeliveryOrder{},
+		models.DeliveryStatus{},
 		models.PaymentOption{},
 		models.Order{},
 		models.OrderStatus{},
@@ -1637,6 +1639,7 @@ func RefreshTablesPart_IV() {
 	models.OrderStatus{}.PgSqlCreate()
 	models.Order{}.PgSqlCreate()
 	models.CartItem{}.PgSqlCreate()
+	models.DeliveryStatus{}.PgSqlCreate()
 	models.DeliveryOrder{}.PgSqlCreate()
 	models.PaymentCash{}.PgSqlCreate()
 	models.PaymentYandex{}.PgSqlCreate()

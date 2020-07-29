@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"time"
 )
@@ -35,6 +36,10 @@ type DeliveryOrder struct {
 	AmountId  	uint			`json:"amountId" gorm:"type:int;not null;"`
 	Amount  	PaymentAmount	`json:"amount"`
 
+	// Статус заказа
+	DeliveryStatusId  	uint	`json:"deliveryStatusId" gorm:"type:int;not null;"`
+	DeliveryStatus		DeliveryStatus	`json:"deliveryStatus"`
+
 	CreatedAt 		time.Time `json:"createdAt"`
 	UpdatedAt 		time.Time `json:"updatedAt"`
 }
@@ -52,6 +57,7 @@ func (DeliveryOrder) PgSqlCreate() {
 	db.CreateTable(&DeliveryOrder{})
 	db.Model(&DeliveryOrder{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Model(&DeliveryOrder{}).AddForeignKey("order_id", "orders(id)", "CASCADE", "CASCADE")
+	db.Model(&DeliveryOrder{}).AddForeignKey("delivery_status_id", "delivery_statuses(id)", "CASCADE", "CASCADE")
 }
 func (deliveryOrder *DeliveryOrder) BeforeCreate(scope *gorm.Scope) error {
 	deliveryOrder.Id = 0
@@ -78,6 +84,33 @@ func (deliveryOrder *DeliveryOrder) AfterFind() (err error) {
 		return
 	}
 
+	return nil
+}
+func (deliveryOrder *DeliveryOrder) AfterCreate(scope *gorm.Scope) (error) {
+	event.AsyncFire(Event{}.DeliveryOrderCreated(deliveryOrder.AccountId, deliveryOrder.Id))
+	return nil
+}
+func (deliveryOrder *DeliveryOrder) AfterUpdate(tx *gorm.DB) (err error) {
+
+	event.AsyncFire(Event{}.DeliveryOrderUpdated(deliveryOrder.AccountId, deliveryOrder.Id))
+
+	orderStatusEntity, err := DeliveryStatus{}.get(deliveryOrder.DeliveryStatusId)
+	if err == nil && orderStatusEntity.GetAccountId() == deliveryOrder.AccountId {
+		if deliveryStatus, ok := orderStatusEntity.(*DeliveryStatus); ok {
+			if deliveryStatus.Code == "completed" {
+				event.AsyncFire(Event{}.DeliveryOrderCompleted(deliveryOrder.AccountId, deliveryOrder.Id))
+			}
+			if deliveryStatus.Code == "canceled" {
+				event.AsyncFire(Event{}.DeliveryOrderCanceled(deliveryOrder.AccountId, deliveryOrder.Id))
+			}
+		}
+
+	}
+
+	return nil
+}
+func (deliveryOrder *DeliveryOrder) AfterDelete(tx *gorm.DB) (err error) {
+	event.AsyncFire(Event{}.DeliveryOrderDeleted(deliveryOrder.AccountId, deliveryOrder.Id))
 	return nil
 }
 

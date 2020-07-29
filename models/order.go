@@ -105,6 +105,19 @@ func (order *Order) AfterCreate(scope *gorm.Scope) (error) {
 }
 func (order *Order) AfterUpdate(tx *gorm.DB) (err error) {
 	event.AsyncFire(Event{}.OrderUpdated(order.AccountId, order.Id))
+
+	orderStatusEntity, err := OrderStatus{}.get(order.OrderStatusId)
+	if err == nil && orderStatusEntity.GetAccountId() == order.AccountId {
+		if orderStatus, ok := orderStatusEntity.(*OrderStatus); ok {
+			if orderStatus.Code == "completed" {
+				event.AsyncFire(Event{}.OrderCompleted(order.AccountId, order.Id))
+			}
+			if orderStatus.Code == "canceled" {
+				event.AsyncFire(Event{}.OrderCanceled(order.AccountId, order.Id))
+			}
+		}
+
+	}
 	return nil
 }
 func (order *Order) AfterDelete(tx *gorm.DB) (err error) {

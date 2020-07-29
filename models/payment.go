@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"time"
 )
@@ -114,6 +115,29 @@ func (Payment) PgSqlCreate() {
 }
 func (payment *Payment) BeforeCreate(scope *gorm.Scope) error {
 	payment.Id = 0
+	return nil
+}
+
+func (payment *Payment) AfterCreate(scope *gorm.Scope) (error) {
+	event.AsyncFire(Event{}.PaymentCreated(payment.AccountId, payment.Id))
+	return nil
+}
+func (payment *Payment) AfterUpdate(tx *gorm.DB) (err error) {
+
+	event.AsyncFire(Event{}.PaymentUpdated(payment.AccountId, payment.Id))
+
+	// статус платежа:  [pending, waiting_for_capture, succeeded и canceled]
+	if payment.Paid || payment.Status == "succeeded" {
+		event.AsyncFire(Event{}.PaymentCompleted(payment.AccountId, payment.Id))
+	}
+	if payment.Status == "canceled" {
+		event.AsyncFire(Event{}.PaymentCanceled(payment.AccountId, payment.Id))
+	}
+
+	return nil
+}
+func (payment *Payment) AfterDelete(tx *gorm.DB) (err error) {
+	event.AsyncFire(Event{}.PaymentDeleted(payment.AccountId, payment.Id))
 	return nil
 }
 
