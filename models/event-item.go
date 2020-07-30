@@ -141,29 +141,7 @@ func (eventItem *EventItem) load() error {
 }
 
 func (EventItem) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-
-	eventItems := make([]EventItem,0)
-	var total uint
-
-	err := db.Model(&EventItem{}).Limit(100).Order(sortBy).Where( "account_id IN (?)", []uint{1, accountId}).
-		Find(&eventItems).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&EventItem{}).Where( "account_id IN (?)", []uint{1, accountId}).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(eventItems))
-	for i,_ := range eventItems {
-		entities[i] = &eventItems[i]
-	}
-
-	return entities, total, nil
+	return EventItem{}.getPaginationList(accountId,0,300, sortBy, "")
 }
 
 func (EventItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {

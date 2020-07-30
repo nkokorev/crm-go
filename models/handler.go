@@ -150,6 +150,7 @@ func (handle EventListener) uploadEntitiesData(event *event.Event) {
 	if userId, ok := e.Get("userId").(uint); ok {
 		user, err := account.GetUser(userId)
 		if err == nil {
+			e.Add("userId", userId)
 			e.Add("User", *user)
 		}
 	}
@@ -157,6 +158,7 @@ func (handle EventListener) uploadEntitiesData(event *event.Event) {
 	if productId, ok := e.Get("productId").(uint); ok {
 	   product, err := account.GetProduct(productId)
 	   if err == nil {
+		   e.Add("productId", productId)
 		   e.Add("Product", *product)
 	   }
 	}
@@ -164,6 +166,7 @@ func (handle EventListener) uploadEntitiesData(event *event.Event) {
 	if productCardId, ok := e.Get("productCardId").(uint); ok {
 		productCard, err := account.GetProductCard(productCardId)
 		if err == nil {
+			e.Add("productCardId", productCardId)
 			e.Add("ProductCard", *productCard)
 		}
 	}
@@ -172,7 +175,25 @@ func (handle EventListener) uploadEntitiesData(event *event.Event) {
 		var order Order
 		err := account.LoadEntity(&order, orderId)
 		if err == nil {
+			e.Add("orderId", orderId)
 			e.Add("Order", order)
+
+			// Добавляем заказчика
+			if order.CustomerId > 0 {
+				customer, err := account.GetUser(order.CustomerId)
+				if err == nil {
+					e.Add("customerId", order.CustomerId)
+					e.Add("Customer", customer)
+				}
+			}
+
+			if order.ManagerId > 0 {
+				manager, err := account.GetUser(order.ManagerId)
+				if err == nil {
+					e.Add("managerId", order.ManagerId)
+					e.Add("Manager", manager)
+				}
+			}
 		}
 	}
 
@@ -180,6 +201,7 @@ func (handle EventListener) uploadEntitiesData(event *event.Event) {
 		var deliveryOrder DeliveryOrder
 		err := account.LoadEntity(&deliveryOrder, deliveryOrderId)
 		if err == nil {
+			e.Add("deliveryOrderId", deliveryOrderId)
 			e.Add("DeliveryOrder", deliveryOrder)
 		}
 	}
@@ -188,6 +210,7 @@ func (handle EventListener) uploadEntitiesData(event *event.Event) {
 		var payment DeliveryOrder
 		err := account.LoadEntity(&payment, paymentId)
 		if err == nil {
+			e.Add("paymentId", paymentId)
 			e.Add("Payment", payment)
 		}
 	}

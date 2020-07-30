@@ -8,6 +8,7 @@ import (
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
 	"html/template"
+	"log"
 	"reflect"
 	"time"
 )
@@ -41,7 +42,9 @@ type EmailNotification struct {
 	RecipientList			postgres.Jsonb	`json:"recipientList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // фиксированный список адресов, на которые будет произведено уведомление
 	
 	// Динамический список пользователей
-	ParseRecipientUsers	bool	`json:"parseRecipientUsers" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя(ей) по userId / users: ['email@mail.ru']
+	ParseRecipientUser	bool	`json:"parseRecipientUser" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя(ей) по userId / users: ['email@mail.ru']
+	ParseRecipientCustomer	bool	`json:"parseRecipientCustomer" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя по customerId / users: ['email@mail.ru']
+	ParseRecipientManager	bool	`json:"parseRecipientManager" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя по customerId / users: ['email@mail.ru']
 
 	// ==========================================
 
@@ -240,10 +243,24 @@ func (emailNotification *EmailNotification) delete () error {
 // Вызов уведомления
 func (emailNotification EmailNotification) Execute(data map[string]interface{}) error {
 
+	// Проверяем статус уведомления
 	if !emailNotification.Enabled {
 		return utils.Error{Message: "Уведомление не может быть отправлено т.к. находится в статусе - 'Отключено'"}
 	}
 
+	// Проверяем тело сообщения (не должно быть пустое)
+	if emailNotification.Subject == "" {
+		return utils.Error{Message: "Уведомление не может быть отправлено т.к. нет темы сообщения"}
+	}
+
+	// Get Account
+	account, err := GetAccount(emailNotification.AccountId)
+	if err != nil {
+		return utils.Error{Message: "Ошибка отправления Уведомления - не удается найти аккаунт"}
+	}
+
+
+	// Находим шаблон письма
 	emailTemplateEntity, err := EmailTemplate{}.get(*emailNotification.EmailTemplateId)
 	if err != nil {
 		return err
@@ -251,18 +268,23 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 	if emailTemplateEntity.GetAccountId() != emailNotification.AccountId {
 		return utils.Error{Message: "Ошибка отправления Уведомления - шаблон принадлежит другому аккаунту 2"}
 	}
-
 	emailTemplate, ok := emailTemplateEntity.(*EmailTemplate)
 	if !ok {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удалось получить шаблон"}
 	}
 
-	vData, err := emailTemplate.PrepareViewData(data)
-
+	// Проверяем, чтобы был почтовые ящики, с которого отправляем
 	if emailNotification.EmailBox.Id < 1 {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается получить почтовый ящик"}
 	}
 
+	// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
+	vData, err := emailTemplate.PrepareViewData(data)
+	if err != nil {
+		return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
+	}
+
+	// Компилируем тему письма
 	_subject, err := parseSubjectByData(emailNotification.Subject, vData)
 	if err != nil {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается прочитать тему сообщения"}
@@ -271,27 +293,20 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		_subject = fmt.Sprintf("Уведомление по почте #%v", emailNotification.Id)
 	}
 
-	// 1. Список пользователей
-	var userEmails = make([]string,0)
-	for i,_ := range emailNotification.RecipientUsers {
-		userEmails = append(userEmails,emailNotification.RecipientUsers[i].Email)
-	}
-
-	// 2. список фиксированных адресов
-	emailList := utils.ParseJSONBToString(emailNotification.RecipientList)
-
-	// fmt.Println("emailNotification.EmailBox: ", emailNotification.EmailBox.Id)
-	// return nil
-
-
+	// Загружаем данные почтового ящика
 	err = emailNotification.EmailBox.load()
 	if err != nil {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается загрузить данные WEbSite"}
 	}
 
-
-	// Проверяем и отправляем 1
+	// 1. Готовим список пользователей и отправляем
 	if emailNotification.SendingToUsers {
+
+		var userEmails = make([]string,0)
+		for i,_ := range emailNotification.RecipientUsers {
+			userEmails = append(userEmails,emailNotification.RecipientUsers[i].Email)
+		}
+
 		for _,v := range(userEmails) {
 			err = emailTemplate.SendMail(emailNotification.EmailBox, v, _subject, vData)
 			if err != nil {
@@ -300,12 +315,65 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		}
 	}
 
-	// Проверяем и отправляем 2
+	// 2. Готовим список почтовых адресов и отправляем
 	if emailNotification.SendingToFixedAddresses {
+		// 2. Готовим список фиксированных адресов
+		emailList := utils.ParseJSONBToString(emailNotification.RecipientList)
+		
 		for _,v := range(emailList) {
 			err = emailTemplate.SendMail(emailNotification.EmailBox, v, _subject, vData)
 			if err != nil {
-				fmt.Println("Ошибка отправления: ", err)
+				log.Printf("Ошибка отправления mailNotification - %v: ", emailNotification.Id,err)
+			}
+		}
+	}
+
+	// Готовим список почтовых адресов из контекста
+	if emailNotification.ParseRecipientUser {
+		if userSTR, ok := data["userId"]; ok {
+			if userId, ok := userSTR.(uint); ok {
+				user, err := account.GetUser(userId)
+				if err == nil && user.Email != "" {
+					err = emailTemplate.SendMail(emailNotification.EmailBox, user.Email, _subject, vData)
+					if err != nil {
+						fmt.Println("Ошибка отправления: ", err)
+					}
+				}
+			}
+		}
+	}
+
+	if emailNotification.ParseRecipientCustomer {
+
+		fmt.Println("Ищем заказчика")
+		// fmt.Println(data)
+		if customerSTR, ok := data["customerId"]; ok {
+			fmt.Println("ok 1")
+			if customerId, ok := customerSTR.(uint); ok {
+				fmt.Println("ok 2")
+				customer, err := account.GetUser(customerId)
+				if err == nil && customer.Email != "" {
+					fmt.Println("Заказчик найден: ", customer.Id)
+					err = emailTemplate.SendMail(emailNotification.EmailBox, customer.Email, _subject, vData)
+					if err != nil {
+						fmt.Println("Ошибка отправления: ", err)
+					}
+				}
+			}
+		}
+	}
+
+	if emailNotification.ParseRecipientManager {
+
+		if managerSTR, ok := data["managerId"]; ok {
+			if managerId, ok := managerSTR.(uint); ok {
+				manager, err := account.GetUser(managerId)
+				if err == nil && manager.Email != "" {
+					err = emailTemplate.SendMail(emailNotification.EmailBox, manager.Email, _subject, vData)
+					if err != nil {
+						fmt.Println("Ошибка отправления: ", err)
+					}
+				}
 			}
 		}
 	}

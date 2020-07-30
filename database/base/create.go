@@ -1758,5 +1758,5 @@ func UploadTestDataPart_IV()  {
 
 func Migrate_I() {
 	pool := models.GetPool()
-	pool.AutoMigrate(&models.User{})
+	pool.AutoMigrate(&models.EmailNotification{})
 }
