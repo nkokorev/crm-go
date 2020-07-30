@@ -167,5 +167,29 @@ func (handle EventListener) uploadEntitiesData(event *event.Event) {
 			e.Add("ProductCard", *productCard)
 		}
 	}
+
+	if orderId, ok := e.Get("orderId").(uint); ok {
+		var order Order
+		err := account.LoadEntity(&order, orderId)
+		if err == nil {
+			e.Add("Order", order)
+		}
+	}
+
+	if deliveryOrderId, ok := e.Get("deliveryOrderId").(uint); ok {
+		var deliveryOrder DeliveryOrder
+		err := account.LoadEntity(&deliveryOrder, deliveryOrderId)
+		if err == nil {
+			e.Add("DeliveryOrder", deliveryOrder)
+		}
+	}
+
+	if paymentId, ok := e.Get("paymentId").(uint); ok {
+		var payment DeliveryOrder
+		err := account.LoadEntity(&payment, paymentId)
+		if err == nil {
+			e.Add("Payment", payment)
+		}
+	}
 	
 }

@@ -215,16 +215,16 @@ func (account Account) UpdateUser(userId uint, input map[string]interface{}) (*U
 
 	// Если флаг подписки был изменен
 	if ok && (_newStatusSubscribed != _user.Subscribed) {
-		fmt.Println("Статус обновлен!")
+		// fmt.Println("Статус обновлен!")
 		// Статус обновлен
 		event.AsyncFire(Event{}.UserUpdateSubscribeStatus(account.Id, _user.Id))
 
 		// флаги подписки / отписки
 		if _newStatusSubscribed {
-			fmt.Println("Пользователь подписался")
+			// fmt.Println("Пользователь подписался")
 			event.AsyncFire(Event{}.UserSubscribed(account.Id, _user.Id))
 		} else {
-			fmt.Println("Пользователь отписался")
+			// fmt.Println("Пользователь отписался")
 			event.AsyncFire(Event{}.UserUnsubscribed(account.Id, _user.Id))
 		}
 
