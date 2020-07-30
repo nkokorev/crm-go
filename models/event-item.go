@@ -37,9 +37,9 @@ func (EventItem) PgSqlCreate() {
 		{Name: "Пользователь добавлен в аккаунт", Code: "UserAppendedToAccount", Enabled: true, Description: "Пользователь получил доступ в текущий аккаунт с какой-то конкретно ролью."},
 		{Name: "Пользователь удален из аккаунта", Code: "UserRemovedFromAccount", Enabled: true, Description: "У пользователя больше нет доступа к вашей системе из-под своей учетной записи."},
 
-		{Name: "Пользователь создан", 	Code: "UserSubscribed", Enabled: true, Description: "Пользователь подписался на рассылки. Технически, скорее всего, его 'подписали' через API или GUI интерфейсы."},
-		{Name: "Пользователь обновлен", Code: "UserUnsubscribed", Enabled: true, Description: "Пользователь отписался от всех рассылок, кроме системных уведомлений."},
-		{Name: "Пользователь удален", 	Code: "UserUpdateSubscribeStatus", Enabled: true, Description: "У пользователя обновился статус подписки."},
+		{Name: "Пользователь подписался на рассылки", 	Code: "UserSubscribed", Enabled: true, Description: "Пользователь подписался на рассылки. Технически, скорее всего, его 'подписали' через API или GUI интерфейсы."},
+		{Name: "Пользователь отписался от рассылок", Code: "UserUnsubscribed", Enabled: true, Description: "Пользователь отписался от всех рассылок, кроме системных уведомлений."},
+		{Name: "Пользователь изменил статус подписки", 	Code: "UserUpdateSubscribeStatus", Enabled: true, Description: "У пользователя обновился статус подписки."},
 
 		{Name: "Товар создан", 		Code: "ProductCreated", Enabled: true, Description: "Создан новый товар или услуга."},
 		{Name: "Товар обновлен", 	Code: "ProductUpdated", Enabled: true, Description: "Данные товара или услуга были обновлены. Сюда также входит обновление связанных данных: изображений, описаний, видео."},

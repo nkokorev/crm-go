@@ -40,7 +40,7 @@ func (HandlerItem) PgSqlCreate() {
 	eventHandlers := []HandlerItem {
 		{Name:"Вызов WebHook'а", Code: "WebHookCall", EntityType: "web_hooks", Enabled: true, Description: "Вызов указанного WebHook'а"},
 		{Name:"Запуск email-уведомления", Code: "EmailNotificationRun", EntityType: "email_notification", Enabled: true, Description: "Отправка электронного письма. Адресат выбирается в зависимости от настроек уведомления и события. Если объект пользователь - то на его email. При отсутствии email'а, запуск уведомления не произойдет."},
-		{Name:"Запуск email-серии", Code: "EmailQueueRun", EntityType: "email_queue", Enabled: true, Description: "Запуск автоматической серии писем. Адресат выбирается исходя из события. Если объект пользователь - то на его email. При отсутствии email'а, запуск серии не произойдет."},
+		{Name:"Запуск серии email (линейной)", Code: "EmailQueueRun", EntityType: "email_queue", Enabled: true, Description: "Запуск автоматической серии писем. Адресат выбирается исходя из события. Если объект пользователь - то на его email. При отсутствии email'а, запуск серии не произойдет."},
 	}
 	for _,v := range eventHandlers {
 		_, err = mainAccount.CreateEntity(&v)

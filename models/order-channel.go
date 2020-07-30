@@ -29,11 +29,10 @@ func (orderChannel OrderChannel) SystemEntity() bool { return orderChannel.Accou
 // ############# Entity interface #############
 
 func (OrderChannel) PgSqlCreate() {
-	if !db.HasTable(&OrderChannel{}) {
-		db.CreateTable(&OrderChannel{})
-	}
+	db.AutoMigrate(&OrderChannel{})
 	db.Model(&OrderChannel{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-
+	
+	db.Delete(&OrderChannel{})
 	orderChannels := []OrderChannel {
 		{Code:"offline", Name:   "Оффлайн",		Description: "-"},
 		{Code:"phone", 			Name:   "По телефону",	Description: "-"},
@@ -46,7 +45,6 @@ func (OrderChannel) PgSqlCreate() {
 		{Code:"online_assistant", 	Name:   "Онлайн-консультант",Description: "-"},
 		{Code:"mobile_apps", Name:   "Мобильное приложение",Description: "-"},
 	}
-
 	for i := range(orderChannels) {
 		_, err := Account{Id: 1}.CreateEntity(&orderChannels[i])
 		if err != nil {

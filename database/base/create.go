@@ -69,7 +69,7 @@ func RefreshTablesPart_I() {
 	pool := models.GetPool()
 
 	// not there
-	err := pool.Exec("drop table if exists orders_products, payment_methods_web_sites, payment_methods_payments").Error
+	err := pool.Exec("drop table if exists orders_products, payment_methods_web_sites, payment_options_payments").Error
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -77,7 +77,8 @@ func RefreshTablesPart_I() {
 
 	pool.DropTableIfExists(models.PaymentOption{}, models.DeliveryOrder{}, models.DeliveryStatus{},models.OrderChannel{},  models.Order{}, models.OrderStatus{},models.Payment{},
 	models.PaymentAmount{})
-	// pool.DropTableIfExists(models.PaymentMethod{}, models.DeliveryOrder{}, models.OrderChannel{}, models.PaymentSubject{},models.VatCode{},models.Order{}, models.Payment{},models.YandexPayment{},models.PaymentAmount{})
+
+	pool.DropTableIfExists(models.CartItem{}, models.OrderComment{}, models.PaymentYandex{}, models.PaymentCash{} )
 
 
 	pool.DropTableIfExists(models.Product{}, models.ProductCard{}, models.ProductGroup{})
@@ -122,20 +123,27 @@ func RefreshTablesPart_I() {
 
 	// Уведомления
 	models.EmailNotification{}.PgSqlCreate()
+	models.OrderComment{}.PgSqlCreate()
 
 
 	models.PaymentAmount{}.PgSqlCreate()
 	models.Payment{}.PgSqlCreate()
-	models.OrderStatus{}.PgSqlCreate()
-	models.Order{}.PgSqlCreate()
-	models.DeliveryOrder{}.PgSqlCreate()
-	models.VatCode{}.PgSqlCreate()
-
 	models.OrderChannel{}.PgSqlCreate()
 	models.PaymentOption{}.PgSqlCreate()
 	models.PaymentSubject{}.PgSqlCreate()
+	models.PaymentYandex{}.PgSqlCreate()
+	models.PaymentCash{}.PgSqlCreate()
 
 	models.DeliveryStatus{}.PgSqlCreate()
+	models.OrderStatus{}.PgSqlCreate()
+	
+	models.DeliveryOrder{}.PgSqlCreate()
+	models.Order{}.PgSqlCreate()
+	models.CartItem{}.PgSqlCreate()
+
+	models.VatCode{}.PgSqlCreate()
+
+
 	models.DeliveryRussianPost{}.PgSqlCreate()
 	models.DeliveryPickup{}.PgSqlCreate()
 	models.DeliveryCourier{}.PgSqlCreate()
@@ -1250,23 +1258,22 @@ func UploadTestDataPart_III() {
 
 	els := []models.EventListener {
 		// товар
-		{Name: "Добавление товара на сайт", EventId: 6, HandlerId: 2, EntityId: 3, Enabled: true},
-		{Name: "Обновление товара на сайте", EventId: 7, HandlerId: 2, EntityId: 3, Enabled: true},
-		{Name: "Обновление товара на сайте", EventId: 8, HandlerId: 2, EntityId: 6, Enabled: true},
+		{Name: "Добавление товара на сайт",  EventId: 9,  HandlerId: 1, EntityId: 3, Enabled: true},
+		{Name: "Обновление товара на сайте", EventId: 10, HandlerId: 1, EntityId: 4, Enabled: true},
+		{Name: "Удаление товара с сайта", 	 EventId: 11, HandlerId: 1, EntityId: 5, Enabled: true},
 
 		// Карточки товара
-		{Name: "Обновление карточек товара", EventId: 9, HandlerId: 2, EntityId: 8, Enabled: true},
-		{Name: "Обновление карточек товара", EventId: 10, HandlerId: 2, EntityId: 9, Enabled: true},
-		{Name: "Обновление карточек товара", EventId: 11, HandlerId: 2, EntityId: 10, Enabled: true},
+		{Name: "Добавление карточки товара", EventId: 12, HandlerId: 1, EntityId: 7, Enabled: true},
+		{Name: "Обновление карточки товара", EventId: 13, HandlerId: 1, EntityId: 8, Enabled: true},
+		{Name: "Удаление карточки товара",   EventId: 14, HandlerId: 1, EntityId: 9, Enabled: true},
 
 		// Магазин (WebSite)
-		{Name: "Обновление данных магазина", EventId: 16, HandlerId: 2, EntityId: 2, Enabled: true},
-		{Name: "Обновление данных магазина", EventId: 17, HandlerId: 2, EntityId: 3, Enabled: true},
+		{Name: "Обновление данных магазина", EventId: 19, HandlerId: 1, EntityId: 2, Enabled: true},
 
 		// Статьи
-		{Name: "Обновление статей на сайте", EventId: 21, HandlerId: 2, EntityId: 16, Enabled: true},
-		{Name: "Обновление статей на сайте", EventId: 22, HandlerId: 2, EntityId: 17, Enabled: true},
-		{Name: "Обновление статей на сайте", EventId: 23, HandlerId: 2, EntityId: 18, Enabled: true},
+		{Name: "Создание статьи на сайте", 	 EventId: 24, HandlerId: 1, EntityId: 15, Enabled: true},
+		{Name: "Обновление статьи на сайте", EventId: 25, HandlerId: 1, EntityId: 16, Enabled: true},
+		{Name: "Удаление статьи на сайте",   EventId: 26, HandlerId: 1, EntityId: 17, Enabled: true},
 
 	}
 	for i := range els {
@@ -1295,7 +1302,6 @@ func UploadTestDataPart_III() {
 
 		// WebSite
 		{Name: "Update webSite", Code: models.EventShopUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/web-sites", HttpMethod: http.MethodPatch},
-		{Name: "Delete webSite", Code: models.EventShopDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/web-sites", HttpMethod: http.MethodDelete},
 
 		// Product
 		{Name: "Create product", Code: models.EventProductCreated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productId}}", HttpMethod: http.MethodPost},
@@ -1612,23 +1618,22 @@ func RefreshTablesPart_IV() {
 
 		models.CartItem{},
 		models.OrderComment{},
-		models.OrderChannel{},
-
-		models.DeliveryOrder{},
-		models.DeliveryStatus{},
 		models.PaymentOption{},
-		models.Order{},
-		models.OrderStatus{},
 		models.Payment{},
-		models.PaymentAmount{},
+		// models.PaymentAmount{},
 		models.PaymentYandex{},
 		models.PaymentCash{},
+		// models.DeliveryOrder{},
+		// models.Order{},
 
+		// models.OrderStatus{},
+		// models.DeliveryStatus{},
+		// models.OrderChannel{},
 		)
-
 
 	// А теперь создаем
 
+	// models.User{}.PgSqlCreate()
 	models.PaymentAmount{}.PgSqlCreate()
 	models.PaymentOption{}.PgSqlCreate()
 

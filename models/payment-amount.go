@@ -29,7 +29,7 @@ func (paymentAmount PaymentAmount) SystemEntity() bool { return false }
 // ############# Entity interface #############
 
 func (PaymentAmount) PgSqlCreate() {
-	db.CreateTable(&PaymentAmount{})
+	db.AutoMigrate(&PaymentAmount{})
 	db.Model(&PaymentAmount{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }
 func (paymentAmount *PaymentAmount) BeforeCreate(scope *gorm.Scope) error {

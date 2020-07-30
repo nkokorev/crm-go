@@ -37,7 +37,7 @@ func (orderStatus OrderStatus) SystemEntity() bool { return orderStatus.AccountI
 // ############# Entity interface #############
 
 func (OrderStatus) PgSqlCreate() {
-	db.CreateTable(&OrderStatus{})
+	db.AutoMigrate(&OrderStatus{})
 	db.Model(&OrderStatus{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 
 	mainAccount, err := GetMainAccount()

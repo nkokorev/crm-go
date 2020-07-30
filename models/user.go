@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
@@ -16,7 +17,7 @@ type User struct {
 	HashId string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
 	IssuerAccountId uint `json:"issuerAccountId" gorm:"index;not null"`
 	
-	Username 	string `json:"username" gorm:"type:varchar(255);unique_index;default:null;"` // уникальный, т.к. через него вход в главный аккаунт
+	Username 	string `json:"username" gorm:"type:varchar(255);index;default:null;"` // уникальный, т.к. через него вход в главный аккаунт
 	Email 		string `json:"email" gorm:"type:varchar(255);index;default:null;"`
 	PhoneRegion string `json:"phoneRegion" gorm:"type:varchar(3);not null;default:'RU';"` // нужно проработать формат данных
 	Phone		string `json:"phone" gorm:"type:varchar(32);index;default:null;"` // нужно проработать формат данных
@@ -58,9 +59,9 @@ type UserAndRole struct {
 }
 
 func (User) PgSqlCreate() {
-	db.CreateTable(&User{})
+	db.AutoMigrate(&User{})
 
-	db.Exec("ALTER TABLE users\n    \n--     ADD CONSTRAINT users_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ADD CONSTRAINT users_default_account_hash_id_fkey FOREIGN KEY (default_account_hash_id) REFERENCES accounts(hash_id) ON DELETE SET NULL ON UPDATE CASCADE,\n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,\nADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n\ncreate unique index uix_users_issuer_account_id_username_email_mobile_phone ON users (issuer_account_id,username,email,phone);\n\n-- alter table  users ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n")
+	db.Exec("ALTER TABLE users\n    \n--     ADD CONSTRAINT users_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ADD CONSTRAINT users_default_account_hash_id_fkey FOREIGN KEY (default_account_hash_id) REFERENCES accounts(hash_id) ON DELETE SET NULL ON UPDATE CASCADE,\n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    \nADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\ncreate unique index uix_users_issuer_account_id_username_email_mobile_phone ON users (issuer_account_id,username,email,phone);\n\ncreate unique index uix_users_username_account_id_sku ON users (issuer_account_id,username);\n\n-- alter table  users ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n")
 	db.Model(&User{}).AddForeignKey("issuer_account_id", "accounts(id)", "SET DEFAULT", "CASCADE")
 	// db.Model(&User{}).AddForeignKey("default_account_hash_id", "accounts(id)", "SET NULL", "CASCADE")
 	db.Model(&User{}).AddForeignKey("invited_user_id", "users(id)", "SET NULL", "CASCADE")
@@ -72,8 +73,25 @@ func (user *User) BeforeCreate(scope *gorm.Scope) (err error) {
 	// user.CreatedAt = time.Now().UTC()
 	return nil
 }
+
 func (user *User) AfterCreate(scope *gorm.Scope) (error) {
 	event.AsyncFire(Event{}.UserCreated(user.IssuerAccountId, user.Id))
+	return nil
+}
+func (user *User) BeforeUpdate(scope *gorm.Scope) (err error) {
+
+	// fmt.Println(user.Subscribed)
+	// fmt.Println(scope.Value.(*User).Subscribed)
+
+	/*_input, ok := scope.Value.(*User)
+	if ok {
+		if (user.Subscribed != _input.Subscribed) {
+			fmt.Println("Статус изменен!")
+		}
+	}*/
+	// fmt.Printf("%T", scope.Value)
+
+
 	return nil
 }
 func (user *User) AfterUpdate(tx *gorm.DB) (err error) {
@@ -120,17 +138,6 @@ func (User) get(id uint) (*User, error) {
 	}
 	return &user, nil
 }
-/*func (User) getWithAUser(accountId, id uint) (*User, error) {
-	user := User{}
-
-	err := db.Preload("AccountUser", func(db *gorm.DB) *gorm.DB {
-		return db.Where("account_id = ?", accountId).Select(AccountUser{}.SelectArrayWithoutBigObject())
-	}).First(&user, id).Error
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
-}*/
 func (user *User) load() error {
 
 	err := db.Model(user).Preload("Roles").First(user,user.Id).Error
@@ -151,6 +158,8 @@ func (User) getByHashId(hashId string) (*User, error) {
 }
 
 func (user *User) update (input map[string]interface{}) error {
+
+	delete(input,"roles")
 
 	err := db.Set("gorm:association_autoupdate", false).
 		Model(user).Omit("id", "hash_id", "issuer_account_id", "created_at", "updated_at").Updates(input).Error
@@ -196,9 +205,30 @@ func (account Account) UpdateUser(userId uint, input map[string]interface{}) (*U
 	if err != nil {
 		return nil, err
 	}
-	
+
+	// Отметка на будущее для события
+	_newStatusSubscribed, ok := input["subscribed"].(bool)
+	_user := *user
+
 	err = user.update(input)
 	if err != nil { return nil, err }
+
+	// Если флаг подписки был изменен
+	if ok && (_newStatusSubscribed != _user.Subscribed) {
+		fmt.Println("Статус обновлен!")
+		// Статус обновлен
+		event.AsyncFire(Event{}.UserUpdateSubscribeStatus(account.Id, _user.Id))
+
+		// флаги подписки / отписки
+		if _newStatusSubscribed {
+			fmt.Println("Пользователь подписался")
+			event.AsyncFire(Event{}.UserSubscribed(account.Id, _user.Id))
+		} else {
+			fmt.Println("Пользователь отписался")
+			event.AsyncFire(Event{}.UserUnsubscribed(account.Id, _user.Id))
+		}
+
+	}
 
 	event.AsyncFire(Event{}.UserUpdated(account.Id, user.Id))
 

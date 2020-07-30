@@ -189,7 +189,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
-
+	
 	// Если обновляются роли, удаляем из общего массива input и потом отдельно обновляем
 	var roleId float64
 	var apiRoleId64 float64 = -1

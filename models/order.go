@@ -67,9 +67,7 @@ type Order struct {
 }
 
 func (Order) PgSqlCreate() {
-	if !db.HasTable(&Order{}) {
-		db.CreateTable(&Order{})
-	}
+	db.AutoMigrate(&Order{})
 	db.Model(&Order{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Model(&Order{}).AddForeignKey("amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
 	db.Model(&Order{}).AddForeignKey("order_channel_id", "order_channels(id)", "CASCADE", "CASCADE")

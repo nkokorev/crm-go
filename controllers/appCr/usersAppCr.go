@@ -258,6 +258,10 @@ func UserAuthByUsername(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if input.Username == "" || input.Password == "" {
+		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации - укажите регистрационные данные"}))
+		return
+	}
 	// Есть процесс авторизации пользователя, а есть выдача token. Лучше бы связать эти данные...
 	// В каком аккаунте происходит авторизация? Где регистрируется триггер "user authorization"
 	// user, token, err := issuerAccount.AuthorizationUserByUsername(v.Username, v.Password, v.OnceLogin, v.RememberChoice, issuerAccount)

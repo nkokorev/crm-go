@@ -12,7 +12,7 @@ type DeliveryStatus struct {
 	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// new, canceled, ...
-	Code	string 	`json:"code" gorm:"type:varchar(32);"`
+	Code	string 	`json:"code" gorm:"type:varchar(32);unique;not null;"`
 
 	// new, agreement, equipment, delivery, completed, canceled
 	Group	string 	`json:"group" gorm:"type:varchar(32);"`
@@ -37,14 +37,16 @@ func (deliveryStatus DeliveryStatus) SystemEntity() bool { return deliveryStatus
 // ############# Entity interface #############
 
 func (DeliveryStatus) PgSqlCreate() {
-	db.CreateTable(&DeliveryStatus{})
+	db.AutoMigrate(&DeliveryStatus{})
 	db.Model(&DeliveryStatus{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+
 
 	mainAccount, err := GetMainAccount()
 	if err != nil {
 		log.Println("Не удалось найти главный аккаунт для DeliveryStatus")
 	}
 
+	db.Delete(&DeliveryStatus{})
 	deliveryStatuses := []DeliveryStatus{
 		// new, agreement, delivery, completed, canceled
 		{Name: "Новая доставка", 	Code: "new", Group:"new", GroupName:"Необработанный заказ",	Description: "Необработанный заказ, первоначальный статус заказа на доставку."},

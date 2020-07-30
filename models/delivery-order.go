@@ -54,9 +54,9 @@ func (DeliveryOrder) SystemEntity() bool { return false }
 // ############# Entity interface #############
 
 func (DeliveryOrder) PgSqlCreate() {
-	db.CreateTable(&DeliveryOrder{})
+	db.AutoMigrate(&DeliveryOrder{})
 	db.Model(&DeliveryOrder{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&DeliveryOrder{}).AddForeignKey("order_id", "orders(id)", "CASCADE", "CASCADE")
+	// db.Model(&DeliveryOrder{}).AddForeignKey("order_id", "orders(id)", "CASCADE", "CASCADE")
 	db.Model(&DeliveryOrder{}).AddForeignKey("delivery_status_id", "delivery_statuses(id)", "CASCADE", "CASCADE")
 }
 func (deliveryOrder *DeliveryOrder) BeforeCreate(scope *gorm.Scope) error {
