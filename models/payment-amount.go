@@ -126,7 +126,7 @@ func (paymentAmount *PaymentAmount) update(input map[string]interface{}) error {
 		Model(paymentAmount).Omit("id", "account_id").Updates(input).Error
 }
 
-func (paymentAmount PaymentAmount) delete () error {
+func (paymentAmount *PaymentAmount) delete () error {
 	return db.Where("id = ?", paymentAmount.Id).Delete(paymentAmount).Error
 }
 func (PaymentAmount) deletes (paymentsIds []uint) error {

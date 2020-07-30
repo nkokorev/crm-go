@@ -124,7 +124,7 @@ func (productCard *ProductCard) update(input map[string]interface{}) error {
 	return nil
 }
 
-func (productCard ProductCard) delete () error {
+func (productCard *ProductCard) delete () error {
 	if err := db.Model(ProductCard{}).Where("id = ?", productCard.Id).Delete(productCard).Error; err != nil { return err }
 
 	event.AsyncFire(Event{}.ProductCardDeleted(productCard.AccountId, productCard.Id))

@@ -227,6 +227,6 @@ func (eventItem *EventItem) update(input map[string]interface{}) error {
 	return nil
 }
 
-func (eventItem EventItem) delete () error {
+func (eventItem *EventItem) delete () error {
 	return db.Model(EventItem{}).Where("id = ?", eventItem.Id).Delete(eventItem).Error
 }

@@ -175,7 +175,7 @@ func (webSite *WebSite) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).Model(webSite).Omit("id", "account_id").Updates(input).Preload("PaymentOptions").Preload("EmailBoxes").First(webSite,webSite.Id).Error
 }
 
-func (webSite WebSite) delete () error {
+func (webSite *WebSite) delete () error {
 	return db.Model(WebSite{}).Where("id = ?", webSite.Id).Delete(webSite).Error
 }
 // ######### END CRUD Functions ############

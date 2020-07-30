@@ -55,6 +55,19 @@ func (article *Article) BeforeCreate(scope *gorm.Scope) error {
 	article.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	return nil
 }
+func (article *Article) AfterCreate(scope *gorm.Scope) (error) {
+	event.AsyncFire(Event{}.ArticleCreated(article.AccountId, article.Id))
+	return nil
+}
+func (article *Article) AfterUpdate(tx *gorm.DB) (err error) {
+	event.AsyncFire(Event{}.ArticleUpdated(article.AccountId, article.Id))
+
+	return nil
+}
+func (article *Article) AfterDelete(tx *gorm.DB) (err error) {
+	event.AsyncFire(Event{}.ArticleDeleted(article.AccountId, article.Id))
+	return nil
+}
 
 // ######### INTERFACE EVENT Functions ############
 func (article Article) getId() uint {
@@ -78,7 +91,6 @@ func (article Article) create() (*Article, error)  {
 	if err != nil {return nil, err}
 	return &newArticle, err
 }
-
 func (Article) get(id uint) (*Article, error) {
 
 	article := Article{}
@@ -91,7 +103,6 @@ func (Article) get(id uint) (*Article, error) {
 
 	return &article, nil
 }
-
 func (Article) getByHashId(hashId string) (*Article, error) {
 
 	article := Article{}
@@ -104,7 +115,6 @@ func (Article) getByHashId(hashId string) (*Article, error) {
 
 	return &article, nil
 }
-
 func (Article) getList(accountId uint) ([]Article, error) {
 
 	articles := make([]Article,0)
@@ -116,7 +126,6 @@ func (Article) getList(accountId uint) ([]Article, error) {
 
 	return articles, nil
 }
-
 func (article *Article) update(input map[string]interface{}) error {
 	// err := db.Set("gorm:association_autoupdate", false).Model(article).Omit("id", "account_id").Update(input).Error
 	err := db.Set("gorm:association_autoupdate", false).Model(article).Omit("id", "account_id").Updates(input).Error
@@ -128,8 +137,7 @@ func (article *Article) update(input map[string]interface{}) error {
 
 	return nil
 }
-
-func (article Article) delete () error {
+  func (article *Article) delete () error {
 	return db.Model(Article{}).Where("id = ?", article.Id).Delete(article).Error
 }
 // ######### END CRUD Functions ############
@@ -143,7 +151,7 @@ func (account Account) CreateArticle(input Article) (*Article, error) {
 		return nil, err
 	}
 
-	event.AsyncFire(Event{}.ArticleCreated(account.Id, article.Id))
+	// event.AsyncFire(Event{}.ArticleCreated(account.Id, article.Id))
 
 	return article, nil
 }
@@ -254,7 +262,7 @@ func (account Account) UpdateArticle(articleId uint, input map[string]interface{
 		return nil, err
 	}
 
-	event.AsyncFire(Event{}.ArticleUpdated(account.Id, article.Id))
+	// event.AsyncFire(Event{}.ArticleUpdated(account.Id, article.Id))
 
 	return article, err
 
@@ -271,7 +279,7 @@ func (account Account) DeleteArticle(articleId uint) error {
 	err = article.delete()
 	if err !=nil { return err }
 
-	event.AsyncFire(Event{}.ArticleDeleted(account.Id, article.Id))
+	// event.AsyncFire(Event{}.ArticleDeleted(account.Id, article.Id))
 
 	return nil
 }

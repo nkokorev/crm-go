@@ -151,7 +151,7 @@ func (paymentSubject *PaymentSubject) update(input map[string]interface{}) error
 		Model(paymentSubject).Omit("id", "account_id").Updates(input).Error
 }
 
-func (paymentSubject PaymentSubject) delete () error {
+func (paymentSubject *PaymentSubject) delete () error {
 	return db.Model(PaymentSubject{}).Where("id = ?", paymentSubject.Id).Delete(paymentSubject).Error
 }
 // ######### END CRUD Functions ############

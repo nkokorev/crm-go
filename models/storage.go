@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
@@ -51,7 +52,6 @@ func (Storage) PgSqlCreate() {
 	db.Exec("ALTER TABLE storage \n ADD CONSTRAINT storage_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--  ADD CONSTRAINT storage_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--  ADD CONSTRAINT storage_email_template_id_fkey FOREIGN KEY (email_id) REFERENCES email_templates(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\n-- create unique index uix_storage_product_id ON storage (account_id,product_id) WHERE product_id IS NOT NULL;\n-- create unique index uix_storage_email_template_id ON storage (account_id,email_id) WHERE email_id IS NOT NULL;\n")
 
 }
-
 func (Storage) TableName() string {
 	return "storage"
 }
@@ -62,32 +62,46 @@ func (fs *Storage) BeforeCreate(scope *gorm.Scope) error {
 	fs.CreatedAt = time.Now().UTC()
 	return nil
 }
-
-/*func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
-
-	if len(fs.OwnerType) > 0 {
-		account, err := GetAccount(fs.AccountId)
-		if err == nil {
-			account.CallWebHookUpdated(*fs)
-		}
+func (fs *Storage) AfterCreate(scope *gorm.Scope) (error) {
+	switch fs.OwnerType {
+	case "products":
+		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, fs.OwnerId))
+	case "articles":
+		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, fs.OwnerId))
+	default:
+		event.AsyncFire(Event{}.StorageCreated(fs.AccountId, fs.Id))
 	}
-	return
-}*/
-
-/*func (fs *Storage) AfterCreate(tx *gorm.DB) (err error) {
-
-	if fs.OwnerType != "" {
-
-		account, err := GetAccount(fs.AccountId)
-		if err == nil {
-			account.CallEventByStorageCreated(*fs)
-		}
+	return nil
+}
+func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
+	
+	switch fs.OwnerType {
+	case "products":
+		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, fs.OwnerId))
+	case "articles":
+		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, fs.OwnerId))
+	default:
+		event.AsyncFire(Event{}.StorageUpdated(fs.AccountId, fs.Id))
 	}
-	return
-}*/
+	
+	return nil
+}
+func (fs *Storage) AfterDelete(tx *gorm.DB) (err error) {
+	switch fs.OwnerType {
+	case "products":
+		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, fs.OwnerId))
+	case "articles":
+		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, fs.OwnerId))
+	default:
+		event.AsyncFire(Event{}.StorageDeleted(fs.AccountId, fs.Id))
+	}
+	return nil
+}
 
 func (fs *Storage) AfterFind() (err error) {
 
+	fs.LoadURL()
+	/*
 	// todo: дописать формирование url
 	// 1. Добавлям URL в зависимости от типа файла:''
 	AppEnv := os.Getenv("APP_ENV")
@@ -108,12 +122,36 @@ func (fs *Storage) AfterFind() (err error) {
 		fs.URL = crmHost + "/emails/images/" + fs.HashId
 		//...
 	case "Article":
-		//..
+		// fs.URL = crmHost + "/emails/images/" + fs.HashId
+	default:
+		fs.URL = crmHost + "/public/" + fs.HashId
+	}*/
+
+	return nil
+}
+func (fs *Storage) LoadURL() {
+	AppEnv := os.Getenv("APP_ENV")
+	crmHost := ""
+	switch AppEnv {
+	case "local":
+		crmHost = "http://cdn.crm.local"
+	case "public":
+		crmHost = "https://cdn.ratuscrm.com"
+	default:
+		crmHost = "https://cdn.ratuscrm.com"
+	}
+
+	switch fs.OwnerType {
+	case "Product":
+		fs.URL = crmHost + "/products/images/" + fs.HashId
+	case "EmailTemplate":
+		fs.URL = crmHost + "/emails/images/" + fs.HashId
+		//...
+	case "Article":
+		fs.URL = crmHost + "/articles/images/" + fs.HashId
 	default:
 		fs.URL = crmHost + "/public/" + fs.HashId
 	}
-
-	return nil
 }
 
 // ############# Entity interface #############
@@ -146,8 +184,9 @@ func (fs Storage) create() (Entity, error)  {
 	if err := db.Create(&file).Error; err != nil {
 		return nil, err
 	}
+	file.LoadURL()
 
-	account.CallEventByStorageCreated(file)
+	// account.CallEventByStorageCreated(file)
 
 	var entity Entity = &file
 
@@ -256,23 +295,17 @@ func (fs *Storage) update(input map[string]interface{}) error {
 		return err
 	}
 
-	account, err := GetAccount(fs.AccountId); if err == nil {
+	/*account, err := GetAccount(fs.AccountId); if err == nil {
 		account.CallEventByStorageUpdated(*fs)
-	}
+	}*/
 
 	return nil
 }
 
-func (fs Storage) delete () error {
+func (fs *Storage) delete () error {
 	if err := db.Model(Storage{}).Where("id = ?", fs.Id).Delete(fs).Error; err != nil {
 		return err
 	}
-
-	// Вызываем обновление emit events
-	account, err := GetAccount(fs.AccountId); if err == nil {
-		account.CallEventByStorageDeletes(fs)
-	}
-
 	return nil
 }
 // ######### END CRUD Functions ############
@@ -399,16 +432,16 @@ func (account Account) CallEventByStorageUpdated(fs Storage) {
 	case "articles":
 		event.AsyncFire(Event{}.ArticleUpdated(account.Id, fs.OwnerId))
 	default:
-		event.AsyncFire(Event{}.StorageUpdated(account.Id, fs.OwnerId))
+		event.AsyncFire(Event{}.StorageUpdated(account.Id, fs.Id))
 	}
 }
 func (account Account) CallEventByStorageDeletes(fs Storage) {
 	switch fs.OwnerType {
 	case "products":
-		event.AsyncFire(Event{}.ProductDeleted(account.Id, fs.OwnerId))
+		event.AsyncFire(Event{}.ProductUpdated(account.Id, fs.OwnerId))
 		// go account.CallWebHookIfExist(EventArticleUpdated, Product{Id: fs.OwnerId})
 	case "articles":
-		event.AsyncFire(Event{}.ArticleDeleted(account.Id, fs.OwnerId))
+		event.AsyncFire(Event{}.ArticleUpdated(account.Id, fs.OwnerId))
 		// go account.CallWebHookIfExist(EventArticleUpdated, Article{Id: fs.OwnerId})
 	default:
 		event.AsyncFire(Event{}.StorageDeleted(account.Id, fs.OwnerId))

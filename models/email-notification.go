@@ -232,7 +232,7 @@ func (emailNotification *EmailNotification) update(input map[string]interface{})
 	return nil
 }
 
-func (emailNotification EmailNotification) delete () error {
+func (emailNotification *EmailNotification) delete () error {
 	return db.Model(EmailNotification{}).Where("id = ?", emailNotification.Id).Delete(emailNotification).Error
 }
 // ######### END CRUD Functions ############

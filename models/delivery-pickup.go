@@ -153,7 +153,7 @@ func (deliveryPickup *DeliveryPickup) update(input map[string]interface{}) error
 		Omit("id", "account_id").Updates(input).Error
 }
 
-func (deliveryPickup DeliveryPickup) delete () error {
+func (deliveryPickup *DeliveryPickup) delete () error {
 	return db.Model(DeliveryPickup{}).Where("id = ?", deliveryPickup.Id).Delete(deliveryPickup).Error
 }
 

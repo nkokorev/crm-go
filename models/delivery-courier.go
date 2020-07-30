@@ -148,7 +148,7 @@ func (deliveryCourier *DeliveryCourier) update(input map[string]interface{}) err
 	return db.Set("gorm:association_autoupdate", false).Model(deliveryCourier).
 		Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").Omit("id", "account_id").Updates(input).Error
 }
-func (deliveryCourier DeliveryCourier) delete () error {
+func (deliveryCourier *DeliveryCourier) delete () error {
 	return db.Model(DeliveryCourier{}).Where("id = ?", deliveryCourier.Id).Delete(deliveryCourier).Error
 }
 

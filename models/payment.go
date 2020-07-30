@@ -336,7 +336,7 @@ func (payment *Payment) update(input map[string]interface{}) error {
 	// return db.Model(Payment{}).Where("id = ?", payment.Id).Omit("id", "account_id").Updates(input).Error
 }
 
-func (payment Payment) delete () error {
+func (payment *Payment) delete () error {
 
 	var idx = make([]uint,0)
 	idx = append(idx,payment.AccountId)

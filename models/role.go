@@ -215,7 +215,7 @@ func (role *Role) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).Model(role).Omit("id", "account_id").Updates(input).Error
 }
 
-func (role Role) delete () error {
+func (role *Role) delete () error {
 	return db.Model(Role{}).Where("id = ?", role.Id).Delete(role).Error
 }
 

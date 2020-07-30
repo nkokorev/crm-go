@@ -143,7 +143,7 @@ func (vatCode *VatCode) update(input map[string]interface{}) error {
 		Model(vatCode).Omit("id", "account_id").Updates(input).Error
 }
 
-func (vatCode VatCode) delete () error {
+func (vatCode *VatCode) delete () error {
 	return db.Model(VatCode{}).Where("id = ?", vatCode.Id).Delete(vatCode).Error
 }
 // ######### END CRUD Functions ############

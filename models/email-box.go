@@ -169,7 +169,7 @@ func (emailBox *EmailBox) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).Model(emailBox).Omit("id", "account_id").Updates(input).Error
 }
 
-func (emailBox EmailBox) delete () error {
+func (emailBox *EmailBox) delete () error {
 	return db.Model(EmailBox{}).Where("id = ?", emailBox.Id).Delete(emailBox).Error
 }
 

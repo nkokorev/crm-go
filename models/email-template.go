@@ -196,7 +196,7 @@ func (et *EmailTemplate) update(input map[string]interface{}) error {
 }
 
 
-func (et EmailTemplate) delete () error {
+func (et *EmailTemplate) delete () error {
 	return db.Model(EmailTemplate{}).Where("id = ?", et.Id).Delete(et).Error
 }
 // ########### ACCOUNT FUNCTIONAL ###########

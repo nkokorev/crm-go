@@ -157,7 +157,7 @@ func (paymentOption *PaymentOption) update(input map[string]interface{}) error {
 		Model(paymentOption).Omit("id", "account_id").Updates(input).Error
 }
 
-func (paymentOption PaymentOption) delete () error {
+func (paymentOption *PaymentOption) delete () error {
 	return db.Model(PaymentOption{}).Where("id = ?", paymentOption.Id).Delete(paymentOption).Error
 }
 // ######### END CRUD Functions ############

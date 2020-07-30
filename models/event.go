@@ -60,14 +60,14 @@ func (Event) ProductGroupDeleted(accountId, productGroupId uint) event.Event {
 }
 
 // ######### Storage #########
-func (Event) StorageCreated(accountId, productId uint) event.Event {
-	return event.NewBasic("ProductCreated", map[string]interface{}{"accountId":accountId, "productId":productId})
+func (Event) StorageCreated(accountId, storageId uint) event.Event {
+	return event.NewBasic("StorageCreated", map[string]interface{}{"accountId":accountId, "storageId":storageId})
 }
-func (Event) StorageUpdated(accountId, productId uint) event.Event {
-	return event.NewBasic("ProductUpdated", map[string]interface{}{"accountId":accountId, "productId":productId})
+func (Event) StorageUpdated(accountId, storageId uint) event.Event {
+	return event.NewBasic("StorageUpdated", map[string]interface{}{"accountId":accountId, "storageId":storageId})
 }
-func (Event) StorageDeleted(accountId, productId uint) event.Event {
-	return event.NewBasic("ProductDeleted", map[string]interface{}{"accountId":accountId, "productId":productId})
+func (Event) StorageDeleted(accountId, storageId uint) event.Event {
+	return event.NewBasic("StorageDeleted", map[string]interface{}{"accountId":accountId, "storageId":storageId})
 }
 
 // ######### Article #########

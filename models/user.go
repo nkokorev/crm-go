@@ -177,7 +177,7 @@ func (user *User) save () error {
 
 }
 
-func (user User) delete () error {
+func (user *User) delete () error {
 	return db.Model(&User{}).Where("id = ?", user.Id).Delete(user).Error
 }
 

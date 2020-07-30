@@ -209,7 +209,7 @@ func (webHook *WebHook) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).Model(webHook).Omit("id", "account_id").Updates(input).Error
 }
 
-func (webHook WebHook) delete () error {
+func (webHook *WebHook) delete () error {
 	return db.Model(WebHook{}).Where("id = ?", webHook.Id).Delete(webHook).Error
 }
 // ######### END CRUD Functions ############

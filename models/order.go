@@ -135,9 +135,11 @@ func (Order) SystemEntity() bool { return false }
 func (order Order) create() (Entity, error)  {
 
 	wb := order
-	if err := db.Create(&wb).Preload("Payment").Preload("PaymentOption").Preload("Customer").Preload("Amount").Preload("CartItems").
-		Preload("CartItems.Product").Preload("CartItems.Product.PaymentSubject").Preload("CartItems.Amount").
-		Preload("Manager").Preload("WebSite").Preload("OrderChannel").First(&wb,wb.Id).Error; err != nil {
+
+	if err := db.Create(&wb).First(&wb,wb.Id).Error; err != nil {
+		return nil, err
+	}
+	if err := wb.GetPreloadDb(false,true).First(&wb,wb.Id).Error; err != nil {
 		return nil, err
 	}
 
@@ -149,9 +151,7 @@ func (Order) get(id uint) (Entity, error) {
 
 	var order Order
 
-	err := db.Preload("PaymentOption").Preload("Customer").Preload("Amount").Preload("CartItems").
-		Preload("CartItems.Product").Preload("CartItems.Product.PaymentSubject").Preload("CartItems.Amount").
-		Preload("Manager").Preload("WebSite").Preload("OrderChannel").
+	err := (&Order{}).GetPreloadDb(false,false).
 		First(&order, id).Error
 	if err != nil {
 		return nil, err
@@ -165,10 +165,7 @@ func (order *Order) load() error {
 		return utils.Error{Message: "Невозможно загрузить Order - не указан  Id"}
 	}
 
-	err := db.Preload("Payment").Preload("PaymentOption").Preload("Customer").Preload("Amount").Preload("CartItems").
-		Preload("CartItems.Product").Preload("CartItems.Product.PaymentSubject").Preload("CartItems.Amount").
-		Preload("Manager").Preload("WebSite").Preload("OrderChannel").First(order, order.Id).Error
-	if err != nil {
+	if err := order.GetPreloadDb(false,true).First(order, order.Id).Error; err != nil {
 		return err
 	}
 
@@ -188,7 +185,7 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Order{}).Preload("Payment").Preload("PaymentOption").Preload("Customer").Preload("Amount").Preload("CartItems").Preload("CartItems.Product").Preload("CartItems.Amount").Preload("Manager").Preload("WebSite").Preload("OrderChannel").
+		err := (&Order{}).GetPreloadDb(false,false).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders, "customer_comment ILIKE ?", search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -205,8 +202,9 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 
 	} else {
 
-		err := db.Model(&Order{}).Limit(limit).Preload("Payment").Preload("PaymentOption").Preload("Customer").Preload("CartItems").Preload("CartItems.Product").Preload("CartItems.Amount").Preload("Amount").Preload("Manager").Preload("WebSite").Preload("OrderChannel").
-			Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		// err := db.Model(&Order{}).Preload("OrderStatus").Preload("Payment").Preload("PaymentOption").Preload("Customer").Preload("CartItems").Preload("CartItems.Product").Preload("CartItems.Amount").Preload("Amount").Preload("Manager").Preload("WebSite").Preload("OrderChannel").
+		err := (&Order{}).GetPreloadDb(false,false).
+				Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -238,10 +236,10 @@ func (order *Order) update(input map[string]interface{}) error {
 	delete(input,"client")
 	delete(input,"cartItems")
 
-	return db.Set("gorm:association_autoupdate", false).
-		Model(order).Preload("Payment").Preload("PaymentOption").Preload("Customer").Preload("Amount").Preload("CartItems").Preload("CartItems.Product").Preload("CartItems.Amount").Preload("Manager").Preload("WebSite").Preload("OrderChannel").Omit("id", "account_id").Updates(input).Error
+	return order.GetPreloadDb(true,true).Omit("id", "account_id").Updates(input).Error
+
 }
-func (order Order) delete () error {
+func (order *Order) delete () error {
 
 	if err := order.Amount.delete(); err != nil {
 		return err
@@ -258,5 +256,16 @@ func (order *Order) AppendProducts (products []Product) error {
 	}
 
 	return nil
+}
+
+func (order *Order) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+	_db := db
+
+	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
+	if getModel { _db.Model(&order) }
+
+	return _db.Preload("OrderStatus").Preload("Payment").Preload("PaymentOption").Preload("Customer").
+		Preload("Amount").Preload("CartItems").Preload("CartItems.Product").Preload("CartItems.Amount").
+		Preload("Manager").Preload("WebSite").Preload("OrderChannel")
 }
 

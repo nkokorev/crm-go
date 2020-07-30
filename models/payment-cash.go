@@ -145,7 +145,7 @@ func (paymentCash *PaymentCash) update(input map[string]interface{}) error {
 		Model(paymentCash).Where("id", paymentCash.Id).Omit("id", "account_id").Updates(input).Error
 }
 
-func (paymentCash PaymentCash) delete () error {
+func (paymentCash *PaymentCash) delete () error {
 	return db.Model(PaymentCash{}).Where("id = ?", paymentCash.Id).Delete(paymentCash).Error
 }
 // ######### END CRUD Functions ############

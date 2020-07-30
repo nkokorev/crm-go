@@ -178,7 +178,7 @@ func (paymentYandex *PaymentYandex) update(input map[string]interface{}) error {
 		Model(paymentYandex).Where("id", paymentYandex.Id).Omit("id", "account_id").Updates(input).Error
 }
 
-func (paymentYandex PaymentYandex) delete () error {
+func (paymentYandex *PaymentYandex) delete () error {
 	return db.Model(PaymentYandex{}).Where("id = ?", paymentYandex.Id).Delete(paymentYandex).Error
 }
 // ######### END CRUD Functions ############

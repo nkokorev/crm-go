@@ -86,7 +86,7 @@ func (ut *UnitMeasurement) update(input map[string]interface{}) error {
 
 }
 
-func (ut UnitMeasurement) delete () error {
+func (ut *UnitMeasurement) delete () error {
 	return db.Model(UnitMeasurement{}).Where("id = ?", ut.Id).Delete(ut).Error
 }
 // ######### END CRUD Functions ############

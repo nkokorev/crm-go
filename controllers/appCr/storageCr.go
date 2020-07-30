@@ -103,14 +103,25 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fs := models.Storage{
-		Name: strings.ToLower(header.Filename),
-		Data: buf.Bytes(),
-		MIME: header.Header.Get("Content-Type"),
-		Size: uint(header.Size),
-		// OwnerId: ownerId, // нуу хз
-		// OwnerType: ownerType,
+	var fs models.Storage
+	if  ownerId > 0 {
+		fs = models.Storage{
+			Name: strings.ToLower(header.Filename),
+			Data: buf.Bytes(),
+			MIME: header.Header.Get("Content-Type"),
+			Size: uint(header.Size),
+			OwnerId: ownerId, // нуу хз
+			OwnerType: ownerType,
+		}
+	} else {
+		fs = models.Storage{
+			Name: strings.ToLower(header.Filename),
+			Data: buf.Bytes(),
+			MIME: header.Header.Get("Content-Type"),
+			Size: uint(header.Size),
+		}
 	}
+
 
 	fileEntity, err := account.CreateEntity(&fs)
 	if err != nil {
@@ -120,11 +131,11 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 
 	_fl, ok := fileEntity.(*models.Storage)
 
-	switch ownerType {
+	/*switch ownerType {
 	case "products":
 		err = (models.Product{Id: ownerId}).AppendAssociationImage(_fl)
 		if err != nil {
-			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска продуктадля загрузки изображения"}))
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска продукта для загрузки изображения"}))
 			return
 		}
 	case "articles":
@@ -133,7 +144,7 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска статьи для загрузки изображения"}))
 			return
 		}
-	}
+	}*/
 
 
 

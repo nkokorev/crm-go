@@ -204,7 +204,7 @@ func (eventListener *EventListener) update(input map[string]interface{}) error {
 
 	return nil
 }
-func (eventListener EventListener) delete () error {
+func (eventListener *EventListener) delete () error {
 	if err := db.Model(EventListener{}).Where("id = ?", eventListener.Id).Delete(eventListener).Error; err != nil {return err}
 
 	go EventListener{}.ReloadEventHandlers()

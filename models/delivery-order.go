@@ -225,7 +225,7 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}) error {
 	return nil
 }
 
-func (deliveryOrder DeliveryOrder) delete () error {
+func (deliveryOrder *DeliveryOrder) delete () error {
 	return db.Model(DeliveryOrder{}).Where("id = ?", deliveryOrder.Id).Delete(deliveryOrder).Error
 }
 // ######### END CRUD Functions ############

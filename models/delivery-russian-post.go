@@ -166,7 +166,7 @@ func (deliveryRussianPost *DeliveryRussianPost) update(input map[string]interfac
 		Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").Omit("id", "account_id").Updates(input).Error
 }
 
-func (deliveryRussianPost DeliveryRussianPost) delete () error {
+func (deliveryRussianPost *DeliveryRussianPost) delete () error {
 	return db.Model(DeliveryRussianPost{}).Where("id = ?", deliveryRussianPost.Id).Delete(deliveryRussianPost).Error
 }
 

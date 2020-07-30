@@ -133,7 +133,7 @@ func (orderComment *OrderComment) update(input map[string]interface{}) error {
 		Model(orderComment).Omit("id", "account_id").Updates(input).Error
 }
 
-func (orderComment OrderComment) delete () error {
+func (orderComment *OrderComment) delete () error {
 	return db.Model(OrderComment{}).Where("id = ?", orderComment.Id).Delete(orderComment).Error
 }
 // ######### END CRUD Functions ############

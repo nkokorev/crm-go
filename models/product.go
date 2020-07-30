@@ -147,7 +147,7 @@ func (product *Product) update(input map[string]interface{}) error {
 	return nil
 }
 
-func (product Product) delete () error {
+func (product *Product) delete () error {
 	if err := db.Model(Product{}).Where("id = ?", product.Id).Delete(product).Error; err != nil {
 		return err
 	}

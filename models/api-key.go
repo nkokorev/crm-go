@@ -86,7 +86,7 @@ func (ApiKey) getList(accountId uint) ([]ApiKey, error) {
 	return apiKeys, nil
 }
 
-func (apiKey ApiKey) delete () error {
+func (apiKey *ApiKey) delete () error {
 	return db.Model(ApiKey{}).Where("id = ?", apiKey.Id).Delete(apiKey).Error
 }
 

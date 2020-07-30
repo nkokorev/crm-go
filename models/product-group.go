@@ -95,7 +95,7 @@ func (productGroup *ProductGroup) update(input map[string]interface{}) error {
 	return nil
 }
 
-func (productGroup ProductGroup) delete () error {
+func (productGroup *ProductGroup) delete () error {
 
 	accountId, err2 := GetAccountIdByWebSiteId(productGroup.WebSiteId)
 

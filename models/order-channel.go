@@ -157,7 +157,7 @@ func (orderChannel *OrderChannel) update(input map[string]interface{}) error {
 		Model(orderChannel).Where("id", orderChannel.Id).Omit("id", "account_id").Updates(input).Error
 }
 
-func (orderChannel OrderChannel) delete () error {
+func (orderChannel *OrderChannel) delete () error {
 	return db.Model(OrderChannel{}).Where("id = ?", orderChannel.Id).Delete(orderChannel).Error
 }
 // ######### END CRUD Functions ############

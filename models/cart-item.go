@@ -147,7 +147,7 @@ func (cartItem *CartItem) update(input map[string]interface{}) error {
 		Model(cartItem).Omit("id", "account_id").Updates(input).Error
 }
 
-func (cartItem CartItem) delete () error {
+func (cartItem *CartItem) delete () error {
 	if err := cartItem.Amount.delete(); err != nil {
 		return err
 	}

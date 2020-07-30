@@ -187,6 +187,6 @@ func (obItem *HandlerItem) update(input map[string]interface{}) error {
 	return nil
 }
 
-func (obItem HandlerItem) delete () error {
+func (obItem *HandlerItem) delete () error {
 	return db.Model(HandlerItem{}).Where("id = ?", obItem.Id).Delete(obItem).Error
 }
