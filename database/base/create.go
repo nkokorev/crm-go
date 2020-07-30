@@ -1754,13 +1754,6 @@ func UploadTestDataPart_IV()  {
 
 	}
 
-
-
-	///////////////
-
-
-
-    fmt.Println("Объекты созданы создан: ")
 }
 
 func Migrate_I() {

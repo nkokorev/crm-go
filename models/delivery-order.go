@@ -37,7 +37,7 @@ type DeliveryOrder struct {
 	Amount  	PaymentAmount	`json:"amount"`
 
 	// Статус заказа
-	DeliveryStatusId  	uint	`json:"deliveryStatusId" gorm:"type:int;not null;"`
+	DeliveryStatusId  	uint	`json:"deliveryStatusId" gorm:"type:int;default:1;"`
 	DeliveryStatus		DeliveryStatus	`json:"deliveryStatus"`
 
 	CreatedAt 		time.Time `json:"createdAt"`

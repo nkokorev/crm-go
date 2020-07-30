@@ -58,7 +58,7 @@ type Order struct {
 	Comments	[]OrderComment `json:"comments"`
 
 	// Статус заказа
-	OrderStatusId  	uint	`json:"orderStatusId" gorm:"type:int;not null;"`
+	OrderStatusId  	uint	`json:"orderStatusId" gorm:"type:int;default:1;"`
 	OrderStatus		OrderStatus	`json:"orderStatus"`
 
 	CreatedAt time.Time 	`json:"createdAt"`
