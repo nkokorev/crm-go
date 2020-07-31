@@ -29,6 +29,7 @@ type PaymentOption struct {
 	DeliveryCouriers 	[]DeliveryCourier  `json:"deliveryCouriers" gorm:"many2many:payment_options_delivery_couriers;preload"`
 	DeliveryRussianPosts 	[]DeliveryRussianPost  `json:"deliveryRussianPosts" gorm:"many2many:payment_options_delivery_russian_posts;preload"`
 
+	// Интерфейс
 	PaymentMethod	`json:"-" gorm:"-"`
 	// Доступен ли данный способ платежей
 	// Enabled	bool	`json:"enabled" gorm:"type:bool;default:false"`

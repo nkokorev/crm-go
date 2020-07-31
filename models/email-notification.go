@@ -345,15 +345,10 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 
 	if emailNotification.ParseRecipientCustomer {
 
-		fmt.Println("Ищем заказчика")
-		// fmt.Println(data)
 		if customerSTR, ok := data["customerId"]; ok {
-			fmt.Println("ok 1")
 			if customerId, ok := customerSTR.(uint); ok {
-				fmt.Println("ok 2")
 				customer, err := account.GetUser(customerId)
 				if err == nil && customer.Email != "" {
-					fmt.Println("Заказчик найден: ", customer.Id)
 					err = emailTemplate.SendMail(emailNotification.EmailBox, customer.Email, _subject, vData)
 					if err != nil {
 						fmt.Println("Ошибка отправления: ", err)
