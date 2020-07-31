@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
 	"time"
 )
@@ -10,7 +11,7 @@ import (
 type DeliveryCourier struct {
 	Id     		uint   	`json:"id" gorm:"primary_key"`
 	AccountId 	uint	`json:"-" gorm:"index;not null"` // аккаунт-владелец ключа
-	WebSiteId		uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	WebSiteId	uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
 	Code 		string	`json:"code" gorm:"type:varchar(16);default:'courier';"` // Для идентификации во фронтенде
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // активен ли способ доставки
@@ -31,6 +32,11 @@ type DeliveryCourier struct {
 
 	// Разрешенные методы оплаты для данного типа доставки
 	PaymentOptions	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_delivery_couriers;preload"`
+
+	// загружаемый интерфейс
+	PaymentMethods		[]PaymentMethod `json:"paymentMethods" gorm:"-"`
+	// Список вариантов оплат для указанного магазина. {shopId:}
+	PaymentMethodList 	postgres.Jsonb 	`json:"recipientUsersList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // список id пользователей, которые получат уведомление
 
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`

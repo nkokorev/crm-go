@@ -17,7 +17,8 @@ type PaymentYandex struct {
 	Id     		uint   	`json:"id" gorm:"primary_key"`
 	HashId 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
-
+	WebSiteId	uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя интеграции магазина "<name>"
 
 	// ####### API PaymentYandex ####### //
@@ -44,6 +45,9 @@ type PaymentYandex struct {
 	// Автоматический прием  поступившего платежа. Со стороны Я.Кассы
 	Capture	bool	`json:"capture" gorm:"type:bool;default:true"`
 
+	WebSite	WebSite `json:"webSites" gorm:"preload"`
+
+	// !!! deprecated !!!
 	PaymentOption   PaymentOption `gorm:"polymorphic:Owner;"`
 }
 
@@ -62,9 +66,65 @@ func (paymentYandex *PaymentYandex) setId(id uint) { paymentYandex.Id = id }
 func (paymentYandex PaymentYandex) GetAccountId() uint { return paymentYandex.AccountId }
 func (paymentYandex *PaymentYandex) setAccountId(id uint) { paymentYandex.AccountId = id }
 func (PaymentYandex) SystemEntity() bool { return false }
+// ############# END OF Entity interface #############
 
-// ############# Entity interface #############
+// ############# Payment Method interface #############
+func (paymentYandex PaymentYandex) CreatePayment(order Order) (*Payment, error) {
 
+	_p := Payment {
+		AccountId: paymentYandex.AccountId,
+		Paid: false,
+		Amount: order.Amount,
+		IncomeAmount: order.Amount,
+		RefundedAmount: PaymentAmount{AccountId: order.AccountId, Value: float64(0), Currency: "RUB"},
+		Description:  fmt.Sprintf("Заказ №%v в магазине AiroCliamte", order.Id),  // Видит клиент
+		PaymentMethodData: PaymentMethodData{Type: "bank_card"}, // вообще еще вопрос
+		Confirmation: Confirmation{Type: "redirect", ReturnUrl: paymentYandex.ReturnUrl},
+		Receipt: Receipt{
+			Customer: Customer{
+				Email: order.Customer.Email,
+				Phone: order.Customer.Phone,
+				FullName: order.Customer.Name + " " + order.Customer.Surname,
+			},
+			Items: order.CartItems,
+			Email: order.Customer.Email,
+			Phone: order.Customer.Phone,
+		},
+		/*Recipient: Recipient{
+			AccountId: paymentYandex.ShopId,
+		},*/
+
+		// Чтобы понять какой платеж был оплачен!!!
+		Metadata: postgres.Jsonb{ RawMessage: utils.MapToRawJson(map[string]interface{}{
+			"orderId":order.Id,
+			"accountId":paymentYandex.AccountId,
+		})},
+		SavePaymentMethod: paymentYandex.SavePaymentMethod,
+		OwnerId: paymentYandex.Id,
+		OwnerType: "payment_yandexes",
+		Capture: paymentYandex.Capture,
+
+		OrderId: order.Id,
+	}
+
+	// создаем внутри платеж
+	entity, err := _p.create()
+	if err != nil {
+		return nil, err
+	}
+	payment := entity.(*Payment)
+
+	// Вызываем Yandex для созданного платежа
+	err = paymentYandex.ExternalCreate(payment)
+	if err != nil {
+		return nil, err
+	}
+
+	return payment, nil
+}
+func (paymentYandex PaymentYandex) GetWebSiteId() uint { return paymentYandex.WebSiteId }
+func (PaymentYandex) GetCode() string { return "payment_yandexes" }
+// ############# END OF Payment Method interface #############
 
 // ######### CRUD Functions ############
 func (paymentYandex PaymentYandex) create() (Entity, error)  {
@@ -183,63 +243,7 @@ func (paymentYandex *PaymentYandex) delete () error {
 }
 // ######### END CRUD Functions ############
 
-
 // ########## Work function ############
-
-func (paymentYandex PaymentYandex) CreatePayment(order Order) (*Payment, error) {
-
-	_p := Payment {
-		AccountId: paymentYandex.AccountId,
-		Paid: false,
-		Amount: order.Amount,
-		IncomeAmount: order.Amount,
-		RefundedAmount: PaymentAmount{AccountId: order.AccountId, Value: float64(0), Currency: "RUB"},
-		Description:  fmt.Sprintf("Заказ №%v в магазине AiroCliamte", order.Id),  // Видит клиент
-		PaymentMethodData: PaymentMethodData{Type: "bank_card"}, // вообще еще вопрос
-		Confirmation: Confirmation{Type: "redirect", ReturnUrl: paymentYandex.ReturnUrl},
-		Receipt: Receipt{
-			Customer: Customer{
-				Email: order.Customer.Email,
-				Phone: order.Customer.Phone,
-				FullName: order.Customer.Name + " " + order.Customer.Surname,
-			},
-			Items: order.CartItems,
-			Email: order.Customer.Email,
-			Phone: order.Customer.Phone,
-		},
-		/*Recipient: Recipient{
-			AccountId: paymentYandex.ShopId,
-		},*/
-
-		// Чтобы понять какой платеж был оплачен!!!
-		Metadata: postgres.Jsonb{ RawMessage: utils.MapToRawJson(map[string]interface{}{
-			"orderId":order.Id,
-			"accountId":paymentYandex.AccountId,
-		})},
-		SavePaymentMethod: paymentYandex.SavePaymentMethod,
-		OwnerId: paymentYandex.Id,
-		OwnerType: "payment_yandexes",
-		Capture: paymentYandex.Capture,
-
-		OrderId: order.Id,
-	}
-
-	// создаем внутри платеж
-	entity, err := _p.create()
-	if err != nil {
-		return nil, err
-	}
-	payment := entity.(*Payment)
-
-	// Вызываем Yandex для созданного платежа
-	err = paymentYandex.ExternalCreate(payment)
-	if err != nil {
-		return nil, err
-	}
-
-	return payment, nil
-}
-
 func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 
 	sendData := struct{

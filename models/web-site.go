@@ -469,7 +469,7 @@ func (webSite WebSite) DeleteDelivery(input map[string]interface{}) error {
 	return nil
 }
 
-func (webSite WebSite) DeliveryListOptions() map[string]interface{} {
+func (webSite WebSite) DeliveryCodeList() map[string]interface{} {
 	return map[string]interface{}{
 		"russianPost": "Почта России",
 		"courier": "Курьерская доставка",
@@ -495,11 +495,11 @@ func (webSite WebSite) CreateEmailBox(emailBox EmailBox) (Entity, error) {
 	emailBox.WebSiteId = webSite.Id
 	return emailBox.create()
 }
-
 func (webSite WebSite) GetEmailBoxList(sortBy string) ([]EmailBox, error) {
 	return EmailBox{}.getListByWebSite(webSite.AccountId, webSite.Id, sortBy)
 }
 
+// deprecated
 func (webSite WebSite) AppendPaymentOptions(paymentOptions []PaymentOption) error {
 	if err := db.Model(&webSite).Association("PaymentOptions").Append(paymentOptions).Error; err != nil {
 		return err
@@ -507,6 +507,7 @@ func (webSite WebSite) AppendPaymentOptions(paymentOptions []PaymentOption) erro
 
 	return nil
 }
+// deprecated
 func (webSite WebSite) ReplacePaymentOptions(paymentOptions []PaymentOption) error {
 	if err := db.Model(&webSite).Association("PaymentOptions").Replace(paymentOptions).Error; err != nil {
 		return err
@@ -514,6 +515,7 @@ func (webSite WebSite) ReplacePaymentOptions(paymentOptions []PaymentOption) err
 
 	return nil
 }
+// deprecated
 func (webSite WebSite) RemovePaymentOptions(paymentOptions []PaymentOption) error {
 	if err := db.Model(&webSite).Association("PaymentOptions").Delete(paymentOptions).Error; err != nil {
 		return err

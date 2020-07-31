@@ -27,7 +27,7 @@ var UiApiRoutes = func (rFree *mux.Router) {
 
 	rFree.HandleFunc("/web-sites/{webSiteId:[0-9]+}/deliveries-calculate", uiApiCr.DeliveryCalculateDeliveryCost).Methods(http.MethodPost, http.MethodOptions)
 
-	rFree.HandleFunc("/web-sites/{webSiteId:[0-9]+}/deliveries-list-options", uiApiCr.DeliveryListOptions).Methods(http.MethodGet, http.MethodOptions)
+	rFree.HandleFunc("/web-sites/{webSiteId:[0-9]+}/deliveries-code-list", uiApiCr.DeliveryCodeList).Methods(http.MethodGet, http.MethodOptions)
 
 
 	// YandexPayment

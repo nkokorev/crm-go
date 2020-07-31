@@ -140,11 +140,10 @@ var AppRoutes = func(r *mux.Router) {
 	// ### Deliveries ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/deliveries", appCr.DeliveryCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/deliveries", appCr.DeliveryGetListByShop).Methods(http.MethodGet, http.MethodOptions)
-	// rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/deliveries/russianPost", appCr.DeliveryUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/deliveries", appCr.DeliveryUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/deliveries", appCr.DeliveryDelete).Methods(http.MethodDelete, http.MethodOptions)
 
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/deliveries-list-options", uiApiCr.DeliveryListOptions).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/deliveries-code-list", uiApiCr.DeliveryCodeList).Methods(http.MethodGet, http.MethodOptions)
 
 	// ### WebHooks ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks", appCr.WebHookCreate).Methods(http.MethodPost, http.MethodOptions)
@@ -220,7 +219,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payments/{paymentId:[0-9]+}", appCr.PaymentGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payments/{paymentId:[0-9]+}", appCr.PaymentUpdate).Methods(http.MethodPatch, http.MethodOptions)
 
-	// ### Payment Subject Items ###
+	// ### Payment Subject Items (SYSTEM) ###
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-subjects", appCr.PaymentSubjectCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-subjects", appCr.PaymentSubjectGetListPagination).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-subjects/{paymentSubjectsId:[0-9]+}", appCr.PaymentSubjectGet).Methods(http.MethodGet, http.MethodOptions)
@@ -228,11 +227,19 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-subjects/{paymentSubjectsId:[0-9]+}", appCr.PaymentSubjectDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### Payment Method Items ###
+	// deprecated
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-options", appCr.PaymentOptionCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-options", appCr.PaymentOptionGetListPagination).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-options/{paymentOptionId:[0-9]+}", appCr.PaymentOptionGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-options/{paymentOptionId:[0-9]+}", appCr.PaymentOptionUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-options/{paymentOptionId:[0-9]+}", appCr.PaymentOptionDelete).Methods(http.MethodDelete, http.MethodOptions)
+
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-methods", appCr.PaymentMethodCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-methods", appCr.PaymentMethodGetList).Methods(http.MethodGet, http.MethodOptions)
+	// требуется указать ?code='cash' / ?code='yandex' /
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-methods/{paymentMethodId:[0-9]+}", appCr.PaymentMethodGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-methods/{paymentMethodId:[0-9]+}", appCr.PaymentMethodUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-methods/{paymentMethodId:[0-9]+}", appCr.PaymentMethodDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### Vat Code ###
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/vat-codes", appCr.VatCodeCreate).Methods(http.MethodPost, http.MethodOptions)

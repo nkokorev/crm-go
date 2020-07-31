@@ -8,15 +8,20 @@ type Delivery interface {
 	GetName() string
 	GetVatCode() VatCode
 
-	CalculateDelivery(deliveryData DeliveryData, weight float64) (float64, error) // weight в кг
-	checkMaxWeight(weight float64) error // проверяет макс вес
+	CalculateDelivery(DeliveryData, float64) (float64, error) // weight в кг
+	checkMaxWeight(float64) error // проверяет макс вес
 
 	setShopId(uint)
-	AppendPaymentOptions(paymentOptions []PaymentOption) error
-	RemovePaymentOptions(paymentOptions []PaymentOption) error
-	ExistPaymentOption(paymentOptions PaymentOption) bool
+	AppendPaymentOptions([]PaymentOption) error
+	RemovePaymentOptions([]PaymentOption) error
+	ExistPaymentOption(PaymentOption) bool
 
-	CreateDeliveryOrder(deliveryData DeliveryData, amount PaymentAmount, order Order) (Entity, error)
+	// new 31.07.2020
+	/*AppendPaymentMethods([]PaymentMethod) error
+	RemovePaymentMethods([]PaymentMethod) error
+	ExistPaymentMethod(PaymentMethod) bool*/
+
+	CreateDeliveryOrder(DeliveryData, PaymentAmount, Order) (Entity, error)
 }
 
 type DeliveryRequest struct {

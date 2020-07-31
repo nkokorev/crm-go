@@ -80,7 +80,7 @@ func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func DeliveryListOptions(w http.ResponseWriter, r *http.Request) {
+func DeliveryCodeList(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
@@ -104,6 +104,6 @@ func DeliveryListOptions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET Deliveries List Options By WebSite")
-	resp["deliveryListOptions"] = webSite.DeliveryListOptions()
+	resp["deliveryCodeList"] = webSite.DeliveryCodeList()
 	u.Respond(w, resp)
 }

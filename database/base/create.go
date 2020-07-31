@@ -1758,5 +1758,8 @@ func UploadTestDataPart_IV()  {
 
 func Migrate_I() {
 	pool := models.GetPool()
-	pool.AutoMigrate(&models.EmailNotification{})
+
+	// 31.07.2020
+	pool.AutoMigrate(&models.PaymentYandex{})
+	pool.AutoMigrate(&models.PaymentCash{})
 }

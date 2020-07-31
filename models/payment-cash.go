@@ -13,6 +13,7 @@ type PaymentCash struct {
 	Id     		uint   	`json:"id" gorm:"primary_key"`
 	HashId 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
+	WebSiteId	uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
 
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя интеграции магазина "<name>"
 	Description 		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание метода оплаты
@@ -20,6 +21,9 @@ type PaymentCash struct {
 	// Включен ли данный способ оплаты ??
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"`
 
+	WebSite		WebSite `json:"webSites" gorm:"preload"`
+
+	// !!! deprecated !!!
 	PaymentOption   PaymentOption `gorm:"polymorphic:Owner;"`
 }
 
@@ -40,7 +44,41 @@ func (paymentCash *PaymentCash) setAccountId(id uint) { paymentCash.AccountId = 
 func (PaymentCash) SystemEntity() bool { return false }
 
 // ############# Entity interface #############
+// ############# Payment Method interface #############
+func (paymentCash PaymentCash) CreatePayment(order Order) (*Payment, error) {
 
+	_p := Payment {
+		AccountId: paymentCash.AccountId,
+		Paid: false,
+		Amount: order.Amount,
+		IncomeAmount: order.Amount,
+		RefundedAmount: PaymentAmount{AccountId: order.AccountId, Value: float64(0), Currency: "RUB"},
+		Description:  fmt.Sprintf("Заказ №%v в магазине AiroCliamte", order.Id),  // Видит клиент
+		PaymentMethodData: PaymentMethodData{Type: "bank_card"}, // вообще еще вопрос
+
+		// Чтобы понять какой платеж был оплачен!!!
+		Metadata: postgres.Jsonb{ RawMessage: utils.MapToRawJson(map[string]interface{}{
+			"orderId":order.Id,
+			"accountId":paymentCash.AccountId,
+		})},
+		SavePaymentMethod: false,
+		OwnerId: paymentCash.Id,
+		OwnerType: "payment_cashes",
+		OrderId: order.Id,
+	}
+
+	// создаем внутри платеж
+	entity, err := _p.create()
+	if err != nil {
+		return nil, err
+	}
+	payment := entity.(*Payment)
+
+	return payment, nil
+}
+func (paymentCash PaymentCash) GetWebSiteId() uint { return paymentCash.WebSiteId }
+func (PaymentCash) GetCode() string {	return "payment_cashes" }
+// ############# END OF Payment Method interface #############
 
 // ######### CRUD Functions ############
 func (paymentCash PaymentCash) create() (Entity, error)  {
@@ -153,37 +191,7 @@ func (paymentCash *PaymentCash) delete () error {
 
 // ########## Work function ############
 
-func (paymentCash PaymentCash) CreatePayment(order Order) (*Payment, error) {
 
-	_p := Payment {
-		AccountId: paymentCash.AccountId,
-		Paid: false,
-		Amount: order.Amount,
-		IncomeAmount: order.Amount,
-		RefundedAmount: PaymentAmount{AccountId: order.AccountId, Value: float64(0), Currency: "RUB"},
-		Description:  fmt.Sprintf("Заказ №%v в магазине AiroCliamte", order.Id),  // Видит клиент
-		PaymentMethodData: PaymentMethodData{Type: "bank_card"}, // вообще еще вопрос
-
-		// Чтобы понять какой платеж был оплачен!!!
-		Metadata: postgres.Jsonb{ RawMessage: utils.MapToRawJson(map[string]interface{}{
-			"orderId":order.Id,
-			"accountId":paymentCash.AccountId,
-		})},
-		SavePaymentMethod: false,
-		OwnerId: paymentCash.Id,
-		OwnerType: "payment_cashes",
-		OrderId: order.Id,
-	}
-
-	// создаем внутри платеж
-	entity, err := _p.create()
-	if err != nil {
-		return nil, err
-	}
-	payment := entity.(*Payment)
-	
-	return payment, nil
-}
 
 
 func (paymentCash PaymentCash) SetPaymentOption(paymentOption PaymentOption) error {
