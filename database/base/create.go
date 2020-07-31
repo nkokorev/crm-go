@@ -1699,13 +1699,12 @@ func UploadTestDataPart_IV()  {
 	// Создаем способ оплаты YandexPayment
 	entityPayment, err := airoAccount.CreateEntity(
 		&models.PaymentYandex{
-			Name:   "Прием платежей через интернет-магазин airoclimate.ru",
+			Name:   "Онлайн оплата на сайте",
+			Label:   "Онлайн-оплата картой",
 			ApiKey: "test_f56EEL_m2Ky7CJnnRjSpb4JLMhiGoGD3X6ScMHGPruM",
 			ShopId: "730509",
-			URL: "https://ui.api.ratuscrm.com/yandex-payment/dasdasdsa/notifications",
 			ReturnUrl: "https://airoclimate.ru/payment-return",
 			Enabled: true,
-			Description: "-",
 			SavePaymentMethod: false,
 			Capture: false,
 		})
@@ -1724,9 +1723,9 @@ func UploadTestDataPart_IV()  {
 	// Создаем способ оплаты PaymentCash
 	entityPayment2, err := airoAccount.CreateEntity(
 		&models.PaymentCash{
-			Name:   "Прием платежей через в интернет-магазине airoclimate.ru",
+			Name:   "Оплата наличными при самовывозе",
+			Label:   "Оплата наличными (при получении)",
 			Enabled: true,
-			Description: "Наличный способ оплаты при самовывозе",
 		})
 	if err != nil {
 		log.Fatalf("Не удалось создать entityPayment: ", err)

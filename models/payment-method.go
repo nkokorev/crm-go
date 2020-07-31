@@ -12,19 +12,30 @@ type PaymentMethod interface {
 	GetWebSiteId() uint
 }
 
-func (account Account) GetPaymentMethods() []PaymentMethod {
+func (account Account) GetPaymentMethods() ([]PaymentMethod, error) {
 
 	// Находим все необходимые методы
 	var paymentCashes []PaymentCash
-	if err := db.Model(&DeliveryRussianPost{}).Preload("WebSite").
-		Find(&paymentCashes, "account_id = ?", account.Id).Error; err != nil {
-		return nil
+	paymentCashesEntity, _, err := PaymentCash{}.getList(account.Id, "id")
+	if err != nil {
+	   return nil, err
+	}
+	for i := range(paymentCashesEntity) {
+		_p, ok :=  paymentCashesEntity[i].(*PaymentCash)
+		if !ok { return nil, utils.Error{Message: "Ошибка при получении списка PaymentCash"} }
+		paymentCashes = append(paymentCashes,*_p)
 	}
 
 	var paymentYandexes []PaymentYandex
-	if err := db.Model(&DeliveryCourier{}).Preload("WebSite").
-		Find(&paymentYandexes, "account_id = ?", account.Id).Error; err != nil {
-		return nil
+	paymentYandexEntity, _, err := PaymentYandex{}.getList(account.Id, "id")
+	if err != nil {
+		return nil, err
+	}
+	for i := range(paymentYandexEntity) {
+		_p, ok :=  paymentYandexEntity[i].(*PaymentYandex)
+		if !ok { return nil, utils.Error{Message: "Ошибка при получении списка PaymentCash"} }
+
+		paymentYandexes = append(paymentYandexes,*_p)
 	}
 
 	methods := make([]PaymentMethod, len(paymentCashes)+len(paymentYandexes))
@@ -35,13 +46,14 @@ func (account Account) GetPaymentMethods() []PaymentMethod {
 		methods[i+len(paymentCashes)] = &paymentYandexes[i]
 	}
 
-	return methods
+	return methods, nil
 }
 
 func (account Account) GetPaymentMethod(code string, methodId uint) (PaymentMethod, error){
 
 	// 1. Получаем все варианты доставки (обычно их мало). Можно через switch, но лень потом исправлять баг с новыми типом доставки
-	methods := account.GetPaymentMethods()
+	methods, err := account.GetPaymentMethods()
+	if err != nil { return nil, err}
 
 
 	// Ищем наш вариант доставки

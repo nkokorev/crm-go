@@ -79,8 +79,14 @@ func PaymentMethodGetList(w http.ResponseWriter, r *http.Request) {
 
 	// todo: get webSiteid: ?webSite=1,2,3
 
+	paymentMethods, err := account.GetPaymentMethods()
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при получении списка методов оплаты"))
+		return
+	}
+
 	resp := u.Message(true, "GET PaymentMethod List")
-	resp["paymentMethods"] = account.GetPaymentMethods()
+	resp["paymentMethods"] =  paymentMethods
 	u.Respond(w, resp)
 }
 

@@ -15,21 +15,23 @@ type PaymentCash struct {
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 	WebSiteId	uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
 
+	Code 		string	`json:"code" gorm:"type:varchar(16);default:'payment_cashes';"` // Для идентификации
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя интеграции магазина "<name>"
-	Description 		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание метода оплаты
+	Label 		string 	`json:"label" gorm:"type:varchar(255);default:'Оплата наличными'"` // 'Оплата при получении'
 
 	// Включен ли данный способ оплаты ??
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"`
 
-	WebSite		WebSite `json:"webSites" gorm:"preload"`
+	WebSite		WebSite `json:"webSite" gorm:"preload"`
 
 	// !!! deprecated !!!
-	PaymentOption   PaymentOption `gorm:"polymorphic:Owner;"`
+	// PaymentOption   PaymentOption `gorm:"polymorphic:Owner;"`
 }
 
 func (PaymentCash) PgSqlCreate() {
 	db.CreateTable(&PaymentCash{})
 	db.Model(&PaymentCash{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Model(&PaymentCash{}).AddForeignKey("web_site_id", "web_sites(id)", "CASCADE", "CASCADE")
 }
 func (paymentCash *PaymentCash) BeforeCreate(scope *gorm.Scope) error {
 	paymentCash.Id = 0
@@ -77,13 +79,17 @@ func (paymentCash PaymentCash) CreatePayment(order Order) (*Payment, error) {
 	return payment, nil
 }
 func (paymentCash PaymentCash) GetWebSiteId() uint { return paymentCash.WebSiteId }
-func (PaymentCash) GetCode() string {	return "payment_cashes" }
+func (paymentCash PaymentCash) GetCode() string { return paymentCash.Code }
 // ############# END OF Payment Method interface #############
 
 // ######### CRUD Functions ############
 func (paymentCash PaymentCash) create() (Entity, error)  {
 	wb := paymentCash
 	if err := db.Create(&wb).Error; err != nil {
+		return nil, err
+	}
+
+	if err := wb.GetPreloadDb(false,true).First(&wb, wb.Id).Error; err != nil {
 		return nil, err
 	}
 
@@ -96,7 +102,7 @@ func (PaymentCash) get(id uint) (Entity, error) {
 
 	var paymentCash PaymentCash
 
-	err := db.First(&paymentCash, id).Error
+	err := paymentCash.GetPreloadDb(false,false).First(&paymentCash, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +113,7 @@ func (paymentCash *PaymentCash) load() error {
 		return utils.Error{Message: "Невозможно загрузить PaymentCash - не указан  Id"}
 	}
 
-	err := db.First(paymentCash,paymentCash.Id).Error
+	err := paymentCash.GetPreloadDb(false,true).First(paymentCash,paymentCash.Id).Error
 	if err != nil {
 		return err
 	}
@@ -129,7 +135,7 @@ func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, 
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&PaymentCash{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&PaymentCash{}).GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&paymentCashs, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -145,7 +151,7 @@ func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	} else {
 
-		err := db.Model(&PaymentCash{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&PaymentCash{}).GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&paymentCashs).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -167,32 +173,18 @@ func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, 
 	return entities, total, nil
 }
 
-func (PaymentCash) getByEvent(eventName string) (*PaymentCash, error) {
-
-	wh := PaymentCash{}
-
-	if err := db.First(&wh, "event_type = ?", eventName).Error; err != nil {
-		return nil, err
-	}
-
-	return &wh, nil
-}
-
 func (paymentCash *PaymentCash) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).
+	return paymentCash.GetPreloadDb(true,true).
 		Model(paymentCash).Where("id", paymentCash.Id).Omit("id", "account_id").Updates(input).Error
 }
 
 func (paymentCash *PaymentCash) delete () error {
-	return db.Model(PaymentCash{}).Where("id = ?", paymentCash.Id).Delete(paymentCash).Error
+	return paymentCash.GetPreloadDb(true,true).Where("id = ?", paymentCash.Id).Delete(paymentCash).Error
 }
 // ######### END CRUD Functions ############
 
 
 // ########## Work function ############
-
-
-
 
 func (paymentCash PaymentCash) SetPaymentOption(paymentOption PaymentOption) error {
 	if err := db.Model(&paymentCash).Association("PaymentOption").Append(paymentOption).Error; err != nil {
@@ -200,4 +192,13 @@ func (paymentCash PaymentCash) SetPaymentOption(paymentOption PaymentOption) err
 	}
 
 	return nil
+}
+
+func (paymentCash PaymentCash) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+	_db := db
+
+	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
+	if getModel { _db.Model(&paymentCash) }
+
+	return _db.Preload("WebSite")
 }

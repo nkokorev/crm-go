@@ -18,8 +18,11 @@ type PaymentYandex struct {
 	HashId 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 	WebSiteId	uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
-	
+
+	Code 		string	`json:"code" gorm:"type:varchar(16);default:'payment_yandexes';"` // Для идентификации
+
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя интеграции магазина "<name>"
+	Label 		string 	`json:"label" gorm:"type:varchar(128);default:''"` // 'Онлайн-оплата картой'
 
 	// ####### API PaymentYandex ####### //
 
@@ -28,8 +31,8 @@ type PaymentYandex struct {
 	ShopId	string	`json:"shopId" gorm:"type:int;"` // shop id от яндекс кассы
 
 	// URL для уведомлений со стороны Я.Кассы.
-	URL		string 	`json:"url" gorm:"type:varchar(255);"`
-	EnabledIncomingNotifications 	bool 	`json:"enabledIncomingNotifications" gorm:"type:bool;default:true"` // обрабатывать ли уведомления от Я.Кассы.
+	// URL		string 	`json:"url" gorm:"type:varchar(255);"`
+	EnabledIncomingNotifications	bool	`json:"enabledIncomingNotifications" gorm:"type:bool;default:true"` // обрабатывать ли уведомления от Я.Кассы.
 	// ####### Внутренние данные ####### //
 
 	// Возврат после платежа или отмена для пользователя
@@ -37,7 +40,7 @@ type PaymentYandex struct {
 
 	// Включен ли данный способ оплаты
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // обрабатывать ли вебхук
-	Description 		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
+	// Description 		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
 
 	// Сохранение платежных данных (с их помощью можно проводить повторные безакцептные списания ).
 	SavePaymentMethod 	bool 	`json:"savePaymentMethod" gorm:"type:bool;default:false"`
@@ -45,15 +48,16 @@ type PaymentYandex struct {
 	// Автоматический прием  поступившего платежа. Со стороны Я.Кассы
 	Capture	bool	`json:"capture" gorm:"type:bool;default:true"`
 
-	WebSite	WebSite `json:"webSites" gorm:"preload"`
+	WebSite	WebSite `json:"webSite" gorm:"preload"`
 
 	// !!! deprecated !!!
-	PaymentOption   PaymentOption `gorm:"polymorphic:Owner;"`
+	// PaymentOption   PaymentOption `gorm:"polymorphic:Owner;"`
 }
 
 func (PaymentYandex) PgSqlCreate() {
 	db.CreateTable(&PaymentYandex{})
 	db.Model(&PaymentYandex{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Model(&PaymentYandex{}).AddForeignKey("web_site_id", "web_sites(id)", "CASCADE", "CASCADE")
 }
 func (paymentYandex *PaymentYandex) BeforeCreate(scope *gorm.Scope) error {
 	paymentYandex.Id = 0
@@ -123,17 +127,21 @@ func (paymentYandex PaymentYandex) CreatePayment(order Order) (*Payment, error) 
 	return payment, nil
 }
 func (paymentYandex PaymentYandex) GetWebSiteId() uint { return paymentYandex.WebSiteId }
-func (PaymentYandex) GetCode() string { return "payment_yandexes" }
+func (paymentYandex PaymentYandex) GetCode() string { return paymentYandex.Code }
 // ############# END OF Payment Method interface #############
 
 // ######### CRUD Functions ############
 func (paymentYandex PaymentYandex) create() (Entity, error)  {
-	wb := paymentYandex
-	if err := db.Create(&wb).Error; err != nil {
+	py := paymentYandex
+	if err := db.Create(&py).Error; err != nil {
 		return nil, err
 	}
 
-	var entity Entity = &wb
+	if err := py.GetPreloadDb(false,true).First(&py,py.Id).Error; err != nil {
+		return nil, err
+	}
+
+	var entity Entity = &py
 
 	return entity, nil
 }
@@ -142,7 +150,7 @@ func (PaymentYandex) get(id uint) (Entity, error) {
 
 	var paymentYandex PaymentYandex
 
-	err := db.First(&paymentYandex, id).Error
+	err := paymentYandex.GetPreloadDb(false,false).First(&paymentYandex, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +159,7 @@ func (PaymentYandex) get(id uint) (Entity, error) {
 func (PaymentYandex) getByHashId(hashId string) (*PaymentYandex, error) {
 	paymentYandex := PaymentYandex{}
 
-	err := db.First(&paymentYandex, "hash_id = ?", hashId).Error
+	err := paymentYandex.GetPreloadDb(false,false).First(&paymentYandex, "hash_id = ?", hashId).Error
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +170,7 @@ func (paymentYandex *PaymentYandex) load() error {
 		return utils.Error{Message: "Невозможно загрузить PaymentYandex - не указан  Id"}
 	}
 
-	err := db.First(paymentYandex,paymentYandex.Id).Error
+	err := paymentYandex.GetPreloadDb(false,true).First(paymentYandex,paymentYandex.Id).Error
 	if err != nil {
 		return err
 	}
@@ -184,7 +192,7 @@ func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&PaymentYandex{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&PaymentYandex{}).GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&paymentYandexs, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -200,7 +208,8 @@ func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	} else {
 
-		err := db.Model(&PaymentYandex{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&PaymentYandex{}).GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Preload("WebSite").
 			Find(&paymentYandexs).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -222,24 +231,13 @@ func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy
 	return entities, total, nil
 }
 
-func (PaymentYandex) getByEvent(eventName string) (*PaymentYandex, error) {
-
-	wh := PaymentYandex{}
-
-	if err := db.First(&wh, "event_type = ?", eventName).Error; err != nil {
-		return nil, err
-	}
-
-	return &wh, nil
-}
-
 func (paymentYandex *PaymentYandex) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).
+	return paymentYandex.GetPreloadDb(false,false).
 		Model(paymentYandex).Where("id", paymentYandex.Id).Omit("id", "account_id").Updates(input).Error
 }
 
 func (paymentYandex *PaymentYandex) delete () error {
-	return db.Model(PaymentYandex{}).Where("id = ?", paymentYandex.Id).Delete(paymentYandex).Error
+	return paymentYandex.GetPreloadDb(true,true).Where("id = ?", paymentYandex.Id).Delete(paymentYandex).Error
 }
 // ######### END CRUD Functions ############
 
@@ -375,4 +373,13 @@ func (account Account) GetPaymentYandexByHashId(hashId string) (*PaymentYandex, 
 	}
 
 	return paymentYandex, nil
+}
+
+func (paymentYandex PaymentYandex) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+	_db := db
+
+	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
+	if getModel { _db.Model(&paymentYandex) }
+
+	return _db.Preload("WebSite")
 }
