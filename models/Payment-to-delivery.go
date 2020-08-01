@@ -29,9 +29,21 @@ func (Payment2Delivery) TableName() string {
 }
 
 // Добавляет, если есть - ничего не делает
-func  (p2d Payment2Delivery) AppendByIds(paymentMethodId uint, paymentMethodType string, paymentDeliveryId uint, paymentDeliveryType string) {
+func  (webSite WebSite) AppendPayment2Delivery(paymentId uint, paymentType string, deliveryId uint, deliveryType string) error {
+	if err := db.Model(&Payment2Delivery{}).FirstOrCreate(Payment2Delivery{
+		AccountId: webSite.AccountId,
+		WebSiteId: webSite.Id,
+		PaymentId:  paymentId,
+		PaymentType: paymentType,
+		DeliveryId: deliveryId,
+		DeliveryType: deliveryType,
+	}).Error; err != nil {
+		return err
+	}
 
+	return nil
 }
+
 func  (p2d Payment2Delivery) Append(paymentMethod PaymentMethod, delivery Delivery) {
 
 }

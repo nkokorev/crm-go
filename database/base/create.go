@@ -75,7 +75,7 @@ func RefreshTablesPart_I() {
 	}
 
 
-	pool.DropTableIfExists(models.PaymentOption{}, models.DeliveryOrder{}, models.DeliveryStatus{},models.OrderChannel{},  models.Order{}, models.OrderStatus{},models.Payment{},
+	pool.DropTableIfExists(models.Payment2Delivery{}, models.DeliveryOrder{}, models.DeliveryStatus{},models.OrderChannel{},  models.Order{}, models.OrderStatus{},models.Payment{},
 	models.PaymentAmount{})
 
 	pool.DropTableIfExists(models.CartItem{}, models.OrderComment{}, models.PaymentYandex{}, models.PaymentCash{} )
@@ -129,7 +129,7 @@ func RefreshTablesPart_I() {
 	models.PaymentAmount{}.PgSqlCreate()
 	models.Payment{}.PgSqlCreate()
 	models.OrderChannel{}.PgSqlCreate()
-	models.PaymentOption{}.PgSqlCreate()
+	models.Payment2Delivery{}.PgSqlCreate()
 	models.PaymentSubject{}.PgSqlCreate()
 	models.PaymentYandex{}.PgSqlCreate()
 	models.PaymentCash{}.PgSqlCreate()
@@ -1618,7 +1618,7 @@ func RefreshTablesPart_IV() {
 
 		models.CartItem{},
 		models.OrderComment{},
-		models.PaymentOption{},
+		models.Payment2Delivery{},
 		models.Payment{},
 		// models.PaymentAmount{},
 		models.PaymentYandex{},
@@ -1635,7 +1635,7 @@ func RefreshTablesPart_IV() {
 
 	// models.User{}.PgSqlCreate()
 	models.PaymentAmount{}.PgSqlCreate()
-	models.PaymentOption{}.PgSqlCreate()
+	models.Payment2Delivery{}.PgSqlCreate()
 
 	// models.PaymentSubject{}.PgSqlCreate()
 	// models.VatCode{}.PgSqlCreate()
@@ -1662,22 +1662,34 @@ func UploadTestDataPart_IV()  {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
-	// Создаем методы оплаты
-	paymentOptions := []models.PaymentOption {
-		{Name:   "Оплата при получении",	Code: "cash"},
-		{Name:   "Онлайн-оплата картой",	Code: "online"},
-		// {Name:   "Покупка в кредит",		Code: "credit"},
+	var webSite models.WebSite
+	if err := airoAccount.LoadEntity(&webSite, 5); err != nil { log.Fatal(err)}
+
+	payment2Deliveries := []models.Payment2Delivery {
+		{AccountId: 5, WebSiteId: 5, PaymentId: 1, PaymentType: "payment_cashes", DeliveryId: 1, DeliveryType: "delivery_pickups"},
+		{AccountId: 5, WebSiteId: 5, PaymentId: 1, PaymentType: "payment_yandexes", DeliveryId: 1, DeliveryType: "delivery_pickups"},
+		{AccountId: 5, WebSiteId: 5, PaymentId: 1, PaymentType: "payment_yandexes", DeliveryId: 1, DeliveryType: "delivery_couriers"},
+		{AccountId: 5, WebSiteId: 5, PaymentId: 1, PaymentType: "payment_yandexes", DeliveryId: 1, DeliveryType: "delivery_russian_posts"},
 	}
-	for i := range(paymentOptions) {
-		_, err := models.Account{Id: airoAccount.Id}.CreateEntity(&paymentOptions[i])
-		if err != nil {
-			log.Fatalf("Не удалось создать paymentMethods: ", err)
+
+	for _,v := range(payment2Deliveries) {
+		if err := webSite.AppendPayment2Delivery(v.PaymentId, v.PaymentType, v.DeliveryId, v.DeliveryType); err != nil {
+			log.Fatal(err)
 		}
 	}
 
+
+	// Создаем методы оплаты
+
+	/*for i := range(payment2Deliveries) {
+		_, err := models.Account{Id: airoAccount.Id}.CreateEntity(&payment2Deliveries[i])
+		if err != nil {
+			log.Fatalf("Не удалось создать paymentMethods: ", err)
+		}
+	}*/
+
 /////////
-	var webSite models.WebSite
-	if err := airoAccount.LoadEntity(&webSite, 5); err != nil { log.Fatal(err)}
+
 
 	////////////
 
@@ -1746,4 +1758,5 @@ func Migrate_I() {
 	pool.AutoMigrate(&models.DeliveryCourier{})
 	pool.AutoMigrate(&models.DeliveryPickup{})
 	pool.AutoMigrate(&models.DeliveryRussianPost{})
+	pool.AutoMigrate(&models.Payment{})
 }

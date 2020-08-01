@@ -43,9 +43,6 @@ type Order struct {
 	PaymentMethodType 	string	`json:"paymentMethodType" gorm:"type:varchar(32);"`
 	PaymentMethod 		PaymentMethod `json:"paymentMethod" gorm:"-"`
 
-	// PaymentOptionId 	uint	`json:"paymentOptionId" gorm:"type:int;not null;"`
-	// PaymentOption 		PaymentOption `json:"paymentOption"`
-
 	// Фиксируем стоимость заказа
 	AmountId  	uint	`json:"amountId" gorm:"type:int;not null;"`
 	Amount		PaymentAmount	`json:"amount"`
@@ -124,6 +121,15 @@ func (order *Order) AfterUpdate(tx *gorm.DB) (err error) {
 }
 func (order *Order) AfterDelete(tx *gorm.DB) (err error) {
 	event.AsyncFire(Event{}.OrderDeleted(order.AccountId, order.Id))
+	return nil
+}
+func (order *Order) AfterFind() (err error) {
+
+	// Get ALL Payment Methods
+	method, err := Account{Id: order.AccountId}.GetPaymentMethod(order.PaymentMethodType, order.PaymentMethodId)
+	if err != nil { return err }
+	order.PaymentMethod = method
+
 	return nil
 }
 
@@ -206,7 +212,6 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 
 	} else {
 
-		// err := db.Model(&Order{}).Preload("OrderStatus").Preload("Payment").Preload("PaymentOption").Preload("Customer").Preload("CartItems").Preload("CartItems.Product").Preload("CartItems.Amount").Preload("Amount").Preload("Manager").Preload("WebSite").Preload("OrderChannel").
 		err := (&Order{}).GetPreloadDb(false,false).
 				Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders).Error
@@ -268,7 +273,7 @@ func (order *Order) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
 	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
 	if getModel { _db.Model(&order) }
 
-	return _db.Preload("OrderStatus").Preload("Payment").Preload("PaymentOption").Preload("Customer").
+	return _db.Preload("OrderStatus").Preload("Payment").Preload("Customer").
 		Preload("Amount").Preload("CartItems").Preload("CartItems.Product").Preload("CartItems.Amount").
 		Preload("Manager").Preload("WebSite").Preload("OrderChannel")
 }

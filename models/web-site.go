@@ -32,7 +32,7 @@ type WebSite struct {
 	Deliveries 		[]Delivery  `json:"deliveries" gorm:"-"`// `gorm:"polymorphic:Owner;"`
 	ProductGroups 	[]ProductGroup `json:"productGroups"`
 	EmailBoxes 		[]EmailBox `json:"emailBoxes"` // доступные почтовые ящики с которых можно отправлять
-	PaymentOptions 	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_web_sites;preload"` // доступные почтовые ящики с которых можно отправлять
+	// PaymentOptions 	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_web_sites;preload"` // доступные почтовые ящики с которых можно отправлять
 }
 
 func (WebSite) PgSqlCreate() {
@@ -49,11 +49,18 @@ func (webSite *WebSite) setAccountId(id uint) { webSite.AccountId = id }
 func (webSite WebSite) SystemEntity() bool { return false }
 // ############# END Of Entity interface #############
 
+func (webSite *WebSite) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+	_db := db
+
+	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
+	if getModel { _db.Model(&webSite) }
+
+	return _db.Preload("EmailBoxes")
+}
 func (webSite *WebSite) BeforeCreate(scope *gorm.Scope) error {
 	webSite.Id = 0
 	return nil
 }
-
 func (webSite *WebSite) AfterFind() (err error) {
 	
 	webSite.Deliveries = webSite.GetDeliveryMethods()
@@ -65,7 +72,11 @@ func (webSite WebSite) create() (Entity, error)  {
 
 	wb := webSite
 	
-	if err := db.Create(&wb).Preload("PaymentOptions").Preload("EmailBoxes").First(&wb, wb.Id).Error; err != nil {
+	if err := db.Create(&wb).Error; err != nil {
+		return nil, err
+	}
+
+	if err := wb.GetPreloadDb(false,true).First(&wb,wb.Id).Error; err != nil {
 		return nil, err
 	}
 
@@ -77,7 +88,7 @@ func (WebSite) get(id uint) (Entity, error) {
 
 	var webSite WebSite
 
-	err := db.First(&webSite, id).Error
+	err := (&WebSite{}).GetPreloadDb(false,false).First(&webSite, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +97,7 @@ func (WebSite) get(id uint) (Entity, error) {
 
 func (webSite *WebSite) load() error {
 
-	err := db.Preload("PaymentOptions").Preload("EmailBoxes").First(webSite,webSite.Id).Error
+	err := webSite.GetPreloadDb(false, true).First(webSite,webSite.Id).Error
 	if err != nil {
 		return err
 	}
@@ -95,29 +106,7 @@ func (webSite *WebSite) load() error {
 
 
 func (WebSite) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-
-	webSites := make([]WebSite,0)
-	var total uint
-
-	err := db.Model(&WebSite{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
-		Preload("PaymentOptions").Preload("EmailBoxes").Find(&webSites).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&WebSite{}).Where("account_id = ?", accountId).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(webSites))
-	for i,_ := range webSites {
-		entities[i] = &webSites[i]
-	}
-
-	return entities, total, nil
+	return WebSite{}.getPaginationList(accountId, 0, 100, sortBy, "")
 }
 
 func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
@@ -131,8 +120,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&WebSite{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("PaymentOptions").Preload("EmailBoxes").
+		err := (&WebSite{}).GetPreloadDb(false, false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webSites, "name ILIKE ? OR address ILIKE ? OR email ILIKE ? OR phone ILIKE ?", search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -148,8 +136,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 
-		err := db.Model(&WebSite{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("PaymentOptions").Preload("EmailBoxes").
+		err := (&WebSite{}).GetPreloadDb(false, false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webSites).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -172,11 +159,11 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 }
 
 func (webSite *WebSite) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(webSite).Omit("id", "account_id").Updates(input).Preload("PaymentOptions").Preload("EmailBoxes").First(webSite,webSite.Id).Error
+	return webSite.GetPreloadDb(true, true).Omit("id", "account_id").Updates(input).First(webSite,webSite.Id).Error
 }
 
 func (webSite *WebSite) delete () error {
-	return db.Model(WebSite{}).Where("id = ?", webSite.Id).Delete(webSite).Error
+	return webSite.GetPreloadDb(false, true).Where("id = ?", webSite.Id).Delete(webSite).Error
 }
 // ######### END CRUD Functions ############
 
@@ -491,29 +478,4 @@ func (webSite WebSite) CreateEmailBox(emailBox EmailBox) (Entity, error) {
 }
 func (webSite WebSite) GetEmailBoxList(sortBy string) ([]EmailBox, error) {
 	return EmailBox{}.getListByWebSite(webSite.AccountId, webSite.Id, sortBy)
-}
-
-// deprecated
-func (webSite WebSite) AppendPaymentOptions(paymentOptions []PaymentOption) error {
-	if err := db.Model(&webSite).Association("PaymentOptions").Append(paymentOptions).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-// deprecated
-func (webSite WebSite) ReplacePaymentOptions(paymentOptions []PaymentOption) error {
-	if err := db.Model(&webSite).Association("PaymentOptions").Replace(paymentOptions).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-// deprecated
-func (webSite WebSite) RemovePaymentOptions(paymentOptions []PaymentOption) error {
-	if err := db.Model(&webSite).Association("PaymentOptions").Delete(paymentOptions).Error; err != nil {
-		return err
-	}
-
-	return nil
 }

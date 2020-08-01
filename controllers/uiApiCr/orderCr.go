@@ -55,7 +55,6 @@ type CreateOrderForm struct {
 	// Собственно, сама корзина
 	Cart []models.CartData `json:"cart"`
 
-	// Способ оплаты PaymentOptions          // online, cashe..
 	PaymentMethodCode string `json:"paymentMethodCode"`
 	PaymentMethodId uint `json:"paymentMethodId"`
 }
@@ -116,11 +115,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска способа оплаты", Errors: map[string]interface{}{"paymentMethodCode":"Необходимо указать способ оплаты"}}))
 		return
 	}
-	/*paymentOption, err := account.GetPaymentOptionByCode(input.PaymentOptionsCode)
-	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска способа оплаты", Errors: map[string]interface{}{"orderChannel":"Способ оплаты не найден"}}))
-		return
-	}*/
+
 	paymentMethod, err := account.GetPaymentMethod(input.PaymentMethodCode, input.PaymentMethodId)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска способа оплаты", Errors: map[string]interface{}{"orderChannel":"Способ оплаты не найден"}}))
@@ -303,7 +298,6 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	_order.OrderChannelId = orderChannel.Id
 	_order.Amount = models.PaymentAmount{Value: totalCost, Currency: totalCurrency, AccountId: account.Id}
 	_order.CartItems = cartItems
-	// _order.PaymentOptionId = paymentOption.Id
 	_order.PaymentMethodId = paymentMethod.GetId()
 	_order.PaymentMethodType = paymentMethod.GetType()
 

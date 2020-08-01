@@ -365,13 +365,6 @@ func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 
 	return nil
 }
-func (paymentYandex PaymentYandex) SetPaymentOption(paymentOption PaymentOption) error {
-	if err := db.Model(&paymentYandex).Association("PaymentOption").Append(paymentOption).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
 func (account Account) GetPaymentYandexByHashId(hashId string) (*PaymentYandex, error) {
 	paymentYandex, err := (PaymentYandex{}).getByHashId(hashId)
 	if err != nil {

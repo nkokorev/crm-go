@@ -96,8 +96,10 @@ type Payment struct {
 	ExternalExpiresAt 	time.Time  `json:"externalExpiresAt"`  // Время, до которого вы можете бесплатно отменить или подтвердить платеж.
 	ExternalCreatedAt 	time.Time  `json:"externalCreatedAt"`  // Время создания заказа, UTC
 
-	//
-	PaymentOptions 	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_payments;preload"`
+	// PaymentOptions 	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_payments;preload"`
+	PaymentMethodId 	uint	`json:"paymentMethodId" gorm:"type:int;"`
+	PaymentMethodType 	string	`json:"paymentMethodType" gorm:"type:varchar(32);"`
+	PaymentMethod 		PaymentMethod `json:"paymentMethod" gorm:"-"`
 
 	// Внутреннее время
 	PaidAt time.Time  `json:"paidAt"`
@@ -138,6 +140,15 @@ func (payment *Payment) AfterUpdate(tx *gorm.DB) (err error) {
 }
 func (payment *Payment) AfterDelete(tx *gorm.DB) (err error) {
 	event.AsyncFire(Event{}.PaymentDeleted(payment.AccountId, payment.Id))
+	return nil
+}
+func (payment *Payment) AfterFind() (err error) {
+
+	// Get ALL Payment Methods
+	method, err := Account{Id: payment.AccountId}.GetPaymentMethod(payment.PaymentMethodType, payment.PaymentMethodId)
+	if err != nil { return err }
+	payment.PaymentMethod = method
+
 	return nil
 }
 
@@ -350,28 +361,6 @@ func (payment *Payment) delete () error {
 	return db.Where("id = ?", payment.Id).Delete(payment).Error
 }
 // ######### END CRUD Functions ############
-
-func (payment Payment) AppendPaymentOptions(paymentOptions []PaymentOption) error {
-	if err := db.Model(&payment).Association("PaymentOptions").Append(paymentOptions).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-func (payment Payment) ReplacePaymentOptions(paymentOptions []PaymentOption) error {
-	if err := db.Model(&payment).Association("PaymentOptions").Replace(paymentOptions).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-func (payment Payment) RemovePaymentOptions(paymentOptions []PaymentOption) error {
-	if err := db.Model(&payment).Association("PaymentOptions").Delete(paymentOptions).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
 
 func (account Account) GetPaymentByExternalId(externalId string) (*Payment, error) {
 	payment, err := (Payment{}).getByExternalId(externalId)

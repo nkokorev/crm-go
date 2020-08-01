@@ -180,22 +180,6 @@ func (paymentCash *PaymentCash) delete () error {
 // ######### END CRUD Functions ############
 
 // ########## Work function ############
-/*func (paymentCash PaymentCash) SetPaymentOption(paymentOption PaymentOption) error {
-	if err := db.Model(&paymentCash).Association("PaymentOption").Append(paymentOption).Error; err != nil {
-		return err
-	}
-
-	return nil
-}*/
-func (paymentCash PaymentCash) SetPaymentOption(paymentOption PaymentOption) error {
-	if err := db.Model(&paymentCash).Association("PaymentOption").Append(paymentOption).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-
-
 func (paymentCash PaymentCash) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
 	_db := db
 

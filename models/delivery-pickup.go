@@ -28,9 +28,6 @@ type DeliveryPickup struct {
 	VatCodeId	uint	`json:"vatCodeId" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
 	VatCode		VatCode	`json:"vatCode"`
 
-	// Разрешенные методы оплаты для данного типа доставки
-	PaymentOptions	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_delivery_pickups;preload"`
-
 	// загружаемый интерфейс
 	PaymentMethods		[]PaymentMethod `json:"paymentMethods" gorm:"-"`
 
@@ -202,16 +199,16 @@ func (deliveryPickup DeliveryPickup) checkMaxWeight(weight float64) error {
 }
 
 func (deliveryPickup DeliveryPickup) AppendPaymentMethods(paymentMethods []PaymentMethod) error  {
-	if err := db.Model(&deliveryPickup).Association("PaymentOptions").Append(paymentMethods).Error; err != nil {
+/*	if err := db.Model(&deliveryPickup).Association("PaymentOptions").Append(paymentMethods).Error; err != nil {
 		return err
-	}
+	}*/
 
 	return nil
 }
 func (deliveryPickup DeliveryPickup) RemovePaymentMethods(paymentMethods []PaymentMethod) error  {
-	if err := db.Model(&deliveryPickup).Association("PaymentOptions").Delete(paymentMethods).Error; err != nil {
+	/*if err := db.Model(&deliveryPickup).Association("PaymentOptions").Delete(paymentMethods).Error; err != nil {
 		return err
-	}
+	}*/
 
 	return nil
 }

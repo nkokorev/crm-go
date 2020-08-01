@@ -30,9 +30,6 @@ type DeliveryCourier struct {
 	VatCodeId	uint	`json:"vatCodeId" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
 	VatCode		VatCode	`json:"vatCode"`
 
-	// Разрешенные методы оплаты для данного типа доставки
-	PaymentOptions	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_delivery_couriers;preload"`
-
 	// загружаемый интерфейс
 	PaymentMethods		[]PaymentMethod `json:"paymentMethods" gorm:"-"`
 
@@ -96,7 +93,7 @@ func (DeliveryCourier) get(id uint) (Entity, error) {
 
 	var deliveryCourier DeliveryCourier
 
-	err := db.Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").First(&deliveryCourier, id).Error
+	err := db.Preload("PaymentSubject").Preload("VatCode").First(&deliveryCourier, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +101,7 @@ func (DeliveryCourier) get(id uint) (Entity, error) {
 }
 func (deliveryCourier *DeliveryCourier) load() error {
 
-	err := db.Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").First(deliveryCourier, deliveryCourier.Id).Error
+	err := db.Preload("PaymentSubject").Preload("VatCode").First(deliveryCourier, deliveryCourier.Id).Error
 	if err != nil {
 		return err
 	}
@@ -178,7 +175,7 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 }
 func (deliveryCourier *DeliveryCourier) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).Model(deliveryCourier).
-		Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").Omit("id", "account_id").Updates(input).Error
+		Preload("PaymentSubject").Preload("VatCode").Omit("id", "account_id").Updates(input).Error
 }
 func (deliveryCourier *DeliveryCourier) delete () error {
 	return db.Model(DeliveryCourier{}).Where("id = ?", deliveryCourier.Id).Delete(deliveryCourier).Error
@@ -208,22 +205,13 @@ func (deliveryCourier DeliveryCourier) checkMaxWeight(weight float64) error {
 }
 
 func (deliveryCourier DeliveryCourier) AppendPaymentMethods(paymentMethods []PaymentMethod) error  {
-	if err := db.Model(&deliveryCourier).Association("PaymentOptions").Append(paymentMethods).Error; err != nil {
-		return err
-	}
-
 	return nil
 }
 func (deliveryCourier DeliveryCourier) RemovePaymentMethods(paymentMethods []PaymentMethod) error  {
-	if err := db.Model(&deliveryCourier).Association("PaymentOptions").Delete(paymentMethods).Error; err != nil {
-		return err
-	}
-
 	return nil
 }
 func (deliveryCourier DeliveryCourier) ExistPaymentMethod(paymentMethod PaymentMethod) bool  {
 	return true
-	// return db.Model(&deliveryCourier).Where("payment_options.id = ?", paymentOptions.Id).Association("PaymentOptions").Find(&PaymentOption{}).Count() > 0
 }
 
 func (deliveryCourier DeliveryCourier) CreateDeliveryOrder(deliveryData DeliveryData, amount PaymentAmount, order Order) (Entity, error)  {
@@ -249,5 +237,5 @@ func (deliveryCourier DeliveryCourier) GetPreloadDb(autoUpdate bool, getModel bo
 	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
 	if getModel { _db.Model(&deliveryCourier) }
 
-	return _db.Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode")
+	return _db.Preload("PaymentSubject").Preload("VatCode")
 }
