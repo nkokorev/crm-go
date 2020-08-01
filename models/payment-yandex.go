@@ -19,6 +19,7 @@ type PaymentYandex struct {
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 	WebSiteId	uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
 
+	Code 		string `json:"code" gorm:"type:varchar(32);default:'payment_yandex'"`
 	Type 		string `json:"type" gorm:"type:varchar(32);default:'payment_yandexes';"` // Для идентификации
 
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя интеграции магазина "<name>"
@@ -130,6 +131,7 @@ func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order) (*Payment, 
 }
 func (paymentYandex PaymentYandex) GetWebSiteId() uint { return paymentYandex.WebSiteId }
 func (paymentYandex PaymentYandex) GetType() string { return "payment_yandexes" }
+func (paymentYandex PaymentYandex) GetCode() string { return "payment_yandex" }
 // ############# END OF Payment Method interface #############
 
 // ######### CRUD Functions ############

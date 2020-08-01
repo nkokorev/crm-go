@@ -16,6 +16,7 @@ type PaymentCash struct {
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 	WebSiteId	uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
 
+	Code 		string `json:"code" gorm:"type:varchar(32);default:'payment_cash'"`
 	Type 		string	`json:"type" gorm:"type:varchar(32);default:'payment_cashes';"` // Для идентификации
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя интеграции магазина "<name>"
 	Label 		string 	`json:"label" gorm:"type:varchar(255);default:'Оплата наличными при получении'"` // 'Оплата при получении'
@@ -68,6 +69,8 @@ func (paymentCash PaymentCash) CreatePaymentByOrder(order Order) (*Payment, erro
 		OwnerId: paymentCash.Id,
 		OwnerType: "payment_cashes",
 		OrderId: order.Id,
+		PaymentMethodId: order.PaymentMethodId,
+		PaymentMethodType: order.PaymentMethodType,
 	}
 
 	// создаем внутри платеж
@@ -81,6 +84,7 @@ func (paymentCash PaymentCash) CreatePaymentByOrder(order Order) (*Payment, erro
 }
 func (paymentCash PaymentCash) GetWebSiteId() uint { return paymentCash.WebSiteId }
 func (paymentCash PaymentCash) GetType() string { return "payment_cashes" }
+func (paymentCash PaymentCash) GetCode() string { return "payment_cash" }
 // ############# END OF Payment Method interface #############
 
 // ######### CRUD Functions ############

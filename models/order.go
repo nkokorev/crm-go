@@ -39,8 +39,8 @@ type Order struct {
 	OrderChannel 	OrderChannel `json:"orderChannel"`
 
 	//	Выбранный клиентом способ оплаты:
-	PaymentMethodId 	uint	`json:"paymentMethodId" gorm:"type:int;"`
-	PaymentMethodType 	string	`json:"paymentMethodType" gorm:"type:varchar(32);"`
+	PaymentMethodId 	uint	`json:"paymentMethodId" gorm:"type:int;not null;default:1"`
+	PaymentMethodType 	string	`json:"paymentMethodType" gorm:"type:varchar(32);not null;default:'payment_yandexes'"`
 	PaymentMethod 		PaymentMethod `json:"paymentMethod" gorm:"-"`
 
 	// Фиксируем стоимость заказа
@@ -126,7 +126,7 @@ func (order *Order) AfterDelete(tx *gorm.DB) (err error) {
 func (order *Order) AfterFind() (err error) {
 
 	// Get ALL Payment Methods
-	method, err := Account{Id: order.AccountId}.GetPaymentMethod(order.PaymentMethodType, order.PaymentMethodId)
+	method, err := Account{Id: order.AccountId}.GetPaymentMethodByType(order.PaymentMethodType, order.PaymentMethodId)
 	if err != nil { return err }
 	order.PaymentMethod = method
 

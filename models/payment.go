@@ -97,8 +97,8 @@ type Payment struct {
 	ExternalCreatedAt 	time.Time  `json:"externalCreatedAt"`  // Время создания заказа, UTC
 
 	// PaymentOptions 	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_payments;preload"`
-	PaymentMethodId 	uint	`json:"paymentMethodId" gorm:"type:int;"`
-	PaymentMethodType 	string	`json:"paymentMethodType" gorm:"type:varchar(32);"`
+	PaymentMethodId 	uint	`json:"paymentMethodId" gorm:"type:int;not null;default:1"`
+	PaymentMethodType 	string	`json:"paymentMethodType" gorm:"type:varchar(32);not null;default:'payment_yandexes'"`
 	PaymentMethod 		PaymentMethod `json:"paymentMethod" gorm:"-"`
 
 	// Внутреннее время
@@ -145,7 +145,7 @@ func (payment *Payment) AfterDelete(tx *gorm.DB) (err error) {
 func (payment *Payment) AfterFind() (err error) {
 
 	// Get ALL Payment Methods
-	method, err := Account{Id: payment.AccountId}.GetPaymentMethod(payment.PaymentMethodType, payment.PaymentMethodId)
+	method, err := Account{Id: payment.AccountId}.GetPaymentMethodByType(payment.PaymentMethodType, payment.PaymentMethodId)
 	if err != nil { return err }
 	payment.PaymentMethod = method
 
