@@ -39,8 +39,12 @@ type Order struct {
 	OrderChannel 	OrderChannel `json:"orderChannel"`
 
 	//	Выбранный клиентом способ оплаты:
-	PaymentOptionId 	uint	`json:"paymentOptionId" gorm:"type:int;not null;"`
-	PaymentOption PaymentOption `json:"paymentOption"`
+	PaymentMethodId 	uint	`json:"paymentMethodId" gorm:"type:int;"`
+	PaymentMethodType 	string	`json:"paymentMethodType" gorm:"type:varchar(32);"`
+	PaymentMethod 		PaymentMethod `json:"paymentMethod" gorm:"-"`
+
+	// PaymentOptionId 	uint	`json:"paymentOptionId" gorm:"type:int;not null;"`
+	// PaymentOption 		PaymentOption `json:"paymentOption"`
 
 	// Фиксируем стоимость заказа
 	AmountId  	uint	`json:"amountId" gorm:"type:int;not null;"`

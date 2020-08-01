@@ -276,24 +276,18 @@ func (webSite WebSite) AppendDeliveryMethod(entity Entity) error {
 
 // todo: пофиксить выпуск публичного ключа через UI / API
 func (webSite WebSite) GetDeliveryMethods() []Delivery {
-	// Находим все необходимые методы
-	var posts []DeliveryRussianPost
-	if err := db.Model(&DeliveryRussianPost{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").
-		Find(&posts, "account_id = ? AND web_site_id = ?", webSite.AccountId, webSite.Id).Error; err != nil {
-		return nil
-	}
 
-	var couriers []DeliveryCourier
-	if err := db.Model(&DeliveryCourier{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").
-		Find(&couriers, "account_id = ? AND web_site_id = ?", webSite.AccountId, webSite.Id).Error; err != nil {
-		return nil
-	}
+	posts := make([]DeliveryRussianPost,0)
+	posts, err := DeliveryRussianPost{}.getListByShop(webSite.AccountId, webSite.Id)
+	if err != nil { return nil }
 
-	var pickups []DeliveryPickup
-	if err := db.Model(&DeliveryPickup{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").
-		Find(&pickups, "account_id = ? AND web_site_id = ?", webSite.AccountId, webSite.Id).Error; err != nil {
-		return nil
-	}
+	couriers := make([]DeliveryCourier,0)
+	couriers, err = DeliveryCourier{}.getListByShop(webSite.AccountId, webSite.Id)
+	if err != nil { return nil }
+
+	pickups := make([]DeliveryPickup,0)
+	pickups, err = DeliveryPickup{}.getListByShop(webSite.AccountId, webSite.Id)
+	if err != nil { return nil }
 
 	deliveries := make([]Delivery, len(posts)+len(pickups)+len(couriers))
 	for i,_ := range posts {
@@ -383,7 +377,7 @@ func (webSite WebSite) CreateDelivery(input map[string]interface{}) (*Entity, er
 		return nil, utils.Error{Message: "Ошибка в коде типа создаваемого интерфейса"}
 	}
 
-	delivery.setShopId(webSite.Id)
+	delivery.setWebSiteId(webSite.Id)
 	delivery.setAccountId(webSite.AccountId)
 
 	entity, err := delivery.create()

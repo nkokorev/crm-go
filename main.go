@@ -47,8 +47,6 @@ func main() {
 	// controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
 }
 
-
-
 func runMigration(line string) {
 	switch line {
 	case "full":

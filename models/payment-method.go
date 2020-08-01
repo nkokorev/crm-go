@@ -6,9 +6,10 @@ import "github.com/nkokorev/crm-go/utils"
 type PaymentMethod interface {
 	Entity
 
-	GetCode() string
-	// создает платеж
-	CreatePayment(order Order) (*Payment, error)
+	GetType() string
+
+	// Функция запускающая процесс создания платежа под Order (Заказ)
+	CreatePaymentByOrder(order Order) (*Payment, error)
 	GetWebSiteId() uint
 }
 
@@ -49,7 +50,7 @@ func (account Account) GetPaymentMethods() ([]PaymentMethod, error) {
 	return methods, nil
 }
 
-func (account Account) GetPaymentMethod(code string, methodId uint) (PaymentMethod, error){
+func (account Account) GetPaymentMethod(code string, methodId uint) (PaymentMethod, error) {
 
 	// 1. Получаем все варианты доставки (обычно их мало). Можно через switch, но лень потом исправлять баг с новыми типом доставки
 	methods, err := account.GetPaymentMethods()
@@ -59,7 +60,7 @@ func (account Account) GetPaymentMethod(code string, methodId uint) (PaymentMeth
 	// Ищем наш вариант доставки
 	var method PaymentMethod
 	for _,v := range methods {
-		if v.GetCode() == code && v.GetId() == methodId {
+		if v.GetType() == code && v.GetId() == methodId {
 			method = v
 			break
 		}

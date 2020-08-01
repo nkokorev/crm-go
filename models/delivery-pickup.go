@@ -10,7 +10,9 @@ type DeliveryPickup struct {
 	Id     		uint   	`json:"id" gorm:"primary_key"`
 	AccountId 	uint	`json:"-" gorm:"index;not null"` // аккаунт-владелец ключа
 	WebSiteId	uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+
 	Code 		string	`json:"code" gorm:"type:varchar(16);default:'pickup';"` // Для идентификации во фронтенде
+	Type 		string	`json:"type" gorm:"type:varchar(32);default:'delivery_pickups';"` // Для идентификации
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // активен ли способ доставки
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // "Самовывоз со основного склада"
@@ -29,6 +31,9 @@ type DeliveryPickup struct {
 	// Разрешенные методы оплаты для данного типа доставки
 	PaymentOptions	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_delivery_pickups;preload"`
 
+	// загружаемый интерфейс
+	PaymentMethods		[]PaymentMethod `json:"paymentMethods" gorm:"-"`
+
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 }
@@ -45,12 +50,16 @@ func (DeliveryPickup) PgSqlCreate() {
 func (deliveryPickup DeliveryPickup) GetId() uint { return deliveryPickup.Id }
 func (deliveryPickup *DeliveryPickup) setId(id uint) { deliveryPickup.Id = id }
 func (deliveryPickup DeliveryPickup) GetAccountId() uint { return deliveryPickup.AccountId }
+func (deliveryPickup DeliveryPickup) GetWebSiteId() uint { return deliveryPickup.WebSiteId }
 func (deliveryPickup *DeliveryPickup) setAccountId(id uint) { deliveryPickup.AccountId = id }
-func (deliveryPickup *DeliveryPickup) setShopId(webSiteId uint) { deliveryPickup.WebSiteId = webSiteId }
+func (deliveryPickup *DeliveryPickup) setWebSiteId(webSiteId uint) { deliveryPickup.WebSiteId = webSiteId }
 func (DeliveryPickup) SystemEntity() bool { return false }
 
 func (deliveryPickup DeliveryPickup) GetCode() string {
 	return deliveryPickup.Code
+}
+func (deliveryPickup DeliveryPickup) GetType() string {
+	return deliveryPickup.Type
 }
 // ############# Entity interface #############
 
@@ -58,6 +67,15 @@ func (deliveryPickup DeliveryPickup) GetCode() string {
 // ###### GORM Functional #######
 func (deliveryPickup *DeliveryPickup) BeforeCreate(scope *gorm.Scope) error {
 	deliveryPickup.Id = 0
+	return nil
+}
+func (deliveryPickup *DeliveryPickup) AfterFind() (err error) {
+
+	// Get ALL Payment Methods
+	methods, err := GetPaymentMethodsByDelivery(deliveryPickup)
+	if err != nil { return err }
+	deliveryPickup.PaymentMethods = methods
+
 	return nil
 }
 // ###### End of GORM Functional #######
@@ -74,30 +92,42 @@ func (deliveryPickup DeliveryPickup) create() (Entity, error)  {
 
 	return entity, nil
 }
-
 func (DeliveryPickup) get(id uint) (Entity, error) {
 
 	var deliveryPickup DeliveryPickup
 
-	err := db.Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").First(&deliveryPickup, id).Error
+	err := db.Preload("PaymentSubject").Preload("VatCode").First(&deliveryPickup, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &deliveryPickup, nil
 }
-
 func (deliveryPickup *DeliveryPickup) load() error {
 
-	err := db.Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").First(deliveryPickup, deliveryPickup.Id).Error
+	err := db.Preload("PaymentSubject").Preload("VatCode").First(deliveryPickup, deliveryPickup.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-
 func (DeliveryPickup) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return DeliveryPickup{}.getPaginationList(accountId, 0, 100, sortBy, "")
 }
+
+func (DeliveryPickup) getListByShop(accountId, websiteId uint) ([]DeliveryPickup, error) {
+
+	deliveryPickups := make([]DeliveryPickup,0)
+
+	err := DeliveryPickup{}.GetPreloadDb(false,false).
+		Limit(100).Where( "account_id = ? AND web_site_id = ?", accountId, websiteId).
+		Find(&deliveryPickups).Error
+	if err != nil && err != gorm.ErrRecordNotFound{
+		return nil, err
+	}
+
+	return deliveryPickups, nil
+}
+
 func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	deliveryPickups := make([]DeliveryPickup,0)
@@ -109,7 +139,7 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortB
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&DeliveryPickup{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := DeliveryPickup{}.GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryPickups, "name ILIKE ? OR code ILIKE ? OR price ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -125,7 +155,7 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortB
 
 	} else {
 
-		err := db.Model(&DeliveryPickup{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := DeliveryPickup{}.GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryPickups).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -146,13 +176,11 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortB
 
 	return entities, total, nil
 }
-
 func (deliveryPickup *DeliveryPickup) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).Model(deliveryPickup).
-		Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").
+		Preload("PaymentSubject").Preload("VatCode").
 		Omit("id", "account_id").Updates(input).Error
 }
-
 func (deliveryPickup *DeliveryPickup) delete () error {
 	return db.Model(DeliveryPickup{}).Where("id = ?", deliveryPickup.Id).Delete(deliveryPickup).Error
 }
@@ -165,32 +193,31 @@ func (deliveryPickup DeliveryPickup) GetName () string {
 func (deliveryPickup DeliveryPickup) GetVatCode () VatCode {
 	return deliveryPickup.VatCode
 }
-
 func (deliveryPickup DeliveryPickup) CalculateDelivery(deliveryData DeliveryData, weight float64) (float64, error) {
 	return deliveryPickup.Price, nil
 	// deliveryData.TotalCost = 0
 }
-
 func (deliveryPickup DeliveryPickup) checkMaxWeight(weight float64) error {
 	return nil
 }
 
-func (deliveryPickup DeliveryPickup) AppendPaymentOptions(paymentOptions []PaymentOption) error  {
-	if err := db.Model(&deliveryPickup).Association("PaymentOptions").Append(paymentOptions).Error; err != nil {
+func (deliveryPickup DeliveryPickup) AppendPaymentMethods(paymentMethods []PaymentMethod) error  {
+	if err := db.Model(&deliveryPickup).Association("PaymentOptions").Append(paymentMethods).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
-func (deliveryPickup DeliveryPickup) RemovePaymentOptions(paymentOptions []PaymentOption) error  {
-	if err := db.Model(&deliveryPickup).Association("PaymentOptions").Delete(paymentOptions).Error; err != nil {
+func (deliveryPickup DeliveryPickup) RemovePaymentMethods(paymentMethods []PaymentMethod) error  {
+	if err := db.Model(&deliveryPickup).Association("PaymentOptions").Delete(paymentMethods).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
-func (deliveryPickup DeliveryPickup) ExistPaymentOption(paymentOptions PaymentOption) bool  {
-	return db.Model(&deliveryPickup).Where("payment_options.id = ?", paymentOptions.Id).Association("PaymentOptions").Find(&PaymentOption{}).Count() > 0
+func (deliveryPickup DeliveryPickup) ExistPaymentMethod(paymentMethod PaymentMethod) bool  {
+	return true
+	// return db.Model(&deliveryPickup).Where("payment_options.id = ?", paymentOptions.Id).Association("PaymentOptions").Find(&PaymentOption{}).Count() > 0
 }
 
 func (deliveryPickup DeliveryPickup) CreateDeliveryOrder(deliveryData DeliveryData, amount PaymentAmount, order Order) (Entity, error)  {
@@ -208,4 +235,13 @@ func (deliveryPickup DeliveryPickup) CreateDeliveryOrder(deliveryData DeliveryDa
 
 	return deliveryOrder.create()
 
+}
+
+func (deliveryPickup DeliveryPickup) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+	_db := db
+
+	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
+	if getModel { _db.Model(&deliveryPickup) }
+
+	return _db.Preload("PaymentSubject").Preload("VatCode")
 }

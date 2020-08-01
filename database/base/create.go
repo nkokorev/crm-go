@@ -1675,32 +1675,17 @@ func UploadTestDataPart_IV()  {
 		}
 	}
 
-	var paymentCash models.PaymentOption
-	if err := airoAccount.LoadEntity(&paymentCash, 1); err != nil {
-		log.Fatal(err)
-	}
-
-	var paymentOnline models.PaymentOption
-	if err := airoAccount.LoadEntity(&paymentOnline, 2); err != nil {
-		log.Fatal(err)
-	}
-
 /////////
 	var webSite models.WebSite
 	if err := airoAccount.LoadEntity(&webSite, 5); err != nil { log.Fatal(err)}
 
-	if err := webSite.AppendPaymentOptions([]models.PaymentOption{
-		{AccountId: 5, Id: 1},{AccountId: 5, Id: 2},
-	}); err != nil {
-		log.Fatal(err)
-	}
 	////////////
 
 	// Создаем способ оплаты YandexPayment
 	entityPayment, err := airoAccount.CreateEntity(
 		&models.PaymentYandex{
-			Name:   "Онлайн оплата на сайте",
-			Label:   "Онлайн-оплата картой",
+			Name:   "Онлайн-оплата на сайте",
+			Label:   "Онлайн-оплата банковской картой",
 			ApiKey: "test_f56EEL_m2Ky7CJnnRjSpb4JLMhiGoGD3X6ScMHGPruM",
 			ShopId: "730509",
 			ReturnUrl: "https://airoclimate.ru/payment-return",
@@ -1716,15 +1701,11 @@ func UploadTestDataPart_IV()  {
 		log.Fatalf("Не удалось найти entityPayment: ", err)
 	}
 
-	if err := _paymentYandex.SetPaymentOption(paymentOnline); err != nil {
-		log.Fatal(err)
-	}
-
 	// Создаем способ оплаты PaymentCash
 	entityPayment2, err := airoAccount.CreateEntity(
 		&models.PaymentCash{
 			Name:   "Оплата наличными при самовывозе",
-			Label:   "Оплата наличными (при получении)",
+			Label:   "Оплата наличными при получении",
 			Enabled: true,
 		})
 	if err != nil {
@@ -1735,18 +1716,14 @@ func UploadTestDataPart_IV()  {
 		log.Fatalf("Не удалось найти paymentCash: ", err)
 	}
 
-	if err := _paymentCash.SetPaymentOption(paymentCash); err != nil {
-		log.Fatal(err)
-	}
-
 	deliveries := webSite.GetDeliveryMethods()
 	for i,v := range(deliveries) {
 		if v.GetCode() == "russianPost" {
-			if err := deliveries[i].AppendPaymentOptions([]models.PaymentOption{paymentOnline}); err != nil {
+			if err := deliveries[i].AppendPaymentMethods([]models.PaymentMethod{&_paymentYandex}); err != nil {
 				return
 			}
 		} else {
-			if err := deliveries[i].AppendPaymentOptions([]models.PaymentOption{paymentCash, paymentOnline}); err != nil {
+			if err := deliveries[i].AppendPaymentMethods([]models.PaymentMethod{&_paymentCash, &_paymentYandex}); err != nil {
 				return
 			}
 		}
@@ -1759,6 +1736,14 @@ func Migrate_I() {
 	pool := models.GetPool()
 
 	// 31.07.2020
+	models.Payment2Delivery{}.PgSqlCreate()
+
+
 	pool.AutoMigrate(&models.PaymentYandex{})
 	pool.AutoMigrate(&models.PaymentCash{})
+	pool.AutoMigrate(&models.Order{})
+
+	pool.AutoMigrate(&models.DeliveryCourier{})
+	pool.AutoMigrate(&models.DeliveryPickup{})
+	pool.AutoMigrate(&models.DeliveryRussianPost{})
 }

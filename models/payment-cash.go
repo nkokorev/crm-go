@@ -11,23 +11,23 @@ import (
 // Условный метод оплаты кешем. Это либо нал, либо перевод на карту.
 type PaymentCash struct {
 	Id     		uint   	`json:"id" gorm:"primary_key"`
+
 	HashId 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 	WebSiteId	uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
 
-	Code 		string	`json:"code" gorm:"type:varchar(16);default:'payment_cashes';"` // Для идентификации
+	Type 		string	`json:"type" gorm:"type:varchar(32);default:'payment_cashes';"` // Для идентификации
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя интеграции магазина "<name>"
-	Label 		string 	`json:"label" gorm:"type:varchar(255);default:'Оплата наличными'"` // 'Оплата при получении'
+	Label 		string 	`json:"label" gorm:"type:varchar(255);default:'Оплата наличными при получении'"` // 'Оплата при получении'
 
 	// Включен ли данный способ оплаты ??
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"`
 
 	WebSite		WebSite `json:"webSite" gorm:"preload"`
-
 	// !!! deprecated !!!
+	
 	// PaymentOption   PaymentOption `gorm:"polymorphic:Owner;"`
 }
-
 func (PaymentCash) PgSqlCreate() {
 	db.CreateTable(&PaymentCash{})
 	db.Model(&PaymentCash{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
@@ -38,16 +38,17 @@ func (paymentCash *PaymentCash) BeforeCreate(scope *gorm.Scope) error {
 	paymentCash.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	return nil
 }
+
 // ############# Entity interface #############
 func (paymentCash PaymentCash) GetId() uint { return paymentCash.Id }
 func (paymentCash *PaymentCash) setId(id uint) { paymentCash.Id = id }
 func (paymentCash PaymentCash) GetAccountId() uint { return paymentCash.AccountId }
 func (paymentCash *PaymentCash) setAccountId(id uint) { paymentCash.AccountId = id }
 func (PaymentCash) SystemEntity() bool { return false }
-
 // ############# Entity interface #############
+
 // ############# Payment Method interface #############
-func (paymentCash PaymentCash) CreatePayment(order Order) (*Payment, error) {
+func (paymentCash PaymentCash) CreatePaymentByOrder(order Order) (*Payment, error) {
 
 	_p := Payment {
 		AccountId: paymentCash.AccountId,
@@ -79,7 +80,7 @@ func (paymentCash PaymentCash) CreatePayment(order Order) (*Payment, error) {
 	return payment, nil
 }
 func (paymentCash PaymentCash) GetWebSiteId() uint { return paymentCash.WebSiteId }
-func (paymentCash PaymentCash) GetCode() string { return paymentCash.Code }
+func (paymentCash PaymentCash) GetType() string { return "payment_cashes" }
 // ############# END OF Payment Method interface #############
 
 // ######### CRUD Functions ############
@@ -97,7 +98,6 @@ func (paymentCash PaymentCash) create() (Entity, error)  {
 
 	return entity, nil
 }
-
 func (PaymentCash) get(id uint) (Entity, error) {
 
 	var paymentCash PaymentCash
@@ -119,11 +119,9 @@ func (paymentCash *PaymentCash) load() error {
 	}
 	return nil
 }
-
 func (PaymentCash) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return  PaymentCash{}.getPaginationList(accountId, 0, 100, sortBy, "")
 }
-
 func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	paymentCashs := make([]PaymentCash,0)
@@ -172,20 +170,23 @@ func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	return entities, total, nil
 }
-
 func (paymentCash *PaymentCash) update(input map[string]interface{}) error {
 	return paymentCash.GetPreloadDb(true,true).
 		Model(paymentCash).Where("id", paymentCash.Id).Omit("id", "account_id").Updates(input).Error
 }
-
 func (paymentCash *PaymentCash) delete () error {
 	return paymentCash.GetPreloadDb(true,true).Where("id = ?", paymentCash.Id).Delete(paymentCash).Error
 }
 // ######### END CRUD Functions ############
 
-
 // ########## Work function ############
+/*func (paymentCash PaymentCash) SetPaymentOption(paymentOption PaymentOption) error {
+	if err := db.Model(&paymentCash).Association("PaymentOption").Append(paymentOption).Error; err != nil {
+		return err
+	}
 
+	return nil
+}*/
 func (paymentCash PaymentCash) SetPaymentOption(paymentOption PaymentOption) error {
 	if err := db.Model(&paymentCash).Association("PaymentOption").Append(paymentOption).Error; err != nil {
 		return err
@@ -194,6 +195,7 @@ func (paymentCash PaymentCash) SetPaymentOption(paymentOption PaymentOption) err
 	return nil
 }
 
+
 func (paymentCash PaymentCash) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
 	_db := db
 
@@ -201,4 +203,21 @@ func (paymentCash PaymentCash) GetPreloadDb(autoUpdate bool, getModel bool) *gor
 	if getModel { _db.Model(&paymentCash) }
 
 	return _db.Preload("WebSite")
+}
+
+func (PaymentCash) GetListByWebSiteAndDelivery(delivery Delivery) ([]PaymentCash, error) {
+
+	methods := make([]PaymentCash,0)
+
+	err := db.Table("payment_to_delivery").
+		Joins("LEFT JOIN payment_cashes ON payment_cashes.id = payment_to_delivery.payment_id AND payment_cashes.type = payment_to_delivery.payment_type").
+		Select("payment_to_delivery.*, payment_cashes.*").
+		Where("payment_to_delivery.account_id = ? AND payment_to_delivery.web_site_id = ? " +
+			"AND payment_to_delivery.delivery_id = ? AND payment_to_delivery.delivery_type = ? " +
+			"AND payment_to_delivery.payment_type = ?",
+			delivery.GetAccountId(), delivery.GetWebSiteId(), delivery.GetId(), delivery.GetType(), PaymentCash{}.GetType()).Find(&methods).Error
+
+	if err != nil { return nil, err }
+
+	return methods,nil
 }

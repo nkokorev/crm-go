@@ -15,7 +15,8 @@ type DeliveryRussianPost struct {
 	AccountId 	uint	`json:"-" gorm:"index;not null"` // аккаунт-владелец ключа
 	WebSiteId		uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
 	Code 		string	`json:"code" gorm:"type:varchar(16);default:'russianPost';"` // Для идентификации во фронтенде
-
+	Type 		string	`json:"type" gorm:"type:varchar(32);default:'delivery_russian_posts';"` // Для идентификации
+	
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // активен ли способ доставки
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // "Курьерская доставка", "Почта России", "Самовывоз"
 
@@ -44,6 +45,9 @@ type DeliveryRussianPost struct {
 	// Разрешенные методы оплаты для данного типа доставки
 	PaymentOptions	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_delivery_russian_posts;preload"`
 
+	// загружаемый интерфейс
+	PaymentMethods		[]PaymentMethod `json:"paymentMethods" gorm:"-"`
+
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 }
@@ -60,18 +64,30 @@ func (DeliveryRussianPost) PgSqlCreate() {
 func (deliveryRussianPost DeliveryRussianPost) GetId() uint { return deliveryRussianPost.Id }
 func (deliveryRussianPost *DeliveryRussianPost) setId(id uint) { deliveryRussianPost.Id = id }
 func (deliveryRussianPost DeliveryRussianPost) GetAccountId() uint { return deliveryRussianPost.AccountId }
+func (deliveryRussianPost DeliveryRussianPost) GetWebSiteId() uint { return deliveryRussianPost.WebSiteId }
 func (deliveryRussianPost *DeliveryRussianPost) setAccountId(id uint) { deliveryRussianPost.AccountId = id }
-func (deliveryRussianPost *DeliveryRussianPost) setShopId(webSiteId uint) { deliveryRussianPost.WebSiteId = webSiteId }
+func (deliveryRussianPost *DeliveryRussianPost) setWebSiteId(webSiteId uint) { deliveryRussianPost.WebSiteId = webSiteId }
 func (deliveryRussianPost DeliveryRussianPost) SystemEntity() bool { return false }
 
 func (deliveryRussianPost DeliveryRussianPost) GetCode() string {
 	return deliveryRussianPost.Code
+}
+func (deliveryRussianPost DeliveryRussianPost) GetType() string {
+	return deliveryRussianPost.Type
 }
 // ############# Entity interface #############
 
 // ###### GORM Functional #######
 func (deliveryRussianPost *DeliveryRussianPost) BeforeCreate(scope *gorm.Scope) error {
 	deliveryRussianPost.Id = 0
+	return nil
+}
+func (deliveryRussianPost *DeliveryRussianPost) AfterFind() (err error) {
+
+	methods, err := GetPaymentMethodsByDelivery(deliveryRussianPost)
+	if err != nil { return err }
+	deliveryRussianPost.PaymentMethods = methods
+
 	return nil
 }
 // ###### End of GORM Functional #######
@@ -111,6 +127,19 @@ func (deliveryRussianPost *DeliveryRussianPost) load() error {
 func (DeliveryRussianPost) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return DeliveryRussianPost{}.getPaginationList(accountId, 0, 100, sortBy, "")
 }
+func (DeliveryRussianPost) getListByShop(accountId, websiteId uint) ([]DeliveryRussianPost, error) {
+
+	deliveryRussianPosts := make([]DeliveryRussianPost,0)
+
+	err := DeliveryRussianPost{}.GetPreloadDb(false,false).
+		Limit(100).Where( "account_id = ? AND web_site_id = ?", accountId, websiteId).
+		Find(&deliveryRussianPosts).Error
+	if err != nil && err != gorm.ErrRecordNotFound{
+		return nil, err
+	}
+
+	return deliveryRussianPosts, nil
+}
 
 func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
@@ -123,7 +152,7 @@ func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, 
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&DeliveryRussianPost{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := DeliveryRussianPost{}.GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryRussianPosts, "name ILIKE ? OR code ILIKE ? OR postal_code_from ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -139,7 +168,7 @@ func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, 
 
 	} else {
 
-		err := db.Model(&DeliveryRussianPost{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := DeliveryRussianPost{}.GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryRussianPosts).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -265,22 +294,24 @@ func (deliveryRussianPost DeliveryRussianPost) GetVatCode () VatCode {
 	return deliveryRussianPost.VatCode
 }
 
-func (deliveryRussianPost DeliveryRussianPost) AppendPaymentOptions(paymentOptions []PaymentOption) error  {
-	if err := db.Model(&deliveryRussianPost).Association("PaymentOptions").Append(paymentOptions).Error; err != nil {
+func (deliveryRussianPost DeliveryRussianPost) AppendPaymentMethods(paymentMethods []PaymentMethod) error  {
+	if err := db.Model(&deliveryRussianPost).Association("PaymentOptions").Append(paymentMethods).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
-func (deliveryRussianPost DeliveryRussianPost) RemovePaymentOptions(paymentOptions []PaymentOption) error  {
-	if err := db.Model(&deliveryRussianPost).Association("PaymentOptions").Delete(paymentOptions).Error; err != nil {
+
+func (deliveryRussianPost DeliveryRussianPost) RemovePaymentMethods(paymentMethods []PaymentMethod) error  {
+	if err := db.Model(&deliveryRussianPost).Association("PaymentOptions").Delete(paymentMethods).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
-func (deliveryRussianPost DeliveryRussianPost) ExistPaymentOption(paymentOptions PaymentOption) bool  {
-	return db.Model(&deliveryRussianPost).Where("payment_options.id = ?", paymentOptions.Id).Association("PaymentOptions").Find(&PaymentOption{}).Count() > 0
+func (deliveryRussianPost DeliveryRussianPost) ExistPaymentMethod(paymentMethod PaymentMethod) bool  {
+	return true
+	// return db.Model(&deliveryRussianPost).Where("payment_options.id = ?", paymentOptions.Id).Association("PaymentOptions").Find(&PaymentOption{}).Count() > 0
 }
 
 func (deliveryRussianPost DeliveryRussianPost) CreateDeliveryOrder(deliveryData DeliveryData, amount PaymentAmount,order Order) (Entity, error)  {
@@ -298,4 +329,13 @@ func (deliveryRussianPost DeliveryRussianPost) CreateDeliveryOrder(deliveryData 
 
 	return deliveryOrder.create()
 
+}
+
+func (deliveryRussianPost DeliveryRussianPost) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+	_db := db
+
+	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
+	if getModel { _db.Model(&deliveryRussianPost) }
+
+	return _db.Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode")
 }

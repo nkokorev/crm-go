@@ -5,21 +5,26 @@ import "github.com/nkokorev/crm-go/utils"
 type Delivery interface {
 	Entity
 	GetCode() string
+	GetType() string
 	GetName() string
 	GetVatCode() VatCode
+	GetWebSiteId() uint
 
 	CalculateDelivery(DeliveryData, float64) (float64, error) // weight в кг
 	checkMaxWeight(float64) error // проверяет макс вес
 
-	setShopId(uint)
-	AppendPaymentOptions([]PaymentOption) error
-	RemovePaymentOptions([]PaymentOption) error
-	ExistPaymentOption(PaymentOption) bool
+	// setShopId(uint)
+	setWebSiteId(uint)
+	// AppendPaymentOptions([]PaymentOption) error
+	// RemovePaymentOptions([]PaymentOption) error
+
 
 	// new 31.07.2020
-	/*AppendPaymentMethods([]PaymentMethod) error
+	AppendPaymentMethods([]PaymentMethod) error
 	RemovePaymentMethods([]PaymentMethod) error
-	ExistPaymentMethod(PaymentMethod) bool*/
+	ExistPaymentMethod(method PaymentMethod) bool
+
+	// getListByShop(accountId, websiteId uint) (interface{}, error)
 
 	CreateDeliveryOrder(DeliveryData, PaymentAmount, Order) (Entity, error)
 }
@@ -101,4 +106,23 @@ func (account Account) GetDeliveryByCode(code string, methodId uint) (Delivery, 
 	}
 
 	return delivery, nil
+}
+
+// Для получения методов оплаты 
+func GetPaymentMethodsByDelivery(delivery Delivery) ([]PaymentMethod, error){
+	// Get ALL Payment Methods
+	paymentCashes, err := PaymentCash{}.GetListByWebSiteAndDelivery(delivery)
+	if err != nil { return nil, err }
+	paymentYandexes, err := PaymentYandex{}.GetListByWebSiteAndDelivery(delivery)
+	if err != nil { return nil, err }
+
+
+	methods := make([]PaymentMethod, len(paymentYandexes) + len(paymentCashes))
+	for i := range paymentCashes {
+		methods[i] = &paymentCashes[i]
+	}
+	for i := range paymentYandexes {
+		methods[i + len(paymentCashes)] = &paymentYandexes[i]
+	}
+	return methods, nil
 }
