@@ -144,10 +144,14 @@ func (payment *Payment) AfterDelete(tx *gorm.DB) (err error) {
 }
 func (payment *Payment) AfterFind() (err error) {
 
-	// Get ALL Payment Methods
-	method, err := Account{Id: payment.AccountId}.GetPaymentMethodByType(payment.PaymentMethodType, payment.PaymentMethodId)
-	if err != nil { return err }
-	payment.PaymentMethod = method
+
+	if payment.PaymentMethodType != "" && payment.PaymentMethodId > 0 {
+		// Get ALL Payment Methods
+		method, err := Account{Id: payment.AccountId}.GetPaymentMethodByType(payment.PaymentMethodType, payment.PaymentMethodId)
+		if err != nil { return err }
+		payment.PaymentMethod = method
+	}
+
 
 	return nil
 }

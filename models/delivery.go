@@ -54,19 +54,19 @@ type CartData struct {
 func (account Account) GetDeliveryMethods() []Delivery {
 	// Находим все необходимые методы
 	var posts []DeliveryRussianPost
-	if err := db.Model(&DeliveryRussianPost{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").
+	if err := db.Model(&DeliveryRussianPost{}).Preload("PaymentSubject").Preload("VatCode").
 		Find(&posts, "account_id = ?", account.Id).Error; err != nil {
 		return nil
 	}
 
 	var couriers []DeliveryCourier
-	if err := db.Model(&DeliveryCourier{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").
+	if err := db.Model(&DeliveryCourier{}).Preload("PaymentSubject").Preload("VatCode").
 		Find(&couriers, "account_id = ?", account.Id).Error; err != nil {
 		return nil
 	}
 
 	var pickups []DeliveryPickup
-	if err := db.Model(&DeliveryPickup{}).Preload("PaymentOptions").Preload("PaymentSubject").Preload("VatCode").
+	if err := db.Model(&DeliveryPickup{}).Preload("PaymentSubject").Preload("VatCode").
 		Find(&pickups, "account_id = ?", account.Id).Error; err != nil {
 		return nil
 	}

@@ -199,7 +199,7 @@ func (PaymentCash) GetListByWebSiteAndDelivery(delivery Delivery) ([]PaymentCash
 
 	err := db.Table("payment_to_delivery").
 		Joins("LEFT JOIN payment_cashes ON payment_cashes.id = payment_to_delivery.payment_id AND payment_cashes.type = payment_to_delivery.payment_type").
-		Select("payment_to_delivery.*, payment_cashes.*").
+		Select("payment_to_delivery.account_id, payment_to_delivery.web_site_id, payment_to_delivery.payment_id, payment_to_delivery.payment_type, payment_to_delivery.delivery_id, payment_to_delivery.delivery_type, payment_cashes.*").
 		Where("payment_to_delivery.account_id = ? AND payment_to_delivery.web_site_id = ? " +
 			"AND payment_to_delivery.delivery_id = ? AND payment_to_delivery.delivery_type = ? " +
 			"AND payment_to_delivery.payment_type = ?",

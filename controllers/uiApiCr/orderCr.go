@@ -123,7 +123,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
     	
 	paymentMethod, err := account.GetPaymentMethodByCode(input.PaymentMethod.Code, input.PaymentMethod.Id)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска способа оплаты", Errors: map[string]interface{}{"orderChannel":"Способ оплаты не найден"}}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска способа оплаты", Errors: map[string]interface{}{"paymentMethod":"Способ оплаты не найден"}}))
 		return
 	}
 
@@ -305,8 +305,8 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	_order.CartItems = cartItems
 	_order.PaymentMethodId = paymentMethod.GetId()
 	_order.PaymentMethodType = paymentMethod.GetType()
+	
 
-	fmt.Println("СОздаем заказ:% ")
 	// Создаем order
 	orderEntity, err := account.CreateEntity(&_order)
 	if err != nil {

@@ -1,7 +1,7 @@
 package models
 
 import (
-	"fmt"
+	"errors"
 	"github.com/nkokorev/crm-go/utils"
 )
 
@@ -44,10 +44,10 @@ func (account Account) GetPaymentMethods() ([]PaymentMethod, error) {
 	}
 
 	methods := make([]PaymentMethod, len(paymentCashes)+len(paymentYandexes))
-	for i,_ := range paymentCashes {
+	for i := range paymentCashes {
 		methods[i] = &paymentCashes[i]
 	}
-	for i,_ := range paymentYandexes {
+	for i := range paymentYandexes {
 		methods[i+len(paymentCashes)] = &paymentYandexes[i]
 	}
 
@@ -55,18 +55,21 @@ func (account Account) GetPaymentMethods() ([]PaymentMethod, error) {
 }
 
 func (account Account) GetPaymentMethodByCode(code string, methodId uint) (PaymentMethod, error) {
-
+	
 	if code == "" || methodId < 1{
-		return nil, utils.Error{Message: "Не верно указаны данные типа оплаты"}
+		return nil, utils.Error{Message: "Не верно указан код типа оплаты"}
 	}
 	// 1. Получаем все варианты доставки (обычно их мало). Можно через switch, но лень потом исправлять баг с новыми типом доставки
 	methods, err := account.GetPaymentMethods()
 	if err != nil { return nil, err}
 
 
+
 	// Ищем наш вариант доставки
 	var method PaymentMethod
 	for _,v := range methods {
+		// fmt.Println("Code: ", v.GetCode(), code)
+		// fmt.Println("v.GetId(): ", v.GetId(), methodId)
 		if v.GetCode() == code && v.GetId() == methodId {
 			method = v
 			break
@@ -83,11 +86,9 @@ func (account Account) GetPaymentMethodByCode(code string, methodId uint) (Payme
 
 func (account Account) GetPaymentMethodByType(codeType string, methodId uint) (PaymentMethod, error) {
 
-	fmt.Println("GetPaymentMethodByCode")
-	fmt.Println(codeType, methodId)
-	
 	if codeType == "" || methodId < 1{
-		return nil, utils.Error{Message: "Не верно указаны данные типа оплаты"}
+		return nil, errors.New("Не верно указаны данные типа оплаты")
+		// return nil, utils.Error{Message: "Не верно указаны данные типа оплаты"}
 	}
 	// 1. Получаем все варианты доставки (обычно их мало). Можно через switch, но лень потом исправлять баг с новыми типом доставки
 	methods, err := account.GetPaymentMethods()

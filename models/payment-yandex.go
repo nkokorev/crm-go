@@ -188,7 +188,7 @@ func (PaymentYandex) GetListByWebSiteAndDelivery(delivery Delivery) ([]PaymentYa
 
 	err := db.Table("payment_to_delivery").
 		Joins("LEFT JOIN payment_yandexes ON payment_yandexes.id = payment_to_delivery.payment_id AND payment_yandexes.type = payment_to_delivery.payment_type").
-		Select("payment_to_delivery.*, payment_yandexes.*").
+		Select("payment_to_delivery.account_id, payment_to_delivery.web_site_id, payment_to_delivery.payment_id, payment_to_delivery.payment_type, payment_to_delivery.delivery_id, payment_to_delivery.delivery_type, payment_yandexes.*").
 		Where("payment_to_delivery.account_id = ? AND payment_to_delivery.web_site_id = ? " +
 			"AND payment_to_delivery.delivery_id = ? AND payment_to_delivery.delivery_type = ? " +
 			"AND payment_to_delivery.payment_type = ?",
