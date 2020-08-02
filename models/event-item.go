@@ -74,11 +74,13 @@ func (EventItem) PgSqlCreate() {
 		{Name: "Заказ выполнен", 	Code: "OrderCompleted", Enabled: true, Description: "Заказ выполнен успешно. В контексте глобальный id заказа."},
 		{Name: "Заказ отменен", 	Code: "OrderCanceled", Enabled: true, Description: "Заказ отменен по каким-то причинам. В контексте глобальный id заказа."},
 
-		{Name: "Создано задание на доставку", 	Code: "DeliveryOrderCreated", Enabled: true, Description: "В системе зарегистрировано новое задание на доставку. Это может быть и самовывоз и доставка Почтой России. В контексте, указан глобальный id доставки."},
-		{Name: "Задание на доставку обновлены", Code: "DeliveryOrderUpdated", Enabled: true, Description: "Какие-то данные по заказу обновились. В контексте глобальный id заказа."},
-		{Name: "Доставка удалена", 		Code: "DeliveryOrderDeleted", Enabled: true, Description: "Задание на доставку удалено из системы. В контексте глобальный id заказа."},
-		{Name: "Доставка выполнена", 	Code: "DeliveryOrderCompleted", Enabled: true, Description: "Задание на доставку успешно завершено. В контексте глобальный id заказа."},
-		{Name: "Доставка отменена", 	Code: "DeliveryOrderCanceled", Enabled: true, Description: "Задание на доставку отменено по каким-то причинам. В контексте глобальный id заказа."},
+		{Name: "Создано задание на доставку", 	Code: "DeliveryOrderCreated", Enabled: true, Description: "В системе зарегистрировано новое задание на доставку. Это может быть и самовывоз и доставка Почтой России."},
+		{Name: "Задание на доставку обновлены", Code: "DeliveryOrderUpdated", Enabled: true, Description: "Какие-то данные по заказу обновились."},
+		{Name: "Доставка согласована", 			Code: "DeliveryOrderInProcess", Enabled: true, Description: "Задание на доставку в процессе доставки."},
+		{Name: "Доставка выполнена", 	Code: "DeliveryOrderCompleted", Enabled: true, Description: "Задание на доставку успешно завершено."},
+		{Name: "Доставка отменена", 	Code: "DeliveryOrderCanceled", Enabled: true, Description: "Задание на доставку отменено по каким-то причинам."},
+		{Name: "У доставки обновился статус", 	Code: "DeliveryOrderStatusUpdated", Enabled: true, Description: "Задание на доставку обновило свой статус."},
+		{Name: "Доставка удалена", 		Code: "DeliveryOrderDeleted", Enabled: true, Description: "Задание на доставку удалено из системы."},
 
 		{Name: "Создан платеж", 	Code: "PaymentCreated", Enabled: true, Description: "Создан объект - платеж (payment). В контексте глобальный id доставки."},
 		{Name: "Платеж обновлен", Code: "PaymentUpdated", Enabled: true, Description: "Какие-то данные платежа изменены. В контексте глобальный id заказа."},

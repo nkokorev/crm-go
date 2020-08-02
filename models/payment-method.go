@@ -14,9 +14,10 @@ type PaymentMethod interface {
 
 	// Функция запускающая процесс создания платежа под Order (Заказ)
 	CreatePaymentByOrder(order Order, mode PaymentMode) (*Payment, error)
+	PrepaymentCheck(payment *Payment, order Order) (*Payment, error)
 	GetWebSiteId() uint
 
-	// нужно ли разносить оплату и доставку
+	// true - моментальная передача товара, false- разнесено во времени; нужно ли разносить оплату и доставку
 	IsInstantDelivery() bool
 }
 

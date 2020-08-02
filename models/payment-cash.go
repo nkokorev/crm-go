@@ -85,6 +85,9 @@ func (paymentCash PaymentCash) CreatePaymentByOrder(order Order, mode PaymentMod
 
 	return payment, nil
 }
+func (paymentCash PaymentCash) PrepaymentCheck(payment *Payment, order Order) (*Payment, error){
+	 return payment, nil
+}
 func (paymentCash PaymentCash) GetWebSiteId() uint { return paymentCash.WebSiteId }
 func (paymentCash PaymentCash) GetType() string { return "payment_cashes" }
 func (paymentCash PaymentCash) GetCode() string { return "payment_cash" }

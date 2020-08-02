@@ -166,8 +166,6 @@ func (user *User) update (input map[string]interface{}) error {
 		 return err
 	}
 	
-	// event.AsyncFire(Event{}.UserUpdated(user.IssuerAccountId, user.Id))
-
 	return nil
 }
 func (user *User) save () error {
@@ -212,6 +210,7 @@ func (account Account) UpdateUser(userId uint, input map[string]interface{}) (*U
 	err = user.update(input)
 	if err != nil { return nil, err }
 
+	// todo: возможно стоит проверить _user => user
 	// Если флаг подписки был изменен
 	if ok && (_newStatusSubscribed != _user.Subscribed) {
 		// fmt.Println("Статус обновлен!")
@@ -478,7 +477,6 @@ func (user User) CreateAccount(input Account) (*Account,error) {
 
 	return account, nil
 }
-
 
 // удаляет аккаунт, если пользователь имеет такие права
 func (user *User) DeleteAccount(a *Account) error {

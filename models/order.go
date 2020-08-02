@@ -292,8 +292,10 @@ func (order *Order) AppendProducts (products []Product) error {
 func (order *Order) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
 	_db := db
 
-	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
-	if getModel { _db.Model(&order) }
+	if autoUpdate { _db = _db.Set("gorm:association_autoupdate", false) }
+	if getModel { _db = _db.Model(order) } else {
+		_db = _db.Model(&Order{})
+	}
 
 	return _db.Preload("OrderStatus").Preload("Payment").Preload("Customer").Preload("DeliveryOrder").Preload("DeliveryOrder.Amount").
 		Preload("Amount").Preload("CartItems").Preload("CartItems.Product").Preload("CartItems.Amount").Preload("CartItems.PaymentMode").

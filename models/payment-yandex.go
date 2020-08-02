@@ -81,7 +81,6 @@ func (PaymentYandex) SystemEntity() bool { return false }
 func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order, mode PaymentMode) (*Payment, error) {
 
 	// 1. Формируем paymentMode (Признак способа расчета): full_prepayment / full_payment / service
-	// _orderCartItems := order.CartItems
 	for i := range(order.CartItems) {
 		order.CartItems[i].Id = mode.Id
 		order.CartItems[i].PaymentMode = mode
@@ -141,7 +140,6 @@ func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order, mode Paymen
 
 	return payment, nil
 }
-
 func (paymentYandex PaymentYandex) GetWebSiteId() uint { return paymentYandex.WebSiteId }
 func (paymentYandex PaymentYandex) GetType() string { return "payment_yandexes" }
 func (paymentYandex PaymentYandex) GetCode() string { return "payment_yandex" }
@@ -276,7 +274,7 @@ func (paymentYandex *PaymentYandex) delete () error {
 // ########## Work function ############
 func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 
-	sendData := struct{
+	sendData := struct {
 		Amount PaymentAmount `json:"amount"`
 		PaymentMethodData PaymentMethodData `json:"payment_method_data"`
 		SavePaymentMethod 	bool 	`json:"save_payment_method"`
@@ -387,6 +385,156 @@ func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 
 	return nil
 }
+
+// Создает чек зачета предоплаты
+func (paymentYandex PaymentYandex) PrepaymentCheck(payment *Payment, order Order) (*Payment, error) {
+
+	// 1. Формируем paymentMode (Признак способа расчета): full_prepayment / full_payment / service
+
+	// Получаем признак полный оплаты
+	mode, err := PaymentMode{}.GetFullPaymentMode()
+	if err != nil {
+		return nil, utils.Error{Message: "Не удалось обновить статус платежа - не найден признак зачета предоплаты"}
+	}
+
+
+	for i := range(order.CartItems) {
+		order.CartItems[i].Id = mode.Id
+		order.CartItems[i].PaymentMode = mode
+		order.CartItems[i].PaymentModeYandex = mode.Code
+	}
+
+	// fmt.Println("payment.Amount: ", payment.Amount)
+	// fmt.Println("order.CartItems: ", order.CartItems[1].PaymentSubjectYandex)
+	// return payment, nil
+
+	type Settlements struct {
+		Type string `json:"type"` //'prepayment'
+		Amount PaymentAmount `json:"amount"`
+	}
+
+	err = Account{Id: paymentYandex.AccountId}.LoadEntity(payment, payment.Id)
+	if err != nil {
+		return nil, utils.Error{Message: "Не удалось обновить статус платежа - не найден платеж"}
+	}
+
+	sendData := struct {
+		Customer Customer `json:"customer"`
+		PaymentId string `json:"payment_id"`
+		Type string `json:"type"` //'payment'
+		Send bool `json:"send"` // true
+		Items []CartItem `json:"items"`
+
+		//  !!! Это совершенные предоплаты !!!
+		Settlements []Settlements `json:"settlements"`
+	}{
+		Customer: Customer{
+			FullName: order.Customer.Name,
+			Email: order.Customer.Email,
+			Phone: order.Customer.Phone,
+		},
+		PaymentId: payment.ExternalId,
+		Type: "payment",
+		Send: true,
+		Items: order.CartItems,
+		Settlements: []Settlements{
+			{Type: "prepayment", Amount: payment.Amount},
+		},
+	}
+
+	url := "https://payment.yandex.net/api/v3/receipts"
+
+	// Собираем JSON данные
+	body, err := json.Marshal(sendData)
+	if err != nil {
+		return nil, utils.Error{Message: "Не удалось разобрать JSON платежа", Errors: map[string]interface{}{"prepaymentCheck":err.Error()}}
+	}
+
+	uuidV4, err := uuid.NewV4()
+	if err != nil {
+		return nil, utils.Error{Message: "Не удалось создать UUID для создания платежа", Errors: map[string]interface{}{"prepaymentCheck":err.Error()}}
+	}
+
+	fmt.Println(string(body))
+
+	// crate new request
+	request, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, utils.Error{Message: "Не удалось создать http-запрос для создания платежа зачета предоплаты",
+			Errors: map[string]interface{}{"prepaymentCheck":err.Error()}}
+	}
+
+	request.Header.Set("Idempotence-Key", uuidV4.String())
+	request.Header.Set("Content-Type", "application/json")
+	request.SetBasicAuth(paymentYandex.ShopId, paymentYandex.ApiKey)
+
+	// Делаем вызов
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, utils.Error{Message: fmt.Sprintf("Ошибка запроса для Yandex кассы: %v", err),
+			Errors: map[string]interface{}{"paymentOption":err.Error()}}
+	}
+	defer response.Body.Close()
+
+
+	if response.StatusCode == 200 {
+
+		fmt.Println("response.StatusCode: ", response.StatusCode)
+		/*var responseRequest map[string]interface{}
+		if err := json.NewDecoder(response.Body).Decode(&responseRequest); err != nil {
+			return utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы: %v", err),
+					Errors: map[string]interface{}{"paymentOption":err.Error()}}
+		}
+
+		if err = payment.update(map[string]interface{}{
+			"externalId":responseRequest["id"],
+			"externalCreatedAt":responseRequest["created_at"],
+			"paid":responseRequest["paid"],
+			"status":responseRequest["status"],
+			"test":responseRequest["test"],
+		}); err != nil {
+			return utils.Error{Message: "Ошибка сохранения responseRequest от Яндекс кассы",Errors: map[string]interface{}{"paymentOption":err.Error()}}
+		}
+
+		var confirmation struct {
+			Type 	string `json:"type" gorm:"type:varchar(32);"` // embedded, redirect, external, qr
+			ReturnUrl 	string `json:"return_url" gorm:"type:varchar(255);"`
+			ConfirmationUrl 	string `json:"confirmation_url" gorm:"type:varchar(255);"`
+		}
+
+		jsonString, err := json.Marshal(responseRequest["confirmation"])
+		if err != nil {
+			return utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы 1: %v", err),
+					Errors: map[string]interface{}{"paymentOption":err.Error()}}
+		}
+
+		if err := json.NewDecoder(bytes.NewBuffer(jsonString)).Decode(&confirmation); err != nil {
+			return utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы: %v", err),
+					Errors: map[string]interface{}{"paymentOption":err.Error()}}
+		}
+
+		payment.ConfirmationUrl = confirmation.ConfirmationUrl
+		if err := payment.update(map[string]interface{}{"ConfirmationUrl":confirmation.ConfirmationUrl}); err != nil {
+			return err
+		}*/
+
+	} else {
+		fmt.Println("response.StatusCode: ", response.StatusCode)
+		
+		var responseRequest map[string]interface{}
+		if err := json.NewDecoder(response.Body).Decode(&responseRequest); err != nil {
+			return nil, utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы: %v", err),
+				Errors: map[string]interface{}{"paymentMode":err.Error()}}
+		}
+		fmt.Println(responseRequest)
+		return nil, utils.Error{Message: fmt.Sprintf("Ответ сервера Яндекс.Кассы: %v", response.StatusCode),
+			Errors: map[string]interface{}{"paymentMode":"Проблема с сервером Яндекс.Кассы"}}
+	}
+
+	return payment, nil
+}
+
 func (account Account) GetPaymentYandexByHashId(hashId string) (*PaymentYandex, error) {
 	paymentYandex, err := (PaymentYandex{}).getByHashId(hashId)
 	if err != nil {

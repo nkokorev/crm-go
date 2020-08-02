@@ -341,7 +341,6 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	if paymentMethod.IsInstantDelivery() {
 		mode, err = models.PaymentMode{}.GetFullPaymentMode()
 		if err != nil {
-			log.Printf("Не удалось получить полную предоплату: %v", err)
 			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
 			return
 		}

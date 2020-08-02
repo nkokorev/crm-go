@@ -35,8 +35,8 @@ type CartItem struct {
 	// Ставка НДС
 	VatCode	uint	`json:"vat_code"`
 
-	Product Product `json:"product"`
-	Order	Order `json:"order" gorm:"preload:false"`
+	Product Product `json:"-"`
+	Order	Order `json:"-" gorm:"preload:false"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`

@@ -268,8 +268,8 @@ func (payment *Payment) load() error {
 	if payment.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить Payment - не указан  Id"}
 	}
-
-	err := db.First(payment,payment.Id).Error
+	
+	err := db.Preload("Amount").First(payment,payment.Id).Error
 	if err != nil {
 		return err
 	}
