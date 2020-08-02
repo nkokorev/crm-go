@@ -226,6 +226,13 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-subjects/{paymentSubjectsId:[0-9]+}", appCr.PaymentSubjectUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-subjects/{paymentSubjectsId:[0-9]+}", appCr.PaymentSubjectDelete).Methods(http.MethodDelete, http.MethodOptions)
 
+	// ### Payment Mode (SYSTEM) ###
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-modes", appCr.PaymentModeCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-modes", appCr.PaymentModeGetList).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-modes/{paymentModeId:[0-9]+}", appCr.PaymentModeGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-modes/{paymentModeId:[0-9]+}", appCr.PaymentModeUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-modes/{paymentModeId:[0-9]+}", appCr.PaymentModeDelete).Methods(http.MethodDelete, http.MethodOptions)
+
 	// ### Payment Method Items ###
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-methods", appCr.PaymentMethodCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/payment-methods", appCr.PaymentMethodGetList).Methods(http.MethodGet, http.MethodOptions)

@@ -24,7 +24,7 @@ type DeliveryOrder struct {
 	WebSiteId 	uint	`json:"webSiteId" gorm:"type:int;not null;"`
 	WebSite		WebSite	`json:"webSite"`
 
-	// Тело заказа
+	// Тип доставки
 	Code	string 	`json:"deliveryCode" gorm:"type:varchar(32);"`
 	MethodId 		uint	`json:"methodId" gorm:"type:int;not null;"`
 

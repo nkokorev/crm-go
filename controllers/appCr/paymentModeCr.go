@@ -67,46 +67,23 @@ func PaymentModeGet(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func PaymentModeGetListPagination(w http.ResponseWriter, r *http.Request) {
+func PaymentModeGetList(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
 		return
 	}
 
-	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
-	if !ok {
-		limit = 25
-	}
-	if limit > 100 { limit = 100 }
-	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
-	if !ok || offset < 0 {
-		offset = 0
-	}
-	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
-	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
-	if !ok {
-		sortBy = "id"
-	}
-	if sortDesc {
-		sortBy += " desc"
-	}
-
-	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
-	if !ok {
-		search = ""
-	}
-
 	var total uint = 0
 	paymentModes := make([]models.Entity,0)
 	
-	paymentModes, total, err = account.GetPaginationListEntity(&models.PaymentMode{}, offset, limit, sortBy, search)
+	paymentModes, total, err = account.GetListEntity(&models.PaymentMode{},"id")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
-	resp := u.Message(true, "GET PaymentMode Pagination List")
+	resp := u.Message(true, "GET PaymentMode List")
 	resp["total"] = total
 	resp["paymentModes"] = paymentModes
 	u.Respond(w, resp)
