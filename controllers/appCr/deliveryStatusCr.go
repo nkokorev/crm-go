@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func PaymentModeCreate(w http.ResponseWriter, r *http.Request) {
+func DeliveryStatusCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -23,7 +23,7 @@ func PaymentModeCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Get JSON-request
 	var input struct{
-		models.PaymentMode
+		models.DeliveryStatus
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -31,43 +31,43 @@ func PaymentModeCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	paymentMode, err := account.CreateEntity(&input.PaymentMode)
+	deliveryStatus, err := account.CreateEntity(&input.DeliveryStatus)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
 		return
 	}
 
-	resp := u.Message(true, "POST PaymentMode Created")
-	resp["paymentMode"] = paymentMode
+	resp := u.Message(true, "POST DeliveryStatus Created")
+	resp["deliveryStatus"] = deliveryStatus
 	u.Respond(w, resp)
 }
 
-func PaymentModeGet(w http.ResponseWriter, r *http.Request) {
+func DeliveryStatusGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	paymentModeId, err := utilsCr.GetUINTVarFromRequest(r, "paymentModeId")
+	deliveryStatusId, err := utilsCr.GetUINTVarFromRequest(r, "deliveryStatusId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке paymentModeId"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке web site Id"))
 		return
 	}
 
-	var paymentMode models.PaymentMode
-	err = account.LoadEntity(&paymentMode, paymentModeId)
+	var deliveryStatus models.DeliveryStatus
+	err = account.LoadEntity(&deliveryStatus, deliveryStatusId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
-	resp := u.Message(true, "GET PaymentMode")
-	resp["paymentMode"] = paymentMode
+	resp := u.Message(true, "GET DeliveryStatus")
+	resp["deliveryStatus"] = deliveryStatus
 	u.Respond(w, resp)
 }
 
-func PaymentModeGetList(w http.ResponseWriter, r *http.Request) {
+func DeliveryStatusGetList(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
@@ -75,21 +75,21 @@ func PaymentModeGetList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var total uint = 0
-	paymentModes := make([]models.Entity,0)
+	deliveryStatuses := make([]models.Entity,0)
 	
-	paymentModes, total, err = account.GetListEntity(&models.PaymentMode{},"id")
+	deliveryStatuses, total, err = account.GetListEntity(&models.DeliveryStatus{},"id")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
-	resp := u.Message(true, "GET PaymentMode List")
+	resp := u.Message(true, "GET DeliveryStatus List")
 	resp["total"] = total
-	resp["paymentModes"] = paymentModes
+	resp["deliveryStatuses"] = deliveryStatuses
 	u.Respond(w, resp)
 }
 
-func PaymentModeUpdate(w http.ResponseWriter, r *http.Request) {
+func DeliveryStatusUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -102,14 +102,14 @@ func PaymentModeUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	paymentModeId, err := utilsCr.GetUINTVarFromRequest(r, "paymentModeId")
+	deliveryStatusId, err := utilsCr.GetUINTVarFromRequest(r, "deliveryStatusId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	var paymentMode models.PaymentMode
-	err = account.LoadEntity(&paymentMode, paymentModeId)
+	var deliveryStatus models.DeliveryStatus
+	err = account.LoadEntity(&deliveryStatus, deliveryStatusId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return
@@ -121,18 +121,18 @@ func PaymentModeUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&paymentMode, input)
+	err = account.UpdateEntity(&deliveryStatus, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH PaymentMode Update")
-	resp["paymentMode"] = paymentMode
+	resp := u.Message(true, "PATCH DeliveryStatus Update")
+	resp["deliveryStatus"] = deliveryStatus
 	u.Respond(w, resp)
 }
 
-func PaymentModeDelete(w http.ResponseWriter, r *http.Request) {
+func DeliveryStatusDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -145,23 +145,23 @@ func PaymentModeDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	paymentModeId, err := utilsCr.GetUINTVarFromRequest(r, "paymentModeId")
+	deliveryStatusId, err := utilsCr.GetUINTVarFromRequest(r, "deliveryStatusId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	var paymentMode models.PaymentMode
-	err = account.LoadEntity(&paymentMode, paymentModeId)
+	var deliveryStatus models.DeliveryStatus
+	err = account.LoadEntity(&deliveryStatus, deliveryStatusId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
 	}
-	if err = account.DeleteEntity(&paymentMode); err != nil {
+	if err = account.DeleteEntity(&deliveryStatus); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
 		return
 	}
 
-	resp := u.Message(true, "DELETE PaymentMode Successful")
+	resp := u.Message(true, "DELETE DeliveryStatus Successful")
 	u.Respond(w, resp)
 }

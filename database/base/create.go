@@ -1753,6 +1753,7 @@ func Migrate_I() {
 	pool.AutoMigrate(&models.PaymentCash{})
 	pool.AutoMigrate(&models.Order{})
 
+	pool.AutoMigrate(&models.DeliveryOrder{})
 	pool.AutoMigrate(&models.DeliveryCourier{})
 	pool.AutoMigrate(&models.DeliveryPickup{})
 	pool.AutoMigrate(&models.DeliveryRussianPost{})

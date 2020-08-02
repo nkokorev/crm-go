@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
@@ -15,7 +14,7 @@ type DeliveryOrder struct {
 
 	// Данные заказа
 	OrderId 	uint	`json:"orderId" gorm:"type:int;not null"`
-	Order		*Order	`json:"-"`
+	// Order		*Order	`json:"-"`
 
 	// Данные заказчика
 	CustomerId 	uint	`json:"customerId" gorm:"type:int;not null"`
@@ -38,8 +37,8 @@ type DeliveryOrder struct {
 	Amount  	PaymentAmount	`json:"amount"`
 
 	// Статус заказа
-	DeliveryStatusId  	uint			`json:"deliveryStatusId" gorm:"type:int;default:1;"`
-	DeliveryStatus		DeliveryStatus	`json:"deliveryStatus" gorm:"preload"`
+	StatusId  	uint			`json:"statusId" gorm:"type:int;default:1;"`
+	Status		DeliveryStatus	`json:"status" gorm:"preload"`
 
 	CreatedAt 		time.Time `json:"createdAt"`
 	UpdatedAt 		time.Time `json:"updatedAt"`
@@ -85,9 +84,6 @@ func (deliveryOrder *DeliveryOrder) AfterFind() (err error) {
 		deliveryOrder.Delivery = delivery
 		return
 	}
-
-	fmt.Println("DeliveryStatus: ", deliveryOrder.DeliveryStatus)
-
 	return nil
 }
 func (deliveryOrder *DeliveryOrder) AfterCreate(scope *gorm.Scope) (error) {
@@ -98,7 +94,7 @@ func (deliveryOrder *DeliveryOrder) AfterUpdate(tx *gorm.DB) (err error) {
 
 	event.AsyncFire(Event{}.DeliveryOrderUpdated(deliveryOrder.AccountId, deliveryOrder.Id))
 
-	orderStatusEntity, err := DeliveryStatus{}.get(deliveryOrder.DeliveryStatusId)
+	orderStatusEntity, err := DeliveryStatus{}.get(deliveryOrder.StatusId)
 	if err == nil && orderStatusEntity.GetAccountId() == deliveryOrder.AccountId {
 		if deliveryStatus, ok := orderStatusEntity.(*DeliveryStatus); ok {
 			if deliveryStatus.Code == "completed" {
@@ -230,7 +226,7 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}) error {
 		return err
 	}
 
-	err := db.Preload("WebSite").Preload("Amount").Preload("Order").Preload("Customer").First(deliveryOrder, deliveryOrder.Id).Error
+	err := deliveryOrder.GetPreloadDb(false,false).First(deliveryOrder, deliveryOrder.Id).Error
 	if err != nil {
 		return err
 	}
@@ -249,6 +245,6 @@ func (deliveryOrder *DeliveryOrder) GetPreloadDb(autoUpdate bool, getModel bool)
 	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
 	if getModel { _db.Model(&deliveryOrder) }
 	
-	return _db.Preload("WebSite").Preload("Amount").Preload("Customer").Preload("DeliveryStatus")
+	return _db.Preload("WebSite").Preload("Amount").Preload("Customer").Preload("Status")
 }
 
