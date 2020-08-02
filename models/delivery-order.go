@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
@@ -14,7 +15,7 @@ type DeliveryOrder struct {
 
 	// Данные заказа
 	OrderId 	uint	`json:"orderId" gorm:"type:int;not null"`
-	Order		*Order	`json:"order"`
+	Order		*Order	`json:"-"`
 
 	// Данные заказчика
 	CustomerId 	uint	`json:"customerId" gorm:"type:int;not null"`
@@ -28,8 +29,8 @@ type DeliveryOrder struct {
 	Code	string 	`json:"deliveryCode" gorm:"type:varchar(32);"`
 	MethodId 		uint	`json:"methodId" gorm:"type:int;not null;"`
 
-	Address	string 	`json:"deliveryAddress" gorm:"type:varchar(32);"`
-	PostalCode	string 	`json:"deliveryPostalCode" gorm:"type:varchar(32);"`
+	Address	string 	`json:"address" gorm:"type:varchar(32);"`
+	PostalCode	string 	`json:"postalCode" gorm:"type:varchar(32);"`
 	Delivery	Delivery	`json:"delivery" gorm:"-"` // << preload
 
 	// Фиксируем стоимость
@@ -84,6 +85,8 @@ func (deliveryOrder *DeliveryOrder) AfterFind() (err error) {
 		deliveryOrder.Delivery = delivery
 		return
 	}
+
+	fmt.Println("DeliveryStatus: ", deliveryOrder.DeliveryStatus)
 
 	return nil
 }
@@ -174,7 +177,7 @@ func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy
 		search = "%"+search+"%"
 
 		err := (&DeliveryOrder{}).GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&deliveryOrders, "name ILIKE ? OR description ILIKE ?", search,search).Error
+			Find(&deliveryOrders, "address ILIKE ? OR postal_code ILIKE ?", search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -182,7 +185,7 @@ func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy
 
 		// Определяем total
 		err = db.Model(&DeliveryOrder{}).
-			Where("account_id = ? AND name ILIKE ? OR description ILIKE ? ", accountId, search,search).
+			Where("account_id = ? AND address ILIKE ? OR postal_code ILIKE ? ", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -201,6 +204,7 @@ func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
+
 	}
 
 	// Преобразуем полученные данные
@@ -245,6 +249,6 @@ func (deliveryOrder *DeliveryOrder) GetPreloadDb(autoUpdate bool, getModel bool)
 	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
 	if getModel { _db.Model(&deliveryOrder) }
 	
-	return _db.Preload("WebSite").Preload("Amount").Preload("Order").Preload("Customer").Preload("DeliveryStatus")
+	return _db.Preload("WebSite").Preload("Amount").Preload("Customer").Preload("DeliveryStatus")
 }
 

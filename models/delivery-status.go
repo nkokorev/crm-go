@@ -16,8 +16,8 @@ type DeliveryStatus struct {
 	Code	string 	`json:"code" gorm:"type:varchar(32);unique;not null;"`
 
 	// new, agreement, equipment, delivery, completed, canceled
-	Group	string 	`json:"group" gorm:"type:varchar(32);"` // <<< является так же ключом для понимания общего состояния процесса (completed / canceled)
-	GroupName	string 	`json:"group" gorm:"type:varchar(128);"`
+	Group		string 	`json:"group" gorm:"type:varchar(32);"` // <<< является так же ключом для понимания общего состояния процесса (completed / canceled)
+	GroupName	string 	`json:"groupName" gorm:"type:varchar(128);"`
 
 	// 'Новый заказ', 'Передан в комплектацию', 'Отменен'
 	Name	string `json:"name" gorm:"type:varchar(128);"`
