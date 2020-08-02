@@ -156,6 +156,7 @@ func (fs *Storage) LoadURL() {
 // ############# Entity interface #############
 func (fs Storage) GetId() uint { return fs.Id }
 func (fs *Storage) setId(id uint) { fs.Id = id }
+func (fs *Storage) setPublicId(id uint) { }
 func (fs Storage) GetAccountId() uint { return fs.AccountId }
 func (fs *Storage) setAccountId(id uint) { fs.AccountId = id }
 func (Storage) SystemEntity() bool { return false }
@@ -222,7 +223,9 @@ func (fs *Storage) load() error {
 	}
 	return nil
 }
-
+func (*Storage) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
+}
 func (Storage) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return Storage{}.getPaginationList(accountId,0,100,sortBy,"")
 }

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
@@ -101,6 +102,7 @@ func (eventItem *EventItem) BeforeCreate(scope *gorm.Scope) error {
 // ############# Entity interface #############
 func (eventItem EventItem) GetId() uint { return eventItem.Id }
 func (eventItem *EventItem) setId(id uint) { eventItem.Id = id }
+func (eventItem *EventItem) setPublicId(id uint) {  }
 func (eventItem EventItem) GetAccountId() uint { return eventItem.AccountId }
 func (eventItem *EventItem) setAccountId(id uint) { eventItem.AccountId = id }
 func (eventItem EventItem) SystemEntity() bool { return eventItem.AccountId == 1 }
@@ -138,6 +140,9 @@ func (eventItem *EventItem) load() error {
 		return err
 	}
 	return nil
+}
+func (*EventItem) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
 func (EventItem) getList(accountId uint, sortBy string) ([]Entity, uint, error) {

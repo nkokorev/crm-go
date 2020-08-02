@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"time"
@@ -46,6 +47,7 @@ func (DeliveryPickup) PgSqlCreate() {
 // ############# Entity interface #############
 func (deliveryPickup DeliveryPickup) GetId() uint { return deliveryPickup.Id }
 func (deliveryPickup *DeliveryPickup) setId(id uint) { deliveryPickup.Id = id }
+func (deliveryPickup *DeliveryPickup) setPublicId(id uint) { }
 func (deliveryPickup DeliveryPickup) GetAccountId() uint { return deliveryPickup.AccountId }
 func (deliveryPickup DeliveryPickup) GetWebSiteId() uint { return deliveryPickup.WebSiteId }
 func (deliveryPickup *DeliveryPickup) setAccountId(id uint) { deliveryPickup.AccountId = id }
@@ -109,6 +111,9 @@ func (deliveryPickup *DeliveryPickup) load() error {
 		return err
 	}
 	return nil
+}
+func (deliveryPickup *DeliveryPickup) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (DeliveryPickup) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return DeliveryPickup{}.getPaginationList(accountId, 0, 100, sortBy, "")

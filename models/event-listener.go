@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
@@ -52,6 +53,7 @@ func (eventListener *EventListener) BeforeCreate(scope *gorm.Scope) error {
 // ############# Entity interface #############
 func (eventListener EventListener) GetId() uint { return eventListener.Id }
 func (eventListener *EventListener) setId(id uint) { eventListener.Id = id }
+func (eventListener *EventListener) setPublicId(id uint) { eventListener.Id = id }
 func (eventListener EventListener) GetAccountId() uint { return eventListener.AccountId }
 func (eventListener *EventListener) setAccountId(id uint) { eventListener.AccountId = id }
 func (eventListener EventListener) SystemEntity() bool { return false }
@@ -85,6 +87,9 @@ func (eventListener *EventListener) load() error {
 		return err
 	}
 	return nil
+}
+func (*EventListener) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
 // функция для загрузки слушателей в шину Events <-

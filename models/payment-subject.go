@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
@@ -18,6 +19,7 @@ type PaymentSubject struct {
 // ############# Entity interface #############
 func (paymentSubject PaymentSubject) GetId() uint { return paymentSubject.Id }
 func (paymentSubject *PaymentSubject) setId(id uint) { paymentSubject.Id = id }
+func (paymentSubject *PaymentSubject) setPublicId(id uint) {}
 func (paymentSubject PaymentSubject) GetAccountId() uint { return paymentSubject.AccountId }
 func (paymentSubject *PaymentSubject) setAccountId(id uint) { paymentSubject.AccountId = id }
 func (paymentSubject PaymentSubject) SystemEntity() bool { return paymentSubject.AccountId == 1 }
@@ -94,6 +96,9 @@ func (paymentSubject *PaymentSubject) load() error {
 		return err
 	}
 	return nil
+}
+func (*PaymentSubject) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
 func (PaymentSubject) getList(accountId uint, sortBy string) ([]Entity, uint, error) {

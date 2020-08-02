@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
@@ -44,6 +45,7 @@ func (paymentCash *PaymentCash) BeforeCreate(scope *gorm.Scope) error {
 // ############# Entity interface #############
 func (paymentCash PaymentCash) GetId() uint { return paymentCash.Id }
 func (paymentCash *PaymentCash) setId(id uint) { paymentCash.Id = id }
+func (paymentCash *PaymentCash) setPublicId(id uint) {  }
 func (paymentCash PaymentCash) GetAccountId() uint { return paymentCash.AccountId }
 func (paymentCash *PaymentCash) setAccountId(id uint) { paymentCash.AccountId = id }
 func (PaymentCash) SystemEntity() bool { return false }
@@ -124,6 +126,9 @@ func (paymentCash *PaymentCash) load() error {
 		return err
 	}
 	return nil
+}
+func (*PaymentCash) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (PaymentCash) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return  PaymentCash{}.getPaginationList(accountId, 0, 100, sortBy, "")

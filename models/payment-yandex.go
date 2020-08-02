@@ -71,6 +71,7 @@ func (paymentYandex *PaymentYandex) BeforeCreate(scope *gorm.Scope) error {
 // ############# Entity interface #############
 func (paymentYandex PaymentYandex) GetId() uint { return paymentYandex.Id }
 func (paymentYandex *PaymentYandex) setId(id uint) { paymentYandex.Id = id }
+func (paymentYandex *PaymentYandex) setPublicId(id uint) { paymentYandex.Id = id }
 func (paymentYandex PaymentYandex) GetAccountId() uint { return paymentYandex.AccountId }
 func (paymentYandex *PaymentYandex) setAccountId(id uint) { paymentYandex.AccountId = id }
 func (PaymentYandex) SystemEntity() bool { return false }
@@ -191,6 +192,9 @@ func (paymentYandex *PaymentYandex) load() error {
 		return err
 	}
 	return nil
+}
+func (*PaymentYandex) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (PaymentYandex) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return  PaymentYandex{}.getPaginationList(accountId, 0, 100, sortBy, "")

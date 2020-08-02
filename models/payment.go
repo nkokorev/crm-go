@@ -12,6 +12,7 @@ import (
 type Payment struct {
 	
 	Id     		uint   	`json:"id" gorm:"primary_key"`
+	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"` // Публичный ID заказа внутри магазина
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Идентификатор платежа в Яндекс.Кассе или у другого посредника.
@@ -117,6 +118,20 @@ func (Payment) PgSqlCreate() {
 }
 func (payment *Payment) BeforeCreate(scope *gorm.Scope) error {
 	payment.Id = 0
+
+	// PublicId
+	lastIdx := uint(0)
+	var ord Order
+
+	err := db.Where("account_id = ?", payment.AccountId).Select("public_id").Last(&ord).Error;
+	if err != nil && err != gorm.ErrRecordNotFound { return err}
+	if err == gorm.ErrRecordNotFound {
+		lastIdx = 0
+	} else {
+		lastIdx = ord.PublicId
+	}
+	payment.PublicId = lastIdx + 1
+
 	return nil
 }
 
@@ -211,6 +226,7 @@ type PaymentMethodData struct {
 // ############# Entity interface #############
 func (payment Payment) GetId() uint { return payment.Id }
 func (payment *Payment) setId(id uint) { payment.Id = id }
+func (payment *Payment) setPublicId(publicId uint) { payment.PublicId = publicId }
 func (payment Payment) GetAccountId() uint { return payment.AccountId }
 func (payment *Payment) setAccountId(id uint) { payment.AccountId = id }
 func (Payment) SystemEntity() bool { return false }
@@ -257,6 +273,19 @@ func (payment *Payment) load() error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+func (payment *Payment) loadByPublicId() error {
+
+
+	if payment.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить Payment - не указан  Id"}
+	}
+
+	if err := payment.GetPreloadDb(false,false).First(payment, "public_id = ?", payment.PublicId).Error; err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -378,3 +407,13 @@ func (account Account) GetPaymentByExternalId(externalId string) (*Payment, erro
 
 	return payment, nil
 }
+
+func (payment *Payment) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+	_db := db
+
+	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
+	if getModel { _db.Model(&payment) }
+
+	return _db.Preload("PaymentAmount")
+}
+

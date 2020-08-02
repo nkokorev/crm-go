@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
@@ -59,6 +60,7 @@ func (obItem *HandlerItem) BeforeCreate(scope *gorm.Scope) error {
 // ############# Entity interface #############
 func (obItem HandlerItem) GetId() uint { return obItem.Id }
 func (obItem *HandlerItem) setId(id uint) { obItem.Id = id }
+func (obItem *HandlerItem) setPublicId(id uint) { }
 func (obItem HandlerItem) GetAccountId() uint { return obItem.AccountId }
 func (obItem *HandlerItem) setAccountId(id uint) { obItem.AccountId = id }
 
@@ -66,7 +68,6 @@ func (obItem *HandlerItem) setAccountId(id uint) { obItem.AccountId = id }
 func (handlerItem HandlerItem) SystemEntity() bool { return handlerItem.AccountId == 1 }
 
 // ############# Entity interface #############
-
 
 func (handlerItem HandlerItem) create() (Entity, error)  {
 
@@ -79,7 +80,6 @@ func (handlerItem HandlerItem) create() (Entity, error)  {
 
 	return entity, nil
 }
-
 func (HandlerItem) get(id uint) (Entity, error) {
 
 	var obItem HandlerItem
@@ -90,7 +90,6 @@ func (HandlerItem) get(id uint) (Entity, error) {
 	}
 	return &obItem, nil
 }
-
 func (obItem *HandlerItem) load() error {
 
 	err := db.First(obItem,obItem.Id).Error
@@ -99,7 +98,9 @@ func (obItem *HandlerItem) load() error {
 	}
 	return nil
 }
-
+func (*HandlerItem) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
+}
 func (HandlerItem) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
 	obItems := make([]HandlerItem,0)
@@ -125,7 +126,6 @@ func (HandlerItem) getList(accountId uint, sortBy string) ([]Entity, uint, error
 
 	return entities, total, nil
 }
-
 func (HandlerItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	obItems := make([]HandlerItem,0)
@@ -177,7 +177,6 @@ func (HandlerItem) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	return entities, total, nil
 }
-
 func (obItem *HandlerItem) update(input map[string]interface{}) error {
 	if err := db.Set("gorm:association_autoupdate", false).Model(obItem).Omit("id", "account_id").
 		Updates(input).Error; err != nil {return err}
@@ -186,7 +185,6 @@ func (obItem *HandlerItem) update(input map[string]interface{}) error {
 
 	return nil
 }
-
 func (obItem *HandlerItem) delete () error {
 	return db.Model(HandlerItem{}).Where("id = ?", obItem.Id).Delete(obItem).Error
 }

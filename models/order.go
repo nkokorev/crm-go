@@ -52,8 +52,8 @@ type Order struct {
 	Payment	Payment	`json:"payment"`
 
 	// Данные о доставке
-	DeliveryOrderId	*uint	`json:"deliveryOrderId" gorm:"type:int;"`
-	DeliveryOrder	*DeliveryOrder	`json:"deliveryOrder"`
+	// DeliveryOrderId	*uint	`json:"deliveryOrderId" gorm:"type:int;"`
+	DeliveryOrder	DeliveryOrder	`json:"deliveryOrder"`
 
 	// Комментарии менеджеров к заказу
 	Comments	[]OrderComment `json:"comments"`
@@ -145,6 +145,7 @@ func (order *Order) AfterFind() (err error) {
 // ############# Entity interface #############
 func (order Order) GetId() uint { return order.Id }
 func (order *Order) setId(id uint) { order.Id = id }
+func (order *Order) setPublicId(id uint) { order.PublicId = id }
 func (order Order) GetAccountId() uint { return order.AccountId }
 func (order *Order) setAccountId(id uint) { order.AccountId = id }
 func (Order) SystemEntity() bool { return false }
@@ -185,6 +186,18 @@ func (order *Order) load() error {
 	}
 
 	if err := order.GetPreloadDb(false,true).First(order, order.Id).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func (order *Order) loadByPublicId() error {
+
+	if order.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить Order - не указан  Id"}
+	}
+
+	if err := order.GetPreloadDb(false,false).First(order, "public_id = ?", order.PublicId).Error; err != nil {
 		return err
 	}
 
@@ -282,8 +295,8 @@ func (order *Order) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
 	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
 	if getModel { _db.Model(&order) }
 
-	return _db.Preload("OrderStatus").Preload("Payment").Preload("Customer").
-		Preload("Amount").Preload("CartItems").Preload("CartItems.Product").Preload("CartItems.Amount").
+	return _db.Preload("OrderStatus").Preload("Payment").Preload("Customer").Preload("DeliveryOrder").Preload("DeliveryOrder.Amount").
+		Preload("Amount").Preload("CartItems").Preload("CartItems.Product").Preload("CartItems.Amount").Preload("CartItems.PaymentMode").
 		Preload("Manager").Preload("WebSite").Preload("OrderChannel")
 }
 

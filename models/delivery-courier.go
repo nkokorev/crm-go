@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
@@ -50,6 +51,7 @@ func (DeliveryCourier) PgSqlCreate() {
 // ############# Entity interface #############
 func (deliveryCourier DeliveryCourier) GetId() uint { return deliveryCourier.Id }
 func (deliveryCourier *DeliveryCourier) setId(id uint) { deliveryCourier.Id = id }
+func (deliveryCourier *DeliveryCourier) setPublicId(id uint) { }
 func (deliveryCourier DeliveryCourier) GetAccountId() uint { return deliveryCourier.AccountId }
 func (deliveryCourier DeliveryCourier) GetWebSiteId() uint { return deliveryCourier.WebSiteId }
 func (deliveryCourier *DeliveryCourier) setAccountId(id uint) { deliveryCourier.AccountId = id }
@@ -106,6 +108,9 @@ func (deliveryCourier *DeliveryCourier) load() error {
 		return err
 	}
 	return nil
+}
+func (deliveryCourier *DeliveryCourier) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (DeliveryCourier) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 

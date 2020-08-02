@@ -2,6 +2,7 @@ package models
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
@@ -65,6 +66,7 @@ type WebHook struct {
 // ############# Entity interface #############
 func (webHook WebHook) GetId() uint { return webHook.Id }
 func (webHook *WebHook) setId(id uint) { webHook.Id = id }
+func (webHook *WebHook) setPublicId(id uint) {}
 func (webHook WebHook) GetAccountId() uint { return webHook.AccountId }
 func (webHook *WebHook) setAccountId(id uint) { webHook.AccountId = id }
 func (WebHook) SystemEntity() bool { return false }
@@ -117,6 +119,9 @@ func (webHook *WebHook) load() error {
 		return err
 	}
 	return nil
+}
+func (*WebHook) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
 func (WebHook) getList(accountId uint, sortBy string) ([]Entity, uint, error) {

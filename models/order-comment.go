@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"time"
@@ -24,6 +25,7 @@ type OrderComment struct {
 // ############# Entity interface #############
 func (orderComment OrderComment) GetId() uint { return orderComment.Id }
 func (orderComment *OrderComment) setId(id uint) { orderComment.Id = id }
+func (orderComment *OrderComment) setPublicId(id uint) { }
 func (orderComment OrderComment) GetAccountId() uint { return orderComment.AccountId }
 func (orderComment *OrderComment) setAccountId(id uint) { orderComment.AccountId = id }
 func (orderComment OrderComment) SystemEntity() bool { return false; }
@@ -72,6 +74,9 @@ func (orderComment *OrderComment) load() error {
 		return err
 	}
 	return nil
+}
+func (*OrderComment) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
 func (OrderComment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {

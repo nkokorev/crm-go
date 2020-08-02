@@ -48,10 +48,11 @@ func DeliveryOrderGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Public ID!!
 	var deliveryOrder models.DeliveryOrder
-	err = account.LoadEntity(&deliveryOrder, deliveryOrderId)
+	err = account.LoadEntityByPublicId(&deliveryOrder, deliveryOrderId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
@@ -91,9 +92,9 @@ func DeliveryOrderGetListPagination(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var total uint = 0
-	orders := make([]models.Entity,0)
+	deliveryOrders := make([]models.Entity,0)
 	
-	orders, total, err = account.GetPaginationListEntity(&models.DeliveryOrder{}, offset, limit, sortBy, search)
+	deliveryOrders, total, err = account.GetPaginationListEntity(&models.DeliveryOrder{}, offset, limit, sortBy, search)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -101,7 +102,7 @@ func DeliveryOrderGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET DeliveryOrder Pagination List")
 	resp["total"] = total
-	resp["orders"] = orders
+	resp["deliveryOrders"] = deliveryOrders
 	u.Respond(w, resp)
 }
 

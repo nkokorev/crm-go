@@ -354,7 +354,6 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	
 	// Создаем платеж на основании заказа 
 	payment, err := paymentMethod.CreatePaymentByOrder(order, mode)
 	if err != nil {
@@ -362,12 +361,14 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	// Создаем доставку на основании заказа. Даже если это моментальная выдача товара (должен быть соответствующий способ).
+	// Создаем заказ на доставку на основании заказа. Даже если это моментальная выдача товара (должен быть соответствующий способ).
 	_, err = delivery.CreateDeliveryOrder(input.Delivery, deliveryAmount, order)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания доставки", Errors: map[string]interface{}{"delivery":err.Error()}}))
 		return
 	}
+
+	
 
 	resp := u.Message(true, "POST Order Created")
 	resp["order"] = order

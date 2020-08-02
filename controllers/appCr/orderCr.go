@@ -45,6 +45,7 @@ func OrderGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// ThisIs PublicID!
 	orderId, err := utilsCr.GetUINTVarFromRequest(r, "orderId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке web site Id"))
@@ -52,9 +53,9 @@ func OrderGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var order models.Order
-	err = account.LoadEntity(&order, orderId)
+	err = account.LoadEntityByPublicId(&order, orderId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список заказов"))
 		return
 	}
 

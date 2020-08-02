@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"net/mail"
@@ -35,6 +36,7 @@ func (emailBox *EmailBox) BeforeCreate(scope *gorm.Scope) error {
 // ############# Entity interface #############
 func (emailBox EmailBox) GetId() uint { return emailBox.Id }
 func (emailBox *EmailBox) setId(id uint) { emailBox.Id = id }
+func (emailBox *EmailBox) setPublicId(id uint) { }
 func (emailBox EmailBox) GetAccountId() uint { return emailBox.AccountId }
 func (emailBox *EmailBox) setAccountId(id uint) { emailBox.AccountId = id }
 func (EmailBox) SystemEntity() bool { return false }
@@ -75,6 +77,9 @@ func (emailBox *EmailBox) load() error {
 		return err
 	}
 	return nil
+}
+func (emailBox *EmailBox) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
 func (EmailBox) getList(accountId uint, sortBy string) ([]Entity, uint, error) {

@@ -363,8 +363,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 		for i,_ := range clients {
 			_, err := acc357.CreateUser(clients[i], *roleClientMain)
 			if err != nil {
-				fmt.Println(err)
-				log.Fatal("Не удалось добавить клиента id: ", i)
+				log.Printf("Не удалось добавить клиента id: %v", i)
 				return
 			}
 		}

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"time"
@@ -65,6 +66,7 @@ func (cartItem *CartItem) AfterFind() (err error) {
 // ############# Entity interface #############
 func (cartItem CartItem) GetId() uint { return cartItem.Id }
 func (cartItem *CartItem) setId(id uint) { cartItem.Id = id }
+func (cartItem *CartItem) setPublicId(publicId uint) { }
 func (cartItem CartItem) GetAccountId() uint { return cartItem.AccountId }
 func (cartItem *CartItem) setAccountId(id uint) { cartItem.AccountId = id }
 func (cartItem CartItem) SystemEntity() bool { return false; }
@@ -82,6 +84,10 @@ func (cartItem CartItem) create() (Entity, error)  {
 		return nil, err
 	}
 
+	if err := _orderChannel.GetPreloadDb(false,false).First(&_orderChannel,_orderChannel.Id).Error; err != nil {
+		return nil, err
+	}
+
 	var entity Entity = &_orderChannel
 
 	return entity, nil
@@ -91,7 +97,7 @@ func (CartItem) get(id uint) (Entity, error) {
 
 	var cartItem CartItem
 
-	err := db.Preload("Amount").Preload("Product").Preload("Product.PaymentSubject").First(&cartItem, id).Error
+	err := cartItem.GetPreloadDb(false, false).First(&cartItem, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -102,11 +108,14 @@ func (cartItem *CartItem) load() error {
 		return utils.Error{Message: "Невозможно загрузить CartItem - не указан  Id"}
 	}
 
-	err := db.Preload("Amount").Preload("Product").Preload("Product.PaymentSubject").First(cartItem, cartItem.Id).Error
+	err := cartItem.GetPreloadDb(false, true).First(cartItem, cartItem.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
+}
+func (cartItem *CartItem) loadByPublicId() error {
+	return errors.New("Нет возможности найти объект по public Id")
 }
 
 func (CartItem) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
@@ -123,7 +132,7 @@ func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&CartItem{}).Preload("Amount").Preload("Product").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&CartItem{}).GetPreloadDb(false, false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orderChannels, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -139,7 +148,7 @@ func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 
 	} else {
 
-		err := db.Model(&CartItem{}).Preload("Amount").Preload("Product").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&CartItem{}).GetPreloadDb(false, false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orderChannels).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -161,8 +170,7 @@ func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 }
 
 func (cartItem *CartItem) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).
-		Model(cartItem).Omit("id", "account_id").Updates(input).Error
+	return cartItem.GetPreloadDb(false, true).Omit("id", "account_id").Updates(input).Error
 }
 
 func (cartItem *CartItem) delete () error {
@@ -176,4 +184,12 @@ func (cartItem *CartItem) delete () error {
 
 
 // ########## Work function ############
+func (cartItem *CartItem) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+	_db := db
+
+	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
+	if getModel { _db.Model(&cartItem) }
+
+	return _db.Preload("Amount").Preload("PaymentMethod")
+}
 

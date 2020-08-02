@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
@@ -30,6 +31,7 @@ type DeliveryStatus struct {
 // ############# Entity interface #############
 func (deliveryStatus DeliveryStatus) GetId() uint { return deliveryStatus.Id }
 func (deliveryStatus *DeliveryStatus) setId(id uint) { deliveryStatus.Id = id }
+func (deliveryStatus *DeliveryStatus) setPublicId(id uint) { }
 func (deliveryStatus DeliveryStatus) GetAccountId() uint { return deliveryStatus.AccountId }
 func (deliveryStatus *DeliveryStatus) setAccountId(id uint) { deliveryStatus.AccountId = id }
 func (deliveryStatus DeliveryStatus) SystemEntity() bool { return deliveryStatus.AccountId == 1 }
@@ -49,9 +51,9 @@ func (DeliveryStatus) PgSqlCreate() {
 	db.Delete(&DeliveryStatus{})
 	deliveryStatuses := []DeliveryStatus{
 		// new, agreement, delivery, completed, canceled
-		{Name: "Новая доставка", 	Code: "new", Group:"new", GroupName:"Необработанный заказ",	Description: "Необработанный заказ, первоначальный статус заказа на доставку."},
+		{Name: "Новая доставка", 			Code: "new", 				Group:"new", 			GroupName:"Необработанный заказ",	Description: "Необработанный заказ, первоначальный статус заказа на доставку."},
 
-		{Name: "Доставка подтверждена", 	Code: "agreement_completed", Group: "agreement", 	GroupName:"Согласование", Description: "Доставка согласована."},
+		{Name: "Доставка подтверждена", 	Code: "agreement_completed",Group: "agreement", 	GroupName:"Согласование", Description: "Доставка согласована."},
 		{Name: "Предложена замена", 		Code: "agreement_change", 	Group: "agreement", 	GroupName:"Согласование", Description: "Доставка перенесена."},
 
 		{Name: "В процессе доставки", 	Code: "delivery", 	Group: "delivery", 	GroupName:"Доставка", Description: "Заказ в процессе доставки"},
@@ -106,6 +108,9 @@ func (deliveryStatus *DeliveryStatus) load() error {
 		return err
 	}
 	return nil
+}
+func (deliveryStatus *DeliveryStatus) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
 func (DeliveryStatus) getList(accountId uint, sortBy string) ([]Entity, uint, error) {

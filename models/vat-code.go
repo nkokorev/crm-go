@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
@@ -22,6 +23,7 @@ type VatCode struct {
 // ############# Entity interface #############
 func (vatCode VatCode) GetId() uint { return vatCode.Id }
 func (vatCode *VatCode) setId(id uint) { vatCode.Id = id }
+func (vatCode *VatCode) setPublicId(id uint) {}
 func (vatCode VatCode) GetAccountId() uint { return vatCode.AccountId }
 func (vatCode *VatCode) setAccountId(id uint) { vatCode.AccountId = id }
 func (vatCode VatCode) SystemEntity() bool { return vatCode.AccountId == 1 }
@@ -87,7 +89,9 @@ func (vatCode *VatCode) load() error {
 	}
 	return nil
 }
-
+func (*VatCode) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
+}
 func (VatCode) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return VatCode{}.getPaginationList(accountId, 0,100,sortBy,"")
 }

@@ -14,7 +14,7 @@ type DeliveryOrder struct {
 
 	// Данные заказа
 	OrderId 	uint	`json:"orderId" gorm:"type:int;not null"`
-	Order	Order	`json:"order"`
+	Order		*Order	`json:"order"`
 
 	// Данные заказчика
 	CustomerId 	uint	`json:"customerId" gorm:"type:int;not null"`
@@ -37,8 +37,8 @@ type DeliveryOrder struct {
 	Amount  	PaymentAmount	`json:"amount"`
 
 	// Статус заказа
-	DeliveryStatusId  	uint	`json:"deliveryStatusId" gorm:"type:int;default:1;"`
-	DeliveryStatus		DeliveryStatus	`json:"deliveryStatus"`
+	DeliveryStatusId  	uint			`json:"deliveryStatusId" gorm:"type:int;default:1;"`
+	DeliveryStatus		DeliveryStatus	`json:"deliveryStatus" gorm:"preload"`
 
 	CreatedAt 		time.Time `json:"createdAt"`
 	UpdatedAt 		time.Time `json:"updatedAt"`
@@ -47,6 +47,7 @@ type DeliveryOrder struct {
 // ############# Entity interface #############
 func (deliveryOrder DeliveryOrder) GetId() uint { return deliveryOrder.Id }
 func (deliveryOrder *DeliveryOrder) setId(id uint) { deliveryOrder.Id = id }
+func (deliveryOrder *DeliveryOrder) setPublicId(publicId uint) { deliveryOrder.PublicId = publicId }
 func (deliveryOrder DeliveryOrder) GetAccountId() uint { return deliveryOrder.AccountId }
 func (deliveryOrder *DeliveryOrder) setAccountId(id uint) { deliveryOrder.AccountId = id }
 func (DeliveryOrder) SystemEntity() bool { return false }
@@ -140,8 +141,18 @@ func (DeliveryOrder) get(id uint) (Entity, error) {
 }
 func (deliveryOrder *DeliveryOrder) load() error {
 
-	err := db.Preload("WebSite").Preload("Amount").Preload("Order").Preload("Customer").First(deliveryOrder, deliveryOrder.Id).Error
+	err := deliveryOrder.GetPreloadDb(false,false).First(deliveryOrder, deliveryOrder.Id).Error
 	if err != nil {
+		return err
+	}
+	return nil
+}
+func (deliveryOrder *DeliveryOrder) loadByPublicId() error {
+
+	if deliveryOrder.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить DeliveryOrder - не указан  Id"}
+	}
+	if err := deliveryOrder.GetPreloadDb(false,false).First(deliveryOrder, "public_id = ?", deliveryOrder.PublicId).Error; err != nil {
 		return err
 	}
 	return nil
@@ -151,7 +162,7 @@ func (DeliveryOrder) getList(accountId uint, sortBy string) ([]Entity, uint, err
 	return DeliveryOrder{}.getPaginationList(accountId, 0, 100, sortBy, "")
 }
 func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
-
+	
 	deliveryOrders := make([]DeliveryOrder,0)
 	var total uint
 
@@ -162,8 +173,7 @@ func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy
 		// jsearch := search
 		search = "%"+search+"%"
 
-		err := db.Model(&DeliveryOrder{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("WebSite").Preload("Amount").Preload("Order").Preload("Customer").
+		err := (&DeliveryOrder{}).GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryOrders, "name ILIKE ? OR description ILIKE ?", search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -180,8 +190,7 @@ func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	} else {
 
-		err := db.Model(&DeliveryOrder{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("WebSite").Preload("Amount").Preload("Order").Preload("Customer").
+		err := (&DeliveryOrder{}).GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryOrders).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -229,3 +238,13 @@ func (deliveryOrder *DeliveryOrder) delete () error {
 	return db.Model(DeliveryOrder{}).Where("id = ?", deliveryOrder.Id).Delete(deliveryOrder).Error
 }
 // ######### END CRUD Functions ############
+
+func (deliveryOrder *DeliveryOrder) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+	_db := db
+
+	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
+	if getModel { _db.Model(&deliveryOrder) }
+	
+	return _db.Preload("WebSite").Preload("Amount").Preload("Order").Preload("Customer").Preload("DeliveryStatus")
+}
+

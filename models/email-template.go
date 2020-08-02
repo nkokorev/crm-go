@@ -55,6 +55,7 @@ func (EmailTemplate) PgSqlCreate() {
 // ############# Entity interface #############
 func (emailTemplate EmailTemplate) GetId() uint { return emailTemplate.Id }
 func (emailTemplate *EmailTemplate) setId(id uint) { emailTemplate.Id = id }
+func (emailTemplate *EmailTemplate) setPublicId(id uint) {}
 func (emailTemplate EmailTemplate) GetAccountId() uint { return emailTemplate.AccountId }
 func (emailTemplate *EmailTemplate) setAccountId(id uint) { emailTemplate.AccountId = id }
 func (EmailTemplate) SystemEntity() bool { return false }
@@ -99,6 +100,9 @@ func (et *EmailTemplate) load() error {
 		return err
 	}
 	return nil
+}
+func (*EmailTemplate) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
 func (EmailTemplate) getByHashId(hashId string) (*EmailTemplate, error) {
@@ -485,9 +489,9 @@ func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, 
 
 	mx, err := net.LookupMX(host)
 	if err != nil {
-		fmt.Println("Email: ", toEmail)
-		fmt.Println(err)
-		log.Fatal("Не найдена MX-запись")
+		// fmt.Println("Email: ", toEmail)
+		// fmt.Println(err)
+		log.Println("Не найдена MX-запись")
 	}
 
 	//addr := fmt.Sprintf("%s:%d", mx[0].Host, 25)

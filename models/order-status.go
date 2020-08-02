@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
@@ -30,6 +31,7 @@ type OrderStatus struct {
 // ############# Entity interface #############
 func (orderStatus OrderStatus) GetId() uint { return orderStatus.Id }
 func (orderStatus *OrderStatus) setId(id uint) { orderStatus.Id = id }
+func (orderStatus *OrderStatus) setPublicId(id uint) { orderStatus.Id = id }
 func (orderStatus OrderStatus) GetAccountId() uint { return orderStatus.AccountId }
 func (orderStatus *OrderStatus) setAccountId(id uint) { orderStatus.AccountId = id }
 func (orderStatus OrderStatus) SystemEntity() bool { return orderStatus.AccountId == 1 }
@@ -108,6 +110,9 @@ func (orderStatus *OrderStatus) load() error {
 		return err
 	}
 	return nil
+}
+func (*OrderStatus) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
 func (OrderStatus) getList(accountId uint, sortBy string) ([]Entity, uint, error) {

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
@@ -22,6 +23,7 @@ type OrderChannel struct {
 // ############# Entity interface #############
 func (orderChannel OrderChannel) GetId() uint { return orderChannel.Id }
 func (orderChannel *OrderChannel) setId(id uint) { orderChannel.Id = id }
+func (orderChannel *OrderChannel) setPublicId(id uint) { }
 func (orderChannel OrderChannel) GetAccountId() uint { return orderChannel.AccountId }
 func (orderChannel *OrderChannel) setAccountId(id uint) { orderChannel.AccountId = id }
 func (orderChannel OrderChannel) SystemEntity() bool { return orderChannel.AccountId == 1 }
@@ -90,6 +92,9 @@ func (orderChannel *OrderChannel) load() error {
 		return err
 	}
 	return nil
+}
+func (*OrderChannel) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
 // Специальная функция *** NOT Entity ***

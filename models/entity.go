@@ -10,6 +10,7 @@ type Entity interface {
 
 	GetId() uint
 	setId(id uint)
+	setPublicId(id uint)
 	GetAccountId() uint
 	setAccountId(id uint)
 
@@ -17,6 +18,7 @@ type Entity interface {
 	create() (Entity, error)
 	get (id uint) (Entity, error)
 	load () error
+	loadByPublicId () error
 	getList(accountId uint, order string) ([]Entity, uint, error)
 	getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error)
 	update(input map[string]interface{}) error
@@ -67,6 +69,25 @@ func (account Account) LoadEntity(entity Entity, primaryKey uint) error {
 	
 	// Загружаем по ссылке
 	err := entity.load()
+	if err != nil {
+		return err
+	}
+
+	// Проверяем принадлежность к аккаунту
+	if entity.GetAccountId() != account.Id && !entity.SystemEntity() {
+		return errors.New("Модель принадлежит другому аккаунту")
+	}
+
+	return nil
+}
+
+func (account Account) LoadEntityByPublicId(entity Entity, publicId uint) error {
+
+	// На всякий случай
+	entity.setPublicId(publicId)
+
+	// Загружаем по ссылке
+	err := entity.loadByPublicId()
 	if err != nil {
 		return err
 	}

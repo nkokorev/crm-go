@@ -3,6 +3,7 @@ package models
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
@@ -58,6 +59,7 @@ type EmailNotification struct {
 // ############# Entity interface #############
 func (emailNotification EmailNotification) GetId() uint { return emailNotification.Id }
 func (emailNotification *EmailNotification) setId(id uint) { emailNotification.Id = id }
+func (emailNotification *EmailNotification) setPublicId(id uint) { }
 func (emailNotification EmailNotification) GetAccountId() uint { return emailNotification.AccountId }
 func (emailNotification *EmailNotification) setAccountId(id uint) { emailNotification.AccountId = id }
 func (EmailNotification) SystemEntity() bool { return false }
@@ -137,6 +139,9 @@ func (emailNotification *EmailNotification) load() error {
 		return err
 	}
 	return nil
+}
+func (*EmailNotification) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
 func (EmailNotification) getList(accountId uint, sortBy string) ([]Entity, uint, error) {

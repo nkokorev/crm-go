@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/mitchellh/mapstructure"
@@ -44,6 +45,7 @@ func (WebSite) PgSqlCreate() {
 // ############# Entity interface #############
 func (webSite WebSite) GetId() uint { return webSite.Id }
 func (webSite *WebSite) setId(id uint) { webSite.Id = id }
+func (webSite *WebSite) setPublicId(id uint) { webSite.Id = id }
 func (webSite WebSite) GetAccountId() uint { return webSite.AccountId }
 func (webSite *WebSite) setAccountId(id uint) { webSite.AccountId = id }
 func (webSite WebSite) SystemEntity() bool { return false }
@@ -103,7 +105,9 @@ func (webSite *WebSite) load() error {
 	}
 	return nil
 }
-
+func (*WebSite) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
+}
 
 func (WebSite) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return WebSite{}.getPaginationList(accountId, 0, 100, sortBy, "")

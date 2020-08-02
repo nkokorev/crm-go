@@ -3,6 +3,7 @@ package models
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
@@ -60,6 +61,7 @@ func (DeliveryRussianPost) PgSqlCreate() {
 // ############# Entity interface #############
 func (deliveryRussianPost DeliveryRussianPost) GetId() uint { return deliveryRussianPost.Id }
 func (deliveryRussianPost *DeliveryRussianPost) setId(id uint) { deliveryRussianPost.Id = id }
+func (deliveryRussianPost *DeliveryRussianPost) setPublicId(id uint) { }
 func (deliveryRussianPost DeliveryRussianPost) GetAccountId() uint { return deliveryRussianPost.AccountId }
 func (deliveryRussianPost DeliveryRussianPost) GetWebSiteId() uint { return deliveryRussianPost.WebSiteId }
 func (deliveryRussianPost *DeliveryRussianPost) setAccountId(id uint) { deliveryRussianPost.AccountId = id }
@@ -122,6 +124,9 @@ func (deliveryRussianPost *DeliveryRussianPost) load() error {
 		return err
 	}
 	return nil
+}
+func (deliveryRussianPost *DeliveryRussianPost) loadByPublicId() error {
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
 func (DeliveryRussianPost) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
