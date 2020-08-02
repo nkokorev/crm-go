@@ -15,6 +15,9 @@ type PaymentMethod interface {
 	// Функция запускающая процесс создания платежа под Order (Заказ)
 	CreatePaymentByOrder(order Order, mode PaymentMode) (*Payment, error)
 	GetWebSiteId() uint
+
+	// нужно ли разносить оплату и доставку
+	IsInstantDelivery() bool
 }
 
 func (account Account) GetPaymentMethods() ([]PaymentMethod, error) {

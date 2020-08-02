@@ -42,6 +42,7 @@ type PaymentYandex struct {
 	// Включен ли данный способ оплаты
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // обрабатывать ли вебхук
 	// Description 		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
+	InstantDelivery 	bool 	`json:"instantDelivery" gorm:"type:bool;default:false"`
 
 	// Сохранение платежных данных (с их помощью можно проводить повторные безакцептные списания ).
 	SavePaymentMethod 	bool 	`json:"savePaymentMethod" gorm:"type:bool;default:false"`
@@ -79,12 +80,11 @@ func (PaymentYandex) SystemEntity() bool { return false }
 func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order, mode PaymentMode) (*Payment, error) {
 
 	// 1. Формируем paymentMode (Признак способа расчета): full_prepayment / full_payment / service
-
-	_orderCartItems := order.CartItems
-	for i := range(_orderCartItems) {
-		_orderCartItems[i].Id = mode.Id
-		_orderCartItems[i].PaymentMode = mode
-		_orderCartItems[i].PaymentModeYandex = mode.Code
+	// _orderCartItems := order.CartItems
+	for i := range(order.CartItems) {
+		order.CartItems[i].Id = mode.Id
+		order.CartItems[i].PaymentMode = mode
+		order.CartItems[i].PaymentModeYandex = mode.Code
 	}
 
 	_p := Payment {
@@ -102,7 +102,7 @@ func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order, mode Paymen
 				Phone: order.Customer.Phone,
 				FullName: order.Customer.Name + " " + order.Customer.Surname,
 			},
-			Items: _orderCartItems, // <<< Признак предмета расчета(?) & Признак способа расчета (?)
+			Items: order.CartItems, // <<< Признак предмета расчета(?) & Признак способа расчета (?)
 			Email: order.Customer.Email,
 			Phone: order.Customer.Phone,
 		},
@@ -132,8 +132,6 @@ func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order, mode Paymen
 	}
 	payment := entity.(*Payment)
 
-	// return nil, errors.New("fdfsdf")
-
 	// Вызываем Yandex для созданного платежа
 	err = paymentYandex.ExternalCreate(payment)
 	if err != nil {
@@ -146,6 +144,7 @@ func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order, mode Paymen
 func (paymentYandex PaymentYandex) GetWebSiteId() uint { return paymentYandex.WebSiteId }
 func (paymentYandex PaymentYandex) GetType() string { return "payment_yandexes" }
 func (paymentYandex PaymentYandex) GetCode() string { return "payment_yandex" }
+func (paymentYandex PaymentYandex) IsInstantDelivery() bool { return paymentYandex.InstantDelivery }
 // ############# END OF Payment Method interface #############
 
 // ######### CRUD Functions ############

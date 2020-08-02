@@ -23,6 +23,7 @@ type PaymentCash struct {
 
 	// Включен ли данный способ оплаты ??
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"`
+	InstantDelivery bool 	`json:"instantDelivery" gorm:"type:bool;default:false"`
 
 	WebSite		WebSite `json:"webSite" gorm:"preload"`
 	// !!! deprecated !!!
@@ -85,6 +86,7 @@ func (paymentCash PaymentCash) CreatePaymentByOrder(order Order, mode PaymentMod
 func (paymentCash PaymentCash) GetWebSiteId() uint { return paymentCash.WebSiteId }
 func (paymentCash PaymentCash) GetType() string { return "payment_cashes" }
 func (paymentCash PaymentCash) GetCode() string { return "payment_cash" }
+func (paymentCash PaymentCash) IsInstantDelivery() bool { return paymentCash.InstantDelivery }
 // ############# END OF Payment Method interface #############
 
 // ######### CRUD Functions ############

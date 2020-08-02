@@ -336,13 +336,24 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
-	mode, err := models.PaymentMode{}.GetFullPrepaymentMode()
-	if err != nil {
-		log.Printf("Не удалось получить полную предоплату: %v", err)
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
-		return
+	// Моментальная доставкатовара или нет
+	var mode models.PaymentMode
+	if paymentMethod.IsInstantDelivery() {
+		mode, err = models.PaymentMode{}.GetFullPaymentMode()
+		if err != nil {
+			log.Printf("Не удалось получить полную предоплату: %v", err)
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
+			return
+		}
+	}   else {
+		mode, err = models.PaymentMode{}.GetFullPrepaymentMode()
+		if err != nil {
+			log.Printf("Не удалось получить полную предоплату: %v", err)
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
+			return
+		}
 	}
+
 	
 	// Создаем платеж на основании заказа 
 	payment, err := paymentMethod.CreatePaymentByOrder(order, mode)
@@ -351,7 +362,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	// Создаем доставку на основании заказа
+	// Создаем доставку на основании заказа. Даже если это моментальная выдача товара (должен быть соответствующий способ).
 	_, err = delivery.CreateDeliveryOrder(input.Delivery, deliveryAmount, order)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания доставки", Errors: map[string]interface{}{"delivery":err.Error()}}))
