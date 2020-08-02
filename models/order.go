@@ -132,6 +132,13 @@ func (order *Order) AfterFind() (err error) {
 		order.PaymentMethod = method
 	}
 
+	for i := range order.CartItems {
+		var paymentSubject PaymentSubject
+		err := Account{Id: order.AccountId}.LoadEntity(&paymentSubject, order.CartItems[i].PaymentSubjectId)
+		if err != nil { return err}
+		order.CartItems[i].PaymentSubjectYandex = paymentSubject.Code
+	}
+
 	return nil
 }
 
@@ -151,7 +158,7 @@ func (order Order) create() (Entity, error)  {
 	if err := db.Create(&wb).First(&wb,wb.Id).Error; err != nil {
 		return nil, err
 	}
-	if err := wb.GetPreloadDb(false,true).First(&wb,wb.Id).Error; err != nil {
+	if err := wb.GetPreloadDb(false,false).First(&wb,wb.Id).Error; err != nil {
 		return nil, err
 	}
 

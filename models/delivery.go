@@ -8,12 +8,12 @@ type Delivery interface {
 	GetType() string
 	GetName() string
 	GetVatCode() VatCode
+	GetPaymentSubject() PaymentSubject
 	GetWebSiteId() uint
 
 	CalculateDelivery(DeliveryData, float64) (float64, error) // weight в кг
 	checkMaxWeight(float64) error // проверяет макс вес
 
-	// setShopId(uint)
 	setWebSiteId(uint)
 	// AppendPaymentOptions([]PaymentOption) error
 	// RemovePaymentOptions([]PaymentOption) error
@@ -23,6 +23,9 @@ type Delivery interface {
 	AppendPaymentMethods([]PaymentMethod) error
 	RemovePaymentMethods([]PaymentMethod) error
 	ExistPaymentMethod(method PaymentMethod) bool
+
+	// Создавать ли ордер на доставку или это моментальная выдача товара
+	// NeedToCreateDeliveryOrder() bool
 
 	// getListByShop(accountId, websiteId uint) (interface{}, error)
 

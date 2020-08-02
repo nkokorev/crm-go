@@ -13,7 +13,7 @@ type PaymentMethod interface {
 	GetCode() string
 
 	// Функция запускающая процесс создания платежа под Order (Заказ)
-	CreatePaymentByOrder(order Order) (*Payment, error)
+	CreatePaymentByOrder(order Order, mode PaymentMode) (*Payment, error)
 	GetWebSiteId() uint
 }
 
@@ -62,8 +62,6 @@ func (account Account) GetPaymentMethodByCode(code string, methodId uint) (Payme
 	// 1. Получаем все варианты доставки (обычно их мало). Можно через switch, но лень потом исправлять баг с новыми типом доставки
 	methods, err := account.GetPaymentMethods()
 	if err != nil { return nil, err}
-
-
 
 	// Ищем наш вариант доставки
 	var method PaymentMethod

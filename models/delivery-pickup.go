@@ -58,6 +58,9 @@ func (deliveryPickup DeliveryPickup) GetCode() string {
 func (deliveryPickup DeliveryPickup) GetType() string {
 	return deliveryPickup.Type
 }
+func (deliveryPickup DeliveryPickup) GetPaymentSubject() PaymentSubject {
+	return deliveryPickup.PaymentSubject
+}
 // ############# Entity interface #############
 
 

@@ -76,7 +76,16 @@ func (PaymentYandex) SystemEntity() bool { return false }
 // ############# END OF Entity interface #############
 
 // ############# Payment Method interface #############
-func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order) (*Payment, error) {
+func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order, mode PaymentMode) (*Payment, error) {
+
+	// 1. Формируем paymentMode (Признак способа расчета): full_prepayment / full_payment / service
+
+	_orderCartItems := order.CartItems
+	for i := range(_orderCartItems) {
+		_orderCartItems[i].Id = mode.Id
+		_orderCartItems[i].PaymentMode = mode
+		_orderCartItems[i].PaymentModeYandex = mode.Code
+	}
 
 	_p := Payment {
 		AccountId: paymentYandex.AccountId,
@@ -93,7 +102,7 @@ func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order) (*Payment, 
 				Phone: order.Customer.Phone,
 				FullName: order.Customer.Name + " " + order.Customer.Surname,
 			},
-			Items: order.CartItems,
+			Items: _orderCartItems, // <<< Признак предмета расчета(?) & Признак способа расчета (?)
 			Email: order.Customer.Email,
 			Phone: order.Customer.Phone,
 		},
@@ -112,6 +121,8 @@ func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order) (*Payment, 
 		Capture: paymentYandex.Capture,
 
 		OrderId: order.Id,
+		PaymentMethodId: order.PaymentMethodId,
+		PaymentMethodType: order.PaymentMethodType,
 	}
 
 	// создаем внутри платеж
@@ -121,6 +132,8 @@ func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order) (*Payment, 
 	}
 	payment := entity.(*Payment)
 
+	// return nil, errors.New("fdfsdf")
+
 	// Вызываем Yandex для созданного платежа
 	err = paymentYandex.ExternalCreate(payment)
 	if err != nil {
@@ -129,6 +142,7 @@ func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order) (*Payment, 
 
 	return payment, nil
 }
+
 func (paymentYandex PaymentYandex) GetWebSiteId() uint { return paymentYandex.WebSiteId }
 func (paymentYandex PaymentYandex) GetType() string { return "payment_yandexes" }
 func (paymentYandex PaymentYandex) GetCode() string { return "payment_yandex" }
@@ -280,7 +294,9 @@ func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 		Receipt: payment.Receipt,
 	}
 
-
+	// fmt.Println("PaymentSubjectYandex: ", sendData.Receipt.Items[0].PaymentSubjectYandex)
+	// return utils.Error{Message: "Не удалось разобрать JSON платежа"}
+	
 	url := "https://payment.yandex.net/api/v3/payments"
 
 	// Собираем JSON данные
@@ -359,10 +375,11 @@ func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 		var responseRequest map[string]interface{}
 		if err := json.NewDecoder(response.Body).Decode(&responseRequest); err != nil {
 			return utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы: %v", err),
-				Errors: map[string]interface{}{"paymentOption":err.Error()}}
+				Errors: map[string]interface{}{"paymentMode":err.Error()}}
 		}
 		fmt.Println(responseRequest)
-		return utils.Error{Message: fmt.Sprintf("Ответ сервера Яндекс.Кассы: %v", response.StatusCode),Errors: map[string]interface{}{"paymentOption":"Проблема с сервером Яндекс.Кассы"}}
+		return utils.Error{Message: fmt.Sprintf("Ответ сервера Яндекс.Кассы: %v", response.StatusCode),
+			Errors: map[string]interface{}{"paymentMode":"Проблема с сервером Яндекс.Кассы"}}
 	}
 
 	return nil

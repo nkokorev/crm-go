@@ -16,14 +16,14 @@ type DeliveryRussianPost struct {
 	WebSiteId		uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
 	Code 		string	`json:"code" gorm:"type:varchar(16);default:'russianPost';"` // Для идентификации во фронтенде
 	Type 		string	`json:"type" gorm:"type:varchar(32);default:'delivery_russian_posts';"` // Для идентификации
-	
+
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // активен ли способ доставки
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // "Курьерская доставка", "Почта России", "Самовывоз"
 
 	AccessToken 		string `json:"accessToken" gorm:"type:varchar(255);"` // accessToken
 	XUserAuthorization 	string `json:"xUserAuthorization" gorm:"type:varchar(255);"` // XUserAuthorization в base64
 	MaxWeight 	float64 `json:"maxWeight" gorm:"type:int;default:20"` // максимальная масса в кг
-	
+
 	PostalCodeFrom	string	`json:"postalCodeFrom" gorm:"type:varchar(255);"` // индекс отправки с почты России
 	MailCategory 	string	`json:"mailCategory" gorm:"type:varchar(50);"` // https://otpravka.pochta.ru/specification#/enums-base-mail-category
 	MailType 		string	`json:"mailType" gorm:"type:varchar(50);"` // https://otpravka.pochta.ru/specification#/enums-base-mail-type
@@ -51,7 +51,7 @@ type DeliveryRussianPost struct {
 
 func (DeliveryRussianPost) PgSqlCreate() {
 	db.CreateTable(&DeliveryRussianPost{})
-	
+
 	db.Model(&DeliveryRussianPost{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Model(&DeliveryRussianPost{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "CASCADE", "CASCADE")
 	db.Model(&DeliveryRussianPost{}).AddForeignKey("vat_code_id", "vat_codes(id)", "CASCADE", "CASCADE")
@@ -71,6 +71,9 @@ func (deliveryRussianPost DeliveryRussianPost) GetCode() string {
 }
 func (deliveryRussianPost DeliveryRussianPost) GetType() string {
 	return deliveryRussianPost.Type
+}
+func (deliveryRussianPost DeliveryRussianPost) GetPaymentSubject() PaymentSubject {
+	return deliveryRussianPost.PaymentSubject
 }
 // ############# Entity interface #############
 

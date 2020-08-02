@@ -69,7 +69,7 @@ func RefreshTablesPart_I() {
 	pool := models.GetPool()
 
 	// not there
-	err := pool.Exec("drop table if exists orders_products, payment_methods_web_sites, payment_options_payments").Error
+	err := pool.Exec("drop table if exists orders_products, payment_methods_web_sites").Error
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -1608,8 +1608,7 @@ func LoadProductCategoryDescriptionAiroClimate()  {
 func RefreshTablesPart_IV() {
 	pool := models.GetPool()
 
-	err := pool.Exec("drop table if exists payment_options_delivery_pickups, payment_options_delivery_couriers, payment_options_delivery_russian_posts, " +
-		"orders_products, payment_methods_web_sites, payment_methods_payments").Error
+	err := pool.Exec("drop table if exists orders_products, payment_methods_web_sites, payment_methods_payments").Error
 	if err != nil {
 		log.Fatalf("Cant create tables -1: %v", err)
 		return
@@ -1759,4 +1758,8 @@ func Migrate_I() {
 	pool.AutoMigrate(&models.DeliveryPickup{})
 	pool.AutoMigrate(&models.DeliveryRussianPost{})
 	pool.AutoMigrate(&models.Payment{})
+	pool.AutoMigrate(&models.CartItem{})
+	pool.AutoMigrate(&models.PaymentMode{})
+
+	// models.PaymentMode{}.PgSqlCreate()
 }

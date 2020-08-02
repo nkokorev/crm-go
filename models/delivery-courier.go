@@ -189,6 +189,7 @@ func (deliveryCourier DeliveryCourier) GetName () string {
 func (deliveryCourier DeliveryCourier) GetVatCode () VatCode {
 	return deliveryCourier.VatCode
 }
+func (deliveryCourier DeliveryCourier) GetPaymentSubject() PaymentSubject {	return deliveryCourier.PaymentSubject }
 
 func (deliveryCourier DeliveryCourier) CalculateDelivery(deliveryData DeliveryData, weight float64) (float64, error) {
 	return  deliveryCourier.Price, nil

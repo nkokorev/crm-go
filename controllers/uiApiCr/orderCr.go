@@ -74,6 +74,7 @@ type Customer struct {
 	Patronymic 	string `json:"patronymic"`
 }
 
+// Отложенная выдача товара!
 func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 
 	/*u.Respond(w, u.MessageError(u.Error{Message:"Указанный тип оплаты не поддерживает данный тип доставки",
@@ -162,8 +163,16 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if product.PaymentSubject.Id < 1 {
+			log.Printf("product.PaymentSubject.Id < 1")
+			u.Respond(w, u.MessageError(u.Error{Message:fmt.Sprintf("Ошибка во время создания заказа")}))
+			return
+		}
+
 		// 1.3 Считаем цену товара с учетом скидок
 		ProductCost := product.RetailPrice - product.RetailDiscount
+
+
 
 		// 1.4 Формируем и добавляем Cart Item в общий список
 		cartItems = append(cartItems, models.CartItem{
@@ -173,13 +182,14 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 			Quantity: v.Quantity,
 			Amount: models.PaymentAmount{Value: ProductCost, Currency: "RUB"},
 			VatCode: product.VatCodeId,
-			// OrderId: order.Id,
+			PaymentSubjectId: product.PaymentSubjectId, // признак предмета расчета
+			PaymentSubjectYandex: product.PaymentSubject.Code,
 		})
 
 		// 1.5 Считаем общую стоимость заказа
 		totalCost += ProductCost * float64(v.Quantity)
 	}
-
+	
 	// 4. Определяем стоимость доставки
 	deliveryCost, _, err := webSite.CalculateDelivery(models.DeliveryRequest{
 		Cart: input.Cart,
@@ -203,8 +213,10 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		Quantity: 1,
 		Amount: deliveryAmount,
 		VatCode: delivery.GetVatCode().YandexCode,
+		PaymentSubjectId: delivery.GetPaymentSubject().Id, // признак предмета расчета
+		PaymentSubjectYandex: delivery.GetPaymentSubject().Code,
 	})
-
+	
 	// 4.2 Добавляем стоимость доставки к общей стоимости
 	totalCost += deliveryCost
 
@@ -305,7 +317,6 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	_order.CartItems = cartItems
 	_order.PaymentMethodId = paymentMethod.GetId()
 	_order.PaymentMethodType = paymentMethod.GetType()
-	
 
 	// Создаем order
 	orderEntity, err := account.CreateEntity(&_order)
@@ -314,21 +325,34 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, ok := orderEntity.(*models.Order)
+	/*order, ok := orderEntity.(*models.Order)
 	if !ok {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время конвертации заказа"}))
 		return
+	}*/
+	var order models.Order
+	if err := account.LoadEntity(&order, orderEntity.GetId()); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
+		return
 	}
 
+
+	mode, err := models.PaymentMode{}.GetFullPrepaymentMode()
+	if err != nil {
+		log.Printf("Не удалось получить полную предоплату: %v", err)
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
+		return
+	}
+	
 	// Создаем платеж на основании заказа 
-	payment, err := paymentMethod.CreatePaymentByOrder(*order)
+	payment, err := paymentMethod.CreatePaymentByOrder(order, mode)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания платежа", Errors: map[string]interface{}{"payment":err.Error()}}))
 		return
 	}
-
+	
 	// Создаем доставку на основании заказа
-	_, err = delivery.CreateDeliveryOrder(input.Delivery, deliveryAmount, *order)
+	_, err = delivery.CreateDeliveryOrder(input.Delivery, deliveryAmount, order)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания доставки", Errors: map[string]interface{}{"delivery":err.Error()}}))
 		return

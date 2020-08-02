@@ -21,6 +21,16 @@ type CartItem struct {
 	AmountId  	uint			`json:"amountId" gorm:"type:int;not null;"`
 	Amount  	PaymentAmount	`json:"amount"`
 
+	// Признак предмета расчета
+	PaymentSubjectId	uint	`json:"paymentSubjectId" gorm:"type:int;not null;default:1"`// товар или услуга ? [вид номенклатуры]
+	PaymentSubject 		PaymentSubject `json:"paymentSubject"`
+	PaymentSubjectYandex	string `json:"payment_subject" gorm:"-"`
+
+	// Признак способа расчета
+	PaymentModeId	uint	`json:"paymentModeId" gorm:"type:int;not null;default:1"`//
+	PaymentMode 	PaymentMode `json:"paymentMode"`
+	PaymentModeYandex 	string `json:"payment_mode" gorm:"-"`
+
 	// Ставка НДС
 	VatCode	uint	`json:"vat_code"`
 
@@ -36,11 +46,19 @@ func (CartItem) PgSqlCreate() {
 	db.Model(&CartItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Model(&CartItem{}).AddForeignKey("amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
 	db.Model(&CartItem{}).AddForeignKey("order_id", "orders(id)", "CASCADE", "CASCADE")
+	db.Model(&CartItem{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "CASCADE", "CASCADE")
+	db.Model(&CartItem{}).AddForeignKey("payment_mode_id", "payment_modes(id)", "CASCADE", "CASCADE")
 
 }
 func (cartItem *CartItem) BeforeCreate(scope *gorm.Scope) error {
 	cartItem.Id = 0
 	cartItem.Amount.AccountId = cartItem.AccountId
+	return nil
+}
+func (cartItem *CartItem) AfterFind() (err error) {
+
+	cartItem.PaymentSubjectYandex = cartItem.PaymentSubject.Code
+
 	return nil
 }
 

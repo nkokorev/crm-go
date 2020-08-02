@@ -49,7 +49,7 @@ func (PaymentCash) SystemEntity() bool { return false }
 // ############# Entity interface #############
 
 // ############# Payment Method interface #############
-func (paymentCash PaymentCash) CreatePaymentByOrder(order Order) (*Payment, error) {
+func (paymentCash PaymentCash) CreatePaymentByOrder(order Order, mode PaymentMode) (*Payment, error) {
 
 	_p := Payment {
 		AccountId: paymentCash.AccountId,
