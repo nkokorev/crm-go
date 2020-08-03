@@ -39,7 +39,7 @@ type DeliveryOrder struct {
 	Amount  	PaymentAmount	`json:"amount"`
 
 	// Статус заказа
-	StatusId  	uint			`json:"statusId" gorm:"type:int;default:1;"`
+	StatusId  	uint			`json:"statusId" gorm:"type:int;"`
 	Status		DeliveryStatus	`json:"status" gorm:"preload"`
 
 	CreatedAt 	time.Time `json:"createdAt"`
@@ -60,7 +60,7 @@ func (DeliveryOrder) PgSqlCreate() {
 	db.AutoMigrate(&DeliveryOrder{})
 	db.Model(&DeliveryOrder{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	// db.Model(&DeliveryOrder{}).AddForeignKey("order_id", "orders(id)", "CASCADE", "CASCADE")
-	db.Model(&DeliveryOrder{}).AddForeignKey("delivery_status_id", "delivery_statuses(id)", "CASCADE", "CASCADE")
+	db.Model(&DeliveryOrder{}).AddForeignKey("status_id", "delivery_statuses(id)", "CASCADE", "CASCADE")
 }
 func (deliveryOrder *DeliveryOrder) BeforeCreate(scope *gorm.Scope) error {
 	deliveryOrder.Id = 0
@@ -281,9 +281,6 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}) error {
 						log.Println(err)
 					}
 				}
-
-				fmt.Println("payment Ex: ", payment.ExternalId)
-
 			}
 
 			// todo: !!! Перевести ЗАКАЗ в статус - Выполнено!!

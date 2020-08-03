@@ -24,18 +24,18 @@ func main() {
 	pool.DB().SetMaxIdleConns(10)
 	pool.DB().SetMaxOpenConns(100)
 
-	// base.RefreshTablesPart_I()
-	// base.UploadTestDataPart_I()
-	// base.LoadImagesAiroClimate(13)
-	// base.LoadArticlesAiroClimate()
-	// base.LoadProductDescriptionAiroClimate()
-	// base.LoadProductCategoryDescriptionAiroClimate()
-	// base.UploadTestDataPart_II()
-	// base.UploadTestDataPart_III()
+	base.RefreshTablesPart_I()
+	base.UploadTestDataPart_I()
+	base.LoadImagesAiroClimate(13)
+	base.LoadArticlesAiroClimate()
+	base.LoadProductDescriptionAiroClimate()
+	base.LoadProductCategoryDescriptionAiroClimate()
+	base.UploadTestDataPart_II()
+	base.UploadTestDataPart_III()
 
 	// yandex payment
 	// base.RefreshTablesPart_IV()
-	// base.UploadTestDataPart_IV()
+	base.UploadTestDataPart_IV()
 	
 	// base.Migrate_I()
 

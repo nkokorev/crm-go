@@ -185,3 +185,12 @@ func (deliveryStatus *DeliveryStatus) delete () error {
 	return db.Model(DeliveryStatus{}).Where("id = ?", deliveryStatus.Id).Delete(deliveryStatus).Error
 }
 // ######### END CRUD Functions ############
+func (DeliveryStatus) GetStatusNew() (DeliveryStatus, error) {
+	var status DeliveryStatus
+
+	err := db.First(&status, "code = 'new'").Error
+	if err != nil {
+		return status, err
+	}
+	return status, nil
+}

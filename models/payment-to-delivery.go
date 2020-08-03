@@ -30,7 +30,7 @@ func (Payment2Delivery) TableName() string {
 
 // Добавляет, если есть - ничего не делает
 func  (webSite WebSite) AppendPayment2Delivery(paymentId uint, paymentType string, deliveryId uint, deliveryType string) error {
-	if err := db.Model(&Payment2Delivery{}).FirstOrCreate(Payment2Delivery{
+	if err := db.Create(&Payment2Delivery{
 		AccountId: webSite.AccountId,
 		WebSiteId: webSite.Id,
 		PaymentId:  paymentId,

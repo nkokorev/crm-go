@@ -226,6 +226,9 @@ func (deliveryPickup DeliveryPickup) ExistPaymentMethod(paymentMethod PaymentMet
 }
 
 func (deliveryPickup DeliveryPickup) CreateDeliveryOrder(deliveryData DeliveryData, amount PaymentAmount, order Order) (Entity, error)  {
+	status, err := DeliveryStatus{}.GetStatusNew()
+	if err != nil { return nil, err}
+
 	deliveryOrder := DeliveryOrder{
 		AccountId: deliveryPickup.AccountId,
 		OrderId:   order.Id,
@@ -236,6 +239,7 @@ func (deliveryPickup DeliveryPickup) CreateDeliveryOrder(deliveryData DeliveryDa
 		Address: deliveryData.Address,
 		PostalCode: deliveryData.PostalCode,
 		Amount: amount,
+		StatusId: status.Id,
 	}
 
 	return deliveryOrder.create()

@@ -310,6 +310,10 @@ func (deliveryRussianPost DeliveryRussianPost) ExistPaymentMethod(paymentMethod 
 }
 
 func (deliveryRussianPost DeliveryRussianPost) CreateDeliveryOrder(deliveryData DeliveryData, amount PaymentAmount,order Order) (Entity, error)  {
+
+	status, err := DeliveryStatus{}.GetStatusNew()
+	if err != nil { return nil, err}
+
 	deliveryOrder := DeliveryOrder{
 		AccountId: deliveryRussianPost.AccountId,
 		OrderId:   order.Id,
@@ -320,6 +324,7 @@ func (deliveryRussianPost DeliveryRussianPost) CreateDeliveryOrder(deliveryData 
 		Address: deliveryData.Address,
 		PostalCode: deliveryData.PostalCode,
 		Amount: amount,
+		StatusId: status.Id,
 	}
 
 	return deliveryOrder.create()

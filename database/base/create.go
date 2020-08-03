@@ -78,7 +78,7 @@ func RefreshTablesPart_I() {
 	pool.DropTableIfExists(models.Payment2Delivery{}, models.DeliveryOrder{}, models.DeliveryStatus{},models.OrderChannel{},  models.Order{}, models.OrderStatus{},models.Payment{},
 	models.PaymentAmount{})
 
-	pool.DropTableIfExists(models.CartItem{}, models.OrderComment{}, models.PaymentYandex{}, models.PaymentCash{} )
+	pool.DropTableIfExists(models.CartItem{}, models.OrderComment{}, models.PaymentMode{},models.PaymentYandex{}, models.PaymentCash{} )
 
 
 	pool.DropTableIfExists(models.Product{}, models.ProductCard{}, models.ProductGroup{})
@@ -124,8 +124,8 @@ func RefreshTablesPart_I() {
 	// Уведомления
 	models.EmailNotification{}.PgSqlCreate()
 	models.OrderComment{}.PgSqlCreate()
-
-
+	
+	models.PaymentMode{}.PgSqlCreate()
 	models.PaymentAmount{}.PgSqlCreate()
 	models.Payment{}.PgSqlCreate()
 	models.OrderChannel{}.PgSqlCreate()
