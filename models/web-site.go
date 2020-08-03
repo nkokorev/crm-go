@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/mitchellh/mapstructure"
+	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 )
 
@@ -76,6 +77,19 @@ func (webSite *WebSite) BeforeCreate(scope *gorm.Scope) error {
 func (webSite *WebSite) AfterFind() (err error) {
 	
 	webSite.Deliveries = webSite.GetDeliveryMethods()
+	return nil
+}
+
+func (webSite *WebSite) AfterCreate(scope *gorm.Scope) (error) {
+	event.AsyncFire(Event{}.WebSiteCreated(webSite.AccountId, webSite.Id))
+	return nil
+}
+func (webSite *WebSite) AfterUpdate(tx *gorm.DB) (err error) {
+	event.AsyncFire(Event{}.WebSiteUpdated(webSite.AccountId, webSite.Id))
+	return nil
+}
+func (webSite *WebSite) AfterDelete(tx *gorm.DB) (err error) {
+	event.AsyncFire(Event{}.WebSiteDeleted(webSite.AccountId, webSite.Id))
 	return nil
 }
 

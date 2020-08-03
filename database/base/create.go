@@ -1324,7 +1324,7 @@ func UploadTestDataPart_III() {
 		{Name: "Upload all webSite data", Code: models.EventUpdateAllShopData, URL: domainAiroSite + "/ratuscrm/webhooks/upload/all", HttpMethod: http.MethodGet},
 
 		// WebSite
-		{Name: "Update webSite", Code: models.EventShopUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/web-sites", HttpMethod: http.MethodPatch},
+		{Name: "Update Web Site", Code: models.EventShopUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/web-sites/{{.webSiteId}}", HttpMethod: http.MethodPatch},
 
 		// Product
 		{Name: "Create product", Code: models.EventProductCreated, URL: domainAiroSite + "/ratuscrm/webhooks/products/{{.productId}}", HttpMethod: http.MethodPost},
