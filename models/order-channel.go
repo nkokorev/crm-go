@@ -5,7 +5,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
-	"time"
 )
 
 type OrderChannel struct {
@@ -15,9 +14,6 @@ type OrderChannel struct {
 	Code		string	`json:"code" gorm:"type:varchar(32);unique;not null;"`
 	Name		string 	`json:"name" gorm:"type:varchar(255);not null;"` // "Заказ из корзины", "Заказ по телефону", "Пропущенный звонок", "Письмо.."
 	Description string 	`json:"description" gorm:"type:varchar(255);"` // Описание назначения канала
-	
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 // ############# Entity interface #############
@@ -45,7 +41,9 @@ func (OrderChannel) PgSqlCreate() {
 		{Code:"request_from_the_landing_page",	Name:   "Заявка с посадочной страницы",Description: "-"},
 		{Code:"messenger", 			Name:   "Мессенджеры",	Description: "-"},
 		{Code:"online_assistant", 	Name:   "Онлайн-консультант",Description: "-"},
-		{Code:"mobile_apps", Name:   "Мобильное приложение",Description: "-"},
+		{Code:"mobile_apps", 	Name:   "Мобильное приложение",Description: "-"},
+		{Code:"callback_phone", Name:   "Заказ обратного звонка",Description: "-"},
+		{Code:"callback_form", Name:   "Вопрос с формы на сайте",Description: "-"},
 	}
 	for i := range(orderChannels) {
 		_, err := Account{Id: 1}.CreateEntity(&orderChannels[i])

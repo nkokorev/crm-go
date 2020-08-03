@@ -27,11 +27,11 @@ type Order struct {
 	WebSite		WebSite	`json:"webSite"`
 
 	// Данные клиента
-	CustomerId 	uint	`json:"customerId" gorm:"type:int;not null"`
+	CustomerId 	uint	`json:"customerId" gorm:"type:int;"`
 	Customer	User	`json:"customer"`
 
 	// Данные компании-заказчика
-	CompanyId 	uint	`json:"companyId" gorm:"type:int;not null"`
+	CompanyId 	uint	`json:"companyId" gorm:"type:int;"`
 	Company		User	`json:"company"`
 
 	// Способ (канал) заказа: "Заказ из корзины", "Заказ по телефону", "Пропущенный звонок", "Письмо.."
@@ -39,12 +39,12 @@ type Order struct {
 	OrderChannel 	OrderChannel `json:"orderChannel"`
 
 	//	Выбранный клиентом способ оплаты:
-	PaymentMethodId 	uint	`json:"paymentMethodId" gorm:"type:int;not null;default:1"`
-	PaymentMethodType 	string	`json:"paymentMethodType" gorm:"type:varchar(32);not null;default:'payment_yandexes'"`
+	PaymentMethodId 	uint	`json:"paymentMethodId" gorm:"type:int;"`
+	PaymentMethodType 	string	`json:"paymentMethodType" gorm:"type:varchar(32);default:'payment_yandexes'"`
 	PaymentMethod 		PaymentMethod `json:"paymentMethod" gorm:"-"`
 
 	// Фиксируем стоимость заказа
-	AmountId  	uint	`json:"amountId" gorm:"type:int;not null;"`
+	AmountId  	uint	`json:"amountId" gorm:"type:int;"`
 	Amount		PaymentAmount	`json:"amount"`
 
 	// Состав заказа

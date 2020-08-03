@@ -427,8 +427,6 @@ func (account Account) GetUserByPhone(phone string, regions... string) (*User, e
 
 	_phone, _ := utils.ParseE164Phone(phone, region)
 
-	// fmt.Println("Phone: ", _phone)
-	// fmt.Println("region: ", region)
 	var user User
 
 	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
@@ -436,7 +434,7 @@ func (account Account) GetUserByPhone(phone string, regions... string) (*User, e
 		Where("account_users.account_id = ? AND phone = ? AND phone_region = ?", account.Id, _phone, region).
 		First(&user).Error
 	if err != nil {
-		fmt.Println("Пользователь не найден по телефону! ", err)
+		// fmt.Println("Пользователь не найден по телефону! ", err)
 		return nil, err
 	}
 	

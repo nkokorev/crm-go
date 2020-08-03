@@ -86,11 +86,6 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		}}))
 	return*/
 
-	// Итоговая стоимость заказа
-	var totalCost float64
-	totalCurrency := "RUB"
-	totalCost = 0
-	
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
@@ -104,15 +99,142 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validateOrder(input); err != nil {
-		u.Respond(w, u.MessageError(err))
-		return
-	}
-
 	// 1. Получаем магазин из контекста
 	var webSite models.WebSite
 	if err := account.LoadEntity(&webSite, input.WebSiteId); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в запросе: проверьте id магазина"))
+		return
+	}
+	
+	// 0. Находим канал заявки
+	if input.OrderChannelCode == "" {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска источника заявки", Errors: map[string]interface{}{"orderChannel":"Необходимо указать канал заявки"}}))
+		return
+	}
+	channel, err := account.GetOrderChannelByCode(input.OrderChannelCode)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска источника заявки", Errors: map[string]interface{}{"orderChannel":"канал не найден"}}))
+		return
+	}
+
+	switch channel.Code {
+	case "through_the_basket":
+		createOrderFromBasket(w, input, *account, webSite, *channel)
+		return
+	case "callback_phone":
+		createOrderFromCallbackPhone(w, input, *account, webSite, *channel)
+		return
+	case "callback_form":
+		createOrderFromCallbackForm(w, input, *account, webSite, *channel)
+		return
+	default:
+		u.Respond(w, u.MessageError(u.Error{Message:"Указанный канал не поддерживается",
+			Errors: map[string]interface{}{
+				"orderChannel":"Не поддерживаемый канал заявок",
+			}}))
+		return
+	}
+
+
+}
+
+func validateCustomerOrder(input CreateOrderForm) error {
+	var e u.Error
+	// Проверяем данные
+	if input.Customer.Phone == "" {
+		e.AddErrors("phone", "Укажите свой контактный телефон")
+	} else {
+		_, err := libphonenumber.Parse(input.Customer.Phone , "RU")
+		if err != nil {
+			e.AddErrors("phone", err.Error())
+		}
+	}
+
+	if input.Customer.Email == "" {
+		e.AddErrors("email", "Необходимо указать email")
+	} else {
+		if err := u.EmailDeepValidation(input.Customer.Email); err != nil {
+			e.AddErrors("email", err.Error())
+		}
+	}
+
+	if input.Customer.Name == "" {
+		e.AddErrors("name", "Укажите имя получателя товара")
+	}
+
+	if e.HasErrors() {
+		e.Message = "Проверьте правильность заполнения формы"
+		return e
+	}
+
+	return nil
+	
+}
+
+func getCustomerFromInput(account models.Account, userHashId, email, phone, name, surname, patronymic string) (*models.User, error) {
+
+	var user models.User
+
+	if userHashId != "" {
+		// Если ищем пользователя среди существующих
+		_user, err := account.GetUserByHashId(userHashId)
+		if err != nil || _user == nil {
+			return nil, u.Error{Message:"Ошибка поиска пользователя", Errors: map[string]interface{}{"hashId":"Не удалось найти пользователя"}}
+		}
+		user = *_user
+	} else {
+		// Если необходимо создать пользователя
+
+		// 6.1 Проверяем, есть ли пользователь с такими контактными данными в существующем аккаунте
+		userByEmail, errEmail := account.GetUserByEmail(email)
+		userByPhone, errPhone := account.GetUserByPhone(phone, "RU")
+
+		// todo: подсовывать ли данные существующим клиентам или нет ? - вывести в настройки
+		if errPhone == nil {
+			user = *userByPhone
+		}
+		if errEmail == nil {
+			user = *userByEmail
+		}
+		if user.Id < 1 {
+			var _user models.User
+			_user.Email = email
+			_user.Phone = phone
+
+			_user.Name = name
+			_user.Surname = surname
+			_user.Patronymic = patronymic
+
+			// 1.3 Роль - клиент
+			role, err := account.GetRoleByTag(models.RoleClient)
+			if err != nil {
+				return nil, u.Error{Message:"Ошибка создания пользователя"}
+			}
+
+			// 2. Создаем пользователя
+			__user, err := account.CreateUser(_user, *role)
+			if err != nil {
+				fmt.Println(err)
+				return nil, u.Error{Message:"Ошибка создания пользователя"}
+			}
+
+			user = *__user
+		}
+	}
+
+	return &user, nil
+}
+
+func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account models.Account, webSite models.WebSite, channel models.OrderChannel) {
+
+	// Итоговая стоимость заказа
+	var totalCost float64
+	totalCurrency := "RUB"
+	totalCost = 0
+
+	
+	if err := validateCustomerOrder(input); err != nil {
+		u.Respond(w, u.MessageError(err))
 		return
 	}
 
@@ -121,7 +243,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска способа оплаты", Errors: map[string]interface{}{"paymentMethodCode":"Необходимо указать способ оплаты"}}))
 		return
 	}
-    	
+
 	paymentMethod, err := account.GetPaymentMethodByCode(input.PaymentMethod.Code, input.PaymentMethod.Id)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска способа оплаты", Errors: map[string]interface{}{"paymentMethod":"Способ оплаты не найден"}}))
@@ -145,11 +267,11 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 			Errors: map[string]interface{}{"paymentMethod":"Указанный тип оплаты не поддерживает данный тип доставки"}}))
 		return
 	}
-	
+
 	// 2. Создаем список продуктов, считаем стоимость каждого
 	var cartItems []models.CartItem
 	for _,v := range input.Cart {
-		
+
 		// 1.1 Получаем продукт
 		product, err := account.GetProduct(v.ProductId)
 		if err != nil {
@@ -189,7 +311,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		// 1.5 Считаем общую стоимость заказа
 		totalCost += ProductCost * float64(v.Quantity)
 	}
-	
+
 	// 4. Определяем стоимость доставки
 	deliveryCost, _, err := webSite.CalculateDelivery(models.DeliveryRequest{
 		Cart: input.Cart,
@@ -216,73 +338,19 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		PaymentSubjectId: delivery.GetPaymentSubject().Id, // признак предмета расчета
 		PaymentSubjectYandex: delivery.GetPaymentSubject().Code,
 	})
-	
+
 	// 4.2 Добавляем стоимость доставки к общей стоимости
 	totalCost += deliveryCost
 
-	// 5. Находим канал заявки
-	if input.OrderChannelCode == "" {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска источника заявки", Errors: map[string]interface{}{"orderChannel":"Необходимо указать канал заявки"}}))
-		return
-	}
-	orderChannel, err := account.GetOrderChannelByCode(input.OrderChannelCode)
-	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска источника заявки", Errors: map[string]interface{}{"orderChannel":"канал не найден"}}))
-		return
-	}
-
 	// 6. Создаем / находим пользователя
-	var customer *models.User
-	if input.CustomerHashId != "" {
-		// Если ищем пользователя среди существующих
-		user, err := account.GetUserByHashId(input.CustomerHashId)
-		if err != nil || user == nil {
-			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска пользователя", Errors: map[string]interface{}{"customerHashId":"Не удалось найти пользователя"}}))
-			return
-		}
-		customer = user
-	} else {
-		// Если необходимо создать пользователя
-
-		// 6.1 Проверяем, есть ли пользователь с такими контактными данными в существующем аккаунте
-		userByEmail, errEmail := account.GetUserByEmail(input.Customer.Email)
-		userByPhone, errPhone := account.GetUserByPhone(input.Customer.Phone, "RU")
-
-		// todo: подсовывать ли данные существующим клиентам или нет ? - вывести в настройки
-		if errPhone == nil {
-			customer = userByPhone
-		}
-		if errEmail == nil {
-			customer = userByEmail
-		}
-		if customer == nil {
-			var _customer models.User
-			_customer.Email = input.Customer.Email
-			_customer.Phone = input.Customer.Phone
-
-			_customer.Name = input.Customer.Name
-			_customer.Surname = input.Customer.Surname
-			_customer.Patronymic = input.Customer.Patronymic
-
-			// 1.3 Роль - клиент
-			role, err := account.GetRoleByTag(models.RoleClient)
-			if err != nil {
-				log.Fatalf("Не удалось найти аккаунт: %v", err)
-			}
-
-			// 2. Создаем пользователя
-			user, err := account.CreateUser(_customer, *role)
-			if err != nil {
-				u.Respond(w, u.MessageError(u.Error{Message:"Ошибка создания пользователя"}))
-				return
-			}
-
-			customer = user
-		}
-
+	// 6. Создаем / находим пользователя
+	customer, err := getCustomerFromInput(account, input.CustomerHashId, input.Customer.Email, input.Customer.Phone, input.Customer.Name, input.Customer.Surname, input.Customer.Patronymic)
+	if err != nil {
+		u.Respond(w, u.MessageError(err))
+		return
 	}
 
-	// 7. Создаем / находим менеджера
+	// 7. Находим менеджера
 	var manager models.User
 	if input.ManagerHashId != "" {
 		// Если ищем пользователя среди существующих
@@ -312,7 +380,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	_order.WebSiteId = webSite.Id
 	_order.CustomerId = customer.Id
 	// order.CompanyId = CompanyId.Id
-	_order.OrderChannelId = orderChannel.Id
+	_order.OrderChannelId = channel.Id
 	_order.Amount = models.PaymentAmount{Value: totalCost, Currency: totalCurrency, AccountId: account.Id}
 	_order.CartItems = cartItems
 	_order.PaymentMethodId = paymentMethod.GetId()
@@ -324,12 +392,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
 		return
 	}
-
-	/*order, ok := orderEntity.(*models.Order)
-	if !ok {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время конвертации заказа"}))
-		return
-	}*/
+	
 	var order models.Order
 	if err := account.LoadEntity(&order, orderEntity.GetId()); err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
@@ -353,13 +416,13 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Создаем платеж на основании заказа 
+	// Создаем платеж на основании заказа
 	payment, err := paymentMethod.CreatePaymentByOrder(order, mode)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания платежа", Errors: map[string]interface{}{"payment":err.Error()}}))
 		return
 	}
-	
+
 	// Создаем заказ на доставку на основании заказа. Даже если это моментальная выдача товара (должен быть соответствующий способ).
 	_, err = delivery.CreateDeliveryOrder(input.Delivery, deliveryAmount, order)
 	if err != nil {
@@ -367,43 +430,171 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
-
 	resp := u.Message(true, "POST Order Created")
 	resp["order"] = order
 	resp["payment"] = payment
 	u.Respond(w, resp)
 }
 
-func validateOrder(input CreateOrderForm) error {
-	var e u.Error
-	// Проверяем данные
+func createOrderFromCallbackPhone(w http.ResponseWriter, input CreateOrderForm, account models.Account, webSite models.WebSite, channel models.OrderChannel) {
+
 	if input.Customer.Phone == "" {
-		e.AddErrors("phone", "Укажите свой контактный телефон")
+		u.Respond(w, u.MessageError(
+			u.Error{Message:"Ошибка создания заявки",
+				Errors: map[string]interface{}{"phone":"Необходимо указать номер телефона"}}))
+		return
 	} else {
 		_, err := libphonenumber.Parse(input.Customer.Phone , "RU")
 		if err != nil {
-			e.AddErrors("phone", err.Error())
+			u.Respond(w, u.MessageError(
+				u.Error{Message:"Ошибка создания заявки",
+					Errors: map[string]interface{}{"phone":"Формат телефона указан не верно"}}))
+			return
 		}
 	}
 
-	if input.Customer.Email == "" {
-		e.AddErrors("email", "Необходимо указать email")
-	} else {
-		if err := u.EmailDeepValidation(input.Customer.Email); err != nil {
-			e.AddErrors("email", err.Error())
+	// 6. Создаем / находим пользователя
+	customer, err := getCustomerFromInput(account, input.CustomerHashId, input.Customer.Email, input.Customer.Phone, input.Customer.Name, input.Customer.Surname, input.Customer.Patronymic)
+	if err != nil {
+		u.Respond(w, u.MessageError(err))
+		return
+	}
+
+	// 7. Находим менеджера
+	var manager models.User
+	if input.ManagerHashId != "" {
+		// Если ищем пользователя среди существующих
+		_manager, err := account.GetUserByHashId(input.ManagerHashId)
+		if err != nil || _manager == nil {
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска ответственного менеджера", Errors: map[string]interface{}{"managerHashId":"Не удалось найти менеджера"}}))
+			return
+
 		}
+		manager = *_manager
 	}
 
-	if input.Customer.Name == "" {
-		e.AddErrors("name", "Укажите имя получателя товара")
+	// 8. Создаем / находим компанию
+	if input.CompanyHashId != "" {
+		// todo создание / поиск компании
+		fmt.Println("Поиск компании..")
 	}
 
-	if e.HasErrors() {
-		e.Message = "Проверьте правильность заполнения формы"
-		return e
+	//////////////////////
+
+	// 9. Создаем заказ
+	var _order models.Order
+
+	_order.CustomerComment = input.CustomerComment
+	_order.ManagerId = manager.Id
+	_order.Individual = input.Individual
+	_order.WebSiteId = webSite.Id
+	_order.CustomerId = customer.Id
+	// _order.CompanyId = CompanyId.Id
+	_order.OrderChannelId = channel.Id
+
+	// Создаем order
+	orderEntity, err := account.CreateEntity(&_order)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
+		return
 	}
 
-	return nil
-	
+	var order models.Order
+	if err := account.LoadEntity(&order, orderEntity.GetId()); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
+		return
+	}
+
+	resp := u.Message(true, "POST Order Created")
+	resp["order"] = order
+	u.Respond(w, resp)
 }
+func createOrderFromCallbackForm(w http.ResponseWriter, input CreateOrderForm, account models.Account, webSite models.WebSite, channel models.OrderChannel) {
+
+	if input.CustomerComment == "" {
+		u.Respond(w, u.MessageError(
+			u.Error{Message:"Ошибка создания заявки",
+				Errors: map[string]interface{}{"customerComment":"Укажите свой вопрос"}}))
+		return
+	}
+	if input.Customer.Phone == "" && input.Customer.Email == "" {
+		u.Respond(w, u.MessageError(
+			u.Error{Message:"Ошибка создания заявки",
+				Errors: map[string]interface{}{"phone":"Необходимо указать номер телефона или email"}}))
+		return
+	}
+	if input.Customer.Phone != "" {
+		_, err := libphonenumber.Parse(input.Customer.Phone , "RU")
+		if err != nil {
+			u.Respond(w, u.MessageError(
+				u.Error{Message:"Ошибка создания заявки",
+					Errors: map[string]interface{}{"phone":"Формат телефона указан не верно"}}))
+			return
+		}
+	}
+	if input.Customer.Email != "" {
+		if err := u.EmailValidation(input.Customer.Email); err != nil {
+			u.Respond(w, u.MessageError(
+				u.Error{Message:"Ошибка создания заявки",
+					Errors: map[string]interface{}{"email":"Проверьте правильность написания email'а"}}))
+			return
+		}
+	}
+
+	// 6. Создаем / находим пользователя
+	customer, err := getCustomerFromInput(account, input.CustomerHashId, input.Customer.Email, input.Customer.Phone, input.Customer.Name, input.Customer.Surname, input.Customer.Patronymic)
+	if err != nil {
+		u.Respond(w, u.MessageError(err))
+		return
+	}
+
+	// 7. Находим менеджера
+	var manager models.User
+	if input.ManagerHashId != "" {
+		// Если ищем пользователя среди существующих
+		_manager, err := account.GetUserByHashId(input.ManagerHashId)
+		if err != nil || _manager == nil {
+			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска ответственного менеджера", Errors: map[string]interface{}{"managerHashId":"Не удалось найти менеджера"}}))
+			return
+
+		}
+		manager = *_manager
+	}
+
+	// 8. Создаем / находим компанию
+	if input.CompanyHashId != "" {
+		// todo создание / поиск компании
+		fmt.Println("Поиск компании..")
+	}
+
+	//////////////////////
+
+	// 9. Создаем заказ
+	var _order models.Order
+
+	_order.CustomerComment = input.CustomerComment
+	_order.ManagerId = manager.Id
+	_order.Individual = input.Individual
+	_order.WebSiteId = webSite.Id
+	_order.CustomerId = customer.Id
+	// _order.CompanyId = CompanyId.Id
+	_order.OrderChannelId = channel.Id
+
+	// Создаем order
+	orderEntity, err := account.CreateEntity(&_order)
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
+		return
+	}
+
+	var order models.Order
+	if err := account.LoadEntity(&order, orderEntity.GetId()); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
+		return
+	}
+
+	resp := u.Message(true, "POST Order Created")
+	resp["order"] = order
+	u.Respond(w, resp)
+}
+
