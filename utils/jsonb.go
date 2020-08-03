@@ -75,6 +75,36 @@ func FixJSONB_Uint(input map[string]interface{}, keys []string) map[string]inter
 	return input
 }
 
+func FixJSONB_MapString(input map[string]interface{}, keys []string) map[string]interface{} {
+
+	if len(keys) < 1 || len(input) < 1 {
+		return input
+	}
+
+	// Делаем апдейт по ключам
+	for _,key := range keys {
+
+		// 1
+		arrMapString, ok := input[key].(map[string]interface{})
+		if !ok || arrMapString == nil {
+			// fmt.Println("Ошибка 1")
+			continue
+		}
+
+		// 2
+		// Преобразуем в JSON
+		rawJSON, err := json.Marshal(arrMapString)
+		if err != nil {
+			rawJSON = json.RawMessage(`{}`)
+		}
+
+		input[key] = postgres.Jsonb{RawMessage: rawJSON}
+	}
+
+
+	return input
+}
+
 func ParseJSONBToString(jsonb postgres.Jsonb) []string {
 
 	var data = make([]string,0)

@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/event"
@@ -56,7 +57,7 @@ type Product struct {
 	//Image 			Storage 	`json:"images" gorm:"polymorphic:Storage;" sql:"-"`  // gorm:"polymorphic:Owner;"
 	// Attributes []EavAttribute `json:"attributes" gorm:"many2many:product_eav_attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
 	//Attributes []EavAttribute `json:"attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
-	Attributes 		postgres.Jsonb `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	Attributes 	postgres.Jsonb `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 
 	// todo: можно изменить и сделать свойства товара
 	// ключ для расчета веса продукта
@@ -131,14 +132,18 @@ func (Product) getList(accountId uint) ([]Product, error) {
 }
 
 func (product *Product) update(input map[string]interface{}) error {
+	// Приводим в опрядок
+	// input = utils.FixJSONB_String(input, []string{"attributes"})
+
 	delete(input, "PaymentSubject")
 	delete(input, "UnitMeasurement")
 	delete(input, "Images")
 	delete(input, "ProductCards")
+
+	input = utils.FixJSONB_MapString(input, []string{"attributes"})
 	
-	err := db.Set("gorm:association_autoupdate", false).
-		Model(&Product{}).Where("id = ?", product.Id).Omit("id", "account_id").Updates(input).Error
-	if err != nil {
+	if err := db.Set("gorm:association_autoupdate", false).
+		Model(&Product{}).Where("id = ?", product.Id).Omit("id", "account_id").Update(input).Error; err != nil {
 		return err
 	}
 
@@ -313,6 +318,8 @@ func (product Product) AddAttr() error {
 }
 
 func (product Product) GetAttribute(name string) (interface{}, error) {
+
+	fmt.Println("product Attributes: ",product.Attributes)
 
 	rawData, err := product.Attributes.MarshalJSON()
 	if err != nil {

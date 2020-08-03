@@ -276,7 +276,6 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}) error {
 
 				status, err := OrderStatus{}.GetCompletedStatus()
 				if err == nil {
-					fmt.Println("Обновляем: ", status.Id)
 					if err := order.update(map[string]interface{}{"statusId":status.Id}); err != nil {
 						log.Println(err)
 					}
