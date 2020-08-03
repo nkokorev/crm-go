@@ -159,7 +159,7 @@ func (order Order) create() (Entity, error)  {
 	if err := db.Create(&wb).First(&wb,wb.Id).Error; err != nil {
 		return nil, err
 	}
-	if err := wb.GetPreloadDb(false,false).First(&wb,wb.Id).Error; err != nil {
+	if err := wb.GetPreloadDb(false,false, true).First(&wb,wb.Id).Error; err != nil {
 		return nil, err
 	}
 
@@ -171,7 +171,7 @@ func (Order) get(id uint) (Entity, error) {
 
 	var order Order
 
-	err := (&Order{}).GetPreloadDb(false,false).
+	err := (&Order{}).GetPreloadDb(false,false, true).
 		First(&order, id).Error
 	if err != nil {
 		return nil, err
@@ -185,7 +185,7 @@ func (order *Order) load() error {
 		return utils.Error{Message: "Невозможно загрузить Order - не указан  Id"}
 	}
 
-	if err := order.GetPreloadDb(false,true).First(order, order.Id).Error; err != nil {
+	if err := order.GetPreloadDb(false,true, true).First(order, order.Id).Error; err != nil {
 		return err
 	}
 
@@ -197,7 +197,7 @@ func (order *Order) loadByPublicId() error {
 		return utils.Error{Message: "Невозможно загрузить Order - не указан  Id"}
 	}
 
-	if err := order.GetPreloadDb(false,false).First(order, "public_id = ?", order.PublicId).Error; err != nil {
+	if err := order.GetPreloadDb(false,false, true).First(order, "public_id = ?", order.PublicId).Error; err != nil {
 		return err
 	}
 
@@ -207,7 +207,7 @@ func (Order) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return Order{}.getPaginationList(accountId, 0,100,sortBy,"")
 }
 func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
-
+	
 	orders := make([]Order,0)
 	var total uint
 
@@ -217,7 +217,7 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&Order{}).GetPreloadDb(false,false).
+		err := (&Order{}).GetPreloadDb(false,false, true).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders, "customer_comment ILIKE ?", search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -234,7 +234,7 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 
 	} else {
 
-		err := (&Order{}).GetPreloadDb(false,false).
+		err := (&Order{}).GetPreloadDb(false,false, true).
 				Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -267,7 +267,8 @@ func (order *Order) update(input map[string]interface{}) error {
 	delete(input,"client")
 	delete(input,"cartItems")
 
-	return order.GetPreloadDb(true,true).Omit("id", "account_id").Updates(input).Error
+	return order.GetPreloadDb(true,false, false).Where("id = ?", order.Id).
+		Omit("id", "account_id").Updates(input).Error
 
 }
 func (order *Order) delete () error {
@@ -289,16 +290,26 @@ func (order *Order) AppendProducts (products []Product) error {
 	return nil
 }
 
-func (order *Order) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+func (order *Order) GetPreloadDb(autoUpdate bool, getModel bool, preload bool) *gorm.DB {
 	_db := db
 
-	if autoUpdate { _db = _db.Set("gorm:association_autoupdate", false) }
-	if getModel { _db = _db.Model(order) } else {
+	if autoUpdate {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(&order)
+	} else {
 		_db = _db.Model(&Order{})
 	}
 
-	return _db.Preload("Status").Preload("Payment").Preload("Customer").Preload("DeliveryOrder").Preload("DeliveryOrder.Amount").
-		Preload("Amount").Preload("CartItems").Preload("CartItems.Product").Preload("CartItems.Amount").Preload("CartItems.PaymentMode").
-		Preload("Manager").Preload("WebSite").Preload("OrderChannel")
+	if preload {
+		return _db.Preload("Status").Preload("Payment").Preload("Customer").Preload("DeliveryOrder").Preload("DeliveryOrder.Amount").
+			Preload("Amount").Preload("CartItems").Preload("CartItems.Product").Preload("CartItems.Amount").Preload("CartItems.PaymentMode").
+			Preload("Manager").Preload("WebSite").Preload("OrderChannel")
+	} else {
+		return _db
+	}
+
+
 }
 

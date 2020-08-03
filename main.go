@@ -37,7 +37,7 @@ func main() {
 	// base.RefreshTablesPart_IV()
 	// base.UploadTestDataPart_IV()
 	
-	base.Migrate_I()
+	// base.Migrate_I()
 
 	if err := (models.EventListener{}).ReloadEventHandlers(); err != nil {
 		log.Fatal(fmt.Sprintf("Не удалось зарегистрировать EventHandler: %v", err))

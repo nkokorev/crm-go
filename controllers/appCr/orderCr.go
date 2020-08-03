@@ -65,7 +65,6 @@ func OrderGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func OrderGetListPagination(w http.ResponseWriter, r *http.Request) {
-	
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
 		return
