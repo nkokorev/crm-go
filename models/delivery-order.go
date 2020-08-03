@@ -5,6 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
+	"log"
 	"time"
 )
 
@@ -266,11 +267,19 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}) error {
 					return utils.Error{Message: "Не удалось обновить статус платежа - не найден платеж"}
 				}
 
+				if payment.ExternalId != "" {
+					_, err = paymentMethod.PrepaymentCheck(&payment, order)
+					if err != nil {
+						fmt.Println("Error: ", err)
+					}
+				}
 
-
-				_, err = paymentMethod.PrepaymentCheck(&payment, order)
-				if err != nil {
-					fmt.Println("Error: ", err)
+				status, err := OrderStatus{}.GetCompletedStatus()
+				if err == nil {
+					fmt.Println("Обновляем: ", status.Id)
+					if err := order.update(map[string]interface{}{"statusId":status.Id}); err != nil {
+						log.Println(err)
+					}
 				}
 
 				fmt.Println("payment Ex: ", payment.ExternalId)

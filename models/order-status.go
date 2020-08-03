@@ -17,7 +17,7 @@ type OrderStatus struct {
 
 	// new, agreement, equipment, delivery, completed, canceled
 	Group	string 	`json:"group" gorm:"type:varchar(32);"`
-	GroupName	string 	`json:"group" gorm:"type:varchar(128);"`
+	GroupName	string 	`json:"groupName" gorm:"type:varchar(128);"`
 
 	// 'Новый заказ', 'Передан в комплектацию', 'Отменен'
 	Name	string `json:"name" gorm:"type:varchar(128);"`
@@ -187,3 +187,13 @@ func (orderStatus *OrderStatus) delete () error {
 	return db.Model(OrderStatus{}).Where("id = ?", orderStatus.Id).Delete(orderStatus).Error
 }
 // ######### END CRUD Functions ############
+
+func (OrderStatus) GetCompletedStatus() (OrderStatus, error) {
+	var status OrderStatus
+
+	err := db.First(&status, "code = 'completed'").Error
+	if err != nil {
+		return status, err
+	}
+	return status, nil
+}

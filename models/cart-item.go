@@ -35,7 +35,7 @@ type CartItem struct {
 	// Ставка НДС
 	VatCode	uint	`json:"vat_code"`
 
-	Product Product `json:"-"`
+	Product Product `json:"product"`
 	Order	Order `json:"-" gorm:"preload:false"`
 
 	CreatedAt time.Time `json:"createdAt"`
@@ -190,6 +190,6 @@ func (cartItem *CartItem) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB 
 	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
 	if getModel { _db.Model(&cartItem) }
 
-	return _db.Preload("Amount").Preload("PaymentMethod")
+	return _db.Preload("Amount").Preload("PaymentMethod").Preload("Product")
 }
 

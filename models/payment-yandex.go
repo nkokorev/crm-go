@@ -455,8 +455,6 @@ func (paymentYandex PaymentYandex) PrepaymentCheck(payment *Payment, order Order
 		return nil, utils.Error{Message: "Не удалось создать UUID для создания платежа", Errors: map[string]interface{}{"prepaymentCheck":err.Error()}}
 	}
 
-	fmt.Println(string(body))
-
 	// crate new request
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
@@ -481,6 +479,12 @@ func (paymentYandex PaymentYandex) PrepaymentCheck(payment *Payment, order Order
 	if response.StatusCode == 200 {
 
 		fmt.Println("response.StatusCode: ", response.StatusCode)
+		// ставим дату Чека закрытия
+		/*if err := payment.update(map[string]interface{}{"ConfirmationUrl":confirmation.ConfirmationUrl}); err != nil {
+			return err
+		}*/
+		// Закрываем order:
+		
 		/*var responseRequest map[string]interface{}
 		if err := json.NewDecoder(response.Body).Decode(&responseRequest); err != nil {
 			return utils.Error{Message: fmt.Sprintf("Ошибка разбора ответа от Yandex кассы: %v", err),

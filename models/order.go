@@ -59,8 +59,8 @@ type Order struct {
 	Comments	[]OrderComment `json:"comments"`
 
 	// Статус заказа
-	OrderStatusId  	uint	`json:"orderStatusId" gorm:"type:int;default:1;"`
-	OrderStatus		OrderStatus	`json:"orderStatus"`
+	StatusId  	uint	`json:"statusId" gorm:"type:int;default:1;"`
+	Status		OrderStatus	`json:"status"`
 
 	CreatedAt time.Time 	`json:"createdAt"`
 	UpdatedAt time.Time 	`json:"updatedAt"`
@@ -105,7 +105,7 @@ func (order *Order) AfterCreate(scope *gorm.Scope) (error) {
 func (order *Order) AfterUpdate(tx *gorm.DB) (err error) {
 	event.AsyncFire(Event{}.OrderUpdated(order.AccountId, order.Id))
 
-	orderStatusEntity, err := OrderStatus{}.get(order.OrderStatusId)
+	orderStatusEntity, err := OrderStatus{}.get(order.StatusId)
 	if err == nil && orderStatusEntity.GetAccountId() == order.AccountId {
 		if orderStatus, ok := orderStatusEntity.(*OrderStatus); ok {
 			if orderStatus.Code == "completed" {
@@ -297,7 +297,7 @@ func (order *Order) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
 		_db = _db.Model(&Order{})
 	}
 
-	return _db.Preload("OrderStatus").Preload("Payment").Preload("Customer").Preload("DeliveryOrder").Preload("DeliveryOrder.Amount").
+	return _db.Preload("Status").Preload("Payment").Preload("Customer").Preload("DeliveryOrder").Preload("DeliveryOrder.Amount").
 		Preload("Amount").Preload("CartItems").Preload("CartItems.Product").Preload("CartItems.Amount").Preload("CartItems.PaymentMode").
 		Preload("Manager").Preload("WebSite").Preload("OrderChannel")
 }
