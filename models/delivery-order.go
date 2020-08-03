@@ -305,10 +305,10 @@ func (deliveryOrder *DeliveryOrder) delete () error {
 }
 // ######### END CRUD Functions ############
 
-func (deliveryOrder *DeliveryOrder) GetPreloadDb(autoUpdate bool, getModel bool, preload bool) *gorm.DB {
+func (deliveryOrder *DeliveryOrder) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
 	_db := db
 
-	if autoUpdate {
+	if autoUpdateOff {
 		_db = _db.Set("gorm:association_autoupdate", false)
 	}
 	if getModel {

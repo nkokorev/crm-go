@@ -98,7 +98,7 @@ func (DeliveryPickup) get(id uint) (Entity, error) {
 
 	var deliveryPickup DeliveryPickup
 
-	err := db.Preload("PaymentSubject").Preload("VatCode").First(&deliveryPickup, id).Error
+	err := deliveryPickup.GetPreloadDb(true,false,true).First(&deliveryPickup, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (DeliveryPickup) get(id uint) (Entity, error) {
 }
 func (deliveryPickup *DeliveryPickup) load() error {
 
-	err := db.Preload("PaymentSubject").Preload("VatCode").First(deliveryPickup, deliveryPickup.Id).Error
+	err := deliveryPickup.GetPreloadDb(true,false,true).First(deliveryPickup, deliveryPickup.Id).Error
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (DeliveryPickup) getListByShop(accountId, websiteId uint) ([]DeliveryPickup
 
 	deliveryPickups := make([]DeliveryPickup,0)
 
-	err := DeliveryPickup{}.GetPreloadDb(false,false).
+	err := DeliveryPickup{}.GetPreloadDb(false,false, true).
 		Limit(100).Where( "account_id = ? AND web_site_id = ?", accountId, websiteId).
 		Find(&deliveryPickups).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
@@ -144,7 +144,7 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortB
 		// string pattern
 		search = "%"+search+"%"
 
-		err := DeliveryPickup{}.GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := DeliveryPickup{}.GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryPickups, "name ILIKE ? OR code ILIKE ? OR price ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -160,7 +160,7 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortB
 
 	} else {
 
-		err := DeliveryPickup{}.GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := DeliveryPickup{}.GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryPickups).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -182,12 +182,11 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortB
 	return entities, total, nil
 }
 func (deliveryPickup *DeliveryPickup) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(deliveryPickup).
-		Preload("PaymentSubject").Preload("VatCode").
+	return deliveryPickup.GetPreloadDb(true,false,false).Where("id = ?", deliveryPickup.Id).
 		Omit("id", "account_id").Updates(input).Error
 }
 func (deliveryPickup *DeliveryPickup) delete () error {
-	return db.Model(DeliveryPickup{}).Where("id = ?", deliveryPickup.Id).Delete(deliveryPickup).Error
+	return deliveryPickup.GetPreloadDb(true,false,false).Where("id = ?", deliveryPickup.Id).Delete(deliveryPickup).Error
 }
 
 // ########## End of CRUD Entity interface ###########
@@ -246,11 +245,21 @@ func (deliveryPickup DeliveryPickup) CreateDeliveryOrder(deliveryData DeliveryDa
 
 }
 
-func (deliveryPickup DeliveryPickup) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+func (deliveryPickup DeliveryPickup) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
 	_db := db
 
-	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
-	if getModel { _db.Model(&deliveryPickup) }
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(&deliveryPickup)
+	} else {
+		_db = _db.Model(&DeliveryPickup{})
+	}
 
-	return _db.Preload("PaymentSubject").Preload("VatCode")
+	if preload {
+		return _db.Preload("PaymentSubject").Preload("VatCode")
+	} else {
+		return _db
+	}
 }

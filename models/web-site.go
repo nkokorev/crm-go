@@ -50,13 +50,24 @@ func (webSite *WebSite) setAccountId(id uint) { webSite.AccountId = id }
 func (webSite WebSite) SystemEntity() bool { return false }
 // ############# END Of Entity interface #############
 
-func (webSite *WebSite) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+func (webSite *WebSite) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
 	_db := db
 
-	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
-	if getModel { _db.Model(&webSite) }
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(&webSite)
+	} else {
+		_db = _db.Model(&WebSite{})
+	}
 
-	return _db.Preload("EmailBoxes")
+	if preload {
+		return _db.Preload("EmailBoxes")
+	} else {
+		return _db
+	}
+
 }
 func (webSite *WebSite) BeforeCreate(scope *gorm.Scope) error {
 	webSite.Id = 0
@@ -77,28 +88,26 @@ func (webSite WebSite) create() (Entity, error)  {
 		return nil, err
 	}
 
-	if err := wb.GetPreloadDb(false,true).First(&wb,wb.Id).Error; err != nil {
+	if err := wb.GetPreloadDb(true,false, false).First(&wb,wb.Id).Error; err != nil {
 		return nil, err
 	}
 
 	var newItem Entity = &wb
 	return newItem, nil
 }
-
 func (WebSite) get(id uint) (Entity, error) {
 
 	var webSite WebSite
 
-	err := (&WebSite{}).GetPreloadDb(false,false).First(&webSite, id).Error
+	err := (&WebSite{}).GetPreloadDb(false,false, true).First(&webSite, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &webSite, nil
 }
-
 func (webSite *WebSite) load() error {
 
-	err := webSite.GetPreloadDb(false, true).First(webSite,webSite.Id).Error
+	err := webSite.GetPreloadDb(false, true, true).First(webSite,webSite.Id).Error
 	if err != nil {
 		return err
 	}
@@ -107,11 +116,9 @@ func (webSite *WebSite) load() error {
 func (*WebSite) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-
 func (WebSite) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return WebSite{}.getPaginationList(accountId, 0, 100, sortBy, "")
 }
-
 func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
 	webSites := make([]WebSite,0)
@@ -123,7 +130,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&WebSite{}).GetPreloadDb(false, false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&WebSite{}).GetPreloadDb(false, false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webSites, "name ILIKE ? OR address ILIKE ? OR email ILIKE ? OR phone ILIKE ?", search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -139,7 +146,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 
-		err := (&WebSite{}).GetPreloadDb(false, false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&WebSite{}).GetPreloadDb(false, false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webSites).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -160,13 +167,14 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	return entities, total, nil
 }
-
 func (webSite *WebSite) update(input map[string]interface{}) error {
-	return webSite.GetPreloadDb(true, true).Omit("id", "account_id").Updates(input).First(webSite,webSite.Id).Error
-}
+	delete(input,"emailBoxes")
+	delete(input,"deliveries")
 
+	return webSite.GetPreloadDb(true, true, false).Where("id = ?", webSite.Id).Omit("id", "account_id").Updates(input).Error
+}
 func (webSite *WebSite) delete () error {
-	return webSite.GetPreloadDb(false, true).Where("id = ?", webSite.Id).Delete(webSite).Error
+	return webSite.GetPreloadDb(false, true, false).Where("id = ?", webSite.Id).Delete(webSite).Error
 }
 // ######### END CRUD Functions ############
 
@@ -207,7 +215,6 @@ func (webSite WebSite) CreateProduct(input Product, card *ProductCard) (*Product
 	
 	return product, nil
 }
-
 func (webSite WebSite) GetProduct(productId uint) (*Product, error) {
 
 	// Создаем продукт
@@ -222,7 +229,6 @@ func (webSite WebSite) GetProduct(productId uint) (*Product, error) {
 
 	return product, nil
 }
-
 func (webSite WebSite) CreateProductWithCardAndGroup(input Product, newCard ProductCard, groupId *uint) (*Product, error) {
 	input.AccountId = webSite.AccountId
 
@@ -257,7 +263,6 @@ func (webSite WebSite) CreateProductWithCardAndGroup(input Product, newCard Prod
 
 	return product, nil
 }
-
 /////////////////////////
 
 func (webSite WebSite) AppendDeliveryMethod(entity Entity) error {

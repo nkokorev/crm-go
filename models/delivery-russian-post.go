@@ -110,7 +110,7 @@ func (DeliveryRussianPost) get(id uint) (Entity, error) {
 
 	var deliveryRussianPost DeliveryRussianPost
 
-	err := db.Preload("PaymentSubject").Preload("VatCode").First(&deliveryRussianPost, id).Error
+	err := deliveryRussianPost.GetPreloadDb(true,false,true).First(&deliveryRussianPost, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (DeliveryRussianPost) get(id uint) (Entity, error) {
 
 func (deliveryRussianPost *DeliveryRussianPost) load() error {
 
-	err := db.Preload("PaymentSubject").Preload("VatCode").First(deliveryRussianPost, deliveryRussianPost.Id).Error
+	err := deliveryRussianPost.GetPreloadDb(true,false,true).First(deliveryRussianPost, deliveryRussianPost.Id).Error
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (DeliveryRussianPost) getListByShop(accountId, websiteId uint) ([]DeliveryR
 
 	deliveryRussianPosts := make([]DeliveryRussianPost,0)
 
-	err := DeliveryRussianPost{}.GetPreloadDb(false,false).
+	err := DeliveryRussianPost{}.GetPreloadDb(false,false, true).
 		Limit(100).Where( "account_id = ? AND web_site_id = ?", accountId, websiteId).
 		Find(&deliveryRussianPosts).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
@@ -157,7 +157,7 @@ func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, 
 		// string pattern
 		search = "%"+search+"%"
 
-		err := DeliveryRussianPost{}.GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := DeliveryRussianPost{}.GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryRussianPosts, "name ILIKE ? OR code ILIKE ? OR postal_code_from ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -173,7 +173,7 @@ func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, 
 
 	} else {
 
-		err := DeliveryRussianPost{}.GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := DeliveryRussianPost{}.GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryRussianPosts).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -196,12 +196,12 @@ func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, 
 }
 
 func (deliveryRussianPost *DeliveryRussianPost) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(deliveryRussianPost).
-		Preload("PaymentSubject").Preload("VatCode").Omit("id", "account_id").Updates(input).Error
+	return deliveryRussianPost.GetPreloadDb(true,true,false).Where("id = ?", deliveryRussianPost.Id).
+		Omit("id", "account_id").Updates(input).Error
 }
 
 func (deliveryRussianPost *DeliveryRussianPost) delete () error {
-	return db.Model(DeliveryRussianPost{}).Where("id = ?", deliveryRussianPost.Id).Delete(deliveryRussianPost).Error
+	return deliveryRussianPost.GetPreloadDb(true,true,false).Where("id = ?", deliveryRussianPost.Id).Delete(deliveryRussianPost).Error
 }
 
 // ########## End of CRUD Entity interface ###########
@@ -333,11 +333,21 @@ func (deliveryRussianPost DeliveryRussianPost) CreateDeliveryOrder(deliveryData 
 
 }
 
-func (deliveryRussianPost DeliveryRussianPost) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+func (deliveryRussianPost DeliveryRussianPost) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
 	_db := db
 
-	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
-	if getModel { _db.Model(&deliveryRussianPost) }
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(&deliveryRussianPost)
+	} else {
+		_db = _db.Model(&DeliveryRussianPost{})
+	}
 
-	return _db.Preload("PaymentSubject").Preload("VatCode")
+	if preload {
+		return _db.Preload("PaymentSubject").Preload("VatCode")
+	} else {
+		return _db
+	}
 }

@@ -120,7 +120,7 @@ func (DeliveryCourier) getListByShop(accountId, websiteId uint) ([]DeliveryCouri
 
 	deliveryCouriers := make([]DeliveryCourier,0)
 
-	err := DeliveryCourier{}.GetPreloadDb(false,false).
+	err := DeliveryCourier{}.GetPreloadDb(false,false, true).
 		Limit(100).Where( "account_id = ? AND web_site_id = ?", accountId, websiteId).
 		Find(&deliveryCouriers).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
@@ -141,7 +141,7 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 		// string pattern
 		search = "%"+search+"%"
 
-		err := DeliveryCourier{}.GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := DeliveryCourier{}.GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryCouriers, "name ILIKE ? OR code ILIKE ? OR price ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -157,7 +157,7 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 
 	} else {
 
-		err := DeliveryCourier{}.GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := DeliveryCourier{}.GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryCouriers).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -179,8 +179,8 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 	return entities, total, nil
 }
 func (deliveryCourier *DeliveryCourier) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(deliveryCourier).
-		Preload("PaymentSubject").Preload("VatCode").Omit("id", "account_id").Updates(input).Error
+	return deliveryCourier.GetPreloadDb(true,false,false).Where("id = ?", deliveryCourier.Id).
+		Omit("id", "account_id").Updates(input).Error
 }
 func (deliveryCourier *DeliveryCourier) delete () error {
 	return db.Model(DeliveryCourier{}).Where("id = ?", deliveryCourier.Id).Delete(deliveryCourier).Error
@@ -241,11 +241,21 @@ func (deliveryCourier DeliveryCourier) CreateDeliveryOrder(deliveryData Delivery
 
 }
 
-func (deliveryCourier DeliveryCourier) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+func (deliveryCourier DeliveryCourier) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
 	_db := db
 
-	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
-	if getModel { _db.Model(&deliveryCourier) }
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(&deliveryCourier)
+	} else {
+		_db = _db.Model(&DeliveryCourier{})
+	}
 
-	return _db.Preload("PaymentSubject").Preload("VatCode")
+	if preload {
+		return _db.Preload("PaymentSubject").Preload("VatCode")
+	} else {
+		return _db
+	}
 }

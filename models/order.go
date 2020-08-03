@@ -289,10 +289,10 @@ func (order *Order) AppendProducts (products []Product) error {
 	return nil
 }
 
-func (order *Order) GetPreloadDb(autoUpdate bool, getModel bool, preload bool) *gorm.DB {
+func (order *Order) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
 	_db := db
 
-	if autoUpdate {
+	if autoUpdateOff {
 		_db = _db.Set("gorm:association_autoupdate", false)
 	}
 	if getModel {

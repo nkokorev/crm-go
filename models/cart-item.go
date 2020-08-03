@@ -84,7 +84,7 @@ func (cartItem CartItem) create() (Entity, error)  {
 		return nil, err
 	}
 
-	if err := _orderChannel.GetPreloadDb(false,false).First(&_orderChannel,_orderChannel.Id).Error; err != nil {
+	if err := _orderChannel.GetPreloadDb(false,false, true).First(&_orderChannel,_orderChannel.Id).Error; err != nil {
 		return nil, err
 	}
 
@@ -97,7 +97,7 @@ func (CartItem) get(id uint) (Entity, error) {
 
 	var cartItem CartItem
 
-	err := cartItem.GetPreloadDb(false, false).First(&cartItem, id).Error
+	err := cartItem.GetPreloadDb(false, false, true).First(&cartItem, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (cartItem *CartItem) load() error {
 		return utils.Error{Message: "Невозможно загрузить CartItem - не указан  Id"}
 	}
 
-	err := cartItem.GetPreloadDb(false, true).First(cartItem, cartItem.Id).Error
+	err := cartItem.GetPreloadDb(false, true, true).First(cartItem, cartItem.Id).Error
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&CartItem{}).GetPreloadDb(false, false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&CartItem{}).GetPreloadDb(false, false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orderChannels, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -148,7 +148,7 @@ func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 
 	} else {
 
-		err := (&CartItem{}).GetPreloadDb(false, false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&CartItem{}).GetPreloadDb(false, false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orderChannels).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -170,7 +170,7 @@ func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 }
 
 func (cartItem *CartItem) update(input map[string]interface{}) error {
-	return cartItem.GetPreloadDb(false, true).Omit("id", "account_id").Updates(input).Error
+	return cartItem.GetPreloadDb(false, true, false).Where("id = ?", cartItem.Id).Omit("id", "account_id").Updates(input).Error
 }
 
 func (cartItem *CartItem) delete () error {
@@ -184,12 +184,22 @@ func (cartItem *CartItem) delete () error {
 
 
 // ########## Work function ############
-func (cartItem *CartItem) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+func (cartItem *CartItem) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
 	_db := db
 
-	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
-	if getModel { _db.Model(&cartItem) }
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(&cartItem)
+	} else {
+		_db = _db.Model(&CartItem{})
+	}
 
-	return _db.Preload("Amount").Preload("PaymentMethod").Preload("Product")
+	if preload {
+		return _db.Preload("Amount").Preload("PaymentMethod").Preload("Product")
+	} else {
+		return _db
+	}
 }
 
