@@ -301,7 +301,16 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}) error {
 }
 
 func (deliveryOrder *DeliveryOrder) delete () error {
-	return db.Model(DeliveryOrder{}).Where("id = ?", deliveryOrder.Id).Delete(deliveryOrder).Error
+
+	var idx = make([]uint,0)
+	idx = append(idx,deliveryOrder.AmountId)
+
+	if err := (PaymentAmount{}).deletes(idx); err != nil {
+		return err
+	}
+
+	
+	return deliveryOrder.GetPreloadDb(true,false,false).Where("id = ?", deliveryOrder.Id).Delete(deliveryOrder).Error
 }
 // ######### END CRUD Functions ############
 

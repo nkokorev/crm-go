@@ -249,7 +249,7 @@ func (Payment) get(id uint) (Entity, error) {
 
 	var payment Payment
 
-	err := db.First(&payment, id).Error
+	err := payment.GetPreloadDb(false,false, true).First(&payment, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func (payment *Payment) load() error {
 		return utils.Error{Message: "Невозможно загрузить Payment - не указан  Id"}
 	}
 	
-	err := db.Preload("Amount").First(payment,payment.Id).Error
+	err := payment.GetPreloadDb(false,false, true).First(payment,payment.Id).Error
 	if err != nil {
 		return err
 	}
@@ -282,7 +282,7 @@ func (payment *Payment) loadByPublicId() error {
 		return utils.Error{Message: "Невозможно загрузить Payment - не указан  Id"}
 	}
 
-	if err := payment.GetPreloadDb(false,false).First(payment, "public_id = ?", payment.PublicId).Error; err != nil {
+	if err := payment.GetPreloadDb(false,false, true).First(payment, "public_id = ?", payment.PublicId).Error; err != nil {
 		return err
 	}
 
@@ -326,14 +326,14 @@ func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Payment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&Payment{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Payment{}).
+		err = (&Payment{}).GetPreloadDb(true,false,true).
 			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -383,7 +383,7 @@ func (payment *Payment) update(input map[string]interface{}) error {
 func (payment *Payment) delete () error {
 
 	var idx = make([]uint,0)
-	idx = append(idx,payment.AccountId)
+	idx = append(idx,payment.AmountId)
 	idx = append(idx,payment.IncomeAmountId)
 	idx = append(idx,payment.RefundedAmountId)
 
@@ -391,7 +391,7 @@ func (payment *Payment) delete () error {
 	  return err
 	}
 
-	return db.Where("id = ?", payment.Id).Delete(payment).Error
+	return payment.GetPreloadDb(true,false,false).Where("id = ?", payment.Id).Delete(payment).Error
 }
 // ######### END CRUD Functions ############
 
@@ -408,12 +408,22 @@ func (account Account) GetPaymentByExternalId(externalId string) (*Payment, erro
 	return payment, nil
 }
 
-func (payment *Payment) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+func (payment *Payment) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
 	_db := db
 
-	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
-	if getModel { _db.Model(&payment) }
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(&payment)
+	} else {
+		_db = _db.Model(&Payment{})
+	}
 
-	return _db.Preload("PaymentAmount")
+	if preload {
+		return _db.Preload("PaymentAmount")
+	} else {
+		return _db
+	}
 }
 

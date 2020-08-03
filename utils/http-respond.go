@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/mux"
-	"github.com/json-iterator/go"
+	jsoniter "github.com/json-iterator/go"
 	"net/http"
 	"strconv"
 )
@@ -19,8 +19,8 @@ func Respond(w http.ResponseWriter, data map[string] interface{}) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Max-Age", "86400") // max 600*/
 	//fmt.Println("Respond")
-
 	jsoniter.NewEncoder(w).Encode(data)
+	// json.NewEncoder(w).Encode(data)
 }
 
 func MessageWithErrors(message string, errors map[string]interface{}) (map[string]interface{}) {

@@ -272,6 +272,13 @@ func (order *Order) update(input map[string]interface{}) error {
 }
 func (order *Order) delete () error {
 
+	var idx = make([]uint,0)
+	idx = append(idx,order.AmountId)
+
+	if err := (PaymentAmount{}).deletes(idx); err != nil {
+		return err
+	}
+
 	if err := order.Amount.delete(); err != nil {
 		return err
 	}

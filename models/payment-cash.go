@@ -101,7 +101,7 @@ func (paymentCash PaymentCash) create() (Entity, error)  {
 		return nil, err
 	}
 
-	if err := wb.GetPreloadDb(false,true).First(&wb, wb.Id).Error; err != nil {
+	if err := wb.GetPreloadDb(false,true, false).First(&wb, wb.Id).Error; err != nil {
 		return nil, err
 	}
 
@@ -113,7 +113,7 @@ func (PaymentCash) get(id uint) (Entity, error) {
 
 	var paymentCash PaymentCash
 
-	err := paymentCash.GetPreloadDb(false,false).First(&paymentCash, id).Error
+	err := paymentCash.GetPreloadDb(false,false, true).First(&paymentCash, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (paymentCash *PaymentCash) load() error {
 		return utils.Error{Message: "Невозможно загрузить PaymentCash - не указан  Id"}
 	}
 
-	err := paymentCash.GetPreloadDb(false,true).First(paymentCash,paymentCash.Id).Error
+	err := paymentCash.GetPreloadDb(false,true, true).First(paymentCash,paymentCash.Id).Error
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, 
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&PaymentCash{}).GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&PaymentCash{}).GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&paymentCashs, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -163,7 +163,7 @@ func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	} else {
 
-		err := (&PaymentCash{}).GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&PaymentCash{}).GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&paymentCashs).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -185,22 +185,32 @@ func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, 
 	return entities, total, nil
 }
 func (paymentCash *PaymentCash) update(input map[string]interface{}) error {
-	return paymentCash.GetPreloadDb(true,true).
-		Model(paymentCash).Where("id", paymentCash.Id).Omit("id", "account_id").Updates(input).Error
+	return paymentCash.GetPreloadDb(true,true, false).
+		Where("id", paymentCash.Id).Omit("id", "account_id").Updates(input).Error
 }
 func (paymentCash *PaymentCash) delete () error {
-	return paymentCash.GetPreloadDb(true,true).Where("id = ?", paymentCash.Id).Delete(paymentCash).Error
+	return paymentCash.GetPreloadDb(true,true, false).Where("id = ?", paymentCash.Id).Delete(paymentCash).Error
 }
 // ######### END CRUD Functions ############
 
 // ########## Work function ############
-func (paymentCash PaymentCash) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+func (paymentCash PaymentCash) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
 	_db := db
 
-	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
-	if getModel { _db.Model(&paymentCash) }
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(&paymentCash)
+	} else {
+		_db = _db.Model(&PaymentCash{})
+	}
 
-	return _db.Preload("WebSite")
+	if preload {
+		return _db.Preload("WebSite")
+	} else {
+		return _db
+	}
 }
 
 func (PaymentCash) GetListByWebSiteAndDelivery(delivery Delivery) ([]PaymentCash, error) {
