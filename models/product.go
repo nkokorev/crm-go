@@ -4,7 +4,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/event"
@@ -318,8 +317,6 @@ func (product Product) AddAttr() error {
 }
 
 func (product Product) GetAttribute(name string) (interface{}, error) {
-
-	fmt.Println("product Attributes: ",product.Attributes)
 
 	rawData, err := product.Attributes.MarshalJSON()
 	if err != nil {

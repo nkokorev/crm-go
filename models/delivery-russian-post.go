@@ -208,7 +208,9 @@ func (deliveryRussianPost *DeliveryRussianPost) delete () error {
 func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData DeliveryData, weight float64) (float64, error) {
 
 	if weight == 0 {
-		return 0, utils.Error{Message: "Ошибка расчета стоимости доставки: отсутствует вес товара"}
+		// Грязный хак, в кг
+		weight = 1
+		// return 0, utils.Error{Message: "Ошибка расчета стоимости доставки: отсутствует вес товара"}
 	}
 	// базовые данные для запроса в api почта россиии
 	url := "https://otpravka-api.pochta.ru/1.0/tariff"

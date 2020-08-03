@@ -2,11 +2,9 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nkokorev/crm-go/utils"
-	"log"
 )
 
 // Прообраз торговой точки
@@ -313,15 +311,14 @@ func (webSite WebSite) CalculateDelivery(deliveryRequest DeliveryRequest) (total
 		// todo: 'что есть вес?'
 		// _w, err := product.GetAttribute(deliveryRequest.DeliveryData.ProductWeightKey)
 		_w, err := product.GetAttribute(product.WeightKey)
-		if err != nil {
-			log.Println("Ошибка получения веса: ", err)
+		if err != nil || _w == nil {
+			// log.Println("Ошибка получения веса: ", err)
 			continue
 		}
-		log.Println("_w: ", _w)
 		wg, ok := _w.(float64)
 		if !ok {
-			fmt.Println("product.WeightKey: ", product.WeightKey)
-			fmt.Println("Не учитываем вес!")
+			// fmt.Println("product.WeightKey: ", product.WeightKey)
+			// fmt.Println("Не учитываем вес!")
 			continue
 		}
 		weight += wg * float64(v.Quantity)
