@@ -30,7 +30,7 @@ type DeliveryOrder struct {
 	Code		string 	`json:"deliveryCode" gorm:"type:varchar(32);"`
 	MethodId 	uint	`json:"methodId" gorm:"type:int;not null;"`
 
-	Address		string 	`json:"address" gorm:"type:varchar(32);"`
+	Address		string 	`json:"address" gorm:"type:varchar(255);"`
 	PostalCode	string 	`json:"postalCode" gorm:"type:varchar(32);"`
 	Delivery	Delivery	`json:"delivery" gorm:"-"` // << preload
 
