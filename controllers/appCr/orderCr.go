@@ -53,10 +53,22 @@ func OrderGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var order models.Order
-	err = account.LoadEntityByPublicId(&order, orderId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список заказов"))
-		return
+
+	// 2. Узнаем, какой список нужен
+	publicIdOk:= utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+
+	if publicIdOk {
+		err = account.LoadEntityByPublicId(&order, orderId)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список заказов"))
+			return
+		}
+	} else {
+		err = account.LoadEntity(&order, orderId)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список заказов"))
+			return
+		}
 	}
 
 	resp := u.Message(true, "GET Order")

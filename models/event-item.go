@@ -75,9 +75,9 @@ func (EventItem) PgSqlCreate() {
 		{Name: "Заказ отменен", 	Code: "OrderCanceled", Enabled: true, Description: "Заказ отменен по каким-то причинам. В контексте глобальный id заказа."},
 
 		{Name: "Создано задание на доставку", 	Code: "DeliveryOrderCreated", Enabled: true, Description: "В системе зарегистрировано новое задание на доставку. Это может быть и самовывоз и доставка Почтой России."},
-		{Name: "Задание на доставку обновлены", Code: "DeliveryOrderUpdated", Enabled: true, Description: "Какие-то данные по заказу обновились."},
+		{Name: "Доставка обновлена", Code: "DeliveryOrderUpdated", Enabled: true, Description: "Какие-то данные по заказу на доставку обновились."},
 		{Name: "Доставка согласована", 			Code: "DeliveryOrderInProcess", Enabled: true, Description: "Задание на доставку в процессе доставки."},
-		{Name: "Доставка выполнена", 	Code: "DeliveryOrderCompleted", Enabled: true, Description: "Задание на доставку успешно завершено."},
+		{Name: "Доставка завершена", 	Code: "DeliveryOrderCompleted", Enabled: true, Description: "Задание на доставку успешно завершено."},
 		{Name: "Доставка отменена", 	Code: "DeliveryOrderCanceled", Enabled: true, Description: "Задание на доставку отменено по каким-то причинам."},
 		{Name: "У доставки обновился статус", 	Code: "DeliveryOrderStatusUpdated", Enabled: true, Description: "Задание на доставку обновило свой статус."},
 		{Name: "Доставка удалена", 		Code: "DeliveryOrderDeleted", Enabled: true, Description: "Задание на доставку удалено из системы."},
