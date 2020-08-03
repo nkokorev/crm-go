@@ -562,7 +562,6 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	}
 	
 
-
 	// AiroClimate
 
 	// 1. Создаем аккаунт из-под Станислава
@@ -571,13 +570,32 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 		models.User{
 			Username:"korotaev",
 			// Email:"sa-tolstov@yandex.ru",
-			Email:"mailtest@ratus-dev.ru",
+			Email:"korotaev@vtvent.ru",
 			PhoneRegion: "RU",
 			Phone: "",
-			Password:"qwerty109#QW",
+			Password:"jv92sA#qpx2S",
 			Name:"Максим",
 			Surname:"Коротаев",
 			Patronymic:"Валерьевич",
+			EmailVerifiedAt:&timeNow,
+		},
+		*roleClientMain,
+	)
+	if err != nil || owner == nil {
+		log.Fatal("Не удалось создать korotaev'a: ", err)
+	}
+
+	ivlev, err := mAcc.CreateUser(
+		models.User{
+			Username:"ivlev",
+			// Email:"sa-tolstov@yandex.ru",
+			Email:"ivlev@vtvent.ru",
+			PhoneRegion: "RU",
+			Phone: "",
+			Password:"uisNKs82#Mr2A",
+			Name:"Владислав",
+			Surname:"Ивлев",
+			Patronymic:"",
 			EmailVerifiedAt:&timeNow,
 		},
 		*roleClientMain,
@@ -602,14 +620,20 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	// 2. добавляем меня как админа
 	_, err = airoClimat.AppendUser(*owner, *roleAdminMain)
 	if err != nil {
-		log.Fatal("Не удалось добавить пользователя admin in 357gr")
+		log.Fatal("Не удалось добавить пользователя admin in airo")
 		return
 	}
 
 	// 2.2. Добавляем mex388 как админа
 	_, err = airoClimat.AppendUser(*mex388, *roleAdminMain)
 	if err != nil {
-		log.Fatal("Не удалось добавить пользователя mex388 in brouser")
+		log.Fatal("Не удалось добавить пользователя mex388 in airo")
+		return
+	}
+
+	_, err = airoClimat.AppendUser(*ivlev, *roleAdminMain)
+	if err != nil {
+		log.Fatal("Не удалось добавить пользователя admin in airo")
 		return
 	}
 
