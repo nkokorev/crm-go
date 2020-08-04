@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// email queue  workflow email templates 
+// M <> M : email queue  <> email templates
 type EmailQueueEmailTemplate struct {
 
 	Id     		uint   	`json:"id" gorm:"primary_key"`

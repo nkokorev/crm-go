@@ -18,7 +18,7 @@ type EmailQueue struct {
 	// В работе серия или нет (== нужно ли ее обходить воркером)
 	Status 	bool 	`json:"status" gorm:"type:bool;default:false;"`
 
-	EmailTemplates	Email	`json:"income_amount"`
+	EmailTemplates	[]EmailQueueEmailTemplate	`json:"income_amount"`
 
 	// Внутреннее время
 	CreatedAt time.Time  `json:"createdAt"`

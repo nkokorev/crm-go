@@ -2,47 +2,38 @@ package models
 
 import (
 	"github.com/jinzhu/gorm"
-	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
 	"time"
 )
 
-// email queue  workflow email templates 
+// активная база с реальными задачами по отправке
 type EmailQueueWorkflow struct {
 
 	Id     		uint   	`json:"id" gorm:"primary_key"`
 	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"` // Публичный ID заказа внутри магазина
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	// Имя очереди (Label)
-	Name	string	`json:"name" gorm:"type:varchar(128);not null;"` // Welcome, Onboarding, ...
-
-	// В работе данное письмо в указанной серии
-	Status 	bool 	`json:"status" gorm:"type:bool;default:false;"`
-	Order 	uint 	`json:"order" gorm:"type:int;not null;"` // порядок
-
-	EmailQueueId	uint	`json:"emailQueueId" gorm:"type:int;"`
+	// К какой серии писем это все относится
+	EmailQueueId	uint	`json:"emailQueueId" gorm:"type:int;not null;"`
 	EmailQueue		EmailQueue `json:"emailQueue"`
+
+	// Id письма (Шага) в серии EmailQueue. Шаг определяется ситуационно в момент Expected Time.
+	// Если шага нет - пользователь выходит из серии.
+	ExpectedStepId	uint	`json:"expectedStepId" gorm:"type:int;not null;"`
+
+	// Предыдущий шаг (?)
+	// PreviewStep	uint 	`json:"previewStep" gorm:"type:int;not null;"`
+
+	// Запланированное время отправки
+	ExpectedTimeStart 	time.Time `json:"expectedTimeStart"`
+
+	// Id пользователя, которому отправляется серия. Обязательный параметр.
+	UserId 	uint `json:"userId" gorm:"type:int;not null;"`
+	User	User `json:"user"`
 
 	EmailTemplateId	uint	`json:"emailTemplateId" gorm:"type:int;"`
 	EmailTemplate	EmailTemplate `json:"emailTemplate"`
 
-	// График: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday | weekends, workday
-	// Schedule	string `json:"emailTemplate"`     `json:"switchProducts"`
-	// 1- mondey, workday = 8, weekend = 89
-	Schedule	postgres.Jsonb `json:"schedule" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
-
-	// В какое время следует отправлять электронные письма:
-	// инста отправка GateStart = GateEnd = null
-	// В указанное время: GateStart = <...>, GateEnd = null
-	// В указанный промежуток: между GateStart <> GateEnd
-	GateStart 	time.Time // << учитывается только время [0-24]
-	GateEnd		time.Time // << учитывается только время [0-24]
-
-	// Что делать, если Gate не подходит? перенести на 1-24 часа / пропустить письмо и перейти к следующему
-
-
-	// Внутреннее время
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 }
@@ -51,7 +42,7 @@ func (EmailQueueWorkflow) PgSqlCreate() {
 	db.CreateTable(&EmailQueueWorkflow{})
 	db.Model(&EmailQueueWorkflow{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Model(&EmailQueueWorkflow{}).AddForeignKey("email_queue_id", "email_queues(id)", "CASCADE", "CASCADE")
-	db.Model(&EmailQueueWorkflow{}).AddForeignKey("email_template_id", "email_templates(id)", "CASCADE", "CASCADE")
+	db.Model(&EmailQueueWorkflow{}).AddForeignKey("expected_step_id", "email_templates(id)", "CASCADE", "CASCADE")
 	// db.Model(&EmailQueueWorkflow{}).AddForeignKey("refunded_amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
 }
 func (emailQueueWorkflow *EmailQueueWorkflow) BeforeCreate(scope *gorm.Scope) error {
