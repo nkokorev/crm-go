@@ -240,6 +240,11 @@ func (payment Payment) create() (Entity, error)  {
 		return nil, err
 	}
 
+	err := wb.GetPreloadDb(false,false, true).First(&wb, wb.Id).Error
+	if err != nil {
+		return nil, err
+	}
+
 	var entity Entity = &wb
 
 	return entity, nil
@@ -258,7 +263,7 @@ func (Payment) get(id uint) (Entity, error) {
 func (Payment) getByExternalId(externalId string) (*Payment, error) {
 	payment := Payment{}
 
-	err := db.First(&payment, "external_id = ?", externalId).Error
+	err := payment.GetPreloadDb(false,false, true).First(&payment, "external_id = ?", externalId).Error
 	if err != nil {
 		return nil, err
 	}
@@ -290,34 +295,12 @@ func (payment *Payment) loadByPublicId() error {
 }
 
 func (Payment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-
-	webHooks := make([]Payment,0)
-	var total uint
-
-	err := db.Model(&Payment{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
-		Find(&webHooks).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&Payment{}).Where("account_id = ?", accountId).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(webHooks))
-	for i,_ := range webHooks {
-		entities[i] = &webHooks[i]
-	}
-
-	return entities, total, nil
+	return Payment{}.getPaginationList(accountId, 0, 25, sortBy, "")
 }
 
 func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
-	webHooks := make([]Payment,0)
+	payments := make([]Payment,0)
 	var total uint
 
 	// if need to search
@@ -327,7 +310,7 @@ func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		search = "%"+search+"%"
 
 		err := (&Payment{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
+			Find(&payments, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -343,7 +326,7 @@ func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 	} else {
 
 		err := db.Model(&Payment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&webHooks).Error
+			Find(&payments).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -356,9 +339,9 @@ func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(webHooks))
-	for i,_ := range webHooks {
-		entities[i] = &webHooks[i]
+	entities := make([]Entity,len(payments))
+	for i,_ := range payments {
+		entities[i] = &payments[i]
 	}
 
 	return entities, total, nil

@@ -134,8 +134,6 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 			}}))
 		return
 	}
-
-
 }
 
 func validateCustomerOrder(input CreateOrderForm) error {

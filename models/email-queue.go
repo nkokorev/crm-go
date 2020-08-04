@@ -1,0 +1,224 @@
+package models
+
+import (
+	"github.com/jinzhu/gorm"
+	"github.com/nkokorev/crm-go/utils"
+	"time"
+)
+
+type EmailQueue struct {
+
+	Id     		uint   	`json:"id" gorm:"primary_key"`
+	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"` // Публичный ID заказа внутри магазина
+	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
+
+	// Имя очереди (Label)
+	Name	string	`json:"name" gorm:"type:varchar(128);not null;"` // Welcome, Onboarding, ...
+
+	// В работе серия или нет (== нужно ли ее обходить воркером)
+	Status 	bool 	`json:"status" gorm:"type:bool;default:false;"`
+
+	EmailTemplates	Email	`json:"income_amount"`
+
+	// Внутреннее время
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
+}
+
+func (EmailQueue) PgSqlCreate() {
+	db.CreateTable(&EmailQueue{})
+	db.Model(&EmailQueue{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&EmailQueue{}).AddForeignKey("amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&EmailQueue{}).AddForeignKey("income_amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&EmailQueue{}).AddForeignKey("refunded_amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
+}
+func (emailQueue *EmailQueue) BeforeCreate(scope *gorm.Scope) error {
+	emailQueue.Id = 0
+
+	// PublicId
+	lastIdx := uint(0)
+	var ord Order
+
+	err := db.Where("account_id = ?", emailQueue.AccountId).Select("public_id").Last(&ord).Error;
+	if err != nil && err != gorm.ErrRecordNotFound { return err}
+	if err == gorm.ErrRecordNotFound {
+		lastIdx = 0
+	} else {
+		lastIdx = ord.PublicId
+	}
+	emailQueue.PublicId = lastIdx + 1
+
+	return nil
+}
+
+func (emailQueue *EmailQueue) AfterCreate(scope *gorm.Scope) (error) {
+	// event.AsyncFire(Event{}.PaymentCreated(emailQueue.AccountId, emailQueue.Id))
+	return nil
+}
+func (emailQueue *EmailQueue) AfterUpdate(tx *gorm.DB) (err error) {
+
+	// event.AsyncFire(Event{}.PaymentUpdated(emailQueue.AccountId, emailQueue.Id))
+
+	return nil
+}
+func (emailQueue *EmailQueue) AfterDelete(tx *gorm.DB) (err error) {
+	// event.AsyncFire(Event{}.PaymentDeleted(emailQueue.AccountId, emailQueue.Id))
+	return nil
+}
+func (emailQueue *EmailQueue) AfterFind() (err error) {
+	return nil
+}
+
+// ############# Entity interface #############
+func (emailQueue EmailQueue) GetId() uint { return emailQueue.Id }
+func (emailQueue *EmailQueue) setId(id uint) { emailQueue.Id = id }
+func (emailQueue *EmailQueue) setPublicId(publicId uint) { emailQueue.PublicId = publicId }
+func (emailQueue EmailQueue) GetAccountId() uint { return emailQueue.AccountId }
+func (emailQueue *EmailQueue) setAccountId(id uint) { emailQueue.AccountId = id }
+func (EmailQueue) SystemEntity() bool { return false }
+// ############# Entity interface #############
+
+// ######### CRUD Functions ############
+func (emailQueue EmailQueue) create() (Entity, error)  {
+	
+	wb := emailQueue
+	if err := db.Create(&wb).Error; err != nil {
+		return nil, err
+	}
+
+	err := wb.GetPreloadDb(false,false, true).First(&wb, wb.Id).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var entity Entity = &wb
+
+	return entity, nil
+}
+
+func (EmailQueue) get(id uint) (Entity, error) {
+
+	var emailQueue EmailQueue
+
+	err := emailQueue.GetPreloadDb(false,false, true).First(&emailQueue, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &emailQueue, nil
+}
+func (EmailQueue) getByExternalId(externalId string) (*EmailQueue, error) {
+	emailQueue := EmailQueue{}
+
+	err := emailQueue.GetPreloadDb(false,false,true).First(&emailQueue, "external_id = ?", externalId).Error
+	if err != nil {
+		return nil, err
+	}
+	return &emailQueue, nil
+}
+func (emailQueue *EmailQueue) load() error {
+	if emailQueue.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить EmailQueue - не указан  Id"}
+	}
+
+	err := emailQueue.GetPreloadDb(false,false, true).First(emailQueue,emailQueue.Id).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (emailQueue *EmailQueue) loadByPublicId() error {
+	
+	if emailQueue.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить EmailQueue - не указан  Id"}
+	}
+
+	if err := emailQueue.GetPreloadDb(false,false, true).First(emailQueue, "public_id = ?", emailQueue.PublicId).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (EmailQueue) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+	return EmailQueue{}.getPaginationList(accountId, 0, 25, sortBy, "")
+}
+
+func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+
+	webHooks := make([]EmailQueue,0)
+	var total uint
+
+	// if need to search
+	if len(search) > 0 {
+
+		// string pattern
+		search = "%"+search+"%"
+
+		err := (&EmailQueue{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = (&EmailQueue{}).GetPreloadDb(true,false,true).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
+			Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+
+	} else {
+
+		err := db.Model(&EmailQueue{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&webHooks).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = db.Model(&EmailQueue{}).Where("account_id = ?", accountId).Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(webHooks))
+	for i,_ := range webHooks {
+		entities[i] = &webHooks[i]
+	}
+
+	return entities, total, nil
+}
+
+func (emailQueue *EmailQueue) update(input map[string]interface{}) error {
+	return emailQueue.GetPreloadDb(false,false,false).Where("if = ?", emailQueue.Id).Omit("id", "account_id").Updates(input).Error
+}
+
+func (emailQueue *EmailQueue) delete () error {
+
+	return emailQueue.GetPreloadDb(true,false,false).Where("id = ?", emailQueue.Id).Delete(emailQueue).Error
+}
+// ######### END CRUD Functions ############
+
+func (emailQueue *EmailQueue) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+	_db := db
+
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(&emailQueue)
+	} else {
+		_db = _db.Model(&EmailQueue{})
+	}
+
+	if preload {
+		// return _db.Preload("PaymentAmount")
+		return _db
+	} else {
+		return _db
+	}
+}
+
