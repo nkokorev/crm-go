@@ -189,7 +189,44 @@ func getCustomerFromInput(account models.Account, userHashId, email, phone, name
 		userByEmail, errEmail := account.GetUserByEmail(email)
 		userByPhone, errPhone := account.GetUserByPhone(phone, "RU")
 
-		// todo: подсовывать ли данные существующим клиентам или нет ? - вывести в настройки
+
+		// ! Оба пользователя найдены = В случае, если у обоих пользователей указаны телефон и емейл, но при этом емейл разные
+		if errEmail == nil && errPhone == nil && userByEmail.Email != "" && userByPhone.Email != "" && (userByEmail.Email != userByPhone.Email) {
+			return nil, u.Error{Message:"Ошибка идентификации пользователя",
+				Errors: map[string]interface{}{
+				"email":"Пользователь с таким email'ом имеет другой телефон",
+				"phone":"Пользователь с таким телефоном имеет другой email",
+				}}
+		}
+
+		// ! Оба пользователя найдены = В случае, если у обоих пользователей указаны телефон и емейл, но при этом телефоны разные
+		if errEmail == nil && errPhone == nil && userByEmail.Phone != "" && userByPhone.Phone != "" && (userByEmail.Phone != userByPhone.Phone) {
+			return nil, u.Error{Message:"Ошибка идентификации пользователя",
+				Errors: map[string]interface{}{
+					"email":"Пользователь с таким email'ом имеет другой телефон",
+					"phone":"Пользователь с таким телефоном имеет другой email",
+				}}
+		}
+
+		// Найден только один пользователь = и у него указан телефон и в заявке у него другой телефон
+		if errEmail == nil && errPhone != nil &&
+			userByEmail.Phone != "" && phone != "" &&
+			(userByEmail.Phone != phone) {
+			return nil, u.Error{Message:"Ошибка идентификации пользователя",
+				Errors: map[string]interface{}{
+					"phone":"Пользователь с указанным email имеет другой номер телефона",
+				}}
+		}
+		// Найден только один пользователь = и у него указан телефон и в заявке у него другой телефон
+		if errPhone == nil && errEmail != nil &&
+			userByPhone.Email != "" && email != "" &&
+			(userByPhone.Email != email) {
+			return nil, u.Error{Message:"Ошибка идентификации пользователя",
+				Errors: map[string]interface{}{
+					"email":"Пользователь с указанным телефоном имеет другой email",
+				}}
+		}
+
 		if errPhone == nil {
 			user = *userByPhone
 		}
@@ -509,6 +546,7 @@ func createOrderFromCallbackPhone(w http.ResponseWriter, input CreateOrderForm, 
 	resp["order"] = order
 	u.Respond(w, resp)
 }
+
 func createOrderFromCallbackForm(w http.ResponseWriter, input CreateOrderForm, account models.Account, webSite models.WebSite, channel models.OrderChannel) {
 
 	if input.CustomerComment == "" {
@@ -542,7 +580,10 @@ func createOrderFromCallbackForm(w http.ResponseWriter, input CreateOrderForm, a
 	}
 
 	// 6. Создаем / находим пользователя
-	customer, err := getCustomerFromInput(account, input.CustomerHashId, input.Customer.Email, input.Customer.Phone, input.Customer.Name, input.Customer.Surname, input.Customer.Patronymic)
+	customer, err := getCustomerFromInput(account,
+		input.CustomerHashId, input.Customer.Email, input.Customer.Phone,
+		input.Customer.Name, input.Customer.Surname, input.Customer.Patronymic)
+
 	if err != nil {
 		u.Respond(w, u.MessageError(err))
 		return
