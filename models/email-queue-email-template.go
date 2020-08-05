@@ -21,8 +21,6 @@ type EmailQueueEmailTemplate struct {
 	Status 	bool 	`json:"status" gorm:"type:bool;default:false;"`
 	Order 	uint 	`json:"order" gorm:"type:int;not null;"` // порядок
 
-
-
 	EmailTemplateId	uint	`json:"emailTemplateId" gorm:"type:int;"`
 	EmailTemplate	EmailTemplate `json:"emailTemplate"`
 
