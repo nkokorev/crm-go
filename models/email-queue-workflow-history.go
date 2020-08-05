@@ -1,74 +1,65 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
-	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
+	"net"
 	"time"
 )
 
-// email queue  workflow email templates 
+// История отправок писем в автоматических серия. История хранится какое-то время.
+// Храним: факт отправки: чего, кому, когда, число попыток, статус (успех/нет) - для быстрой выборки, открытия / отписки / ip-адрес пользователя (?).
 type EmailQueueWorkflowHistory struct {
 
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"` // Публичный ID заказа внутри магазина
+	Id     		uint   	`json:"id" gorm:"primary_key"` // очень большой индекс может быть
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	// Имя очереди (Label)
-	Name	string	`json:"name" gorm:"type:varchar(128);not null;"` // Welcome, Onboarding, ...
-
-	// В работе данное письмо в указанной серии
-	Status 	bool 	`json:"status" gorm:"type:bool;default:false;"`
-	Order 	uint 	`json:"order" gorm:"type:int;not null;"` // порядок
-
-	EmailQueueId	uint	`json:"emailQueueId" gorm:"type:int;"`
+	// К какой серии писем относится задача
+	EmailQueueId	uint	`json:"emailQueueId" gorm:"type:int;index;not null;"` // index, т.к. выборка будет идти по этой колонке
 	EmailQueue		EmailQueue `json:"emailQueue"`
 
-	EmailTemplateId	uint	`json:"emailTemplateId" gorm:"type:int;"`
-	EmailTemplate	EmailTemplate `json:"emailTemplate"`
+	// Номер шага в очереди, который был совершен. По нему может выводиться статистика.
+	StepId	uint	`json:"stepId" gorm:"type:smallint;default:1;not null;"`
 
-	// График: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday | weekends, workday
-	// Schedule	string `json:"emailTemplate"`     `json:"switchProducts"`
-	// 1- mondey, workday = 8, weekend = 89
-	Schedule	postgres.Jsonb `json:"schedule" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	// ID конкретной связи <Queue>&<EmailTemplate>
+	EmailQueueEmailTemplateIdId		uint	`json:"emailQueueEmailTemplateIdId" gorm:"type:smallint;default:1;not null;"`
 
-	// В какое время следует отправлять электронные письма:
-	// инста отправка GateStart = GateEnd = null
-	// В указанное время: GateStart = <...>, GateEnd = null
-	// В указанный промежуток: между GateStart <> GateEnd
-	GateStart 	time.Time // << учитывается только время [0-24]
-	GateEnd		time.Time // << учитывается только время [0-24]
+	// Какой конкретно шаблон был отправлен - нужно для статистики по конкретным письмам в серии.
+	// При изменении шаблона, но сохранении номера шага - id все равно останутся...
+	// EmailTemplateId	uint	`json:"emailTemplateId" gorm:"type:int;index;not null;"` // << index для выборки по конкретному письму
+	// EmailTemplate	EmailTemplate `json:"emailTemplate"`
 
-	// Что делать, если Gate не подходит? перенести на 1-24 часа / пропустить письмо и перейти к следующему
+	// Успешна ли отправка или скип задача. Хз зачем.
+	Succeed 	bool 	`json:"succeed" gorm:"type:bool;default:false;"`
 
+	// С какой попытки было отправлено письмо. По этой колонке можно понять качество базы. << хз нужно ли.
+	NumberOfAttempts uint `json:"numberOfAttempts" gorm:"type:smallint;default:1;"`
 
-	// Внутреннее время
+	// Статистика открытий
+	Opens 		uint 		`json:"opens" gorm:"type:smallint;default:1;"`
+	OpenedAt 	*time.Time  	`json:"openedAt"` // << время 1-го открытия
+
+	// Отписался ли человек. По этому полю будет выборка (для сбора статистики)
+	Unsubscribed 	bool 	`json:"unsubscribed" gorm:"type:bool;default:false;"`
+	UnsubscribedAt 	*time.Time  `json:"unsubscribedAt"` // << время отписки
+
+	// Ip адрес с которого человек открыл письмо. Может быть полезно для определения GeoLocation.
+	NetIp	*net.IP `json:"ipAddr" gorm:"type:cidr;"`
+
+	// Время создания
 	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
+
 }
 
 func (EmailQueueWorkflowHistory) PgSqlCreate() {
 	db.CreateTable(&EmailQueueWorkflowHistory{})
 	db.Model(&EmailQueueWorkflowHistory{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Model(&EmailQueueWorkflowHistory{}).AddForeignKey("email_queue_id", "email_queues(id)", "CASCADE", "CASCADE")
-	db.Model(&EmailQueueWorkflowHistory{}).AddForeignKey("email_template_id", "email_templates(id)", "CASCADE", "CASCADE")
-	// db.Model(&EmailQueueWorkflowHistory{}).AddForeignKey("refunded_amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&EmailQueueWorkflowHistory{}).AddForeignKey("email_template_id", "email_templates(id)", "CASCADE", "CASCADE")
 }
 func (emailQueueWorkflowHistory *EmailQueueWorkflowHistory) BeforeCreate(scope *gorm.Scope) error {
 	emailQueueWorkflowHistory.Id = 0
-
-	// PublicId
-	lastIdx := uint(0)
-	var ord Order
-
-	err := db.Where("account_id = ?", emailQueueWorkflowHistory.AccountId).Select("public_id").Last(&ord).Error;
-	if err != nil && err != gorm.ErrRecordNotFound { return err}
-	if err == gorm.ErrRecordNotFound {
-		lastIdx = 0
-	} else {
-		lastIdx = ord.PublicId
-	}
-	emailQueueWorkflowHistory.PublicId = lastIdx + 1
 
 	return nil
 }
@@ -94,7 +85,7 @@ func (emailQueueWorkflowHistory *EmailQueueWorkflowHistory) AfterFind() (err err
 // ############# Entity interface #############
 func (emailQueueWorkflowHistory EmailQueueWorkflowHistory) GetId() uint { return emailQueueWorkflowHistory.Id }
 func (emailQueueWorkflowHistory *EmailQueueWorkflowHistory) setId(id uint) { emailQueueWorkflowHistory.Id = id }
-func (emailQueueWorkflowHistory *EmailQueueWorkflowHistory) setPublicId(publicId uint) { emailQueueWorkflowHistory.PublicId = publicId }
+func (emailQueueWorkflowHistory *EmailQueueWorkflowHistory) setPublicId(publicId uint) { }
 func (emailQueueWorkflowHistory EmailQueueWorkflowHistory) GetAccountId() uint { return emailQueueWorkflowHistory.AccountId }
 func (emailQueueWorkflowHistory *EmailQueueWorkflowHistory) setAccountId(id uint) { emailQueueWorkflowHistory.AccountId = id }
 func (EmailQueueWorkflowHistory) SystemEntity() bool { return false }
@@ -128,15 +119,7 @@ func (EmailQueueWorkflowHistory) get(id uint) (Entity, error) {
 	}
 	return &emailQueueWorkflowHistory, nil
 }
-func (EmailQueueWorkflowHistory) getByExternalId(externalId string) (*EmailQueueWorkflowHistory, error) {
-	emailQueueWorkflowHistory := EmailQueueWorkflowHistory{}
 
-	err := emailQueueWorkflowHistory.GetPreloadDb(false,false,true).First(&emailQueueWorkflowHistory, "external_id = ?", externalId).Error
-	if err != nil {
-		return nil, err
-	}
-	return &emailQueueWorkflowHistory, nil
-}
 func (emailQueueWorkflowHistory *EmailQueueWorkflowHistory) load() error {
 	if emailQueueWorkflowHistory.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить EmailQueueWorkflowHistory - не указан  Id"}
@@ -149,16 +132,7 @@ func (emailQueueWorkflowHistory *EmailQueueWorkflowHistory) load() error {
 	return nil
 }
 func (emailQueueWorkflowHistory *EmailQueueWorkflowHistory) loadByPublicId() error {
-	
-	if emailQueueWorkflowHistory.PublicId < 1 {
-		return utils.Error{Message: "Невозможно загрузить EmailQueueWorkflowHistory - не указан  Id"}
-	}
-
-	if err := emailQueueWorkflowHistory.GetPreloadDb(false,false, true).First(emailQueueWorkflowHistory, "public_id = ?", emailQueueWorkflowHistory.PublicId).Error; err != nil {
-		return err
-	}
-
-	return nil
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
 func (EmailQueueWorkflowHistory) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
@@ -167,7 +141,7 @@ func (EmailQueueWorkflowHistory) getList(accountId uint, sortBy string) ([]Entit
 
 func (EmailQueueWorkflowHistory) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
-	webHooks := make([]EmailQueueWorkflowHistory,0)
+	emailQueueHistories := make([]EmailQueueWorkflowHistory,0)
 	var total uint
 
 	// if need to search
@@ -177,7 +151,7 @@ func (EmailQueueWorkflowHistory) getPaginationList(accountId uint, offset, limit
 		search = "%"+search+"%"
 
 		err := (&EmailQueueWorkflowHistory{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
+			Find(&emailQueueHistories, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -193,7 +167,7 @@ func (EmailQueueWorkflowHistory) getPaginationList(accountId uint, offset, limit
 	} else {
 
 		err := db.Model(&EmailQueueWorkflowHistory{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&webHooks).Error
+			Find(&emailQueueHistories).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -206,9 +180,9 @@ func (EmailQueueWorkflowHistory) getPaginationList(accountId uint, offset, limit
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(webHooks))
-	for i,_ := range webHooks {
-		entities[i] = &webHooks[i]
+	entities := make([]Entity,len(emailQueueHistories))
+	for i,_ := range emailQueueHistories {
+		entities[i] = &emailQueueHistories[i]
 	}
 
 	return entities, total, nil

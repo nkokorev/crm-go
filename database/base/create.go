@@ -1769,21 +1769,27 @@ func UploadTestDataPart_IV()  {
 func Migrate_I() {
 	pool := models.GetPool()
 
-	// 31.07.2020
-	models.Payment2Delivery{}.PgSqlCreate()
+	// 05.08.2020
+	pool.DropTableIfExists(
+		models.EmailQueue{},
+		models.EmailQueueEmailTemplate{},
+		models.EmailQueueWorkflow{},
+		models.EmailQueueWorkflowHistory{},
+		)
+	
+
+	models.EmailQueue{}.PgSqlCreate()
+	models.EmailQueueEmailTemplate{}.PgSqlCreate()
+	models.EmailQueueWorkflow{}.PgSqlCreate()
+	models.EmailQueueWorkflowHistory{}.PgSqlCreate()
+
+	// pool.AutoMigrate(&models.EmailQueue{})
+	// pool.AutoMigrate(&models.EmailQueueEmailTemplate{})
+	// pool.AutoMigrate(&models.EmailQueueWorkflow{})
+	// pool.AutoMigrate(&models.EmailQueueWorkflowHistory{})
 
 
-	pool.AutoMigrate(&models.PaymentYandex{})
-	pool.AutoMigrate(&models.PaymentCash{})
-	pool.AutoMigrate(&models.Order{})
 
-	pool.AutoMigrate(&models.DeliveryOrder{})
-	pool.AutoMigrate(&models.DeliveryCourier{})
-	pool.AutoMigrate(&models.DeliveryPickup{})
-	pool.AutoMigrate(&models.DeliveryRussianPost{})
-	pool.AutoMigrate(&models.Payment{})
-	pool.AutoMigrate(&models.CartItem{})
-	pool.AutoMigrate(&models.PaymentMode{})
 
 	// models.PaymentMode{}.PgSqlCreate()
 }

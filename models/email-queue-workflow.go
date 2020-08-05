@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"time"
@@ -10,30 +11,26 @@ import (
 type EmailQueueWorkflow struct {
 
 	Id     		uint   	`json:"id" gorm:"primary_key"`
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"` // Публичный ID заказа внутри магазина
-	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
+	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"` // << нужен ли? т.к. поиск будет по сериям писем скорее всего...
 
-	// К какой серии писем это все относится
-	EmailQueueId	uint	`json:"emailQueueId" gorm:"type:int;not null;"`
+	// К какой серии писем относится задача
+	EmailQueueId	uint	`json:"emailQueueId" gorm:"type:int;not null;"` // может быть надо добавить index, т.к. по этой колонке будет поиск
 	EmailQueue		EmailQueue `json:"emailQueue"`
 
-	// Id письма (Шага) в серии EmailQueue. Шаг определяется ситуационно в момент Expected Time.
-	// Если шага нет - пользователь выходит из серии.
+	// Номер необходимого шага в серии EmailQueue. Шаг определяется ситуационно в момент Expected Time. Если шага нет - серия завершается за пользователя.
+	// После выполнения - № шага увеличивается на 1
 	ExpectedStepId	uint	`json:"expectedStepId" gorm:"type:int;not null;"`
 
-	// Предыдущий шаг (?)
-	// PreviewStep	uint 	`json:"previewStep" gorm:"type:int;not null;"`
-
-	// Запланированное время отправки
+	// Запланированное время отправки (time for next step)
 	ExpectedTimeStart 	time.Time `json:"expectedTimeStart"`
 
 	// Id пользователя, которому отправляется серия. Обязательный параметр.
 	UserId 	uint `json:"userId" gorm:"type:int;not null;"`
 	User	User `json:"user"`
 
-	EmailTemplateId	uint	`json:"emailTemplateId" gorm:"type:int;"`
-	EmailTemplate	EmailTemplate `json:"emailTemplate"`
-
+	// Число попыток отправки. Если почему-то не удалось отправить письмо есть возможность перенести отправку и повторить попытку. При 2-3х попытках, завершается неудачей.
+	NumberOfAttempts uint `json:"numberOfAttempts" gorm:"type:smallint;default:0;"`
+	
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 }
@@ -42,25 +39,11 @@ func (EmailQueueWorkflow) PgSqlCreate() {
 	db.CreateTable(&EmailQueueWorkflow{})
 	db.Model(&EmailQueueWorkflow{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Model(&EmailQueueWorkflow{}).AddForeignKey("email_queue_id", "email_queues(id)", "CASCADE", "CASCADE")
-	db.Model(&EmailQueueWorkflow{}).AddForeignKey("expected_step_id", "email_templates(id)", "CASCADE", "CASCADE")
-	// db.Model(&EmailQueueWorkflow{}).AddForeignKey("refunded_amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
+	db.Model(&EmailQueueWorkflow{}).AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
 }
+
 func (emailQueueWorkflow *EmailQueueWorkflow) BeforeCreate(scope *gorm.Scope) error {
 	emailQueueWorkflow.Id = 0
-
-	// PublicId
-	lastIdx := uint(0)
-	var ord Order
-
-	err := db.Where("account_id = ?", emailQueueWorkflow.AccountId).Select("public_id").Last(&ord).Error;
-	if err != nil && err != gorm.ErrRecordNotFound { return err}
-	if err == gorm.ErrRecordNotFound {
-		lastIdx = 0
-	} else {
-		lastIdx = ord.PublicId
-	}
-	emailQueueWorkflow.PublicId = lastIdx + 1
-
 	return nil
 }
 
@@ -85,7 +68,7 @@ func (emailQueueWorkflow *EmailQueueWorkflow) AfterFind() (err error) {
 // ############# Entity interface #############
 func (emailQueueWorkflow EmailQueueWorkflow) GetId() uint { return emailQueueWorkflow.Id }
 func (emailQueueWorkflow *EmailQueueWorkflow) setId(id uint) { emailQueueWorkflow.Id = id }
-func (emailQueueWorkflow *EmailQueueWorkflow) setPublicId(publicId uint) { emailQueueWorkflow.PublicId = publicId }
+func (emailQueueWorkflow *EmailQueueWorkflow) setPublicId(publicId uint) { }
 func (emailQueueWorkflow EmailQueueWorkflow) GetAccountId() uint { return emailQueueWorkflow.AccountId }
 func (emailQueueWorkflow *EmailQueueWorkflow) setAccountId(id uint) { emailQueueWorkflow.AccountId = id }
 func (EmailQueueWorkflow) SystemEntity() bool { return false }
@@ -140,16 +123,7 @@ func (emailQueueWorkflow *EmailQueueWorkflow) load() error {
 	return nil
 }
 func (emailQueueWorkflow *EmailQueueWorkflow) loadByPublicId() error {
-	
-	if emailQueueWorkflow.PublicId < 1 {
-		return utils.Error{Message: "Невозможно загрузить EmailQueueWorkflow - не указан  Id"}
-	}
-
-	if err := emailQueueWorkflow.GetPreloadDb(false,false, true).First(emailQueueWorkflow, "public_id = ?", emailQueueWorkflow.PublicId).Error; err != nil {
-		return err
-	}
-
-	return nil
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
 func (EmailQueueWorkflow) getList(accountId uint, sortBy string) ([]Entity, uint, error) {

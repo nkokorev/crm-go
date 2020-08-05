@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
@@ -11,7 +12,6 @@ import (
 type EmailQueueEmailTemplate struct {
 
 	Id     		uint   	`json:"id" gorm:"primary_key"`
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"` // Публичный ID заказа внутри магазина
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Имя очереди (Label)
@@ -52,24 +52,9 @@ func (EmailQueueEmailTemplate) PgSqlCreate() {
 	db.Model(&EmailQueueEmailTemplate{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Model(&EmailQueueEmailTemplate{}).AddForeignKey("email_queue_id", "email_queues(id)", "CASCADE", "CASCADE")
 	db.Model(&EmailQueueEmailTemplate{}).AddForeignKey("email_template_id", "email_templates(id)", "CASCADE", "CASCADE")
-	// db.Model(&EmailQueueEmailTemplate{}).AddForeignKey("refunded_amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
 }
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) BeforeCreate(scope *gorm.Scope) error {
 	emailQueueEmailTemplate.Id = 0
-
-	// PublicId
-	lastIdx := uint(0)
-	var ord Order
-
-	err := db.Where("account_id = ?", emailQueueEmailTemplate.AccountId).Select("public_id").Last(&ord).Error;
-	if err != nil && err != gorm.ErrRecordNotFound { return err}
-	if err == gorm.ErrRecordNotFound {
-		lastIdx = 0
-	} else {
-		lastIdx = ord.PublicId
-	}
-	emailQueueEmailTemplate.PublicId = lastIdx + 1
-
 	return nil
 }
 
@@ -94,7 +79,7 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) AfterFind() (err error) 
 // ############# Entity interface #############
 func (emailQueueEmailTemplate EmailQueueEmailTemplate) GetId() uint { return emailQueueEmailTemplate.Id }
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) setId(id uint) { emailQueueEmailTemplate.Id = id }
-func (emailQueueEmailTemplate *EmailQueueEmailTemplate) setPublicId(publicId uint) { emailQueueEmailTemplate.PublicId = publicId }
+func (emailQueueEmailTemplate *EmailQueueEmailTemplate) setPublicId(publicId uint) { }
 func (emailQueueEmailTemplate EmailQueueEmailTemplate) GetAccountId() uint { return emailQueueEmailTemplate.AccountId }
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) setAccountId(id uint) { emailQueueEmailTemplate.AccountId = id }
 func (EmailQueueEmailTemplate) SystemEntity() bool { return false }
@@ -149,16 +134,7 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) load() error {
 	return nil
 }
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) loadByPublicId() error {
-	
-	if emailQueueEmailTemplate.PublicId < 1 {
-		return utils.Error{Message: "Невозможно загрузить EmailQueueEmailTemplate - не указан  Id"}
-	}
-
-	if err := emailQueueEmailTemplate.GetPreloadDb(false,false, true).First(emailQueueEmailTemplate, "public_id = ?", emailQueueEmailTemplate.PublicId).Error; err != nil {
-		return err
-	}
-
-	return nil
+	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
 func (EmailQueueEmailTemplate) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
@@ -167,7 +143,7 @@ func (EmailQueueEmailTemplate) getList(accountId uint, sortBy string) ([]Entity,
 
 func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
-	webHooks := make([]EmailQueueEmailTemplate,0)
+	emailQueueEmailTemplates := make([]EmailQueueEmailTemplate,0)
 	var total uint
 
 	// if need to search
@@ -177,7 +153,7 @@ func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit i
 		search = "%"+search+"%"
 
 		err := (&EmailQueueEmailTemplate{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
+			Find(&emailQueueEmailTemplates, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -193,7 +169,7 @@ func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit i
 	} else {
 
 		err := db.Model(&EmailQueueEmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&webHooks).Error
+			Find(&emailQueueEmailTemplates).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -206,9 +182,9 @@ func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit i
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(webHooks))
-	for i,_ := range webHooks {
-		entities[i] = &webHooks[i]
+	entities := make([]Entity,len(emailQueueEmailTemplates))
+	for i,_ := range emailQueueEmailTemplates {
+		entities[i] = &emailQueueEmailTemplates[i]
 	}
 
 	return entities, total, nil

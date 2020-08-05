@@ -62,6 +62,8 @@ type Order struct {
 	StatusId  	uint	`json:"statusId" gorm:"type:int;default:1;"`
 	Status		OrderStatus	`json:"status"`
 
+	// IpV4	Ipv
+
 	CreatedAt time.Time 	`json:"createdAt"`
 	UpdatedAt time.Time 	`json:"updatedAt"`
 	DeletedAt *time.Time 	`json:"deletedAt"`
