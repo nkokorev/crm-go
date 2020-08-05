@@ -30,9 +30,12 @@ type EmailQueueWorkflow struct {
 
 	// Число попыток отправки. Если почему-то не удалось отправить письмо есть возможность перенести отправку и повторить попытку. При 2-3х попытках, завершается неудачей.
 	NumberOfAttempts uint `json:"numberOfAttempts" gorm:"type:smallint;default:0;"`
-	
+
+	// Когда была последняя попытка отправки (обычно = CreatedAt time)
+	LastTriedAt time.Time  `json:"lastTriedAt"`
+
 	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
+	// UpdatedAt time.Time  `json:"updatedAt"` << не очень нужно знать, когда произошло обновление
 }
 
 func (EmailQueueWorkflow) PgSqlCreate() {

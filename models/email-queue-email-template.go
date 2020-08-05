@@ -14,30 +14,29 @@ type EmailQueueEmailTemplate struct {
 	Id     		uint   	`json:"id" gorm:"primary_key"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	// Имя очереди (Label)
-	Name	string	`json:"name" gorm:"type:varchar(128);not null;"` // Welcome, Onboarding, ...
-
+	EmailQueueId	uint	`json:"emailQueueId" gorm:"type:int;"`
+	EmailQueue		EmailQueue `json:"emailQueue"`
+	
 	// В работе данное письмо в указанной серии
 	Status 	bool 	`json:"status" gorm:"type:bool;default:false;"`
 	Order 	uint 	`json:"order" gorm:"type:int;not null;"` // порядок
 
-	EmailQueueId	uint	`json:"emailQueueId" gorm:"type:int;"`
-	EmailQueue		EmailQueue `json:"emailQueue"`
+
 
 	EmailTemplateId	uint	`json:"emailTemplateId" gorm:"type:int;"`
 	EmailTemplate	EmailTemplate `json:"emailTemplate"`
 
 	// График: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday | weekends, workday
 	// Schedule	string `json:"emailTemplate"`     `json:"switchProducts"`
-	// 1- mondey, workday = 8, weekend = 89
+	// 1- mondey, workday = 8, weekend = 9, everyday = 10
 	Schedule	postgres.Jsonb `json:"schedule" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 
 	// В какое время следует отправлять электронные письма:
 	// инста отправка GateStart = GateEnd = null
 	// В указанное время: GateStart = <...>, GateEnd = null
 	// В указанный промежуток: между GateStart <> GateEnd
-	GateStart 	time.Time // << учитывается только время [0-24]
-	GateEnd		time.Time // << учитывается только время [0-24]
+	GateStart 	*time.Time `json:"gateStart" gorm:"default:null"`// << учитывается только время [0-24]
+	GateEnd		*time.Time `json:"gateEnd" gorm:"default:null"`	// << учитывается только время [0-24]
 
 	// Что делать, если Gate не подходит? перенести на 1-24 часа / пропустить письмо и перейти к следующему
 

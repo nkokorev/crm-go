@@ -1770,23 +1770,22 @@ func Migrate_I() {
 	pool := models.GetPool()
 
 	// 05.08.2020
-	pool.DropTableIfExists(
-		models.EmailQueue{},
-		models.EmailQueueEmailTemplate{},
-		models.EmailQueueWorkflow{},
+	/*pool.DropTableIfExists(
 		models.EmailQueueWorkflowHistory{},
+		models.EmailQueueWorkflow{},
+		models.EmailQueueEmailTemplate{},
+		models.EmailQueue{},
 		)
-	
 
 	models.EmailQueue{}.PgSqlCreate()
 	models.EmailQueueEmailTemplate{}.PgSqlCreate()
 	models.EmailQueueWorkflow{}.PgSqlCreate()
-	models.EmailQueueWorkflowHistory{}.PgSqlCreate()
+	models.EmailQueueWorkflowHistory{}.PgSqlCreate()*/
 
-	// pool.AutoMigrate(&models.EmailQueue{})
-	// pool.AutoMigrate(&models.EmailQueueEmailTemplate{})
-	// pool.AutoMigrate(&models.EmailQueueWorkflow{})
-	// pool.AutoMigrate(&models.EmailQueueWorkflowHistory{})
+	pool.AutoMigrate(&models.EmailQueue{})
+	pool.AutoMigrate(&models.EmailQueueEmailTemplate{})
+	pool.AutoMigrate(&models.EmailQueueWorkflow{})
+	pool.AutoMigrate(&models.EmailQueueWorkflowHistory{})
 
 
 

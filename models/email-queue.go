@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"time"
@@ -18,7 +19,29 @@ type EmailQueue struct {
 	// В работе серия или нет (== нужно ли ее обходить воркером)
 	Status 	bool 	`json:"status" gorm:"type:bool;default:false;"`
 
-	EmailTemplates	[]EmailQueueEmailTemplate	`json:"income_amount"`
+	// EmailQueueEmailTemplate	[]EmailQueueEmailTemplate	`json:"-"`
+
+	// EmailQueueWorkflow []EmailQueueWorkflow `json:"emailQueueWorkflow" gorm:"preload"`
+	// EmailQueueWorkflowQuantity uint `json:"emailQueueWorkflowQuantity" gorm:"preload"`
+
+	// Сколько в очереди сейчас задач (выборка по EmailQueueWorkflow) = сколько подписчиков еще проходят, в процессе
+	Queue uint `json:"_queue" gorm:"-"`
+
+	// Из скольких активных писем состоит цепочка      activeEmailTemplates
+	ActiveEmailTemplates uint `json:"_activeEmailTemplates" gorm:"-"`
+
+	// Сколько прошло через нее. На это число навешивается статистика открытий / отписок / кликов
+	Recipients uint `json:"_recipients" gorm:"-"`
+
+	OpenRate uint `json:"_openRate" gorm:"-"`
+
+	UnsubscribeRate uint `json:"_unsubscribeRate" gorm:"-"`
+
+	
+	
+
+	// Сколько пользователей завершило серию
+	// Subscribers uint `json:"emailQueueWorkflowQuantity" gorm:"preload"`
 
 	// Внутреннее время
 	CreatedAt time.Time  `json:"createdAt"`
@@ -66,6 +89,19 @@ func (emailQueue *EmailQueue) AfterDelete(tx *gorm.DB) (err error) {
 	return nil
 }
 func (emailQueue *EmailQueue) AfterFind() (err error) {
+
+	// Рассчитываем сколько пользователей сейчас в очереди
+	countWorkflows := uint(0)
+	err = db.Model(&EmailQueueWorkflow{}).Where("account_id = ? AND email_queue_id = ?", emailQueue.AccountId, emailQueue.Id).Count(&countWorkflows).Error;
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	if err == gorm.ErrRecordNotFound {countWorkflows = 0} else { emailQueue.Queue = countWorkflows}
+
+	countTemplates := uint(0)
+	err = db.Model(&EmailQueueEmailTemplate{}).Where("account_id = ? AND email_queue_id = ? AND status = 'true'", emailQueue.AccountId, emailQueue.Id).Count(&countTemplates).Error;
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	if err == gorm.ErrRecordNotFound {countTemplates = 0} else { emailQueue.ActiveEmailTemplates = countTemplates}
+
+
 	return nil
 }
 
@@ -145,7 +181,7 @@ func (EmailQueue) getList(accountId uint, sortBy string) ([]Entity, uint, error)
 
 func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
 
-	webHooks := make([]EmailQueue,0)
+	emailQueues := make([]EmailQueue,0)
 	var total uint
 
 	// if need to search
@@ -154,8 +190,12 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&EmailQueue{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
+		err := (&EmailQueue{}).GetPreloadDb(true,false,true).
+			Preload("EmailQueueWorkflow", func(db *gorm.DB) *gorm.DB {
+				return db.Select([]string{"id"})
+			}).
+			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&emailQueues, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -170,9 +210,11 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 
 	} else {
 
-		err := db.Model(&EmailQueue{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&webHooks).Error
+		err := (&EmailQueue{}).GetPreloadDb(false,false,true).
+			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&emailQueues).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
+			fmt.Println(err)
 			return nil, 0, err
 		}
 
@@ -184,9 +226,9 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(webHooks))
-	for i,_ := range webHooks {
-		entities[i] = &webHooks[i]
+	entities := make([]Entity,len(emailQueues))
+	for i,_ := range emailQueues {
+		entities[i] = &emailQueues[i]
 	}
 
 	return entities, total, nil
@@ -215,7 +257,7 @@ func (emailQueue *EmailQueue) GetPreloadDb(autoUpdateOff bool, getModel bool, pr
 	}
 
 	if preload {
-		// return _db.Preload("PaymentAmount")
+		// return _db.Preload("EmailTemplates")
 		return _db
 	} else {
 		return _db
