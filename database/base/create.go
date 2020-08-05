@@ -8,7 +8,6 @@ import (
 	"github.com/nkokorev/crm-go/utils"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
@@ -1768,27 +1767,27 @@ func UploadTestDataPart_IV()  {
 }
 
 func Migrate_I() {
-	pool := models.GetPool()
+	/*pool := models.GetPool()
 
 	// 05.08.2020
-	/*pool.DropTableIfExists(
+	pool.DropTableIfExists(
 		models.EmailQueueWorkflowHistory{},
 		models.EmailQueueWorkflow{},
 		models.EmailQueueEmailTemplate{},
 		models.EmailQueue{},
-		)
+		)*/
 
 	models.EmailQueue{}.PgSqlCreate()
 	models.EmailQueueEmailTemplate{}.PgSqlCreate()
 	models.EmailQueueWorkflow{}.PgSqlCreate()
-	models.EmailQueueWorkflowHistory{}.PgSqlCreate()*/
+	models.EmailQueueWorkflowHistory{}.PgSqlCreate()
 
-	pool.AutoMigrate(&models.EmailQueue{})
+	/*pool.AutoMigrate(&models.EmailQueue{})
 	pool.AutoMigrate(&models.EmailQueueEmailTemplate{})
 	pool.AutoMigrate(&models.EmailQueueWorkflow{})
-	pool.AutoMigrate(&models.EmailQueueWorkflowHistory{})
+	pool.AutoMigrate(&models.EmailQueueWorkflowHistory{})*/
 
-	for i := 0; i < 100000 ;i++ {
+	/*for i := 0; i < 100000 ;i++ {
 		timeNow := time.Now()
 		rand2 := uint(rand.Intn(2))+1
 		rand3 := uint(rand.Intn(3))+1
@@ -1811,7 +1810,7 @@ func Migrate_I() {
 		if _, err := (models.Account{Id: 5}).CreateEntity(&model); err != nil {
 			log.Fatal(err)
 		}
-	}
+	}*/
 
 	fmt.Println("Создание закончено!")
 

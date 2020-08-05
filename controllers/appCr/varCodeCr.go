@@ -33,7 +33,7 @@ func VatCodeCreate(w http.ResponseWriter, r *http.Request) {
 
 	vatCode, err := account.CreateEntity(&input.VatCode)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания"}))
 		return
 	}
 

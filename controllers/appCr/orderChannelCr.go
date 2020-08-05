@@ -33,7 +33,7 @@ func OrderChannelCreate(w http.ResponseWriter, r *http.Request) {
 
 	orderChannel, err := account.CreateEntity(&input.OrderChannel)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания канала"}))
 		return
 	}
 

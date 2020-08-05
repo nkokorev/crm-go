@@ -29,7 +29,7 @@ func PaymentMethodCreate(w http.ResponseWriter, r *http.Request) {
 	// хз хз
 	paymentMethod, err := account.CreateEntity(input.PaymentMethod)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания метода"}))
 		return
 	}
 

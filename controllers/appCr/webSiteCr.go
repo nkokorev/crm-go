@@ -28,7 +28,7 @@ func WebSiteCreate(w http.ResponseWriter, r *http.Request) {
 
 	webSite, err := account.CreateEntity(&input.WebSite)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания"}))
 		return
 	}
 

@@ -33,7 +33,7 @@ func PaymentSubjectCreate(w http.ResponseWriter, r *http.Request) {
 
 	paymentSubject, err := account.CreateEntity(&input.PaymentSubject)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания"}))
 		return
 	}
 

@@ -29,7 +29,7 @@ func OrderCreate(w http.ResponseWriter, r *http.Request) {
 
 	order, err := account.CreateEntity(&input.Order)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заявки"}))
 		return
 	}
 

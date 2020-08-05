@@ -29,7 +29,7 @@ func EmailQueueCreate(w http.ResponseWriter, r *http.Request) {
 
 	emailQueue, err := account.CreateEntity(&input.EmailQueue)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания серии"}))
 		return
 	}
 

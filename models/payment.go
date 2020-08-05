@@ -121,7 +121,7 @@ func (payment *Payment) BeforeCreate(scope *gorm.Scope) error {
 
 	// PublicId
 	lastIdx := uint(0)
-	var ord Order
+	var ord Payment
 
 	err := db.Where("account_id = ?", payment.AccountId).Select("public_id").Last(&ord).Error;
 	if err != nil && err != gorm.ErrRecordNotFound { return err}

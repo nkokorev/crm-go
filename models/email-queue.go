@@ -17,7 +17,7 @@ type EmailQueue struct {
 	Name	string	`json:"name" gorm:"type:varchar(128);not null;"` // Welcome, Onboarding, ...
 
 	// В работе серия или нет (== нужно ли ее обходить воркером)
-	Status 	bool 	`json:"status" gorm:"type:bool;default:false;"`
+	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false;"`
 
 	// EmailQueueEmailTemplate	[]EmailQueueEmailTemplate	`json:"-"`
 
@@ -57,14 +57,14 @@ func (emailQueue *EmailQueue) BeforeCreate(scope *gorm.Scope) error {
 
 	// PublicId
 	lastIdx := uint(0)
-	var ord Order
+	var eq EmailQueue
 
-	err := db.Where("account_id = ?", emailQueue.AccountId).Select("public_id").Last(&ord).Error;
+	err := db.Where("account_id = ?", emailQueue.AccountId).Select("public_id").Last(&eq).Error;
 	if err != nil && err != gorm.ErrRecordNotFound { return err}
 	if err == gorm.ErrRecordNotFound {
 		lastIdx = 0
 	} else {
-		lastIdx = ord.PublicId
+		lastIdx = eq.PublicId
 	}
 	emailQueue.PublicId = lastIdx + 1
 
@@ -100,12 +100,13 @@ func (emailQueue *EmailQueue) AfterFind() (err error) {
 	if err == gorm.ErrRecordNotFound {countQueue = 0} else { emailQueue.Queue = countQueue}
 
 
+
 	stat := struct {
 		Recipients uint  	// << Успешных отправок (succeed = true)
 		Completed uint   	// << Завершило серию (completed = true)
 		Opens uint    		// (opens >=1)
 		Unsubscribed uint 	// (unsubscribed = true)
-	}{}
+	}{0,0,0,0}
 	if err = db.Raw("SELECT   \n       COUNT(CASE WHEN succeed = true THEN 1 END) AS recipients,  \n       COUNT(CASE WHEN completed = true THEN 1 END) AS completed,  \n       COUNT(CASE WHEN opens >=1 THEN 1 END) AS opens,   \n       COUNT(CASE WHEN unsubscribed = true THEN 1 END) AS unsubscribed \nFROM email_queue_workflow_histories \nWHERE account_id = ? AND email_queue_id = ?;", emailQueue.AccountId, emailQueue.Id).
 		Scan(&stat).Error; err != nil {
 			return err
@@ -113,8 +114,16 @@ func (emailQueue *EmailQueue) AfterFind() (err error) {
 
 	emailQueue.Recipients = stat.Completed
 	emailQueue.EmailsSent = stat.Recipients
-	emailQueue.OpenRate = (float64(stat.Opens) / float64(stat.Recipients))*100
-	emailQueue.UnsubscribeRate = (float64(stat.Unsubscribed) / float64(stat.Recipients))*100
+	if stat.Opens > 0 && stat.Recipients > 0{
+		emailQueue.OpenRate = (float64(stat.Opens) / float64(stat.Recipients))*100
+	} else {
+		emailQueue.OpenRate = 0
+	}
+	if stat.Unsubscribed > 0 && stat.Recipients > 0{
+		emailQueue.UnsubscribeRate = (float64(stat.Unsubscribed) / float64(stat.Recipients))*100
+	} else {
+		emailQueue.UnsubscribeRate = 0
+	}
 
 
 

@@ -33,7 +33,7 @@ func OrderStatusCreate(w http.ResponseWriter, r *http.Request) {
 
 	orderStatus, err := account.CreateEntity(&input.OrderStatus)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания статуса"}))
 		return
 	}
 

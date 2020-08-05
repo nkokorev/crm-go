@@ -26,7 +26,7 @@ func DeliveryOrderCreate(w http.ResponseWriter, r *http.Request) {
 
 	deliveryOrder, err := account.CreateEntity(&input.DeliveryOrder)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заявки"}))
 		return
 	}
 

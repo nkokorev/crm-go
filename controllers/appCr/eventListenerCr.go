@@ -28,7 +28,7 @@ func EventListenerCreate(w http.ResponseWriter, r *http.Request) {
 
 	eventListener, err := account.CreateEntity(&input.EventListener)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания ключа"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания слушателя"}))
 		return
 	}
 
