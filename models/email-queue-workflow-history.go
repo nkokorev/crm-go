@@ -19,11 +19,19 @@ type EmailQueueWorkflowHistory struct {
 	EmailQueueId	uint	`json:"emailQueueId" gorm:"type:int;index;not null;"` // index, т.к. выборка будет идти по этой колонке
 	EmailQueue		EmailQueue `json:"emailQueue"`
 
-	// Номер шага в очереди, который был совершен. По нему может выводиться статистика.
+	// ID конкретной связи <Queue>&<EmailTemplate>. Для сбора статистики по конкретному шаблону.
+	EmailQueueEmailTemplateId		uint	`json:"emailQueueEmailTemplateId" gorm:"type:smallint;default:1;not null;"`
+	
+	// Номер шага в очереди, который был совершен. По нему может выводиться статистика (избыточно?).
 	StepId	uint	`json:"stepId" gorm:"type:smallint;default:1;not null;"`
 
-	// ID конкретной связи <Queue>&<EmailTemplate>
-	EmailQueueEmailTemplateIdId		uint	`json:"emailQueueEmailTemplateIdId" gorm:"type:smallint;default:1;not null;"`
+	// LastStep = Последний ли шаг или промежуточный шаг в цепочке. По нему выборка завершенных.
+	Completed 	bool 	`json:"completed" gorm:"type:bool;default:false;"`
+
+
+	// Id пользователя, которому было отправлено письмо серия.
+	UserId 	uint `json:"userId" gorm:"type:int;not null;default:1;"`
+	User	User `json:"user"`
 
 	// Какой конкретно шаблон был отправлен - нужно для статистики по конкретным письмам в серии.
 	// При изменении шаблона, но сохранении номера шага - id все равно останутся...
@@ -34,10 +42,10 @@ type EmailQueueWorkflowHistory struct {
 	Succeed 	bool 	`json:"succeed" gorm:"type:bool;default:false;"`
 
 	// С какой попытки было отправлено письмо. По этой колонке можно понять качество базы. << хз нужно ли.
-	NumberOfAttempts uint `json:"numberOfAttempts" gorm:"type:smallint;default:1;"`
+	NumberOfAttempts uint `json:"numberOfAttempts" gorm:"type:smallint;"`
 
 	// Статистика открытий
-	Opens 		uint 		`json:"opens" gorm:"type:smallint;default:1;"`
+	Opens 		uint 		`json:"opens" gorm:"type:smallint;"`
 	OpenedAt 	*time.Time  	`json:"openedAt"` // << время 1-го открытия
 
 	// Отписался ли человек. По этому полю будет выборка (для сбора статистики)
@@ -56,7 +64,10 @@ func (EmailQueueWorkflowHistory) PgSqlCreate() {
 	db.CreateTable(&EmailQueueWorkflowHistory{})
 	db.Model(&EmailQueueWorkflowHistory{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Model(&EmailQueueWorkflowHistory{}).AddForeignKey("email_queue_id", "email_queues(id)", "CASCADE", "CASCADE")
-	// db.Model(&EmailQueueWorkflowHistory{}).AddForeignKey("email_template_id", "email_templates(id)", "CASCADE", "CASCADE")
+
+	// todo: проработать модель удаления шаблона или связи
+	db.Model(&EmailQueueWorkflowHistory{}).AddForeignKey("email_queue_email_template_id", "email_queue_email_templates(id)", "SET NULL", "CASCADE")
+	db.Model(&EmailQueueWorkflowHistory{}).AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
 }
 func (emailQueueWorkflowHistory *EmailQueueWorkflowHistory) BeforeCreate(scope *gorm.Scope) error {
 	emailQueueWorkflowHistory.Id = 0

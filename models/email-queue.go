@@ -32,13 +32,9 @@ type EmailQueue struct {
 
 	// Сколько прошло через нее. На это число навешивается статистика открытий / отписок / кликов
 	Recipients uint `json:"_recipients" gorm:"-"`
-
-	OpenRate uint `json:"_openRate" gorm:"-"`
-
-	UnsubscribeRate uint `json:"_unsubscribeRate" gorm:"-"`
-
-	
-	
+	OpenRate float64 `json:"_openRate" gorm:"-"`
+	UnsubscribeRate float64 `json:"_unsubscribeRate" gorm:"-"`
+		
 
 	// Сколько пользователей завершило серию
 	// Subscribers uint `json:"emailQueueWorkflowQuantity" gorm:"preload"`
@@ -90,17 +86,59 @@ func (emailQueue *EmailQueue) AfterDelete(tx *gorm.DB) (err error) {
 }
 func (emailQueue *EmailQueue) AfterFind() (err error) {
 
-	// Рассчитываем сколько пользователей сейчас в очереди
-	countWorkflows := uint(0)
-	err = db.Model(&EmailQueueWorkflow{}).Where("account_id = ? AND email_queue_id = ?", emailQueue.AccountId, emailQueue.Id).Count(&countWorkflows).Error;
-	if err != nil && err != gorm.ErrRecordNotFound { return err }
-	if err == gorm.ErrRecordNotFound {countWorkflows = 0} else { emailQueue.Queue = countWorkflows}
-
+	// Рассчитываем сколько активных писем в серии
 	countTemplates := uint(0)
 	err = db.Model(&EmailQueueEmailTemplate{}).Where("account_id = ? AND email_queue_id = ? AND status = 'true'", emailQueue.AccountId, emailQueue.Id).Count(&countTemplates).Error;
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
 	if err == gorm.ErrRecordNotFound {countTemplates = 0} else { emailQueue.ActiveEmailTemplates = countTemplates}
 
+	// Рассчитываем сколько пользователей сейчас в очереди
+	countQueue := uint(0)
+	err = db.Model(&EmailQueueWorkflow{}).Where("account_id = ? AND email_queue_id = ?", emailQueue.AccountId, emailQueue.Id).Count(&countQueue).Error;
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	if err == gorm.ErrRecordNotFound {countQueue = 0} else { emailQueue.Queue = countQueue}
+
+
+	stat := struct {
+		Completed uint
+		Opens uint
+		Unsubscribed uint
+	}{}
+	if err = db.Raw("SELECT   COUNT(CASE WHEN completed = true THEN 1 END) AS completed,  COUNT(CASE WHEN opens >=1 THEN 1 END) AS opens,   COUNT(CASE WHEN unsubscribed = true THEN 1 END) AS unsubscribed FROM email_queue_workflow_histories WHERE account_id = ? AND email_queue_id = ?;", emailQueue.AccountId, emailQueue.Id).
+		Scan(&stat).Error; err != nil {
+			return err
+	}
+
+	emailQueue.Recipients = stat.Completed
+	emailQueue.OpenRate = (float64(stat.Opens) / float64(stat.Completed))*100
+	emailQueue.UnsubscribeRate = (float64(stat.Unsubscribed) / float64(stat.Completed))*100
+
+
+
+	/*// |Дорогой запрос| Сколько прошло подписчиков
+	countRecipients := uint(0)
+	// err = db.Model(&EmailQueueWorkflowHistory{}).Where("account_id = ? AND email_queue_id = ? AND completed ='true'", emailQueue.AccountId, emailQueue.Id).Count(&countRecipients).Error;
+	err = db.Model(&EmailQueueWorkflowHistory{}).Where("account_id = ? AND email_queue_id = ? AND completed = 'true'", emailQueue.AccountId, emailQueue.Id).
+		Select("count(id)").Count(&countRecipients).Error;
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	if err == gorm.ErrRecordNotFound {countRecipients = 0} else { emailQueue.Recipients = countRecipients}
+
+	// |Дорогой запрос| Сколько прошло подписчиков
+	countOpens := uint(0)
+	// err = db.Model(&EmailQueueWorkflowHistory{}).Where("account_id = ? AND email_queue_id = ? AND completed ='true'", emailQueue.AccountId, emailQueue.Id).Count(&countRecipients).Error;
+	err = db.Model(&EmailQueueWorkflowHistory{}).Where("account_id = ? AND email_queue_id = ? AND opens >=1", emailQueue.AccountId, emailQueue.Id).
+		Select("count(id)").Count(&countOpens).Error;
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	if err == gorm.ErrRecordNotFound {countOpens = 0} else { emailQueue.OpenRate = (float64(countOpens) / float64(countRecipients))*100 }
+
+	// |Дорогой запрос| Каков % отписок
+	countUnsubs := uint(0)
+	// err = db.Model(&EmailQueueWorkflowHistory{}).Where("account_id = ? AND email_queue_id = ? AND completed ='true'", emailQueue.AccountId, emailQueue.Id).Count(&countRecipients).Error;
+	err = db.Model(&EmailQueueWorkflowHistory{}).Where("account_id = ? AND email_queue_id = ? AND unsubscribed = 'true'", emailQueue.AccountId, emailQueue.Id).
+		Select("count(id)").Count(&countUnsubs).Error;
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	if err == gorm.ErrRecordNotFound {countUnsubs = 0} else { emailQueue.UnsubscribeRate = (float64(countUnsubs) / float64(countRecipients))*100 }*/
+	
 
 	return nil
 }
@@ -219,7 +257,7 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 		}
 
 		// Определяем total
-		err = db.Model(&EmailQueue{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&EmailQueue{}).GetPreloadDb(false,false,true).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
