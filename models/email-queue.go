@@ -31,7 +31,8 @@ type EmailQueue struct {
 	ActiveEmailTemplates uint `json:"_activeEmailTemplates" gorm:"-"`
 
 	// Сколько прошло через нее. На это число навешивается статистика открытий / отписок / кликов
-	Recipients uint `json:"_recipients" gorm:"-"`
+	Recipients uint `json:"_recipients" gorm:"-"` // << число участников в серии
+	EmailsSent uint `json:"_emailsSent" gorm:"-"` // << всего успешно отправлено писем
 	OpenRate float64 `json:"_openRate" gorm:"-"`
 	UnsubscribeRate float64 `json:"_unsubscribeRate" gorm:"-"`
 		
@@ -100,18 +101,20 @@ func (emailQueue *EmailQueue) AfterFind() (err error) {
 
 
 	stat := struct {
-		Completed uint
-		Opens uint
-		Unsubscribed uint
+		Recipients uint  	// << Успешных отправок (succeed = true)
+		Completed uint   	// << Завершило серию (completed = true)
+		Opens uint    		// (opens >=1)
+		Unsubscribed uint 	// (unsubscribed = true)
 	}{}
-	if err = db.Raw("SELECT   COUNT(CASE WHEN completed = true THEN 1 END) AS completed,  COUNT(CASE WHEN opens >=1 THEN 1 END) AS opens,   COUNT(CASE WHEN unsubscribed = true THEN 1 END) AS unsubscribed FROM email_queue_workflow_histories WHERE account_id = ? AND email_queue_id = ?;", emailQueue.AccountId, emailQueue.Id).
+	if err = db.Raw("SELECT   \n       COUNT(CASE WHEN succeed = true THEN 1 END) AS recipients,  \n       COUNT(CASE WHEN completed = true THEN 1 END) AS completed,  \n       COUNT(CASE WHEN opens >=1 THEN 1 END) AS opens,   \n       COUNT(CASE WHEN unsubscribed = true THEN 1 END) AS unsubscribed \nFROM email_queue_workflow_histories \nWHERE account_id = ? AND email_queue_id = ?;", emailQueue.AccountId, emailQueue.Id).
 		Scan(&stat).Error; err != nil {
 			return err
 	}
 
 	emailQueue.Recipients = stat.Completed
-	emailQueue.OpenRate = (float64(stat.Opens) / float64(stat.Completed))*100
-	emailQueue.UnsubscribeRate = (float64(stat.Unsubscribed) / float64(stat.Completed))*100
+	emailQueue.EmailsSent = stat.Recipients
+	emailQueue.OpenRate = (float64(stat.Opens) / float64(stat.Recipients))*100
+	emailQueue.UnsubscribeRate = (float64(stat.Unsubscribed) / float64(stat.Recipients))*100
 
 
 

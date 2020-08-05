@@ -8,6 +8,7 @@ import (
 	"github.com/nkokorev/crm-go/utils"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
@@ -1787,7 +1788,7 @@ func Migrate_I() {
 	pool.AutoMigrate(&models.EmailQueueWorkflow{})
 	pool.AutoMigrate(&models.EmailQueueWorkflowHistory{})
 
-/*	for i := 0; i < 400000 ;i++ {
+	for i := 0; i < 100000 ;i++ {
 		timeNow := time.Now()
 		rand2 := uint(rand.Intn(2))+1
 		rand3 := uint(rand.Intn(3))+1
@@ -1799,17 +1800,18 @@ func Migrate_I() {
 			Completed: true,
 			UserId: 1,
 			Succeed: true,
-			NumberOfAttempts: 1,
+			NumberOfAttempts: rand2,
 			Opens: uint(rand.Intn(2)),
 			// Opens: 0,
 			OpenedAt: &timeNow,
-			Unsubscribed: false,
+			Unsubscribed: true,
+			UnsubscribedAt: &timeNow,
 			CreatedAt: timeNow,
 		}
 		if _, err := (models.Account{Id: 5}).CreateEntity(&model); err != nil {
 			log.Fatal(err)
 		}
-	}*/
+	}
 
 	fmt.Println("Создание закончено!")
 
