@@ -81,10 +81,10 @@ func (*OrderComment) loadByPublicId() error {
 
 func (OrderComment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
-	return OrderComment{}.getPaginationList(accountId, 0,100,sortBy,"")
+	return OrderComment{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
 }
 
-func (OrderComment) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (OrderComment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	orderChannels := make([]OrderComment,0)
 	var total uint

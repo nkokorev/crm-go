@@ -136,7 +136,7 @@ func WebSiteListPaginationGet(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		webSites, total, err = account.GetPaginationListEntity(&models.WebSite{}, offset, limit, sortBy, search)
+		webSites, total, err = account.GetPaginationListEntity(&models.WebSite{}, offset, limit, sortBy, search, nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
 			return

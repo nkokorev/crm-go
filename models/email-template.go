@@ -140,7 +140,7 @@ func (EmailTemplate) getList(accountId uint, sortBy string) ([]Entity, uint, err
 
 	return entities, total, nil
 }
-func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	emailTemplates := make([]EmailTemplate,0)
 	var total uint

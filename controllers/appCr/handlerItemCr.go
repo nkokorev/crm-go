@@ -109,7 +109,7 @@ func HandlerItemGetList(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		handlerItems, total, err = account.GetPaginationListEntity(&models.HandlerItem{}, offset, limit, sortBy, search)
+		handlerItems, total, err = account.GetPaginationListEntity(&models.HandlerItem{}, offset, limit, sortBy, search, nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -164,7 +164,7 @@ func HandlerItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		handlerItems, total, err = account.GetPaginationListEntity(&models.HandlerItem{}, offset, limit, sortBy, search)
+		handlerItems, total, err = account.GetPaginationListEntity(&models.HandlerItem{}, offset, limit, sortBy, search, nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return

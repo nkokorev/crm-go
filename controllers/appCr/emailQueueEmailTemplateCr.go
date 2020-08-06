@@ -9,7 +9,7 @@ import (
 )
 
 // Ui / API there!
-func EmailQueueCreate(w http.ResponseWriter, r *http.Request) {
+func EmailQueueEmailTemplateCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -19,7 +19,7 @@ func EmailQueueCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Get JSON-request
 	var input struct{
-		models.EmailQueue
+		models.EmailQueueEmailTemplate
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -27,18 +27,18 @@ func EmailQueueCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emailQueue, err := account.CreateEntity(&input.EmailQueue)
+	emailQueueEmailTemplate, err := account.CreateEntity(&input.EmailQueueEmailTemplate)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания серии"}))
 		return
 	}
 
-	resp := u.Message(true, "POST EmailQueue Created")
-	resp["emailQueue"] = emailQueue
+	resp := u.Message(true, "POST EmailQueueEmailTemplate Created")
+	resp["emailQueueEmailTemplate"] = emailQueueEmailTemplate
 	u.Respond(w, resp)
 }
 
-func EmailQueueGet(w http.ResponseWriter, r *http.Request) {
+func EmailQueueEmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -46,37 +46,37 @@ func EmailQueueGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// ThisIs PublicID or inside
-	emailQueueId, err := utilsCr.GetUINTVarFromRequest(r, "emailQueueId")
+	emailQueueEmailTemplateId, err := utilsCr.GetUINTVarFromRequest(r, "emailQueueEmailTemplateId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке web site Id"))
 		return
 	}
 
-	var emailQueue models.EmailQueue
+	var emailQueueEmailTemplate models.EmailQueueEmailTemplate
 
 	// 2. Узнаем, какой список нужен
 	publicIdOk:= utilsCr.GetQueryBoolVarFromGET(r, "publicId")
 
 	if publicIdOk {
-		err = account.LoadEntityByPublicId(&emailQueue, emailQueueId)
+		err = account.LoadEntityByPublicId(&emailQueueEmailTemplate, emailQueueEmailTemplateId)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список заказов"))
 			return
 		}
 	} else {
-		err = account.LoadEntity(&emailQueue, emailQueueId)
+		err = account.LoadEntity(&emailQueueEmailTemplate, emailQueueEmailTemplateId)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список заказов"))
 			return
 		}
 	}
 
-	resp := u.Message(true, "GET EmailQueue")
-	resp["emailQueue"] = emailQueue
+	resp := u.Message(true, "GET EmailQueueEmailTemplate")
+	resp["emailQueueEmailTemplate"] = emailQueueEmailTemplate
 	u.Respond(w, resp)
 }
 
-func EmailQueueGetListPagination(w http.ResponseWriter, r *http.Request) {
+func EmailQueueEmailTemplateGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
@@ -106,22 +106,31 @@ func EmailQueueGetListPagination(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 
+	emailQueueId, err := utilsCr.GetUINTVarFromRequest(r, "emailQueueId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailQueueId"))
+		return
+	}
+
+	filter := make(map[string]interface{},0)
+	filter["email_queue_id"] = emailQueueId
+
 	var total uint = 0
-	emailQueues := make([]models.Entity,0)
+	emailQueueEmailTemplates := make([]models.Entity,0)
 	
-	emailQueues, total, err = account.GetPaginationListEntity(&models.EmailQueue{}, offset, limit, sortBy, search, nil)
+	emailQueueEmailTemplates, total, err = account.GetPaginationListEntity(&models.EmailQueueEmailTemplate{}, offset, limit, sortBy, search, filter)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
-	resp := u.Message(true, "GET EmailQueue Pagination List")
+	resp := u.Message(true, "GET EmailQueueEmailTemplate Pagination List")
 	resp["total"] = total
-	resp["emailQueues"] = emailQueues
+	resp["emailQueueEmailTemplates"] = emailQueueEmailTemplates
 	u.Respond(w, resp)
 }
 
-func EmailQueueUpdate(w http.ResponseWriter, r *http.Request) {
+func EmailQueueEmailTemplateUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -129,14 +138,14 @@ func EmailQueueUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emailQueueId, err := utilsCr.GetUINTVarFromRequest(r, "emailQueueId")
+	emailQueueEmailTemplateId, err := utilsCr.GetUINTVarFromRequest(r, "emailQueueEmailTemplateId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	var emailQueue models.EmailQueue
-	err = account.LoadEntity(&emailQueue, emailQueueId)
+	var emailQueueEmailTemplate models.EmailQueueEmailTemplate
+	err = account.LoadEntity(&emailQueueEmailTemplate, emailQueueEmailTemplateId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
@@ -148,18 +157,18 @@ func EmailQueueUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&emailQueue, input)
+	err = account.UpdateEntity(&emailQueueEmailTemplate, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH EmailQueue Update")
-	resp["emailQueue"] = emailQueue
+	resp := u.Message(true, "PATCH EmailQueueEmailTemplate Update")
+	resp["emailQueueEmailTemplate"] = emailQueueEmailTemplate
 	u.Respond(w, resp)
 }
 
-func EmailQueueDelete(w http.ResponseWriter, r *http.Request) {
+func EmailQueueEmailTemplateDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -167,23 +176,23 @@ func EmailQueueDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	emailQueueId, err := utilsCr.GetUINTVarFromRequest(r, "emailQueueId")
+	emailQueueEmailTemplateId, err := utilsCr.GetUINTVarFromRequest(r, "emailQueueEmailTemplateId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	var emailQueue models.EmailQueue
-	err = account.LoadEntity(&emailQueue, emailQueueId)
+	var emailQueueEmailTemplate models.EmailQueueEmailTemplate
+	err = account.LoadEntity(&emailQueueEmailTemplate, emailQueueEmailTemplateId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
 		return
 	}
-	if err = account.DeleteEntity(&emailQueue); err != nil {
+	if err = account.DeleteEntity(&emailQueueEmailTemplate); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
 		return
 	}
 
-	resp := u.Message(true, "DELETE EmailQueue Successful")
+	resp := u.Message(true, "DELETE EmailQueueEmailTemplate Successful")
 	u.Respond(w, resp)
 }

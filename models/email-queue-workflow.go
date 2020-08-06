@@ -130,10 +130,10 @@ func (emailQueueWorkflow *EmailQueueWorkflow) loadByPublicId() error {
 }
 
 func (EmailQueueWorkflow) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return EmailQueueWorkflow{}.getPaginationList(accountId, 0, 25, sortBy, "")
+	return EmailQueueWorkflow{}.getPaginationList(accountId, 0, 25, sortBy, "",nil)
 }
 
-func (EmailQueueWorkflow) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (EmailQueueWorkflow) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	webHooks := make([]EmailQueueWorkflow,0)
 	var total uint

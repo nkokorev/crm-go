@@ -109,7 +109,7 @@ func OrderGetListPagination(w http.ResponseWriter, r *http.Request) {
 	var total uint = 0
 	orders := make([]models.Entity,0)
 	
-	orders, total, err = account.GetPaginationListEntity(&models.Order{}, offset, limit, sortBy, search)
+	orders, total, err = account.GetPaginationListEntity(&models.Order{}, offset, limit, sortBy, search, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

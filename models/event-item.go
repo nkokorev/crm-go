@@ -148,10 +148,10 @@ func (*EventItem) loadByPublicId() error {
 }
 
 func (EventItem) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return EventItem{}.getPaginationList(accountId,0,300, sortBy, "")
+	return EventItem{}.getPaginationList(accountId,0,300, sortBy, "",nil)
 }
 
-func (EventItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (EventItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	eventItems := make([]EventItem,0)
 	var total uint

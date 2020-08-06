@@ -20,7 +20,7 @@ type Entity interface {
 	load () error
 	loadByPublicId () error
 	getList(accountId uint, order string) ([]Entity, uint, error)
-	getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error)
+	getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error)
 	update(input map[string]interface{}) error
 	delete() error
 
@@ -104,8 +104,8 @@ func (account Account) GetListEntity(model Entity, order string) ([]Entity, uint
 	return model.getList(account.Id, order)
 }
 
-func (account Account) GetPaginationListEntity(model Entity, offset, limit int, order string, search string) ([]Entity, uint, error) {
-	return model.getPaginationList(account.Id, offset, limit, order, search)
+func (account Account) GetPaginationListEntity(model Entity, offset, limit int, order string, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+	return model.getPaginationList(account.Id, offset, limit, order, search, filter)
 }
 
 func (account Account) UpdateEntity(entity Entity, input map[string]interface{}) error {

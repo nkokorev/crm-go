@@ -121,7 +121,7 @@ func (EmailBox) getListByWebSite(accountId uint, webSiteId uint, sortBy string) 
 	return emailBoxes, nil
 }
 
-func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	webHooks := make([]EmailBox,0)
 	var total uint

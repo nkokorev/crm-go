@@ -103,10 +103,10 @@ func (OrderChannel) getByCode(accountId uint, code string) (*OrderChannel, error
 }
 
 func (OrderChannel) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return OrderChannel{}.getPaginationList(accountId, 0,100,sortBy,"")
+	return OrderChannel{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
 }
 
-func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	orderChannels := make([]OrderChannel,0)
 	var total uint

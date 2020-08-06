@@ -119,10 +119,10 @@ func (cartItem *CartItem) loadByPublicId() error {
 }
 
 func (CartItem) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return CartItem{}.getPaginationList(accountId, 0,100,sortBy,"")
+	return CartItem{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
 }
 
-func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	orderChannels := make([]CartItem,0)
 	var total uint

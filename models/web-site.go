@@ -131,9 +131,9 @@ func (*WebSite) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (WebSite) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return WebSite{}.getPaginationList(accountId, 0, 100, sortBy, "")
+	return WebSite{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	webSites := make([]WebSite,0)
 	var total uint

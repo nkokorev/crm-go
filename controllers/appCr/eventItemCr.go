@@ -109,7 +109,7 @@ func EventItemGetList(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		observerItems, total, err = account.GetPaginationListEntity(&models.EventItem{}, offset, limit, sortBy, search)
+		observerItems, total, err = account.GetPaginationListEntity(&models.EventItem{}, offset, limit, sortBy, search, nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -164,7 +164,7 @@ func EventItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		observerItems, total, err = account.GetPaginationListEntity(&models.EventItem{}, offset, limit, sortBy, search)
+		observerItems, total, err = account.GetPaginationListEntity(&models.EventItem{}, offset, limit, sortBy, search, nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return

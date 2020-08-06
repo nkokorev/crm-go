@@ -145,9 +145,9 @@ func (*EmailNotification) loadByPublicId() error {
 }
 
 func (EmailNotification) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return EmailNotification{}.getPaginationList(accountId, 0, 100, sortBy, "")
+	return EmailNotification{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-func (EmailNotification) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (EmailNotification) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	emailNotifications := make([]EmailNotification,0)
 	var total uint

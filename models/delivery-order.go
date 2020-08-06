@@ -160,9 +160,9 @@ func (deliveryOrder *DeliveryOrder) loadByPublicId() error {
 }
 
 func (DeliveryOrder) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return DeliveryOrder{}.getPaginationList(accountId, 0, 100, sortBy, "")
+	return DeliveryOrder{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 	
 	deliveryOrders := make([]DeliveryOrder,0)
 	var total uint

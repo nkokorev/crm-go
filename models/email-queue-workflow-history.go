@@ -147,10 +147,10 @@ func (emailQueueWorkflowHistory *EmailQueueWorkflowHistory) loadByPublicId() err
 }
 
 func (EmailQueueWorkflowHistory) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return EmailQueueWorkflowHistory{}.getPaginationList(accountId, 0, 25, sortBy, "")
+	return EmailQueueWorkflowHistory{}.getPaginationList(accountId, 0, 25, sortBy, "",nil)
 }
 
-func (EmailQueueWorkflowHistory) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (EmailQueueWorkflowHistory) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	emailQueueHistories := make([]EmailQueueWorkflowHistory,0)
 	var total uint

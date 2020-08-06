@@ -114,7 +114,7 @@ func (deliveryCourier *DeliveryCourier) loadByPublicId() error {
 }
 func (DeliveryCourier) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
-	return DeliveryCourier{}.getPaginationList(accountId, 0, 100, sortBy, "")
+	return DeliveryCourier{}.getPaginationList(accountId, 0, 100, sortBy, "", nil)
 }
 func (DeliveryCourier) getListByShop(accountId, websiteId uint) ([]DeliveryCourier, error) {
 
@@ -130,7 +130,7 @@ func (DeliveryCourier) getListByShop(accountId, websiteId uint) ([]DeliveryCouri
 	return deliveryCouriers, nil
 }
 
-func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	deliveryCouriers := make([]DeliveryCourier,0)
 	var total uint

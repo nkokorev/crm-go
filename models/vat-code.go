@@ -93,10 +93,10 @@ func (*VatCode) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (VatCode) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return VatCode{}.getPaginationList(accountId, 0,100,sortBy,"")
+	return VatCode{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
 }
 
-func (VatCode) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (VatCode) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	vatCodes := make([]VatCode,0)
 	var total uint

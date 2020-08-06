@@ -114,9 +114,9 @@ func (deliveryStatus *DeliveryStatus) loadByPublicId() error {
 }
 
 func (DeliveryStatus) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return DeliveryStatus{}.getPaginationList(accountId, 0, 100, sortBy, "")
+	return DeliveryStatus{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-func (DeliveryStatus) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (DeliveryStatus) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	deliveryStatuses := make([]DeliveryStatus,0)
 	var total uint

@@ -100,7 +100,7 @@ func PaymentSubjectGetListPagination(w http.ResponseWriter, r *http.Request) {
 	var total uint = 0
 	paymentSubjects := make([]models.Entity,0)
 	
-	paymentSubjects, total, err = account.GetPaginationListEntity(&models.PaymentSubject{}, offset, limit, sortBy, search)
+	paymentSubjects, total, err = account.GetPaginationListEntity(&models.PaymentSubject{}, offset, limit, sortBy, search, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

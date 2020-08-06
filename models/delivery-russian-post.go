@@ -130,7 +130,7 @@ func (deliveryRussianPost *DeliveryRussianPost) loadByPublicId() error {
 }
 
 func (DeliveryRussianPost) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return DeliveryRussianPost{}.getPaginationList(accountId, 0, 100, sortBy, "")
+	return DeliveryRussianPost{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
 func (DeliveryRussianPost) getListByShop(accountId, websiteId uint) ([]DeliveryRussianPost, error) {
 
@@ -146,7 +146,7 @@ func (DeliveryRussianPost) getListByShop(accountId, websiteId uint) ([]DeliveryR
 	return deliveryRussianPosts, nil
 }
 
-func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	deliveryRussianPosts := make([]DeliveryRussianPost,0)
 	var total uint

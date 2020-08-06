@@ -164,7 +164,7 @@ func (Role) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
 	return entities, total, nil
 }
-func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	roles := make([]Role,0)
 	var total uint

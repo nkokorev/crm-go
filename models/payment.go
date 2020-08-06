@@ -295,10 +295,10 @@ func (payment *Payment) loadByPublicId() error {
 }
 
 func (Payment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return Payment{}.getPaginationList(accountId, 0, 25, sortBy, "")
+	return Payment{}.getPaginationList(accountId, 0, 25, sortBy, "", nil)
 }
 
-func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	payments := make([]Payment,0)
 	var total uint

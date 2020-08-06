@@ -2,6 +2,7 @@ package utilsCr
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -228,6 +229,20 @@ func GetQueryBoolVarFromGET(r *http.Request, key string) bool {
 	
 
 	return res
+}
+
+func GetQueryFilterFromGET(r *http.Request) (map[string]interface{}, bool) {
+
+	filter := make(map[string]interface{}, 0)
+	strVar := r.URL.Query().Get("filter")
+
+	if strVar == "" {
+		return nil, false
+	}
+
+	fmt.Println("filter: ", strVar)
+
+	return filter, true
 }
 
 // INPUTS

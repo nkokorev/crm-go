@@ -94,7 +94,7 @@ func DeliveryOrderGetListPagination(w http.ResponseWriter, r *http.Request) {
 	var total uint = 0
 	deliveryOrders := make([]models.Entity,0)
 	
-	deliveryOrders, total, err = account.GetPaginationListEntity(&models.DeliveryOrder{}, offset, limit, sortBy, search)
+	deliveryOrders, total, err = account.GetPaginationListEntity(&models.DeliveryOrder{}, offset, limit, sortBy, search, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

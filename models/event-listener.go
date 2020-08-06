@@ -140,7 +140,7 @@ func (EventListener) getList(accountId uint, sortBy string) ([]Entity, uint, err
 
 	return entities, total, nil
 }
-func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	type EventListenerSearch struct {
 		EventListener

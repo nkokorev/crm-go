@@ -15,7 +15,7 @@ type EmailQueueEmailTemplate struct {
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	EmailQueueId	uint	`json:"emailQueueId" gorm:"type:int;"`
-	EmailQueue		EmailQueue `json:"emailQueue"`
+	EmailQueue		EmailQueue `json:"-"`
 	
 	// В работе данное письмо в указанной серии
 	Status 	bool 	`json:"status" gorm:"type:bool;default:false;"`
@@ -135,10 +135,10 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) loadByPublicId() error {
 }
 
 func (EmailQueueEmailTemplate) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return EmailQueueEmailTemplate{}.getPaginationList(accountId, 0, 25, sortBy, "")
+	return EmailQueueEmailTemplate{}.getPaginationList(accountId, 0, 50, sortBy, "",nil)
 }
 
-func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	emailQueueEmailTemplates := make([]EmailQueueEmailTemplate,0)
 	var total uint
@@ -149,15 +149,15 @@ func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit i
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&EmailQueueEmailTemplate{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&emailQueueEmailTemplates, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
+		err := (&EmailQueueEmailTemplate{}).GetPreloadDb(false,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&emailQueueEmailTemplates, "gate_start ILIKE ? OR gate_end ILIKE ?", search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
 		err = (&EmailQueueEmailTemplate{}).GetPreloadDb(true,false,true).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
+			Where("account_id = ? AND gate_start ILIKE ? OR gate_end ILIKE ?", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -165,7 +165,8 @@ func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit i
 
 	} else {
 
-		err := db.Model(&EmailQueueEmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&EmailQueueEmailTemplate{}).GetPreloadDb(false,false,true).
+			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).Where(filter).
 			Find(&emailQueueEmailTemplates).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -210,8 +211,10 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) GetPreloadDb(autoUpdateO
 	}
 
 	if preload {
-		// return _db.Preload("PaymentAmount")
-		return _db
+		return _db.Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
+			return db.Select(EmailTemplate{}.SelectArrayWithoutData())
+		})
+		// return _db
 	} else {
 		return _db
 	}

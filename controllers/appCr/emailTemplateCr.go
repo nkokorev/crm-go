@@ -107,7 +107,7 @@ func EmailTemplateGetListPagination(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		emailTemplates, total, err = account.GetPaginationListEntity(&models.EmailTemplate{}, offset, limit, sortBy, search)
+		emailTemplates, total, err = account.GetPaginationListEntity(&models.EmailTemplate{}, offset, limit, sortBy, search, nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список email-шаблонов"))
 			return

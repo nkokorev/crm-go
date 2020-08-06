@@ -227,10 +227,10 @@ func (*Storage) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (Storage) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return Storage{}.getPaginationList(accountId,0,100,sortBy,"")
+	return Storage{}.getPaginationList(accountId,0,100,sortBy,"",nil)
 }
 
-func (Storage) getPaginationList(accountId uint, offset, limit int, sortBy, search string) ([]Entity, uint, error) {
+func (Storage) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	files := make([]Storage,0)
 	var total uint
@@ -364,7 +364,7 @@ func (Account) StorageGetPublicByHashId(hashId string) (*Storage, error) {
 func (account Account) GetStoragePaginationListByOwner(offset, limit int, sortBy, search string, ownerId uint, ownerType string) ([]Entity, uint, error) {
 
 	if ownerType == "" {
-		return  Storage{}.getPaginationList(account.Id, offset, limit, sortBy, search)
+		return  Storage{}.getPaginationList(account.Id, offset, limit, sortBy, search,nil)
 	}
 
 
