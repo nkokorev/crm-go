@@ -137,3 +137,14 @@ func ParseJSONBToMapString(jsonb postgres.Jsonb) map[string]interface{} {
 
 	return data
 }
+
+
+// удаляет все переменные которые с '_name'
+func FixInputHiddenVars(input map[string]interface{}) map[string]interface{} {
+	for key := range input {
+		if string(key[0]) == "_" {
+			delete(input, key)
+		}
+	}
+	return input
+}

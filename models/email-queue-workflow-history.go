@@ -200,7 +200,7 @@ func (EmailQueueWorkflowHistory) getPaginationList(accountId uint, offset, limit
 }
 
 func (emailQueueWorkflowHistory *EmailQueueWorkflowHistory) update(input map[string]interface{}) error {
-	return emailQueueWorkflowHistory.GetPreloadDb(false,false,false).Where("if = ?", emailQueueWorkflowHistory.Id).Omit("id", "account_id").Updates(input).Error
+	return emailQueueWorkflowHistory.GetPreloadDb(false,false,false).Where("id = ?", emailQueueWorkflowHistory.Id).Omit("id", "account_id").Updates(input).Error
 }
 
 func (emailQueueWorkflowHistory *EmailQueueWorkflowHistory) delete () error {

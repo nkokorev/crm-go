@@ -188,7 +188,7 @@ func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit i
 }
 
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) update(input map[string]interface{}) error {
-	return emailQueueEmailTemplate.GetPreloadDb(false,false,false).Where("if = ?", emailQueueEmailTemplate.Id).Omit("id", "account_id").Updates(input).Error
+	return emailQueueEmailTemplate.GetPreloadDb(false,false,false).Where("id = ?", emailQueueEmailTemplate.Id).Omit("id", "account_id").Updates(input).Error
 }
 
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) delete () error {

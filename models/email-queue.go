@@ -98,9 +98,7 @@ func (emailQueue *EmailQueue) AfterFind() (err error) {
 	err = db.Model(&EmailQueueWorkflow{}).Where("account_id = ? AND email_queue_id = ?", emailQueue.AccountId, emailQueue.Id).Count(&countQueue).Error;
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
 	if err == gorm.ErrRecordNotFound {countQueue = 0} else { emailQueue.Queue = countQueue}
-
-
-
+	
 	stat := struct {
 		Recipients uint  	// << Успешных отправок (succeed = true)
 		Completed uint   	// << Завершило серию (completed = true)
@@ -124,7 +122,6 @@ func (emailQueue *EmailQueue) AfterFind() (err error) {
 	} else {
 		emailQueue.UnsubscribeRate = 0
 	}
-
 
 
 	/*// |Дорогой запрос| Сколько прошло подписчиков
@@ -285,7 +282,8 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 }
 
 func (emailQueue *EmailQueue) update(input map[string]interface{}) error {
-	return emailQueue.GetPreloadDb(false,false,false).Where("if = ?", emailQueue.Id).Omit("id", "account_id").Updates(input).Error
+	input = utils.FixInputHiddenVars(input)
+	return emailQueue.GetPreloadDb(false,false,false).Where("id = ?", emailQueue.Id).Omit("id", "account_id").Updates(input).Error
 }
 
 func (emailQueue *EmailQueue) delete () error {
