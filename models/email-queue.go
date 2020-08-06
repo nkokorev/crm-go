@@ -342,7 +342,7 @@ func (emailQueue EmailQueue) GetStepByOrder(order uint) (*EmailQueueEmailTemplat
 	 return &eqet, nil
 }
 
-func (emailQueue EmailQueue) AddUser(userId uint) error {
+func (emailQueue EmailQueue) AddUserToQueue(userId uint) error {
 	// adding user to worker
 
 	// 1. Check some
