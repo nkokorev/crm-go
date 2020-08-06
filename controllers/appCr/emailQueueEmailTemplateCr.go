@@ -168,6 +168,59 @@ func EmailQueueEmailTemplateUpdate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+func EmailQueueEmailTemplateMassUpdates(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	emailQueueId, err := utilsCr.GetUINTVarFromRequest(r, "emailQueueId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailQueueId"))
+		return
+	}
+
+	emailQueue := models.EmailQueue{}
+	if err =account.LoadEntity(&emailQueue, emailQueueId); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Не найдена серия писем"}))
+		return
+	}
+
+
+	// var input map[string]interface{}
+	var input struct{
+		EmailQueueEmailTemplates []models.MassUpdateEmailQueueTemplate `json:"emailQueueEmailTemplates"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	if err = emailQueue.UpdateOrderEmailTemplates(input.EmailQueueEmailTemplates); err !=nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 2"))
+		return
+	}
+
+	filter := make(map[string]interface{},0)
+	filter["email_queue_id"] = emailQueueId
+
+	var total uint = 0
+	emailQueueEmailTemplates := make([]models.Entity,0)
+
+	emailQueueEmailTemplates, total, err = account.GetPaginationListEntity(&models.EmailQueueEmailTemplate{}, 0, 100, "order", "", filter)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		return
+	}
+
+	resp := u.Message(true, "PATCH EmailQueueEmailTemplate MassUpdates")
+	resp["emailQueueEmailTemplates"] = emailQueueEmailTemplates
+	resp["total"] = total
+	u.Respond(w, resp)
+}
+
 func EmailQueueEmailTemplateDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)

@@ -89,7 +89,7 @@ func (emailQueue *EmailQueue) AfterFind() (err error) {
 
 	// Рассчитываем сколько активных писем в серии
 	countTemplates := uint(0)
-	err = db.Model(&EmailQueueEmailTemplate{}).Where("account_id = ? AND email_queue_id = ? AND status = 'true'", emailQueue.AccountId, emailQueue.Id).Count(&countTemplates).Error;
+	err = db.Model(&EmailQueueEmailTemplate{}).Where("account_id = ? AND email_queue_id = ? AND enabled = 'true'", emailQueue.AccountId, emailQueue.Id).Count(&countTemplates).Error;
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
 	if err == gorm.ErrRecordNotFound {countTemplates = 0} else { emailQueue.ActiveEmailTemplates = countTemplates}
 
@@ -242,14 +242,14 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 				return db.Select([]string{"id"})
 			}).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&emailQueues, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
+			Find(&emailQueues, "name ILIKE ? OR enabled ILIKE ?", search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
 		err = (&EmailQueue{}).GetPreloadDb(true,false,true).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR enabled ILIKE ?", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -284,6 +284,23 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 func (emailQueue *EmailQueue) update(input map[string]interface{}) error {
 	input = utils.FixInputHiddenVars(input)
 	return emailQueue.GetPreloadDb(false,false,false).Where("id = ?", emailQueue.Id).Omit("id", "account_id").Updates(input).Error
+}
+
+type MassUpdateEmailQueueTemplate struct {
+	Id uint `json:"id"`
+	Order uint `json:"order"`
+}
+
+func (emailQueue *EmailQueue) UpdateOrderEmailTemplates(input []MassUpdateEmailQueueTemplate) error {
+	for _,v := range (input) {
+
+		if err := (&EmailQueueEmailTemplate{Id: v.Id }).update(map[string]interface{}{"order":v.Order}); err != nil {
+			fmt.Println(err)
+			return err
+		}
+	}
+	return nil
+	// return emailQueue.GetPreloadDb(false,false,false).Where("id = ?", emailQueue.Id).Omit("id", "account_id").Updates(input).Error
 }
 
 func (emailQueue *EmailQueue) delete () error {

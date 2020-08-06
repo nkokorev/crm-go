@@ -18,7 +18,7 @@ type EmailQueueEmailTemplate struct {
 	EmailQueue		EmailQueue `json:"-"`
 	
 	// В работе данное письмо в указанной серии
-	Status 	bool 	`json:"status" gorm:"type:bool;default:false;"`
+	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false;"`
 	Order 	uint 	`json:"order" gorm:"type:int;not null;"` // порядок
 
 	EmailTemplateId	uint	`json:"emailTemplateId" gorm:"type:int;"`

@@ -210,6 +210,7 @@ var AppRoutes = func(r *mux.Router) {
 	// ### Email Queue ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-queues/{emailQueueId:[0-9]+}/email-queue-email-templates", appCr.EmailQueueEmailTemplateCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-queues/{emailQueueId:[0-9]+}/email-queue-email-templates", appCr.EmailQueueEmailTemplateGetListPagination).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-queues/{emailQueueId:[0-9]+}/email-queue-email-templates", appCr.EmailQueueEmailTemplateMassUpdates).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-queues/{emailQueueId:[0-9]+}/email-queue-email-templates/{emailQueueEmailTemplates:[0-9]+}", appCr.EmailQueueEmailTemplateGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-queues/{emailQueueId:[0-9]+}/email-queue-email-templates/{emailQueueEmailTemplates:[0-9]+}", appCr.EmailQueueEmailTemplateUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-queues/{emailQueueId:[0-9]+}/email-queue-email-templates/{emailQueueEmailTemplates:[0-9]+}", appCr.EmailQueueEmailTemplateDelete).Methods(http.MethodDelete, http.MethodOptions)
