@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
@@ -329,3 +330,50 @@ func (emailQueue *EmailQueue) GetPreloadDb(autoUpdateOff bool, getModel bool, pr
 	}
 }
 
+//////// ###### WORKER function ########## //////////
+
+// Получает шаблон для stepId шага
+func (emailQueue EmailQueue) GetStepByOrder(order uint) (*EmailQueueEmailTemplate, error) {
+	var eqet EmailQueueEmailTemplate
+	 if err := db.Model(&eqet).Where("email_queue_id = ? AND order = ?", emailQueue.Id, order).First(&eqet).Error; err != nil {
+	 	return nil, err
+	 }
+
+	 return &eqet, nil
+}
+
+func (emailQueue EmailQueue) AddUser(userId uint) error {
+	// adding user to worker
+
+	// 1. Check some
+	if emailQueue.Id < 1 && userId < 1 {
+		return errors.New("Ошибка добавление пользователя в серию писем")
+	}
+
+	// 2. Get Step
+	step, err := emailQueue.GetStepByOrder(1);
+	if err != nil {
+		return err
+	}
+
+	// тут какое-то определение времени отправки
+	fmt.Println(step.Schedule)
+
+
+	// 2. Add user to EmailQueueWorkflow
+	emailQueueWorkflow := EmailQueueWorkflow{
+		AccountId: emailQueue.AccountId,
+		EmailQueueId: emailQueue.Id,
+		ExpectedStepId: 1,
+		ExpectedTimeStart: time.Now(), // << пока так, но надо бы определить в соответствии с шагом
+		UserId: userId, // << пока так
+		NumberOfAttempts: 0, // << пока так
+	}
+
+	if _, err := emailQueueWorkflow.create(); err != nil {
+		return err
+	}
+
+	return nil
+
+}

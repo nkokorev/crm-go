@@ -32,7 +32,7 @@ type EmailQueueWorkflow struct {
 	NumberOfAttempts uint `json:"numberOfAttempts" gorm:"type:smallint;default:0;"`
 
 	// Когда была последняя попытка отправки (обычно = CreatedAt time)
-	LastTriedAt time.Time  `json:"lastTriedAt"`
+	LastTriedAt *time.Time  `json:"lastTriedAt"` // << may be null
 
 	CreatedAt time.Time  `json:"createdAt"`
 	// UpdatedAt time.Time  `json:"updatedAt"` << не очень нужно знать, когда произошло обновление

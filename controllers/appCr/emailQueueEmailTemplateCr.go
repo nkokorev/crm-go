@@ -188,8 +188,6 @@ func EmailQueueEmailTemplateMassUpdates(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-
-	// var input map[string]interface{}
 	var input struct{
 		EmailQueueEmailTemplates []models.MassUpdateEmailQueueTemplate `json:"emailQueueEmailTemplates"`
 	}
