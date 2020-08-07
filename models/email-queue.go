@@ -340,14 +340,22 @@ func (emailQueue *EmailQueue) GetPreloadDb(autoUpdateOff bool, getModel bool, pr
 // Получает шаблон для stepId шага
 func (emailQueue EmailQueue) GetStepByOrder(order uint) (*EmailQueueEmailTemplate, error) {
 	var eqet EmailQueueEmailTemplate
-	 if err := db.Model(&eqet).Where("email_queue_id = ? AND order = ?", emailQueue.Id, order).First(&eqet).Error; err != nil {
+	 if err := db.Debug().Model(&eqet).Where("email_queue_id = ? AND email_queue_email_templates.order = ?", emailQueue.Id, order).First(&eqet).Error; err != nil {
 	 	return nil, err
 	 }
 
 	 return &eqet, nil
 }
+func (emailQueue EmailQueue) GetFirstStep() (*EmailQueueEmailTemplate, error) {
+	var eqet EmailQueueEmailTemplate
+	if err := db.Debug().Model(&eqet).Where("email_queue_id = ? ", emailQueue.Id).Select("MIN(email_queue_email_templates.order)").Find(&eqet).Error; err != nil {
+		return nil, err
+	}
 
-func (emailQueue EmailQueue) AddUserToQueue(userId uint) error {
+	return &eqet, nil
+}
+
+func (emailQueue EmailQueue) AppendUser(userId uint) error {
 	// adding user to worker
 
 	// 1. Check some
@@ -356,10 +364,11 @@ func (emailQueue EmailQueue) AddUserToQueue(userId uint) error {
 	}
 
 	// 2. Get Step
-	step, err := emailQueue.GetStepByOrder(1);
+	step, err := emailQueue.GetFirstStep();
 	if err != nil {
 		return err
 	}
+	
 
 	// todo: проверка на запуск письма в серии.
 	// ...

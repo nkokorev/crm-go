@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"net/http"
 	"strings"
@@ -219,7 +218,7 @@ func (webHook *WebHook) delete () error {
 }
 // ######### END CRUD Functions ############
 
-func (webHook WebHook) Execute(e event.Event) error {
+func (webHook WebHook) Execute(data map[string]interface{}) error {
 
 	// проверка
 	if !webHook.Enabled || webHook.URL == "" {
@@ -233,12 +232,11 @@ func (webHook WebHook) Execute(e event.Event) error {
 	}
 
 	urlB := new(bytes.Buffer)
-	var data interface{}
+	/*var data interface{}
 
-	// Данные для расчета url вебхука
 	if e != nil && e.Data() != nil {
 		data = e.Data()
-	}
+	}*/
 
 	err = tplUrl.Execute(urlB, data)
 	if err != nil {

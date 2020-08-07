@@ -102,6 +102,38 @@ func (handler EventListener) EmailNotificationRun(e event.Event) error {
 
 func (handler EventListener) EmailQueueRun(e event.Event) error {
 	fmt.Printf("Запуск серии писем, обытие: %v данные: %v\n",e.Name(), e.Data())
+
+	accountStr := e.Get("accountId")
+	accountId, ok :=  accountStr.(uint)
+	if !ok {
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить EmailQueue id = %v, не найден accountId.", handler.EntityId)}
+	}
+
+	account, err := GetAccount(accountId)
+	if err != nil {
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить EmailQueue id = %v, не найден account by id: %v.", handler.EntityId, accountId)}
+	}
+
+	var emailQueue EmailQueue
+	if err := account.LoadEntity(&emailQueue, handler.EntityId); err != nil {
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить EmailQueue id = %v, не загружается объект.", handler.EntityId)}
+	}
+
+	// Загружаем данные в теле
+	handler.uploadEntitiesData(&e)
+
+	// Получаем userId
+	if userId, ok := e.Get("userId").(uint); ok {
+		// Проверяем, что он аккаунте
+		if account.ExistAccountUser(userId) {
+			if err := emailQueue.AppendUser(userId); err != nil {
+				return err
+			}
+		}
+	}
+	
+
+
 	// fmt.Println("Observer: ", handler) // контекст серии писем, какой именно и т.д.
 	// e.Set("result", "OK") // возможность записать в событие какие-то данные для других обработчиков..
 	return nil
@@ -127,7 +159,13 @@ func (handler EventListener) WebHookCall(e event.Event) error {
 		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить WebHook id = %v, не загружается webHook.", handler.EntityId)}
 	}
 
-	return webHook.Execute(e)
+	// Загружаем данные в теле
+	handler.uploadEntitiesData(&e)
+
+	// return en.Execute(e.Data())
+	
+	// return webHook.Execute(e)
+	return webHook.Execute(e.Data())
 }
 // #############   END Of Event Handlers   #############
 

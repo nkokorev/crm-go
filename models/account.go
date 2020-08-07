@@ -532,14 +532,15 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 	return users, total, nil
 }
 
-func (Account) ExistUser(user User) bool {
+func (account Account) ExistUser(user User) bool {
+
 	return !db.Model(&User{}).First(&User{}, user.Id).RecordNotFound()
 }
 
 // Тоже, что и ExitUser, только в контексте аккаунта
-func (account Account) ExistAccountUser(user User) bool {
+func (account Account) ExistAccountUser(userId uint) bool {
 
-	if db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.Id, user.Id).Find(&AccountUser{}).RecordNotFound() {
+	if db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.Id, userId).Find(&AccountUser{}).RecordNotFound() {
 		return false
 	} else {
 		return true
@@ -618,7 +619,7 @@ func (account Account) AppendUser(user User, role Role) (*AccountUser, error) {
 	}
 
 	// проверяем, относится ли пользователь к аккаунту
-	if account.ExistAccountUser(user) {
+	if account.ExistAccountUser(user.Id) {
 		// обновляем роль
 		// todo дописать..
 		return nil, errors.New("Невозможно добавить пользователя в аккаунт, т.к. он в нем уже есть.")
