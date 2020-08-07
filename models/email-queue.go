@@ -340,19 +340,27 @@ func (emailQueue *EmailQueue) GetPreloadDb(autoUpdateOff bool, getModel bool, pr
 // Получает шаблон для stepId шага
 func (emailQueue EmailQueue) GetStepByOrder(order uint) (*EmailQueueEmailTemplate, error) {
 	var eqet EmailQueueEmailTemplate
-	 if err := db.Debug().Model(&eqet).Where("email_queue_id = ? AND email_queue_email_templates.order = ?", emailQueue.Id, order).First(&eqet).Error; err != nil {
+	 if err := db.Model(&eqet).Where("email_queue_id = ? AND email_queue_email_templates.order = ?", emailQueue.Id, order).First(&eqet).Error; err != nil {
 	 	return nil, err
 	 }
 
 	 return &eqet, nil
 }
 func (emailQueue EmailQueue) GetFirstStep() (*EmailQueueEmailTemplate, error) {
-	var eqet EmailQueueEmailTemplate
-	if err := db.Debug().Model(&eqet).Where("email_queue_id = ? ", emailQueue.Id).Select("MIN(email_queue_email_templates.order)").Find(&eqet).Error; err != nil {
+	// var eqet EmailQueueEmailTemplate
+	var order = uint(0)
+	err := db.Model(&EmailQueueEmailTemplate{}).Where("email_queue_id = ? AND enabled = 'true'", emailQueue.Id).
+		Select("min(email_queue_email_templates.order)").Row().Scan(&order)
+	if err != nil {
+		return nil, utils.Error{Message: "Нет доступных писем для отправления"}
+	}
+
+	eqet, err := emailQueue.GetStepByOrder(order)
+	if err != nil {
 		return nil, err
 	}
 
-	return &eqet, nil
+	return eqet, nil
 }
 
 func (emailQueue EmailQueue) AppendUser(userId uint) error {
@@ -377,7 +385,7 @@ func (emailQueue EmailQueue) AppendUser(userId uint) error {
 	emailQueueWorkflow := EmailQueueWorkflow{
 		AccountId: emailQueue.AccountId,
 		EmailQueueId: emailQueue.Id,
-		ExpectedStepId: 1,
+		ExpectedStepId: step.Order,
 		ExpectedTimeStart: time.Now().Add(step.DelayTime),
 		UserId: userId, // << пока так
 		NumberOfAttempts: 0, // << пока так
