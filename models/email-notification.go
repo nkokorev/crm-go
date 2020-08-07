@@ -265,7 +265,6 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается найти аккаунт"}
 	}
 
-
 	// Находим шаблон письма
 	emailTemplateEntity, err := EmailTemplate{}.get(*emailNotification.EmailTemplateId)
 	if err != nil {

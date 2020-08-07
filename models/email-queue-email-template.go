@@ -24,6 +24,10 @@ type EmailQueueEmailTemplate struct {
 	EmailTemplateId	uint	`json:"emailTemplateId" gorm:"type:int;"`
 	EmailTemplate	EmailTemplate `json:"emailTemplate"`
 
+	// С какого почтового ящика отправляем
+	EmailBoxId		*uint 	`json:"emailBoxId" gorm:"type:int;default:null;"` // С какого ящика идет отправка
+	EmailBox		EmailBox `json:"emailBox" gorm:"preload:false"`
+
 	// Через сколько запускать письмо в серии. hours / days / week
 	DelayTime	time.Duration `json:"delayTime" gorm:"default:0"`// << учитывается только время [0-24]
 
@@ -46,6 +50,8 @@ type EmailQueueEmailTemplate struct {
 
 	// Что делать, если Gate не подходит? перенести на 1-24 часа / пропустить письмо и перейти к следующему
 
+	// Что делать, если письмо на паузе - пропускать?
+	// SkipIfDisabled bool `json:"skipIfDisabled" gorm:"type:bool;default:true;"`
 
 	// Внутреннее время
 	CreatedAt time.Time  `json:"createdAt"`

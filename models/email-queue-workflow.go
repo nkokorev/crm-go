@@ -2,8 +2,10 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"log"
 	"time"
 )
 
@@ -212,3 +214,113 @@ func (emailQueueWorkflow *EmailQueueWorkflow) GetPreloadDb(autoUpdateOff bool, g
 	}
 }
 
+// Отправка элемента или перенос
+func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
+
+	// Локальные данные аккаунта, пользователя
+	data := make(map[string]interface{})
+
+	account, err := GetAccount(emailQueueWorkflow.AccountId)
+	if err != nil {
+		if err = emailQueueWorkflow.delete(); err != nil {
+			log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", emailQueueWorkflow.Id, err)
+		}
+		return err
+	}
+
+	user, err := account.GetUser(emailQueueWorkflow.UserId)
+	if err != nil {
+		if err = emailQueueWorkflow.delete(); err != nil {
+			log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", emailQueueWorkflow.Id, err)
+		}
+		return err
+	}
+
+	// Проверяем статус подписки
+	if !user.Subscribed {
+		if err = emailQueueWorkflow.delete(); err != nil {
+			log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", emailQueueWorkflow.Id, err)
+		}
+		return utils.Error{Message: "Невозможно отправить письмо пользователю, т.к. он отписан от всех подписок"}
+	}
+
+	data["accountId"] = emailQueueWorkflow.AccountId
+	data["account"] = account.GetDepersonalizedData() // << хз
+	data["userId"] = user.Id // << хз
+	data["user"] = user.GetDepersonalizedData() // << хз
+
+	///////////
+	var emailQueue EmailQueue
+	if err := account.LoadEntity(&emailQueue, emailQueueWorkflow.EmailQueueId); err != nil {
+		return err
+	}
+
+	// Проверяем состоянии очереди
+	if !emailQueue.Enabled {
+		return utils.Error{Message: fmt.Sprintf("Невозможно отправить письмо, т.к. очередь [id = %v] не запущена\n", emailQueue.Id)}
+	}
+
+	step, err := emailQueue.GetNearbyActiveStep(emailQueueWorkflow.ExpectedStepId)
+	if err != nil {
+		return err
+	}
+
+	if !step.Enabled {
+		if err = emailQueueWorkflow.delete(); err != nil {
+			log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", emailQueueWorkflow.Id, err)
+		}
+	}
+
+	// Находим шаблон письма
+	emailTemplate, err := emailQueue.GetEmailTemplateByStep(emailQueueWorkflow.ExpectedStepId)
+	if err != nil {
+		return err
+	}
+
+	// EmailBox
+	var emailBox EmailBox
+	err = account.LoadEntity(&emailBox, *step.EmailBoxId)
+	if err != nil {
+		return err
+	}
+
+
+	//////////
+	// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
+	vData, err := emailTemplate.PrepareViewData(data)
+	if err != nil {
+		return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
+	}
+
+	// Компилируем тему письма
+	_subject, err := parseSubjectByData(step.Subject, vData)
+	if err != nil {
+		return utils.Error{Message: "Ошибка отправления Уведомления - не удается прочитать тему сообщения"}
+	}
+	if _subject == "" {
+		_subject = fmt.Sprintf("Уведомление по почте #%v", emailQueueWorkflow.Id)
+	}
+
+	//////
+
+	err = emailTemplate.SendMail(emailBox, user.Email, _subject, vData)
+	if err != nil {
+		fmt.Println("Ошибка отправления: ", err)
+	} else {
+		if err = emailQueueWorkflow.delete(); err != nil {
+			log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", emailQueueWorkflow.Id, err)
+		}
+	}
+
+	fmt.Println("Step: ", emailTemplate.Name)
+
+
+	// Если шаг на паузе, то мы должны либо пропустить, либо..
+
+
+	
+
+
+
+	return nil
+}

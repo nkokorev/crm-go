@@ -363,6 +363,26 @@ func (emailQueue EmailQueue) GetFirstStep() (*EmailQueueEmailTemplate, error) {
 	return eqet, nil
 }
 
+// Возвращает ближайший шаг (может быть равен order) или ошибку
+func (emailQueue EmailQueue) GetNearbyActiveStep(order uint) (*EmailQueueEmailTemplate, error) {
+
+	// var eqet EmailQueueEmailTemplate
+	var _order = uint(0)
+	err := db.Model(&EmailQueueEmailTemplate{}).Where("email_queue_id = ? AND enabled = 'true' AND email_queue_email_templates.order >= ?", emailQueue.Id, order).
+		Select("min(email_queue_email_templates.order)").Row().Scan(&_order)
+	if err != nil {
+		fmt.Println("! err", err)
+		return nil, utils.Error{Message: "Нет доступных писем для отправления"}
+	}
+
+	step, err := emailQueue.GetStepByOrder(_order)
+	if err != nil {
+		return nil, err
+	}
+
+	return step, nil
+}
+
 func (emailQueue EmailQueue) AppendUser(userId uint) error {
 	// adding user to worker
 
@@ -387,7 +407,7 @@ func (emailQueue EmailQueue) AppendUser(userId uint) error {
 		EmailQueueId: emailQueue.Id,
 		ExpectedStepId: step.Order,
 		ExpectedTimeStart: time.Now().Add(step.DelayTime),
-		UserId: userId, // << пока так
+		UserId: userId, 
 		NumberOfAttempts: 0, // << пока так
 	}
 
@@ -396,4 +416,19 @@ func (emailQueue EmailQueue) AppendUser(userId uint) error {
 	}
 
 	return nil
+}
+
+
+
+
+func (emailQueue EmailQueue) GetEmailTemplateByStep(order uint) (*EmailTemplate, error) {
+	step, err := emailQueue.GetStepByOrder(order)
+	if err != nil {return nil, err}
+
+	var emailTemplate EmailTemplate
+	if err = (Account{Id: emailQueue.AccountId}).LoadEntity(&emailTemplate, step.EmailTemplateId); err != nil {
+		return nil, err
+	}
+
+	return &emailTemplate, nil
 }

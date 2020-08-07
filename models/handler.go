@@ -183,13 +183,13 @@ func (handle EventListener) uploadEntitiesData(event *event.Event) {
 	if err != nil || account == nil {
 		return
 	}
-	e.Add("Account", *account)
+	e.Add("Account", account.GetDepersonalizedData())
 
 	if userId, ok := e.Get("userId").(uint); ok {
 		user, err := account.GetUser(userId)
 		if err == nil {
 			e.Add("userId", userId)
-			e.Add("User", *user)
+			e.Add("User", user.GetDepersonalizedData())
 		}
 	}
 

@@ -517,3 +517,10 @@ func (user *User) CreateInviteForUser (email string, sendMail bool) error {
 
 	return nil
 }
+
+
+// =============
+
+func (user User) GetDepersonalizedData() interface{} {
+	return &user
+}

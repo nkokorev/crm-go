@@ -1127,3 +1127,7 @@ func (account Account) ParseAndDecryptToken(cryptToken string) (*JWT, error) {
 }
 
 // ===============================================
+
+func (account Account) GetDepersonalizedData() interface{} {
+	return &account
+}
