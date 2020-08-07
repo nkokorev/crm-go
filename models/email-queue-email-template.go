@@ -24,6 +24,14 @@ type EmailQueueEmailTemplate struct {
 	EmailTemplateId	uint	`json:"emailTemplateId" gorm:"type:int;"`
 	EmailTemplate	EmailTemplate `json:"emailTemplate"`
 
+	// Через сколько запускать письмо в серии. hours / days / week
+	DelayTime	time.Duration `json:"delayTime" gorm:"default:0"`// << учитывается только время [0-24]
+
+	// С каким текстом отправляется это сообщение.
+	Subject			string 	`json:"subject" gorm:"type:varchar(128);not null;"` // Тема сообщения, компилируются
+	PreviewText		string 	`json:"previewText" gorm:"type:varchar(255);default:''"` // Тема сообщения, компилируются
+
+
 	// График: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday | weekends, workday
 	// Schedule	string `json:"emailTemplate"`     `json:"switchProducts"`
 	// 1- mondey, workday = 8, weekend = 9, everyday = 10
@@ -52,6 +60,7 @@ func (EmailQueueEmailTemplate) PgSqlCreate() {
 }
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) BeforeCreate(scope *gorm.Scope) error {
 	emailQueueEmailTemplate.Id = 0
+	emailQueueEmailTemplate.DelayTime = time.Duration(time.Hour*10)
 	return nil
 }
 

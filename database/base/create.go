@@ -1787,6 +1787,8 @@ func Migrate_I() {
 	pool.AutoMigrate(&models.EmailQueueWorkflow{})
 	pool.AutoMigrate(&models.EmailQueueWorkflowHistory{})
 
+	pool.AutoMigrate(&models.EmailNotification{})
+
 	/*for i := 0; i < 100000 ;i++ {
 		timeNow := time.Now()
 		rand2 := uint(rand.Intn(2))+1

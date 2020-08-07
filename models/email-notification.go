@@ -23,7 +23,8 @@ type EmailNotification struct {
 	
 	Name 			string 	`json:"name" gorm:"type:varchar(128);default:''"` // "Оповещение менеджера", "Оповещение клиента"
 
-	Subject			string 	`json:"subject" gorm:"type:varchar(128);default:''"` // Тема сообщения, компилируются
+	Subject			string 	`json:"subject" gorm:"type:varchar(128);not null;"` // Тема сообщения, компилируются
+	PreviewText		string 	`json:"previewText" gorm:"type:varchar(255);default:''"` // Тема сообщения, компилируются
 	
 	Description		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
 

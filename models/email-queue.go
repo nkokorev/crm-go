@@ -356,7 +356,7 @@ func (emailQueue EmailQueue) AddUserToQueue(userId uint) error {
 		return err
 	}
 
-	// тут какое-то определение времени отправки
+	// todo: тут какое-то определение времени отправки
 	fmt.Println(step.Schedule)
 
 
