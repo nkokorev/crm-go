@@ -215,8 +215,8 @@ func (emailQueue *EmailQueue) loadByPublicId() error {
 	if emailQueue.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить EmailQueue - не указан  Id"}
 	}
-
-	if err := emailQueue.GetPreloadDb(false,false, true).First(emailQueue, "public_id = ?", emailQueue.PublicId).Error; err != nil {
+	fmt.Println(emailQueue.AccountId, emailQueue.PublicId)
+	if err := emailQueue.GetPreloadDb(false,false, true).First(emailQueue, "account_id = ? AND public_id = ?", emailQueue.AccountId, emailQueue.PublicId).Error; err != nil {
 		return err
 	}
 
@@ -284,7 +284,13 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 
 func (emailQueue *EmailQueue) update(input map[string]interface{}) error {
 	input = utils.FixInputHiddenVars(input)
-	return emailQueue.GetPreloadDb(false,false,false).Where("id = ?", emailQueue.Id).Omit("id", "account_id").Updates(input).Error
+	err := emailQueue.GetPreloadDb(false,false,false).Where("id = ?", emailQueue.Id).Omit("id", "account_id").Updates(input).Error;
+	if err != nil {	return err	}
+	if err = emailQueue.GetPreloadDb(false,true,true).First(emailQueue).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type MassUpdateEmailQueueTemplate struct {
@@ -356,16 +362,15 @@ func (emailQueue EmailQueue) AddUserToQueue(userId uint) error {
 		return err
 	}
 
-	// todo: тут какое-то определение времени отправки
-	fmt.Println(step.Schedule)
-
-
+	// todo: проверка на запуск письма в серии.
+	// ...
+	
 	// 2. Add user to EmailQueueWorkflow
 	emailQueueWorkflow := EmailQueueWorkflow{
 		AccountId: emailQueue.AccountId,
 		EmailQueueId: emailQueue.Id,
 		ExpectedStepId: 1,
-		ExpectedTimeStart: time.Now(), // << пока так, но надо бы определить в соответствии с шагом
+		ExpectedTimeStart: time.Now().Add(step.DelayTime),
 		UserId: userId, // << пока так
 		NumberOfAttempts: 0, // << пока так
 	}
@@ -375,5 +380,4 @@ func (emailQueue EmailQueue) AddUserToQueue(userId uint) error {
 	}
 
 	return nil
-
 }

@@ -85,6 +85,7 @@ func (account Account) LoadEntityByPublicId(entity Entity, publicId uint) error 
 
 	// На всякий случай
 	entity.setPublicId(publicId)
+	entity.setAccountId(account.Id)
 
 	// Загружаем по ссылке
 	err := entity.loadByPublicId()

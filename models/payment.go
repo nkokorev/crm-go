@@ -287,7 +287,7 @@ func (payment *Payment) loadByPublicId() error {
 		return utils.Error{Message: "Невозможно загрузить Payment - не указан  Id"}
 	}
 
-	if err := payment.GetPreloadDb(false,false, true).First(payment, "public_id = ?", payment.PublicId).Error; err != nil {
+	if err := payment.GetPreloadDb(false,false, true).First(payment, "account_id = ? AND public_id = ?", payment.AccountId, payment.PublicId).Error; err != nil {
 		return err
 	}
 

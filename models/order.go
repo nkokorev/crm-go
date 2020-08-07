@@ -198,7 +198,7 @@ func (order *Order) loadByPublicId() error {
 		return utils.Error{Message: "Невозможно загрузить Order - не указан  Id"}
 	}
 
-	if err := order.GetPreloadDb(false,false, true).First(order, "public_id = ?", order.PublicId).Error; err != nil {
+	if err := order.GetPreloadDb(false,false, true).First(order, "account_id = ? AND public_id = ?", order.AccountId, order.PublicId).Error; err != nil {
 		return err
 	}
 

@@ -153,7 +153,7 @@ func (deliveryOrder *DeliveryOrder) loadByPublicId() error {
 	if deliveryOrder.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить DeliveryOrder - не указан  Id"}
 	}
-	if err := deliveryOrder.GetPreloadDb(false,false, true).First(deliveryOrder, "public_id = ?", deliveryOrder.PublicId).Error; err != nil {
+	if err := deliveryOrder.GetPreloadDb(false,false, true).First(deliveryOrder, "account_id = ? AND public_id = ?", deliveryOrder.AccountId, deliveryOrder.PublicId).Error; err != nil {
 		return err
 	}
 	return nil
