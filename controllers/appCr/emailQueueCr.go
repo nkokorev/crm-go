@@ -108,14 +108,28 @@ func EmailQueueGetListPagination(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 
+	// возвращаемые переменные
 	var total uint = 0
 	emailQueues := make([]models.Entity,0)
-	
-	emailQueues, total, err = account.GetPaginationListEntity(&models.EmailQueue{}, offset, limit, sortBy, search, nil)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
-		return
+
+	// 2. Узнаем, какой список нужен
+	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
+
+	if all == "true" && allOk {
+		emailQueues, total, err = account.GetListEntity(&models.EmailQueue{}, sortBy)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			return
+		}
+	} else {
+		emailQueues, total, err = account.GetPaginationListEntity(&models.EmailQueue{}, offset, limit, sortBy, search, nil)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			return
+		}
 	}
+	
+
 
 	resp := u.Message(true, "GET EmailQueue Pagination List")
 	resp["total"] = total

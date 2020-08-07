@@ -215,7 +215,6 @@ func (emailQueue *EmailQueue) loadByPublicId() error {
 	if emailQueue.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить EmailQueue - не указан  Id"}
 	}
-	fmt.Println(emailQueue.AccountId, emailQueue.PublicId)
 	if err := emailQueue.GetPreloadDb(false,false, true).First(emailQueue, "account_id = ? AND public_id = ?", emailQueue.AccountId, emailQueue.PublicId).Error; err != nil {
 		return err
 	}
