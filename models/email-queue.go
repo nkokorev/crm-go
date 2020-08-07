@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"time"
@@ -261,7 +260,6 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailQueues).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
-			fmt.Println(err)
 			return nil, 0, err
 		}
 
@@ -301,7 +299,6 @@ func (emailQueue *EmailQueue) UpdateOrderEmailTemplates(input []MassUpdateEmailQ
 	for _,v := range (input) {
 
 		if err := (&EmailQueueEmailTemplate{Id: v.Id }).update(map[string]interface{}{"order":v.Order}); err != nil {
-			fmt.Println(err)
 			return err
 		}
 	}
@@ -371,7 +368,6 @@ func (emailQueue EmailQueue) GetNearbyActiveStep(order uint) (*EmailQueueEmailTe
 	err := db.Model(&EmailQueueEmailTemplate{}).Where("email_queue_id = ? AND enabled = 'true' AND email_queue_email_templates.order >= ?", emailQueue.Id, order).
 		Select("min(email_queue_email_templates.order)").Row().Scan(&_order)
 	if err != nil {
-		fmt.Println("! err", err)
 		return nil, utils.Error{Message: "Нет доступных писем для отправления"}
 	}
 
@@ -381,6 +377,10 @@ func (emailQueue EmailQueue) GetNearbyActiveStep(order uint) (*EmailQueueEmailTe
 	}
 
 	return step, nil
+}
+
+func (emailQueue EmailQueue) GetNextActiveStep(order uint) (*EmailQueueEmailTemplate, error) {
+	return emailQueue.GetNearbyActiveStep(order+1)
 }
 
 func (emailQueue EmailQueue) AppendUser(userId uint) error {
@@ -406,7 +406,7 @@ func (emailQueue EmailQueue) AppendUser(userId uint) error {
 		AccountId: emailQueue.AccountId,
 		EmailQueueId: emailQueue.Id,
 		ExpectedStepId: step.Order,
-		ExpectedTimeStart: time.Now().Add(step.DelayTime),
+		ExpectedTimeStart: time.Now().UTC().Add(step.DelayTime),
 		UserId: userId, 
 		NumberOfAttempts: 0, // << пока так
 	}
@@ -417,9 +417,6 @@ func (emailQueue EmailQueue) AppendUser(userId uint) error {
 
 	return nil
 }
-
-
-
 
 func (emailQueue EmailQueue) GetEmailTemplateByStep(order uint) (*EmailTemplate, error) {
 	step, err := emailQueue.GetStepByOrder(order)

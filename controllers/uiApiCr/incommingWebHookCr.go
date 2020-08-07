@@ -64,7 +64,7 @@ func PaymentYandexWebHook(w http.ResponseWriter, r *http.Request) {
 		m = map[string]interface{}{
 			"status":input.Object.Status,
 			"paid":input.Object.Paid,
-			"paidAt": time.Now(), // обновляем время платежа
+			"paidAt": time.Now().UTC(), // обновляем время платежа
 		}
 	} else {
 		m = map[string]interface{}{

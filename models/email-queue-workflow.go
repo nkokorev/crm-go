@@ -269,6 +269,7 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 		if err = emailQueueWorkflow.delete(); err != nil {
 			log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", emailQueueWorkflow.Id, err)
 		}
+		return utils.Error{Message: "Этап отправки не активен"}
 	}
 
 	// Находим шаблон письма
@@ -284,8 +285,8 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 		return err
 	}
 
+	// ================== //
 
-	//////////
 	// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
 	vData, err := emailTemplate.PrepareViewData(data)
 	if err != nil {
@@ -303,24 +304,108 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 
 	//////
 
+	history := &EmailQueueWorkflowHistory{
+		AccountId: emailQueueWorkflow.AccountId,
+		EmailQueueId: emailQueue.Id,
+		EmailQueueEmailTemplateId: step.EmailTemplateId,
+		StepId: step.Id,
+		UserId: user.Id,
+		NumberOfAttempts: emailQueueWorkflow.NumberOfAttempts,
+		Succeed: false,
+		Completed: false,
+	}
+	defer func() {
+		history.create()
+	}()
+
 	err = emailTemplate.SendMail(emailBox, user.Email, _subject, vData)
 	if err != nil {
-		fmt.Println("Ошибка отправления: ", err)
+		history.Succeed = false
+
+		// Обновляем данные последней попытки
+		timeNow := time.Now().UTC()
+		// emailQueueWorkflow.LastTriedAt = &timeNow
+		// emailQueueWorkflow.NumberOfAttempts ++
+		_ = emailQueueWorkflow.update(map[string]interface{}{
+			"Last_tried_at": &timeNow,
+			"number_of_attempts": emailQueueWorkflow.NumberOfAttempts+1,
+		})
+		
+		return err
+
 	} else {
-		if err = emailQueueWorkflow.delete(); err != nil {
-			log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", emailQueueWorkflow.Id, err)
+
+		// Ставим флаг успешного выполнения
+		history.Succeed = true
+
+		// 1. Получаем следующий шаг
+		nextStep, err := emailQueue.GetNextActiveStep(step.Order)
+		if err != nil {
+			history.Completed = true
+			// исключаем задачу, если не удалось ее обновить
+			if err = emailQueueWorkflow.delete(); err != nil {
+				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", emailQueueWorkflow.Id, err)
+			}
+			return nil
 		}
+
+		// Проверяем на его активность
+		if !nextStep.Enabled {
+			history.Completed = true
+			if err = emailQueueWorkflow.delete(); err != nil {
+				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", emailQueueWorkflow.Id, err)
+			}
+			return nil
+		}
+
+		// Обновляем задачу
+		if err := emailQueueWorkflow.UpdateByNextStep(*nextStep); err != nil {
+
+			// исключаем задачу, если не удалось ее обновить
+			if err = emailQueueWorkflow.delete(); err != nil {
+				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", emailQueueWorkflow.Id, err)
+			}
+			// Не удалось обновить следующий шаг, значит последний был до этого
+			history.Completed = true
+			return nil
+		}
+		// Если дошли сюда - значит, задача не завершена
+		history.Completed = false
 	}
 
-	fmt.Println("Step: ", emailTemplate.Name)
-
-
-	// Если шаг на паузе, то мы должны либо пропустить, либо..
-
-
-	
-
-
-
 	return nil
+}
+
+func (emailQueueWorkflow *EmailQueueWorkflow) UpdateByNextStep(expectedStep EmailQueueEmailTemplate) error {
+	// Изменяется expected step, expected_time_start, number_attems, last_tried
+	return emailQueueWorkflow.update(map[string]interface{}{
+		"expected_step_id": expectedStep.Order,
+		"expected_time_start": time.Now().UTC().Add(expectedStep.DelayTime),
+		"number_of_attempts": 0,
+		"last_tried_at": nil,
+	})
+
+}
+
+func (emailQueueWorkflow EmailQueueWorkflow) CreateHistory(emailQueueId, stepTemplateId, stepId, userId uint, completed, succeed bool) (*EmailQueueWorkflowHistory, error) {
+	// 0. Записываем в историю отправки
+	_history := EmailQueueWorkflowHistory{
+		AccountId: emailQueueWorkflow.AccountId,
+		EmailQueueId: emailQueueId,
+		EmailQueueEmailTemplateId: stepTemplateId,
+		StepId: stepId,
+		UserId: userId,
+		Completed: completed,
+		Succeed: succeed,
+		NumberOfAttempts: emailQueueWorkflow.NumberOfAttempts,
+	}
+
+	historyE, err := _history.create()
+	if err != nil {return nil, err}
+	history, ok := historyE.(*EmailQueueWorkflowHistory)
+	if !ok {
+		return nil, errors.New("Не удалось преобразовать")
+	}
+
+	return history, nil
 }

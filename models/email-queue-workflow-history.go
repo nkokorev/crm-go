@@ -28,7 +28,6 @@ type EmailQueueWorkflowHistory struct {
 	// LastStep = Последний ли шаг или промежуточный шаг в цепочке. По нему выборка завершенных.
 	Completed 	bool 	`json:"completed" gorm:"type:bool;default:false;"`
 
-
 	// Id пользователя, которому было отправлено письмо серия.
 	UserId 	uint `json:"userId" gorm:"type:int;not null;default:1;"`
 	User	User `json:"user"`

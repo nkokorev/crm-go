@@ -12,8 +12,6 @@ import (
 
 func (handle *EventListener) Handle(e event.Event) error {
 
-	// utils.TimeTrack(time.Now())
-
 	TargetName := handle.Handler.Code
 
 	if TargetName == "" {
