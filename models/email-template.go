@@ -411,7 +411,6 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string) error {
 
 func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, vData *ViewData) error {
 
-	return errors.New("dfds")
 	// return errors.New("что-то там")
 	if from.WebSite.Id <1 {
 		log.Println("EmailTemplate: Не удалось определить WebSite")
@@ -443,7 +442,7 @@ func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, 
 	headers["Content-Transfer-Encoding"] = "quoted-printable" // имя SMTP сервера
 	headers["Feedback-Id"] = "1324078:20488:trust:54854"
 	// Идентификатор представляет собой 32-битное число в диапазоне от 1 до 2147483647, либо строку длиной до 40 символов, состоящую из латинских букв, цифр и символов ".-_".
-	headers["Message-Id"] = "1001" // номер сообщения (внутренний номер)
+	headers["Message-Id"] = "1001" // номер сообщения (внутренний номер) <<< вот тут не плохо бы сгенерировать какой-нибудь ключ
 	headers["Received"] = "RatusCRM"
 	// headers["Return-Path"] = "<smtp@rus-marketing.ru>"
 
