@@ -1788,6 +1788,7 @@ func Migrate_I() {
 	pool.AutoMigrate(&models.EmailQueueWorkflowHistory{})
 
 	pool.AutoMigrate(&models.EmailNotification{})
+	pool.AutoMigrate(&models.User{})
 
 	/*for i := 0; i < 100000 ;i++ {
 		timeNow := time.Now()
