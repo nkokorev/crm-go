@@ -261,9 +261,7 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 	}
 
 	step, err := emailQueue.GetNearbyActiveStep(emailQueueWorkflow.ExpectedStepId)
-	if err != nil {
-		return err
-	}
+	if err != nil {return err}
 
 	if !step.Enabled {
 		if err = emailQueueWorkflow.delete(); err != nil {
@@ -274,16 +272,12 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 
 	// Находим шаблон письма
 	emailTemplate, err := emailQueue.GetEmailTemplateByStep(emailQueueWorkflow.ExpectedStepId)
-	if err != nil {
-		return err
-	}
+	if err != nil {	return err }
 
 	// EmailBox
 	var emailBox EmailBox
 	err = account.LoadEntity(&emailBox, *step.EmailBoxId)
-	if err != nil {
-		return err
-	}
+	if err != nil { return err }
 
 	// ================== //
 
@@ -304,15 +298,16 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 
 	//////
 
+	// Объект истории, который может быть дополнен позже
 	history := &EmailQueueWorkflowHistory{
 		AccountId: emailQueueWorkflow.AccountId,
 		EmailQueueId: emailQueue.Id,
 		EmailQueueEmailTemplateId: step.EmailTemplateId,
 		StepId: step.Id,
 		UserId: user.Id,
-		NumberOfAttempts: emailQueueWorkflow.NumberOfAttempts,
-		Succeed: false,
-		Completed: false,
+		NumberOfAttempts: emailQueueWorkflow.NumberOfAttempts+1,
+		Succeed: false, 	// по умолчанию
+		Completed: false,	// по умолчанию
 	}
 	defer func() {
 		history.create()
@@ -320,19 +315,21 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 
 	err = emailTemplate.SendMail(emailBox, user.Email, _subject, vData)
 	if err != nil {
+		
 		history.Succeed = false
 
 		// Обновляем данные последней попытки
 		timeNow := time.Now().UTC()
-		// emailQueueWorkflow.LastTriedAt = &timeNow
-		// emailQueueWorkflow.NumberOfAttempts ++
-		_ = emailQueueWorkflow.update(map[string]interface{}{
-			"Last_tried_at": &timeNow,
+		if err2 := emailQueueWorkflow.update(map[string]interface{}{
+			"last_tried_at": &timeNow,
 			"number_of_attempts": emailQueueWorkflow.NumberOfAttempts+1,
-		})
-		
-		return err
+			"expected_time_start": time.Now().UTC().Add(time.Minute * 5),
+			/*"next step"*/
+		}); err2 != nil {
+			fmt.Println("Err emailQueueWorkflow update: ", err2)
+		}
 
+		return err
 	} else {
 
 		// Ставим флаг успешного выполнения
