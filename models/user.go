@@ -36,8 +36,9 @@ type User struct {
 	Subscribed	bool	`json:"subscribed" gorm:"type:bool;default:true;"` // Есть ли подписка на общее рассылки.
 	SubscribedAt 	*time.Time `json:"subscribedAt" gorm:"default:null"`
 	UnsubscribedAt 	*time.Time `json:"unsubscribedAt" gorm:"default:null"` // << last
-	SubscriptionReason	string `json:"subscriptionReason" gorm:"default:null"`
-	UnsubscribedReason	string `json:"unsubscribedReason" gorm:"default:null"`
+	// manual, gui, api,
+	SubscriptionReason	string `json:"subscriptionReason" gorm:"type:varchar(32);default:null"`
+	// UnsubscribedReason	string `json:"unsubscribedReason" gorm:"default:null"`
 
 	DefaultAccountId uint `json:"defaultAccountId" gorm:"type:varchar(12);default:null;"` // указывает какой аккаунт по дефолту загружать
 	InvitedUserId uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
@@ -529,3 +530,23 @@ func (user *User) CreateInviteForUser (email string, sendMail bool) error {
 func (user User) GetDepersonalizedData() interface{} {
 	return &user
 }
+
+func (user *User) Unsubscribing() error {
+	input := map[string]interface{} {
+		"subscribed":false,
+		"unsubscribedAt":time.Now().UTC(),
+	}
+
+	// Событие отписки отслеживается в функции update()
+	if err := user.update(input); err != nil { return nil }
+
+	return nil
+}
+
+/*func (user User) GetHashKeyForValid() string {
+	data := []byte(user.HashId + "RatusCRM#2020")
+	hexHash := md5.Sum(data)
+	return hex.EncodeToString(hexHash[:])
+}
+*/
+

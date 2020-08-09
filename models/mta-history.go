@@ -5,6 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -13,6 +14,8 @@ import (
 type MTAHistory struct {
 
 	Id     		uint   	`json:"id" gorm:"primary_key"` // очень большой индекс может быть
+	HashId 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Id пользователя, которому было отправлено письмо серия.
@@ -55,7 +58,7 @@ type MTAHistory struct {
 	// Отписался ли человек. По этому полю будет выборка (для сбора статистики)
 	Unsubscribed 	bool 	`json:"unsubscribed" gorm:"type:bool;default:false;"`
 	UnsubscribedAt 	*time.Time  `json:"unsubscribedAt"` // << время отписки
-	UnsubscribedReason	string `json:"unsubscribedReason" gorm:"default:null"`
+	// UnsubscribedReason	string `json:"unsubscribedReason" gorm:"type:varchar(32);default:null"`
 
 	// Ip адрес с которого человек открыл письмо. Может быть полезно для определения GeoLocation.
 	NetIp	*net.IP `json:"ipAddr" gorm:"type:cidr;"`
@@ -75,43 +78,47 @@ func (MTAHistory) PgSqlCreate() {
 	db.Model(&MTAHistory{}).AddForeignKey("email_template_id", "email_templates(id)", "CASCADE", "CASCADE")
 
 }
-func (emailQueueWorkflowHistory *MTAHistory) BeforeCreate(scope *gorm.Scope) error {
-	emailQueueWorkflowHistory.Id = 0
+func (mtaHistory *MTAHistory) BeforeCreate(scope *gorm.Scope) error {
+	mtaHistory.Id = 0
+	if len(mtaHistory.HashId) < 1 {
+		mtaHistory.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
+		// todo: тут должен быть какой-то тест на существование
 
+	}
 	return nil
 }
 
-func (emailQueueWorkflowHistory *MTAHistory) AfterCreate(scope *gorm.Scope) (error) {
-	// event.AsyncFire(Event{}.PaymentCreated(emailQueueWorkflowHistory.AccountId, emailQueueWorkflowHistory.Id))
+func (mtaHistory *MTAHistory) AfterCreate(scope *gorm.Scope) (error) {
+	// event.AsyncFire(Event{}.PaymentCreated(mtaHistory.AccountId, mtaHistory.Id))
 	return nil
 }
-func (emailQueueWorkflowHistory *MTAHistory) AfterUpdate(tx *gorm.DB) (err error) {
+func (mtaHistory *MTAHistory) AfterUpdate(tx *gorm.DB) (err error) {
 
-	// event.AsyncFire(Event{}.PaymentUpdated(emailQueueWorkflowHistory.AccountId, emailQueueWorkflowHistory.Id))
+	// event.AsyncFire(Event{}.PaymentUpdated(mtaHistory.AccountId, mtaHistory.Id))
 
 	return nil
 }
-func (emailQueueWorkflowHistory *MTAHistory) AfterDelete(tx *gorm.DB) (err error) {
-	// event.AsyncFire(Event{}.PaymentDeleted(emailQueueWorkflowHistory.AccountId, emailQueueWorkflowHistory.Id))
+func (mtaHistory *MTAHistory) AfterDelete(tx *gorm.DB) (err error) {
+	// event.AsyncFire(Event{}.PaymentDeleted(mtaHistory.AccountId, mtaHistory.Id))
 	return nil
 }
-func (emailQueueWorkflowHistory *MTAHistory) AfterFind() (err error) {
+func (mtaHistory *MTAHistory) AfterFind() (err error) {
 	return nil
 }
 
 // ############# Entity interface #############
-func (emailQueueWorkflowHistory MTAHistory) GetId() uint { return emailQueueWorkflowHistory.Id }
-func (emailQueueWorkflowHistory *MTAHistory) setId(id uint) { emailQueueWorkflowHistory.Id = id }
-func (emailQueueWorkflowHistory *MTAHistory) setPublicId(publicId uint) { }
-func (emailQueueWorkflowHistory MTAHistory) GetAccountId() uint { return emailQueueWorkflowHistory.AccountId }
-func (emailQueueWorkflowHistory *MTAHistory) setAccountId(id uint) { emailQueueWorkflowHistory.AccountId = id }
+func (mtaHistory MTAHistory) GetId() uint { return mtaHistory.Id }
+func (mtaHistory *MTAHistory) setId(id uint) { mtaHistory.Id = id }
+func (mtaHistory *MTAHistory) setPublicId(publicId uint) { }
+func (mtaHistory MTAHistory) GetAccountId() uint { return mtaHistory.AccountId }
+func (mtaHistory *MTAHistory) setAccountId(id uint) { mtaHistory.AccountId = id }
 func (MTAHistory) SystemEntity() bool { return false }
 // ############# Entity interface #############
 
 // ######### CRUD Functions ############
-func (emailQueueWorkflowHistory MTAHistory) create() (Entity, error)  {
+func (mtaHistory MTAHistory) create() (Entity, error)  {
 	
-	wb := emailQueueWorkflowHistory
+	wb := mtaHistory
 	if err := db.Create(&wb).Error; err != nil {
 		return nil, err
 	}
@@ -128,27 +135,27 @@ func (emailQueueWorkflowHistory MTAHistory) create() (Entity, error)  {
 
 func (MTAHistory) get(id uint) (Entity, error) {
 
-	var emailQueueWorkflowHistory MTAHistory
+	var mtaHistory MTAHistory
 
-	err := emailQueueWorkflowHistory.GetPreloadDb(false,false, true).First(&emailQueueWorkflowHistory, id).Error
+	err := mtaHistory.GetPreloadDb(false,false, true).First(&mtaHistory, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &emailQueueWorkflowHistory, nil
+	return &mtaHistory, nil
 }
 
-func (emailQueueWorkflowHistory *MTAHistory) load() error {
-	if emailQueueWorkflowHistory.Id < 1 {
+func (mtaHistory *MTAHistory) load() error {
+	if mtaHistory.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить MTAHistory - не указан  Id"}
 	}
 
-	err := emailQueueWorkflowHistory.GetPreloadDb(false,false, true).First(emailQueueWorkflowHistory,emailQueueWorkflowHistory.Id).Error
+	err := mtaHistory.GetPreloadDb(false,false, true).First(mtaHistory,mtaHistory.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (emailQueueWorkflowHistory *MTAHistory) loadByPublicId() error {
+func (mtaHistory *MTAHistory) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
@@ -205,24 +212,35 @@ func (MTAHistory) getPaginationList(accountId uint, offset, limit int, sortBy, s
 	return entities, total, nil
 }
 
-func (emailQueueWorkflowHistory *MTAHistory) update(input map[string]interface{}) error {
-	return emailQueueWorkflowHistory.GetPreloadDb(false,false,false).Where("id = ?", emailQueueWorkflowHistory.Id).Omit("id", "account_id").Updates(input).Error
+func (mtaHistory *MTAHistory) update(input map[string]interface{}) error {
+	return mtaHistory.GetPreloadDb(false,false,false).Where("id = ?", mtaHistory.Id).Omit("id", "account_id").Updates(input).Error
 }
 
-func (emailQueueWorkflowHistory *MTAHistory) delete () error {
+func (mtaHistory *MTAHistory) delete () error {
 
-	return emailQueueWorkflowHistory.GetPreloadDb(true,false,false).Where("id = ?", emailQueueWorkflowHistory.Id).Delete(emailQueueWorkflowHistory).Error
+	return mtaHistory.GetPreloadDb(true,false,false).Where("id = ?", mtaHistory.Id).Delete(mtaHistory).Error
 }
 // ######### END CRUD Functions ############
 
-func (emailQueueWorkflowHistory *MTAHistory) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+
+func (account Account) GetMTAHistoryByHashId(hashId string) (*MTAHistory, error) {
+	et := MTAHistory{}
+
+	err := db.First(&et, "account_id = ? hash_id = ?", account.Id, hashId).Error
+	if err != nil {
+		return nil, err
+	}
+	return &et, nil
+}
+
+func (mtaHistory *MTAHistory) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
 	_db := db
 
 	if autoUpdateOff {
 		_db = _db.Set("gorm:association_autoupdate", false)
 	}
 	if getModel {
-		_db = _db.Model(&emailQueueWorkflowHistory)
+		_db = _db.Model(&mtaHistory)
 	} else {
 		_db = _db.Model(&MTAHistory{})
 	}
@@ -233,4 +251,23 @@ func (emailQueueWorkflowHistory *MTAHistory) GetPreloadDb(autoUpdateOff bool, ge
 	} else {
 		return _db
 	}
+}
+
+// 
+func (mtaHistory *MTAHistory) UpdateSetUnsubscribeUser() error {
+	return mtaHistory.update(map[string]interface{}{
+		"unsubscribed": true,
+		"unsubscribedAt": time.Now().UTC(),
+	})
+}
+
+func (mtaHistory *MTAHistory) UpdateOpenUser(ipv4 string) error {
+	input := map[string]interface{}{
+		"open": mtaHistory.Opens + 1,
+	}
+	if mtaHistory.Opens < 0 {
+		input["openAt"] = time.Now().UTC()
+	}
+	
+	return mtaHistory.update(input)
 }

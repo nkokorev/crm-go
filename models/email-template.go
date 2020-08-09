@@ -411,7 +411,6 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string) error {
 
 func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, vData *ViewData) error {
 
-	return errors.New("что-то там")
 	if from.WebSite.Id <1 {
 		log.Println("EmailTemplate: Не удалось определить WebSite")
 		return utils.Error{Message: "Не удалось определить WebSite"}

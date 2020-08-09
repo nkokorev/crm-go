@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"time"
@@ -206,7 +205,6 @@ func (emailQueue *EmailQueue) load() error {
 
 	err := emailQueue.GetPreloadDb(false,false, true).First(emailQueue,emailQueue.Id).Error
 	if err != nil {
-		fmt.Println("Err: ", err)
 		return err
 	}
 	return nil

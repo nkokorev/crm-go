@@ -6,6 +6,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -263,6 +264,10 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 	step, err := emailQueue.GetNearbyActiveStep(emailQueueWorkflow.ExpectedStepId)
 	if err != nil {return err}
 
+	if step.EmailBoxId == nil {
+		return utils.Error{Message: "Данные не полные: не хватает emailBoxID"}
+	}
+
 	if !step.Enabled {
 		if err = emailQueueWorkflow.delete(); err != nil {
 			log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", emailQueueWorkflow.Id, err)
@@ -275,9 +280,12 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 	if err != nil {	return err }
 
 	// EmailBox
+
 	var emailBox EmailBox
 	err = account.LoadEntity(&emailBox, *step.EmailBoxId)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	// ================== //
 
@@ -300,6 +308,7 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 
 	// Объект истории, который может быть дополнен позже
 	history := &MTAHistory{
+		HashId:  strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true)),
 		AccountId: emailQueueWorkflow.AccountId,
 		UserId: user.Id,
 		OwnerId: emailQueue.Id,
@@ -307,7 +316,7 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 		EmailTemplateId: step.EmailTemplateId,
 		QueueStepId: step.Order,
 		QueueCompleted: false,	// по умолчанию
-		NumberOfAttempts: emailQueueWorkflow.NumberOfAttempts+1,
+		NumberOfAttempts: emailQueueWorkflow.NumberOfAttempts + 1,
 		Succeed: false, 	// по умолчанию
 	}
 	defer func() {

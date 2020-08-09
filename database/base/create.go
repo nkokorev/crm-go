@@ -1768,10 +1768,10 @@ func UploadTestDataPart_IV()  {
 
 func Migrate_I() {
 	pool := models.GetPool()
-	/*
+
 	// 05.08.2020
-	pool.DropTableIfExists(
-		models.EmailQueueWorkflowHistory{},
+	/*pool.DropTableIfExists(
+		models.MTAHistory{},
 		models.EmailQueueWorkflow{},
 		models.EmailQueueEmailTemplate{},
 		models.EmailQueue{},
@@ -1780,8 +1780,8 @@ func Migrate_I() {
 	models.EmailQueue{}.PgSqlCreate()
 	models.EmailQueueEmailTemplate{}.PgSqlCreate()
 	models.EmailQueueWorkflow{}.PgSqlCreate()
-	models.MTAHistory{}.PgSqlCreate()
-	 */
+	models.MTAHistory{}.PgSqlCreate()*/
+
 
 	pool.AutoMigrate(&models.EmailQueue{})
 	pool.AutoMigrate(&models.EmailQueueEmailTemplate{})

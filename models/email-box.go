@@ -69,6 +69,10 @@ func (EmailBox) get(id uint) (Entity, error) {
 }
 func (emailBox *EmailBox) load() error {
 
+	if emailBox == nil {
+		return utils.Error{Message: "Невозможно загрузить EmailBox - не указан  объект"}
+	}
+
 	if emailBox.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить EmailBox - не указан  Id"}
 	}
