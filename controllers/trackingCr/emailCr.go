@@ -38,11 +38,11 @@ func UnsubscribeUser(w http.ResponseWriter, r *http.Request) {
 
 	// получаем контекст отписки
 	// &w=<>
-	userHashId, ok := utilsCr.GetQuerySTRVarFromGET(r, "w")
+/*	userHashId, ok := utilsCr.GetQuerySTRVarFromGET(r, "w")
 	if !ok {
 		u.Respond(w, u.MessageError(err, "Необходимо указать пользователя"))
 		return
-	}
+	}*/
 
 	// Тут функция отписки пользователя.
 	update := map[string]interface{} {

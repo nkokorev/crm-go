@@ -114,7 +114,7 @@ func (handler EventListener) EmailQueueRun(e event.Event) error {
 
 	var emailQueue EmailQueue
 	if err := account.LoadEntity(&emailQueue, handler.EntityId); err != nil {
-		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить EmailQueue id = %v, не загружается объект.", handler.EntityId)}
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить EmailQueue id = %v, не загружается объект: %v.", handler.EntityId, err)}
 	}
 
 	// Загружаем данные в теле

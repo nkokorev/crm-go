@@ -1775,17 +1775,19 @@ func Migrate_I() {
 		models.EmailQueueWorkflow{},
 		models.EmailQueueEmailTemplate{},
 		models.EmailQueue{},
-		)*/
+		)
 
-/*	models.EmailQueue{}.PgSqlCreate()
+	models.EmailQueue{}.PgSqlCreate()
 	models.EmailQueueEmailTemplate{}.PgSqlCreate()
 	models.EmailQueueWorkflow{}.PgSqlCreate()
-	models.EmailQueueWorkflowHistory{}.PgSqlCreate()*/
+	models.MTAHistory{}.PgSqlCreate()
+	 */
 
 	pool.AutoMigrate(&models.EmailQueue{})
 	pool.AutoMigrate(&models.EmailQueueEmailTemplate{})
 	pool.AutoMigrate(&models.EmailQueueWorkflow{})
-	pool.AutoMigrate(&models.EmailQueueWorkflowHistory{})
+	pool.AutoMigrate(&models.EmailTemplate{})
+	pool.AutoMigrate(&models.MTAHistory{})
 
 	pool.AutoMigrate(&models.EmailNotification{})
 	pool.AutoMigrate(&models.User{})

@@ -23,10 +23,10 @@ type MTAHistory struct {
 	OwnerType	string	`json:"ownerType" gorm:"varchar(32);default:'email_queues';not null;"` // << тип события: кампания, серия, уведомление
 	OwnerId		uint	`json:"ownerId" gorm:"type:smallint;default:1;not null;"` // ID типа события: какая серия, компания или уведомление
 
-	// Номер шага в очереди, который был совершен. Для статистики серий писем.
+	// Queues: номер шага в очереди, который был совершен. Для статистики серий писем.
 	QueueStepId	uint	`json:"queueStepId" gorm:"type:smallint;default:null;"`
 
-	// Последний ли шаг или промежуточный шаг в цепочке. По нему выборка завершивших серию писем за указанный период времени.
+	// Queues: последний ли шаг или промежуточный шаг в цепочке. По нему выборка завершивших серию писем за указанный период времени.
 	QueueCompleted 	bool 	`json:"queueCompleted" gorm:"type:bool;default:false;"`
 
 	// ID конкретной связи <Queue>&<EmailTemplate>. Для сбора статистики по конкретному шаблону.
@@ -55,6 +55,7 @@ type MTAHistory struct {
 	// Отписался ли человек. По этому полю будет выборка (для сбора статистики)
 	Unsubscribed 	bool 	`json:"unsubscribed" gorm:"type:bool;default:false;"`
 	UnsubscribedAt 	*time.Time  `json:"unsubscribedAt"` // << время отписки
+	UnsubscribedReason	string `json:"unsubscribedReason" gorm:"default:null"`
 
 	// Ip адрес с которого человек открыл письмо. Может быть полезно для определения GeoLocation.
 	NetIp	*net.IP `json:"ipAddr" gorm:"type:cidr;"`
@@ -71,7 +72,7 @@ func (MTAHistory) PgSqlCreate() {
 	// db.Model(&MTAHistory{}).AddForeignKey("email_queue_id", "email_queues(id)", "CASCADE", "CASCADE")
 
 	// todo: проработать модель удаления шаблона или связи
-	// db.Model(&MTAHistory{}).AddForeignKey("email_queue_email_template_id", "email_queue_email_templates(id)", "SET NULL", "CASCADE")
+	db.Model(&MTAHistory{}).AddForeignKey("email_template_id", "email_templates(id)", "CASCADE", "CASCADE")
 
 }
 func (emailQueueWorkflowHistory *MTAHistory) BeforeCreate(scope *gorm.Scope) error {
@@ -233,4 +234,3 @@ func (emailQueueWorkflowHistory *MTAHistory) GetPreloadDb(autoUpdateOff bool, ge
 		return _db
 	}
 }
-

@@ -301,13 +301,14 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 	// Объект истории, который может быть дополнен позже
 	history := &MTAHistory{
 		AccountId: emailQueueWorkflow.AccountId,
-		EmailQueueId: emailQueue.Id,
-		EmailQueueEmailTemplateId: step.EmailTemplateId,
-		StepId: step.Id,
 		UserId: user.Id,
+		OwnerId: emailQueue.Id,
+		OwnerType: "email_queues",
+		EmailTemplateId: step.EmailTemplateId,
+		QueueStepId: step.Order,
+		QueueCompleted: false,	// по умолчанию
 		NumberOfAttempts: emailQueueWorkflow.NumberOfAttempts+1,
 		Succeed: false, 	// по умолчанию
-		Completed: false,	// по умолчанию
 	}
 	defer func() {
 		history.create()
@@ -324,7 +325,6 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 			"last_tried_at": &timeNow,
 			"number_of_attempts": emailQueueWorkflow.NumberOfAttempts+1,
 			"expected_time_start": time.Now().UTC().Add(time.Minute * 5),
-			/*"next step"*/
 		}); err2 != nil {
 			fmt.Println("Err emailQueueWorkflow update: ", err2)
 		}
@@ -338,7 +338,7 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 		// 1. Получаем следующий шаг
 		nextStep, err := emailQueue.GetNextActiveStep(step.Order)
 		if err != nil {
-			history.Completed = true
+			history.QueueCompleted = true
 			// исключаем задачу, если не удалось ее обновить
 			if err = emailQueueWorkflow.delete(); err != nil {
 				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", emailQueueWorkflow.Id, err)
@@ -348,7 +348,7 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 
 		// Проверяем на его активность
 		if !nextStep.Enabled {
-			history.Completed = true
+			history.QueueCompleted = true
 			if err = emailQueueWorkflow.delete(); err != nil {
 				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", emailQueueWorkflow.Id, err)
 			}
@@ -363,11 +363,11 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", emailQueueWorkflow.Id, err)
 			}
 			// Не удалось обновить следующий шаг, значит последний был до этого
-			history.Completed = true
+			history.QueueCompleted = true
 			return nil
 		}
 		// Если дошли сюда - значит, задача не завершена
-		history.Completed = false
+		history.QueueCompleted = false
 	}
 
 	return nil

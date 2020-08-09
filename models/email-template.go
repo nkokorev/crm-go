@@ -42,7 +42,8 @@ type EmailTemplate struct {
 	// GORM vars
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
-	// DeletedAt *time.Time `json:"deletedAt" sql:"index"`
+	// Шаблоны не удаляемы теперь для MTAHistory
+	DeletedAt *time.Time `json:"deletedAt" sql:"index"`
 }
 
 func (EmailTemplate) PgSqlCreate() {
@@ -244,8 +245,7 @@ func (et EmailTemplate) PrepareViewData(data map[string]interface{}) (*ViewData,
 
 	jsonMap := make(map[string]interface{})
 	jsonMap = utils.ParseJSONBToMapString(et.JsonData)
-
-
+	
 	return &ViewData{
 		TemplateName: et.Name, // ? надо ли?
 		PreviewText: et.PreviewText,
@@ -411,7 +411,7 @@ func (et EmailTemplate) Send(from EmailBox, user User, subject string) error {
 
 func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, vData *ViewData) error {
 
-	// return errors.New("что-то там")
+	return errors.New("что-то там")
 	if from.WebSite.Id <1 {
 		log.Println("EmailTemplate: Не удалось определить WebSite")
 		return utils.Error{Message: "Не удалось определить WebSite"}

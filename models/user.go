@@ -35,7 +35,7 @@ type User struct {
 
 	Subscribed	bool	`json:"subscribed" gorm:"type:bool;default:true;"` // Есть ли подписка на общее рассылки.
 	SubscribedAt 	*time.Time `json:"subscribedAt" gorm:"default:null"`
-	UnsubscribedAt 	*time.Time `json:"unsubscribedAt" gorm:"default:null"`
+	UnsubscribedAt 	*time.Time `json:"unsubscribedAt" gorm:"default:null"` // << last
 	SubscriptionReason	string `json:"subscriptionReason" gorm:"default:null"`
 	UnsubscribedReason	string `json:"unsubscribedReason" gorm:"default:null"`
 

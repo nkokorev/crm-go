@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"time"
@@ -105,13 +106,13 @@ func (emailQueue *EmailQueue) AfterFind() (err error) {
 		Opens uint    		// (opens >=1)
 		Unsubscribed uint 	// (unsubscribed = true)
 	}{0,0,0,0}
-	if err = db.Raw("SELECT   \n       COUNT(CASE WHEN succeed = true THEN 1 END) AS recipients,  \n       COUNT(CASE WHEN queue_completed = true THEN 1 END) AS completed,  \n       COUNT(CASE WHEN opens >=1 THEN 1 END) AS opens,   \n       COUNT(CASE WHEN unsubscribed = true THEN 1 END) AS unsubscribed \nFROM mta_histories \nWHERE account_id = ? AND email_queue_id = ?;", emailQueue.AccountId, emailQueue.Id).
+	if err = db.Raw("SELECT   \n       COUNT(CASE WHEN succeed = true THEN 1 END) AS recipients, -- успешно отправленных  \n       COUNT(CASE WHEN queue_completed = true THEN 1 END) AS completed, -- завершивших серию \n       COUNT(CASE WHEN opens >=1 AND succeed = true THEN 1 END) AS opens, -- открытий среди успешно отправленных   \n       COUNT(CASE WHEN unsubscribed = true THEN 1 END) AS unsubscribed \nFROM mta_histories \nWHERE account_id = ? AND owner_id = ? AND owner_type = 'email_queues';", emailQueue.AccountId, emailQueue.Id).
 		Scan(&stat).Error; err != nil {
 			return err
 	}
 
-	emailQueue.Recipients = stat.Completed
-	emailQueue.EmailsSent = stat.Recipients
+	emailQueue.Recipients = stat.Completed //  queue_completed = true
+	emailQueue.EmailsSent = stat.Recipients // << succeed = true - Сколько всего реально было отправлено писем.
 	if stat.Opens > 0 && stat.Recipients > 0{
 		emailQueue.OpenRate = (float64(stat.Opens) / float64(stat.Recipients))*100
 	} else {
@@ -205,6 +206,7 @@ func (emailQueue *EmailQueue) load() error {
 
 	err := emailQueue.GetPreloadDb(false,false, true).First(emailQueue,emailQueue.Id).Error
 	if err != nil {
+		fmt.Println("Err: ", err)
 		return err
 	}
 	return nil
