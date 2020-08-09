@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"net"
@@ -264,13 +265,16 @@ func (mtaHistory *MTAHistory) UpdateSetUnsubscribeUser(ipV4 string) error {
 
 func (mtaHistory *MTAHistory) UpdateOpenUser(ipV4 string) error {
 
+	
 	input := map[string]interface{} {
-		"open": mtaHistory.Opens + 1,
+		"opens": mtaHistory.Opens + 1,
 		// "net_ip"	:	ipV4,
 	}
-	if mtaHistory.Opens < 0 {
-		input["openAt"] = time.Now().UTC()
+	if mtaHistory.Opens <= 0 {
+		input["openedAt"] = time.Now().UTC()
 	}
-	
+
+	fmt.Println("Обновляем: ", input)
+
 	return mtaHistory.update(input)
 }

@@ -304,6 +304,7 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 	}()
 	
 	unsubscribeUrl := account.GetUnsubscribeUrl(*user, *history)
+	pixelURL := account.GetPixelUrl(*history)
 
 	// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
 	data["accountId"] = emailQueueWorkflow.AccountId
@@ -313,7 +314,7 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 	data["unsubscribeUrl"] = unsubscribeUrl
 	// data["pixel"] = pixel
 
-	vData, err := emailTemplate.PrepareViewData(data, &unsubscribeUrl)
+	vData, err := emailTemplate.PrepareViewData(data, pixelURL, &unsubscribeUrl)
 	if err != nil {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
 	}

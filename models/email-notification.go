@@ -311,9 +311,10 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 
 			history.UserId = &v.Id
 			unsubscribeUrl := account.GetUnsubscribeUrl(v, *history)
+			pixelURL := account.GetPixelUrl(*history)
 
 			// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
-			vData, err := emailTemplate.PrepareViewData(data, &unsubscribeUrl)
+			vData, err := emailTemplate.PrepareViewData(data, pixelURL, &unsubscribeUrl)
 			if err != nil {
 				return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
 			}
@@ -344,8 +345,9 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 	if emailNotification.SendingToFixedAddresses {
 		// 2. Готовим список фиксированных адресов
 		emailList := utils.ParseJSONBToString(emailNotification.RecipientList)
+		pixelURL := account.GetPixelUrl(*history)
 
-		vData, err := emailTemplate.PrepareViewData(data, nil)
+		vData, err := emailTemplate.PrepareViewData(data, pixelURL, nil)
 		if err != nil {
 			return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
 		}
@@ -379,9 +381,10 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 
 					history.UserId = &user.Id
 					unsubscribeUrl := account.GetUnsubscribeUrl(*user, *history)
+					pixelURL := account.GetPixelUrl(*history)
 
 					// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
-					vData, err := emailTemplate.PrepareViewData(data, &unsubscribeUrl)
+					vData, err := emailTemplate.PrepareViewData(data, pixelURL, &unsubscribeUrl)
 					if err != nil {
 						return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
 					}
@@ -417,9 +420,10 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 
 					history.UserId = &customer.Id
 					unsubscribeUrl := account.GetUnsubscribeUrl(*customer, *history)
+					pixelURL := account.GetPixelUrl(*history)
 
 					// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
-					vData, err := emailTemplate.PrepareViewData(data, &unsubscribeUrl)
+					vData, err := emailTemplate.PrepareViewData(data, pixelURL, &unsubscribeUrl)
 					if err != nil {
 						return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
 					}
@@ -455,9 +459,10 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 
 					history.UserId = &manager.Id
 					unsubscribeUrl := account.GetUnsubscribeUrl(*manager, *history)
+					pixelURL := account.GetPixelUrl(*history)
 
 					// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
-					vData, err := emailTemplate.PrepareViewData(data, &unsubscribeUrl)
+					vData, err := emailTemplate.PrepareViewData(data, pixelURL, &unsubscribeUrl)
 					if err != nil {
 						return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
 					}

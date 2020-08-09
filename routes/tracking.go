@@ -18,6 +18,7 @@ var TrackingRoutes = func (rFree *mux.Router) {
 
 	// ?u={userHashId} а аккаунт через accountHashId передан.
 	rFree.HandleFunc("/e/unsubscribe", trackingCr.UnsubscribeUser).Methods(http.MethodGet, http.MethodOptions)
+	rFree.HandleFunc("/e/open", trackingCr.OpenEmailByPixelUser).Methods(http.MethodGet, http.MethodOptions)
 
 	// pixel ?u={userHashId} а аккаунт через accountHashId передан.
 	// r.HandleFunc("/e/open", trackingCr.UnsubscribeUser).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)

@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
@@ -568,5 +569,30 @@ func (account Account) GetUnsubscribeUrl(user User, mtaHistory MTAHistory) strin
 
 	// return crmHost + "/accounts/" +  account.HashId + "/e/unsubscribe?u=" + user.HashId + "&i="+ strconv.Itoa(int(mtaHistory.Id)) + "&hi=" + mtaHistory.HashId
 	return crmHost + "/accounts/" +  account.HashId + "/e/unsubscribe?u=" + user.HashId + "&hi=" + mtaHistory.HashId
+}
+
+func (account Account) GetPixelUrl(mtaHistory MTAHistory) string {
+
+	// var unsubscribeUrl := "http://tracking.crm.local/accounts/3niyoz4vucpz/e/unsubscribe?u=keqcfnymylb9&i=5&hi=vlbkv0bf9yr8"
+
+	AppEnv := os.Getenv("APP_ENV")
+	crmHost := ""
+	switch AppEnv {
+	case "local":
+		crmHost = "http://tracking.crm.local"
+	case "public":
+		crmHost = "https://tracking.ratuscrm.com"
+	default:
+		crmHost = "https://tracking.ratuscrm.com"
+	}
+
+	// http://tracking.crm.local/accounts/3niyoz4vucpz/e/open?hi=mggigw8fiy9c
+	return crmHost + "/accounts/" +  account.HashId + "/e/open?hi=" + mtaHistory.HashId
+}
+
+func (EmailTemplate) GetPixelHTML(pixelUrl string) string {
+
+	// return `<img style="width: 1px;height: 1px;opacity: 0;" src='` + pixelUrl + `'/>`
+	return fmt.Sprintf("<img style=\"width: 1px;height: 1px;opacity: 0;\" src=\"%v\"/>", pixelUrl)
 }
 

@@ -47,6 +47,8 @@ type ViewData struct{
 	// User map[string]interface{}
 	Json map[string]interface{}
 	UnsubscribeURL string
+	PixelURL string // 
+	PixelHTML string // html <<
 }
 
 func mtaServer(c <-chan EmailPkg) {
