@@ -299,7 +299,7 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 	//////
 
 	// Объект истории, который может быть дополнен позже
-	history := &EmailQueueWorkflowHistory{
+	history := &MTAHistory{
 		AccountId: emailQueueWorkflow.AccountId,
 		EmailQueueId: emailQueue.Id,
 		EmailQueueEmailTemplateId: step.EmailTemplateId,
@@ -382,27 +382,4 @@ func (emailQueueWorkflow *EmailQueueWorkflow) UpdateByNextStep(expectedStep Emai
 		"last_tried_at": nil,
 	})
 
-}
-
-func (emailQueueWorkflow EmailQueueWorkflow) CreateHistory(emailQueueId, stepTemplateId, stepId, userId uint, completed, succeed bool) (*EmailQueueWorkflowHistory, error) {
-	// 0. Записываем в историю отправки
-	_history := EmailQueueWorkflowHistory{
-		AccountId: emailQueueWorkflow.AccountId,
-		EmailQueueId: emailQueueId,
-		EmailQueueEmailTemplateId: stepTemplateId,
-		StepId: stepId,
-		UserId: userId,
-		Completed: completed,
-		Succeed: succeed,
-		NumberOfAttempts: emailQueueWorkflow.NumberOfAttempts,
-	}
-
-	historyE, err := _history.create()
-	if err != nil {return nil, err}
-	history, ok := historyE.(*EmailQueueWorkflowHistory)
-	if !ok {
-		return nil, errors.New("Не удалось преобразовать")
-	}
-
-	return history, nil
 }

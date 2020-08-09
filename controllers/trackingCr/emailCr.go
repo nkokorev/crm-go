@@ -18,8 +18,6 @@ func UnsubscribeUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Account: ", account.Name)
-
 	userHashId, ok := utilsCr.GetQuerySTRVarFromGET(r, "u")
 	if !ok {
 		u.Respond(w, u.MessageError(err, "Необходимо указать пользователя"))
@@ -32,11 +30,21 @@ func UnsubscribeUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Если пользователь уже отписан
 	if !user.Subscribed {
 		u.Respond(w, u.MessageError(err, "Пользователь уже отписан от всех рассылок"))
 		return
 	}
 
+	// получаем контекст отписки
+	// &w=<>
+	userHashId, ok := utilsCr.GetQuerySTRVarFromGET(r, "w")
+	if !ok {
+		u.Respond(w, u.MessageError(err, "Необходимо указать пользователя"))
+		return
+	}
+
+	// Тут функция отписки пользователя.
 	update := map[string]interface{} {
 		"subscribed":false,
 		"unsubscribedAt":time.Now().UTC(),

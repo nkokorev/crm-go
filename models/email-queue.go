@@ -105,7 +105,7 @@ func (emailQueue *EmailQueue) AfterFind() (err error) {
 		Opens uint    		// (opens >=1)
 		Unsubscribed uint 	// (unsubscribed = true)
 	}{0,0,0,0}
-	if err = db.Raw("SELECT   \n       COUNT(CASE WHEN succeed = true THEN 1 END) AS recipients,  \n       COUNT(CASE WHEN completed = true THEN 1 END) AS completed,  \n       COUNT(CASE WHEN opens >=1 THEN 1 END) AS opens,   \n       COUNT(CASE WHEN unsubscribed = true THEN 1 END) AS unsubscribed \nFROM email_queue_workflow_histories \nWHERE account_id = ? AND email_queue_id = ?;", emailQueue.AccountId, emailQueue.Id).
+	if err = db.Raw("SELECT   \n       COUNT(CASE WHEN succeed = true THEN 1 END) AS recipients,  \n       COUNT(CASE WHEN queue_completed = true THEN 1 END) AS completed,  \n       COUNT(CASE WHEN opens >=1 THEN 1 END) AS opens,   \n       COUNT(CASE WHEN unsubscribed = true THEN 1 END) AS unsubscribed \nFROM mta_histories \nWHERE account_id = ? AND email_queue_id = ?;", emailQueue.AccountId, emailQueue.Id).
 		Scan(&stat).Error; err != nil {
 			return err
 	}
