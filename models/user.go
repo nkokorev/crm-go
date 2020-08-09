@@ -7,6 +7,7 @@ import (
 	"github.com/nkokorev/crm-go/event"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
+	"os"
 	"strings"
 	"time"
 )
@@ -549,4 +550,23 @@ func (user *User) Unsubscribing() error {
 	return hex.EncodeToString(hexHash[:])
 }
 */
+
+func (account Account) GetUnsubscribeUrl(user User, mtaHistory MTAHistory) string {
+
+	// var unsubscribeUrl := "http://tracking.crm.local/accounts/3niyoz4vucpz/e/unsubscribe?u=keqcfnymylb9&i=5&hi=vlbkv0bf9yr8"
+
+	AppEnv := os.Getenv("APP_ENV")
+	crmHost := ""
+	switch AppEnv {
+	case "local":
+		crmHost = "http://tracking.crm.local"
+	case "public":
+		crmHost = "https://tracking.ratuscrm.com"
+	default:
+		crmHost = "https://tracking.ratuscrm.com"
+	}
+
+	// return crmHost + "/accounts/" +  account.HashId + "/e/unsubscribe?u=" + user.HashId + "&i="+ strconv.Itoa(int(mtaHistory.Id)) + "&hi=" + mtaHistory.HashId
+	return crmHost + "/accounts/" +  account.HashId + "/e/unsubscribe?u=" + user.HashId + "&hi=" + mtaHistory.HashId
+}
 

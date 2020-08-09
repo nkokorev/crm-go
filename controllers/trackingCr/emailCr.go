@@ -2,7 +2,6 @@ package trackingCr
 
 import (
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
-	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
 )
@@ -10,6 +9,7 @@ import (
 //  Query:
 //  ?u={userHashId}   <<< Минимальный пакет данных
 // 	?u={userHashId}&?i={mtaHistoryId}&hi={hashId}
+// 	?u={userHashId}&hi={hashId}
 func UnsubscribeUser(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w, r)
@@ -47,20 +47,14 @@ func UnsubscribeUser(w http.ResponseWriter, r *http.Request) {
 	// 1. Находим событие по по hashId, в следствии которого, клиент получал письмо
 	mtaHistoryHashId, ok := utilsCr.GetQuerySTRVarFromGET(r, "hi")
 	if ok {
-		mtaHistoryId, ok2 := utilsCr.GetQueryUINTVarFromGET(r, "i")
-		if ok2 {
-			var mtaHistory models.MTAHistory
-			err := account.LoadEntity(&mtaHistory, mtaHistoryId)
-			if err == nil {
-
-				// если hashId Отправки совпадает, то отписываем. Это как проверочный код.
-				if mtaHistory.HashId == mtaHistoryHashId {
-					_ = mtaHistory.UpdateSetUnsubscribeUser()
-				}
+		mtaHistory, err := account.GetMTAHistoryByHashId(mtaHistoryHashId)
+		if err == nil {
+			// если hashId Отправки совпадает, то отписываем. Это как проверочный код.
+			if mtaHistory.HashId == mtaHistoryHashId {
+				_ = mtaHistory.UpdateSetUnsubscribeUser(utilsCr.GetIP(r))
 			}
 		}
 	}
-
 
 	resp := u.Message(true, "User unsubscribed!")
 	u.Respond(w, resp)

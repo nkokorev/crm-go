@@ -100,7 +100,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{emailTemplateId}", appCr.EmailTemplateUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{emailTemplateId}", appCr.EmailTemplateDelete).Methods(http.MethodDelete, http.MethodOptions)
 	// !!!!!!!!
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{emailTemplateHashId}/send/user", appCr.EmailTemplateSendToUser).Methods(http.MethodPost, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/email-templates/{emailTemplateHashId}/send/user", appCr.EmailTemplateSendToUser).Methods(http.MethodPost, http.MethodOptions)
 
 	// ### STORAGE CRUD ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/storage", appCr.StorageCreateFile).Methods(http.MethodPost, http.MethodOptions)

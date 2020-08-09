@@ -245,10 +245,9 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 		return utils.Error{Message: "Невозможно отправить письмо пользователю, т.к. он отписан от всех подписок"}
 	}
 
-	data["accountId"] = emailQueueWorkflow.AccountId
-	data["account"] = account.GetDepersonalizedData() // << хз
-	data["userId"] = user.Id // << хз
-	data["user"] = user.GetDepersonalizedData() // << хз
+	// ############ Готовим данные
+
+
 
 	///////////
 	var emailQueue EmailQueue
@@ -287,10 +286,34 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 		return err
 	}
 
-	// ================== //
+	// Объект истории, который может быть дополнен позже
+	history := &MTAHistory{
+		HashId:  strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true)),
+		AccountId: emailQueueWorkflow.AccountId,
+		UserId: &user.Id,
+		OwnerId: emailQueue.Id,
+		OwnerType: "email_queues",
+		EmailTemplateId: step.EmailTemplateId,
+		QueueStepId: step.Order,
+		QueueCompleted: false,	// по умолчанию
+		NumberOfAttempts: emailQueueWorkflow.NumberOfAttempts + 1,
+		Succeed: false, 	// по умолчанию
+	}
+	defer func() {
+		history.create()
+	}()
+	
+	unsubscribeUrl := account.GetUnsubscribeUrl(*user, *history)
 
 	// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
-	vData, err := emailTemplate.PrepareViewData(data)
+	data["accountId"] = emailQueueWorkflow.AccountId
+	data["account"] = account.GetDepersonalizedData() // << хз
+	data["userId"] = user.Id // << хз
+	data["user"] = user.GetDepersonalizedData() // << хз
+	data["unsubscribeUrl"] = unsubscribeUrl
+	// data["pixel"] = pixel
+
+	vData, err := emailTemplate.PrepareViewData(data, &unsubscribeUrl)
 	if err != nil {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
 	}
@@ -304,26 +327,7 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 		_subject = fmt.Sprintf("Уведомление по почте #%v", emailQueueWorkflow.Id)
 	}
 
-	//////
-
-	// Объект истории, который может быть дополнен позже
-	history := &MTAHistory{
-		HashId:  strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true)),
-		AccountId: emailQueueWorkflow.AccountId,
-		UserId: user.Id,
-		OwnerId: emailQueue.Id,
-		OwnerType: "email_queues",
-		EmailTemplateId: step.EmailTemplateId,
-		QueueStepId: step.Order,
-		QueueCompleted: false,	// по умолчанию
-		NumberOfAttempts: emailQueueWorkflow.NumberOfAttempts + 1,
-		Succeed: false, 	// по умолчанию
-	}
-	defer func() {
-		history.create()
-	}()
-
-	err = emailTemplate.SendMail(emailBox, user.Email, _subject, vData)
+	err = emailTemplate.SendMail(emailBox, user.Email, _subject, vData,  unsubscribeUrl)
 	if err != nil {
 		
 		history.Succeed = false

@@ -19,7 +19,7 @@ type MTAHistory struct {
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Id пользователя, которому было отправлено письмо серия.
-	UserId 	uint `json:"userId" gorm:"type:int;not null;default:1;"`
+	UserId 	*uint `json:"userId" gorm:"type:int;default:1;"` // при отправке на почту пользователю
 	User	User `json:"user"`
 
 	// email_queues, email_campaigns, email_notifications
@@ -226,7 +226,7 @@ func (mtaHistory *MTAHistory) delete () error {
 func (account Account) GetMTAHistoryByHashId(hashId string) (*MTAHistory, error) {
 	et := MTAHistory{}
 
-	err := db.First(&et, "account_id = ? hash_id = ?", account.Id, hashId).Error
+	err := db.First(&et, "account_id = ? AND hash_id = ?", account.Id, hashId).Error
 	if err != nil {
 		return nil, err
 	}
@@ -254,16 +254,19 @@ func (mtaHistory *MTAHistory) GetPreloadDb(autoUpdateOff bool, getModel bool, pr
 }
 
 // 
-func (mtaHistory *MTAHistory) UpdateSetUnsubscribeUser() error {
+func (mtaHistory *MTAHistory) UpdateSetUnsubscribeUser(ipV4 string) error {
 	return mtaHistory.update(map[string]interface{}{
-		"unsubscribed": true,
-		"unsubscribedAt": time.Now().UTC(),
+		"unsubscribed"		: 	true,
+		"unsubscribedAt"	: 	time.Now().UTC(),
+		// "net_ip"	:	ipV4,
 	})
 }
 
-func (mtaHistory *MTAHistory) UpdateOpenUser(ipv4 string) error {
-	input := map[string]interface{}{
+func (mtaHistory *MTAHistory) UpdateOpenUser(ipV4 string) error {
+
+	input := map[string]interface{} {
 		"open": mtaHistory.Opens + 1,
+		// "net_ip"	:	ipV4,
 	}
 	if mtaHistory.Opens < 0 {
 		input["openAt"] = time.Now().UTC()

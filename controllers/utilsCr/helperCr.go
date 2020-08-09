@@ -258,3 +258,11 @@ func isAppRequest(r *http.Request) bool {
 func isUIApiRequest(r *http.Request) bool {
 	return r.Context().Value("issuer") == "ui-api"
 }
+
+func GetIP(r *http.Request) string {
+	forwarded := r.Header.Get("X-FORWARDED-FOR")
+	if forwarded != "" {
+		return forwarded
+	}
+	return r.RemoteAddr
+}

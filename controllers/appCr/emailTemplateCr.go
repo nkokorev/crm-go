@@ -193,7 +193,7 @@ func EmailTemplateDelete(w http.ResponseWriter, r *http.Request) {
 
 
 // -- TEST -- 
-func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
+/*func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -246,7 +246,7 @@ func EmailTemplateSendToUser(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET Email Template send to user")
 	u.Respond(w, resp)
-}
+}*/
 
 
 // ### --- Public function --- ###
@@ -267,7 +267,7 @@ func EmailTemplatePreviewGetHTML(w http.ResponseWriter, r *http.Request) {
 
 	// Подготавливаем данные для шаблона
 	// vData, err := template.PrepareViewData(tempUser())
-	vData, err := template.PrepareViewData(nil)
+	vData, err := template.PrepareViewData(nil, nil)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html;charset=UTF-8")
 		w.Write(errorHTMLPage("Ошибка подготовки данных для отображения HTML"))

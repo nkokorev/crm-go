@@ -74,36 +74,3 @@ func examplePhone(numToParse string) {
 	// num is a *libphonenumber.PhoneNumber
 
 }
-func SendMail() error {
-
-	// 1. Получаем аккаунт
-	acc, err := models.GetAccount(4)
-	if err != nil {
-		return err
-	}
-
-	// 2. Загружаем шаблон из БД
-	var et models.EmailTemplate
-	err = acc.LoadEntity(&et, 4)
-	if err != nil {
-		return err
-	}
-
-	// 3. Выбираем MailBox
-	var ebox4 models.EmailBox
-	err = acc.LoadEntity(&ebox4, 4)
-	if err != nil {
-		return err
-	}
-
-	
-
-	// 4. Отправляем шаблон из MailBox
-	// err = et.Send(*mb, models.User{Email: "aix27249@yandex.ru"}, "Тест return path")
-	err = et.Send(ebox4, models.User{Email: "nkokorev@rus-marketing.ru"}, "Тест return path")
-	if err != nil {
-		return err
-	}
-
-	return nil
-}

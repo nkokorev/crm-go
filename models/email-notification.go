@@ -9,8 +9,8 @@ import (
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
 	"html/template"
-	"log"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -283,20 +283,18 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается получить почтовый ящик"}
 	}
 
-	// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
-	vData, err := emailTemplate.PrepareViewData(data)
-	if err != nil {
-		return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
+	history := &MTAHistory{
+		HashId:  strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true)),
+		AccountId: emailNotification.AccountId,
+		// UserId: user.Id, // надо дополнить в контексте )
+		OwnerId: emailNotification.Id,
+		OwnerType: "email_notifications",
+		EmailTemplateId: emailTemplate.Id,
+		NumberOfAttempts: 1, // todo: как иначе делать?
+		Succeed: false, 	// по умолчанию
 	}
 
-	// Компилируем тему письма
-	_subject, err := parseSubjectByData(emailNotification.Subject, vData)
-	if err != nil {
-		return utils.Error{Message: "Ошибка отправления Уведомления - не удается прочитать тему сообщения"}
-	}
-	if _subject == "" {
-		_subject = fmt.Sprintf("Уведомление по почте #%v", emailNotification.Id)
-	}
+
 
 	// Загружаем данные почтового ящика
 	err = emailNotification.EmailBox.load()
@@ -308,14 +306,36 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 	if emailNotification.SendingToUsers {
 
 		var userEmails = make([]string,0)
-		for i,_ := range emailNotification.RecipientUsers {
+		for i,v := range emailNotification.RecipientUsers {
 			userEmails = append(userEmails,emailNotification.RecipientUsers[i].Email)
-		}
 
-		for _,v := range(userEmails) {
-			err = emailTemplate.SendMail(emailNotification.EmailBox, v, _subject, vData)
+			history.UserId = &v.Id
+			unsubscribeUrl := account.GetUnsubscribeUrl(v, *history)
+
+			// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
+			vData, err := emailTemplate.PrepareViewData(data, &unsubscribeUrl)
 			if err != nil {
-				fmt.Println("Ошибка отправления: ", err)
+				return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
+			}
+
+			// Компилируем тему письма
+			_subject, err := parseSubjectByData(emailNotification.Subject, vData)
+			if err != nil {
+				return utils.Error{Message: "Ошибка отправления Уведомления - не удается прочитать тему сообщения"}
+			}
+			if _subject == "" {
+				_subject = fmt.Sprintf("Уведомление по почте #%v", emailNotification.Id)
+			}
+
+			for _,v := range userEmails {
+				err = emailTemplate.SendMail(emailNotification.EmailBox, v, _subject, vData, unsubscribeUrl)
+				if err != nil {
+					history.Succeed = false
+				} else {
+					history.Succeed = true
+				}
+
+				_, _ = history.create()
 			}
 		}
 	}
@@ -324,12 +344,29 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 	if emailNotification.SendingToFixedAddresses {
 		// 2. Готовим список фиксированных адресов
 		emailList := utils.ParseJSONBToString(emailNotification.RecipientList)
+
+		vData, err := emailTemplate.PrepareViewData(data, nil)
+		if err != nil {
+			return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
+		}
+
+		// Компилируем тему письма
+		_subject, err := parseSubjectByData(emailNotification.Subject, vData)
+		if err != nil {
+			return utils.Error{Message: "Ошибка отправления Уведомления - не удается прочитать тему сообщения"}
+		}
+		if _subject == "" {
+			_subject = fmt.Sprintf("Уведомление по почте #%v", emailNotification.Id)
+		}
 		
-		for _,v := range(emailList) {
-			err = emailTemplate.SendMail(emailNotification.EmailBox, v, _subject, vData)
+		for _,v := range emailList {
+			err = emailTemplate.SendMail(emailNotification.EmailBox, v, _subject, vData, "")
 			if err != nil {
-				log.Printf("Ошибка отправления mailNotification - %v: ", emailNotification.Id,err)
+				history.Succeed = false
+			} else {
+				history.Succeed = true
 			}
+			_, _ = history.create()
 		}
 	}
 
@@ -339,10 +376,33 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			if userId, ok := userSTR.(uint); ok {
 				user, err := account.GetUser(userId)
 				if err == nil && user.Email != "" {
-					err = emailTemplate.SendMail(emailNotification.EmailBox, user.Email, _subject, vData)
+
+					history.UserId = &user.Id
+					unsubscribeUrl := account.GetUnsubscribeUrl(*user, *history)
+
+					// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
+					vData, err := emailTemplate.PrepareViewData(data, &unsubscribeUrl)
 					if err != nil {
-						fmt.Println("Ошибка отправления: ", err)
+						return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
 					}
+
+					// Компилируем тему письма
+					_subject, err := parseSubjectByData(emailNotification.Subject, vData)
+					if err != nil {
+						return utils.Error{Message: "Ошибка отправления Уведомления - не удается прочитать тему сообщения"}
+					}
+					if _subject == "" {
+						_subject = fmt.Sprintf("Уведомление по почте #%v", emailNotification.Id)
+					}
+
+					err = emailTemplate.SendMail(emailNotification.EmailBox, user.Email, _subject, vData, unsubscribeUrl)
+					if err != nil {
+						history.Succeed = false
+					} else {
+						history.Succeed = true
+					}
+
+					_, _ = history.create()
 				}
 			}
 		}
@@ -354,10 +414,33 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			if customerId, ok := customerSTR.(uint); ok {
 				customer, err := account.GetUser(customerId)
 				if err == nil && customer.Email != "" {
-					err = emailTemplate.SendMail(emailNotification.EmailBox, customer.Email, _subject, vData)
+
+					history.UserId = &customer.Id
+					unsubscribeUrl := account.GetUnsubscribeUrl(*customer, *history)
+
+					// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
+					vData, err := emailTemplate.PrepareViewData(data, &unsubscribeUrl)
 					if err != nil {
-						fmt.Println("Ошибка отправления: ", err)
+						return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
 					}
+
+					// Компилируем тему письма
+					_subject, err := parseSubjectByData(emailNotification.Subject, vData)
+					if err != nil {
+						return utils.Error{Message: "Ошибка отправления Уведомления - не удается прочитать тему сообщения"}
+					}
+					if _subject == "" {
+						_subject = fmt.Sprintf("Уведомление по почте #%v", emailNotification.Id)
+					}
+
+					err = emailTemplate.SendMail(emailNotification.EmailBox, customer.Email, _subject, vData,unsubscribeUrl)
+					if err != nil {
+						history.Succeed = false
+					} else {
+						history.Succeed = true
+					}
+
+					_, _ = history.create()
 				}
 			}
 		}
@@ -369,10 +452,33 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			if managerId, ok := managerSTR.(uint); ok {
 				manager, err := account.GetUser(managerId)
 				if err == nil && manager.Email != "" {
-					err = emailTemplate.SendMail(emailNotification.EmailBox, manager.Email, _subject, vData)
+
+					history.UserId = &manager.Id
+					unsubscribeUrl := account.GetUnsubscribeUrl(*manager, *history)
+
+					// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
+					vData, err := emailTemplate.PrepareViewData(data, &unsubscribeUrl)
 					if err != nil {
-						fmt.Println("Ошибка отправления: ", err)
+						return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
 					}
+
+					// Компилируем тему письма
+					_subject, err := parseSubjectByData(emailNotification.Subject, vData)
+					if err != nil {
+						return utils.Error{Message: "Ошибка отправления Уведомления - не удается прочитать тему сообщения"}
+					}
+					if _subject == "" {
+						_subject = fmt.Sprintf("Уведомление по почте #%v", emailNotification.Id)
+					}
+					
+					err = emailTemplate.SendMail(emailNotification.EmailBox, manager.Email, _subject, vData, unsubscribeUrl)
+					if err != nil {
+						history.Succeed = false
+					} else {
+						history.Succeed = true
+					}
+
+					_, _ = history.create()
 				}
 			}
 		}
