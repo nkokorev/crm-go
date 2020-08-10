@@ -264,7 +264,6 @@ func (mtaHistory *MTAHistory) UpdateSetUnsubscribeUser(ipV4 string) error {
 }
 
 func (mtaHistory *MTAHistory) UpdateOpenUser(ipV4 string) error {
-
 	
 	input := map[string]interface{} {
 		"opens": mtaHistory.Opens + 1,

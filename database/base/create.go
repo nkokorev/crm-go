@@ -1767,10 +1767,11 @@ func UploadTestDataPart_IV()  {
 }
 
 func Migrate_I() {
-	pool := models.GetPool()
+	// pool := models.GetPool()
+	/*
 
 	// 05.08.2020
-	/*pool.DropTableIfExists(
+	pool.DropTableIfExists(
 		models.MTAHistory{},
 		models.EmailQueueWorkflow{},
 		models.EmailQueueEmailTemplate{},
@@ -1783,14 +1784,14 @@ func Migrate_I() {
 	models.MTAHistory{}.PgSqlCreate()*/
 
 
-	pool.AutoMigrate(&models.EmailQueue{})
+	/*pool.AutoMigrate(&models.EmailQueue{})
 	pool.AutoMigrate(&models.EmailQueueEmailTemplate{})
 	pool.AutoMigrate(&models.EmailQueueWorkflow{})
 	pool.AutoMigrate(&models.EmailTemplate{})
-	pool.AutoMigrate(&models.MTAHistory{})
+	pool.AutoMigrate(&models.MTAHistory{})*/
 
-	pool.AutoMigrate(&models.EmailNotification{})
-	pool.AutoMigrate(&models.User{})
+	/*pool.AutoMigrate(&models.EmailNotification{})
+	pool.AutoMigrate(&models.User{})*/
 
 	/*for i := 0; i < 100000 ;i++ {
 		timeNow := time.Now()
@@ -1817,7 +1818,8 @@ func Migrate_I() {
 		}
 	}*/
 
-	fmt.Println("Создание закончено!")
+	// fmt.Println("Создание закончено!")
 
 	// models.PaymentMode{}.PgSqlCreate()
+	// pool.AutoMigrate(&models.EmailTemplate{})
 }

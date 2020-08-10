@@ -26,7 +26,7 @@ func EmailQueueEmailTemplateCreate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
-
+	
 	emailQueueEmailTemplate, err := account.CreateEntity(&input.EmailQueueEmailTemplate)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания серии"}))

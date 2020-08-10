@@ -3,7 +3,6 @@ package trackingCr
 import (
 	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
-	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
 	"time"
 )
@@ -14,6 +13,10 @@ import (
 // 	?u={userHashId}&hi={hashId}
 func UnsubscribeUser(w http.ResponseWriter, r *http.Request) {
 
+
+	// body, _ := ioutil.ReadFile("templates/register.html")
+
+
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
 		return
@@ -21,25 +24,25 @@ func UnsubscribeUser(w http.ResponseWriter, r *http.Request) {
 
 	userHashId, ok := utilsCr.GetQuerySTRVarFromGET(r, "u")
 	if !ok {
-		u.Respond(w, u.MessageError(err, "Необходимо указать пользователя"))
+		retHTML(w, "Необходимо указать пользователя")
 		return
 	}
 
 	// Получаем пользователя
 	user, err := account.GetUserByHashId(userHashId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти пользователя"))
+		retHTML(w, "Пользователь не найден!")
 		return
 	}
 
 	// Если пользователь уже отписан
 	if !user.Subscribed {
-		u.Respond(w, u.MessageError(err, "Пользователь уже отписан от всех рассылок"))
+		retHTML(w, "Пользователь уже отписан от всех рассылок")
 		return
 	}
 
 	if err := user.Unsubscribing(); err != nil {
-		u.Respond(w, u.MessageWithErrors("Ошибка отписки пользователя", nil))
+		retHTML(w, "Ошибка во время отписки пользователя")
 		return
 	}
 
@@ -58,8 +61,8 @@ func UnsubscribeUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	resp := u.Message(true, "User unsubscribed!")
-	u.Respond(w, resp)
+	retHTML(w, "Пользователь успешно отписан от всех рассылок")
+	return
 }
 
 
@@ -92,4 +95,23 @@ func OpenEmailByPixelUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0")
 	w.Header().Set("Pragma", "no-cache")
 	fmt.Fprintf(w, transPixel)
+}
+
+func retHTML(w http.ResponseWriter, message string)  {
+	body := fmt.Sprintf(`<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.TemplateName}}</title>
+</head>
+<body style="background-color: #F4F4F4;" leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0">
+	<div style="padding: 5px 15px;"><h5 style="font-size: 18px;color: #4a4949;">%v</h5></div>
+</body>
+</html>`, message)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(body))
+
+	// fmt.Fprint(w, body)
+	return
 }

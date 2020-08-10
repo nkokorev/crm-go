@@ -39,7 +39,7 @@ type User struct {
 	SubscribedAt 	*time.Time `json:"subscribedAt" gorm:"default:null"`
 	UnsubscribedAt 	*time.Time `json:"unsubscribedAt" gorm:"default:null"` // << last
 	// manual, gui, api,
-	SubscriptionReason	string `json:"subscriptionReason" gorm:"type:varchar(32);default:null"`
+	SubscriptionReason	*string `json:"subscriptionReason" gorm:"type:varchar(32);default:null"`
 	// UnsubscribedReason	string `json:"unsubscribedReason" gorm:"default:null"`
 
 	DefaultAccountId uint `json:"defaultAccountId" gorm:"type:varchar(12);default:null;"` // указывает какой аккаунт по дефолту загружать

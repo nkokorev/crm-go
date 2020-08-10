@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"log"
 	"time"
 )
@@ -18,7 +17,6 @@ func init() {
 }
 
 func emailQueueWorker() {
-	fmt.Println("Запускаем emailQueueWorker ")
 	for {
 		if db == nil {
 			time.Sleep(time.Millisecond*2000)

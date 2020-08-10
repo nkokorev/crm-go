@@ -29,7 +29,7 @@ type EmailQueueEmailTemplate struct {
 	EmailBox		EmailBox `json:"emailBox" gorm:"preload:false"`
 
 	// Через сколько запускать письмо в серии. hours / days / week
-	DelayTime	time.Duration `json:"delayTime" gorm:"default:0"`// << учитывается только время [0-24]
+	DelayTime		time.Duration `json:"delayTime" gorm:"type:int16;default:0"`// << учитывается только время [0-24]
 
 	// С каким текстом отправляется это сообщение.
 	Subject			string 	`json:"subject" gorm:"type:varchar(128);not null;"` // Тема сообщения, компилируются
@@ -66,7 +66,7 @@ func (EmailQueueEmailTemplate) PgSqlCreate() {
 }
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) BeforeCreate(scope *gorm.Scope) error {
 	emailQueueEmailTemplate.Id = 0
-	emailQueueEmailTemplate.DelayTime = time.Duration(time.Hour*10)
+	// emailQueueEmailTemplate.DelayTime = time.Duration(time.Hour*10)
 	return nil
 }
 
@@ -101,6 +101,7 @@ func (EmailQueueEmailTemplate) SystemEntity() bool { return false }
 func (emailQueueEmailTemplate EmailQueueEmailTemplate) create() (Entity, error)  {
 	
 	wb := emailQueueEmailTemplate
+	
 	if err := db.Create(&wb).Error; err != nil {
 		return nil, err
 	}
@@ -204,7 +205,12 @@ func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit i
 }
 
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) update(input map[string]interface{}) error {
-	return emailQueueEmailTemplate.GetPreloadDb(false,false,false).Where("id = ?", emailQueueEmailTemplate.Id).Omit("id", "account_id").Updates(input).Error
+	err := emailQueueEmailTemplate.GetPreloadDb(false,false,false).
+		Where("id = ?", emailQueueEmailTemplate.Id).Omit("id", "account_id").Updates(input).Error
+	if err != nil { return err}
+
+	_ = emailQueueEmailTemplate.load()
+	return nil
 }
 
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) delete () error {

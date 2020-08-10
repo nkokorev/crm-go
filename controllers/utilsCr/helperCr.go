@@ -140,7 +140,7 @@ func GetUINTVarFromRequest(r *http.Request, key string) (uint, error) {
 	strVar := mux.Vars(r)[key]
 
 	if strVar == "" {
-		return 0, errors.New("Не верно указан account Id")
+		return 0, errors.New("Переменная не найдена")
 	}
 
 	accountIdParse, err := strconv.ParseUint(strVar, 10, 64)
