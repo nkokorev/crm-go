@@ -232,7 +232,7 @@ func (Account) EmailTemplateGetSharedByHashId(hashId string) (*EmailTemplate, er
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 
 // Подготавливает данные для отправки обезличивая их
-func (et EmailTemplate) PrepareViewData(data map[string]interface{}, pixelURL string, unsubscribeUrl *string) (*ViewData, error) {
+func (et EmailTemplate) PrepareViewData(subject, previewText string, data map[string]interface{}, pixelURL string, unsubscribeUrl *string) (*ViewData, error) {
 
 	// 1. Готовим JSON
 	// WORK OLD !!!
@@ -241,16 +241,20 @@ func (et EmailTemplate) PrepareViewData(data map[string]interface{}, pixelURL st
 	if err != nil {
 		return nil, errors.New("Json data not valid")
 	}*/
+	unsubUrl := ""
+	if unsubscribeUrl != nil {
+		unsubUrl = *unsubscribeUrl
+	}
 
 	jsonMap := make(map[string]interface{})
 	jsonMap = utils.ParseJSONBToMapString(et.JsonData)
 	
 	return &ViewData{
-		TemplateName: et.Name, // ? надо ли?
-		PreviewText: et.PreviewText,
+		Subject: subject,
+		PreviewText: previewText,
 		Data: data,
 		Json: jsonMap,
-		UnsubscribeURL: *unsubscribeUrl,
+		UnsubscribeURL: unsubUrl,
 		PixelURL: pixelURL,
 		PixelHTML: et.GetPixelHTML(pixelURL),
 	}, nil
@@ -277,6 +281,7 @@ func (et EmailTemplate) GetHTML(viewData *ViewData) (html string, err error) {
 func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, vData *ViewData, unsubscribeUrl string) error {
 
 	// fmt.Println("unsubscribeUrl: ", unsubscribeUrl)
+	return nil
 
 	if from.WebSite.Id <1 {
 		log.Println("EmailTemplate: Не удалось определить WebSite")

@@ -102,7 +102,7 @@ func retHTML(w http.ResponseWriter, message string)  {
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>{{.TemplateName}}</title>
+    <title>Пользователь отписан</title>
 </head>
 <body style="background-color: #F4F4F4;" leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0">
 	<div style="padding: 5px 15px;"><h5 style="font-size: 18px;color: #4a4949;">%v</h5></div>

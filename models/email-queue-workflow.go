@@ -245,11 +245,8 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 		return utils.Error{Message: "Невозможно отправить письмо пользователю, т.к. он отписан от всех подписок"}
 	}
 
-	// ############ Готовим данные
+	// ############ Готовим данные ############
 
-
-
-	///////////
 	var emailQueue EmailQueue
 	if err := account.LoadEntity(&emailQueue, emailQueueWorkflow.EmailQueueId); err != nil {
 		return err
@@ -291,6 +288,7 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 		HashId:  strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true)),
 		AccountId: emailQueueWorkflow.AccountId,
 		UserId: &user.Id,
+		Email: user.Email,
 		OwnerId: emailQueue.Id,
 		OwnerType: "email_queues",
 		EmailTemplateId: step.EmailTemplateId,
@@ -312,15 +310,9 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 	data["userId"] = user.Id // << хз
 	data["user"] = user.GetDepersonalizedData() // << хз
 	data["unsubscribeUrl"] = unsubscribeUrl
-	// data["pixel"] = pixel
-
-	vData, err := emailTemplate.PrepareViewData(data, pixelURL, &unsubscribeUrl)
-	if err != nil {
-		return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
-	}
 
 	// Компилируем тему письма
-	_subject, err := parseSubjectByData(step.Subject, vData)
+	_subject, err := parseSubjectByData(step.Subject, data)
 	if err != nil {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается прочитать тему сообщения"}
 	}
@@ -328,9 +320,16 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 		_subject = fmt.Sprintf("Уведомление по почте #%v", emailQueueWorkflow.Id)
 	}
 
+	// Готовим еще раз полностью данные
+	vData, err := emailTemplate.PrepareViewData(_subject, step.PreviewText, data, pixelURL, &unsubscribeUrl)
+	if err != nil {
+		return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
+	}
+
 	err = emailTemplate.SendMail(emailBox, user.Email, _subject, vData,  unsubscribeUrl)
 	if err != nil {
-		
+
+		fmt.Println("Ошибка отправления письма: ", err)
 		history.Succeed = false
 
 		// Обновляем данные последней попытки

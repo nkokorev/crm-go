@@ -29,7 +29,7 @@ type EmailQueueEmailTemplate struct {
 	EmailBox		EmailBox `json:"emailBox" gorm:"preload:false"`
 
 	// Через сколько запускать письмо в серии. hours / days / week
-	DelayTime		time.Duration `json:"delayTime" gorm:"type:int16;default:0"`// << учитывается только время [0-24]
+	DelayTime		time.Duration `json:"delayTime" gorm:"default:0"`// << учитывается только время [0-24]
 
 	// С каким текстом отправляется это сообщение.
 	Subject			string 	`json:"subject" gorm:"type:varchar(128);not null;"` // Тема сообщения, компилируются

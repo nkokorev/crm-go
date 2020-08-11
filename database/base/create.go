@@ -75,6 +75,13 @@ func RefreshTablesPart_I() {
 	}
 
 
+	pool.DropTableIfExists(
+		models.MTAHistory{},
+		models.EmailQueueWorkflow{},
+		models.EmailQueueEmailTemplate{},
+		models.EmailQueue{},
+	)
+
 	pool.DropTableIfExists(models.Payment2Delivery{}, models.DeliveryOrder{}, models.DeliveryStatus{},models.OrderChannel{},  models.Order{}, models.OrderStatus{},models.Payment{},
 	models.PaymentAmount{})
 
@@ -124,6 +131,12 @@ func RefreshTablesPart_I() {
 	// Уведомления
 	models.EmailNotification{}.PgSqlCreate()
 	models.OrderComment{}.PgSqlCreate()
+
+	models.EmailQueue{}.PgSqlCreate()
+	models.EmailQueueEmailTemplate{}.PgSqlCreate()
+	models.EmailQueueWorkflow{}.PgSqlCreate()
+
+	models.MTAHistory{}.PgSqlCreate()
 	
 	models.PaymentMode{}.PgSqlCreate()
 	models.PaymentAmount{}.PgSqlCreate()
@@ -1700,21 +1713,6 @@ func UploadTestDataPart_IV()  {
 		}
 	}
 
-
-	// Создаем методы оплаты
-
-	/*for i := range(payment2Deliveries) {
-		_, err := models.Account{Id: airoAccount.Id}.CreateEntity(&payment2Deliveries[i])
-		if err != nil {
-			log.Fatalf("Не удалось создать paymentMethods: ", err)
-		}
-	}*/
-
-/////////
-
-
-	////////////
-
 	// Создаем способ оплаты YandexPayment
 	entityPayment, err := airoAccount.CreateEntity(
 		&models.PaymentYandex{
@@ -1764,6 +1762,69 @@ func UploadTestDataPart_IV()  {
 
 	}
 
+}
+
+func UploadBroUserData() {
+	account, err := models.GetAccount(4)
+	if err != nil {
+		log.Fatalf("Не удалось найти BroUser аккаунт: %v", err)
+	}
+
+	data, err := ioutil.ReadFile("/var/www/ratuscrm/files/brouser/emails/example.html")
+	if err != nil {
+		fmt.Println("File reading error", err)
+		return
+	}
+
+	emailTemplates := []models.EmailTemplate{
+		{Name: "Шаблон для онбординг серии - 1", Description: "1-е письмо в серии.", HTMLData: string(data)},
+		{Name: "Шаблон для онбординг серии - 2", Description: "2-е письмо в серии.", HTMLData: string(data)},
+		{Name: "Шаблон для онбординг серии - 3", Description: "3-е письмо в серии", HTMLData: string(data)},
+	}
+	for i := range emailTemplates {
+		_, err = account.CreateEntity(&emailTemplates[i])
+		if err != nil {log.Fatal(err)}
+	}
+
+	emailQueueE, _ := account.CreateEntity(&models.EmailQueue{
+		Name: "Onboarding",
+		Enabled: false,
+	})
+
+	Iuint4 := uint(4)
+	_, _ = account.CreateEntity(&models.EmailQueueEmailTemplate{
+		AccountId: account.Id,
+		EmailQueueId: emailQueueE.GetId(),
+		Enabled: true,
+		Order: 1,
+		EmailTemplateId: 5,
+		EmailBoxId: &Iuint4,
+		DelayTime: 0,
+		Subject: "Тема письма 1",
+		CreatedAt: time.Now().UTC(),
+	})
+	_, _ = account.CreateEntity(&models.EmailQueueEmailTemplate{
+		AccountId: account.Id,
+		EmailQueueId: emailQueueE.GetId(),
+		Enabled: false,
+		Order: 2,
+		EmailTemplateId: 6,
+		EmailBoxId: &Iuint4,
+		DelayTime: 0,
+		Subject: "Тема письма 2",
+		CreatedAt: time.Now().UTC(),
+	})
+	_, _ = account.CreateEntity(&models.EmailQueueEmailTemplate{
+		AccountId: account.Id,
+		EmailQueueId: emailQueueE.GetId(),
+		Enabled: false,
+		Order: 3,
+		EmailTemplateId: 7,
+		EmailBoxId: &Iuint4,
+		DelayTime: 0,
+		Subject: "Тема письма 3",
+		CreatedAt: time.Now().UTC(),
+	})
 }
 
 func Migrate_I() {

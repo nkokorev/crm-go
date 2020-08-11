@@ -32,11 +32,9 @@ func main() {
 	// base.LoadProductCategoryDescriptionAiroClimate()
 	// base.UploadTestDataPart_II()
 	// base.UploadTestDataPart_III()
-
-	// yandex payment
-	// ---- base.RefreshTablesPart_IV()
 	// base.UploadTestDataPart_IV()
-	
+	// base.UploadBroUserData()
+
 	// base.Migrate_I()
 
 	if err := (models.EventListener{}).ReloadEventHandlers(); err != nil {

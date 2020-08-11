@@ -23,6 +23,9 @@ type MTAHistory struct {
 	UserId 	*uint `json:"userId" gorm:"type:int;default:1;"` // при отправке на почту пользователю
 	User	User `json:"user"`
 
+	// Кому фактически был отправлен email
+	Email 	string `json:"email" gorm:"varchar(255);not null;"`
+
 	// email_queues, email_campaigns, email_notifications
 	OwnerType	string	`json:"ownerType" gorm:"varchar(32);default:'email_queues';not null;"` // << тип события: кампания, серия, уведомление
 	OwnerId		uint	`json:"ownerId" gorm:"type:smallint;default:1;not null;"` // ID типа события: какая серия, компания или уведомление

@@ -267,7 +267,7 @@ func EmailTemplatePreviewGetHTML(w http.ResponseWriter, r *http.Request) {
 
 	// Подготавливаем данные для шаблона
 	// vData, err := template.PrepareViewData(tempUser())
-	vData, err := template.PrepareViewData(nil, "", nil)
+	vData, err := template.PrepareViewData("Subject", "PreviewText", nil, "", nil)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html;charset=UTF-8")
 		w.Write(errorHTMLPage("Ошибка подготовки данных для отображения HTML"))

@@ -41,7 +41,7 @@ type EmailPkg struct {
 }
 
 type ViewData struct{
-	TemplateName string
+	Subject string
 	PreviewText string
 	Data map[string]interface{}
 	// User map[string]interface{}

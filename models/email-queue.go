@@ -10,7 +10,7 @@ import (
 type EmailQueue struct {
 
 	Id     		uint   	`json:"id" gorm:"primary_key"`
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"` // Публичный ID заказа внутри магазина
+	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Имя очереди (Label)
