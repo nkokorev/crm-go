@@ -56,9 +56,22 @@ func EmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var emailTemplate models.EmailTemplate
-	if err := account.LoadEntity(&emailTemplate,emailTemplateId); err != nil {
-		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
-		return
+
+	// 2. Узнаем, какой id учитывается нужен
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+
+	if publicOk  {
+		err = account.LoadEntityByPublicId(&emailTemplate, emailTemplateId)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
+			return
+		}
+	} else {
+		if err = account.LoadEntity(&emailTemplate,emailTemplateId); err != nil {
+			u.Respond(w, u.MessageError(err, "Шаблон не найден"))
+			return
+		}
+
 	}
 
 	// time.Sleep(5 * time.Second)

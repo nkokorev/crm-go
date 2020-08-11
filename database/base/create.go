@@ -1831,6 +1831,7 @@ func Migrate_I() {
 	pool := models.GetPool()
 
 	pool.AutoMigrate(&models.EmailNotification{})
+	pool.AutoMigrate(&models.EmailTemplate{})
 	/*
 
 		// 05.08.2020

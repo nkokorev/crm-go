@@ -22,9 +22,10 @@ import (
 // Template of email body message
 type EmailTemplate struct {
 
-	Id     uint   `json:"id" gorm:"primary_key"`
-	HashId string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
-	AccountId uint `json:"-" gorm:"type:int;index;not null;"`
+	Id     		uint   	`json:"id" gorm:"primary_key"`
+	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"`
+	HashId 		string 	`json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name 		string	`json:"name" gorm:"type:varchar(255);not null"` // inside name of mail
 	Description	string 	`json:"description" gorm:"type:varchar(255);default:''"` // краткое назначение письма
@@ -51,24 +52,36 @@ func (EmailTemplate) PgSqlCreate() {
 	db.CreateTable(&EmailTemplate{})
 	db.Model(&EmailTemplate{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }
+func (emailTemplate *EmailTemplate) BeforeCreate(scope *gorm.Scope) error {
+	emailTemplate.Id = 0
+	emailTemplate.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
+
+	// PublicId
+	lastIdx := uint(0)
+	var eq EmailTemplate
+
+	err := db.Where("account_id = ?", emailTemplate.AccountId).Select("public_id").Last(&eq).Error
+	if err != nil && err != gorm.ErrRecordNotFound { return err}
+	if err == gorm.ErrRecordNotFound {
+		lastIdx = 0
+	} else {
+		lastIdx = eq.PublicId
+	}
+	emailTemplate.PublicId = lastIdx + 1
+	
+	return nil
+}
 
 // ############# Entity interface #############
 func (emailTemplate EmailTemplate) GetId() uint { return emailTemplate.Id }
 func (emailTemplate *EmailTemplate) setId(id uint) { emailTemplate.Id = id }
-func (emailTemplate *EmailTemplate) setPublicId(id uint) {}
+func (emailTemplate *EmailTemplate) setPublicId(publicId uint) { emailTemplate.PublicId = publicId}
 func (emailTemplate EmailTemplate) GetAccountId() uint { return emailTemplate.AccountId }
 func (emailTemplate *EmailTemplate) setAccountId(id uint) { emailTemplate.AccountId = id }
 func (EmailTemplate) SystemEntity() bool { return false }
 func (emailTemplate EmailTemplate) GetData() string { return emailTemplate.HTMLData }
 // ############# Entity interface #############
 
-func (et *EmailTemplate) BeforeCreate(scope *gorm.Scope) error {
-	et.Id = 0
-	et.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
-	et.CreatedAt = time.Now().UTC()
-
-	return nil
-}
 
 // ########### CRUD FUNCTIONAL #########
 func (emailTemplate EmailTemplate) create() (Entity, error) {
@@ -78,67 +91,57 @@ func (emailTemplate EmailTemplate) create() (Entity, error) {
 	if err := db.Create(&et).Error; err != nil {
 		return nil, err
 	}
-	var entity Entity = &et
 
-	return entity, nil
+	err := et.GetPreloadDb(false,false, true).First(&et, et.Id).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var newItem Entity = &et
+
+	return newItem, nil
 }
 
 func (EmailTemplate) get(id uint) (Entity, error) {
 
-	var et EmailTemplate
+	var emailTemplate EmailTemplate
 
-	err := db.First(&et, id).Error
+	err := db.First(&emailTemplate, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &et, nil
+	return &emailTemplate, nil
 }
-func (et *EmailTemplate) load() error {
+func (emailTemplate *EmailTemplate) load() error {
 
-	err := db.First(et, et.Id).Error
+	err := db.First(emailTemplate, emailTemplate.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (*EmailTemplate) loadByPublicId() error {
-	return errors.New("Нет возможности загрузить объект по Public Id")
+func (emailTemplate *EmailTemplate) loadByPublicId() error {
+	if emailTemplate.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить EmailNotification - не указан  Id"}
+	}
+	if err := emailTemplate.GetPreloadDb(false,false, true).
+		First(emailTemplate, "account_id = ? AND public_id = ?", emailTemplate.AccountId, emailTemplate.PublicId).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
-
 func (EmailTemplate) getByHashId(hashId string) (*EmailTemplate, error) {
-	et := EmailTemplate{}
+	emailTemplate := EmailTemplate{}
 
-	err := db.First(&et, "hash_id = ?", hashId).Error
+	err := db.First(&emailTemplate, "hash_id = ?", hashId).Error
 	if err != nil {
 		return nil, err
 	}
-	return &et, nil
+	return &emailTemplate, nil
 }
-
 func (EmailTemplate) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-
-	emailTemplates := make([]EmailTemplate,0)
-	var total uint
-
-	err := db.Model(&EmailTemplate{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
-		Select(EmailTemplate{}.SelectArrayWithoutData()).Find(&emailTemplates).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&EmailTemplate{}).Where("account_id = ?", accountId).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(emailTemplates))
-	for i,_ := range emailTemplates {
-		entities[i] = &emailTemplates[i]
-	}
-
-	return entities, total, nil
+	return (EmailTemplate{}).getPaginationList(accountId, 0, 25, sortBy, "", nil)
 }
 func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
@@ -191,53 +194,51 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 	return entities, total, nil
 }
 
-func (et *EmailTemplate) update(input map[string]interface{}) error {
-	// return db.Model(&EmailTemplate{}).Where("id = ?", et.Id).Omit("id", "account_id").Update(input).Error
+func (emailTemplate *EmailTemplate) update(input map[string]interface{}) error {
+	// return db.Model(&EmailTemplate{}).Where("id = ?", emailTemplate.Id).Omit("id", "account_id").Update(input).Error
 
 	input = utils.FixJSONB_String(input, []string{"jsonData"})
 
-	return db.Model(et).Omit("id", "account_id").Updates(input).Error
+	return db.Model(emailTemplate).Omit("id", "account_id").Updates(input).Error
 }
-
-
-func (et *EmailTemplate) delete () error {
-	return db.Model(EmailTemplate{}).Where("id = ?", et.Id).Delete(et).Error
+func (emailTemplate *EmailTemplate) delete () error {
+	return db.Model(EmailTemplate{}).Where("id = ?", emailTemplate.Id).Delete(emailTemplate).Error
 }
 // ########### ACCOUNT FUNCTIONAL ###########
 
 func (account Account) EmailTemplateGetByHashId(hashId string) (*EmailTemplate, error) {
-	et, err := (EmailTemplate{}).getByHashId(hashId)
+	emailTemplate, err := (EmailTemplate{}).getByHashId(hashId)
 	if err != nil {
 		return nil, err
 	}
 
-	if et.AccountId != account.Id {
+	if emailTemplate.AccountId != account.Id {
 		return nil, errors.New("Шаблон принадлежит другому аккаунту")
 	}
 
-	return et, nil
+	return emailTemplate, nil
 }
 func (Account) EmailTemplateGetSharedByHashId(hashId string) (*EmailTemplate, error) {
-	et, err := (EmailTemplate{}).getByHashId(hashId)
+	emailTemplate, err := (EmailTemplate{}).getByHashId(hashId)
 	if err != nil {
 		return nil, err
 	}
 
-	if !et.Public {
+	if !emailTemplate.Public {
 		return nil, errors.New("Шаблон не расшарен для просмотра через web")
 	}
 
-	return et, nil
+	return emailTemplate, nil
 }
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 
 // Подготавливает данные для отправки обезличивая их
-func (et EmailTemplate) PrepareViewData(subject, previewText string, data map[string]interface{}, pixelURL string, unsubscribeUrl *string) (*ViewData, error) {
+func (emailTemplate EmailTemplate) PrepareViewData(subject, previewText string, data map[string]interface{}, pixelURL string, unsubscribeUrl *string) (*ViewData, error) {
 
 	// 1. Готовим JSON
 	// WORK OLD !!!
 	/*jsonMap := make(map[string]interface{})
-	err := et.Json.AssignTo(&jsonMap)
+	err := emailTemplate.Json.AssignTo(&jsonMap)
 	if err != nil {
 		return nil, errors.New("Json data not valid")
 	}*/
@@ -247,7 +248,7 @@ func (et EmailTemplate) PrepareViewData(subject, previewText string, data map[st
 	}
 
 	jsonMap := make(map[string]interface{})
-	jsonMap = utils.ParseJSONBToMapString(et.JsonData)
+	jsonMap = utils.ParseJSONBToMapString(emailTemplate.JsonData)
 	
 	return &ViewData{
 		Subject: subject,
@@ -256,16 +257,16 @@ func (et EmailTemplate) PrepareViewData(subject, previewText string, data map[st
 		Json: jsonMap,
 		UnsubscribeURL: unsubUrl,
 		PixelURL: pixelURL,
-		PixelHTML: et.GetPixelHTML(pixelURL),
+		PixelHTML: emailTemplate.GetPixelHTML(pixelURL),
 	}, nil
 }
 
 // Возвращает тело письма в формате string в кодировке HTML, учитывая переменные в T[map]
-func (et EmailTemplate) GetHTML(viewData *ViewData) (html string, err error) {
+func (emailTemplate EmailTemplate) GetHTML(viewData *ViewData) (html string, err error) {
 
 	body := new(bytes.Buffer)
 
-	tmpl, err := template.New(et.Name).Parse(et.HTMLData)
+	tmpl, err := template.New(emailTemplate.Name).Parse(emailTemplate.HTMLData)
 	if err != nil {
 		return "", err
 	}
@@ -278,7 +279,7 @@ func (et EmailTemplate) GetHTML(viewData *ViewData) (html string, err error) {
 	return body.String(), nil
 }
 
-func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, vData *ViewData, unsubscribeUrl string) error {
+func (emailTemplate EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, vData *ViewData, unsubscribeUrl string) error {
 
 	// fmt.Println("unsubscribeUrl: ", unsubscribeUrl)
 
@@ -291,10 +292,10 @@ func (et EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, 
 	// user - получатель письма, письмо уйдет на user.Email
 
 	// Формируем данные для сборки шаблона
-	// vData, err := et.PrepareViewData(data)
+	// vData, err := emailTemplate.PrepareViewData(data)
 
 	// 1. Получаем html из email'а
-	html, err := et.GetHTML(vData)
+	html, err := emailTemplate.GetHTML(vData)
 	if err != nil {
 		return err
 	}
@@ -436,4 +437,24 @@ func (EmailTemplate) SelectArrayWithoutData() []string {
 	fields := structs.Names(&EmailTemplate{}) //.(map[string]string)
 	fields = utils.RemoveKey(fields, "Data")
 	return utils.ToLowerSnakeCaseArr(fields)
+}
+
+func (emailTemplate *EmailTemplate) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+	_db := db
+
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(emailTemplate)
+	} else {
+		_db = _db.Model(&EmailTemplate{})
+	}
+
+	if preload {
+		// Preload...
+		return _db
+	} else {
+		return _db
+	}
 }

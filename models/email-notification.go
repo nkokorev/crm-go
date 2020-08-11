@@ -135,6 +135,11 @@ func (emailNotification EmailNotification) create() (Entity, error)  {
 		return nil, err
 	}
 
+	err := en.GetPreloadDb(false,false, true).First(&en, en.Id).Error
+	if err != nil {
+		return nil, err
+	}
+
 	var newItem Entity = &en
 
 	return newItem, nil
@@ -278,7 +283,7 @@ func (emailNotification *EmailNotification) GetPreloadDb(autoUpdateOff bool, get
 		_db = _db.Set("gorm:association_autoupdate", false)
 	}
 	if getModel {
-		_db = _db.Model(&emailNotification)
+		_db = _db.Model(emailNotification)
 	} else {
 		_db = _db.Model(&EmailNotification{})
 	}
