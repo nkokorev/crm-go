@@ -281,7 +281,8 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 
 func (emailQueue *EmailQueue) update(input map[string]interface{}) error {
 	input = utils.FixInputHiddenVars(input)
-	err := emailQueue.GetPreloadDb(false,false,false).Where("id = ?", emailQueue.Id).Omit("id", "account_id").Updates(input).Error;
+	err := emailQueue.GetPreloadDb(true,false,false).Where("id = ?", emailQueue.Id).
+		Omit("id", "account_id", "created_at").Update(input).Error
 	if err != nil {	return err	}
 	if err = emailQueue.GetPreloadDb(false,true,true).First(emailQueue).Error; err != nil {
 		return err

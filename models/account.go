@@ -926,7 +926,7 @@ func (account *Account) GetToAccount() error {
 
 // сохраняет ВСЕ необходимые поля, кроме id, deleted_at и возвращает в Account обновленные данные
 func (account *Account) Save() error {
-	return db.Model(&Account{}).Omit("id", "deleted_at").Save(account).Find(account, "id = ?", account.Id).Error
+	return db.Model(&Account{}).Omit("id", "deleted_at","created_at").Save(account).Find(account, "id = ?", account.Id).Error
 }
 
 // обновляет данные аккаунта кроме id, deleted_at и возвращает в Account обновленные данные
