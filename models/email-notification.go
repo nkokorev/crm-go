@@ -3,7 +3,6 @@ package models
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
@@ -21,7 +20,9 @@ type EmailNotification struct {
 	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Enabled 		bool 	`json:"enabled" gorm:"type:bool;default:false;"` // отключить / включить
-	Delay			uint 	`json:"delay" gorm:"type:int;default:0"` // Задержка перед отправлением в минутах: [0-180]
+
+	// Delay			uint 	`json:"delay" gorm:"type:int;default:0"` // Задержка перед отправлением в минутах: [0-180]
+	DelayTime		time.Duration `json:"delayTime" gorm:"type:int8;default:0"`// << учитывается только время [0-24]
 	
 	Name 			string 	`json:"name" gorm:"type:varchar(128);default:''"` // "Оповещение менеджера", "Оповещение клиента"
 
@@ -62,7 +63,7 @@ type EmailNotification struct {
 // ############# Entity interface #############
 func (emailNotification EmailNotification) GetId() uint { return emailNotification.Id }
 func (emailNotification *EmailNotification) setId(id uint) { emailNotification.Id = id }
-func (emailNotification *EmailNotification) setPublicId(id uint) { }
+func (emailNotification *EmailNotification) setPublicId(publicId uint) { emailNotification.PublicId = publicId }
 func (emailNotification EmailNotification) GetAccountId() uint { return emailNotification.AccountId }
 func (emailNotification *EmailNotification) setAccountId(id uint) { emailNotification.AccountId = id }
 func (EmailNotification) SystemEntity() bool { return false }
@@ -76,6 +77,20 @@ func (EmailNotification) PgSqlCreate() {
 }
 func (emailNotification *EmailNotification) BeforeCreate(scope *gorm.Scope) error {
 	emailNotification.Id = 0
+
+	// PublicId
+	lastIdx := uint(0)
+	var eq EmailNotification
+
+	err := db.Where("account_id = ?", emailNotification.AccountId).Select("public_id").Last(&eq).Error
+	if err != nil && err != gorm.ErrRecordNotFound { return err}
+	if err == gorm.ErrRecordNotFound {
+		lastIdx = 0
+	} else {
+		lastIdx = eq.PublicId
+	}
+	emailNotification.PublicId = lastIdx + 1
+
 	return nil
 }
 func (emailNotification *EmailNotification) AfterFind() (err error) {
@@ -143,8 +158,16 @@ func (emailNotification *EmailNotification) load() error {
 	}
 	return nil
 }
-func (*EmailNotification) loadByPublicId() error {
-	return errors.New("Нет возможности загрузить объект по Public Id")
+func (emailNotification *EmailNotification) loadByPublicId() error {
+	
+	if emailNotification.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить EmailNotification - не указан  Id"}
+	}
+	if err := emailNotification.GetPreloadDb(false,false, true).First(emailNotification, "account_id = ? AND public_id = ?", emailNotification.AccountId, emailNotification.PublicId).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (EmailNotification) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
@@ -247,6 +270,27 @@ func (emailNotification *EmailNotification) delete () error {
 	return db.Model(EmailNotification{}).Where("id = ?", emailNotification.Id).Delete(emailNotification).Error
 }
 // ######### END CRUD Functions ############
+
+func (emailNotification *EmailNotification) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+	_db := db
+
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(&emailNotification)
+	} else {
+		_db = _db.Model(&EmailNotification{})
+	}
+
+	if preload {
+		return _db.Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
+			return db.Select(EmailTemplate{}.SelectArrayWithoutData())
+		}).Preload("EmailBox")
+	} else {
+		return _db
+	}
+}
 
 // Вызов уведомления
 func (emailNotification EmailNotification) Execute(data map[string]interface{}) error {
@@ -404,12 +448,6 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			}
 
 			pixelURL := account.GetPixelUrl(*history)
-
-			// Временные данные
-		/*	_vData, err := emailTemplate.PrepareViewData(emailNotification.Subject, emailNotification.PreviewText, data, pixelURL, nil)
-			if err != nil {
-				return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
-			}*/
 
 			// Компилируем тему письма
 			_subject, err := parseSubjectByData(emailNotification.Subject, data)

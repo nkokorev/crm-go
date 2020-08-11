@@ -1400,20 +1400,20 @@ func UploadTestDataPart_III() {
 	num7 := uint(7)
 	emailNotifications := []models.EmailNotification {
 		{
-			Enabled: false, Delay: 0, Name:"Новый заказ", Description: "Оповещение менеджеров о новом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
+			Enabled: false, DelayTime: 0, Name:"Новый заказ", Description: "Оповещение менеджеров о новом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-marketing.ru"})},
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{2,6,7})},
 			EmailBoxId: &num5,
 
 		},
 		{
-			Enabled: false, Delay: 0, Name:"Ваш заказ получен!", Description: "Информирование клиента о принятом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
+			Enabled: false, DelayTime: 0, Name:"Ваш заказ получен!", Description: "Информирование клиента о принятом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"mex388@gmail.com"})},
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{7})},
 			EmailBoxId: &num6,
 		},
 		{
-			Enabled: false, Delay: 0, Name:"*Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
+			Enabled: false, DelayTime: 0, Name:"*Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
 			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-marketing.ru"})},
 			EmailBoxId: &num7,
 		},
@@ -1828,59 +1828,22 @@ func UploadBroUserData() {
 }
 
 func Migrate_I() {
-	// pool := models.GetPool()
+	pool := models.GetPool()
+
+	pool.AutoMigrate(&models.EmailNotification{})
 	/*
 
-	// 05.08.2020
-	pool.DropTableIfExists(
-		models.MTAHistory{},
-		models.EmailQueueWorkflow{},
-		models.EmailQueueEmailTemplate{},
-		models.EmailQueue{},
-		)
+		// 05.08.2020
+		pool.DropTableIfExists(
+			models.MTAHistory{},
+			models.EmailQueueWorkflow{},
+			models.EmailQueueEmailTemplate{},
+			models.EmailQueue{},
+			)
 
-	models.EmailQueue{}.PgSqlCreate()
-	models.EmailQueueEmailTemplate{}.PgSqlCreate()
-	models.EmailQueueWorkflow{}.PgSqlCreate()
-	models.MTAHistory{}.PgSqlCreate()*/
+		models.EmailQueue{}.PgSqlCreate()
+		models.EmailQueueEmailTemplate{}.PgSqlCreate()
+		models.EmailQueueWorkflow{}.PgSqlCreate()
+		models.MTAHistory{}.PgSqlCreate()*/
 
-
-	/*pool.AutoMigrate(&models.EmailQueue{})
-	pool.AutoMigrate(&models.EmailQueueEmailTemplate{})
-	pool.AutoMigrate(&models.EmailQueueWorkflow{})
-	pool.AutoMigrate(&models.EmailTemplate{})
-	pool.AutoMigrate(&models.MTAHistory{})*/
-
-	/*pool.AutoMigrate(&models.EmailNotification{})
-	pool.AutoMigrate(&models.User{})*/
-
-	/*for i := 0; i < 100000 ;i++ {
-		timeNow := time.Now()
-		rand2 := uint(rand.Intn(2))+1
-		rand3 := uint(rand.Intn(3))+1
-		model := models.EmailQueueWorkflowHistory{
-			AccountId: 5,
-			EmailQueueId: rand3,
-			EmailQueueEmailTemplateId: rand2,
-			StepId: rand3,
-			Completed: true,
-			UserId: 1,
-			Succeed: true,
-			NumberOfAttempts: rand2,
-			Opens: uint(rand.Intn(2)),
-			// Opens: 0,
-			OpenedAt: &timeNow,
-			Unsubscribed: true,
-			UnsubscribedAt: &timeNow,
-			CreatedAt: timeNow,
-		}
-		if _, err := (models.Account{Id: 5}).CreateEntity(&model); err != nil {
-			log.Fatal(err)
-		}
-	}*/
-
-	// fmt.Println("Создание закончено!")
-
-	// models.PaymentMode{}.PgSqlCreate()
-	// pool.AutoMigrate(&models.EmailTemplate{})
 }

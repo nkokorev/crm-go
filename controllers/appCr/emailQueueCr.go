@@ -2,7 +2,6 @@ package appCr
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -56,19 +55,18 @@ func EmailQueueGet(w http.ResponseWriter, r *http.Request) {
 	var emailQueue models.EmailQueue
 
 	// 2. Узнаем, какой id учитывается нужен
-	publicIdOk:= utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
 
-	if publicIdOk {
+	if publicOk  {
 		err = account.LoadEntityByPublicId(&emailQueue, emailQueueId)
 		if err != nil {
-			fmt.Println(err)
-			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	} else {
 		err = account.LoadEntity(&emailQueue, emailQueueId)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	}

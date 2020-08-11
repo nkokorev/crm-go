@@ -226,7 +226,6 @@ func GetQueryBoolVarFromGET(r *http.Request, key string) bool {
 	default:
 		res = false
 	}
-	
 
 	return res
 }

@@ -48,40 +48,30 @@ func EmailNotificationGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var emailNotification models.EmailNotification
-	err = account.LoadEntity(&emailNotification, emailNotificationId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
-		return
+
+	// 2. Узнаем, какой id учитывается нужен
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+
+
+	if publicOk  {
+		err = account.LoadEntityByPublicId(&emailNotification, emailNotificationId)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить объект 1"))
+			return
+		}
+	} else {
+		err = account.LoadEntity(&emailNotification, emailNotificationId)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось найти объект 2"))
+			return
+		}
 	}
+
+
+
 
 	resp := u.Message(true, "GET Email Notification")
 	resp["emailNotification"] = emailNotification
-	u.Respond(w, resp)
-}
-
-func EmailNotificationExecute(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		return
-	}
-
-	emailNotificationId, err := utilsCr.GetUINTVarFromRequest(r, "emailNotificationId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailNotification"))
-		return
-	}
-
-	var emailNotification models.EmailNotification
-	err = account.LoadEntity(&emailNotification, emailNotificationId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти вебхук"))
-		return
-	}
-
-	go emailNotification.Execute(nil)
-
-	resp := u.Message(true, "GET Email Notification Execute Call")
 	u.Respond(w, resp)
 }
 
