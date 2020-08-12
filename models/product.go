@@ -21,6 +21,7 @@ import (
 
 type Product struct {
 	Id     uint   `json:"id" gorm:"primary_key"`
+	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
 	AccountId uint `json:"-" gorm:"type:int;index;not null;"`
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // можно ли продавать товар и выводить в карточки
@@ -85,6 +86,20 @@ func (Product) PgSqlCreate() {
 
 func (product *Product) BeforeCreate(scope *gorm.Scope) error {
 	product.Id = 0
+
+	// 1. Рассчитываем PublicId (#id заказа) внутри аккаунта
+	lastIdx := uint(0)
+	var _product Product
+
+	err := db.Where("account_id = ?", product.AccountId).Select("public_id").Last(&_product).Error
+	if err != nil && err != gorm.ErrRecordNotFound { return err}
+	if err == gorm.ErrRecordNotFound {
+		lastIdx = 0
+	} else {
+		lastIdx = _product.PublicId
+	}
+	product.PublicId = lastIdx + 1
+
 	return nil
 }
 
@@ -102,7 +117,6 @@ func (product Product) create() (*Product, error)  {
 	event.AsyncFire(Event{}.ProductCreated(newProduct.AccountId, newProduct.Id))
 	return &newProduct, nil
 }
-
 func (Product) get(id uint) (*Product, error) {
 
 	product := Product{}
@@ -112,13 +126,13 @@ func (Product) get(id uint) (*Product, error) {
 	//}
 	if err := db.Model(&product).Preload("VatCode").Preload("PaymentSubject").Preload("Images", func(db *gorm.DB) *gorm.DB {
 		return db.Select(Storage{}.SelectArrayWithoutDataURL())
-	}).First(&product, id).Error; err != nil {
+	}).
+		First(&product, id).Error; err != nil {
 		return nil, err
 	}
 
 	return &product, nil
 }
-
 func (Product) getList(accountId uint) ([]Product, error) {
 
 	products := make([]Product,0)
@@ -130,7 +144,6 @@ func (Product) getList(accountId uint) ([]Product, error) {
 
 	return products, nil
 }
-
 func (product *Product) update(input map[string]interface{}) error {
 	// Приводим в опрядок
 	// input = utils.FixJSONB_String(input, []string{"attributes"})
@@ -151,7 +164,6 @@ func (product *Product) update(input map[string]interface{}) error {
 
 	return nil
 }
-
 func (product *Product) delete () error {
 	if err := db.Model(Product{}).Where("id = ?", product.Id).Delete(product).Error; err != nil {
 		return err
@@ -181,7 +193,6 @@ func (account Account) CreateProduct(input Product) (*Product, error) {
 
 	return product, nil
 }
-
 func (account Account) GetProduct(productId uint) (*Product, error) {
 	product, err := Product{}.get(productId)
 	if err != nil {
@@ -194,8 +205,20 @@ func (account Account) GetProduct(productId uint) (*Product, error) {
 
 	return product, nil
 }
+func (account Account) GetProductByPublicId(publicId uint) (*Product, error) {
+	var product Product
+	err := db.Model(&product).First(&product, "public_id = ?", publicId).Error
+	if err != nil {
+		return nil, err
+	}
 
-func (account Account) GetProductListPagination(offset, limit int, search string) ([]Product, uint, error) {
+	if account.Id != product.AccountId {
+		return nil, utils.Error{Message: "Товар принадлежит другому аккаунту"}
+	}
+
+	return &product, nil
+}
+func (account Account) GetProductListPagination(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Product, uint, error) {
 
 	products := make([]Product,0)
 	var total uint
@@ -213,9 +236,7 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 			Preload("Images", func(db *gorm.DB) *gorm.DB {
 				return db.Select(Storage{}.SelectArrayWithoutDataURL())
 			}).
-			Limit(limit).
-			Offset(offset).
-			Order("id").
+			Limit(limit).Offset(offset).Order(sortBy).
 			Where("account_id = ?", account.Id).
 			Find(&products, "name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?", search,search,search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -242,7 +263,8 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 			Preload("Images", func(db *gorm.DB) *gorm.DB {
 				return db.Select(Storage{}.SelectArrayWithoutDataURL())
 			}).
-			Limit(limit).Offset(offset).Order("id").Find(&products, "account_id = ?", account.Id).Error
+			Limit(limit).Offset(offset).Order(sortBy).
+			Find(&products, "account_id = ?", account.Id).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -257,7 +279,6 @@ func (account Account) GetProductListPagination(offset, limit int, search string
 
 	return products, total, nil
 }
-
 func (account Account) UpdateProduct(productId uint, input map[string]interface{}) (*Product, error) {
 
 	product, err := account.GetProduct(productId)
@@ -287,7 +308,6 @@ func (account Account) UpdateProduct(productId uint, input map[string]interface{
 	return product, err
 
 }
-
 func (account Account) DeleteProduct(productId uint) error {
 
 	// включает в себя проверку принадлежности к аккаунту
@@ -308,15 +328,12 @@ func (account Account) DeleteProduct(productId uint) error {
 func (product Product) ExistSKU() bool {
 	return !db.Unscoped().First(&Product{},"account_id = ? AND sku = ?", product.AccountId, product.SKU).RecordNotFound()
 }
-
 func (product Product) ExistModel() bool {
 	return !db.Unscoped().First(&Product{},"account_id = ? AND model = ?", product.AccountId, product.Model).RecordNotFound()
 }
-
 func (product Product) AddAttr() error {
 	return nil
 }
-
 func (product Product) GetAttribute(name string) (interface{}, error) {
 
 	rawData, err := product.Attributes.MarshalJSON()

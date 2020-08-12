@@ -417,6 +417,7 @@ func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) 
 	if !ok {
 		search = ""
 	}
+
 	products, _ := utilsCr.GetQuerySTRVarFromGET(r, "products")
 
 	productCards, total, err := webSite.GetProductCardList(offset, limit, search, products == "true")
@@ -539,11 +540,26 @@ func ProductGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	product, err := account.GetProduct(productId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
-		return
+	var product models.Product
+	// 2. Узнаем, какой список нужен
+	publicIdOk:= utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+
+	if publicIdOk {
+		_product, err := account.GetProductByPublicId(productId)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
+			return
+		}
+		product = *_product
+	} else {
+		_product, err := account.GetProduct(productId)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
+			return
+		}
+		product = *_product
 	}
+
 
 	resp := u.Message(true, "GET Product")
 	resp["product"] = product
@@ -561,20 +577,30 @@ func ProductListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
 	if !ok {
-		limit = 100
+		limit = 25
 	}
+	if limit > 100 { limit = 100 }
 	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
 	if !ok || offset < 0 {
 		offset = 0
 	}
+	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
+	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
+	if !ok {
+		sortBy = ""
+	}
+	if sortDesc {
+		sortBy += " desc"
+	}
+
 	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
 	if !ok {
 		search = ""
 	}
 
-	products, total, err := account.GetProductListPagination(offset, limit, search)
+	products, total, err := account.GetProductListPagination(account.Id, offset, limit, sortBy, search, nil)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "ННе удалось загрузить данные"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 

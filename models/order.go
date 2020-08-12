@@ -75,8 +75,6 @@ func (Order) PgSqlCreate() {
 	db.Model(&Order{}).AddForeignKey("amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
 	db.Model(&Order{}).AddForeignKey("order_channel_id", "order_channels(id)", "RESTRICT", "CASCADE")
 	db.Model(&Order{}).AddForeignKey("status_id", "order_statuses(id)", "RESTRICT", "CASCADE")
-
-	// fmt.Println("Щквук!")
 }
 func (order *Order) BeforeCreate(scope *gorm.Scope) error {
 	order.Id = 0

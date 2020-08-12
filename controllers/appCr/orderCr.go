@@ -44,8 +44,7 @@ func OrderGet(w http.ResponseWriter, r *http.Request) {
 	if err != nil || account == nil {
 		return
 	}
-
-	// ThisIs PublicID!
+	
 	orderId, err := utilsCr.GetUINTVarFromRequest(r, "orderId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке web site Id"))

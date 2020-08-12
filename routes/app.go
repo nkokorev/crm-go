@@ -131,11 +131,11 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/product-cards/{productCardId:[0-9]+}", appCr.ProductCardDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	// todo: byShop - сейчас косвенная принадлежность товаров к магазину не отслеживается
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/products", appCr.ProductCreate).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/products/{productId:[0-9]+}", appCr.ProductGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/products", appCr.ProductListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/products/{productId:[0-9]+}", appCr.ProductUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/products/{productId:[0-9]+}", appCr.ProductDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/products", appCr.ProductCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}", appCr.ProductGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/products", appCr.ProductListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}", appCr.ProductUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}", appCr.ProductDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### Deliveries ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/deliveries", appCr.DeliveryCreate).Methods(http.MethodPost, http.MethodOptions)

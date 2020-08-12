@@ -205,6 +205,10 @@ func UploadTestDataPart_I() {
 	if err != nil {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
+	roleManagerMain, err := mAcc.GetRoleByTag(models.RoleManager)
+	if err != nil {
+		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
+	}
 	roleClientMain, err := mAcc.GetRoleByTag(models.RoleClient)
 	if err != nil {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
@@ -246,6 +250,24 @@ func UploadTestDataPart_I() {
 	)
 	if err != nil || mex388 == nil {
 		log.Fatal("Не удалось создать mex388'a: ", err)
+	}
+
+	markPlatov, err := mAcc.CreateUser(
+		models.User{
+			Username:"MarkPlatov",
+			Email:"markPlatov@rus-marketing.ru",
+			PhoneRegion: "RU",
+			Phone: "79777201164",
+			Password:"daUw#92QapZ",
+			Name:"Михаил",
+			Surname:"Коротченко",
+			Patronymic:"-",
+			EmailVerifiedAt:&timeNow,
+		},
+		*roleManagerMain,
+	)
+	if err != nil || markPlatov == nil {
+		log.Fatal("Не удалось создать markPlatov'a: ", err)
 	}
 
 	// 3. Создаем домен для главного аккаунта
@@ -358,6 +380,12 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	_, err = acc357.AppendUser(*owner, *roleAdminMain)
 	if err != nil {
 		log.Fatal("Не удалось добавить пользователя admin in 357gr")
+		return
+	}
+
+	_, err = acc357.AppendUser(*markPlatov, *roleAdminMain)
+	if err != nil {
+		log.Fatal("Не удалось добавить пользователя markPlatov in 357gr")
 		return
 	}
 
