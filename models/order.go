@@ -266,9 +266,12 @@ func (order *Order) update(input map[string]interface{}) error {
 	delete(input,"client")
 	delete(input,"cartItems")
 
-	return order.GetPreloadDb(true,false, false).Where("id = ?", order.Id).
+	err := order.GetPreloadDb(true,false, false).Where("id = ?", order.Id).
 		Omit("id", "account_id").Updates(input).Error
+	if err != nil { return err }
 
+	_ = order.load()
+	return nil
 }
 func (order *Order) delete () error {
 

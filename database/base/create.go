@@ -1750,6 +1750,7 @@ func UploadTestDataPart_IV()  {
 			ShopId: "730509",
 			ReturnUrl: "https://airoclimate.ru/payment-return",
 			Enabled: true,
+			WebSiteId: 5,
 			SavePaymentMethod: false,
 			Capture: false,
 		})
@@ -1766,6 +1767,7 @@ func UploadTestDataPart_IV()  {
 		&models.PaymentCash{
 			Name:   "Оплата наличными при самовывозе",
 			Label:   "Оплата наличными при получении",
+			WebSiteId: 5,
 			Enabled: true,
 		})
 	if err != nil {

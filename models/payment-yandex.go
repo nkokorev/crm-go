@@ -153,7 +153,7 @@ func (paymentYandex PaymentYandex) create() (Entity, error)  {
 		return nil, err
 	}
 
-	if err := py.GetPreloadDb(false,true).First(&py,py.Id).Error; err != nil {
+	if err := py.GetPreloadDb(false,false, true).First(&py,py.Id).Error; err != nil {
 		return nil, err
 	}
 
@@ -165,7 +165,7 @@ func (PaymentYandex) get(id uint) (Entity, error) {
 
 	var paymentYandex PaymentYandex
 
-	err := paymentYandex.GetPreloadDb(false,false).First(&paymentYandex, id).Error
+	err := paymentYandex.GetPreloadDb(false,false, true).First(&paymentYandex, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func (PaymentYandex) get(id uint) (Entity, error) {
 func (PaymentYandex) getByHashId(hashId string) (*PaymentYandex, error) {
 	paymentYandex := PaymentYandex{}
 
-	err := paymentYandex.GetPreloadDb(false,false).First(&paymentYandex, "hash_id = ?", hashId).Error
+	err := paymentYandex.GetPreloadDb(false,false, true).First(&paymentYandex, "hash_id = ?", hashId).Error
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func (paymentYandex *PaymentYandex) load() error {
 		return utils.Error{Message: "Невозможно загрузить PaymentYandex - не указан  Id"}
 	}
 
-	err := paymentYandex.GetPreloadDb(false,true).First(paymentYandex,paymentYandex.Id).Error
+	err := paymentYandex.GetPreloadDb(false,true, true).First(paymentYandex,paymentYandex.Id).Error
 	if err != nil {
 		return err
 	}
@@ -224,7 +224,7 @@ func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&PaymentYandex{}).GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&PaymentYandex{}).GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&paymentYandexs, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -240,7 +240,7 @@ func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	} else {
 
-		err := (&PaymentYandex{}).GetPreloadDb(false,false).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&PaymentYandex{}).GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Preload("WebSite").
 			Find(&paymentYandexs).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -263,11 +263,15 @@ func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy
 	return entities, total, nil
 }
 func (paymentYandex *PaymentYandex) update(input map[string]interface{}) error {
-	return paymentYandex.GetPreloadDb(false,false).
-		Model(paymentYandex).Where("id", paymentYandex.Id).Omit("id", "account_id").Updates(input).Error
+	delete(input,"webSite")
+	err := paymentYandex.GetPreloadDb(true,false, false).Where("id = ?", paymentYandex.Id).
+		Omit("id", "hashId","account_id").Updates(input).Error
+	if err != nil { return err}
+	_ = paymentYandex.load()
+	return nil
 }
 func (paymentYandex *PaymentYandex) delete () error {
-	return paymentYandex.GetPreloadDb(true,true).Where("id = ?", paymentYandex.Id).Delete(paymentYandex).Error
+	return paymentYandex.GetPreloadDb(true,true, false).Where("id = ?", paymentYandex.Id).Delete(paymentYandex).Error
 }
 // ######### END CRUD Functions ############
 
@@ -551,11 +555,22 @@ func (account Account) GetPaymentYandexByHashId(hashId string) (*PaymentYandex, 
 
 	return paymentYandex, nil
 }
-func (paymentYandex PaymentYandex) GetPreloadDb(autoUpdate bool, getModel bool) *gorm.DB {
+func (paymentYandex *PaymentYandex) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+
 	_db := db
 
-	if autoUpdate { _db.Set("gorm:association_autoupdate", false) }
-	if getModel { _db.Model(&paymentYandex) }
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(&paymentYandex)
+	} else {
+		_db = _db.Model(&PaymentYandex{})
+	}
 
-	return _db.Preload("WebSite")
+	if preload {
+		return _db.Preload("WebSite")
+	} else {
+		return _db
+	}
 }
