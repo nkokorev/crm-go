@@ -62,7 +62,7 @@ func (EmailQueueEmailTemplate) PgSqlCreate() {
 	db.CreateTable(&EmailQueueEmailTemplate{})
 	db.Model(&EmailQueueEmailTemplate{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Model(&EmailQueueEmailTemplate{}).AddForeignKey("email_queue_id", "email_queues(id)", "CASCADE", "CASCADE")
-	db.Model(&EmailQueueEmailTemplate{}).AddForeignKey("email_template_id", "email_templates(id)", "CASCADE", "CASCADE")
+	db.Model(&EmailQueueEmailTemplate{}).AddForeignKey("email_template_id", "email_templates(id)", "RESTRICT", "CASCADE")
 }
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) BeforeCreate(scope *gorm.Scope) error {
 	emailQueueEmailTemplate.Id = 0

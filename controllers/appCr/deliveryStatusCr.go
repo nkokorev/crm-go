@@ -154,7 +154,7 @@ func DeliveryStatusDelete(w http.ResponseWriter, r *http.Request) {
 	var deliveryStatus models.DeliveryStatus
 	err = account.LoadEntity(&deliveryStatus, deliveryStatusId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 	if err = account.DeleteEntity(&deliveryStatus); err != nil {

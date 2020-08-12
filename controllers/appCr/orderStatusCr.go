@@ -154,11 +154,11 @@ func OrderStatusDelete(w http.ResponseWriter, r *http.Request) {
 	var orderStatus models.OrderStatus
 	err = account.LoadEntity(&orderStatus, orderStatusId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 	if err = account.DeleteEntity(&orderStatus); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении"))
 		return
 	}
 

@@ -42,7 +42,7 @@ type ProductCard struct {
 
 func (ProductCard) PgSqlCreate() {
 	db.CreateTable(&ProductCard{})
-	db.Exec("ALTER TABLE product_cards\n    ADD CONSTRAINT product_cards_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT product_cards_product_group_id_fkey FOREIGN KEY (product_group_id) REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE;\n")
+	db.Model(&ProductCard{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }
 
 func (productCard *ProductCard) BeforeCreate(scope *gorm.Scope) error {

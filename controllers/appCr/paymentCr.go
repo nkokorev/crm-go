@@ -96,7 +96,7 @@ func PaymentUpdate(w http.ResponseWriter, r *http.Request) {
 	var payment models.Payment
 	err = account.LoadEntity(&payment, paymentId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 

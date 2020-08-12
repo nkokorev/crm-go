@@ -23,8 +23,7 @@ type ApiKey struct {
 func (ApiKey) PgSqlCreate() {
 	
 	db.CreateTable(&ApiKey{})
-	
-	db.Exec("ALTER TABLE api_keys \n    ADD CONSTRAINT api_keys_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\n-- create unique index uix_api_keys_token_account_id ON api_keys (token,account_id);")
+	db.Model(&ApiKey{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }
 
 func (apiKey *ApiKey) BeforeCreate(scope *gorm.Scope) error {

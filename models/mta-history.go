@@ -20,7 +20,7 @@ type MTAHistory struct {
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Id пользователя, которому было отправлено письмо серия.
-	UserId 	*uint `json:"userId" gorm:"type:int;default:1;"` // при отправке на почту пользователю
+	UserId 	*uint `json:"userId" gorm:"type:int;default:null;"` // при отправке на почту пользователю
 	User	User `json:"user"`
 
 	// Кому фактически был отправлен email
@@ -31,21 +31,13 @@ type MTAHistory struct {
 	OwnerId		uint	`json:"ownerId" gorm:"type:smallint;default:1;not null;"` // ID типа события: какая серия, компания или уведомление
 
 	// Queues: номер шага в очереди, который был совершен. Для статистики серий писем.
-	QueueStepId	uint	`json:"queueStepId" gorm:"type:smallint;default:null;"`
+	QueueStepId	*uint	`json:"queueStepId" gorm:"type:smallint;default:null;"`
 
 	// Queues: последний ли шаг или промежуточный шаг в цепочке. По нему выборка завершивших серию писем за указанный период времени.
 	QueueCompleted 	bool 	`json:"queueCompleted" gorm:"type:bool;default:false;"`
 
-	// ID конкретной связи <Queue>&<EmailTemplate>. Для сбора статистики по конкретному шаблону.
-	// EmailQueueEmailTemplateId		uint	`json:"emailQueueEmailTemplateId" gorm:"type:smallint;default:1;not null;"`
-
-	// К какой серии писем относится задача
-	// EmailQueueId	uint	`json:"emailQueueId" gorm:"type:int;index;not null;"` // index, т.к. выборка будет идти по этой колонке
-	// EmailQueue		EmailQueue `json:"emailQueue"`
-
-
 	// Какой конкретно шаблон был отправлен. Может пригодиться для истории, кто что кому отправлял.
-	EmailTemplateId	uint	`json:"emailTemplateId" gorm:"type:int;index;not null;"` // << index для выборки по конкретному письму
+	EmailTemplateId		*uint	`json:"emailTemplateId" gorm:"type:int;index;default:null;"` // << index для выборки по конкретному письму
 
 	// Была ли успешна ли отправка. По этому показателю делаем выборку для кампаний и статистики уведомлений, серий писем.
 	Succeed 	bool 	`json:"succeed" gorm:"type:bool;default:false;"`
@@ -74,12 +66,10 @@ type MTAHistory struct {
 func (MTAHistory) PgSqlCreate() {
 	db.CreateTable(&MTAHistory{})
 	db.Model(&MTAHistory{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	// db.Model(&MTAHistory{}).AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
-	
-	// db.Model(&MTAHistory{}).AddForeignKey("email_queue_id", "email_queues(id)", "CASCADE", "CASCADE")
+	db.Model(&MTAHistory{}).AddForeignKey("user_id", "users(id)", "SET NULL", "CASCADE")
 
 	// todo: проработать модель удаления шаблона или связи
-	db.Model(&MTAHistory{}).AddForeignKey("email_template_id", "email_templates(id)", "CASCADE", "CASCADE")
+	db.Model(&MTAHistory{}).AddForeignKey("email_template_id", "email_templates(id)", "SET NULL", "CASCADE")
 
 }
 func (mtaHistory *MTAHistory) BeforeCreate(scope *gorm.Scope) error {

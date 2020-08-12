@@ -54,8 +54,8 @@ func (DeliveryRussianPost) PgSqlCreate() {
 	db.CreateTable(&DeliveryRussianPost{})
 
 	db.Model(&DeliveryRussianPost{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&DeliveryRussianPost{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "CASCADE", "CASCADE")
-	db.Model(&DeliveryRussianPost{}).AddForeignKey("vat_code_id", "vat_codes(id)", "CASCADE", "CASCADE")
+	db.Model(&DeliveryRussianPost{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "RESTRICT", "CASCADE")
+	db.Model(&DeliveryRussianPost{}).AddForeignKey("vat_code_id", "vat_codes(id)", "RESTRICT", "CASCADE")
 }
 
 // ############# Entity interface #############

@@ -105,7 +105,7 @@ func HandlerItemGetList(w http.ResponseWriter, r *http.Request) {
 	if all == "true" && allOk {
 		handlerItems, total, err = account.GetListEntity(&models.HandlerItem{}, sortBy)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	} else {
@@ -160,7 +160,7 @@ func HandlerItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 	if all == "true" && allOk {
 		handlerItems, total, err = account.GetListEntity(&models.HandlerItem{}, sortBy)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	} else {
@@ -201,7 +201,7 @@ func HandlerItemUpdate(w http.ResponseWriter, r *http.Request) {
 	var handlerItem models.HandlerItem
 	err = account.LoadEntity(&handlerItem, handlerItemId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 

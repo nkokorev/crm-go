@@ -43,7 +43,7 @@ func (ProductGroup) PgSqlCreate() {
 	db.CreateTable(&ProductGroup{})
 	db.Model(&ProductGroup{}).AddForeignKey("web_site_id", "web_sites(id)", "CASCADE", "CASCADE")
 
-	db.Exec("ALTER TABLE product_groups\n--     ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    alter column parent_id SET DEFAULT NULL;\n--     ADD CONSTRAINT products_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES product_groups(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\n\n-- create unique index uix_products_account_id_sku ON products (account_id,sku);\n-- alter table product_groups alter column parent_id set default NULL;\n")
+	db.Exec("ALTER TABLE product_groups\n    alter column parent_id SET DEFAULT NULL;\n")
 }
 
 func (productGroup *ProductGroup) BeforeCreate(scope *gorm.Scope) error {

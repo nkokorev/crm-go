@@ -57,7 +57,7 @@ var systemRoles = []Role{
 
 func (Role) PgSqlCreate() {
 	db.CreateTable(&Role{})
-	db.Exec("-- ALTER TABLE roles\n--     ADD CONSTRAINT roles_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\ncreate unique index uix_roles_issuer_account_id_tag_code ON roles (account_id, tag);")
+	db.Exec("create unique index uix_roles_issuer_account_id_tag_code ON roles (account_id, tag);")
 	db.Model(&Role{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 
 	// Создаем системные роли

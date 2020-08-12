@@ -51,7 +51,7 @@ func ArticleGet(w http.ResponseWriter, r *http.Request) {
 
 	article, err := account.GetArticle(articleId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 

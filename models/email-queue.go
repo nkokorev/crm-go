@@ -48,9 +48,6 @@ type EmailQueue struct {
 func (EmailQueue) PgSqlCreate() {
 	db.CreateTable(&EmailQueue{})
 	db.Model(&EmailQueue{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	// db.Model(&EmailQueue{}).AddForeignKey("amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
-	// db.Model(&EmailQueue{}).AddForeignKey("income_amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
-	// db.Model(&EmailQueue{}).AddForeignKey("refunded_amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
 }
 func (emailQueue *EmailQueue) BeforeCreate(scope *gorm.Scope) error {
 	emailQueue.Id = 0

@@ -40,8 +40,8 @@ func (DeliveryPickup) PgSqlCreate() {
 	db.CreateTable(&DeliveryPickup{})
 	
 	db.Model(&DeliveryPickup{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&DeliveryPickup{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "CASCADE", "CASCADE")
-	db.Model(&DeliveryPickup{}).AddForeignKey("vat_code_id", "vat_codes(id)", "CASCADE", "CASCADE")
+	db.Model(&DeliveryPickup{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "RESTRICT", "CASCADE")
+	db.Model(&DeliveryPickup{}).AddForeignKey("vat_code_id", "vat_codes(id)", "RESTRICT", "CASCADE")
 }
 
 // ############# Entity interface #############

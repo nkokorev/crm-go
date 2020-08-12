@@ -48,7 +48,7 @@ func (Storage) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&Storage{})
-	db.Exec("ALTER TABLE storage \n ADD CONSTRAINT storage_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--  ADD CONSTRAINT storage_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--  ADD CONSTRAINT storage_email_template_id_fkey FOREIGN KEY (email_id) REFERENCES email_templates(id) ON DELETE CASCADE ON UPDATE CASCADE;\n\n-- create unique index uix_storage_product_id ON storage (account_id,product_id) WHERE product_id IS NOT NULL;\n-- create unique index uix_storage_email_template_id ON storage (account_id,email_id) WHERE email_id IS NOT NULL;\n")
+	db.Model(&Storage{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 
 }
 func (Storage) TableName() string {

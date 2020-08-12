@@ -60,7 +60,7 @@ func (DeliveryOrder) PgSqlCreate() {
 	db.AutoMigrate(&DeliveryOrder{})
 	db.Model(&DeliveryOrder{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	// db.Model(&DeliveryOrder{}).AddForeignKey("order_id", "orders(id)", "CASCADE", "CASCADE")
-	db.Model(&DeliveryOrder{}).AddForeignKey("status_id", "delivery_statuses(id)", "CASCADE", "CASCADE")
+	db.Model(&DeliveryOrder{}).AddForeignKey("status_id", "delivery_statuses(id)", "RESTRICT", "CASCADE")
 }
 func (deliveryOrder *DeliveryOrder) BeforeCreate(scope *gorm.Scope) error {
 	deliveryOrder.Id = 0

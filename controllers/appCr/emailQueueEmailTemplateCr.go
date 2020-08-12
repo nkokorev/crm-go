@@ -147,7 +147,7 @@ func EmailQueueEmailTemplateUpdate(w http.ResponseWriter, r *http.Request) {
 	var emailQueueEmailTemplate models.EmailQueueEmailTemplate
 	err = account.LoadEntity(&emailQueueEmailTemplate, emailQueueEmailTemplateId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
@@ -236,11 +236,11 @@ func EmailQueueEmailTemplateDelete(w http.ResponseWriter, r *http.Request) {
 	var emailQueueEmailTemplate models.EmailQueueEmailTemplate
 	err = account.LoadEntity(&emailQueueEmailTemplate, emailQueueEmailTemplateId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 	if err = account.DeleteEntity(&emailQueueEmailTemplate); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении шаблона"))
 		return
 	}
 

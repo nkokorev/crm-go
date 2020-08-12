@@ -58,7 +58,7 @@ func OrderChannelGet(w http.ResponseWriter, r *http.Request) {
 	var orderChannel models.OrderChannel
 	err = account.LoadEntity(&orderChannel, orderChannelId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
@@ -134,7 +134,7 @@ func OrderChannelUpdate(w http.ResponseWriter, r *http.Request) {
 	var orderChannel models.OrderChannel
 	err = account.LoadEntity(&orderChannel, orderChannelId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
@@ -177,7 +177,7 @@ func OrderChannelDelete(w http.ResponseWriter, r *http.Request) {
 	var orderChannel models.OrderChannel
 	err = account.LoadEntity(&orderChannel, orderChannelId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 	if err = account.DeleteEntity(&orderChannel); err != nil {

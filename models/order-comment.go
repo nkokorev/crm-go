@@ -12,11 +12,11 @@ type OrderComment struct {
 	
 	Id     		uint   	`json:"id" gorm:"primary_key"`
 	AccountId 	uint	`json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
-	UserId 		uint	`json:"userId" gorm:"index;not null"`
-	User	User	`json:"user"`
+	UserId 		*uint	`json:"userId" gorm:"type:int;index;default:null;"`
+	User		User	`json:"user"`
 
 	Description string 	`json:"description" gorm:"type:varchar(255);"` // Описание назначения канала
-	ManagersComments string `json:"description" gorm:"type:varchar(255);"`
+	ManagersComments string `json:"managersComments" gorm:"type:varchar(255);"`
 	
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -28,14 +28,15 @@ func (orderComment *OrderComment) setId(id uint) { orderComment.Id = id }
 func (orderComment *OrderComment) setPublicId(id uint) { }
 func (orderComment OrderComment) GetAccountId() uint { return orderComment.AccountId }
 func (orderComment *OrderComment) setAccountId(id uint) { orderComment.AccountId = id }
-func (orderComment OrderComment) SystemEntity() bool { return false; }
+func (orderComment OrderComment) SystemEntity() bool { return false }
 
 // ############# Entity interface #############
 
 func (OrderComment) PgSqlCreate() {
 	db.CreateTable(&OrderComment{})
 	db.Model(&OrderComment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	
+	db.Model(&OrderComment{}).AddForeignKey("user_id", "users(id)", "SET NULL", "CASCADE")
+
 }
 func (orderComment *OrderComment) BeforeCreate(scope *gorm.Scope) error {
 	orderComment.Id = 0

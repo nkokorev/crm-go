@@ -138,7 +138,7 @@ func OrderUpdate(w http.ResponseWriter, r *http.Request) {
 	var order models.Order
 	err = account.LoadEntity(&order, orderId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 
@@ -176,11 +176,11 @@ func OrderDelete(w http.ResponseWriter, r *http.Request) {
 	var order models.Order
 	err = account.LoadEntity(&order, orderId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 	if err = account.DeleteEntity(&order); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении заказа"))
 		return
 	}
 

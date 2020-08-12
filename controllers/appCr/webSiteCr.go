@@ -80,7 +80,7 @@ func WebSiteListGet(w http.ResponseWriter, r *http.Request) {
 
 	webSites, total, err := account.GetListEntity(&models.WebSite{}, sortBy)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список сайтов"))
 		return
 	}
 
@@ -167,7 +167,7 @@ func WebSiteUpdate(w http.ResponseWriter, r *http.Request) {
 	var webSite models.WebSite
 	err = account.LoadEntity(&webSite, webSiteId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 

@@ -123,7 +123,7 @@ func DeliveryOrderUpdate(w http.ResponseWriter, r *http.Request) {
 	var deliveryOrder models.DeliveryOrder
 	err = account.LoadEntity(&deliveryOrder, deliveryOrderId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
@@ -161,7 +161,7 @@ func DeliveryOrderDelete(w http.ResponseWriter, r *http.Request) {
 	var deliveryOrder models.DeliveryOrder
 	err = account.LoadEntity(&deliveryOrder, deliveryOrderId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 	if err = account.DeleteEntity(&deliveryOrder); err != nil {

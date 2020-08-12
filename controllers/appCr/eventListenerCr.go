@@ -53,7 +53,7 @@ func EventListenerGet(w http.ResponseWriter, r *http.Request) {
 	var eventListener models.EventListener
 	err = account.LoadEntity(&eventListener, eventListenerId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
@@ -99,7 +99,7 @@ func EventListenerGetListPagination(w http.ResponseWriter, r *http.Request) {
 	if all == "true" && allOk {
 		eventListeners, total, err = account.GetListEntity(&models.EventListener{}, sortBy)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	} else {
@@ -133,7 +133,7 @@ func EventListenerUpdate(w http.ResponseWriter, r *http.Request) {
 	var eventListener models.EventListener
 	err = account.LoadEntity(&eventListener, eventListenerId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
@@ -171,7 +171,7 @@ func EventListenerDelete(w http.ResponseWriter, r *http.Request) {
 	var eventListener models.EventListener
 	err = account.LoadEntity(&eventListener, eventListenerId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 	if err = account.DeleteEntity(&eventListener); err != nil {

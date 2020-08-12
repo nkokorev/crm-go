@@ -98,7 +98,7 @@ type Payment struct {
 	ExternalCreatedAt 	time.Time  `json:"externalCreatedAt"`  // Время создания заказа, UTC
 
 	// PaymentOptions 	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_payments;preload"`
-	PaymentMethodId 	uint	`json:"paymentMethodId" gorm:"type:int;not null;default:1"`
+	PaymentMethodId 	uint	`json:"paymentMethodId" gorm:"type:int;not null;"`
 	PaymentMethodType 	string	`json:"paymentMethodType" gorm:"type:varchar(32);not null;default:'payment_yandexes'"`
 	PaymentMethod 		PaymentMethod `json:"paymentMethod" gorm:"-"`
 
@@ -112,9 +112,9 @@ type Payment struct {
 func (Payment) PgSqlCreate() {
 	db.CreateTable(&Payment{})
 	db.Model(&Payment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&Payment{}).AddForeignKey("amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
-	db.Model(&Payment{}).AddForeignKey("income_amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
-	db.Model(&Payment{}).AddForeignKey("refunded_amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
+	db.Model(&Payment{}).AddForeignKey("amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
+	db.Model(&Payment{}).AddForeignKey("income_amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
+	db.Model(&Payment{}).AddForeignKey("refunded_amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
 }
 func (payment *Payment) BeforeCreate(scope *gorm.Scope) error {
 	payment.Id = 0

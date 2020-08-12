@@ -291,8 +291,8 @@ func (emailQueueWorkflow *EmailQueueWorkflow) Execute() error {
 		Email: user.Email,
 		OwnerId: emailQueue.Id,
 		OwnerType: "email_queues",
-		EmailTemplateId: step.EmailTemplateId,
-		QueueStepId: step.Order,
+		EmailTemplateId: utils.UINTp(step.EmailTemplateId),
+		QueueStepId: utils.UINTp(step.Order),
 		QueueCompleted: false,	// по умолчанию
 		NumberOfAttempts: emailQueueWorkflow.NumberOfAttempts + 1,
 		Succeed: false, 	// по умолчанию

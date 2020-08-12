@@ -58,7 +58,7 @@ func PaymentSubjectGet(w http.ResponseWriter, r *http.Request) {
 	var paymentSubject models.PaymentSubject
 	err = account.LoadEntity(&paymentSubject, paymentSubjectId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 
@@ -177,7 +177,7 @@ func PaymentSubjectDelete(w http.ResponseWriter, r *http.Request) {
 	var paymentSubject models.PaymentSubject
 	err = account.LoadEntity(&paymentSubject, paymentSubjectId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 	if err = account.DeleteEntity(&paymentSubject); err != nil {

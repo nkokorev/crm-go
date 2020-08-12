@@ -73,7 +73,7 @@ type Account struct {
 	ApiKeys []ApiKey `json:"-"`
 
 	Products []Product `json:"-"`
-	Stocks   []Stock   `json:"-"`
+	// Stocks   []Stock   `json:"-"`
 }
 
 // ###
@@ -953,18 +953,6 @@ func (account *Account) DeleteUnscoped() error {
 func (account *Account) GetApiKeys() error {
 	return db.Preload("ApiKeys").First(&account).Error
 }
-
-// ### Stock functions ### //
-func (account Account) StockCreate(stock *Stock) error {
-	stock.AccountId = account.Id
-	return stock.Create()
-}
-
-func (account *Account) StockLoad() (err error) {
-	account.Stocks, err = (Stock{}).GetAll(account.Id)
-	return err
-}
-
 
 // ### JWT Crypto ### !!!!!!!!!!1
 

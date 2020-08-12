@@ -152,7 +152,7 @@ func EmailQueueUpdate(w http.ResponseWriter, r *http.Request) {
 	var emailQueue models.EmailQueue
 	err = account.LoadEntity(&emailQueue, emailQueueId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
@@ -190,7 +190,7 @@ func EmailQueueDelete(w http.ResponseWriter, r *http.Request) {
 	var emailQueue models.EmailQueue
 	err = account.LoadEntity(&emailQueue, emailQueueId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 	if err = account.DeleteEntity(&emailQueue); err != nil {

@@ -58,7 +58,7 @@ func VatCodeGet(w http.ResponseWriter, r *http.Request) {
 	var vatCode models.VatCode
 	err = account.LoadEntity(&vatCode, vatCodeId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 
@@ -177,11 +177,11 @@ func VatCodeDelete(w http.ResponseWriter, r *http.Request) {
 	var vatCode models.VatCode
 	err = account.LoadEntity(&vatCode, vatCodeId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 	if err = account.DeleteEntity(&vatCode); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении"))
 		return
 	}
 

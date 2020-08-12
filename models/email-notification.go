@@ -73,7 +73,7 @@ func (EmailNotification) SystemEntity() bool { return false }
 func (EmailNotification) PgSqlCreate() {
 	db.CreateTable(&EmailNotification{})
 	db.Model(&EmailNotification{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&EmailNotification{}).AddForeignKey("email_template_id", "email_templates(id)", "CASCADE", "CASCADE")
+	db.Model(&EmailNotification{}).AddForeignKey("email_template_id", "email_templates(id)", "RESTRICT", "CASCADE")
 }
 func (emailNotification *EmailNotification) BeforeCreate(scope *gorm.Scope) error {
 	emailNotification.Id = 0
@@ -395,7 +395,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			Email: users[i].Email,
 			OwnerId: emailNotification.Id,
 			OwnerType: "email_notifications",
-			EmailTemplateId: emailTemplate.Id,
+			EmailTemplateId: utils.UINTp(emailTemplate.Id),
 			NumberOfAttempts: 1,
 			Succeed: false,
 		}
@@ -447,7 +447,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 				Email: v,
 				OwnerId: emailNotification.Id,
 				OwnerType: "email_notifications",
-				EmailTemplateId: emailTemplate.Id,
+				EmailTemplateId: utils.UINTp(emailTemplate.Id),
 				NumberOfAttempts: 1,
 				Succeed: false,
 			}

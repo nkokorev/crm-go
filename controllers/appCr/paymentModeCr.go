@@ -154,7 +154,7 @@ func PaymentModeDelete(w http.ResponseWriter, r *http.Request) {
 	var paymentMode models.PaymentMode
 	err = account.LoadEntity(&paymentMode, paymentModeId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 	if err = account.DeleteEntity(&paymentMode); err != nil {

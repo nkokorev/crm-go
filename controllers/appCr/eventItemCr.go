@@ -105,7 +105,7 @@ func EventItemGetList(w http.ResponseWriter, r *http.Request) {
 	if all == "true" && allOk {
 		observerItems, total, err = account.GetListEntity(&models.EventItem{}, sortBy)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	} else {
@@ -160,7 +160,7 @@ func EventItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 	if all == "true" && allOk {
 		observerItems, total, err = account.GetListEntity(&models.EventItem{}, sortBy)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	} else {
@@ -201,7 +201,7 @@ func EventItemUpdate(w http.ResponseWriter, r *http.Request) {
 	var eventItem models.EventItem
 	err = account.LoadEntity(&eventItem, eventItemId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 

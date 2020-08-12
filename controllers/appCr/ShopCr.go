@@ -84,7 +84,7 @@ func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
 
 	productGroup, err := webSite.GetProductGroup(productGroupId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 
@@ -173,7 +173,7 @@ func ProductGroupListGet(w http.ResponseWriter, r *http.Request) {
 
 	productGroups, err := account.GetProductGroups()
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 
@@ -421,7 +421,7 @@ func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) 
 
 	productCards, total, err := webSite.GetProductCardList(offset, limit, search, products == "true")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 
@@ -541,7 +541,7 @@ func ProductGet(w http.ResponseWriter, r *http.Request) {
 
 	product, err := account.GetProduct(productId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 
@@ -574,7 +574,7 @@ func ProductListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 	products, total, err := account.GetProductListPagination(offset, limit, search)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "ННе удалось загрузить данные"))
 		return
 	}
 
@@ -652,12 +652,6 @@ func ProductAttributeList(w http.ResponseWriter, r *http.Request) {
 	if err != nil || account == nil {
 		return
 	}
-
-	/*attrs, err := account.GetProductListPagination(offset, limit, search)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
-		return
-	}*/
 
 	resp := u.Message(true, "GET Product List Pagination")
 	// resp["total"] = total

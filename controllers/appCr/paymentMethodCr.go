@@ -61,7 +61,7 @@ func PaymentMethodGet(w http.ResponseWriter, r *http.Request) {
 
 	paymentMethod, err := account.GetPaymentMethodByCode(code, paymentMethodId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
@@ -114,7 +114,7 @@ func PaymentMethodUpdate(w http.ResponseWriter, r *http.Request) {
 
 	paymentMethod, err := account.GetPaymentMethodByCode(code, paymentMethodId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 
@@ -159,7 +159,7 @@ func PaymentMethodDelete(w http.ResponseWriter, r *http.Request) {
 
 	paymentMethod, err := account.GetPaymentMethodByCode(code, paymentMethodId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список магазинов"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 

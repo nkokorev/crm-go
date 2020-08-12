@@ -79,7 +79,8 @@ func (Product) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	db.CreateTable(&Product{})
-	db.Exec("ALTER TABLE products\n    ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT uix_products_account_id_sku UNIQUE (account_id,sku),\n--     ADD CONSTRAINT uix_products_account_id_model UNIQUE (account_id,model),\n--     ADD CONSTRAINT uix_products_account_id_article UNIQUE (account_id,article);\n--     ADD CONSTRAINT uix_products_account_id_sku CHECK (account_id AND sku CREATE UNIQUE INDEX ) WHERE sku IS NOT NULL;\n--     ADD constraint uc_products_sku UNIQUE (sku) WHERE sku IS NOT NULL;\n-- ALTER TABLE products ADD CONSTRAINT uc_products_sku UNIQUE (sku);\n\ncreate unique index uix_products_account_id_sku ON products (account_id,sku) WHERE sku IS NOT NULL;\ncreate unique index uix_products_account_id_model ON products (account_id,model) WHERE model IS NOT NULL;\ncreate unique index uix_products_account_id_article ON products (account_id,article) WHERE article IS NOT NULL;\n")
+	db.Model(&Product{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Exec("create unique index uix_products_account_id_sku ON products (account_id,sku) WHERE sku IS NOT NULL;\ncreate unique index uix_products_account_id_model ON products (account_id,model) WHERE model IS NOT NULL;\ncreate unique index uix_products_account_id_article ON products (account_id,article) WHERE article IS NOT NULL;\n")
 }
 
 func (product *Product) BeforeCreate(scope *gorm.Scope) error {
