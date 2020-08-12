@@ -287,7 +287,8 @@ func (payment *Payment) loadByPublicId() error {
 		return utils.Error{Message: "Невозможно загрузить Payment - не указан  Id"}
 	}
 
-	if err := payment.GetPreloadDb(false,false, true).First(payment, "account_id = ? AND public_id = ?", payment.AccountId, payment.PublicId).Error; err != nil {
+	if err := payment.GetPreloadDb(false,false, true).
+		First(payment, "account_id = ? AND public_id = ?", payment.AccountId, payment.PublicId).Error; err != nil {
 		return err
 	}
 
@@ -297,7 +298,6 @@ func (payment *Payment) loadByPublicId() error {
 func (Payment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return Payment{}.getPaginationList(accountId, 0, 25, sortBy, "", nil)
 }
-
 func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	payments := make([]Payment,0)
@@ -346,7 +346,6 @@ func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	return entities, total, nil
 }
-
 func (Payment) getByEvent(eventName string) (*Payment, error) {
 
 	wh := Payment{}
@@ -404,7 +403,8 @@ func (payment *Payment) GetPreloadDb(autoUpdateOff bool, getModel bool, preload 
 	}
 
 	if preload {
-		return _db.Preload("PaymentAmount")
+		return _db.Preload("Amount").Preload("IncomeAmount").Preload("RefundedAmount")
+		// return _db
 	} else {
 		return _db
 	}
