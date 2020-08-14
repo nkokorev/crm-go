@@ -325,9 +325,6 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается получить почтовый ящик"}
 	}
 
-
-
-
 	// Загружаем данные почтового ящика
 	err = emailNotification.EmailBox.load()
 	if err != nil {
@@ -408,12 +405,18 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			continue
 		}
 
-		err = emailTemplate.SendMail(emailNotification.EmailBox, users[i].Email, _subject, vData, unsubscribeUrl)
-		if err != nil {
-			history.Succeed = false
+		// if now ==
+		if emailNotification.DelayTime == 0 {
+			err = emailTemplate.SendMail(emailNotification.EmailBox, users[i].Email, _subject, vData, unsubscribeUrl)
+			if err != nil {
+				history.Succeed = false
+			} else {
+				history.Succeed = true
+			}
 		} else {
-			history.Succeed = true
+			// ставим в очередь
 		}
+
 
 		_, _ = history.create()
 	}
@@ -421,7 +424,6 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 	return nil
 }
 
-// func parseSubjectByData(tpl string, vData *ViewData) (string, error) {
 func parseSubjectByData(tpl string, data map[string]interface{}) (string, error) {
 
 	body := new(bytes.Buffer)
