@@ -108,6 +108,9 @@ func (emailNotification *EmailNotification) AfterFind() (err error) {
 	err = db.Find(&emailNotification.RecipientUsers, "id IN (?)", arr).Error
 	if err != nil  {return err}
 
+	// fix nono to ms
+	// emailNotification.DelayTime = time.Millisecond*emailNotification.DelayTime
+
 
 	/////////////////////////////////////
 
@@ -239,18 +242,18 @@ func (emailNotification *EmailNotification) update(input map[string]interface{})
 	delete(input, "emailTemplate")
 	delete(input, "emailBox")
 
+	/*_f, ok := input["delayTime"].(float64)
+	if !ok {
+		log.Fatal("not ok!")
+	}
 
-	// if err := db.Model(EmailNotification{}).Where("id = ?", emailNotification.Id).Omit("id", "account_id").Updates(input).Error; err != nil {
-	// 	return err
-	// }
-	// fmt.Println("emailNotification id", emailNotification.EmailBoxId)
 
-/*	if err := db.Model(emailNotification).
-		Omit("id", "account_id","created_at").Update(input).Error; err != nil {
-		return err
-	}*/
+	d, err := time.ParseDuration(strconv.Itoa(int(_f)))
+	if err != nil {
+		log.Fatal(err)
+	}
+	input["delayTime"] = d*/
 
-	// work!!!
 	if err := db.Set("gorm:association_autoupdate", false).Model(EmailNotification{}).Where(" id = ?", emailNotification.Id).
 		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
 		return err
@@ -408,7 +411,8 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		}
 
 		// if now ==
-		if emailNotification.DelayTime == 0 {
+		// if emailNotification.DelayTime == 0 {
+		if false {
 			err = emailTemplate.SendMail(emailNotification.EmailBox, users[i].Email, _subject, vData, unsubscribeUrl)
 			if err != nil {
 				history.Succeed = false
@@ -417,6 +421,22 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			}
 		} else {
 			// ставим в очередь
+
+			// 2. Add user to MTAWorkflow
+			mtaWorkflow := MTAWorkflow{
+				AccountId: emailNotification.AccountId,
+				OwnerId: emailNotification.Id,
+				OwnerType: EmailSenderNotification,
+				ExpectedTimeStart: time.Now().UTC().Add(emailNotification.DelayTime * time.Millisecond),
+				UserId: users[i].Id,
+				NumberOfAttempts: 0,
+			}
+
+			if _, err := mtaWorkflow.create(); err != nil {
+				return err
+			}
+
+			return nil
 		}
 
 

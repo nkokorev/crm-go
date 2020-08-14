@@ -120,6 +120,8 @@ func (emailQueue *EmailQueue) AfterFind() (err error) {
 		emailQueue.UnsubscribeRate = 0
 	}
 
+
+
 	return nil
 }
 
@@ -381,7 +383,7 @@ func (emailQueue EmailQueue) AppendUser(userId uint) error {
 		OwnerId: emailQueue.Id,
 		OwnerType: EmailSenderQueue,
 		QueueExpectedStepId: step.Order,
-		ExpectedTimeStart: time.Now().UTC().Add(step.DelayTime),
+		ExpectedTimeStart: time.Now().UTC().Add(step.DelayTime * time.Millisecond),
 		UserId: userId, 
 		NumberOfAttempts: 0, // << пока так
 	}

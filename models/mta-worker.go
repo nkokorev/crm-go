@@ -14,10 +14,11 @@ import (
 var maxAttempts = uint(3)
 
 func init() {
-	go emailQueueWorker()
+	go mtaWorker()
 }
 
-func emailQueueWorker() {
+func mtaWorker() {
+	
 	for {
 		if db == nil {
 			time.Sleep(time.Millisecond*2000)
@@ -44,10 +45,11 @@ func emailQueueWorker() {
 
 		err := db.Model(&MTAWorkflow{}).
 			Joins("LEFT JOIN email_queues ON email_queues.id = mta_workflows.owner_id").
-			Select("email_queues.enabled, mta_workflows.*").
-			Where("email_queues.enabled = 'true' AND mta_workflows.expected_time_start <= ?", time.Now().UTC()).Limit(100).Find(&workflows).Error
+			Joins("LEFT JOIN email_notifications ON email_notifications.id = mta_workflows.owner_id").
+			Select("email_queues.enabled,email_notifications.enabled, mta_workflows.*").
+			Where("email_queues.enabled = 'true' OR  email_notifications.enabled = 'true' AND mta_workflows.expected_time_start <= ?", time.Now().UTC()).Limit(100).Find(&workflows).Error
 		if err != nil {
-			log.Printf("emailQueueWorker:  %v", err)
+			log.Printf("MTAWorkflow:  %v", err)
 			time.Sleep(time.Second*10)
 			continue
 		}

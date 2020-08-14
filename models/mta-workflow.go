@@ -21,7 +21,9 @@ type MTAWorkflow struct {
 	OwnerId		uint	`json:"ownerId" gorm:"type:smallint;not null;"` // ID типа события: какая серия, компания или уведомление
 
 	// К какой серии писем относится задача
-	EmailQueue		EmailQueue `json:"_emailQueue" gorm:"-"`
+	EmailQueue			EmailQueue `json:"_emailQueue" gorm:"-"`
+	EmailNotification	EmailNotification `json:"_emailNotification" gorm:"-"`
+	EmailCampaign	EmailCampaign `json:"_emailCampaign" gorm:"-"`
 
 	// Номер необходимого шага в серии EmailQueue. Шаг определяется ситуационно в момент Expected Time. Если шага нет - серия завершается за пользователя.
 	// После выполнения - № шага увеличивается на 1
@@ -279,7 +281,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 
 		// Проверяем состоянии очереди
 		if !sender.IsEnabled() {
-			// Тут могут копиться люди в очереди
+			// Тут могут копиться люди в очереди, поэтому возвращаем ошибку
 			return utils.Error{ Message: fmt.Sprintf("Невозможно отправить письмо, т.к. объект [id = %v] не запущен\n", sender.GetId()),
 			}
 		}
@@ -326,7 +328,28 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		}
 	}
 
-	// if sender.GetType() == EmailSenderNotification { ... }
+	if sender.GetType() == EmailSenderNotification {
+
+		if !sender.IsEnabled() {
+			// Возвращаем с ошибкой, т.к. могут копиться люди в очереди
+			return utils.Error{ Message: fmt.Sprintf("Невозможно отправить письмо, т.к. объект [id = %v] не запущен\n", sender.GetId()),
+			}
+		}
+
+		emailNotification, ok := sender.(*EmailNotification)
+		if !ok { return errors.New("Ошибка преобразования в email Notification")}
+
+		err := account.LoadEntity(&emailTemplate, *emailNotification.EmailTemplateId)
+		if err != nil {	return err }
+
+		err = account.LoadEntity(&emailBox, *emailNotification.EmailBoxId)
+		if err != nil {
+			return err
+		}
+		
+		Subject = emailNotification.Subject
+		PreviewText = emailNotification.PreviewText
+	}
 	// if sender.GetType() == EmailSenderCampaign { ... }
 
 	// **************************** //
@@ -446,10 +469,17 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		}
 
 		if sender.GetType() == EmailSenderCampaign {
+			if err = mtaWorkflow.delete(); err != nil {
+				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
+			}
 			return nil
 		}
 
 		if sender.GetType() == EmailSenderNotification {
+			// удаляем задачу
+			if err = mtaWorkflow.delete(); err != nil {
+				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
+			}
 			return nil
 		}
 		
@@ -461,8 +491,8 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 func (mtaWorkflow *MTAWorkflow) UpdateByNextStep(expectedStep EmailQueueEmailTemplate) error {
 	// Изменяется expected step, expected_time_start, number_attems, last_tried
 	return mtaWorkflow.update(map[string]interface{}{
-		"expected_step_id": expectedStep.Order,
-		"expected_time_start": time.Now().UTC().Add(expectedStep.DelayTime),
+		"queue_expected_step_id": expectedStep.Order,
+		"expected_time_start": time.Now().UTC().Add(expectedStep.DelayTime * time.Millisecond),
 		"number_of_attempts": 0,
 		"last_tried_at": nil,
 	})

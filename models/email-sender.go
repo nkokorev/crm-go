@@ -9,7 +9,6 @@ type EmailSender interface {
 
 	// Возвращает состояние сендера
 	IsEnabled() bool
-
 }
 
 type EmailSenderType = string

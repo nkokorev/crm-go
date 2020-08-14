@@ -66,7 +66,6 @@ func (EmailQueueEmailTemplate) PgSqlCreate() {
 }
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) BeforeCreate(scope *gorm.Scope) error {
 	emailQueueEmailTemplate.Id = 0
-	// emailQueueEmailTemplate.DelayTime = time.Duration(time.Hour*10)
 	return nil
 }
 
@@ -85,6 +84,7 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) AfterDelete(tx *gorm.DB)
 	return nil
 }
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) AfterFind() (err error) {
+
 	return nil
 }
 
