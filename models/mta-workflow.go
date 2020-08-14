@@ -71,6 +71,11 @@ func (mtaWorkflow *MTAWorkflow) AfterDelete(tx *gorm.DB) (err error) {
 	return nil
 }
 func (mtaWorkflow *MTAWorkflow) AfterFind() (err error) {
+	/*_t, err := time.Parse(time.RFC3339, mtaWorkflow.ExpectedTimeStart.String())
+	if err != nil { return err }
+	mtaWorkflow.ExpectedTimeStart = _t*/
+
+	// fmt.Println("Найдено: ", _t)
 	return nil
 }
 
@@ -492,7 +497,7 @@ func (mtaWorkflow *MTAWorkflow) UpdateByNextStep(expectedStep EmailQueueEmailTem
 	// Изменяется expected step, expected_time_start, number_attems, last_tried
 	return mtaWorkflow.update(map[string]interface{}{
 		"queue_expected_step_id": expectedStep.Order,
-		"expected_time_start": time.Now().UTC().Add(expectedStep.DelayTime * time.Millisecond),
+		"expected_time_start": time.Now().UTC().Add(expectedStep.DelayTime),
 		"number_of_attempts": 0,
 		"last_tried_at": nil,
 	})

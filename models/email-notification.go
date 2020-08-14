@@ -427,7 +427,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 				AccountId: emailNotification.AccountId,
 				OwnerId: emailNotification.Id,
 				OwnerType: EmailSenderNotification,
-				ExpectedTimeStart: time.Now().UTC().Add(emailNotification.DelayTime * time.Millisecond),
+				ExpectedTimeStart: time.Now().UTC().Add(emailNotification.DelayTime),
 				UserId: users[i].Id,
 				NumberOfAttempts: 0,
 			}
