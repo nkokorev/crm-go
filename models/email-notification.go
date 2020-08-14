@@ -29,8 +29,6 @@ type EmailNotification struct {
 	Subject			string 	`json:"subject" gorm:"type:varchar(128);not null;"` // Тема сообщения, компилируются
 	PreviewText		string 	`json:"previewText" gorm:"type:varchar(255);default:''"` // Тема сообщения, компилируются
 	
-	Description		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
-
 	EmailTemplateId *uint 	`json:"emailTemplateId" gorm:"type:int;default:null;"` // всегда должен быть шаблон, иначе смысла в нем нет
 	EmailTemplate 	EmailTemplate 	`json:"emailTemplate" gorm:"preload:true"`
 
@@ -39,12 +37,12 @@ type EmailNotification struct {
 	// =============   Настройки получателей    ===================
 
 	// Список пользователей позволяет сделать "рассылку" уведомления по email-адреса пользователей, до 10 человек.
-	SendingToUsers		bool			`json:"sendingToUsers" gorm:"type:bool;default:false"` // Отправлять пользователем RatusCRM (на их почтовые адреса, при их наличии)
+	// SendingToUsers		bool			`json:"sendingToUsers" gorm:"type:bool;default:false"` // Отправлять пользователем RatusCRM (на их почтовые адреса, при их наличии)
 	RecipientUsersList	postgres.Jsonb 	`json:"recipientUsersList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // список id пользователей, которые получат уведомление
 
 	// Список фиксированных адресов позволяет сделать "рассылку" по своей базе, до 10 человек.
-	SendingToFixedAddresses	bool	`json:"sendingToFixedAddresses" gorm:"type:bool;default:false"` // Отправлять ли на фиксированный адреса
-	RecipientList			postgres.Jsonb	`json:"recipientList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // фиксированный список адресов, на которые будет произведено уведомление
+	// SendingToFixedAddresses	bool	`json:"sendingToFixedAddresses" gorm:"type:bool;default:false"` // Отправлять ли на фиксированный адреса
+	// RecipientList			postgres.Jsonb	`json:"recipientList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // фиксированный список адресов, на которые будет произведено уведомление
 	
 	// Динамический список пользователей
 	ParseRecipientUser	bool	`json:"parseRecipientUser" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя(ей) по userId / users: ['email@mail.ru']
@@ -108,15 +106,8 @@ func (emailNotification *EmailNotification) AfterFind() (err error) {
 	err = db.Find(&emailNotification.RecipientUsers, "id IN (?)", arr).Error
 	if err != nil  {return err}
 
-	//////
-
 
 	/////////////////////////////////////
-
-	
-	if reflect.DeepEqual(emailNotification.SendingToFixedAddresses, *new(postgres.Jsonb)) {
-		emailNotification.RecipientUsersList = postgres.Jsonb{RawMessage: []byte("[]")}
-	}
 
 	if reflect.DeepEqual(emailNotification.RecipientUsersList, *new(postgres.Jsonb)) {
 		emailNotification.RecipientUsersList = postgres.Jsonb{RawMessage: []byte("[]")}
@@ -348,11 +339,9 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 	var users = make([]User,0)
 
 	// 1. Собираем список пользователей
-	if emailNotification.SendingToUsers {
-		for i := range emailNotification.RecipientUsers {
-			users = append(users, emailNotification.RecipientUsers[i])
+	for i := range emailNotification.RecipientUsers {
+		users = append(users, emailNotification.RecipientUsers[i])
 
-		}
 	}
 	if emailNotification.ParseRecipientUser {
 		if userSTR, ok := data["userId"]; ok {
@@ -427,56 +416,6 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		}
 
 		_, _ = history.create()
-	}
-
-	// END NEW NEW =========
-
-
-	// 2. Готовим список почтовых адресов и отправляем
-	if emailNotification.SendingToFixedAddresses {
-		// 2. Готовим список фиксированных адресов
-
-
-		emailList := utils.ParseJSONBToString(emailNotification.RecipientList)
-
-		for _,v := range emailList {
-
-			history := &MTAHistory{
-				HashId:  strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true)),
-				AccountId: emailNotification.AccountId,
-				Email: v,
-				OwnerId: emailNotification.Id,
-				OwnerType: "email_notifications",
-				EmailTemplateId: utils.UINTp(emailTemplate.Id),
-				NumberOfAttempts: 1,
-				Succeed: false,
-			}
-
-			pixelURL := account.GetPixelUrl(*history)
-
-			// Компилируем тему письма
-			_subject, err := parseSubjectByData(emailNotification.Subject, data)
-			if err != nil {
-				return utils.Error{Message: "Ошибка отправления Уведомления - не удается прочитать тему сообщения"}
-			}
-			if _subject == "" {
-				_subject = fmt.Sprintf("Уведомление по почте #%v", emailNotification.Id)
-			}
-
-			// Рабочие данные
-			vData, err := emailTemplate.PrepareViewData(_subject, emailNotification.PreviewText, data, pixelURL, nil)
-			if err != nil {
-				return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
-			}
-
-			err = emailTemplate.SendMail(emailNotification.EmailBox, v, _subject, vData, "")
-			if err != nil {
-				history.Succeed = false
-			} else {
-				history.Succeed = true
-			}
-			_, _ = history.create()
-		}
 	}
 
 	return nil

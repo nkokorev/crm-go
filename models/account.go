@@ -374,7 +374,7 @@ func (account Account) GetUserForAuthAppByUsername(username string) (*User, erro
 	// Просто ищем пользователя с таким username
 	user, err := User{}.GetByUsername(username)
 	if err != nil {
-		return nil, utils.Error{Message: "Пользователь не найден"}
+		return nil, utils.Error{ Message: "Пользователь не найден" }
 	}
 
 	// 2. Проверяем, имеет ли он доступ к целевому аккаунту

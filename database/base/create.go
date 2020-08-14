@@ -1428,21 +1428,18 @@ func UploadTestDataPart_III() {
 	num7 := uint(7)
 	emailNotifications := []models.EmailNotification {
 		{
-			Enabled: false, DelayTime: 0, Name:"Новый заказ", Description: "Оповещение менеджеров о новом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
-			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-marketing.ru"})},
-			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{2,6,7})},
+			Enabled: false, DelayTime: 0, Name:"Оповещение менеджера", Subject: "Поступил новый заказ", EmailTemplateId: &numOne,
+			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{2})},
 			EmailBoxId: &num5,
 
 		},
 		{
-			Enabled: false, DelayTime: 0, Name:"Ваш заказ получен!", Description: "Информирование клиента о принятом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
-			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"mex388@gmail.com"})},
+			Enabled: false, DelayTime: 0, Name:"Оповещение клиента", Subject: "Ваш заказ получен", EmailTemplateId: &numOne,
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{7})},
 			EmailBoxId: &num6,
 		},
 		{
-			Enabled: false, DelayTime: 0, Name:"*Ваш заказ отправлен по почте", Description: "Информирование клиента о принятом заказе", EmailTemplateId: &numOne, SendingToFixedAddresses: true,
-			RecipientList: postgres.Jsonb{RawMessage: utils.StringArrToRawJson([]string{"nkokorev@rus-marketing.ru"})},
+			Enabled: false, DelayTime: 0, Name:"Оповещение об отправке заказа",Subject: "Ваш заказ отправлен по почте",  EmailTemplateId: &numOne,
 			EmailBoxId: &num7,
 		},
 
@@ -1858,11 +1855,11 @@ func UploadBroUserData() {
 }
 
 func Migrate_I() {
-	pool := models.GetPool()
+	// pool := models.GetPool()
 
 	// pool.AutoMigrate(&models.EmailNotification{})
 	// pool.AutoMigrate(&models.EmailTemplate{})
-	pool.AutoMigrate(&models.AccountUser{})
+	// pool.AutoMigrate(&models.AccountUser{})
 	/*
 
 		// 05.08.2020
