@@ -279,19 +279,28 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 
 		// Проверяем состоянии очереди
 		if !sender.IsEnabled() {
-			return utils.Error{Message: fmt.Sprintf("Невозможно отправить письмо, т.к. объект [id = %v] не запущен\n", sender.GetId())}
+			// Тут могут копиться люди в очереди
+			return utils.Error{ Message: fmt.Sprintf("Невозможно отправить письмо, т.к. объект [id = %v] не запущен\n", sender.GetId()),
+			}
 		}
 
 		emailQueue, ok := sender.(*EmailQueue)
 		if !ok { return errors.New("Ошибка преобразования в EmailQueue")}
 		
 		step, err := emailQueue.GetNearbyActiveStep(mtaWorkflow.QueueExpectedStepId)
-		if err != nil {return err}
+		if err != nil {
+			// Если нет доступных шагов - удаляем задачу
+			if err = mtaWorkflow.delete(); err != nil {
+				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
+			}
+			return err
+		}
 
 		if step.EmailBoxId == nil {
 			return utils.Error{Message: "Данные не полные: не хватает emailBoxID"}
 		}
 
+		// Только теоретически такое возможно
 		if !step.Enabled {
 			if err = mtaWorkflow.delete(); err != nil {
 				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/nkokorev/crm-go/event"
 )
 
@@ -20,6 +21,7 @@ func (Event) UserDeleted(accountId uint, userId uint) event.Event {
 }
 
 func (Event) UserAppendedToAccount(accountId, userId, roleId uint) event.Event {
+	fmt.Println("UserAppendedToAccount")
 	return event.NewBasic("UserAppendedToAccount", map[string]interface{}{"accountId":accountId, "userId":userId, "roleId":roleId})
 }
 func (Event) UserRemovedFromAccount(accountId, userId uint) event.Event {

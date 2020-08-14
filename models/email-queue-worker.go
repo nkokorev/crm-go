@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"log"
 	"time"
 )
@@ -36,6 +37,11 @@ func emailQueueWorker() {
 			continue
 		}*/
 
+		/*err := db.Model(&MTAWorkflow{}).
+			Joins("LEFT JOIN email_queues ON email_queues.id = mta_workflows.owner_id").
+			Select("email_queues.enabled, mta_workflows.*").
+			Where("email_queues.enabled = 'true' AND mta_workflows.expected_time_start <= ?", time.Now().UTC()).Limit(100).Find(&workflows).Error*/
+
 		err := db.Model(&MTAWorkflow{}).
 			Joins("LEFT JOIN email_queues ON email_queues.id = mta_workflows.owner_id").
 			Select("email_queues.enabled, mta_workflows.*").
@@ -45,6 +51,8 @@ func emailQueueWorker() {
 			time.Sleep(time.Second*10)
 			continue
 		}
+
+		fmt.Println("workflows: ", workflows)
 
 		// Подготавливаем отправку
 		for i := range workflows {

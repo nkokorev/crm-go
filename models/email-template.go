@@ -282,8 +282,10 @@ func (emailTemplate EmailTemplate) GetHTML(viewData *ViewData) (html string, err
 func (emailTemplate EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, vData *ViewData, unsubscribeUrl string) error {
 
 	// fmt.Println("unsubscribeUrl: ", unsubscribeUrl)
+	// fmt.Println("Типа отослали")
+	// return errors.New("sdds")
 
-	if from.WebSite.Id <1 {
+	if from.WebSite.Id < 1 {
 		log.Println("EmailTemplate: Не удалось определить WebSite")
 		return utils.Error{Message: "Не удалось определить WebSite"}
 	}
