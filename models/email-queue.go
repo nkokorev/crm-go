@@ -21,10 +21,10 @@ type EmailQueue struct {
 
 	// EmailQueueEmailTemplate	[]EmailQueueEmailTemplate	`json:"-"`
 
-	// EmailQueueWorkflow []EmailQueueWorkflow `json:"emailQueueWorkflow" gorm:"preload"`
-	// EmailQueueWorkflowQuantity uint `json:"emailQueueWorkflowQuantity" gorm:"preload"`
+	// MTAWorkflow []MTAWorkflow `json:"emailQueueWorkflow" gorm:"preload"`
+	// MTAWorkflowQuantity uint `json:"emailQueueWorkflowQuantity" gorm:"preload"`
 
-	// Сколько в очереди сейчас задач (выборка по EmailQueueWorkflow) = сколько подписчиков еще проходят, в процессе
+	// Сколько в очереди сейчас задач (выборка по MTAWorkflow) = сколько подписчиков еще проходят, в процессе
 	Queue uint `json:"_queue" gorm:"-"`
 
 	// Из скольких активных писем состоит цепочка      activeEmailTemplates
@@ -92,7 +92,7 @@ func (emailQueue *EmailQueue) AfterFind() (err error) {
 
 	// Рассчитываем сколько пользователей сейчас в очереди
 	countQueue := uint(0)
-	err = db.Model(&EmailQueueWorkflow{}).Where("account_id = ? AND email_queue_id = ?", emailQueue.AccountId, emailQueue.Id).Count(&countQueue).Error;
+	err = db.Model(&MTAWorkflow{}).Where("account_id = ? AND owner_id = ? AND owner_type = 'email_queues'", emailQueue.AccountId, emailQueue.Id).Count(&countQueue).Error
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
 	if err == gorm.ErrRecordNotFound {countQueue = 0} else { emailQueue.Queue = countQueue}
 	
@@ -120,32 +120,6 @@ func (emailQueue *EmailQueue) AfterFind() (err error) {
 		emailQueue.UnsubscribeRate = 0
 	}
 
-
-	/*// |Дорогой запрос| Сколько прошло подписчиков
-	countRecipients := uint(0)
-	// err = db.Model(&EmailQueueWorkflowHistory{}).Where("account_id = ? AND email_queue_id = ? AND completed ='true'", emailQueue.AccountId, emailQueue.Id).Count(&countRecipients).Error;
-	err = db.Model(&EmailQueueWorkflowHistory{}).Where("account_id = ? AND email_queue_id = ? AND completed = 'true'", emailQueue.AccountId, emailQueue.Id).
-		Select("count(id)").Count(&countRecipients).Error;
-	if err != nil && err != gorm.ErrRecordNotFound { return err }
-	if err == gorm.ErrRecordNotFound {countRecipients = 0} else { emailQueue.Recipients = countRecipients}
-
-	// |Дорогой запрос| Сколько прошло подписчиков
-	countOpens := uint(0)
-	// err = db.Model(&EmailQueueWorkflowHistory{}).Where("account_id = ? AND email_queue_id = ? AND completed ='true'", emailQueue.AccountId, emailQueue.Id).Count(&countRecipients).Error;
-	err = db.Model(&EmailQueueWorkflowHistory{}).Where("account_id = ? AND email_queue_id = ? AND opens >=1", emailQueue.AccountId, emailQueue.Id).
-		Select("count(id)").Count(&countOpens).Error;
-	if err != nil && err != gorm.ErrRecordNotFound { return err }
-	if err == gorm.ErrRecordNotFound {countOpens = 0} else { emailQueue.OpenRate = (float64(countOpens) / float64(countRecipients))*100 }
-
-	// |Дорогой запрос| Каков % отписок
-	countUnsubs := uint(0)
-	// err = db.Model(&EmailQueueWorkflowHistory{}).Where("account_id = ? AND email_queue_id = ? AND completed ='true'", emailQueue.AccountId, emailQueue.Id).Count(&countRecipients).Error;
-	err = db.Model(&EmailQueueWorkflowHistory{}).Where("account_id = ? AND email_queue_id = ? AND unsubscribed = 'true'", emailQueue.AccountId, emailQueue.Id).
-		Select("count(id)").Count(&countUnsubs).Error;
-	if err != nil && err != gorm.ErrRecordNotFound { return err }
-	if err == gorm.ErrRecordNotFound {countUnsubs = 0} else { emailQueue.UnsubscribeRate = (float64(countUnsubs) / float64(countRecipients))*100 }*/
-	
-
 	return nil
 }
 
@@ -156,6 +130,8 @@ func (emailQueue *EmailQueue) setPublicId(publicId uint) { emailQueue.PublicId =
 func (emailQueue EmailQueue) GetAccountId() uint { return emailQueue.AccountId }
 func (emailQueue *EmailQueue) setAccountId(id uint) { emailQueue.AccountId = id }
 func (EmailQueue) SystemEntity() bool { return false }
+func (EmailQueue) GetType() string { return "email_queues" }
+func (emailQueue EmailQueue) IsEnabled() bool { return emailQueue.Enabled }
 // ############# Entity interface #############
 
 // ######### CRUD Functions ############
@@ -234,7 +210,7 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 		search = "%"+search+"%"
 
 		err := (&EmailQueue{}).GetPreloadDb(true,false,true).
-			Preload("EmailQueueWorkflow", func(db *gorm.DB) *gorm.DB {
+			Preload("MTAWorkflow", func(db *gorm.DB) *gorm.DB {
 				return db.Select([]string{"id"})
 			}).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
@@ -390,7 +366,7 @@ func (emailQueue EmailQueue) AppendUser(userId uint) error {
 	}
 
 	// 2. Get Step
-	step, err := emailQueue.GetFirstStep();
+	step, err := emailQueue.GetFirstStep()
 	if err != nil {
 		return err
 	}
@@ -399,17 +375,18 @@ func (emailQueue EmailQueue) AppendUser(userId uint) error {
 	// todo: проверка на запуск письма в серии.
 	// ...
 	
-	// 2. Add user to EmailQueueWorkflow
-	emailQueueWorkflow := EmailQueueWorkflow{
+	// 2. Add user to MTAWorkflow
+	mtaWorkflow := MTAWorkflow{
 		AccountId: emailQueue.AccountId,
-		EmailQueueId: emailQueue.Id,
-		ExpectedStepId: step.Order,
+		OwnerId: emailQueue.Id,
+		OwnerType: EmailSenderQueue,
+		QueueExpectedStepId: step.Order,
 		ExpectedTimeStart: time.Now().UTC().Add(step.DelayTime),
 		UserId: userId, 
 		NumberOfAttempts: 0, // << пока так
 	}
 
-	if _, err := emailQueueWorkflow.create(); err != nil {
+	if _, err := mtaWorkflow.create(); err != nil {
 		return err
 	}
 

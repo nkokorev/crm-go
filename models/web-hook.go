@@ -13,10 +13,6 @@ import (
 
 type WebHookType = string
 
-type WebHookEventObject interface {
-	getId() uint
-}
-
 const (
 	EventShopCreated 	WebHookType = "ShopCreated"
 	EventShopUpdated 	WebHookType = "ShopUpdated"

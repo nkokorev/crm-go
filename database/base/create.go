@@ -77,7 +77,7 @@ func RefreshTablesPart_I() {
 
 	pool.DropTableIfExists(
 		models.MTAHistory{},
-		models.EmailQueueWorkflow{},
+		models.MTAWorkflow{},
 		models.EmailQueueEmailTemplate{},
 		models.EmailQueue{},
 	)
@@ -134,7 +134,7 @@ func RefreshTablesPart_I() {
 
 	models.EmailQueue{}.PgSqlCreate()
 	models.EmailQueueEmailTemplate{}.PgSqlCreate()
-	models.EmailQueueWorkflow{}.PgSqlCreate()
+	models.MTAWorkflow{}.PgSqlCreate()
 
 	models.MTAHistory{}.PgSqlCreate()
 	
@@ -1860,19 +1860,7 @@ func Migrate_I() {
 	// pool.AutoMigrate(&models.EmailNotification{})
 	// pool.AutoMigrate(&models.EmailTemplate{})
 	// pool.AutoMigrate(&models.AccountUser{})
-	/*
-
-		// 05.08.2020
-		pool.DropTableIfExists(
-			models.MTAHistory{},
-			models.EmailQueueWorkflow{},
-			models.EmailQueueEmailTemplate{},
-			models.EmailQueue{},
-			)
-
-		models.EmailQueue{}.PgSqlCreate()
-		models.EmailQueueEmailTemplate{}.PgSqlCreate()
-		models.EmailQueueWorkflow{}.PgSqlCreate()
-		models.MTAHistory{}.PgSqlCreate()*/
+	
+	
 
 }

@@ -1,20 +1,18 @@
 package models
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
-	"html/template"
 	"log"
 	"reflect"
 	"strings"
 	"time"
 )
 
-type EmailNotification struct {
+type EmailCampaign struct {
 	Id     			uint   	`json:"id" gorm:"primary_key"`
 	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"`
 	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
@@ -59,44 +57,44 @@ type EmailNotification struct {
 }
 
 // ############# Entity interface #############
-func (emailNotification EmailNotification) GetId() uint { return emailNotification.Id }
-func (emailNotification *EmailNotification) setId(id uint) { emailNotification.Id = id }
-func (emailNotification *EmailNotification) setPublicId(publicId uint) { emailNotification.PublicId = publicId }
-func (emailNotification EmailNotification) GetAccountId() uint { return emailNotification.AccountId }
-func (emailNotification *EmailNotification) setAccountId(id uint) { emailNotification.AccountId = id }
-func (EmailNotification) SystemEntity() bool { return false }
-func (EmailNotification) GetType() string { return "email_notifications" }
-func (emailNotification EmailNotification) IsEnabled() bool { return emailNotification.Enabled }
+func (emailCampaign EmailCampaign) GetId() uint { return emailCampaign.Id }
+func (emailCampaign *EmailCampaign) setId(id uint) { emailCampaign.Id = id }
+func (emailCampaign *EmailCampaign) setPublicId(publicId uint) { emailCampaign.PublicId = publicId }
+func (emailCampaign EmailCampaign) GetAccountId() uint { return emailCampaign.AccountId }
+func (emailCampaign *EmailCampaign) setAccountId(id uint) { emailCampaign.AccountId = id }
+func (EmailCampaign) SystemEntity() bool { return false }
+func (EmailCampaign) GetType() string { return "email_campaigns" }
+func (emailCampaign EmailCampaign) IsEnabled() bool { return emailCampaign.Enabled }
 
 // ############# Entity interface #############
 
-func (EmailNotification) PgSqlCreate() {
-	db.CreateTable(&EmailNotification{})
-	db.Model(&EmailNotification{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&EmailNotification{}).AddForeignKey("email_template_id", "email_templates(id)", "RESTRICT", "CASCADE")
+func (EmailCampaign) PgSqlCreate() {
+	db.CreateTable(&EmailCampaign{})
+	db.Model(&EmailCampaign{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Model(&EmailCampaign{}).AddForeignKey("email_template_id", "email_templates(id)", "RESTRICT", "CASCADE")
 }
-func (emailNotification *EmailNotification) BeforeCreate(scope *gorm.Scope) error {
-	emailNotification.Id = 0
+func (emailCampaign *EmailCampaign) BeforeCreate(scope *gorm.Scope) error {
+	emailCampaign.Id = 0
 
 	// PublicId
 	lastIdx := uint(0)
-	var eq EmailNotification
+	var eq EmailCampaign
 
-	err := db.Where("account_id = ?", emailNotification.AccountId).Select("public_id").Last(&eq).Error
+	err := db.Where("account_id = ?", emailCampaign.AccountId).Select("public_id").Last(&eq).Error
 	if err != nil && err != gorm.ErrRecordNotFound { return err}
 	if err == gorm.ErrRecordNotFound {
 		lastIdx = 0
 	} else {
 		lastIdx = eq.PublicId
 	}
-	emailNotification.PublicId = lastIdx + 1
+	emailCampaign.PublicId = lastIdx + 1
 
 	return nil
 }
-func (emailNotification *EmailNotification) AfterFind() (err error) {
+func (emailCampaign *EmailCampaign) AfterFind() (err error) {
 
 	// Собираем пользователей
-	b, err := emailNotification.RecipientUsersList.MarshalJSON()
+	b, err := emailCampaign.RecipientUsersList.MarshalJSON()
 	if err != nil {
 		return err
 	}
@@ -105,14 +103,14 @@ func (emailNotification *EmailNotification) AfterFind() (err error) {
 	err = json.Unmarshal(b, &arr)
 	if err != nil { return err }
 
-	err = db.Find(&emailNotification.RecipientUsers, "id IN (?)", arr).Error
+	err = db.Find(&emailCampaign.RecipientUsers, "id IN (?)", arr).Error
 	if err != nil  {return err}
 
 
 	/////////////////////////////////////
 
-	if reflect.DeepEqual(emailNotification.RecipientUsersList, *new(postgres.Jsonb)) {
-		emailNotification.RecipientUsersList = postgres.Jsonb{RawMessage: []byte("[]")}
+	if reflect.DeepEqual(emailCampaign.RecipientUsersList, *new(postgres.Jsonb)) {
+		emailCampaign.RecipientUsersList = postgres.Jsonb{RawMessage: []byte("[]")}
 	}
 
 
@@ -120,9 +118,9 @@ func (emailNotification *EmailNotification) AfterFind() (err error) {
 }
 
 // ######### CRUD Functions ############
-func (emailNotification EmailNotification) create() (Entity, error)  {
+func (emailCampaign EmailCampaign) create() (Entity, error)  {
 
-	en := emailNotification
+	en := emailCampaign
 
 	if err := db.Create(&en).Error; err != nil {
 		return nil, err
@@ -138,42 +136,42 @@ func (emailNotification EmailNotification) create() (Entity, error)  {
 	return newItem, nil
 }
 
-func (EmailNotification) get(id uint) (Entity, error) {
+func (EmailCampaign) get(id uint) (Entity, error) {
 
-	var emailNotification EmailNotification
+	var emailCampaign EmailCampaign
 
-	err := db.Preload("EmailBox").First(&emailNotification, id).Error
+	err := db.Preload("EmailBox").First(&emailCampaign, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &emailNotification, nil
+	return &emailCampaign, nil
 }
-func (emailNotification *EmailNotification) load() error {
+func (emailCampaign *EmailCampaign) load() error {
 
-	err := db.Preload("EmailBox").First(emailNotification, emailNotification.Id).Error
+	err := db.Preload("EmailBox").First(emailCampaign, emailCampaign.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (emailNotification *EmailNotification) loadByPublicId() error {
+func (emailCampaign *EmailCampaign) loadByPublicId() error {
 	
-	if emailNotification.PublicId < 1 {
-		return utils.Error{Message: "Невозможно загрузить EmailNotification - не указан  Id"}
+	if emailCampaign.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить EmailCampaign - не указан  Id"}
 	}
-	if err := emailNotification.GetPreloadDb(false,false, true).First(emailNotification, "account_id = ? AND public_id = ?", emailNotification.AccountId, emailNotification.PublicId).Error; err != nil {
+	if err := emailCampaign.GetPreloadDb(false,false, true).First(emailCampaign, "account_id = ? AND public_id = ?", emailCampaign.AccountId, emailCampaign.PublicId).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (EmailNotification) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return EmailNotification{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
+func (EmailCampaign) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+	return EmailCampaign{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-func (EmailNotification) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (EmailCampaign) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
-	emailNotifications := make([]EmailNotification,0)
+	emailNotifications := make([]EmailCampaign,0)
 	var total uint
 
 	// if need to search
@@ -183,7 +181,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		// jsearch := search
 		search = "%"+search+"%"
 
-		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&EmailCampaign{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
 				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
 			}).Preload("EmailBox").
@@ -194,7 +192,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		}
 
 		// Определяем total
-		err = db.Model(&EmailNotification{}).
+		err = db.Model(&EmailCampaign{}).
 			Where("account_id = ? AND name ILIKE ? OR description ILIKE ? ", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
@@ -203,7 +201,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 
 	} else {
 
-		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := db.Model(&EmailCampaign{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
 				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
 			}).Preload("EmailBox").
@@ -213,7 +211,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		}
 
 		// Определяем total
-		err = db.Model(&EmailNotification{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&EmailCampaign{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -228,7 +226,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 	return entities, total, nil
 }
 
-func (emailNotification *EmailNotification) update(input map[string]interface{}) error {
+func (emailCampaign *EmailCampaign) update(input map[string]interface{}) error {
 
 	// Приводим в опрядок
 	input = utils.FixJSONB_String(input, []string{"recipientList"})
@@ -240,23 +238,23 @@ func (emailNotification *EmailNotification) update(input map[string]interface{})
 	delete(input, "emailBox")
 
 
-	// if err := db.Model(EmailNotification{}).Where("id = ?", emailNotification.Id).Omit("id", "account_id").Updates(input).Error; err != nil {
+	// if err := db.Model(EmailCampaign{}).Where("id = ?", emailCampaign.Id).Omit("id", "account_id").Updates(input).Error; err != nil {
 	// 	return err
 	// }
-	// fmt.Println("emailNotification id", emailNotification.EmailBoxId)
+	// fmt.Println("emailCampaign id", emailCampaign.EmailBoxId)
 
-/*	if err := db.Model(emailNotification).
+/*	if err := db.Model(emailCampaign).
 		Omit("id", "account_id","created_at").Update(input).Error; err != nil {
 		return err
 	}*/
 
 	// work!!!
-	if err := db.Set("gorm:association_autoupdate", false).Model(EmailNotification{}).Where(" id = ?", emailNotification.Id).
+	if err := db.Set("gorm:association_autoupdate", false).Model(EmailCampaign{}).Where(" id = ?", emailCampaign.Id).
 		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
 		return err
 	}
 
-	err := db.Preload("EmailBox").Preload("EmailTemplate").First(emailNotification, emailNotification.Id).Error
+	err := db.Preload("EmailBox").Preload("EmailTemplate").First(emailCampaign, emailCampaign.Id).Error
 	if err != nil {
 		return err
 	}
@@ -264,21 +262,21 @@ func (emailNotification *EmailNotification) update(input map[string]interface{})
 	return nil
 }
 
-func (emailNotification *EmailNotification) delete () error {
-	return db.Model(EmailNotification{}).Where("id = ?", emailNotification.Id).Delete(emailNotification).Error
+func (emailCampaign *EmailCampaign) delete () error {
+	return db.Model(EmailCampaign{}).Where("id = ?", emailCampaign.Id).Delete(emailCampaign).Error
 }
 // ######### END CRUD Functions ############
 
-func (emailNotification *EmailNotification) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (emailCampaign *EmailCampaign) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
 	_db := db
 
 	if autoUpdateOff {
 		_db = _db.Set("gorm:association_autoupdate", false)
 	}
 	if getModel {
-		_db = _db.Model(emailNotification)
+		_db = _db.Model(emailCampaign)
 	} else {
-		_db = _db.Model(&EmailNotification{})
+		_db = _db.Model(&EmailCampaign{})
 	}
 
 	if preload {
@@ -291,30 +289,30 @@ func (emailNotification *EmailNotification) GetPreloadDb(autoUpdateOff bool, get
 }
 
 // Вызов уведомления
-func (emailNotification EmailNotification) Execute(data map[string]interface{}) error {
+func (emailCampaign EmailCampaign) Execute(data map[string]interface{}) error {
 
 	// Проверяем статус уведомления
-	if !emailNotification.Enabled {
+	if !emailCampaign.Enabled {
 		return utils.Error{Message: "Уведомление не может быть отправлено т.к. находится в статусе - 'Отключено'"}
 	}
 
 	// Проверяем тело сообщения (не должно быть пустое)
-	if emailNotification.Subject == "" {
+	if emailCampaign.Subject == "" {
 		return utils.Error{Message: "Уведомление не может быть отправлено т.к. нет темы сообщения"}
 	}
 
 	// Get Account
-	account, err := GetAccount(emailNotification.AccountId)
+	account, err := GetAccount(emailCampaign.AccountId)
 	if err != nil {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается найти аккаунт"}
 	}
 
 	// Находим шаблон письма
-	emailTemplateEntity, err := EmailTemplate{}.get(*emailNotification.EmailTemplateId)
+	emailTemplateEntity, err := EmailTemplate{}.get(*emailCampaign.EmailTemplateId)
 	if err != nil {
 		return err
 	}
-	if emailTemplateEntity.GetAccountId() != emailNotification.AccountId {
+	if emailTemplateEntity.GetAccountId() != emailCampaign.AccountId {
 		return utils.Error{Message: "Ошибка отправления Уведомления - шаблон принадлежит другому аккаунту 2"}
 	}
 	emailTemplate, ok := emailTemplateEntity.(*EmailTemplate)
@@ -323,12 +321,12 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 	}
 
 	// Проверяем, чтобы был почтовые ящики, с которого отправляем
-	if emailNotification.EmailBox.Id < 1 {
+	if emailCampaign.EmailBox.Id < 1 {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается получить почтовый ящик"}
 	}
 
 	// Загружаем данные почтового ящика
-	err = emailNotification.EmailBox.load()
+	err = emailCampaign.EmailBox.load()
 	if err != nil {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается загрузить данные WEbSite"}
 	}
@@ -338,11 +336,11 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 	var users = make([]User,0)
 
 	// 1. Собираем список пользователей
-	for i := range emailNotification.RecipientUsers {
-		users = append(users, emailNotification.RecipientUsers[i])
+	for i := range emailCampaign.RecipientUsers {
+		users = append(users, emailCampaign.RecipientUsers[i])
 
 	}
-	if emailNotification.ParseRecipientUser {
+	if emailCampaign.ParseRecipientUser {
 		if userSTR, ok := data["userId"]; ok {
 			if userId, ok := userSTR.(uint); ok {
 				user, err := account.GetUser(userId)
@@ -352,7 +350,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			}
 		}
 	}
-	if emailNotification.ParseRecipientCustomer {
+	if emailCampaign.ParseRecipientCustomer {
 		if customerSTR, ok := data["customerId"]; ok {
 			if customerId, ok := customerSTR.(uint); ok {
 				customer, err := account.GetUser(customerId)
@@ -362,7 +360,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			}
 		}
 	}
-	if emailNotification.ParseRecipientManager {
+	if emailCampaign.ParseRecipientManager {
 		if managerSTR, ok := data["managerId"]; ok {
 			if managerId, ok := managerSTR.(uint); ok {
 				manager, err := account.GetUser(managerId)
@@ -378,10 +376,10 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 
 		history := &MTAHistory{
 			HashId:  strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true)),
-			AccountId: emailNotification.AccountId,
+			AccountId: emailCampaign.AccountId,
 			UserId: &users[i].Id,
 			Email: users[i].Email,
-			OwnerId: emailNotification.Id,
+			OwnerId: emailCampaign.Id,
 			OwnerType: "email_notifications",
 			EmailTemplateId: utils.UINTp(emailTemplate.Id),
 			NumberOfAttempts: 1,
@@ -392,24 +390,24 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		pixelURL := account.GetPixelUrl(*history)
 
 		// Компилируем тему письма
-		_subject, err := parseSubjectByData(emailNotification.Subject, data)
+		_subject, err := parseSubjectByData(emailCampaign.Subject, data)
 		if err != nil {
-			log.Printf("Ошибка отправления Уведомления - не удается прочитать тему сообщения. emailNotificationId: %v\n", emailNotification.Id)
+			log.Printf("Ошибка отправления Уведомления - не удается прочитать тему сообщения. emailNotificationId: %v\n", emailCampaign.Id)
 			continue
 		}
 		if _subject == "" {
-			_subject = fmt.Sprintf("Уведомление по почте #%v", emailNotification.Id)
+			_subject = fmt.Sprintf("Уведомление по почте #%v", emailCampaign.Id)
 		}
 
-		vData, err := emailTemplate.PrepareViewData(_subject, emailNotification.PreviewText, data, pixelURL, &unsubscribeUrl)
+		vData, err := emailTemplate.PrepareViewData(_subject, emailCampaign.PreviewText, data, pixelURL, &unsubscribeUrl)
 		if err != nil {
-			log.Printf("Ошибка отправления Уведомления - не удается подготовить данные для сообщения. emailNotificationId: %v\n", emailNotification.Id)
+			log.Printf("Ошибка отправления Уведомления - не удается подготовить данные для сообщения. emailNotificationId: %v\n", emailCampaign.Id)
 			continue
 		}
 
 		// if now ==
-		if emailNotification.DelayTime == 0 {
-			err = emailTemplate.SendMail(emailNotification.EmailBox, users[i].Email, _subject, vData, unsubscribeUrl)
+		if emailCampaign.DelayTime == 0 {
+			err = emailTemplate.SendMail(emailCampaign.EmailBox, users[i].Email, _subject, vData, unsubscribeUrl)
 			if err != nil {
 				history.Succeed = false
 			} else {
@@ -424,21 +422,4 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 	}
 
 	return nil
-}
-
-func parseSubjectByData(tpl string, data map[string]interface{}) (string, error) {
-
-	body := new(bytes.Buffer)
-
-	tmpl, err := template.New("et.Name").Parse(tpl)
-	if err != nil {
-		return "", err
-	}
-
-	err = tmpl.Execute(body, data)
-	if err != nil {
-		return "", utils.Error{Message: fmt.Sprintf("Ошибка в заголовке шаблона")}
-	}
-
-	return body.String(), nil
 }

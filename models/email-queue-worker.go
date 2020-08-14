@@ -23,13 +23,23 @@ func emailQueueWorker() {
 			continue
 		}
 		
-		workflows := make([]EmailQueueWorkflow,0)
+		workflows := make([]MTAWorkflow,0)
 
 		// Получаем задачи у которых серия запущена
-		err := db.Model(&EmailQueueWorkflow{}).
+		/*err := db.Model(&MTAWorkflow{}).
 			Joins("LEFT JOIN email_queues ON email_queues.id = email_queue_workflows.email_queue_id").
 			Select("email_queues.enabled, email_queue_workflows.*").
 			Where("email_queues.enabled = 'true' AND email_queue_workflows.expected_time_start <= ?", time.Now().UTC()).Limit(100).Find(&workflows).Error
+		if err != nil {
+			log.Printf("emailQueueWorker:  %v", err)
+			time.Sleep(time.Second*10)
+			continue
+		}*/
+
+		err := db.Model(&MTAWorkflow{}).
+			Joins("LEFT JOIN email_queues ON email_queues.id = mta_workflows.owner_id").
+			Select("email_queues.enabled, mta_workflows.*").
+			Where("email_queues.enabled = 'true' AND mta_workflows.expected_time_start <= ?", time.Now().UTC()).Limit(100).Find(&workflows).Error
 		if err != nil {
 			log.Printf("emailQueueWorker:  %v", err)
 			time.Sleep(time.Second*10)
