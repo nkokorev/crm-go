@@ -403,7 +403,7 @@ func (account Account) GetUserByEmail(email string) (*User, error) {
 	var user User
 
 	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
-		Select("account_users.account_id, users.*").
+		Select("account_users.public_id, account_users.account_id, users.*").
 		Where("account_users.account_id = ? AND users.email = ?", account.Id, email).
 		First(&user).Error
 	if err != nil {
@@ -430,7 +430,7 @@ func (account Account) GetUserByPhone(phone string, regions... string) (*User, e
 	var user User
 
 	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
-		Select("account_users.account_id, users.*").
+		Select("account_users.public_id, account_users.account_id, users.*").
 		Where("account_users.account_id = ? AND phone = ? AND phone_region = ?", account.Id, _phone, region).
 		First(&user).Error
 	if err != nil {
@@ -450,7 +450,7 @@ func (account Account) GetUsersByList(list []uint, sortBy string) ([]User, uint,
 
 
 	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
-		Select("account_users.account_id, account_users.role_id, users.*").Order(sortBy).
+		Select("account_users.public_id, account_users.account_id, account_users.role_id, users.*").Order(sortBy).
 		Where("account_users.account_id = ? AND users.id IN (?)", account.Id, list).Preload("Roles").
 		Find(&users).Error
 	if err != nil {
@@ -478,7 +478,7 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 		search = "%"+search+"%"
 
 		err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
-			Select("account_users.account_id, account_users.role_id, users.*").
+			Select("account_users.public_id, account_users.account_id, account_users.role_id, users.*").
 			Order(sortBy).Limit(limit).
 			Preload("AccountUser", func(db *gorm.DB) *gorm.DB {
 				return db.Select(AccountUser{}.SelectArrayWithoutBigObject())
@@ -501,7 +501,7 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 	} else {
 
 		err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
-			Select("account_users.account_id, account_users.role_id, users.*").
+			Select("account_users.public_id, account_users.account_id, account_users.role_id, users.*").
 			Where("account_users.account_id = ? AND account_users.role_id IN (?)", account.Id, role).
 			Order(sortBy).Offset(offset).Limit(limit).
 			Preload("AccountUser", func(db *gorm.DB) *gorm.DB {

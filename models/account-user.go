@@ -3,23 +3,22 @@ package models
 import (
 	"errors"
 	"github.com/fatih/structs"
+	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 )
 
 // M<>M
 type AccountUser struct {
+	
+	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1;"`
+
 	AccountId uint	`json:"accountId" gorm:"type:int;index;not null;"`
 	UserId uint	`json:"userId" gorm:"type:int;index;not null;"`
 	RoleId uint	`json:"roleId" gorm:"type:int;not null;"`
 
 	User    User    `json:"-"  gorm:"preload:true"`
-
-	//User `json:"user"  gorm:"preload:true"`
 	Account Account `json:"-" gorm:"preload:true"`
-	//Role    Role    `json:"role" gorm:"preload:true"`
 	Role    Role    `json:"role" gorm:"preload:true"`
-	// Role    Role    `json:"role"  gorm:"many2many:account_users;preload"`
-	// Role []Role `json:"role" gorm:"many2many:account_users;preload"`
 }
 
 func (AccountUser) PgSqlCreate() {
@@ -30,6 +29,23 @@ func (AccountUser) PgSqlCreate() {
 	db.Model(&AccountUser{}).AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
 	db.Model(&AccountUser{}).AddForeignKey("role_id", "roles(id)", "RESTRICT", "CASCADE")
 	db.Exec("create unique index uix_account_users_account_id_user_id_role_id ON account_users (account_id,user_id,role_id);")
+}
+func (aUser *AccountUser) BeforeCreate(scope *gorm.Scope) error {
+
+	// 1. Рассчитываем PublicId (#id заказа) внутри аккаунта
+	lastIdx := uint(0)
+	var ord AccountUser
+
+	err := db.Where("account_id = ?", aUser.AccountId).Select("public_id").Last(&ord).Error
+	if err != nil && err != gorm.ErrRecordNotFound { return err}
+	if err == gorm.ErrRecordNotFound {
+		lastIdx = 0
+	} else {
+		lastIdx = ord.PublicId
+	}
+	aUser.PublicId = lastIdx + 1
+
+	return nil
 }
 
 // Установить имя таблицы AccountUser's как `account_users`
@@ -78,7 +94,6 @@ func (aUser *AccountUser) update (input interface{}) error {
 	return db.Model(AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).
 		Updates(input).Preload("Account").Preload("User").Preload("Role").First(aUser).Error
 }
-
 
 func (aUser *AccountUser) delete() error {
 	

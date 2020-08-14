@@ -482,6 +482,7 @@ func (paymentYandex PaymentYandex) PrepaymentCheck(payment *Payment, order Order
 
 	if response.StatusCode == 200 {
 
+		// todo: повесить флаг отправки зачетного чека
 		// fmt.Println("response.StatusCode: ", response.StatusCode)
 		// ставим дату Чека закрытия
 		/*if err := payment.update(map[string]interface{}{"ConfirmationUrl":confirmation.ConfirmationUrl}); err != nil {

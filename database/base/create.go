@@ -1860,8 +1860,9 @@ func UploadBroUserData() {
 func Migrate_I() {
 	pool := models.GetPool()
 
-	pool.AutoMigrate(&models.EmailNotification{})
-	pool.AutoMigrate(&models.EmailTemplate{})
+	// pool.AutoMigrate(&models.EmailNotification{})
+	// pool.AutoMigrate(&models.EmailTemplate{})
+	pool.AutoMigrate(&models.AccountUser{})
 	/*
 
 		// 05.08.2020
