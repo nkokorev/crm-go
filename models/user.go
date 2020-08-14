@@ -105,6 +105,9 @@ func (user *User) AfterUpdate(tx *gorm.DB) (err error) {
 	event.AsyncFire(Event{}.UserUpdated(user.IssuerAccountId, user.Id))
 	return nil
 }
+func (user *User) AfterFind() (err error) {
+	return nil
+}
 
 
 func (user User) create () (*User, error) {

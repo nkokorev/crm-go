@@ -477,7 +477,7 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 
 		search = "%"+search+"%"
 
-		err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+	/*	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
 			Select("account_users.public_id, account_users.account_id, account_users.role_id, users.*").
 			Order(sortBy).Limit(limit).
 			Preload("AccountUser", func(db *gorm.DB) *gorm.DB {
@@ -487,6 +487,24 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 			Find(&users, "hash_id ILIKE ? OR username ILIKE ? OR email ILIKE ? OR phone ILIKE ? OR name ILIKE ? OR surname ILIKE ? OR patronymic ILIKE ?", search,search,search,search,search,search,search).Error
 		if err != nil {
 			return nil, 0, err
+		}*/
+
+		err := db.Table("users").Joins("left join account_users ON account_users.user_id = users.id").
+			Select("account_users.account_id, account_users.role_id, users.*").
+			Where("account_users.account_id = ? AND account_users.role_id IN (?)", account.Id, role).
+			Order(sortBy).Offset(offset).Limit(limit).
+			Find(&users, "hash_id ILIKE ? OR username ILIKE ? OR email ILIKE ? OR phone ILIKE ? OR name ILIKE ? OR surname ILIKE ? OR patronymic ILIKE ?", search,search,search,search,search,search,search).Error
+		if err != nil {
+			return nil, 0, err
+		}
+
+		for i := range users {
+			var aUser AccountUser
+			err = db.Model(&aUser).Where("account_id = ? AND user_id = ?", account.Id, users[i].Id).First(&aUser).Error
+			if err != nil {
+				return nil, 0, err
+			}
+			users[i].AccountUser = &aUser
 		}
 
 		// Вычисляем total
@@ -500,16 +518,31 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 
 	} else {
 
-		err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
-			Select("account_users.public_id, account_users.account_id, account_users.role_id, users.*").
+		/*err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+			Select("account_users.account_id, account_users.role_id, users.*").
 			Where("account_users.account_id = ? AND account_users.role_id IN (?)", account.Id, role).
 			Order(sortBy).Offset(offset).Limit(limit).
 			Preload("AccountUser", func(db *gorm.DB) *gorm.DB {
 				return db.Select(AccountUser{}.SelectArrayWithoutBigObject())
 			}).
+			Find(&users).Error*/
+
+		err := db.Table("users").Joins("left join account_users ON account_users.user_id = users.id").
+			Select("account_users.account_id, account_users.role_id, users.*").
+			Where("account_users.account_id = ? AND account_users.role_id IN (?)", account.Id, role).
+			Order(sortBy).Offset(offset).Limit(limit).
 			Find(&users).Error
 		if err != nil {
 			return nil, 0, err
+		}
+
+		for i := range users {
+			var aUser AccountUser
+			err = db.Model(&aUser).Where("account_id = ? AND user_id = ?", account.Id, users[i].Id).First(&aUser).Error
+			if err != nil {
+				return nil, 0, err
+			}
+			users[i].AccountUser = &aUser
 		}
 
 		// Вычисляем total
