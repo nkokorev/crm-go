@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
@@ -11,6 +12,7 @@ import (
 
 type Article struct {
 	Id     		uint   `json:"id" gorm:"primary_key"`
+	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 	HashId 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
 
@@ -53,6 +55,14 @@ func (Article) PgSqlCreate() {
 func (article *Article) BeforeCreate(scope *gorm.Scope) error {
 	article.Id = 0
 	article.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
+
+	// PublicId
+	var lastIdx sql.NullInt64
+	err := db.Model(&Article{}).Where("account_id = ?",  article.AccountId).
+		Select("max(public_id)").Row().Scan(&lastIdx)
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	article.PublicId = 1 + uint(lastIdx.Int64)
+
 	return nil
 }
 func (article *Article) AfterCreate(scope *gorm.Scope) (error) {

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
@@ -80,17 +81,11 @@ func (order *Order) BeforeCreate(scope *gorm.Scope) error {
 	order.Id = 0
 
 	// 1. Рассчитываем PublicId (#id заказа) внутри аккаунта
-	lastIdx := uint(0)
-	var ord Order
-
-	err := db.Where("account_id = ?", order.AccountId).Select("public_id").Last(&ord).Error;
-	if err != nil && err != gorm.ErrRecordNotFound { return err}
-	if err == gorm.ErrRecordNotFound {
-		lastIdx = 0
-	} else {
-		lastIdx = ord.PublicId
-	}
-	order.PublicId = lastIdx + 1
+	var lastIdx sql.NullInt64
+	err := db.Model(&Order{}).Where("account_id = ?",  order.AccountId).
+		Select("max(public_id)").Row().Scan(&lastIdx)
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	order.PublicId = 1 + uint(lastIdx.Int64)
 
 	// 2. Fix accountId in Amount
 	order.Amount.AccountId = order.AccountId

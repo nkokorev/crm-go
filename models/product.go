@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
@@ -88,17 +89,12 @@ func (product *Product) BeforeCreate(scope *gorm.Scope) error {
 	product.Id = 0
 
 	// 1. Рассчитываем PublicId (#id заказа) внутри аккаунта
-	lastIdx := uint(0)
-	var _product Product
+	var lastIdx sql.NullInt64
 
-	err := db.Where("account_id = ?", product.AccountId).Select("public_id").Last(&_product).Error
-	if err != nil && err != gorm.ErrRecordNotFound { return err}
-	if err == gorm.ErrRecordNotFound {
-		lastIdx = 0
-	} else {
-		lastIdx = _product.PublicId
-	}
-	product.PublicId = lastIdx + 1
+	err := db.Model(&Product{}).Where("account_id = ?",  product.AccountId).
+		Select("max(public_id)").Row().Scan(&lastIdx)
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	product.PublicId = 1+ uint(lastIdx.Int64)
 
 	return nil
 }

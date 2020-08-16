@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
@@ -65,17 +66,12 @@ func (DeliveryOrder) PgSqlCreate() {
 func (deliveryOrder *DeliveryOrder) BeforeCreate(scope *gorm.Scope) error {
 	deliveryOrder.Id = 0
 
-	lastIdx := uint(0)
-	var ord DeliveryOrder
+	var lastIdx sql.NullInt64
+	err := db.Model(&DeliveryOrder{}).Where("account_id = ?",  deliveryOrder.AccountId).
+		Select("max(public_id)").Row().Scan(&lastIdx)
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
 
-	err := db.Where("account_id = ?", deliveryOrder.AccountId).Select("public_id").Last(&ord).Error;
-	if err != nil && err != gorm.ErrRecordNotFound { return err}
-	if err == gorm.ErrRecordNotFound {
-		lastIdx = 0
-	} else {
-		lastIdx = ord.PublicId
-	}
-	deliveryOrder.PublicId = lastIdx + 1
+	deliveryOrder.PublicId = 1 + uint(lastIdx.Int64)
 
 	return nil
 }

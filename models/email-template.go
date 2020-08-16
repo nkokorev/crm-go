@@ -3,6 +3,7 @@ package models
 import (
 	"bytes"
 	"crypto/tls"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/fatih/structs"
@@ -57,17 +58,11 @@ func (emailTemplate *EmailTemplate) BeforeCreate(scope *gorm.Scope) error {
 	emailTemplate.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 
 	// PublicId
-	lastIdx := uint(0)
-	var eq EmailTemplate
-
-	err := db.Where("account_id = ?", emailTemplate.AccountId).Select("public_id").Last(&eq).Error
-	if err != nil && err != gorm.ErrRecordNotFound { return err}
-	if err == gorm.ErrRecordNotFound {
-		lastIdx = 0
-	} else {
-		lastIdx = eq.PublicId
-	}
-	emailTemplate.PublicId = lastIdx + 1
+	var lastIdx sql.NullInt64
+	err := db.Model(&EmailTemplate{}).Where("account_id = ?",  emailTemplate.AccountId).
+		Select("max(public_id)").Row().Scan(&lastIdx)
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	emailTemplate.PublicId = 1 + uint(lastIdx.Int64)
 	
 	return nil
 }

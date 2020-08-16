@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
@@ -120,17 +121,11 @@ func (payment *Payment) BeforeCreate(scope *gorm.Scope) error {
 	payment.Id = 0
 
 	// PublicId
-	lastIdx := uint(0)
-	var ord Payment
-
-	err := db.Where("account_id = ?", payment.AccountId).Select("public_id").Last(&ord).Error;
-	if err != nil && err != gorm.ErrRecordNotFound { return err}
-	if err == gorm.ErrRecordNotFound {
-		lastIdx = 0
-	} else {
-		lastIdx = ord.PublicId
-	}
-	payment.PublicId = lastIdx + 1
+	var lastIdx sql.NullInt64
+	err := db.Model(&Payment{}).Where("account_id = ?",  payment.AccountId).
+		Select("max(public_id)").Row().Scan(&lastIdx)
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	payment.PublicId = 1 + uint(lastIdx.Int64)
 
 	return nil
 }

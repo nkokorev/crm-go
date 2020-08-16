@@ -2,6 +2,7 @@ package models
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/jinzhu/gorm"
@@ -79,17 +80,11 @@ func (emailNotification *EmailNotification) BeforeCreate(scope *gorm.Scope) erro
 	emailNotification.Id = 0
 
 	// PublicId
-	lastIdx := uint(0)
-	var eq EmailNotification
-
-	err := db.Where("account_id = ?", emailNotification.AccountId).Select("public_id").Last(&eq).Error
-	if err != nil && err != gorm.ErrRecordNotFound { return err}
-	if err == gorm.ErrRecordNotFound {
-		lastIdx = 0
-	} else {
-		lastIdx = eq.PublicId
-	}
-	emailNotification.PublicId = lastIdx + 1
+	var lastIdx sql.NullInt64
+	err := db.Model(&EmailNotification{}).Where("account_id = ?",  emailNotification.AccountId).
+		Select("max(public_id)").Row().Scan(&lastIdx)
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	emailNotification.PublicId = 1 + uint(lastIdx.Int64)
 
 	return nil
 }

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"errors"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
@@ -33,17 +34,16 @@ func (AccountUser) PgSqlCreate() {
 func (aUser *AccountUser) BeforeCreate(scope *gorm.Scope) error {
 
 	// 1. Рассчитываем PublicId (#id заказа) внутри аккаунта
-	lastIdx := uint(0)
-	var ord AccountUser
+	var lastIdx sql.NullInt64
 
-	err := db.Where("account_id = ?", aUser.AccountId).Select("public_id").Last(&ord).Error
-	if err != nil && err != gorm.ErrRecordNotFound { return err}
-	if err == gorm.ErrRecordNotFound {
-		lastIdx = 0
-	} else {
-		lastIdx = ord.PublicId
-	}
-	aUser.PublicId = lastIdx + 1
+	row := db.Model(&AccountUser{}).Where("account_id = ?",  aUser.AccountId).
+		Select("max(public_id)").Row()
+	if row != nil {
+		err := row.Scan(&lastIdx)
+		if err != nil && err != gorm.ErrRecordNotFound { return err }
+	} 
+
+	aUser.PublicId = 1 + uint(lastIdx.Int64)
 
 	return nil
 }

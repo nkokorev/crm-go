@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/jinzhu/gorm"
@@ -77,17 +78,11 @@ func (emailCampaign *EmailCampaign) BeforeCreate(scope *gorm.Scope) error {
 	emailCampaign.Id = 0
 
 	// PublicId
-	lastIdx := uint(0)
-	var eq EmailCampaign
-
-	err := db.Where("account_id = ?", emailCampaign.AccountId).Select("public_id").Last(&eq).Error
-	if err != nil && err != gorm.ErrRecordNotFound { return err}
-	if err == gorm.ErrRecordNotFound {
-		lastIdx = 0
-	} else {
-		lastIdx = eq.PublicId
-	}
-	emailCampaign.PublicId = lastIdx + 1
+	var lastIdx sql.NullInt64
+	err := db.Model(&EmailCampaign{}).Where("account_id = ?",  emailCampaign.AccountId).
+		Select("max(public_id)").Row().Scan(&lastIdx)
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	emailCampaign.PublicId = 1 + uint(lastIdx.Int64)
 
 	return nil
 }
