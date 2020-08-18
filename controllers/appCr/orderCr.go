@@ -53,7 +53,7 @@ func OrderGet(w http.ResponseWriter, r *http.Request) {
 
 	var order models.Order
 
-	// 2. Узнаем, какой список нужен
+	// 2. Узнаем, какой объект нужен
 	publicIdOk:= utilsCr.GetQueryBoolVarFromGET(r, "publicId")
 
 	if publicIdOk {

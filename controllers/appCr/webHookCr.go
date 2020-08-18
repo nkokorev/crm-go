@@ -51,11 +51,24 @@ func WebHookGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var webHook models.WebHook
-	err = account.LoadEntity(&webHook, webHookId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
-		return
+	// 2. Узнаем, какой id учитывается нужен
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+
+	if publicOk  {
+		err = account.LoadEntityByPublicId(&webHook, webHookId)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
+			return
+		}
+	} else {
+		err = account.LoadEntity(&webHook, webHookId)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
+			return
+		}
+
 	}
+
 
 	resp := u.Message(true, "GET Web Hook")
 	resp["webHook"] = webHook

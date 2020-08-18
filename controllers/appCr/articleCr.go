@@ -25,14 +25,14 @@ func ArticleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	article, err := account.CreateArticle(input.Article)
+	article, err := account.CreateEntity(&input.Article)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка во время создания продукта"))
 		return
 	}
 
 	resp := u.Message(true, "POST Article Created")
-	resp["article"] = *article
+	resp["article"] = article
 	u.Respond(w, resp)
 }
 
@@ -49,11 +49,26 @@ func ArticleGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	article, err := account.GetArticle(articleId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
-		return
+	var article models.Article
+
+	// 2. Узнаем, какой id учитывается нужен
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+
+	if publicOk  {
+		err = account.LoadEntityByPublicId(&article, articleId)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
+			return
+		}
+	} else {
+		err = account.LoadEntity(&article, articleId)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
+			return
+		}
 	}
+
+
 
 	resp := u.Message(true, "GET Article")
 	resp["article"] = article
@@ -67,26 +82,47 @@ func ArticleListPaginationGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Узнаем, какой список нужен
 	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
 	if !ok {
-		limit = 100
+		limit = 25
 	}
 	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
 	if !ok || offset < 0 {
 		offset = 0
 	}
+	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
+	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
+	if !ok {
+		sortBy = ""
+	}
+	if sortDesc {
+		sortBy += " desc"
+	}
 	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
 	if !ok {
 		search = ""
 	}
+	// 2. Узнаем, какой список нужен
+	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
-	articles, total, err := account.GetArticleListPagination(offset, limit, search)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список статей"))
-		return
+	var total uint = 0
+	articles := make([]models.Entity, 0)
+
+	if all == "true" && allOk {
+		articles, total, err = account.GetListEntity(&models.Article{}, sortBy)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить данные"))
+			return
+		}
+	} else {
+		// emailNotifications, total, err = account.GetEmailNotificationsPaginationList(offset, limit, search)
+		articles, total, err = account.GetPaginationListEntity(&models.Article{}, offset, limit, sortBy, search, nil)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить данные"))
+			return
+		}
 	}
-
+	
 	resp := u.Message(true, "GET Article List Pagination")
 	resp["total"] = total
 	resp["articles"] = articles
@@ -114,8 +150,13 @@ func ArticleUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//card, err := account.UpdateProduct(productId, input.Product)
-	article, err := account.UpdateArticle(articleId, input)
+	var article models.Article
+	if err = account.LoadEntity(&article, articleId); err != nil {
+		u.Respond(w, u.MessageError(err, "Статья не найдена"))
+		return
+	}
+
+	err = account.UpdateEntity(&article, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -141,9 +182,14 @@ func ArticleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var article models.Article
+	if err = account.LoadEntity(&article, articleId); err != nil {
+		u.Respond(w, u.MessageError(err, "Статья не найдена"))
+		return
+	}
 
-	if err = account.DeleteArticle(articleId); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении карточки товара"))
+	if err = account.DeleteEntity(&article); err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении статьи"))
 		return
 	}
 

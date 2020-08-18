@@ -2,9 +2,7 @@ package models
 
 import (
 	"database/sql"
-	"errors"
 	"github.com/jinzhu/gorm"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"strings"
 	"time"
@@ -51,9 +49,9 @@ func (Article) PgSqlCreate() {
 	db.CreateTable(&Article{})
 	db.Model(&Article{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }
-
 func (article *Article) BeforeCreate(scope *gorm.Scope) error {
 	article.Id = 0
+
 	article.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 
 	// PublicId
@@ -65,133 +63,177 @@ func (article *Article) BeforeCreate(scope *gorm.Scope) error {
 
 	return nil
 }
-func (article *Article) AfterCreate(scope *gorm.Scope) error {
-	event.AsyncFire(Event{}.ArticleCreated(article.AccountId, article.Id))
-	return nil
-}
-func (article *Article) AfterUpdate(tx *gorm.DB) (err error) {
-	event.AsyncFire(Event{}.ArticleUpdated(article.AccountId, article.Id))
-
-	return nil
-}
-func (article *Article) AfterDelete(tx *gorm.DB) (err error) {
-	event.AsyncFire(Event{}.ArticleDeleted(article.AccountId, article.Id))
+func (article *Article) AfterFind() (err error) {
 	return nil
 }
 
-// ######### INTERFACE EVENT Functions ############
-func (article Article) getId() uint {
-	return article.Id
-}
-func (article Article) getAccountId() uint {
-	return article.AccountId
-}
-func (article Article) setAccountId(id uint) {
-	article.AccountId = id
-}
-func (article *Article) setPublicId(id uint) {article.PublicId = id}
-func (article Article) getEntityName() string {
-	return "Article"
-}
-// ######### END OF INTERFAe Functions ############
+// ############# Entity interface #############
+func (article Article) GetId() uint { return article.Id }
+func (article *Article) setId(id uint) { article.Id = id }
+func (article *Article) setPublicId(publicId uint) { article.PublicId = publicId }
+func (article Article) GetAccountId() uint { return article.AccountId }
+func (article *Article) setAccountId(id uint) { article.AccountId = id }
+func (Article) SystemEntity() bool { return false }
+// ############# Entity interface #############
 
 // ######### CRUD Functions ############
-func (article Article) create() (*Article, error)  {
-	var newArticle = article
-	err := db.Create(&newArticle).Error
-	if err != nil {return nil, err}
-	return &newArticle, err
-}
-func (Article) get(id uint) (*Article, error) {
+func (article Article) create() (Entity, error)  {
 
-	article := Article{}
+	en := article
 
-	if err := db.Model(&article).Preload("Image", func(db *gorm.DB) *gorm.DB {
-		return db.Select(Storage{}.SelectArrayWithoutDataURL())
-	}).First(&article, id).Error; err != nil {
+	if err := db.Create(&en).Error; err != nil {
 		return nil, err
 	}
 
+	err := en.GetPreloadDb(false,false, true).First(&en, en.Id).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var newItem Entity = &en
+
+	return newItem, nil
+}
+
+func (Article) get(id uint) (Entity, error) {
+
+	var article Article
+
+	err := (&Article{}).GetPreloadDb(false,false,true).First(&article, id).Error
+	if err != nil {
+		return nil, err
+	}
 	return &article, nil
 }
 func (Article) getByHashId(hashId string) (*Article, error) {
-
 	article := Article{}
 
-	if err := db.Model(&article).Preload("Image", func(db *gorm.DB) *gorm.DB {
-		return db.Select(Storage{}.SelectArrayWithoutDataURL())
-	}).First(&article, "hash_id = ?", hashId).Error; err != nil {
+	err := db.First(&article, "hash_id = ?", hashId).Error
+	if err != nil {
 		return nil, err
 	}
-
 	return &article, nil
 }
-func (Article) getList(accountId uint) ([]Article, error) {
+func (article *Article) load() error {
 
-	articles := make([]Article,0)
+	err := article.GetPreloadDb(false,true,true).First(article, article.Id).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (article *Article) loadByPublicId() error {
 
-	err := db.Model(&Article{}).Find(&articles, "account_id = ?", accountId).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, err
+	if article.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить Article - не указан  Id"}
+	}
+	if err := article.GetPreloadDb(false,false, true).First(article, "account_id = ? AND public_id = ?", article.AccountId, article.PublicId).Error; err != nil {
+		return err
 	}
 
-	return articles, nil
+	return nil
 }
-func (article *Article) update(input map[string]interface{}) error {
-	// err := db.Set("gorm:association_autoupdate", false).Model(article).Omit("id", "account_id").Update(input).Error
-	err := db.Set("gorm:association_autoupdate", false).Model(article).Omit("id", "account_id","created_at").Updates(input).Error
 
-	// err := db.Debug().Model(&Article{}).Omit("accountHashId").Select("name", "shortName").Where("id = ?", article.Id).Update(input).Error
+func (Article) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+	return Article{}.getPaginationList(accountId, 0, 25, sortBy, "",nil)
+}
+func (Article) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+
+	articles := make([]Article,0)
+	var total uint
+
+	// if need to search
+	if len(search) > 0 {
+
+		// string pattern
+		// jsearch := search
+		search = "%"+search+"%"
+
+		err := (&Article{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).
+			Where( "account_id = ?", accountId).
+			Find(&articles, "name ILIKE ? OR short_name ILIKE ? OR body ILIKE ? OR description ILIKE ?",search, search,search,search).Error
+
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = (&Article{}).GetPreloadDb(true,false,false).
+			Where("account_id = ? AND name ILIKE ? OR description ILIKE ? ", accountId, search,search).
+			Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+
+	} else {
+
+		err := (&Article{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).
+			Where( "account_id = ?", accountId).Find(&articles).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = (&Article{}).GetPreloadDb(true,false,false).Where("account_id = ?", accountId).Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+	}
+
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(articles))
+	for i,_ := range articles {
+		entities[i] = &articles[i]
+	}
+
+	return entities, total, nil
+}
+
+func (article *Article) update(input map[string]interface{}) error {
+
+	if err := article.GetPreloadDb(true,false,false).Where(" id = ?", article.Id).
+		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
+		return err
+	}
+
+	err := article.GetPreloadDb(false,true,true).First(article, article.Id).Error
 	if err != nil {
 		return err
 	}
 
 	return nil
 }
-  func (article *Article) delete () error {
-	return db.Model(Article{}).Where("id = ?", article.Id).Delete(article).Error
+
+func (article *Article) delete () error {
+	return article.GetPreloadDb(true,true,false).Where("id = ?", article.Id).Delete(article).Error
 }
 // ######### END CRUD Functions ############
 
-// ######### ACCOUNT Functions ############
-func (account Account) CreateArticle(input Article) (*Article, error) {
-	input.AccountId = account.Id
+func (article *Article) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+	_db := db
 
-	article, err := input.create()
-	if err != nil {
-		return nil, err
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(&article)
+	} else {
+		_db = _db.Model(&Article{})
 	}
 
-	// event.AsyncFire(Event{}.ArticleCreated(account.Id, article.Id))
-
-	return article, nil
+	if preload {
+		// return _db.Preload("")
+		return _db.Preload("Image", func(db *gorm.DB) *gorm.DB {
+			return db.Select(Storage{}.SelectArrayWithoutDataURL())
+		})
+	} else {
+		return _db
+	}
 }
-func (account Account) GetArticle(articleId uint) (*Article, error) {
 
-	article, err := Article{}.get(articleId)
-	if err != nil {
-		return nil, err
-	}
+// ########## SELF FUNCTIONAL ############
 
-	if account.Id != article.AccountId {
-		return nil, utils.Error{Message: "Товар принадлежит другому аккаунту"}
-	}
 
-	return article, nil
-}
-func (account Account) GetArticleByHashId(hashId string) (*Article, error) {
-
-	article, err := Article{}.getByHashId(hashId)
-	if err != nil {
-		return nil, err
-	}
-
-	if account.Id != article.AccountId {
-		return nil, utils.Error{Message: "С принадлежит другому аккаунту"}
-	}
-
-	return article, nil
-}
 func (account Account) GetArticleSharedByHashId(hashId string) (*Article, error) {
 
 	article, err := Article{}.getByHashId(hashId)
@@ -205,90 +247,3 @@ func (account Account) GetArticleSharedByHashId(hashId string) (*Article, error)
 
 	return article, nil
 }
-func (account Account) GetArticleListPagination(offset, limit int, search string) ([]Article, uint, error) {
-
-	articles := make([]Article,0)
-
-	// if need to search
-	if len(search) > 0 {
-
-		// string pattern
-		search = "%"+search+"%"
-
-		err := db.Model(&Article{}).
-			Preload("Image", func(db *gorm.DB) *gorm.DB {
-				return db.Select(Storage{}.SelectArrayWithoutDataURL())
-			}).
-			Limit(limit).
-			Offset(offset).
-			Order("id").
-			Where("account_id = ?", account.Id).
-			Find(&articles, "name ILIKE ? OR short_name ILIKE ? OR body ILIKE ? OR description ILIKE ?" , search, search,search,search).Error
-		if err != nil && err != gorm.ErrRecordNotFound{
-			return nil, 0, err
-		}
-
-	} else {
-		if offset < 0 || limit < 0 {
-			return nil, 0, errors.New("Offset or limit is wrong")
-		}
-
-		err := db.Model(&Article{}).Preload("Image", func(db *gorm.DB) *gorm.DB {
-			return db.Select(Storage{}.SelectArrayWithoutDataURL())
-		}).Limit(limit).Offset(offset).Order("id").Find(&articles, "account_id = ?", account.Id).Error
-
-
-		if err != nil && err != gorm.ErrRecordNotFound{
-			return nil, 0, err
-		}
-	}
-
-	// len(cards) != всему списку!
-	var total uint
-	err := db.Model(&Article{}).Where("account_id = ?", account.Id).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема"}
-	}
-
-	return articles, total, nil
-}
-func (account Account) UpdateArticle(articleId uint, input map[string]interface{}) (*Article, error) {
-
-	article, err := account.GetArticle(articleId)
-	if err != nil {
-		return nil, err
-	}
-
-	if account.Id != article.AccountId {
-		return nil, utils.Error{Message: "Товар принадлежит другому аккаунту"}
-	}
-
-	err = article.update(input)
-	if err != nil {
-		return nil, err
-	}
-
-	// event.AsyncFire(Event{}.ArticleUpdated(account.Id, article.Id))
-
-	return article, err
-
-}
-func (account Account) DeleteArticle(articleId uint) error {
-
-	// включает в себя проверку принадлежности к аккаунту
-	article, err := account.GetArticle(articleId)
-	if err != nil {
-		return err
-	}
-
-	err = article.delete()
-	if err !=nil { return err }
-
-	// event.AsyncFire(Event{}.ArticleDeleted(account.Id, article.Id))
-
-	return nil
-}
-// ######### END OF ACCOUNT Functions ############
-
-
-// ########## SELF FUNCTIONAL ############

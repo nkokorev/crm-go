@@ -167,7 +167,7 @@ func (emailNotification *EmailNotification) loadByPublicId() error {
 }
 
 func (EmailNotification) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return EmailNotification{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
+	return EmailNotification{}.getPaginationList(accountId, 0, 25, sortBy, "",nil)
 }
 func (EmailNotification) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
@@ -181,7 +181,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		// jsearch := search
 		search = "%"+search+"%"
 
-		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&EmailNotification{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
 				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
 			}).Preload("EmailBox").
@@ -192,7 +192,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		}
 
 		// Определяем total
-		err = db.Model(&EmailNotification{}).
+		err = (&EmailNotification{}).GetPreloadDb(true,false,false).
 			Where("account_id = ? AND name ILIKE ? OR description ILIKE ? ", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
@@ -201,7 +201,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 
 	} else {
 
-		err := db.Model(&EmailNotification{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&EmailNotification{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
 				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
 			}).Preload("EmailBox").
@@ -211,7 +211,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		}
 
 		// Определяем total
-		err = db.Model(&EmailNotification{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&EmailNotification{}).GetPreloadDb(true,false,false).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -249,12 +249,12 @@ func (emailNotification *EmailNotification) update(input map[string]interface{})
 	}
 	input["delayTime"] = d*/
 
-	if err := db.Set("gorm:association_autoupdate", false).Model(EmailNotification{}).Where(" id = ?", emailNotification.Id).
+	if err := (&EmailNotification{}).GetPreloadDb(true,false,false).Where(" id = ?", emailNotification.Id).
 		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
 		return err
 	}
 
-	err := db.Preload("EmailBox").Preload("EmailTemplate").First(emailNotification, emailNotification.Id).Error
+	err := (&EmailNotification{}).GetPreloadDb(true,false,true).First(emailNotification, emailNotification.Id).Error
 	if err != nil {
 		return err
 	}

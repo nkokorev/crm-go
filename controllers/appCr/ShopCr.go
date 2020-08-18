@@ -75,8 +75,8 @@ func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var webSite models.WebSite
+
 	err = account.LoadEntity(&webSite, webSiteId)
-	// webSite, err := account.GetShop(webSiteId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return

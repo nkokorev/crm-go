@@ -1565,9 +1565,13 @@ func LoadArticlesAiroClimate()  {
 			Shared: true,
 			Body: string(body),
 		}
-		article, err := account.CreateArticle(articleNew)
+		articleEntity, err := account.CreateEntity(&articleNew)
 		if err != nil {
 			log.Fatalf("unable to create file: %v", err)
+		}
+		article, ok := articleEntity.(*models.Article)
+		if !ok {
+			log.Fatal("article, ok := articleEntity.(*models.Article)")
 		}
 
 		fmt.Println("article:", article.Name)
@@ -1744,7 +1748,7 @@ func UploadTestDataPart_IV()  {
 			Label:   "Онлайн-оплата банковской картой",
 			ApiKey: "test_f56EEL_m2Ky7CJnnRjSpb4JLMhiGoGD3X6ScMHGPruM",
 			ShopId: "730509",
-			ReturnUrl: "https://airoclimate.ru/payment-return",
+			ReturnUrl: "https://airoclimate.ru",
 			Enabled: true,
 			WebSiteId: 5,
 			SavePaymentMethod: false,

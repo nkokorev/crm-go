@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func WebSiteCreate(w http.ResponseWriter, r *http.Request) {
+func EmailBoxCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil {
@@ -18,7 +18,7 @@ func WebSiteCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Get JSON-request
 	var input struct{
-		models.WebSite
+		models.EmailBox
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -26,43 +26,43 @@ func WebSiteCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSite, err := account.CreateEntity(&input.WebSite)
+	emailBox, err := account.CreateEntity(&input.EmailBox)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания"}))
 		return
 	}
 
-	resp := u.Message(true, "POST WebSite Created")
-	resp["webSite"] = webSite
+	resp := u.Message(true, "POST EmailBox Created")
+	resp["emailBox"] = emailBox
 	u.Respond(w, resp)
 }
 
-func WebSiteGet(w http.ResponseWriter, r *http.Request) {
+func EmailBoxGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	emailBoxId, err := utilsCr.GetUINTVarFromRequest(r, "emailBoxId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке webSite Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке emailBox Id"))
 		return
 	}
 
-	var webSite models.WebSite
+	var emailBox models.EmailBox
 
 	// 2. Узнаем, какой id учитывается нужен
 	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
 
 	if publicOk  {
-		err = account.LoadEntityByPublicId(&webSite, webSiteId)
+		err = account.LoadEntityByPublicId(&emailBox, emailBoxId)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	} else {
-		err = account.LoadEntity(&webSite, webSiteId)
+		err = account.LoadEntity(&emailBox, emailBoxId)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
 			return
@@ -71,40 +71,12 @@ func WebSiteGet(w http.ResponseWriter, r *http.Request) {
 
 
 
-	resp := u.Message(true, "GET WebSite ")
-	resp["webSite"] = webSite
+	resp := u.Message(true, "GET EmailBox ")
+	resp["emailBox"] = emailBox
 	u.Respond(w, resp)
 }
 
-func WebSiteListGet(w http.ResponseWriter, r *http.Request) {
-	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		return
-	}
-
-	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
-	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
-	if !ok {
-		sortBy = ""
-	}
-	if sortDesc {
-		sortBy += " desc"
-	}
-
-	webSites, total, err := account.GetListEntity(&models.WebSite{}, sortBy)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список сайтов"))
-		return
-	}
-
-	resp := u.Message(true, "GET WebSite List")
-	resp["webSites"] = webSites
-	resp["total"] = total
-	u.Respond(w, resp)
-}
-
-func WebSiteListPaginationGet(w http.ResponseWriter, r *http.Request) {
+func EmailBoxListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
@@ -140,17 +112,17 @@ func WebSiteListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 
 	var total uint = 0
-	webSites := make([]models.Entity,0)
+	emailBoxes := make([]models.Entity,0)
 
 	if all == "true" && allOk {
-		webSites, total, err = account.GetListEntity(&models.WebSite{}, sortBy)
+		emailBoxes, total, err = account.GetListEntity(&models.EmailBox{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
 			return
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		webSites, total, err = account.GetPaginationListEntity(&models.WebSite{}, offset, limit, sortBy, search, nil)
+		emailBoxes, total, err = account.GetPaginationListEntity(&models.EmailBox{}, offset, limit, sortBy, search, nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
 			return
@@ -159,12 +131,12 @@ func WebSiteListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 
 	resp := u.Message(true, "GET Web Sites PaginationList")
-	resp["webSites"] = webSites
+	resp["emailBoxes"] = emailBoxes
 	resp["total"] = total
 	u.Respond(w, resp)
 }
 
-func WebSiteUpdate(w http.ResponseWriter, r *http.Request) {
+func EmailBoxUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -172,14 +144,14 @@ func WebSiteUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	emailBoxId, err := utilsCr.GetUINTVarFromRequest(r, "emailBoxId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	var emailBox models.EmailBox
+	err = account.LoadEntity(&emailBox, emailBoxId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
@@ -192,19 +164,19 @@ func WebSiteUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// webSite, err := account.UpdateWebSite(webSiteId, &input.WebSite)
-	err = account.UpdateEntity(&webSite, input)
+	// emailBox, err := account.UpdateWebSite(emailBoxId, &input.EmailBox)
+	err = account.UpdateEntity(&emailBox, input)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH WebSite Update")
-	resp["webSite"] = webSite
+	resp := u.Message(true, "PATCH EmailBox Update")
+	resp["emailBox"] = emailBox
 	u.Respond(w, resp)
 }
 
-func WebSiteDelete(w http.ResponseWriter, r *http.Request) {
+func EmailBoxDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -212,24 +184,24 @@ func WebSiteDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
+	emailBoxId, err := utilsCr.GetUINTVarFromRequest(r, "emailBoxId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	var emailBox models.EmailBox
+	err = account.LoadEntity(&emailBox, emailBoxId)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
 		return
 	}
 
-	if err = account.DeleteEntity(&webSite); err != nil {
+	if err = account.DeleteEntity(&emailBox); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
 		return
 	}
 
-	resp := u.Message(true, "DELETE WebSite Successful")
+	resp := u.Message(true, "DELETE EmailBox Successful")
 	u.Respond(w, resp)
 }

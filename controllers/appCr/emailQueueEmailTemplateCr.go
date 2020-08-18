@@ -54,21 +54,10 @@ func EmailQueueEmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 
 	var emailQueueEmailTemplate models.EmailQueueEmailTemplate
 
-	// 2. Узнаем, какой список нужен
-	publicIdOk:= utilsCr.GetQueryBoolVarFromGET(r, "publicId")
-
-	if publicIdOk {
-		err = account.LoadEntityByPublicId(&emailQueueEmailTemplate, emailQueueEmailTemplateId)
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список заказов"))
-			return
-		}
-	} else {
-		err = account.LoadEntity(&emailQueueEmailTemplate, emailQueueEmailTemplateId)
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список заказов"))
-			return
-		}
+	err = account.LoadEntity(&emailQueueEmailTemplate, emailQueueEmailTemplateId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список заказов"))
+		return
 	}
 
 	resp := u.Message(true, "GET EmailQueueEmailTemplate")

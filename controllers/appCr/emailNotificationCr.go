@@ -52,7 +52,6 @@ func EmailNotificationGet(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой id учитывается нужен
 	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
 
-
 	if publicOk  {
 		err = account.LoadEntityByPublicId(&emailNotification, emailNotificationId)
 		if err != nil {
@@ -66,10 +65,7 @@ func EmailNotificationGet(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
-
-
-
+	
 	resp := u.Message(true, "GET Email Notification")
 	resp["emailNotification"] = emailNotification
 	u.Respond(w, resp)

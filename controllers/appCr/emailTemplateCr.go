@@ -74,8 +74,6 @@ func EmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	// time.Sleep(5 * time.Second)
-
 	resp := u.Message(true, "GET Email template")
 	resp["emailTemplate"] = emailTemplate
 	u.Respond(w, resp)

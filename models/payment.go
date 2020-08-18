@@ -277,7 +277,6 @@ func (payment *Payment) load() error {
 }
 func (payment *Payment) loadByPublicId() error {
 
-
 	if payment.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить Payment - не указан  Id"}
 	}

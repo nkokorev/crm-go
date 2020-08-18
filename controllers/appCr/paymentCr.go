@@ -23,11 +23,25 @@ func PaymentGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var payment models.Payment
-	err = account.LoadEntity(&payment, paymentId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить платеж"))
-		return
+	
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+
+	if publicOk  {
+		err = account.LoadEntityByPublicId(&payment, paymentId)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
+			return
+		}
+	} else {
+		err = account.LoadEntity(&payment, paymentId)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить платеж"))
+			return
+		}
 	}
+
+
+
 
 	resp := u.Message(true, "GET Payment")
 	resp["payment"] = payment

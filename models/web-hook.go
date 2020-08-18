@@ -141,11 +141,9 @@ func (webHook *WebHook) loadByPublicId() error {
 
 	return nil
 }
-
 func (WebHook) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return WebHook{}.getPaginationList(accountId,0,25,sortBy, "", nil)
 }
-
 func (WebHook) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	webHooks := make([]WebHook,0)
@@ -194,7 +192,6 @@ func (WebHook) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	return entities, total, nil
 }
-
 func (WebHook) getByEvent(eventName string) (*WebHook, error) {
 
 	wh := WebHook{}
@@ -205,7 +202,6 @@ func (WebHook) getByEvent(eventName string) (*WebHook, error) {
 
 	return &wh, nil
 }
-
 func (webHook *WebHook) update(input map[string]interface{}) error {
 	return db.Set("gorm:association_autoupdate", false).Model(webHook).Omit("id", "account_id").Updates(input).Error
 }
