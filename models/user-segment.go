@@ -15,6 +15,12 @@ type UserSegment struct {
 	// Имя кампании сегмента: 'активные участники', 'только клиенты', 'майские подписчики'
 	Name 			string 		`json:"name" gorm:"type:varchar(128);"`
 
+	// AND or ANY
+	StrictMatching 		bool 	`json:"enabled" gorm:"type:bool;default:false;"`
+
+	// персональные настройки сегмента
+	UserSegmentRules []UserSegmentRule `json:"userSegmentRules"`
+
 	// =============   Настройки получателей    ===================
 	CreatedAt 		time.Time `json:"createdAt"`
 }
