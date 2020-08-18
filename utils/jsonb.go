@@ -87,12 +87,10 @@ func FixJSONB_MapString(input map[string]interface{}, keys []string) map[string]
 		// 1
 		arrMapString, ok := input[key].(map[string]interface{})
 		if !ok || arrMapString == nil {
-			// fmt.Println("Ошибка 1")
 			continue
 		}
 
-		// 2
-		// Преобразуем в JSON
+		// 2. Преобразуем в JSON
 		rawJSON, err := json.Marshal(arrMapString)
 		if err != nil {
 			rawJSON = json.RawMessage(`{}`)

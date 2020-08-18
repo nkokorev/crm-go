@@ -101,7 +101,7 @@ func (EmailTemplate) get(id uint) (Entity, error) {
 
 	var emailTemplate EmailTemplate
 
-	err := db.First(&emailTemplate, id).Error
+	err := emailTemplate.GetPreloadDb(true,false,true).First(&emailTemplate, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (EmailTemplate) get(id uint) (Entity, error) {
 }
 func (emailTemplate *EmailTemplate) load() error {
 
-	err := db.First(emailTemplate, emailTemplate.Id).Error
+	err := emailTemplate.GetPreloadDb(true,false,true).First(emailTemplate, emailTemplate.Id).Error
 	if err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&EmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&EmailTemplate{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Select(EmailTemplate{}.SelectArrayWithoutData()).
 			Find(&emailTemplates, "hash_id ILIKE ? OR name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -166,7 +166,7 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	} else {
 
-		err := db.Model(&EmailTemplate{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err :=(&EmailTemplate{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Select(EmailTemplate{}.SelectArrayWithoutData()).
 			Find(&emailTemplates).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -182,7 +182,7 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(emailTemplates))
-	for i,_ := range emailTemplates {
+	for i := range emailTemplates {
 		entities[i] = &emailTemplates[i]
 	}
 
@@ -190,11 +190,20 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 }
 
 func (emailTemplate *EmailTemplate) update(input map[string]interface{}) error {
-	// return db.Model(&EmailTemplate{}).Where("id = ?", emailTemplate.Id).Omit("id", "account_id").Update(input).Error
 
 	input = utils.FixJSONB_String(input, []string{"jsonData"})
 
-	return db.Model(emailTemplate).Omit("id", "account_id").Updates(input).Error
+	if err := emailTemplate.GetPreloadDb(true,false,false).Where(" id = ?", emailTemplate.Id).
+		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
+		return err
+	}
+
+	err := emailTemplate.GetPreloadDb(true,false,false).First(emailTemplate, emailTemplate.Id).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 func (emailTemplate *EmailTemplate) delete () error {
 	return db.Model(EmailTemplate{}).Where("id = ?", emailTemplate.Id).Delete(emailTemplate).Error

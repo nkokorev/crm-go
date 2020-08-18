@@ -198,7 +198,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(webSites))
-	for i,_ := range webSites {
+	for i := range webSites {
 		entities[i] = &webSites[i]
 	}
 

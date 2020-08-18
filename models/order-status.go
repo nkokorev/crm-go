@@ -160,7 +160,7 @@ func (OrderStatus) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(orderStatuses))
-	for i,_ := range orderStatuses {
+	for i := range orderStatuses {
 		entities[i] = &orderStatuses[i]
 	}
 

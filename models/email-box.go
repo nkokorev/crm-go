@@ -105,7 +105,7 @@ func (EmailBox) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(webHooks))
-	for i,_ := range webHooks {
+	for i := range webHooks {
 		entities[i] = &webHooks[i]
 	}
 
@@ -167,7 +167,7 @@ func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(webHooks))
-	for i,_ := range webHooks {
+	for i := range webHooks {
 		entities[i] = &webHooks[i]
 	}
 

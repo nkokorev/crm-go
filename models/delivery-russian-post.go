@@ -188,7 +188,7 @@ func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, 
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(deliveryRussianPosts))
-	for i,_ := range deliveryRussianPosts {
+	for i := range deliveryRussianPosts {
 		entities[i] = &deliveryRussianPosts[i]
 	}
 

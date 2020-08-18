@@ -133,7 +133,7 @@ func (PaymentMode) getPaginationList(accountId uint, offset, limit int, sortBy, 
 	}
 
 	entities := make([]Entity,len(paymentModes))
-	for i,_ := range paymentModes {
+	for i := range paymentModes {
 		entities[i] = &paymentModes[i]
 	}
 

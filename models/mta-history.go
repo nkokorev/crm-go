@@ -199,7 +199,7 @@ func (MTAHistory) getPaginationList(accountId uint, offset, limit int, sortBy, s
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(emailQueueHistories))
-	for i,_ := range emailQueueHistories {
+	for i := range emailQueueHistories {
 		entities[i] = &emailQueueHistories[i]
 	}
 

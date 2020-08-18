@@ -178,7 +178,7 @@ func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(paymentCashs))
-	for i,_ := range paymentCashs {
+	for i := range paymentCashs {
 		entities[i] = &paymentCashs[i]
 	}
 

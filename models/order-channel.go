@@ -148,7 +148,7 @@ func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(orderChannels))
-	for i,_ := range orderChannels {
+	for i := range orderChannels {
 		entities[i] = &orderChannels[i]
 	}
 

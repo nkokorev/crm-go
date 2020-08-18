@@ -135,7 +135,7 @@ func (VatCode) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 	}
 
 	entities := make([]Entity,len(vatCodes))
-	for i,_ := range vatCodes {
+	for i := range vatCodes {
 		entities[i] = &vatCodes[i]
 	}
 

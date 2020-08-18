@@ -272,7 +272,7 @@ func (Storage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(files))
-	for i,_ := range files {
+	for i := range files {
 		entities[i] = &files[i]
 	}
 
@@ -408,7 +408,7 @@ func (account Account) GetStoragePaginationListByOwner(offset, limit int, sortBy
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(files))
-	for i,_ := range files {
+	for i := range files {
 		entities[i] = &files[i]
 	}
 

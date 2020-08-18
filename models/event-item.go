@@ -196,7 +196,7 @@ func (EventItem) getPaginationList(accountId uint, offset, limit int, sortBy, se
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(eventItems))
-	for i,_ := range eventItems {
+	for i := range eventItems {
 		entities[i] = &eventItems[i]
 	}
 

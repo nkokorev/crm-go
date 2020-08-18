@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/fatih/structs"
 	"github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
 )
 
@@ -16,6 +17,12 @@ type AccountUser struct {
 	AccountId uint	`json:"accountId" gorm:"type:int;index;not null;"`
 	UserId uint	`json:"userId" gorm:"type:int;index;not null;"`
 	RoleId uint	`json:"roleId" gorm:"type:int;not null;"`
+
+	// Данные пользователя в контексте аккаунта
+	JsonData postgres.Jsonb `json:"jsonData" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+
+	// rating [0-5]
+	EmailMarketingRating int8 `json:"emailMarketingRating" gorm:"type:smallint;default:3;"`
 
 	User    User    `json:"-"  gorm:"preload:true"`
 	Account Account `json:"-" gorm:"preload:true"`

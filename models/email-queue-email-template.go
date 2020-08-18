@@ -197,7 +197,7 @@ func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit i
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(emailQueueEmailTemplates))
-	for i,_ := range emailQueueEmailTemplates {
+	for i := range emailQueueEmailTemplates {
 		entities[i] = &emailQueueEmailTemplates[i]
 	}
 

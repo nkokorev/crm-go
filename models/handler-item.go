@@ -120,7 +120,7 @@ func (HandlerItem) getList(accountId uint, sortBy string) ([]Entity, uint, error
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(obItems))
-	for i,_ := range obItems {
+	for i := range obItems {
 		entities[i] = &obItems[i]
 	}
 
@@ -171,7 +171,7 @@ func (HandlerItem) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(obItems))
-	for i,_ := range obItems {
+	for i := range obItems {
 		entities[i] = &obItems[i]
 	}
 

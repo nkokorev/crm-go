@@ -175,7 +175,7 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortB
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(deliveryPickups))
-	for i,_ := range deliveryPickups {
+	for i := range deliveryPickups {
 		entities[i] = &deliveryPickups[i]
 	}
 

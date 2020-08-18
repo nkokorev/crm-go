@@ -186,7 +186,7 @@ func (MTAWorkflow) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(webHooks))
-	for i,_ := range webHooks {
+	for i := range webHooks {
 		entities[i] = &webHooks[i]
 	}
 

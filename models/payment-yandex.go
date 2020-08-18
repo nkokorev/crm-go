@@ -256,7 +256,7 @@ func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(paymentYandexs))
-	for i,_ := range paymentYandexs {
+	for i := range paymentYandexs {
 		entities[i] = &paymentYandexs[i]
 	}
 

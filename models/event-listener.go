@@ -134,7 +134,7 @@ func (EventListener) getList(accountId uint, sortBy string) ([]Entity, uint, err
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(eventListeners))
-	for i,_ := range eventListeners {
+	for i := range eventListeners {
 		entities[i] = &eventListeners[i]
 	}
 
@@ -191,7 +191,6 @@ func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(eventListeners))
 	for i := range eventListeners {
-		// entities[i] = &eventListeners[i]
 		entities[i] = &eventListeners[i].EventListener
 	}
 	

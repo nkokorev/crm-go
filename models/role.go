@@ -158,8 +158,8 @@ func (Role) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(roles))
-	for i, v := range roles {
-		entities[i] = &v
+	for i := range roles {
+		entities[i] = &roles[i]
 	}
 
 	return entities, total, nil
@@ -209,8 +209,8 @@ func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search 
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(roles))
-	for i, v := range roles {
-		entities[i] = &v
+	for i := range roles {
+		entities[i] = &roles[i]
 	}
 
 	return entities, total, nil

@@ -162,7 +162,7 @@ func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 	}
 	
 	entities := make([]Entity,len(orderChannels))
-	for i,_ := range orderChannels {
+	for i := range orderChannels {
 		entities[i] = &orderChannels[i]
 	}
 

@@ -41,10 +41,6 @@ type EmailNotification struct {
 	// SendingToUsers		bool			`json:"sendingToUsers" gorm:"type:bool;default:false"` // Отправлять пользователем RatusCRM (на их почтовые адреса, при их наличии)
 	RecipientUsersList	postgres.Jsonb 	`json:"recipientUsersList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // список id пользователей, которые получат уведомление
 
-	// Список фиксированных адресов позволяет сделать "рассылку" по своей базе, до 10 человек.
-	// SendingToFixedAddresses	bool	`json:"sendingToFixedAddresses" gorm:"type:bool;default:false"` // Отправлять ли на фиксированный адреса
-	// RecipientList			postgres.Jsonb	`json:"recipientList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // фиксированный список адресов, на которые будет произведено уведомление
-	
 	// Динамический список пользователей
 	ParseRecipientUser	bool	`json:"parseRecipientUser" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя(ей) по userId / users: ['email@mail.ru']
 	ParseRecipientCustomer	bool	`json:"parseRecipientCustomer" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя по customerId / users: ['email@mail.ru']
@@ -219,7 +215,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(emailNotifications))
-	for i,_ := range emailNotifications {
+	for i := range emailNotifications {
 		entities[i] = &emailNotifications[i]
 	}
 
@@ -229,25 +225,10 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 func (emailNotification *EmailNotification) update(input map[string]interface{}) error {
 
 	// Приводим в опрядок
-	input = utils.FixJSONB_String(input, []string{"recipientList"})
 	input = utils.FixJSONB_Uint(input, []string{"recipientUsersList"})
 
-	// delete(input, "recipientList")
-	// delete(input, "recipientUsersList")
 	delete(input, "emailTemplate")
 	delete(input, "emailBox")
-
-	/*_f, ok := input["delayTime"].(float64)
-	if !ok {
-		log.Fatal("not ok!")
-	}
-
-
-	d, err := time.ParseDuration(strconv.Itoa(int(_f)))
-	if err != nil {
-		log.Fatal(err)
-	}
-	input["delayTime"] = d*/
 
 	if err := (&EmailNotification{}).GetPreloadDb(true,false,false).Where(" id = ?", emailNotification.Id).
 		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {

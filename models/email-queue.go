@@ -240,7 +240,7 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(emailQueues))
-	for i,_ := range emailQueues {
+	for i := range emailQueues {
 		entities[i] = &emailQueues[i]
 	}
 
