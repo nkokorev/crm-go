@@ -65,7 +65,7 @@ func (article *Article) BeforeCreate(scope *gorm.Scope) error {
 
 	return nil
 }
-func (article *Article) AfterCreate(scope *gorm.Scope) (error) {
+func (article *Article) AfterCreate(scope *gorm.Scope) error {
 	event.AsyncFire(Event{}.ArticleCreated(article.AccountId, article.Id))
 	return nil
 }
@@ -89,6 +89,7 @@ func (article Article) getAccountId() uint {
 func (article Article) setAccountId(id uint) {
 	article.AccountId = id
 }
+func (article *Article) setPublicId(id uint) {article.PublicId = id}
 func (article Article) getEntityName() string {
 	return "Article"
 }
@@ -165,7 +166,6 @@ func (account Account) CreateArticle(input Article) (*Article, error) {
 
 	return article, nil
 }
-
 func (account Account) GetArticle(articleId uint) (*Article, error) {
 
 	article, err := Article{}.get(articleId)
@@ -179,7 +179,6 @@ func (account Account) GetArticle(articleId uint) (*Article, error) {
 
 	return article, nil
 }
-
 func (account Account) GetArticleByHashId(hashId string) (*Article, error) {
 
 	article, err := Article{}.getByHashId(hashId)
@@ -193,7 +192,6 @@ func (account Account) GetArticleByHashId(hashId string) (*Article, error) {
 
 	return article, nil
 }
-
 func (account Account) GetArticleSharedByHashId(hashId string) (*Article, error) {
 
 	article, err := Article{}.getByHashId(hashId)
@@ -207,7 +205,6 @@ func (account Account) GetArticleSharedByHashId(hashId string) (*Article, error)
 
 	return article, nil
 }
-
 func (account Account) GetArticleListPagination(offset, limit int, search string) ([]Article, uint, error) {
 
 	articles := make([]Article,0)
@@ -255,7 +252,6 @@ func (account Account) GetArticleListPagination(offset, limit int, search string
 
 	return articles, total, nil
 }
-
 func (account Account) UpdateArticle(articleId uint, input map[string]interface{}) (*Article, error) {
 
 	article, err := account.GetArticle(articleId)
@@ -277,7 +273,6 @@ func (account Account) UpdateArticle(articleId uint, input map[string]interface{
 	return article, err
 
 }
-
 func (account Account) DeleteArticle(articleId uint) error {
 
 	// включает в себя проверку принадлежности к аккаунту

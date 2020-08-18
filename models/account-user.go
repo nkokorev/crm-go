@@ -11,7 +11,7 @@ import (
 // M<>M
 type AccountUser struct {
 	
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1;"`
+	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"`
 
 	AccountId uint	`json:"accountId" gorm:"type:int;index;not null;"`
 	UserId uint	`json:"userId" gorm:"type:int;index;not null;"`

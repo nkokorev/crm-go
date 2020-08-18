@@ -2,7 +2,7 @@ package models
 
 import (
 	"bytes"
-	"errors"
+	"database/sql"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
@@ -44,6 +44,7 @@ const (
 
 type WebHook struct {
 	Id     		uint   	`json:"id" gorm:"primary_key"`
+	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя вебхука
@@ -61,7 +62,7 @@ type WebHook struct {
 // ############# Entity interface #############
 func (webHook WebHook) GetId() uint { return webHook.Id }
 func (webHook *WebHook) setId(id uint) { webHook.Id = id }
-func (webHook *WebHook) setPublicId(id uint) {}
+func (webHook *WebHook) setPublicId(id uint) {webHook.PublicId = id}
 func (webHook WebHook) GetAccountId() uint { return webHook.AccountId }
 func (webHook *WebHook) setAccountId(id uint) { webHook.AccountId = id }
 func (WebHook) SystemEntity() bool { return false }
@@ -78,6 +79,17 @@ func (WebHook) PgSqlCreate() {
 }
 func (webHook *WebHook) BeforeCreate(scope *gorm.Scope) error {
 	webHook.Id = 0
+	var lastIdx sql.NullInt64
+
+	row := db.Model(&WebHook{}).Where("account_id = ?",  webHook.AccountId).
+		Select("max(public_id)").Row()
+	if row != nil {
+		err := row.Scan(&lastIdx)
+		if err != nil && err != gorm.ErrRecordNotFound { return err }
+	}
+
+	webHook.PublicId = 1 + uint(lastIdx.Int64)
+
 	return nil
 }
 
@@ -115,34 +127,23 @@ func (webHook *WebHook) load() error {
 	}
 	return nil
 }
-func (*WebHook) loadByPublicId() error {
-	return errors.New("Нет возможности загрузить объект по Public Id")
+func (webHook *WebHook) loadByPublicId() error {
+
+
+	if webHook.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить Payment - не указан  Id"}
+	}
+
+	if err := webHook.GetPreloadDb(false,false, true).
+		First(webHook, "account_id = ? AND public_id = ?", webHook.AccountId, webHook.PublicId).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (WebHook) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-
-	webHooks := make([]WebHook,0)
-	var total uint
-
-	err := db.Model(&WebHook{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
-		Find(&webHooks).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&WebHook{}).Where("account_id = ?", accountId).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(webHooks))
-	for i,_ := range webHooks {
-		entities[i] = &webHooks[i]
-	}
-
-	return entities, total, nil
+	return WebHook{}.getPaginationList(accountId,0,25,sortBy, "", nil)
 }
 
 func (WebHook) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
@@ -272,4 +273,24 @@ func (webHook WebHook) Execute(data map[string]interface{}) error {
 	defer response.Body.Close()
 
 	return nil
+}
+
+func (webHook WebHook) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+	_db := db
+
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(&webHook)
+	} else {
+		_db = _db.Model(&WebHook{})
+	}
+
+	if preload {
+		// return _db.Preload("")
+		return _db
+	} else {
+		return _db
+	}
 }

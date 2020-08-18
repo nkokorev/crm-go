@@ -1,7 +1,7 @@
 package models
 
 import (
-	"errors"
+	"database/sql"
 	"github.com/jinzhu/gorm"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nkokorev/crm-go/event"
@@ -10,24 +10,25 @@ import (
 
 // Прообраз торговой точки
 type WebSite struct {
-	Id     uint   `json:"id" gorm:"primary_key"`
-	AccountId uint `json:"-" gorm:"type:int;index;not null;"`
+	Id     		uint   	`json:"id" gorm:"primary_key"`
+	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"`
+	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	Name string `json:"name" gorm:"type:varchar(255);default:'Новый магазин';not null;"` // Внутреннее имя сайта
-	Hostname string `json:"hostname" gorm:"type:varchar(255);not_null;"` // ratuscrm.com, airoclimate.ru, vetvent.ru, ..
-	URL 	string `json:"url" gorm:"type:varchar(255);not_null;"` // https://ratuscrm.com, https://airoclimate.ru, http://vetvent.ru, ..
+	Name 		string `json:"name" gorm:"type:varchar(255);default:'Новый магазин';not null;"` // Внутреннее имя сайта
+	Hostname 	string `json:"hostname" gorm:"type:varchar(255);not_null;"` // ratuscrm.com, airoclimate.ru, vetvent.ru, ..
+	URL 		string `json:"url" gorm:"type:varchar(255);not_null;"` // https://ratuscrm.com, https://airoclimate.ru, http://vetvent.ru, ..
 
 	// Email DKIM
-	DKIMPublicRSAKey string `json:"dkimPublicRsaKey" gorm:"type:text;"` // публичный ключ
-	DKIMPrivateRSAKey string `json:"dkimPrivateRsaKey" gorm:"type:text;"` // приватный ключ
-	DKIMSelector string `json:"dkimSelector" gorm:"type:varchar(255);default:'dk1'"` // dk1
+	DKIMPublicRSAKey 	string `json:"dkimPublicRsaKey" gorm:"type:text;"` // публичный ключ
+	DKIMPrivateRSAKey 	string `json:"dkimPrivateRsaKey" gorm:"type:text;"` // приватный ключ
+	DKIMSelector 		string `json:"dkimSelector" gorm:"type:varchar(255);default:'dk1'"` // dk1
 
 	// Контактные данные
-	Address string `json:"address" gorm:"type:varchar(255);default:null;"` // Публичный физический адрес
-	Email string `json:"email" gorm:"type:varchar(255);default:null;"` // Публичный email магазина
-	Phone string `json:"phone" gorm:"type:varchar(255);default:null;"` // Публичный телефон
+	Address 	string `json:"address" gorm:"type:varchar(255);default:null;"` // Публичный физический адрес
+	Email 		string `json:"email" gorm:"type:varchar(255);default:null;"` // Публичный email магазина
+	Phone 		string `json:"phone" gorm:"type:varchar(255);default:null;"` // Публичный телефон
 
-	Type	string 	`json:"type" gorm:"type:varchar(50);not null;"` // имя типа shop, site, ... хз как это использовать, на будущее
+	Type		string 	`json:"type" gorm:"type:varchar(50);not null;"` // имя типа shop, site, ... хз как это использовать, на будущее
 	Description string `json:"description" gorm:"type:text;default:''"` // html-описание магазина
 
 	Deliveries 		[]Delivery  `json:"deliveries" gorm:"-"`// `gorm:"polymorphic:Owner;"`
@@ -45,7 +46,7 @@ func (WebSite) PgSqlCreate() {
 // ############# Entity interface #############
 func (webSite WebSite) GetId() uint { return webSite.Id }
 func (webSite *WebSite) setId(id uint) { webSite.Id = id }
-func (webSite *WebSite) setPublicId(id uint) { webSite.Id = id }
+func (webSite *WebSite) setPublicId(id uint) { webSite.PublicId = id }
 func (webSite WebSite) GetAccountId() uint { return webSite.AccountId }
 func (webSite *WebSite) setAccountId(id uint) { webSite.AccountId = id }
 func (webSite WebSite) SystemEntity() bool { return false }
@@ -72,6 +73,17 @@ func (webSite *WebSite) GetPreloadDb(autoUpdateOff bool, getModel bool, preload 
 }
 func (webSite *WebSite) BeforeCreate(scope *gorm.Scope) error {
 	webSite.Id = 0
+
+	var lastIdx sql.NullInt64
+
+	row := db.Model(&WebSite{}).Where("account_id = ?",  webSite.AccountId).
+		Select("max(public_id)").Row()
+	if row != nil {
+		err := row.Scan(&lastIdx)
+		if err != nil && err != gorm.ErrRecordNotFound { return err }
+	}
+
+	webSite.PublicId = 1 + uint(lastIdx.Int64)
 	return nil
 }
 func (webSite *WebSite) AfterFind() (err error) {
@@ -127,8 +139,19 @@ func (webSite *WebSite) load() error {
 	}
 	return nil
 }
-func (*WebSite) loadByPublicId() error {
-	return errors.New("Нет возможности загрузить объект по Public Id")
+func (webSite *WebSite) loadByPublicId() error {
+
+
+	if webSite.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить Payment - не указан  Id"}
+	}
+
+	if err := webSite.GetPreloadDb(false,false, true).
+		First(webSite, "account_id = ? AND public_id = ?", webSite.AccountId, webSite.PublicId).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 func (WebSite) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return WebSite{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)

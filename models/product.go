@@ -94,7 +94,7 @@ func (product *Product) BeforeCreate(scope *gorm.Scope) error {
 	err := db.Model(&Product{}).Where("account_id = ?",  product.AccountId).
 		Select("max(public_id)").Row().Scan(&lastIdx)
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
-	product.PublicId = 1+ uint(lastIdx.Int64)
+	product.PublicId = 1 + uint(lastIdx.Int64)
 
 	return nil
 }

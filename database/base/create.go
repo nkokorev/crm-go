@@ -162,7 +162,6 @@ func RefreshTablesPart_I() {
 	models.DeliveryCourier{}.PgSqlCreate()
 }
 
-
 // загрузка первоначальных данных в EAV-таблицы
 func UploadEavData() {
 
