@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"log"
 	"strings"
 	"time"
 )
@@ -30,7 +31,7 @@ type EmailCampaign struct {
 	// Планируемое время старта
 	ScheduleRun		time.Time 	`json:"scheduleRun"`
 
-	// Ежемесячный дайджест !
+	// Имя кампании - Ежемесячный дайджест !
 	Name 			string 	`json:"name" gorm:"type:varchar(128);default:''"`
 
 	// Тема сообщения и preview-текст, компилируются
@@ -42,11 +43,13 @@ type EmailCampaign struct {
 	EmailTemplate 	EmailTemplate 	`json:"emailTemplate"`
 
 	// Отправитель, может устанавливаться в конце
-	EmailBoxId		uint 	`json:"emailBoxId" gorm:"type:int;not null;"`
+	EmailBoxId		uint 		`json:"emailBoxId" gorm:"type:int;not null;"`
+	EmailBox 		EmailBox 	`json:"emailBox"`
 
 	// RecipientList	postgres.Jsonb 	`json:"recipientList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 	// UserSegments	[]UserSegment `json:"userSegments"`
-	UserSegmentId	uint `json:"userSegmentId" gorm:"type:int;not null;"`
+	UsersSegmentId	uint 		`json:"userSegmentId" gorm:"type:int;not null;"`
+	UsersSegment 	UsersSegment `json:"usersSegment"`
 
 
 	Queue 			uint `json:"_queue" gorm:"-"` // сколько подписчиков еще в процессе отправки кампании
@@ -258,7 +261,7 @@ func (emailCampaign *EmailCampaign) GetPreloadDb(autoUpdateOff bool, getModel bo
 	}
 
 	if preload {
-		return _db.Preload("EmailTemplate")
+		return _db.Preload("EmailTemplate").Preload("emailBox").Preload("UsersSegment")
 		// return _db
 	} else {
 		return _db
@@ -268,36 +271,56 @@ func (emailCampaign *EmailCampaign) GetPreloadDb(autoUpdateOff bool, getModel bo
 // Добавляет кампанию в планировщик задач
 func (emailCampaign *EmailCampaign) Planning() error {
 
-	// Проверяем статус уведомления
-	if !emailCampaign.Enabled {
-		return utils.Error{Message: "Уведомление не может быть отправлено т.к. находится в статусе - 'Отключено'"}
-	}
-
-	// Проверяем тело сообщения (не должно быть пустое)
-	if emailCampaign.Subject == "" {
-		return utils.Error{Message: "Уведомление не может быть отправлено т.к. нет темы сообщения"}
-	}
-
 	// Get Account
 	account, err := GetAccount(emailCampaign.AccountId)
 	if err != nil {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается найти аккаунт"}
 	}
+	
+	// Проверяем статус кампании, готова ли она к запуску
+	if !emailCampaign.Enabled {
+		return utils.Error{Message: "Уведомление не может быть отправлено т.к. находится в статусе - 'Отключено'"}
+	}
 
-	// Находим шаблон письма
-	emailTemplateEntity, err := EmailTemplate{}.get(emailCampaign.EmailTemplateId)
+
+	// Проверяем тело сообщения (не должно быть пустое)
+	if emailCampaign.Subject == "" {
+		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет темы сообщения"}
+	}
+
+	// Проверяем ключи и загружаем еще раз все данные для отправки сообщения
+	if emailCampaign.EmailTemplateId < 1 {
+		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного шаблона email-сообщения"}
+	}
+	err = account.LoadEntity(&emailCampaign.EmailTemplate, emailCampaign.EmailTemplateId)
 	if err != nil {
-		return err
-	}
-	if emailTemplateEntity.GetAccountId() != emailCampaign.AccountId {
-		return utils.Error{Message: "Ошибка отправления Уведомления - шаблон принадлежит другому аккаунту 2"}
-	}
-	emailTemplate, ok := emailTemplateEntity.(*EmailTemplate)
-	if !ok {
-		return utils.Error{Message: "Ошибка отправления Уведомления - не удалось получить шаблон"}
+		log.Printf("Ошибка загрузки шаблона email-сообщения для кампании [%v]: %v\n", emailCampaign.Id, err)
+		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки шаблона email-сообщения"}
 	}
 
-	fmt.Println(account, emailTemplate)
+	if emailCampaign.EmailBoxId < 1 {
+		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного адреса отправителя"}
+	}
+	err = account.LoadEntity(&emailCampaign.EmailBox, emailCampaign.EmailBoxId)
+	if err != nil {
+		log.Printf("Ошибка загрузки адреса отправителя для кампании [%v]: %v\n", emailCampaign.Id, err)
+		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки адреса отправителя"}
+	}
+	
+	if emailCampaign.UsersSegmentId < 1 {
+		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного сегмента пользователей"}
+	}
+	err = account.LoadEntity(&emailCampaign.UsersSegment, emailCampaign.UsersSegmentId)
+	if err != nil {
+		log.Printf("Ошибка загрузка сегмента пользователей для кампании [%v]: %v\n", emailCampaign.Id, err)
+		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки сегмента пользователей"}
+	}
+
+	// Переводим Кампанию в состояние блокировки
+	if err := emailCampaign.update(map[string]interface{}{"executed":true}); err != nil {
+		log.Printf("Ошибка перевод состояния кампании [%v]: %v\n", emailCampaign.Id, err)
+		return utils.Error{Message: "Кампания не может быть запущена - ошибка отправки данных в планировщик"}
+	}
 
 	return nil
 }
@@ -337,5 +360,3 @@ func (emailCampaign *EmailCampaign) Execute() error {
 
 	return nil
 }
-
-

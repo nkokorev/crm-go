@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"log"
 	"time"
 )
@@ -30,7 +29,7 @@ func taskWorker() {
 			continue
 		}
 
-		fmt.Println("Обход taskWorker")
+		// fmt.Println("Обход taskWorker")
 		
 		tasks := make([]TaskScheduler,0)
 

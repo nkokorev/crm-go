@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type UserSegment struct {
+type UsersSegment struct {
 	Id     			uint   	`json:"id" gorm:"primary_key"`
 	PublicId		uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"`
 	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
@@ -26,39 +26,39 @@ type UserSegment struct {
 }
 
 // ############# Entity interface #############
-func (userSegment UserSegment) GetId() uint { return userSegment.Id }
-func (userSegment *UserSegment) setId(id uint) { userSegment.Id = id }
-func (userSegment *UserSegment) setPublicId(publicId uint) { userSegment.PublicId = publicId }
-func (userSegment UserSegment) GetAccountId() uint { return userSegment.AccountId }
-func (userSegment *UserSegment) setAccountId(id uint) { userSegment.AccountId = id }
-func (UserSegment) SystemEntity() bool { return false }
+func (usersSegment UsersSegment) GetId() uint { return usersSegment.Id }
+func (usersSegment *UsersSegment) setId(id uint) { usersSegment.Id = id }
+func (usersSegment *UsersSegment) setPublicId(publicId uint) { usersSegment.PublicId = publicId }
+func (usersSegment UsersSegment) GetAccountId() uint { return usersSegment.AccountId }
+func (usersSegment *UsersSegment) setAccountId(id uint) { usersSegment.AccountId = id }
+func (UsersSegment) SystemEntity() bool { return false }
 
 // ############# Entity interface #############
 
-func (UserSegment) PgSqlCreate() {
-	db.CreateTable(&UserSegment{})
-	db.Model(&UserSegment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+func (UsersSegment) PgSqlCreate() {
+	db.CreateTable(&UsersSegment{})
+	db.Model(&UsersSegment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }
-func (userSegment *UserSegment) BeforeCreate(scope *gorm.Scope) error {
-	userSegment.Id = 0
+func (usersSegment *UsersSegment) BeforeCreate(scope *gorm.Scope) error {
+	usersSegment.Id = 0
 
 	// PublicId
 	var lastIdx sql.NullInt64
-	err := db.Model(&UserSegment{}).Where("account_id = ?",  userSegment.AccountId).
+	err := db.Model(&UsersSegment{}).Where("account_id = ?",  usersSegment.AccountId).
 		Select("max(public_id)").Row().Scan(&lastIdx)
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
-	userSegment.PublicId = 1 + uint(lastIdx.Int64)
+	usersSegment.PublicId = 1 + uint(lastIdx.Int64)
 
 	return nil
 }
-func (userSegment *UserSegment) AfterFind() (err error) {
+func (usersSegment *UsersSegment) AfterFind() (err error) {
 	return nil
 }
 
 // ######### CRUD Functions ############
-func (userSegment UserSegment) create() (Entity, error)  {
+func (usersSegment UsersSegment) create() (Entity, error)  {
 
-	en := userSegment
+	en := usersSegment
 
 	if err := db.Create(&en).Error; err != nil {
 		return nil, err
@@ -73,41 +73,41 @@ func (userSegment UserSegment) create() (Entity, error)  {
 
 	return newItem, nil
 }
-func (UserSegment) get(id uint) (Entity, error) {
+func (UsersSegment) get(id uint) (Entity, error) {
 
-	var userSegment UserSegment
+	var usersSegment UsersSegment
 
-	err := userSegment.GetPreloadDb(false,false,true).First(&userSegment, id).Error
+	err := usersSegment.GetPreloadDb(false,false,true).First(&usersSegment, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &userSegment, nil
+	return &usersSegment, nil
 }
-func (userSegment *UserSegment) load() error {
+func (usersSegment *UsersSegment) load() error {
 
-	err := userSegment.GetPreloadDb(false,false,true).First(userSegment, userSegment.Id).Error
+	err := usersSegment.GetPreloadDb(false,false,true).First(usersSegment, usersSegment.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (userSegment *UserSegment) loadByPublicId() error {
+func (usersSegment *UsersSegment) loadByPublicId() error {
 
-	if userSegment.PublicId < 1 {
-		return utils.Error{Message: "Невозможно загрузить UserSegment - не указан  Id"}
+	if usersSegment.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить UsersSegment - не указан  Id"}
 	}
-	if err := userSegment.GetPreloadDb(false,false, true).First(userSegment, "account_id = ? AND public_id = ?", userSegment.AccountId, userSegment.PublicId).Error; err != nil {
+	if err := usersSegment.GetPreloadDb(false,false, true).First(usersSegment, "account_id = ? AND public_id = ?", usersSegment.AccountId, usersSegment.PublicId).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
-func (UserSegment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-	return UserSegment{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
+func (UsersSegment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+	return UsersSegment{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-func (UserSegment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (UsersSegment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
-	userSegments := make([]UserSegment,0)
+	usersSegments := make([]UsersSegment,0)
 	var total uint
 
 	// if need to search
@@ -115,18 +115,18 @@ func (UserSegment) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 		search = "%"+search+"%"
 
-		err := (&UserSegment{}).GetPreloadDb(true,false,true).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&UsersSegment{}).GetPreloadDb(true,false,true).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
 				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
 			}).Preload("EmailBox").
-			Find(&userSegments, "name ILIKE ? OR subject ILIKE ? OR preview_text ILIKE ?", search,search,search).Error
+			Find(&usersSegments, "name ILIKE ? OR subject ILIKE ? OR preview_text ILIKE ?", search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&UserSegment{}).
+		err = db.Model(&UsersSegment{}).
 			Where("account_id = ? AND name ILIKE ? OR description ILIKE ? ", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
@@ -135,59 +135,59 @@ func (UserSegment) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	} else {
 
-		err := (&UserSegment{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&UsersSegment{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
 				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
 			}).Preload("EmailBox").
-			Find(&userSegments).Error
+			Find(&usersSegments).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&UserSegment{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&UsersSegment{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(userSegments))
-	for i := range userSegments {
-		entities[i] = &userSegments[i]
+	entities := make([]Entity,len(usersSegments))
+	for i := range usersSegments {
+		entities[i] = &usersSegments[i]
 	}
 
 	return entities, total, nil
 }
-func (userSegment *UserSegment) update(input map[string]interface{}) error {
+func (usersSegment *UsersSegment) update(input map[string]interface{}) error {
 
-	if err := userSegment.GetPreloadDb(true,false,false).Where(" id = ?", userSegment.Id).
+	if err := usersSegment.GetPreloadDb(true,false,false).Where(" id = ?", usersSegment.Id).
 		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
 		return err
 	}
 
-	err := userSegment.GetPreloadDb(true,false,false).First(userSegment, userSegment.Id).Error
+	err := usersSegment.GetPreloadDb(true,false,false).First(usersSegment, usersSegment.Id).Error
 	if err != nil {
 		return err
 	}
 
 	return nil
 }
-func (userSegment *UserSegment) delete () error {
-	return userSegment.GetPreloadDb(true,true,false).Where("id = ?", userSegment.Id).Delete(userSegment).Error
+func (usersSegment *UsersSegment) delete () error {
+	return usersSegment.GetPreloadDb(true,true,false).Where("id = ?", usersSegment.Id).Delete(usersSegment).Error
 }
 // ######### END CRUD Functions ############
 
-func (userSegment *UserSegment) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (usersSegment *UsersSegment) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
 	_db := db
 
 	if autoUpdateOff {
 		_db = _db.Set("gorm:association_autoupdate", false)
 	}
 	if getModel {
-		_db = _db.Model(userSegment)
+		_db = _db.Model(usersSegment)
 	} else {
-		_db = _db.Model(&UserSegment{})
+		_db = _db.Model(&UsersSegment{})
 	}
 
 	if preload {
@@ -199,7 +199,7 @@ func (userSegment *UserSegment) GetPreloadDb(autoUpdateOff bool, getModel bool, 
 }
 
 // Получения списка пользователей в сегменте
-func (userSegment UserSegment) Execute(data map[string]interface{}) error {
+func (usersSegment UsersSegment) Execute(data map[string]interface{}) error {
 	
 
 	return nil

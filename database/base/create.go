@@ -76,7 +76,7 @@ func RefreshTablesPart_I() {
 
 
 	pool.DropTableIfExists(
-		models.UserSegment{},
+		models.UsersSegment{},
 		models.UserSegmentConditions{},
 		models.MTAHistory{},
 		models.MTAWorkflow{},
@@ -147,7 +147,7 @@ func RefreshTablesPart_I() {
 
 	models.MTAHistory{}.PgSqlCreate()
 	models.UserSegmentConditions{}.PgSqlCreate()
-	models.UserSegment{}.PgSqlCreate()
+	models.UsersSegment{}.PgSqlCreate()
 
 
 	models.PaymentMode{}.PgSqlCreate()
@@ -1879,13 +1879,13 @@ func Migrate_I() {
 	}
 
 	pool.DropTableIfExists(
-		models.UserSegment{},
+		models.UsersSegment{},
 		models.UserSegmentConditions{},
 		models.EmailCampaign{},
 		models.TaskScheduler{},
 	)
 
-	models.UserSegment{}.PgSqlCreate()
+	models.UsersSegment{}.PgSqlCreate()
 	models.UserSegmentConditions{}.PgSqlCreate()
 	models.EmailCampaign{}.PgSqlCreate()
 	models.TaskScheduler{}.PgSqlCreate()
@@ -1893,7 +1893,7 @@ func Migrate_I() {
 	account,err := models.GetAccount(4)
 	if err != nil { log.Fatal(err)}
 
-	userSegment := []models.UserSegment {
+	userSegment := []models.UsersSegment {
 		{AccountId: account.Id, Name: "Все подписчики", StrictMatching: true},
 		{AccountId: account.Id, Name: "Все клиенты", StrictMatching: true},
 	}
@@ -1903,7 +1903,8 @@ func Migrate_I() {
 	}
 
 	emailCampaigns := []models.EmailCampaign{
-		{Name: "Оповещение пользователей", Enabled: true, ScheduleRun: time.Now().UTC(), Subject: "Установите наш модуль!", PreviewText: "", EmailTemplateId: 7, EmailBoxId: 4, UserSegmentId: 1},
+		{Name: "Оповещение пользователей", Enabled: true, ScheduleRun: time.Now().UTC(), Subject: "Установите наш модуль!", PreviewText: "", EmailTemplateId: 7, EmailBoxId: 4,
+			UsersSegmentId: 1},
 	}
 
 	for i := range emailCampaigns {
