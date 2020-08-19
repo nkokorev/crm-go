@@ -266,7 +266,7 @@ func (emailCampaign *EmailCampaign) GetPreloadDb(autoUpdateOff bool, getModel bo
 }
 
 // Отправка кампании
-func (emailCampaign EmailCampaign) Execute(data map[string]interface{}) error {
+func (emailCampaign *EmailCampaign) Execute() error {
 
 	// Проверяем статус уведомления
 	if !emailCampaign.Enabled {

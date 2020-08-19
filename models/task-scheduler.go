@@ -20,6 +20,9 @@ type TaskScheduler struct {
 	// Запланированное время выполнения
 	ExpectedTimeToStart 	time.Time `json:"expectedTimeToStart"`
 
+	// системная ли задача
+	IsSystem	bool	`json:"isSystem" gorm:"type:bool;default:true"`
+
 	// Результат выполнения: planned / pending / completed / failed / cancelled => планируется / выполняется / выполнена / провалена / отмена
 	Status WorkStatus `json:"status" gorm:"type:varchar(18);default:'planned'"`
 
