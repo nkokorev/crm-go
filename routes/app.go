@@ -211,6 +211,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-campaigns/{emailCampaignId:[0-9]+}", appCr.EmailCampaignGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-campaigns/{emailCampaignId:[0-9]+}", appCr.EmailCampaignUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-campaigns/{emailCampaignId:[0-9]+}", appCr.EmailCampaignDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-campaigns/{emailCampaignId:[0-9]+}/planning", appCr.EmailCampaignPlanning).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-campaigns/{emailCampaignId:[0-9]+}/execute", appCr.EmailCampaignExecute).Methods(http.MethodGet, http.MethodOptions)
 
 	// ### Email Queue ####

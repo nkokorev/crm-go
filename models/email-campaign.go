@@ -265,7 +265,43 @@ func (emailCampaign *EmailCampaign) GetPreloadDb(autoUpdateOff bool, getModel bo
 	}
 }
 
-// Отправка кампании
+// Добавляет кампанию в планировщик задач
+func (emailCampaign *EmailCampaign) Planning() error {
+
+	// Проверяем статус уведомления
+	if !emailCampaign.Enabled {
+		return utils.Error{Message: "Уведомление не может быть отправлено т.к. находится в статусе - 'Отключено'"}
+	}
+
+	// Проверяем тело сообщения (не должно быть пустое)
+	if emailCampaign.Subject == "" {
+		return utils.Error{Message: "Уведомление не может быть отправлено т.к. нет темы сообщения"}
+	}
+
+	// Get Account
+	account, err := GetAccount(emailCampaign.AccountId)
+	if err != nil {
+		return utils.Error{Message: "Ошибка отправления Уведомления - не удается найти аккаунт"}
+	}
+
+	// Находим шаблон письма
+	emailTemplateEntity, err := EmailTemplate{}.get(emailCampaign.EmailTemplateId)
+	if err != nil {
+		return err
+	}
+	if emailTemplateEntity.GetAccountId() != emailCampaign.AccountId {
+		return utils.Error{Message: "Ошибка отправления Уведомления - шаблон принадлежит другому аккаунту 2"}
+	}
+	emailTemplate, ok := emailTemplateEntity.(*EmailTemplate)
+	if !ok {
+		return utils.Error{Message: "Ошибка отправления Уведомления - не удалось получить шаблон"}
+	}
+
+	fmt.Println(account, emailTemplate)
+
+	return nil
+}
+
 func (emailCampaign *EmailCampaign) Execute() error {
 
 	// Проверяем статус уведомления
@@ -301,3 +337,5 @@ func (emailCampaign *EmailCampaign) Execute() error {
 
 	return nil
 }
+
+
