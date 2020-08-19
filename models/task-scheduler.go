@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
@@ -225,7 +224,6 @@ func (taskScheduler *TaskScheduler) GetPreloadDb(autoUpdateOff bool, getModel bo
 
 // Выполнения задачи 
 func (taskScheduler TaskScheduler) Execute() error {
-	fmt.Println("Task Execute!")
 	// return errors.New("Тестовая ошибка")
 
 	account, err := GetAccount(taskScheduler.AccountId)
@@ -235,7 +233,6 @@ func (taskScheduler TaskScheduler) Execute() error {
 
 	switch taskScheduler.OwnerType {
 	case TaskEmailCampaignRun:
-		fmt.Println("Запускаем task campaign run!")
 
 		// 1. Получаем кампанию
 		var emailCampaign EmailCampaign

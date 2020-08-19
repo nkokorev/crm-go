@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
@@ -400,14 +399,13 @@ func (emailCampaign *EmailCampaign) Execute() error {
 	users := make([]User,0)
 
 	offset := uint(0)
-	limit := uint(500)
+	limit := uint(100)
 	total := uint(1)
 
 	for offset < total {
 
 		_users, _total, err := segment.ChunkUsers(offset, limit)
 		if err != nil {
-			fmt.Println("Прерываем, ошибка: ", err)
 			break
 		}
 
@@ -416,7 +414,6 @@ func (emailCampaign *EmailCampaign) Execute() error {
 		offset = offset + uint(len(_users))
 		total = _total
 
-		// fmt.Println("offset: ", offset)
 		time.Sleep(time.Millisecond * 10)
 	}
 
@@ -436,7 +433,6 @@ func (emailCampaign *EmailCampaign) Execute() error {
 			log.Printf("Ошибка добавления пользователя [%v] в очередь: %v", v.Id, err)
 		}
 
-		fmt.Printf("Пользователь добавлен в workflow: %v\n", v.Email)
 	}
 
 

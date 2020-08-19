@@ -54,6 +54,44 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+func UserUpload(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w, r)
+	if err != nil {
+		return
+	}
+
+	var input struct {
+		Users []models.User `json:"users"`
+		RoleId uint `json:"roleId"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	var role models.Role
+	if err = account.LoadEntity(&role, input.RoleId); err != nil {
+		u.Respond(w, u.MessageError(err, "Роль пользователя не найдена!"))
+		return
+	}
+
+	if role.IsOwner() {
+		u.Respond(w, u.MessageError(err, "Нельзя создать пользователя с ролью владельца аккаунта"))
+		return
+	}
+
+	if err := account.UploadUsers(input.Users, role); err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось создать пользователей"))
+		return
+	}
+
+
+	resp := u.Message(true, "CREATE Users in Account")
+	u.Respond(w, resp)
+}
+
 func UserGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w, r)

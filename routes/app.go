@@ -63,6 +63,7 @@ var AppRoutes = func(r *mux.Router) {
 	// rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userHashId}", appCr.UserUpdate).Methods(http.MethodPatch, http.MethodOptions)
 
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/users", appCr.UserCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/users/upload", appCr.UserUpload).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/users", appCr.UsersGetListPagination).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userId:[0-9]+}", appCr.UserGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/users/{userId:[0-9]+}", appCr.UserUpdate).Methods(http.MethodPatch, http.MethodOptions)

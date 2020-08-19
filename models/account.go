@@ -301,6 +301,82 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 
 	return user, nil
 }
+func (account Account) UploadUsers(users []User, role Role) error {
+
+	if account.Id < 1 {
+		return errors.New("Не верно указан контекст аккаунта")
+	}
+
+	for _, user := range users {
+		var err error
+		var username, email, phone bool
+
+		// Утверждаем main-account пользователя
+		user.IssuerAccountId = account.Id
+
+		// ### !!!! Проверка входящих данных !!! ### ///
+		if len(user.Username) > 0 {
+
+			username = true
+			if err := utils.VerifyUsername(user.Username); err != nil {
+				continue
+			}
+		}
+
+		if len(user.Email) > 0 {
+			email = true
+			// if err := utils.EmailValidation(user.Email); err != nil {
+			if err := utils.EmailDeepValidation(user.Email); err != nil {
+				continue
+			}
+		}
+
+		if len(user.Phone) > 0 {
+			phone = true
+
+			if user.PhoneRegion == "" {
+				user.PhoneRegion = "RU"
+			}
+
+			// Устанавливаем нужный формат
+			user.Phone, err = utils.ParseE164Phone(user.Phone, user.PhoneRegion)
+			if err != nil {
+				continue
+			}
+
+		}
+
+		// 5. One of username. email and phone must be!
+		if !(username || email || phone) {
+			continue
+		}
+
+		// Проверка дублирование полей
+		if account.existUserByUsername(user.Username) {
+			continue
+		}
+		if account.existUserByEmail(user.Email) {
+			continue
+		}
+		if account.existUserByPhone(user.Phone) {
+			continue
+		}
+
+		// создаем пользователя
+		user, err := user.create()
+		if err != nil || user == nil {
+			continue
+		}
+
+		// Автоматически добавляем пользователя в аккаунт
+		_, err = account.AppendUser(*user, role)
+		if err != nil {
+			continue
+		}
+	}
+
+	return nil
+}
 
 // Возвращает пользователя везде, кроме главного аккаунта
 func (account Account) GetUser(userId uint) (*User, error) {
@@ -547,7 +623,7 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 
 		// Вычисляем total
 		if len(users) > 0 {
-			err = db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").Offset(offset).
+			err = db.Model(&User{}).Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
 				Where("account_id = ? AND role_id IN (?)", account.Id, role).
 				Count(&total).Error
 			if err != nil && err != gorm.ErrRecordNotFound {
