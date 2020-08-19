@@ -69,17 +69,20 @@ func RefreshTablesPart_I() {
 	pool := models.GetPool()
 
 	// not there
-	err := pool.Exec("drop table if exists orders_products, payment_methods_web_sites").Error
+	err := pool.Exec("drop table if exists user_segments_user_segment_conditions, orders_products, payment_methods_web_sites").Error
 	if err != nil {
 		log.Fatal(err)
 	}
 
 
 	pool.DropTableIfExists(
+		models.UserSegment{},
+		models.UserSegmentConditions{},
 		models.MTAHistory{},
 		models.MTAWorkflow{},
 		models.EmailQueueEmailTemplate{},
 		models.EmailQueue{},
+		models.EmailCampaign{},
 	)
 
 	pool.DropTableIfExists(models.Payment2Delivery{}, models.DeliveryOrder{}, models.DeliveryStatus{},models.OrderChannel{},  models.Order{}, models.OrderStatus{},models.Payment{},
@@ -103,6 +106,8 @@ func RefreshTablesPart_I() {
 	models.Account{}.PgSqlCreate()
 	models.Role{}.PgSqlCreate()
 	models.User{}.PgSqlCreate()
+
+
 	models.AccountUser{}.PgSqlCreate()
 	models.ApiKey{}.PgSqlCreate()
 
@@ -128,16 +133,21 @@ func RefreshTablesPart_I() {
 
 	models.WebHook{}.PgSqlCreate()
 
+
 	// Уведомления
 	models.EmailNotification{}.PgSqlCreate()
 	models.OrderComment{}.PgSqlCreate()
 
 	models.EmailQueue{}.PgSqlCreate()
 	models.EmailQueueEmailTemplate{}.PgSqlCreate()
+	models.EmailCampaign{}.PgSqlCreate()
 	models.MTAWorkflow{}.PgSqlCreate()
 
 	models.MTAHistory{}.PgSqlCreate()
-	
+	models.UserSegmentConditions{}.PgSqlCreate()
+	models.UserSegment{}.PgSqlCreate()
+
+
 	models.PaymentMode{}.PgSqlCreate()
 	models.PaymentAmount{}.PgSqlCreate()
 	models.Payment{}.PgSqlCreate()
@@ -156,10 +166,11 @@ func RefreshTablesPart_I() {
 
 	models.VatCode{}.PgSqlCreate()
 
-
 	models.DeliveryRussianPost{}.PgSqlCreate()
 	models.DeliveryPickup{}.PgSqlCreate()
 	models.DeliveryCourier{}.PgSqlCreate()
+
+
 }
 
 // загрузка первоначальных данных в EAV-таблицы
@@ -1860,7 +1871,42 @@ func UploadBroUserData() {
 func Migrate_I() {
 	pool := models.GetPool()
 
-	pool.AutoMigrate(&models.AccountUser{})
+	err := pool.Exec("drop table if exists user_segments_user_segment_conditions").Error
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	pool.DropTableIfExists(
+		models.UserSegment{},
+		models.UserSegmentConditions{},
+		models.EmailCampaign{},
+	)
+
+	models.UserSegment{}.PgSqlCreate()
+	models.UserSegmentConditions{}.PgSqlCreate()
+	models.EmailCampaign{}.PgSqlCreate()
+
+	account,err := models.GetAccount(4)
+	if err != nil { log.Fatal(err)}
+
+	userSegment := []models.UserSegment {
+		{AccountId: account.Id, Name: "Все подписчики", StrictMatching: true},
+		{AccountId: account.Id, Name: "Все клиенты", StrictMatching: true},
+	}
+
+	for i := range userSegment {
+		_, _ = account.CreateEntity(&userSegment[i])
+	}
+
+	emailCampaigns := []models.EmailCampaign{
+		{Name: "Оповещение пользователей", Enabled: true, ScheduleRun: time.Now().UTC(), Subject: "Установите наш модуль!", PreviewText: "", EmailTemplateId: 7, EmailBoxId: 4, UserSegmentId: 1},
+	}
+
+	for i := range emailCampaigns {
+		_, _ = account.CreateEntity(&emailCampaigns[i])
+	}
+
+	// pool.AutoMigrate(&models.AccountUser{})
 	// pool.AutoMigrate(&models.EmailTemplate{})
 	// pool.AutoMigrate(&models.AccountUser{})
 	

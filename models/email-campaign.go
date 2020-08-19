@@ -17,7 +17,7 @@ type EmailCampaign struct {
 	Enabled 		bool 	`json:"enabled" gorm:"type:bool;default:false;"`
 
 	// Планируемое время старта
-	ScheduleRun		time.Time `json:"scheduleRun" gorm:"type:int8;"`
+	ScheduleRun		time.Time `json:"scheduleRun"`
 
 	// Ежемесячный дайджест !
 	Name 			string 	`json:"name" gorm:"type:varchar(128);default:''"`
@@ -33,7 +33,8 @@ type EmailCampaign struct {
 	EmailBoxId		uint 	`json:"emailBoxId" gorm:"type:int;not null;"`
 
 	// RecipientList	postgres.Jsonb 	`json:"recipientList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
-	UserSegments	[]UserSegment `json:"userSegments"`
+	// UserSegments	[]UserSegment `json:"userSegments"`
+	UserSegmentId	uint `json:"userSegmentId" gorm:"type:int;not null;`
 
 	CreatedAt 		time.Time `json:"createdAt"`
 	UpdatedAt 		time.Time `json:"updatedAt"`
@@ -134,9 +135,6 @@ func (EmailCampaign) getPaginationList(accountId uint, offset, limit int, sortBy
 		search = "%"+search+"%"
 
 		err := (&EmailCampaign{}).GetPreloadDb(true,false,true).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
-				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
-			}).Preload("EmailBox").
 			Find(&emailCampaigns, "name ILIKE ? OR subject ILIKE ? OR preview_text ILIKE ?", search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -145,7 +143,7 @@ func (EmailCampaign) getPaginationList(accountId uint, offset, limit int, sortBy
 
 		// Определяем total
 		err = db.Model(&EmailCampaign{}).
-			Where("account_id = ? AND name ILIKE ? OR description ILIKE ? ", accountId, search,search).
+			Where("account_id = ? AND name ILIKE ? OR subject ILIKE ? OR preview_text ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -154,9 +152,6 @@ func (EmailCampaign) getPaginationList(accountId uint, offset, limit int, sortBy
 	} else {
 
 		err := (&EmailCampaign{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
-				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
-			}).Preload("EmailBox").
 			Find(&emailCampaigns).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -211,9 +206,8 @@ func (emailCampaign *EmailCampaign) GetPreloadDb(autoUpdateOff bool, getModel bo
 	}
 
 	if preload {
-		return _db.Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
-			return db.Select(EmailTemplate{}.SelectArrayWithoutData())
-		}).Preload("EmailBox")
+		// return _db.Preload("EmailTemplate")
+		return _db
 	} else {
 		return _db
 	}

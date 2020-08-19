@@ -185,17 +185,14 @@ func (user *User) save () error {
 		Model(user).Omit("id", "hash_id", "issuer_account_id", "created_at", "updated_at").Save(user).Error
 
 }
-
 func (user *User) delete () error {
 	return db.Model(&User{}).Where("id = ?", user.Id).Delete(user).Error
 }
-
 func getUserById(userId uint) (*User,error) {
 	user := User{}
 	err := db.Model(&User{}).First(&user, userId).Error
 	return &user, err
 }
-
 func getUnscopedUserById(userId uint) (*User,error) {
 	user := User{}
 	err := db.Model(&User{}).Unscoped().First(&user, userId).Error

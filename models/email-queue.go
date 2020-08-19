@@ -15,18 +15,13 @@ type EmailQueue struct {
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Имя очереди (Label)
-	Name	string	`json:"name" gorm:"type:varchar(128);not null;"` // Welcome, Onboarding, ...
+	Name		string	`json:"name" gorm:"type:varchar(128);not null;"` // Welcome, Onboarding, ...
 
 	// В работе серия или нет (== нужно ли ее обходить воркером)
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false;"`
 
-	// EmailQueueEmailTemplate	[]EmailQueueEmailTemplate	`json:"-"`
-
-	// MTAWorkflow []MTAWorkflow `json:"emailQueueWorkflow" gorm:"preload"`
-	// MTAWorkflowQuantity uint `json:"emailQueueWorkflowQuantity" gorm:"preload"`
-
 	// Сколько в очереди сейчас задач (выборка по MTAWorkflow) = сколько подписчиков еще проходят, в процессе
-	Queue uint `json:"_queue" gorm:"-"`
+	Queue 		uint `json:"_queue" gorm:"-"`
 
 	// Из скольких активных писем состоит цепочка      activeEmailTemplates
 	ActiveEmailTemplates uint `json:"_activeEmailTemplates" gorm:"-"`
@@ -34,12 +29,8 @@ type EmailQueue struct {
 	// Сколько прошло через нее. На это число навешивается статистика открытий / отписок / кликов
 	Recipients uint `json:"_recipients" gorm:"-"` // << число участников в серии
 	EmailsSent uint `json:"_emailsSent" gorm:"-"` // << всего успешно отправлено писем
-	OpenRate float64 `json:"_openRate" gorm:"-"`
+	OpenRate 		float64 `json:"_openRate" gorm:"-"`
 	UnsubscribeRate float64 `json:"_unsubscribeRate" gorm:"-"`
-		
-
-	// Сколько пользователей завершило серию
-	// Subscribers uint `json:"emailQueueWorkflowQuantity" gorm:"preload"`
 
 	// Внутреннее время
 	CreatedAt time.Time  `json:"createdAt"`
@@ -205,18 +196,18 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 		search = "%"+search+"%"
 
 		err := (&EmailQueue{}).GetPreloadDb(true,false,true).
-			Preload("MTAWorkflow", func(db *gorm.DB) *gorm.DB {
+			/*Preload("MTAWorkflow", func(db *gorm.DB) *gorm.DB {
 				return db.Select([]string{"id"})
-			}).
+			}).*/
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&emailQueues, "name ILIKE ? OR enabled ILIKE ?", search,search).Error
+			Find(&emailQueues, "name ILIKE ?", search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
 		err = (&EmailQueue{}).GetPreloadDb(true,false,true).
-			Where("account_id = ? AND name ILIKE ? OR enabled ILIKE ?", accountId, search,search).
+			Where("account_id = ? AND name ILIKE ?", accountId, search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}

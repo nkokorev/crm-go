@@ -36,7 +36,6 @@ func (UserSegmentConditions) SystemEntity() bool { return false }
 func (UserSegmentConditions) PgSqlCreate() {
 	db.CreateTable(&UserSegmentConditions{})
 	db.Model(&UserSegmentConditions{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&UserSegmentConditions{}).AddForeignKey("email_template_id", "email_templates(id)", "RESTRICT", "CASCADE")
 }
 func (userSegmentConditions *UserSegmentConditions) BeforeCreate(scope *gorm.Scope) error {
 	userSegmentConditions.Id = 0
@@ -194,9 +193,8 @@ func (userSegmentConditions *UserSegmentConditions) GetPreloadDb(autoUpdateOff b
 	}
 
 	if preload {
-		return _db.Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
-			return db.Select(EmailTemplate{}.SelectArrayWithoutData())
-		}).Preload("EmailBox")
+		// return _db.Preload("")
+		return _db
 	} else {
 		return _db
 	}

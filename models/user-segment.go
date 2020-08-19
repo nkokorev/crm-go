@@ -15,11 +15,11 @@ type UserSegment struct {
 	// Имя кампании сегмента: 'активные участники', 'только клиенты', 'майские подписчики'
 	Name 			string 		`json:"name" gorm:"type:varchar(128);"`
 
-	// AND or ANY
+	// true = AND ; false = ANY
 	StrictMatching 		bool 	`json:"enabled" gorm:"type:bool;default:false;"`
 
 	// персональные настройки сегмента
-	UserSegmentRules []UserSegmentRule `json:"userSegmentRules"`
+	UserSegmentRules []UserSegmentConditions `json:"userSegmentRules" gorm:"many2many:user_segments_user_segment_conditions"`
 
 	// =============   Настройки получателей    ===================
 	CreatedAt 		time.Time `json:"createdAt"`
@@ -38,7 +38,6 @@ func (UserSegment) SystemEntity() bool { return false }
 func (UserSegment) PgSqlCreate() {
 	db.CreateTable(&UserSegment{})
 	db.Model(&UserSegment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&UserSegment{}).AddForeignKey("email_template_id", "email_templates(id)", "RESTRICT", "CASCADE")
 }
 func (userSegment *UserSegment) BeforeCreate(scope *gorm.Scope) error {
 	userSegment.Id = 0
@@ -74,7 +73,6 @@ func (userSegment UserSegment) create() (Entity, error)  {
 
 	return newItem, nil
 }
-
 func (UserSegment) get(id uint) (Entity, error) {
 
 	var userSegment UserSegment
@@ -104,7 +102,6 @@ func (userSegment *UserSegment) loadByPublicId() error {
 
 	return nil
 }
-
 func (UserSegment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return UserSegment{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
@@ -162,7 +159,6 @@ func (UserSegment) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	return entities, total, nil
 }
-
 func (userSegment *UserSegment) update(input map[string]interface{}) error {
 
 	if err := userSegment.GetPreloadDb(true,false,false).Where(" id = ?", userSegment.Id).
@@ -177,7 +173,6 @@ func (userSegment *UserSegment) update(input map[string]interface{}) error {
 
 	return nil
 }
-
 func (userSegment *UserSegment) delete () error {
 	return userSegment.GetPreloadDb(true,true,false).Where("id = ?", userSegment.Id).Delete(userSegment).Error
 }
@@ -196,9 +191,8 @@ func (userSegment *UserSegment) GetPreloadDb(autoUpdateOff bool, getModel bool, 
 	}
 
 	if preload {
-		return _db.Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
-			return db.Select(EmailTemplate{}.SelectArrayWithoutData())
-		}).Preload("EmailBox")
+		// return _db.Preload("")
+		return _db
 	} else {
 		return _db
 	}
