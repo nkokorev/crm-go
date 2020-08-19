@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"log"
 	"time"
 )
@@ -29,7 +30,7 @@ func taskWorker() {
 			continue
 		}
 
-		// fmt.Println("Обход taskWorker")
+		fmt.Printf("Обход taskWorker : %v\n", time.Now().UTC().Format(time.Stamp))
 		
 		tasks := make([]TaskScheduler,0)
 
@@ -45,15 +46,20 @@ func taskWorker() {
 
 		// Подготавливаем отправку
 		for i := range tasks {
+
+			fmt.Println("Подготавливаем Task к запуску")
+			
 			// 1. Ставим статус в работе
 			if err := tasks[i].SetStatus(WorkStatusPending); err != nil {
 				log.Printf("taskWorker: Ошибка установки статуса Pending задачи [%v]: %v", tasks[i].Id, err)
 				continue
-			} 
+			}
+
+			// Запускаем исполнителя и смотрим что он вернет (может занять какое-то время...)
 			if err = tasks[i].Execute(); err != nil {
 
 				// Если задача провалена
-				if err := tasks[i].SetStatus(WorkStatusFailed); err != nil {
+				if err := tasks[i].SetStatus(WorkStatusFailed, err.Error()); err != nil {
 					log.Printf("taskWorker: Ошибка установки статуса Failed задачи [%v]: %v", tasks[i].Id, err)
 				}
 				continue

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"log"
 	"time"
 )
 
@@ -115,10 +116,8 @@ func (UsersSegment) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 		search = "%"+search+"%"
 
-		err := (&UsersSegment{}).GetPreloadDb(true,false,true).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
-				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
-			}).Preload("EmailBox").
+		err := (&UsersSegment{}).GetPreloadDb(true,false,true).
+			Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&usersSegments, "name ILIKE ? OR subject ILIKE ? OR preview_text ILIKE ?", search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -135,10 +134,8 @@ func (UsersSegment) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 	} else {
 
-		err := (&UsersSegment{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
-				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
-			}).Preload("EmailBox").
+		err := (&UsersSegment{}).GetPreloadDb(true,false,true).
+			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&usersSegments).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -203,4 +200,34 @@ func (usersSegment UsersSegment) Execute(data map[string]interface{}) error {
 	
 
 	return nil
+}
+
+// Самая важная функция - возвращает пользователей согласно сегменту
+func (usersSegment UsersSegment) ChunkUsers(offset uint, limit uint) ([]User, uint, error) {
+	// Тут идет сборка всех условий и т.д., но пока парсим просто всех пользователей
+
+	users := make([]User,0)
+
+	// Список пользователей по ролям (выбираем все роли)
+	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+		Select("account_users.account_id, account_users.role_id, users.*").
+		Where("account_users.account_id = ? AND users.subscribed = true AND char_length(users.email) > 6", usersSegment.AccountId).
+		Offset(offset).Limit(limit).
+		Find(&users).Error
+	if err != nil {
+		log.Printf("ChunkUsers:  %v", err)
+		return nil, 0, err
+	}
+
+	// Определяем total
+	var total = uint(0)
+	err = db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+		Select("account_users.account_id, account_users.role_id, users.*").
+		Where("account_users.account_id = ? AND users.subscribed = true AND char_length(users.email) > 6", usersSegment.AccountId).
+		Count(&total).Error
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+	}
+
+	return users, total, nil
 }

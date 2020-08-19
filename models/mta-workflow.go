@@ -280,6 +280,8 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	var emailBox EmailBox
 	var emailTemplate EmailTemplate
 	var Subject, PreviewText string
+
+	// wtf
 	var QueueOrder uint
 
 	if sender.GetType() == EmailSenderQueue {
@@ -355,7 +357,29 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		Subject = emailNotification.Subject
 		PreviewText = emailNotification.PreviewText
 	}
-	// if sender.GetType() == EmailSenderCampaign { ... }
+
+	if sender.GetType() == EmailSenderCampaign {
+
+		if !sender.IsEnabled() {
+			// Возвращаем с ошибкой, т.к. могут копиться люди в очереди
+			return utils.Error{ Message: fmt.Sprintf("Невозможно отправить письмо, т.к. кампания [id = %v] не запущена\n", sender.GetId()),
+			}
+		}
+
+		emailCampaign, ok := sender.(*EmailCampaign)
+		if !ok { return errors.New("Ошибка преобразования в email campaign")}
+
+		err := account.LoadEntity(&emailTemplate, emailCampaign.EmailTemplateId)
+		if err != nil {	return err }
+
+		err = account.LoadEntity(&emailBox, emailCampaign.EmailBoxId)
+		if err != nil {
+			return err
+		}
+
+		Subject = emailCampaign.Subject
+		PreviewText = emailCampaign.PreviewText
+	}
 
 	// **************************** //
 	
@@ -374,7 +398,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		Succeed: false, 	// по умолчанию
 	}
 	defer func() {
-		history.create()
+		_, _ = history.create()
 	}()
 	
 	unsubscribeUrl := account.GetUnsubscribeUrl(*user, *history)
@@ -473,15 +497,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			return nil
 		}
 
-		if sender.GetType() == EmailSenderCampaign {
-			if err = mtaWorkflow.delete(); err != nil {
-				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
-			}
-			return nil
-		}
-
-		if sender.GetType() == EmailSenderNotification {
-			// удаляем задачу
+		if sender.GetType() == EmailSenderCampaign || sender.GetType() == EmailSenderNotification{
 			if err = mtaWorkflow.delete(); err != nil {
 				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
 			}

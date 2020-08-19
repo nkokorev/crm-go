@@ -286,8 +286,8 @@ func (emailTemplate EmailTemplate) GetHTML(viewData *ViewData) (html string, err
 func (emailTemplate EmailTemplate) SendMail(from EmailBox, toEmail string, subject string, vData *ViewData, unsubscribeUrl string) error {
 	
 	// fmt.Println("unsubscribeUrl: ", unsubscribeUrl)
-	fmt.Println("Типа отослали")
-	return nil
+	// fmt.Println("Типа отослали")
+	// return nil
 	// return errors.New("sdds")
 
 	if from.WebSite.Id < 1 {

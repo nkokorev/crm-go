@@ -2,9 +2,10 @@ package models
 
 import (
 	"database/sql"
-	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"log"
 	"time"
 )
 
@@ -222,15 +223,36 @@ func (taskScheduler *TaskScheduler) GetPreloadDb(autoUpdateOff bool, getModel bo
 	}
 }
 
-// Отправка кампании
+// Выполнения задачи 
 func (taskScheduler TaskScheduler) Execute() error {
-                                           
-	return errors.New("Тестовая ошибка")
+	fmt.Println("Task Execute!")
+	// return errors.New("Тестовая ошибка")
+
+	account, err := GetAccount(taskScheduler.AccountId)
+	if err != nil {
+		return err
+	}
+
+	switch taskScheduler.OwnerType {
+	case TaskEmailCampaignRun:
+		fmt.Println("Запускаем task campaign run!")
+
+		// 1. Получаем кампанию
+		var emailCampaign EmailCampaign
+		err := account.LoadEntity(&emailCampaign, taskScheduler.OwnerId)
+		if err != nil {return err}
+
+		// 2. Запускаем кампанию
+		return emailCampaign.Execute()
+	default:
+		log.Printf("Тип задачи не установлен.. Id: %v Type: %v \n", taskScheduler.Id, taskScheduler.OwnerType)
+	}
+	
 	return nil
 }
 
 func (taskScheduler *TaskScheduler) SetStatus(status WorkStatus, ReasonVar... string) error {
-	reason := "unknown"
+	reason := ""
 	if len(ReasonVar) > 0 {
 		reason = ReasonVar[0]
 	}

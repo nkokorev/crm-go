@@ -136,7 +136,7 @@ func (EmailNotification) get(id uint) (Entity, error) {
 
 	var emailNotification EmailNotification
 
-	err := db.Preload("EmailBox").First(&emailNotification, id).Error
+	err := emailNotification.GetPreloadDb(true,false,true).First(&emailNotification, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (EmailNotification) get(id uint) (Entity, error) {
 }
 func (emailNotification *EmailNotification) load() error {
 
-	err := db.Preload("EmailBox").First(emailNotification, emailNotification.Id).Error
+	err := emailNotification.GetPreloadDb(true,false,true).First(emailNotification, emailNotification.Id).Error
 	if err != nil {
 		return err
 	}
@@ -178,9 +178,6 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		search = "%"+search+"%"
 
 		err := (&EmailNotification{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
-				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
-			}).Preload("EmailBox").
 			Find(&emailNotifications, "name ILIKE ? OR description ILIKE ?", search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -197,10 +194,8 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 
 	} else {
 
-		err := (&EmailNotification{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
-				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
-			}).Preload("EmailBox").
+		err := (&EmailNotification{}).GetPreloadDb(true,false,true).
+			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailNotifications).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err

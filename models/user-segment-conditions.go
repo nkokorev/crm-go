@@ -115,10 +115,8 @@ func (UserSegmentConditions) getPaginationList(accountId uint, offset, limit int
 
 		search = "%"+search+"%"
 
-		err := (&UserSegmentConditions{}).GetPreloadDb(true,false,true).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
-				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
-			}).Preload("EmailBox").
+		err := (&UserSegmentConditions{}).GetPreloadDb(true,false,true).
+			Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&userSegmentConditions, "name ILIKE ? OR subject ILIKE ? OR preview_text ILIKE ?", search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -135,10 +133,8 @@ func (UserSegmentConditions) getPaginationList(accountId uint, offset, limit int
 
 	} else {
 
-		err := (&UserSegmentConditions{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
-				return db.Select(EmailTemplate{}.SelectArrayWithoutData())
-			}).Preload("EmailBox").
+		err := (&UserSegmentConditions{}).GetPreloadDb(true,false,true).
+			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&userSegmentConditions).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err

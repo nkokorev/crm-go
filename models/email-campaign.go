@@ -22,7 +22,7 @@ type EmailCampaign struct {
 	// При выполнении начинает пополнять mta-workflow задачами по отправке в установленное время (ScheduleRun)
 	// Отменить старт задачи можно пока Executed = false, потом можно только приостановить выполнение (executed = true / enabled = false)
 
-	// Reed to start = true | В каком состоянии кампания
+	// Reed to start = true | В каком состоянии кампания, на этот показатель ориентируется воркер
 	Enabled 		bool 		`json:"enabled" gorm:"type:bool;default:false;"`
 
 	// exported to mta-workflows = true | В состоянии запуска, когда workflow забито задачами по отправке писем для данной кампании
@@ -48,7 +48,7 @@ type EmailCampaign struct {
 
 	// RecipientList	postgres.Jsonb 	`json:"recipientList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 	// UserSegments	[]UserSegment `json:"userSegments"`
-	UsersSegmentId	uint 		`json:"userSegmentId" gorm:"type:int;not null;"`
+	UsersSegmentId	uint 		`json:"usersSegmentId" gorm:"type:int;not null;"`
 	UsersSegment 	UsersSegment `json:"usersSegment"`
 
 
@@ -261,7 +261,7 @@ func (emailCampaign *EmailCampaign) GetPreloadDb(autoUpdateOff bool, getModel bo
 	}
 
 	if preload {
-		return _db.Preload("EmailTemplate").Preload("emailBox").Preload("UsersSegment")
+		return _db.Preload("EmailTemplate").Preload("EmailBox").Preload("UsersSegment")
 		// return _db
 	} else {
 		return _db
@@ -281,7 +281,6 @@ func (emailCampaign *EmailCampaign) Planning() error {
 	if !emailCampaign.Enabled {
 		return utils.Error{Message: "Уведомление не может быть отправлено т.к. находится в статусе - 'Отключено'"}
 	}
-
 
 	// Проверяем тело сообщения (не должно быть пустое)
 	if emailCampaign.Subject == "" {
@@ -318,23 +317,43 @@ func (emailCampaign *EmailCampaign) Planning() error {
 
 	// Переводим Кампанию в состояние блокировки
 	if err := emailCampaign.update(map[string]interface{}{"executed":true}); err != nil {
-		log.Printf("Ошибка перевод состояния кампании [%v]: %v\n", emailCampaign.Id, err)
+		log.Printf("Ошибка перевода состояния кампании executed = true [%v]: %v\n", emailCampaign.Id, err)
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка отправки данных в планировщик"}
 	}
 
+	// Добавляем кампанию в TaskScheduler
+	task := TaskScheduler {
+		AccountId: emailCampaign.AccountId,
+		OwnerType: TaskEmailCampaignRun,
+		OwnerId: emailCampaign.Id,
+		ExpectedTimeToStart: emailCampaign.ScheduleRun,// todo: мб сделать - 1 минуту?
+		IsSystem: true,
+		Status: WorkStatusPlanned,
+	}
+
+	_, err = account.CreateEntity(&task)
+	if err != nil {
+		log.Printf("Ошибка создания задачи по запуску кампании [%v]: %v\n", emailCampaign.Id, err)
+
+		// Возвращаем статус кампании 
+		if err := emailCampaign.update(map[string]interface{}{"executed":false}); err != nil {
+			log.Printf("Ошибка перевода состояния кампании в executed = false[%v]: %v\n", emailCampaign.Id, err)
+		}
+		return utils.Error{Message: "Ошибка создания задания по запуску кампании"}
+	}
+
+	// Создании задачи успешно завершено...
 	return nil
 }
 
+// Запускает процесс отправки письма
 func (emailCampaign *EmailCampaign) Execute() error {
 
+	// 1. Проверяем все данные перед маршем
+	
 	// Проверяем статус уведомления
 	if !emailCampaign.Enabled {
 		return utils.Error{Message: "Уведомление не может быть отправлено т.к. находится в статусе - 'Отключено'"}
-	}
-
-	// Проверяем тело сообщения (не должно быть пустое)
-	if emailCampaign.Subject == "" {
-		return utils.Error{Message: "Уведомление не может быть отправлено т.к. нет темы сообщения"}
 	}
 
 	// Get Account
@@ -343,20 +362,84 @@ func (emailCampaign *EmailCampaign) Execute() error {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается найти аккаунт"}
 	}
 
-	// Находим шаблон письма
-	emailTemplateEntity, err := EmailTemplate{}.get(emailCampaign.EmailTemplateId)
-	if err != nil {
-		return err
-	}
-	if emailTemplateEntity.GetAccountId() != emailCampaign.AccountId {
-		return utils.Error{Message: "Ошибка отправления Уведомления - шаблон принадлежит другому аккаунту 2"}
-	}
-	emailTemplate, ok := emailTemplateEntity.(*EmailTemplate)
-	if !ok {
-		return utils.Error{Message: "Ошибка отправления Уведомления - не удалось получить шаблон"}
+	// Проверяем тело сообщения (не должно быть пустое)
+	if emailCampaign.Subject == "" {
+		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет темы сообщения"}
 	}
 
-	fmt.Println(account, emailTemplate)
+	// Проверяем ключи и загружаем еще раз все данные для отправки сообщения
+	if emailCampaign.EmailTemplateId < 1 {
+		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного шаблона email-сообщения"}
+	}
+	err = account.LoadEntity(&emailCampaign.EmailTemplate, emailCampaign.EmailTemplateId)
+	if err != nil {
+		log.Printf("Ошибка загрузки шаблона email-сообщения для кампании [%v]: %v\n", emailCampaign.Id, err)
+		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки шаблона email-сообщения"}
+	}
+
+	if emailCampaign.EmailBoxId < 1 {
+		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного адреса отправителя"}
+	}
+	err = account.LoadEntity(&emailCampaign.EmailBox, emailCampaign.EmailBoxId)
+	if err != nil {
+		log.Printf("Ошибка загрузки адреса отправителя для кампании [%v]: %v\n", emailCampaign.Id, err)
+		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки адреса отправителя"}
+	}
+
+	if emailCampaign.UsersSegmentId < 1 {
+		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного сегмента пользователей"}
+	}
+	err = account.LoadEntity(&emailCampaign.UsersSegment, emailCampaign.UsersSegmentId)
+	if err != nil {
+		log.Printf("Ошибка загрузка сегмента пользователей для кампании [%v]: %v\n", emailCampaign.Id, err)
+		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки сегмента пользователей"}
+	}
+
+	// 2. Начинаем собирать пользователей из базы согласно сегменту
+	segment := emailCampaign.UsersSegment
+	users := make([]User,0)
+
+	offset := uint(0)
+	limit := uint(500)
+	total := uint(1)
+
+	for offset < total {
+
+		_users, _total, err := segment.ChunkUsers(offset, limit)
+		if err != nil {
+			fmt.Println("Прерываем, ошибка: ", err)
+			break
+		}
+
+		// добавляем в общий массив пользователей
+		users = append(users, _users...)
+		offset = offset + uint(len(_users))
+		total = _total
+
+		// fmt.Println("offset: ", offset)
+		time.Sleep(time.Millisecond * 10)
+	}
+
+	// Добавляем для каждого пользователя задачу в mta-workflow
+	mtaWorkflow := MTAWorkflow{
+		AccountId: emailCampaign.AccountId,
+		OwnerId: emailCampaign.Id,
+		OwnerType: EmailSenderCampaign,
+		ExpectedTimeStart: emailCampaign.ScheduleRun,
+		// UserId: users[i].Id, // << ставим во время цикла
+		NumberOfAttempts: 0,
+	}
+	
+	for _, v := range users {
+		mtaWorkflow.UserId = v.Id
+		if _, err = mtaWorkflow.create(); err != nil {
+			log.Printf("Ошибка добавления пользователя [%v] в очередь: %v", v.Id, err)
+		}
+
+		fmt.Printf("Пользователь добавлен в workflow: %v\n", v.Email)
+	}
+
+
 
 	return nil
 }
