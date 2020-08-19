@@ -5,19 +5,30 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"strings"
 	"time"
 )
 
 type EmailCampaign struct {
-	Id     			uint   	`json:"id" gorm:"primary_key"`
-	PublicId		uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"`
-	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
+	Id     			uint   		`json:"id" gorm:"primary_key"`
+	PublicId		uint   		`json:"publicId" gorm:"type:int;index;not null;default:1"`
+	AccountId 		uint 		`json:"-" gorm:"type:int;index;not null;"`
+	HashId 			string 		`json:"hashId" gorm:"type:varchar(12);unique_index;not null;"`
 
-	// Запущена ли кампания
-	Enabled 		bool 	`json:"enabled" gorm:"type:bool;default:false;"`
+	// Кнопка Старт => enabled = true  / enabled = false
+	// Появляется задача планирования => запустить рассылку в time(ScheduleRun)
+	// За 5 минут задача из планирования начинает выполняться и Executed = true
+	// При выполнении начинает пополнять mta-workflow задачами по отправке в установленное время (ScheduleRun)
+	// Отменить старт задачи можно пока Executed = false, потом можно только приостановить выполнение (executed = true / enabled = false)
+
+	// Reed to start = true | В каком состоянии кампания
+	Enabled 		bool 		`json:"enabled" gorm:"type:bool;default:false;"`
+
+	// exported to mta-workflows = true | В состоянии запуска, когда workflow забито задачами по отправке писем для данной кампании
+	Executed 		bool 		`json:"executed" gorm:"type:bool;default:false;"`
 
 	// Планируемое время старта
-	ScheduleRun		time.Time `json:"scheduleRun"`
+	ScheduleRun		time.Time 	`json:"scheduleRun"`
 
 	// Ежемесячный дайджест !
 	Name 			string 	`json:"name" gorm:"type:varchar(128);default:''"`
@@ -28,13 +39,20 @@ type EmailCampaign struct {
 
 	// Шаблон email-сообщения
 	EmailTemplateId uint 	`json:"emailTemplateId" gorm:"type:int;not null;"`
+	EmailTemplate 	EmailTemplate 	`json:"emailTemplate"`
 
 	// Отправитель, может устанавливаться в конце
 	EmailBoxId		uint 	`json:"emailBoxId" gorm:"type:int;not null;"`
 
 	// RecipientList	postgres.Jsonb 	`json:"recipientList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 	// UserSegments	[]UserSegment `json:"userSegments"`
-	UserSegmentId	uint `json:"userSegmentId" gorm:"type:int;not null;`
+	UserSegmentId	uint `json:"userSegmentId" gorm:"type:int;not null;"`
+
+
+	Queue 			uint `json:"_queue" gorm:"-"` // сколько подписчиков еще в процессе отправки кампании
+	Recipients 		uint `json:"_recipients" gorm:"-"` // << всего успешно отправлено писем
+	OpenRate 		float64 `json:"_openRate" gorm:"-"`
+	UnsubscribeRate float64 `json:"_unsubscribeRate" gorm:"-"`
 
 	CreatedAt 		time.Time `json:"createdAt"`
 	UpdatedAt 		time.Time `json:"updatedAt"`
@@ -58,6 +76,7 @@ func (EmailCampaign) PgSqlCreate() {
 }
 func (emailCampaign *EmailCampaign) BeforeCreate(scope *gorm.Scope) error {
 	emailCampaign.Id = 0
+	emailCampaign.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 
 	// PublicId
 	var lastIdx sql.NullInt64
@@ -69,6 +88,36 @@ func (emailCampaign *EmailCampaign) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 func (emailCampaign *EmailCampaign) AfterFind() (err error) {
+
+	// Рассчитываем сколько пользователей сейчас в очереди
+	inQueue := uint(0)
+	err = db.Model(&MTAWorkflow{}).Where("account_id = ? AND owner_id = ? AND owner_type = ?", emailCampaign.AccountId, emailCampaign.Id, EmailSenderCampaign).Count(&inQueue).Error
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	if err == gorm.ErrRecordNotFound {emailCampaign.Queue = 0} else { emailCampaign.Queue = inQueue}
+
+	stat := struct {
+		// Sended uint  	// << Все отправленных писем..
+		Recipients uint  	// << Успешных отправок (succeed = true)
+		Opens uint    		// (opens >=1)
+		Unsubscribed uint 	// (unsubscribed = true)
+	}{0,0,0}
+	if err = db.Raw("SELECT   \n       COUNT(CASE WHEN succeed = true THEN 1 END) AS recipients, -- успешно отправленных   \n       COUNT(CASE WHEN opens >=1 AND succeed = true THEN 1 END) AS opens, -- открытий среди успешно отправленных   \n       COUNT(CASE WHEN unsubscribed = true THEN 1 END) AS unsubscribed \nFROM mta_histories \nWHERE account_id = ? AND owner_id = ? AND owner_type = 'email_campaigns';", emailCampaign.AccountId, emailCampaign.Id).
+		Scan(&stat).Error; err != nil {
+		return err
+	}
+
+	emailCampaign.Recipients = stat.Recipients // << succeed = true - Сколько всего реально было отправлено писем.
+	if stat.Opens > 0 && stat.Recipients > 0{
+		emailCampaign.OpenRate = (float64(stat.Opens) / float64(stat.Recipients))*100
+	} else {
+		emailCampaign.OpenRate = 0
+	}
+	if stat.Unsubscribed > 0 && stat.Recipients > 0 {
+		emailCampaign.UnsubscribeRate = (float64(stat.Unsubscribed) / float64(stat.Recipients))*100
+	} else {
+		emailCampaign.UnsubscribeRate = 0
+	}
+
 	return nil
 }
 
@@ -175,6 +224,9 @@ func (EmailCampaign) getPaginationList(accountId uint, offset, limit int, sortBy
 
 func (emailCampaign *EmailCampaign) update(input map[string]interface{}) error {
 
+	input = utils.FixInputHiddenVars(input)
+	input = utils.FixInputDataTimeVars(input,[]string{"scheduleRun"})
+	
 	if err := emailCampaign.GetPreloadDb(true,false,false).Where(" id = ?", emailCampaign.Id).
 		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
 		return err
@@ -206,8 +258,8 @@ func (emailCampaign *EmailCampaign) GetPreloadDb(autoUpdateOff bool, getModel bo
 	}
 
 	if preload {
-		// return _db.Preload("EmailTemplate")
-		return _db
+		return _db.Preload("EmailTemplate")
+		// return _db
 	} else {
 		return _db
 	}

@@ -27,8 +27,8 @@ type EmailQueue struct {
 	ActiveEmailTemplates uint `json:"_activeEmailTemplates" gorm:"-"`
 
 	// Сколько прошло через нее. На это число навешивается статистика открытий / отписок / кликов
-	Recipients uint `json:"_recipients" gorm:"-"` // << число участников в серии
-	EmailsSent uint `json:"_emailsSent" gorm:"-"` // << всего успешно отправлено писем
+	Recipients uint `json:"_recipients" gorm:"-"` // <<< всего успешно отправлено писем
+	Completed uint `json:"_completed" gorm:"-"` /// << число завершивших серию
 	OpenRate 		float64 `json:"_openRate" gorm:"-"`
 	UnsubscribeRate float64 `json:"_unsubscribeRate" gorm:"-"`
 
@@ -77,24 +77,26 @@ func (emailQueue *EmailQueue) AfterFind() (err error) {
 	if err == gorm.ErrRecordNotFound {countTemplates = 0} else { emailQueue.ActiveEmailTemplates = countTemplates}
 
 	// Рассчитываем сколько пользователей сейчас в очереди
-	countQueue := uint(0)
-	err = db.Model(&MTAWorkflow{}).Where("account_id = ? AND owner_id = ? AND owner_type = 'email_queues'", emailQueue.AccountId, emailQueue.Id).Count(&countQueue).Error
+	inQueue := uint(0)
+	err = db.Model(&MTAWorkflow{}).Where("account_id = ? AND owner_id = ? AND owner_type = ?", emailQueue.AccountId, emailQueue.Id, EmailSenderQueue).Count(&inQueue).Error
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
-	if err == gorm.ErrRecordNotFound {countQueue = 0} else { emailQueue.Queue = countQueue}
-	
+	if err == gorm.ErrRecordNotFound {emailQueue.Queue = 0} else { emailQueue.Queue = inQueue}
+
+	// todo: можно добавить % доставки
 	stat := struct {
 		Recipients uint  	// << Успешных отправок (succeed = true)
 		Completed uint   	// << Завершило серию (completed = true)
 		Opens uint    		// (opens >=1)
 		Unsubscribed uint 	// (unsubscribed = true)
 	}{0,0,0,0}
-	if err = db.Raw("SELECT   \n       COUNT(CASE WHEN succeed = true THEN 1 END) AS recipients, -- успешно отправленных  \n       COUNT(CASE WHEN queue_completed = true THEN 1 END) AS completed, -- завершивших серию \n       COUNT(CASE WHEN opens >=1 AND succeed = true THEN 1 END) AS opens, -- открытий среди успешно отправленных   \n       COUNT(CASE WHEN unsubscribed = true THEN 1 END) AS unsubscribed \nFROM mta_histories \nWHERE account_id = ? AND owner_id = ? AND owner_type = 'email_queues';", emailQueue.AccountId, emailQueue.Id).
+	if err = db.Raw("SELECT   \n       COUNT(CASE WHEN succeed = true THEN 1 END) AS recipients, -- фактически отправленных писем (успешно)  \n       COUNT(CASE WHEN queue_completed = true THEN 1 END) AS completed, -- завершивших серию \n       COUNT(CASE WHEN opens >=1 AND succeed = true THEN 1 END) AS opens, -- открытий среди успешно отправленных   \n       COUNT(CASE WHEN unsubscribed = true THEN 1 END) AS unsubscribed \nFROM mta_histories \nWHERE account_id = ? AND owner_id = ? AND owner_type = 'email_queues';", emailQueue.AccountId, emailQueue.Id).
 		Scan(&stat).Error; err != nil {
 			return err
 	}
 
-	emailQueue.Recipients = stat.Completed //  queue_completed = true
-	emailQueue.EmailsSent = stat.Recipients // << succeed = true - Сколько всего реально было отправлено писем.
+	emailQueue.Recipients = stat.Recipients // << succeed = true - Сколько всего реально было отправлено писем.
+	emailQueue.Completed = stat.Completed //  queue_completed = true
+	
 	if stat.Opens > 0 && stat.Recipients > 0{
 		emailQueue.OpenRate = (float64(stat.Opens) / float64(stat.Recipients))*100
 	} else {

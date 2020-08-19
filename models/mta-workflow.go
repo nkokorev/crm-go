@@ -23,7 +23,7 @@ type MTAWorkflow struct {
 	// К какой серии писем относится задача
 	EmailQueue			EmailQueue `json:"_emailQueue" gorm:"-"`
 	EmailNotification	EmailNotification `json:"_emailNotification" gorm:"-"`
-	EmailCampaign	EmailCampaign `json:"_emailCampaign" gorm:"-"`
+	EmailCampaign		EmailCampaign `json:"_emailCampaign" gorm:"-"`
 
 	// Номер необходимого шага в серии EmailQueue. Шаг определяется ситуационно в момент Expected Time. Если шага нет - серия завершается за пользователя.
 	// После выполнения - № шага увеличивается на 1

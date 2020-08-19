@@ -83,6 +83,7 @@ func RefreshTablesPart_I() {
 		models.EmailQueueEmailTemplate{},
 		models.EmailQueue{},
 		models.EmailCampaign{},
+		models.TaskScheduler{},
 	)
 
 	pool.DropTableIfExists(models.Payment2Delivery{}, models.DeliveryOrder{}, models.DeliveryStatus{},models.OrderChannel{},  models.Order{}, models.OrderStatus{},models.Payment{},
@@ -141,6 +142,7 @@ func RefreshTablesPart_I() {
 	models.EmailQueue{}.PgSqlCreate()
 	models.EmailQueueEmailTemplate{}.PgSqlCreate()
 	models.EmailCampaign{}.PgSqlCreate()
+	models.TaskScheduler{}.PgSqlCreate()
 	models.MTAWorkflow{}.PgSqlCreate()
 
 	models.MTAHistory{}.PgSqlCreate()
@@ -1880,11 +1882,13 @@ func Migrate_I() {
 		models.UserSegment{},
 		models.UserSegmentConditions{},
 		models.EmailCampaign{},
+		models.TaskScheduler{},
 	)
 
 	models.UserSegment{}.PgSqlCreate()
 	models.UserSegmentConditions{}.PgSqlCreate()
 	models.EmailCampaign{}.PgSqlCreate()
+	models.TaskScheduler{}.PgSqlCreate()
 
 	account,err := models.GetAccount(4)
 	if err != nil { log.Fatal(err)}

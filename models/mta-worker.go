@@ -10,7 +10,7 @@ import (
 // Получает данные для отправки писем
 // Добавляет письма в MTA-server
 
-var maxAttempts = uint(3)
+var maxAttemptsMTAWorker = uint(3)
 
 func init() {
 	go mtaWorker()
@@ -46,7 +46,7 @@ func mtaWorker() {
 			if err = workflows[i].Execute(); err != nil {
 				// fmt.Println("Попыток: ", workflows[i].NumberOfAttempts)
 				// Если слишком много попыток
-				if workflows[i].NumberOfAttempts + 1 > maxAttempts {
+				if workflows[i].NumberOfAttempts + 1 > maxAttemptsMTAWorker {
 					_ = workflows[i].delete()
 				}
 			}

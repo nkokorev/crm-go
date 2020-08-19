@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"github.com/jinzhu/gorm/dialects/postgres"
+	"time"
 )
 
 // For function Update()
@@ -142,6 +143,21 @@ func FixInputHiddenVars(input map[string]interface{}) map[string]interface{} {
 	for key := range input {
 		if string(key[0]) == "_" {
 			delete(input, key)
+		}
+	}
+	return input
+}
+
+// удаляет все переменные которые с '_name'
+func FixInputDataTimeVars(input map[string]interface{}, keys []string) map[string]interface{} {
+	for _,key := range keys {
+		sR, ok := input[key].(string)
+		delete(input, key)
+		if ok {
+			_time, err := time.Parse(time.RFC3339, sR)
+			if err == nil {
+				input[key] = _time
+			}
 		}
 	}
 	return input
