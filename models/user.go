@@ -40,7 +40,8 @@ type User struct {
 	UnsubscribedAt 	*time.Time `json:"unsubscribedAt" gorm:"default:null"` // << last
 	// manual, gui, api,
 	SubscriptionReason	*string `json:"subscriptionReason" gorm:"type:varchar(32);default:null"`
-	// UnsubscribedReason	string `json:"unsubscribedReason" gorm:"default:null"`
+
+	// UnsubscribedReason	string `json:"unsubscribedReason" gorm:"default:null"` << see mta-bounced...
 
 	DefaultAccountId uint `json:"defaultAccountId" gorm:"type:varchar(12);default:null;"` // указывает какой аккаунт по дефолту загружать
 	InvitedUserId uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
@@ -533,6 +534,7 @@ func (user User) GetDepersonalizedData() interface{} {
 	return &user
 }
 
+// Пользователь самостоятельно отписывается или его отписывает система
 func (user *User) Unsubscribing() error {
 	input := map[string]interface{} {
 		"subscribed":false,

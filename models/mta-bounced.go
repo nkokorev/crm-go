@@ -78,6 +78,10 @@ type MTABounced struct {
 
 	CreatedAt 	time.Time `json:"createdAt"`
 }
+func (MTABounced) TableName() string {
+	return "mta_bounces"
+}
+
 // обработчик ошибки при отправке
 func (pkg EmailPkg) bounced(b BounceType, reason string) {
 
@@ -93,16 +97,58 @@ func (pkg EmailPkg) bounced(b BounceType, reason string) {
 	_,err := bounce.create()
 	if err != nil {
 		log.Printf("Ошибка создания записи в журнал MTABounced: %v", err)
+		return
 	}
 
-	// 2. Если это жесткий отскок - надо отписать пользователя
-	if b == hardBounced {
-		aUser, err := Account{Id: pkg.emailSender.GetAccountId()}.GetAccountUser(pkg.userId)
-		if err != nil {
-			log.Printf("Ошибка получения aUser при создании записи в журнал MTABounced: %v", err)
-		}
-		// aUser.
+	user, err := Account{Id: pkg.emailSender.GetAccountId()}.GetUser(pkg.userId)
+	if err != nil {
+		log.Printf("Ошибка получения user при создании записи в журнал MTABounced: %v", err)
+		return
 	}
+
+	// 2. Если это мягкий отскок - считаем, сколько их было до этого и принимаем решение - отписывать ли пользователя
+	if b == softBounced {
+	   num, err := bounce.NumSoftByUserId(pkg.userId)
+		if err != nil {
+			log.Printf("Ошибка подсчета числа soft bounced у пользователя [id=%v]: %v", pkg.userId, err)
+			return
+		}
+
+		// 5 отскоков, за период в 1 год (по-умолчанию)
+		if num >= 5 {
+			if err := user.Unsubscribing(); err != nil {
+				log.Printf("Ошибка отписки при обновлении user [id=%v] при создании записи в журнал MTABounced: %v", user.Id, err)
+				return
+			}
+		}
+
+	}
+
+	// 3. Если это жесткий отскок - надо отписать пользователя
+	if b == hardBounced {
+
+		// отписываем пользователя и указываем время
+		if err := user.Unsubscribing(); err != nil {
+			log.Printf("Ошибка отписки при обновлении user [id=%v] при создании записи в журнал MTABounced: %v", user.Id, err)
+			return
+		}
+	}
+
+
+}
+
+// Подсчитывает число мягких отскоков у пользователя в течение 1 года. 
+func (MTABounced) NumSoftByUserId(userId uint) (uint, error) {
+
+	var total = uint(0)
+
+	err := db.Table("mta_bounces").
+		Where("user_id = ? AND soft_bounced = 'true' AND created_at <= ?", userId, time.Now().UTC().AddDate(-1, 0, 0)).Count(&total).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return total, nil
 }
 
 // ############# Entity interface #############
