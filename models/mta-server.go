@@ -84,7 +84,6 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	defer wg.Done() // отписываемся о закрытии текущей горутины
 	defer func() {workerCount++}() // освобождаем счетчик потоков (горутин) по отправке
 
-
 	// 1. Получаем переменные для отправки письма
 	account, err := GetAccount(pkg.accountId)
 	if err != nil {
@@ -111,7 +110,7 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	returnPath := "abuse@mta1.ratuscrm.com"  // тут тоже hash адресс
 	messageId :=  hashAddress.Address
 
-	// accountId | userId | ownerId | ownerType | MTA server
+	// accountId | userId | ownerId | ownerType | MTA server (= ничего не значит)
 	feedBackId := strconv.Itoa(int(pkg.accountId)) + ":" + strconv.Itoa(int(pkg.userId)) + ":" + strconv.Itoa(int(pkg.emailSender.GetId())) + ":" +
 		u.ToCamel(pkg.emailSender.GetType()) + ":1"
 

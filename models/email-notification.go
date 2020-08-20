@@ -347,7 +347,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 
 		historyHashId := strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 
-		history := &MTAHistory{
+	/*	history := &MTAHistory{
 			HashId:  historyHashId,
 			AccountId: emailNotification.AccountId,
 			UserId: &users[i].Id,
@@ -355,9 +355,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			OwnerId: emailNotification.Id,
 			OwnerType: "email_notifications",
 			EmailTemplateId: utils.UINTp(emailTemplate.Id),
-			// NumberOfAttempts: 1,
-			// Succeed: false,
-		}
+		}*/
 
 		unsubscribeUrl := account.GetUnsubscribeUrl(users[i].HashId, historyHashId)
 		pixelURL := account.GetPixelUrl(historyHashId)
@@ -398,17 +396,8 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		}
 
 		if emailNotification.DelayTime == 0 {
-		// todo дописать обработку
-		// if false {
 			fmt.Println("Отправляем сейчас же!")
-
 			SendEmail(pkg)
-			/*err = emailTemplate.SendMail(emailNotification.EmailBox, users[i].Email, _subject, vData, unsubscribeUrl)
-			if err != nil {
-				// history.Succeed = false
-			} else {
-				// history.Succeed = true
-			}*/
 		} else {
 			// ставим в очередь
 
@@ -430,7 +419,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		}
 
 
-		_, _ = history.create()
+		// _, _ = history.create()
 	}
 
 	return nil
