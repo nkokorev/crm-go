@@ -426,6 +426,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
 	}
 
+	// todo: тут надо добавлять на сервер для отправки
 	err = emailTemplate.SendMail(emailBox, user.Email, _subject, vData,  unsubscribeUrl)
 	if err != nil {
 		

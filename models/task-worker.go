@@ -71,6 +71,7 @@ func taskWorker() {
 				// Останавливаем будущий обход до разбирательства
 				withoutMistakesTaskWorker = false
 			}
+
 			continue
 
 		}

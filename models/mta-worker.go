@@ -43,6 +43,7 @@ func mtaWorker() {
 
 
 		// Подготавливаем отправку
+		// todo: возможно тут надо добавлять в поток отправки через асинхронность
 		for i := range workflows {
 			if err = workflows[i].Execute(); err != nil {
 				log.Println("Неудачная отправка: ", err)
