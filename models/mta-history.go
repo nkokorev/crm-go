@@ -19,9 +19,10 @@ type MTAHistory struct {
 	
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
+	// ID типа события: какая серия, компания или уведомление
+	OwnerId		uint			`json:"ownerId" gorm:"index;type:smallint;not null;"`
 	// email_queues, email_campaigns, email_notifications
-	OwnerType	string	`json:"ownerType" gorm:"varchar(32);default:'email_queues';not null;"` // << тип события: кампания, серия, уведомление
-	OwnerId		uint	`json:"ownerId" gorm:"index;type:smallint;default:1;not null;"` // ID типа события: какая серия, компания или уведомление
+	OwnerType	EmailSenderType	`json:"ownerType" gorm:"varchar(32);default:'email_queues';not null;"`
 	
 	// Id пользователя, которому было отправлено письмо серия.
 	UserId 	*uint `json:"userId" gorm:"type:int;default:null;"` // при отправке на почту пользователю
@@ -40,10 +41,12 @@ type MTAHistory struct {
 	EmailTemplateId		*uint	`json:"emailTemplateId" gorm:"type:int;index;default:null;"` // << index для выборки по конкретному письму
 
 	// Была ли успешна ли отправка. По этому показателю делаем выборку для кампаний и статистики уведомлений, серий писем.
-	Succeed 	bool 	`json:"succeed" gorm:"type:bool;default:false;"`
+	// deprecated - вся история - валидных отправок. Ошибки сохраняются в mta-bounced
+	// Succeed 	bool 	`json:"succeed" gorm:"type:bool;default:false;"`
 
 	// С какой попытки было отправлено письмо. По этой колонке можно понять качество базы/рассылок.
-	NumberOfAttempts uint `json:"numberOfAttempts" gorm:"type:smallint;"`
+	// deprecated - все отправки фактические, если что-то не удалось - идет запись в mta-bounced
+	// NumberOfAttempts uint `json:"numberOfAttempts" gorm:"type:smallint;"`
 
 	// ####### Статистика #######
 

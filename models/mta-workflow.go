@@ -387,15 +387,15 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	history := &MTAHistory{
 		HashId:  strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true)),
 		AccountId: mtaWorkflow.AccountId,
-		UserId: &user.Id,
+		UserId: user.Id,
 		Email: user.Email,
 		OwnerId: sender.GetId(),
 		OwnerType: sender.GetType(),
 		EmailTemplateId: utils.UINTp(emailTemplate.Id),
 		QueueStepId: utils.UINTp(QueueOrder),
 		QueueCompleted: false,	// по умолчанию
-		NumberOfAttempts: mtaWorkflow.NumberOfAttempts + 1,
-		Succeed: false, 	// по умолчанию
+		// NumberOfAttempts: mtaWorkflow.NumberOfAttempts + 1,
+		// Succeed: false, 	// по умолчанию
 	}
 	defer func() {
 		_, _ = history.create()
@@ -426,11 +426,11 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
 	}
 
-	// todo: тут надо добавлять на сервер для отправки
+	// todo: тут надо добавлять на сервер для отправки и все ошибки пойдут в mta-bounced
 	err = emailTemplate.SendMail(emailBox, user.Email, _subject, vData,  unsubscribeUrl)
 	if err != nil {
 		
-		history.Succeed = false
+		// history.Succeed = false
 
 		// Обновляем данные последней попытки
 		timeNow := time.Now().UTC()
@@ -446,7 +446,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	} else {
 
 		// Ставим флаг успешного выполнения
-		history.Succeed = true
+		// history.Succeed = true
 
 		if sender.GetType() == EmailSenderQueue {
 			// 1. Получаем следующий шаг

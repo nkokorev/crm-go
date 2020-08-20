@@ -28,29 +28,20 @@ func init() {
 	go mtaServer(smtpCh) // start MTA server
 }
 
-type EmailPkg struct {
-	From 		mail.Address
-	To 			mail.Address
-	Subject     string
-	WebSite		WebSite // for DKIM
-
-	EmailTemplate EmailTemplate // сам шаблон письма
-	ViewData	ViewData
-	
-	Account       Account
-}
-
-type ViewData struct{
+// Содержание письма компилируется из ViewData
+type ViewData struct {
 	Subject string
 	PreviewText string
+
 	Data map[string]interface{}
-	// User map[string]interface{}
 	Json map[string]interface{}
+
 	UnsubscribeURL string
-	PixelURL string // 
+	PixelURL string // ссылка для пикселя
 	PixelHTML string // html <<
 }
 
+// worker MTA-Server
 func mtaServer(c <-chan EmailPkg) {
 
 	var wg sync.WaitGroup // можно доработать синхронизацию, но после тестов по отправке
@@ -82,7 +73,7 @@ func mtaServer(c <-chan EmailPkg) {
 	}
 }
 
-// Функция по отправке почтового пакета, обычно, работает в отдельной горутине
+// Функция по отправке почтового пакета, обычно, запускается воркером в отдельной горутине
 func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 
 	defer wg.Done() // отписываемся о закрытии текущей горутины
@@ -95,33 +86,39 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	feedBackId := "1324078:20488:trust:54854"
 
 	// 1. Получаем compile html из email'а
-	html, err := pkg.EmailTemplate.GetHTML(&pkg.ViewData)
+	html, err := pkg.emailTemplate.GetHTML(pkg.viewData)
 	if err != nil {
-		skipSend(err)
+		pkg.bounced(softBounced, fmt.Sprintf("Ошибка в синтаксисе email-шаблона id = %v", pkg.emailTemplate.Id))
 		return
 	}
 
 	// 2. Собираем хедеры
-	headers := getHeaders(pkg.From, pkg.To, pkg.Subject, messageId, feedBackId)
+	// headers := getHeaders(pkg.From, pkg.To, pkg.subject, messageId, feedBackId)
+	headers := getHeaders(mail.Address{Name:pkg.emailBox.Name, Address: pkg.emailBox.Box + "@" + pkg.webSite.Hostname}, pkg.To, pkg.subject, messageId, feedBackId)
 
 	// 3. Создаем тело сообщения с хедерами и html
-	body, err := getSignBody(headers, html, pkg.WebSite)
+	if pkg.webSite.Id < 1 || pkg.emailBox.Id < 1 {
+		pkg.bounced(softBounced, "Техническая ошибка: не удалось установить отправителя: webSite || emailBox id < 1")
+		return
+	}
+
+	body, err := getSignBody(headers, html, pkg.webSite)
 	if err != nil {
-		skipSend(err)
+		pkg.bounced(softBounced, fmt.Sprintf("Ошибка в процессе DKIM-подписи письма: %v", err.Error()))
 		return
 	}
 
 	// 4. Делаем коннект к почтовому серверу получателя
-	client, err := getClientByEmail(pkg.To.Address)
+	client, bounceLevel, err := getClientByEmail(pkg.To.Address)
 	if err != nil {
-		skipSend(err)
+		pkg.bounced(bounceLevel, fmt.Sprintf("Неудается установить connect с MX-сервером: %v", err.Error()))
 		return
 	}
 
 	// 5. Отсылаем сообщение | требует времени !
-	err = sendMailByClient(client, body, pkg.To.Address, returnPath)
+	bounceLevel, err = sendMailByClient(client, body, pkg.To.Address, returnPath)
 	if err != nil {
-		skipSend(err)
+		pkg.bounced(bounceLevel, fmt.Sprintf("Ошибка во время отправки письма: %v", err.Error()))
 		return
 	}
 }
@@ -131,10 +128,11 @@ func SendEmail(pkg EmailPkg)  {
 	case smtpCh <- pkg:
 		fmt.Println("add msg to message channel")
 	}
-	// smtpCh <- pkg
+	smtpCh <- pkg
 }
 
-func skipSend(err error)  {
+// Обработка ошибки
+func skipSend(err error, bounced TypeBounces)  {
 	fmt.Println("Error: ", err)
 }
 
@@ -164,11 +162,11 @@ func getHeaders(from, to mail.Address, subject string, messageId, feedbackId str
 	return &headers
 }
 
-func getOptionsForDKIM(domain WebSite, headers map[string]string) dkim.SigOptions {
+func getOptionsForDKIM(domain *WebSite, headers map[string]string) dkim.SigOptions {
 	options := dkim.NewSigOptions()
 	options.PrivateKey = []byte(domain.DKIMPrivateRSAKey)
 	options.Domain = domain.Hostname
-	options.Selector = "dk1"
+	options.Selector = domain.DKIMSelector // "dk1"
 	options.SignatureExpireIn = 0
 	options.BodyLength = 50
 	options.Headers = GetHeaderKeys(headers)
@@ -178,7 +176,7 @@ func getOptionsForDKIM(domain WebSite, headers map[string]string) dkim.SigOption
 	return options
 }
 
-func getSignBody(headers *map[string]string, html string, webSite WebSite) ([]byte, error) {
+func getSignBody(headers *map[string]string, html string, webSite *WebSite) ([]byte, error) {
 
 	message := "" // return value
 
@@ -204,7 +202,7 @@ func getSignBody(headers *map[string]string, html string, webSite WebSite) ([]by
 
 	body := []byte(message)
 	if err := dkim.Sign(&body, dkimOptions); err != nil {
-		return nil, errors.New("Cant sign DKIM")
+		return nil, err
 	}
 
 	return body, nil
@@ -220,18 +218,18 @@ func getHostFromEmail(email string) (account, host string, err error) {
 	return
 }
 
-func getClientByEmail(email string) (*smtp.Client, error) {
+func getClientByEmail(email string) (*smtp.Client, TypeBounces, error) {
 
 	// 1. Получаем хост, на который нужно отправить email
 	_, host, err := getHostFromEmail(email)
 	if err != nil {
-		return nil, err
+		return nil, hardBounced, err
 	}
 
 	// 2. Получаем список mx-ов, где может быть почтовый сервер
 	mx, err := net.LookupMX(host)
 	if err != nil {
-		return nil, err
+		return nil, softBounced, err
 	}
 	
 	// список портов, к которым пробуем подключиться
@@ -249,7 +247,7 @@ func getClientByEmail(email string) (*smtp.Client, error) {
 			if err != nil {
 				fmt.Printf("Коннект не прошел: %s\n", hostPort)
 				if j == len(ports)-1 {
-					return nil, err
+					return nil, softBounced, err
 				}
 
 				continue
@@ -260,7 +258,7 @@ func getClientByEmail(email string) (*smtp.Client, error) {
 			if err != nil {
 				fmt.Printf("Не удалось подключиться: %s\n", server)
 				if j == len(ports)-1 {
-					return nil, err
+					return nil, softBounced, err
 				}
 				continue
 			}
@@ -280,33 +278,35 @@ func getClientByEmail(email string) (*smtp.Client, error) {
 		}
 	}
 
-	return client, nil
+	return client, "", nil
 
 }
 
-func sendMailByClient(client *smtp.Client, body []byte, to string, returnPath string) error {
+func sendMailByClient(client *smtp.Client, body []byte, to string, returnPath string) (TypeBounces, error) {
 
 	defer client.Close()
 
 	err := client.Mail(returnPath)
 	if err != nil {
-		return errors.New("Почтовый адрес не может принять почту")
+		return hardBounced, err
 	}
 
 	err = client.Rcpt(to)
 	if err != nil {
-		return errors.New("Похоже, почтовый адрес не сущесвует")
+		// return errors.New("Похоже, почтовый адрес не сущесвует")
+		return hardBounced, err
 	}
 
 	wc, err := client.Data()
 	if err != nil {
-		return errors.New("Клиент не готовы принять сообщение")
+		// return errors.New("Клиент не готовы принять сообщение")
+		return hardBounced, err
 	}
 	defer wc.Close()
 
 	_, err = wc.Write(body)
 	if err != nil {
-		return errors.New("Не удалось отправить сообщение")
+		return softBounced, err
 	}
 
 	// может вернуть (yandex): 250 2.0.0 Ok: queued on mxfront9q.mail.yandex.net as 1590262878-g7S0CPwaoz-fIVS8Xqq
@@ -327,5 +327,5 @@ func sendMailByClient(client *smtp.Client, body []byte, to string, returnPath st
 		return errors.New("Ошибка закрытия коннекта 2")
 	}*/
 
-	return nil
+	return "", nil
 }

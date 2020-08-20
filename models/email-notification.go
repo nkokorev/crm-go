@@ -358,8 +358,8 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			OwnerId: emailNotification.Id,
 			OwnerType: "email_notifications",
 			EmailTemplateId: utils.UINTp(emailTemplate.Id),
-			NumberOfAttempts: 1,
-			Succeed: false,
+			// NumberOfAttempts: 1,
+			// Succeed: false,
 		}
 
 		unsubscribeUrl := account.GetUnsubscribeUrl(users[i], *history)
@@ -383,12 +383,13 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 
 		// if now ==
 		// if emailNotification.DelayTime == 0 {
+		// todo дописать обработку
 		if false {
 			err = emailTemplate.SendMail(emailNotification.EmailBox, users[i].Email, _subject, vData, unsubscribeUrl)
 			if err != nil {
-				history.Succeed = false
+				// history.Succeed = false
 			} else {
-				history.Succeed = true
+				// history.Succeed = true
 			}
 		} else {
 			// ставим в очередь
