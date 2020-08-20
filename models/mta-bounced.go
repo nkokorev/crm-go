@@ -82,75 +82,6 @@ func (MTABounced) TableName() string {
 	return "mta_bounces"
 }
 
-// обработчик ошибки при отправке
-func (pkg EmailPkg) bounced(b BounceType, reason string) {
-
-	// 1. Регистрируем отскок в БД
-	bounce := MTABounced{
-		AccountId: 	pkg.accountId,
-		UserId: 	&pkg.userId,
-		OwnerId: 	pkg.emailSender.GetId(),
-		OwnerType: 	pkg.emailSender.GetType(),
-		Reason: 	reason[:255],
-		SoftBounced:b == softBounced,
-	}
-	_,err := bounce.create()
-	if err != nil {
-		log.Printf("Ошибка создания записи в журнал MTABounced: %v", err)
-		return
-	}
-
-	user, err := Account{Id: pkg.emailSender.GetAccountId()}.GetUser(pkg.userId)
-	if err != nil {
-		log.Printf("Ошибка получения user при создании записи в журнал MTABounced: %v", err)
-		return
-	}
-
-	// 2. Если это мягкий отскок - считаем, сколько их было до этого и принимаем решение - отписывать ли пользователя
-	if b == softBounced {
-	   num, err := bounce.NumSoftByUserId(pkg.userId)
-		if err != nil {
-			log.Printf("Ошибка подсчета числа soft bounced у пользователя [id=%v]: %v", pkg.userId, err)
-			return
-		}
-
-		// 5 отскоков, за период в 1 год (по-умолчанию)
-		if num >= 5 {
-			if err := user.Unsubscribing(); err != nil {
-				log.Printf("Ошибка отписки при обновлении user [id=%v] при создании записи в журнал MTABounced: %v", user.Id, err)
-				return
-			}
-		}
-
-	}
-
-	// 3. Если это жесткий отскок - надо отписать пользователя
-	if b == hardBounced {
-
-		// отписываем пользователя и указываем время
-		if err := user.Unsubscribing(); err != nil {
-			log.Printf("Ошибка отписки при обновлении user [id=%v] при создании записи в журнал MTABounced: %v", user.Id, err)
-			return
-		}
-	}
-
-
-}
-
-// Подсчитывает число мягких отскоков у пользователя в течение 1 года. 
-func (MTABounced) NumSoftByUserId(userId uint) (uint, error) {
-
-	var total = uint(0)
-
-	err := db.Table("mta_bounces").
-		Where("user_id = ? AND soft_bounced = 'true' AND created_at <= ?", userId, time.Now().UTC().AddDate(-1, 0, 0)).Count(&total).Error
-	if err != nil {
-		return 0, err
-	}
-
-	return total, nil
-}
-
 // ############# Entity interface #############
 func (mtaBounced MTABounced) GetId() uint { return mtaBounced.Id }
 func (mtaBounced *MTABounced) setId(id uint) { mtaBounced.Id = id }
@@ -337,3 +268,70 @@ func (mtaBounced *MTABounced) GetPreloadDb(autoUpdateOff bool, getModel bool, pr
 // ######### END OF SPECIAL Functions ############
 
 
+// обработчик ошибки при отправке письма. Логика по отписке пользователя
+func (pkg EmailPkg) bounced(b BounceType, reason string) {
+
+	// 1. Регистрируем отскок в БД
+	bounce := MTABounced{
+		AccountId: 	pkg.accountId,
+		UserId: 	&pkg.userId,
+		OwnerId: 	pkg.emailSender.GetId(),
+		OwnerType: 	pkg.emailSender.GetType(),
+		Reason: 	reason[:255],
+		SoftBounced:b == softBounced,
+	}
+	_,err := bounce.create()
+	if err != nil {
+		log.Printf("Ошибка создания записи в журнал MTABounced: %v", err)
+		return
+	}
+
+	user, err := Account{Id: pkg.emailSender.GetAccountId()}.GetUser(pkg.userId)
+	if err != nil {
+		log.Printf("Ошибка получения user при создании записи в журнал MTABounced: %v", err)
+		return
+	}
+
+	// 2. Если это мягкий отскок - считаем, сколько их было до этого и принимаем решение - отписывать ли пользователя
+	if b == softBounced {
+		num, err := bounce.NumSoftByUserId(pkg.userId)
+		if err != nil {
+			log.Printf("Ошибка подсчета числа soft bounced у пользователя [id=%v]: %v", pkg.userId, err)
+			return
+		}
+
+		// 5 отскоков, за период в 1 год (по-умолчанию)
+		if num >= 5 {
+			if err := user.Unsubscribing(); err != nil {
+				log.Printf("Ошибка отписки при обновлении user [id=%v] при создании записи в журнал MTABounced: %v", user.Id, err)
+				return
+			}
+		}
+
+	}
+
+	// 3. Если это жесткий отскок - надо отписать пользователя
+	if b == hardBounced {
+
+		// отписываем пользователя и указываем время
+		if err := user.Unsubscribing(); err != nil {
+			log.Printf("Ошибка отписки при обновлении user [id=%v] при создании записи в журнал MTABounced: %v", user.Id, err)
+			return
+		}
+	}
+
+}
+
+// Подсчитывает число мягких отскоков у пользователя в течение 1 года.
+func (MTABounced) NumSoftByUserId(userId uint) (uint, error) {
+
+	var total = uint(0)
+
+	err := db.Table("mta_bounces").
+		Where("user_id = ? AND soft_bounced = 'true' AND created_at <= ?", userId, time.Now().UTC().AddDate(-1, 0, 0)).Count(&total).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return total, nil
+}
