@@ -78,6 +78,7 @@ func RefreshTablesPart_I() {
 	pool.DropTableIfExists(
 		models.UsersSegment{},
 		models.UserSegmentConditions{},
+		models.MTABounced{},
 		models.MTAHistory{},
 		models.MTAWorkflow{},
 		models.EmailQueueEmailTemplate{},
@@ -146,6 +147,7 @@ func RefreshTablesPart_I() {
 	models.MTAWorkflow{}.PgSqlCreate()
 
 	models.MTAHistory{}.PgSqlCreate()
+	models.MTABounced{}.PgSqlCreate()
 	models.UserSegmentConditions{}.PgSqlCreate()
 	models.UsersSegment{}.PgSqlCreate()
 

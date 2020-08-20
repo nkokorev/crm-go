@@ -44,39 +44,36 @@ type EmailPkg struct {
 type BounceType = string
 
 const(
-	// жесткий отказ
+	// жесткий отскок, когда все совсем плохо
 	hardBounced 	BounceType 	= 	"hard"
 	
-	// мягкий отказ, какая-то временная (возможно) ошибка
+	// мягкий отскок, какая-то временная (возможно) ошибка
 	softBounced 	BounceType 	= 	"soft"
 )
 
 type MTABounced struct {
-	Id     		uint   		`json:"id" gorm:"primary_key"`
-	PublicId	uint   		`json:"publicId" gorm:"type:int;index;not null;"`
-	AccountId 	uint 		`json:"-" gorm:"type:int;index;not null;"`
+	Id     		uint   	`json:"id" gorm:"primary_key"`
+	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"`
+	AccountId 	uint	`json:"-" gorm:"type:int;index;not null;"`
 
 	// ID типа события: какая серия, компания или уведомление
-	OwnerId		uint			`json:"ownerId" gorm:"index;type:smallint;not null;"`
+	OwnerId		uint	`json:"ownerId" gorm:"index;type:smallint;not null;"`
 	// email_queues, email_campaigns, email_notifications
 	OwnerType	EmailSenderType	`json:"ownerType" gorm:"varchar(32);default:'email_queues';not null;"`
 
 	// Получатель
-	UserId		*uint 		`json:"userId" gorm:"type:int;default:null;"`
-	User		User	 	`json:"user"`
+	UserId		*uint 	`json:"userId" gorm:"type:int;default:null;"`
+	User		User	`json:"user"`
 
 	// Почтовый ящик, с которым произошли проблемы
 	EmailBoxId	*uint 		`json:"emailBoxId" gorm:"type:int;default:null;"`
 	EmailBox 	EmailBox 	`json:"emailBox"`
 
 	// true = soft, false = hard
-	SoftBounced bool 		`json:"softBounced" gorm:"type:bool;default:true;"`
+	SoftBounced bool 	`json:"softBounced" gorm:"type:bool;default:true;"`
+	Reason 		string 	`json:"reason" gorm:"type:varchar(255);"`
 
-	Reason 		string 		`json:"reason" gorm:"type:varchar(255);"`
-
-
-
-	CreatedAt 	time.Time `json:"createdAt"`
+	CreatedAt 	time.Time 	`json:"createdAt"`
 }
 func (MTABounced) TableName() string {
 	return "mta_bounces"
