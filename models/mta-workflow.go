@@ -384,8 +384,10 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	// **************************** //
 	
 	// Объект истории, который может быть дополнен позже
+	historyHashId := strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
+
 	history := &MTAHistory{
-		HashId:  strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true)),
+		HashId:  historyHashId,
 		AccountId: mtaWorkflow.AccountId,
 		UserId: &user.Id,
 		Email: user.Email,
@@ -401,8 +403,8 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		_, _ = history.create()
 	}()
 	
-	unsubscribeUrl := account.GetUnsubscribeUrl(*user, *history)
-	pixelURL := account.GetPixelUrl(*history)
+	unsubscribeUrl := account.GetUnsubscribeUrl(user.HashId, historyHashId)
+	pixelURL := account.GetPixelUrl(historyHashId)
 
 	// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
 	data["accountId"] = mtaWorkflow.AccountId

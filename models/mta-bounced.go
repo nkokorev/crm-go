@@ -22,22 +22,16 @@ type EmailPkg struct {
 	// тех.данные для отправки
 	webSite 	*WebSite
 	emailBox 	*EmailBox
-
-	emailSender EmailSender // interface for email-notification, campaign, queue
-	// user User
-
-	subject     string // Тема сообщения
-
-	// Шаблон письма
 	emailTemplate 	*EmailTemplate
 
 	// Переменные письма письма для компиляции
-	viewData		*ViewData
+	viewData	*ViewData
+	subject     string // Тема сообщения
+	
+	emailSender EmailSender // interface for email-notification, campaign, queue
 
 	// Ссылка для отписки (нужна ли, т.к. можно брать из viewData)
 	// UnsubscribeUrl string
-
-	// WebSite		WebSite // for DKIM
 }
 
 // Types of bounces

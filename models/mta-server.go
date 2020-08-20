@@ -5,11 +5,14 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	u "github.com/nkokorev/crm-go/utils"
 	"github.com/toorop/go-dkim"
+	"log"
 	"mime/quotedprintable"
 	"net"
 	"net/mail"
 	"net/smtp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -76,14 +79,41 @@ func mtaServer(c <-chan EmailPkg) {
 // Функция по отправке почтового пакета, обычно, запускается воркером в отдельной горутине
 func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 
+	fmt.Println("Готовим отправку из mtaSender!")
+	
 	defer wg.Done() // отписываемся о закрытии текущей горутины
 	defer func() {workerCount++}() // освобождаем счетчик потоков (горутин) по отправке
 
+
+	// 1. Получаем переменные для отправки письма
+	account, err := GetAccount(pkg.accountId)
+	if err != nil {
+		log.Printf("Ошибка получения аккаунта [id = %v] при отправки email-сообщения: %v", pkg.accountId, err.Error())
+		return
+	}
+
+	user, err := account.GetUser(pkg.userId); if err != nil {
+		log.Printf("Ошибка получения пользователя [id = %v] при отправки email-сообщения: %v", pkg.userId, err.Error())
+		return
+	}
+	historyHashId := strings.ToLower(u.RandStringBytesMaskImprSrcUnsafe(12, true))
+
+	unsubscribeUrl := Account{Id: pkg.accountId}.GetUnsubscribeUrl(user.HashId, historyHashId)
+	pixelURL := account.GetPixelUrl(historyHashId)
+	hashAddress := mail.Address{Address: historyHashId + "@mta1.ratuscrm.com"}
+
+	// Добавляем во данные письма url отписки и счетчика открытий
+	(*pkg.viewData).UnsubscribeURL = unsubscribeUrl
+	(*pkg.viewData).PixelURL = pixelURL
+
 	// todo: сделать осознанные messageId feedbackId
 	// todo: сделать осознанный returnPath
-	returnPath := "abuse@ratuscrm.com"
-	messageId := "1002"
-	feedBackId := "1324078:20488:trust:54854"
+	returnPath := "abuse@mta1.ratuscrm.com"  // тут тоже hash адресс
+	messageId :=  hashAddress.Address
+
+	// accountId | userId | ownerId | ownerType | MTA server
+	feedBackId := strconv.Itoa(int(pkg.accountId)) + ":" + strconv.Itoa(int(pkg.userId)) + ":" + strconv.Itoa(int(pkg.emailSender.GetId())) + ":" +
+		u.ToCamel(pkg.emailSender.GetType()) + ":1"
 
 	// 1. Получаем compile html из email'а
 	html, err := pkg.emailTemplate.GetHTML(pkg.viewData)
@@ -91,10 +121,12 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 		pkg.bounced(softBounced, fmt.Sprintf("Ошибка в синтаксисе email-шаблона id = %v", pkg.emailTemplate.Id))
 		return
 	}
-
+	
 	// 2. Собираем хедеры
-	// headers := getHeaders(pkg.From, pkg.To, pkg.subject, messageId, feedBackId)
-	headers := getHeaders(mail.Address{Name:pkg.emailBox.Name, Address: pkg.emailBox.Box + "@" + pkg.webSite.Hostname}, pkg.To, pkg.subject, messageId, feedBackId)
+	headers := getHeaders(
+		mail.Address{Name:pkg.emailBox.Name, Address: pkg.emailBox.Box + "@" + pkg.webSite.Hostname},
+		pkg.To, pkg.subject, messageId, feedBackId, unsubscribeUrl, historyHashId,
+		)
 
 	// 3. Создаем тело сообщения с хедерами и html
 	if pkg.webSite.Id < 1 || pkg.emailBox.Id < 1 {
@@ -124,10 +156,10 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 }
 
 func SendEmail(pkg EmailPkg)  {
-	select {
+	/*select {
 	case smtpCh <- pkg:
 		fmt.Println("add msg to message channel")
-	}
+	}*/
 	smtpCh <- pkg
 }
 
@@ -136,9 +168,9 @@ func skipSend(err error, bounced BounceType)  {
 	fmt.Println("Error: ", err)
 }
 
-func getHeaders(from, to mail.Address, subject string, messageId, feedbackId string) *map[string]string {
+func getHeaders(from, to mail.Address, subject string, messageId, feedbackId, unsubscribeUrl, historyHashId string) *map[string]string {
 	if len([]rune(messageId)) > 40 {
-		messageId = "101"
+		messageId = "10001@mta1.ratuscrm.com"
 	}
 	
 	headers := make(map[string]string)
@@ -154,10 +186,19 @@ func getHeaders(from, to mail.Address, subject string, messageId, feedbackId str
 	headers["Content-Transfer-Encoding"] = "quoted-printable"
 	headers["Feedback-ID"] = feedbackId //"1324078:20488:trust:54854"
 	// Идентификатор представляет собой 32-битное число в диапазоне от 1 до 2147483647, либо строку длиной до 40 символов, состоящую из латинских букв, цифр и символов ".-_".
+	headers["List-Unsubscribe"] = unsubscribeUrl
+	headers["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
+
 	//List-Unsubscribe-Post: List-Unsubscribe=One-Click
 	//List-Unsubscribe: <https://your-company-net/unsubscribe/example>
 	headers["Message-ID"] = messageId // номер сообщения (внутренний номер)
-	headers["Received"] = "RatusCRM"  // имя SMTP сервера
+	headers["Received"] = "by MTA of RatusCRM"  // имя SMTP сервера
+	headers["X-Mailer"] = "RatusCRM Mailer v2.0.1"  // какая программа
+
+	campaignId := "ratuscrm" + historyHashId
+	headers["X-Campaign"] = campaignId  // какая программа
+	headers["X-campaignid"] = campaignId  // какая программа
+
 
 	return &headers
 }
@@ -245,18 +286,17 @@ func getClientByEmail(email string) (*smtp.Client, BounceType, error) {
 			// Ждем {dialTimeout} секунд, для установки связи..
 			conn, err := net.DialTimeout("tcp", hostPort, dialTimeout)
 			if err != nil {
-				fmt.Printf("Коннект не прошел: %s\n", hostPort)
+				log.Printf("Коннект не прошел: %s\n", hostPort)
 				if j == len(ports)-1 {
 					return nil, softBounced, err
 				}
-
 				continue
 			}
 
 			// _client, err := smtp.Dial(conn, server)
 			_client, err := smtp.NewClient(conn, server)
 			if err != nil {
-				fmt.Printf("Не удалось подключиться: %s\n", server)
+				log.Printf("Не удалось подключиться: %s\n", server)
 				if j == len(ports)-1 {
 					return nil, softBounced, err
 				}
@@ -270,7 +310,7 @@ func getClientByEmail(email string) (*smtp.Client, BounceType, error) {
 				// ServerName: server,
 			}
 			if err := _client.StartTLS(tlc); err != nil {
-				fmt.Println("Не удалось установить TLC")
+				log.Println("Не удалось установить TLC")
 			}
 
 			client = _client
@@ -279,7 +319,6 @@ func getClientByEmail(email string) (*smtp.Client, BounceType, error) {
 	}
 
 	return client, "", nil
-
 }
 
 func sendMailByClient(client *smtp.Client, body []byte, to string, returnPath string) (BounceType, error) {

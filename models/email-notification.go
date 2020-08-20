@@ -10,6 +10,7 @@ import (
 	"github.com/nkokorev/crm-go/utils"
 	"html/template"
 	"log"
+	"net/mail"
 	"reflect"
 	"strings"
 	"time"
@@ -284,16 +285,10 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 	}
 
 	// Находим шаблон письма
-	emailTemplateEntity, err := EmailTemplate{}.get(*emailNotification.EmailTemplateId)
-	if err != nil {
+	var emailTemplate EmailTemplate
+	if err = account.LoadEntity(&emailTemplate, *emailNotification.EmailTemplateId); err != nil {
+		log.Printf("Ошибка отправления Уведомления - не удается загрузить шаблон письма: %v\n", err)
 		return err
-	}
-	if emailTemplateEntity.GetAccountId() != emailNotification.AccountId {
-		return utils.Error{Message: "Ошибка отправления Уведомления - шаблон принадлежит другому аккаунту 2"}
-	}
-	emailTemplate, ok := emailTemplateEntity.(*EmailTemplate)
-	if !ok {
-		return utils.Error{Message: "Ошибка отправления Уведомления - не удалось получить шаблон"}
 	}
 
 	// Проверяем, чтобы был почтовые ящики, с которого отправляем
@@ -350,8 +345,10 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 	// 2. Отправляем списку
 	for i := range users {
 
+		historyHashId := strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
+
 		history := &MTAHistory{
-			HashId:  strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true)),
+			HashId:  historyHashId,
 			AccountId: emailNotification.AccountId,
 			UserId: &users[i].Id,
 			Email: users[i].Email,
@@ -362,8 +359,8 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			// Succeed: false,
 		}
 
-		unsubscribeUrl := account.GetUnsubscribeUrl(users[i], *history)
-		pixelURL := account.GetPixelUrl(*history)
+		unsubscribeUrl := account.GetUnsubscribeUrl(users[i].HashId, historyHashId)
+		pixelURL := account.GetPixelUrl(historyHashId)
 
 		// Компилируем тему письма
 		_subject, err := parseSubjectByData(emailNotification.Subject, data)
@@ -381,16 +378,37 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			continue
 		}
 
-		// if now ==
-		// if emailNotification.DelayTime == 0 {
+		var webSite WebSite
+		if err = account.LoadEntity(&webSite, emailNotification.EmailBox.WebSiteId); err != nil {
+			log.Printf("Ошибка отправления Уведомления - не удается загрузить данные по WebSite: %v\n", err)
+			continue
+		}
+
+		// Пакет для добавления в MTA-сервер
+		var pkg = EmailPkg {
+			To: mail.Address{Name: users[i].Name, Address: users[i].Email},
+			accountId: account.Id,
+			userId: users[i].Id,
+			webSite: &webSite,
+			emailBox: &emailNotification.EmailBox,
+			emailSender: &emailNotification,
+			emailTemplate: &emailTemplate,
+			subject: _subject,
+			viewData: vData,
+		}
+
+		if emailNotification.DelayTime == 0 {
 		// todo дописать обработку
-		if false {
-			err = emailTemplate.SendMail(emailNotification.EmailBox, users[i].Email, _subject, vData, unsubscribeUrl)
+		// if false {
+			fmt.Println("Отправляем сейчас же!")
+
+			SendEmail(pkg)
+			/*err = emailTemplate.SendMail(emailNotification.EmailBox, users[i].Email, _subject, vData, unsubscribeUrl)
 			if err != nil {
 				// history.Succeed = false
 			} else {
 				// history.Succeed = true
-			}
+			}*/
 		} else {
 			// ставим в очередь
 

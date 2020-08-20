@@ -553,10 +553,9 @@ func (user *User) Unsubscribing() error {
 	return hex.EncodeToString(hexHash[:])
 }
 */
-
-func (account Account) GetUnsubscribeUrl(user User, mtaHistory MTAHistory) string {
-
-	// var unsubscribeUrl := "http://tracking.crm.local/accounts/3niyoz4vucpz/e/unsubscribe?u=keqcfnymylb9&i=5&hi=vlbkv0bf9yr8"
+// userHashId = уникальная 12-символ строка у пользователя, mtaHistoryHashId - сгенерированный будущий ключ
+// func (account Account) GetUnsubscribeUrl(user User, mtaHistory MTAHistory) string {
+func (account Account) GetUnsubscribeUrl(userHashId, mtaHistoryHashId string) string {
 
 	AppEnv := os.Getenv("APP_ENV")
 	crmHost := ""
@@ -569,11 +568,10 @@ func (account Account) GetUnsubscribeUrl(user User, mtaHistory MTAHistory) strin
 		crmHost = "https://tracking.ratuscrm.com"
 	}
 
-	// return crmHost + "/accounts/" +  account.HashId + "/e/unsubscribe?u=" + user.HashId + "&i="+ strconv.Itoa(int(mtaHistory.Id)) + "&hi=" + mtaHistory.HashId
-	return crmHost + "/accounts/" +  account.HashId + "/e/unsubscribe?u=" + user.HashId + "&hi=" + mtaHistory.HashId
+	return crmHost + "/accounts/" +  account.HashId + "/e/unsubscribe?u=" + userHashId + "&hi=" + mtaHistoryHashId
 }
 
-func (account Account) GetPixelUrl(mtaHistory MTAHistory) string {
+func (account Account) GetPixelUrl(mtaHistoryHashId string) string {
 
 	// var unsubscribeUrl := "http://tracking.crm.local/accounts/3niyoz4vucpz/e/unsubscribe?u=keqcfnymylb9&i=5&hi=vlbkv0bf9yr8"
 
@@ -589,7 +587,7 @@ func (account Account) GetPixelUrl(mtaHistory MTAHistory) string {
 	}
 
 	// http://tracking.crm.local/accounts/3niyoz4vucpz/e/open?hi=mggigw8fiy9c
-	return crmHost + "/accounts/" +  account.HashId + "/e/open?hi=" + mtaHistory.HashId
+	return crmHost + "/accounts/" +  account.HashId + "/e/open?hi=" + mtaHistoryHashId
 }
 
 func (EmailTemplate) GetPixelHTML(pixelUrl string) string {
