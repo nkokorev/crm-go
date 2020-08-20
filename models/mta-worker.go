@@ -45,6 +45,7 @@ func mtaWorker() {
 		// Подготавливаем отправку
 		for i := range workflows {
 			if err = workflows[i].Execute(); err != nil {
+				log.Println("Неудачная отправка: ", err)
 				// fmt.Println("Попыток: ", workflows[i].NumberOfAttempts)
 				// Если слишком много попыток
 				if workflows[i].NumberOfAttempts + 1 > maxAttemptsMTAWorker {

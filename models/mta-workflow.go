@@ -406,9 +406,9 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 
 	// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
 	data["accountId"] = mtaWorkflow.AccountId
-	data["account"] = account.GetDepersonalizedData() // << хз
+	data["Account"] = account.GetDepersonalizedData() // << хз
 	data["userId"] = user.Id // << хз
-	data["user"] = user.GetDepersonalizedData() // << хз
+	data["User"] = user.GetDepersonalizedData() // << хз
 	data["unsubscribeUrl"] = unsubscribeUrl
 
 	// Компилируем тему письма

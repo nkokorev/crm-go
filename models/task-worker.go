@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"log"
 	"time"
 )
@@ -30,7 +29,7 @@ func taskWorker() {
 			continue
 		}
 
-		fmt.Printf("Обход taskWorker : %v\n", time.Now().UTC().Format(time.Stamp))
+		// fmt.Printf("Обход taskWorker : %v\n", time.Now().UTC().Format(time.Stamp))
 		
 		tasks := make([]TaskScheduler,0)
 
@@ -47,7 +46,7 @@ func taskWorker() {
 		// Подготавливаем отправку
 		for i := range tasks {
 
-			fmt.Println("Подготавливаем Task к запуску")
+			// fmt.Println("Подготавливаем Task к запуску")
 			
 			// 1. Ставим статус в работе
 			if err := tasks[i].SetStatus(WorkStatusPending); err != nil {

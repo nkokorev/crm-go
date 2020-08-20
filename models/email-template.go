@@ -13,9 +13,11 @@ import (
 	"github.com/toorop/go-dkim"
 	"html/template"
 	"log"
+	"math/rand"
 	"mime/quotedprintable"
 	"net"
 	"net/smtp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -320,8 +322,9 @@ func (emailTemplate EmailTemplate) SendMail(from EmailBox, toEmail string, subje
 	headers["Content-Transfer-Encoding"] = "quoted-printable" // имя SMTP сервера
 	headers["Feedback-Id"] = "1324078:20488:trust:54854"
 	// Идентификатор представляет собой 32-битное число в диапазоне от 1 до 2147483647, либо строку длиной до 40 символов, состоящую из латинских букв, цифр и символов ".-_".
-	headers["Message-Id"] = "1001" // номер сообщения (внутренний номер) <<< вот тут не плохо бы сгенерировать какой-нибудь ключ
-	headers["Received"] = "RatusCRM"
+	// headers["Message-Id"] = "1001"                  // номер сообщения (внутренний номер) <<< вот тут не плохо бы сгенерировать какой-нибудь ключ
+	headers["Message-Id"] = strconv.Itoa(rand.Intn(2000)) // номер сообщения (внутренний номер) <<< вот тут не плохо бы сгенерировать какой-нибудь ключ
+	headers["Received"] = "by RatusCRM"
 	headers["List-Unsubscribe"] = unsubscribeUrl
 	headers["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
 	// headers["Return-Path"] = "<smtp@rus-marketing.ru>"
@@ -373,6 +376,7 @@ func (emailTemplate EmailTemplate) SendMail(from EmailBox, toEmail string, subje
 		// fmt.Println("Email: ", toEmail)
 		// fmt.Println(err)
 		log.Println("Не найдена MX-запись")
+		return errors.New("Не найдена MX-запись")
 	}
 
 	//addr := fmt.Sprintf("%s:%d", mx[0].Host, 25)
@@ -380,47 +384,58 @@ func (emailTemplate EmailTemplate) SendMail(from EmailBox, toEmail string, subje
 
 	client, err := smtp.Dial(addr)
 	if err != nil {
-		log.Fatalf("DialTimeout fail: %v", mx[0].Host)
+		e := fmt.Sprintf("DialTimeout fail: %v\n", mx[0].Host)
+		log.Println(e)
+		return errors.New(e)
 	}
 
 	if err = client.StartTLS(&tls.Config {
 		InsecureSkipVerify: true,
 		ServerName: host,
 	}); err != nil {
-		log.Printf("client.StartTLS fail: %v", err)
+		e := fmt.Sprintf("client.StartTLS fail: %v", err)
+		log.Println(e)
+		return errors.New(e)
 	}
 
 	// from
 	// err = client.Mail(from.GetMailAddress().Address)
-	err = client.Mail("user-21.abuse.@ratuscrm.com")
+	// err = client.Mail("abuse@mta1.ratuscrm.com") // << return path
+	err = client.Mail("smtp@rus-marketing.ru") // << return path
 	if err != nil {
 		log.Println("Почтовый адрес не может принять почту")
+		return errors.New("Почтовый адрес не может принять почту")
 	}
 
 	err = client.Rcpt(toEmail)
 	if err != nil {
 		log.Println("Похоже, почтовый адрес не существует")
+		return errors.New("Похоже, почтовый адрес не существует")
 	}
 
 	wc, err := client.Data()
 	if err != nil {
 		log.Println(err)
+		return errors.New(err.Error())
 	}
 
 	_, err = wc.Write(email)
 	if err != nil {
 		log.Println(err)
+		return errors.New(err.Error())
 	}
 
 	err = wc.Close()
 	if err != nil {
 		log.Println(err)
+		return errors.New(err.Error())
 	}
 
 	// Send the QUIT command and close the connection.
 	err = client.Quit()
 	if err != nil {
 		log.Println(err)
+		return errors.New(err.Error())
 	}
 
 	return nil
