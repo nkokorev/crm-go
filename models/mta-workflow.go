@@ -387,7 +387,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	history := &MTAHistory{
 		HashId:  strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true)),
 		AccountId: mtaWorkflow.AccountId,
-		UserId: user.Id,
+		UserId: &user.Id,
 		Email: user.Email,
 		OwnerId: sender.GetId(),
 		OwnerType: sender.GetType(),

@@ -132,7 +132,7 @@ func SendEmail(pkg EmailPkg)  {
 }
 
 // Обработка ошибки
-func skipSend(err error, bounced TypeBounces)  {
+func skipSend(err error, bounced BounceType)  {
 	fmt.Println("Error: ", err)
 }
 
@@ -218,7 +218,7 @@ func getHostFromEmail(email string) (account, host string, err error) {
 	return
 }
 
-func getClientByEmail(email string) (*smtp.Client, TypeBounces, error) {
+func getClientByEmail(email string) (*smtp.Client, BounceType, error) {
 
 	// 1. Получаем хост, на который нужно отправить email
 	_, host, err := getHostFromEmail(email)
@@ -282,7 +282,7 @@ func getClientByEmail(email string) (*smtp.Client, TypeBounces, error) {
 
 }
 
-func sendMailByClient(client *smtp.Client, body []byte, to string, returnPath string) (TypeBounces, error) {
+func sendMailByClient(client *smtp.Client, body []byte, to string, returnPath string) (BounceType, error) {
 
 	defer client.Close()
 

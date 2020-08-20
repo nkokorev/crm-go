@@ -98,17 +98,16 @@ func (emailCampaign *EmailCampaign) AfterFind() (err error) {
 	if err == gorm.ErrRecordNotFound {emailCampaign.Queue = 0} else { emailCampaign.Queue = inQueue}
 
 	stat := struct {
-		// Sended uint  	// << Все отправленных писем..
-		Recipients uint  	// << Успешных отправок (succeed = true)
+		Recipients uint  	// << Всего отправок
 		Opens uint    		// (opens >=1)
 		Unsubscribed uint 	// (unsubscribed = true)
 	}{0,0,0}
-	if err = db.Raw("SELECT   \n       COUNT(CASE WHEN succeed = true THEN 1 END) AS recipients, -- успешно отправленных   \n       COUNT(CASE WHEN opens >=1 AND succeed = true THEN 1 END) AS opens, -- открытий среди успешно отправленных   \n       COUNT(CASE WHEN unsubscribed = true THEN 1 END) AS unsubscribed \nFROM mta_histories \nWHERE account_id = ? AND owner_id = ? AND owner_type = 'email_campaigns';", emailCampaign.AccountId, emailCampaign.Id).
+	if err = db.Raw("SELECT   \n--        COUNT(CASE WHEN succeed = true THEN 1 END) AS recipients, -- успешно отправленных   \n       COUNT(*) AS recipients, -- успешно отправленных   \n       COUNT(CASE WHEN opens >=1 THEN 1 END) AS opens, -- открытий среди успешно отправленных   \n       COUNT(CASE WHEN unsubscribed = true THEN 1 END) AS unsubscribed \nFROM mta_histories \nWHERE account_id = ? AND owner_id = ? AND owner_type = 'email_campaigns';", emailCampaign.AccountId, emailCampaign.Id).
 		Scan(&stat).Error; err != nil {
 		return err
 	}
 
-	emailCampaign.Recipients = stat.Recipients // << succeed = true - Сколько всего реально было отправлено писем.
+	emailCampaign.Recipients = stat.Recipients // << Сколько всего реально было отправлено писем.
 	if stat.Opens > 0 && stat.Recipients > 0{
 		emailCampaign.OpenRate = (float64(stat.Opens) / float64(stat.Recipients))*100
 	} else {

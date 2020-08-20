@@ -84,17 +84,17 @@ func (emailQueue *EmailQueue) AfterFind() (err error) {
 
 	// todo: можно добавить % доставки
 	stat := struct {
-		Recipients uint  	// << Успешных отправок (succeed = true)
+		Recipients uint  	// << Всего отправок
 		Completed uint   	// << Завершило серию (completed = true)
 		Opens uint    		// (opens >=1)
 		Unsubscribed uint 	// (unsubscribed = true)
 	}{0,0,0,0}
-	if err = db.Raw("SELECT   \n       COUNT(CASE WHEN succeed = true THEN 1 END) AS recipients, -- фактически отправленных писем (успешно)  \n       COUNT(CASE WHEN queue_completed = true THEN 1 END) AS completed, -- завершивших серию \n       COUNT(CASE WHEN opens >=1 AND succeed = true THEN 1 END) AS opens, -- открытий среди успешно отправленных   \n       COUNT(CASE WHEN unsubscribed = true THEN 1 END) AS unsubscribed \nFROM mta_histories \nWHERE account_id = ? AND owner_id = ? AND owner_type = 'email_queues';", emailQueue.AccountId, emailQueue.Id).
+	if err = db.Raw("SELECT   \n--        COUNT(CASE WHEN succeed = true THEN 1 END) AS recipients, -- фактически отправленных писем (успешно)\n       COUNT(*) AS recipients, -- успешно отправленных\n       COUNT(CASE WHEN queue_completed = true THEN 1 END) AS completed, -- завершивших серию \n       COUNT(CASE WHEN opens >=1 THEN 1 END) AS opens, -- открытий среди успешно отправленных   \n       COUNT(CASE WHEN unsubscribed = true THEN 1 END) AS unsubscribed \nFROM mta_histories \nWHERE account_id = ? AND owner_id = ? AND owner_type = 'email_queues';", emailQueue.AccountId, emailQueue.Id).
 		Scan(&stat).Error; err != nil {
 			return err
 	}
 
-	emailQueue.Recipients = stat.Recipients // << succeed = true - Сколько всего реально было отправлено писем.
+	emailQueue.Recipients = stat.Recipients // Сколько всего реально было отправлено писем.
 	emailQueue.Completed = stat.Completed //  queue_completed = true
 	
 	if stat.Opens > 0 && stat.Recipients > 0{

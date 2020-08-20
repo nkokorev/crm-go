@@ -75,9 +75,6 @@ type MTABounced struct {
 
 	CreatedAt 	time.Time 	`json:"createdAt"`
 }
-func (MTABounced) TableName() string {
-	return "mta_bounces"
-}
 
 // ############# Entity interface #############
 func (mtaBounced MTABounced) GetId() uint { return mtaBounced.Id }
@@ -93,6 +90,9 @@ func (MTABounced) PgSqlCreate() {
 	db.Model(&MTABounced{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	db.Model(&MTABounced{}).AddForeignKey("user_id", "users(id)", "SET NULL", "CASCADE")
 	db.Model(&MTABounced{}).AddForeignKey("email_box_id", "email_boxes(id)", "SET NULL", "CASCADE")
+}
+func (MTABounced) TableName() string {
+	return "mta_bounces"
 }
 func (mtaBounced *MTABounced) BeforeCreate(scope *gorm.Scope) error {
 	mtaBounced.Id = 0
