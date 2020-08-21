@@ -70,6 +70,8 @@ func mtaServer(c <-chan EmailPkg) {
 
 			// Без go - ожидает отправки каждого сообщения
 			go mtaSender(pkg, &wg)
+			time.Sleep(time.Millisecond*200)
+			// mtaSender(pkg, &wg)
 		default:
 			time.Sleep(time.Millisecond*100)
 		}
@@ -171,9 +173,8 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	if err != nil {
 		log.Printf("Ошибка создания записи в истории отправки email-писем. AccountId [id = %v], OwnerId: [id = %v]: %v", pkg.accountId, pkg.emailSender.GetId(), err.Error())
 	} else {
-		fmt.Println("Запись в истории создана!")
+		// fmt.Println("Запись в истории создана!")
 	}
-
 
 }
 

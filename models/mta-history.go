@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"net"
@@ -270,8 +269,6 @@ func (mtaHistory *MTAHistory) UpdateOpenUser(ipV4 string) error {
 	if mtaHistory.Opens <= 0 {
 		input["openedAt"] = time.Now().UTC()
 	}
-
-	fmt.Println("Обновляем: ", input)
 
 	return mtaHistory.update(input)
 }

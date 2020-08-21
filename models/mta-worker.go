@@ -31,7 +31,7 @@ func mtaWorker() {
 			Joins("LEFT JOIN email_campaigns ON email_campaigns.id = mta_workflows.owner_id").
 			Select("email_queues.enabled,email_notifications.enabled, email_campaigns.enabled, mta_workflows.*").
 			Where("mta_workflows.expected_time_start <= ? AND (email_queues.enabled = 'true' OR email_notifications.enabled = 'true' OR email_campaigns.enabled = 'true')", time.Now().UTC()).
-			Limit(100).Find(&workflows).Error
+			Limit(20).Find(&workflows).Error
 		if err != nil {
 			log.Printf("MTAWorkflow:  %v", err)
 			time.Sleep(time.Second*10)
