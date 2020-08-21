@@ -19,12 +19,12 @@ import (
 )
 
 var smtpCh chan EmailPkg
-const deepMTACh = 10000 // глубина очереди из пакетов сообщений
-const dialTimeout = time.Second * 5 // время для установки коннекта с smtp сервером получателя
+const deepMTACh = 100 // Данный объем буфера регулирует сколько будет в памяти программы, а не в mta-workflow
+const dialTimeout = time.Second * 5 // максимальное время для установки соединения с smtp сервером получателя
 
 // число одновременных запущенных потоков отправки для email. Если один висит, два других ждут.
 // Очередь запинается, когда один поток подвисает, а другие потоки разобраны.
-var workerCount = 3
+var workerCount = 10
 
 func init() {
 	smtpCh = make(chan EmailPkg, deepMTACh)
@@ -70,10 +70,13 @@ func mtaServer(c <-chan EmailPkg) {
 
 			// Без go - ожидает отправки каждого сообщения
 			go mtaSender(pkg, &wg)
-			time.Sleep(time.Millisecond*200)
+
+			// fix ХЗ чего
+			time.Sleep(time.Millisecond*10)
 			// mtaSender(pkg, &wg)
 		default:
-			time.Sleep(time.Millisecond*100)
+			// нет сообщений
+			time.Sleep(time.Millisecond*500)
 		}
 	}
 }
@@ -385,4 +388,11 @@ func sendMailByClient(client *smtp.Client, body []byte, to string, returnPath st
 	}*/
 
 	return "", nil
+}
+
+func MTALenChannel() uint {
+   return uint(len(smtpCh))
+}
+func MTACapChannel() uint {
+	return uint(cap(smtpCh))
 }
