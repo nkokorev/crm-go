@@ -14,9 +14,9 @@ type EmailPkg struct {
 	// From 		mail.Address
 	To 			mail.Address
 	// Если что-то в отправке пойдет не так - можно будет найти пользователя
-	accountId uint
-	userId uint
-	workflowId uint
+	accountId 	uint
+	userId 		uint
+	workflowId 	uint
 
 	// тех.данные для отправки
 	webSite 	*WebSite
@@ -393,6 +393,19 @@ func (pkg EmailPkg) handleQueue() bool {
 	}
 
 	return false
+}
+
+func (pkg EmailPkg) stopEmailSender(reason string) {
+
+	log.Printf("StopEmailSender, reason: %v\n", reason)
+
+	// 1. удаляем задачу, если это EmailQueue
+	if pkg.emailSender.GetType() == EmailSenderQueue {
+		_ = (&MTAWorkflow{Id: pkg.workflowId}).delete()
+	}
+
+	_ = pkg.emailSender.SetWorkStatus(WorkStatusFailed, reason)
+
 }
 
 // Подсчитывает число мягких отскоков у пользователя в течение 1 года.

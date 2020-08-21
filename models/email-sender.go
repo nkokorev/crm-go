@@ -9,6 +9,10 @@ type EmailSender interface {
 
 	// Возвращает состояние сендера
 	IsEnabled() bool
+	IsActive() bool
+
+	// Устанавливает статус + может дописывать ошибку
+	SetWorkStatus(status WorkStatus, reason... string) error
 }
 
 type EmailSenderType = string

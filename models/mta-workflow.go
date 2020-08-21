@@ -229,27 +229,17 @@ func (mtaWorkflow *MTAWorkflow) GetPreloadDb(autoUpdateOff bool, getModel bool, 
 	}
 }
 
-// Отправка элемента или перенос
+// Создание пакета для добавления в буфер на отправку
 func (mtaWorkflow *MTAWorkflow) Execute() error {
 
 	// Локальные данные аккаунта, пользователя
 	data := make(map[string]interface{})
 
 	account, err := GetAccount(mtaWorkflow.AccountId)
-	if err != nil {
-		if err = mtaWorkflow.delete(); err != nil {
-			log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
-		}
-		return err
-	}
+	if err != nil { return err }
 
 	user, err := account.GetUser(mtaWorkflow.UserId)
-	if err != nil {
-		if err = mtaWorkflow.delete(); err != nil {
-			log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
-		}
-		return err
-	}
+	if err != nil { return err }
 
 	// Проверяем статус подписки
 	if !user.Subscribed {
@@ -290,14 +280,13 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	if sender.GetType() == EmailSenderQueue {
 
 		// Проверяем состоянии кампании/очереди/уведомления
-		if !sender.IsEnabled() {
+		if !sender.IsActive() {
 			// Тут могут копиться люди в очереди, поэтому возвращаем ошибку
-			return utils.Error{ Message: fmt.Sprintf("Невозможно отправить письмо, т.к. объект [id = %v] не запущен\n", sender.GetId()),
-			}
+			return utils.Error{ Message: fmt.Sprintf("Невозможно отправить письмо, т.к. объект [id = %v] не запущен\n", sender.GetId())}
 		}
 
 		emailQueue, ok := sender.(*EmailQueue)
-		if !ok { return errors.New("Ошибка преобразования в EmailQueue")}
+		if !ok { return errors.New("Ошибка преобразования в Email Queue")}
 		
 		step, err := emailQueue.GetNearbyActiveStep(mtaWorkflow.QueueExpectedStepId)
 		if err != nil {
@@ -314,9 +303,6 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 
 		// Только теоретически такое возможно
 		if !step.Enabled {
-			if err = mtaWorkflow.delete(); err != nil {
-				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
-			}
 			return utils.Error{Message: "Этап отправки не активен"}
 		}
 
@@ -339,7 +325,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 
 	if sender.GetType() == EmailSenderNotification {
 
-		if !sender.IsEnabled() {
+		if !sender.IsActive() {
 			// Возвращаем с ошибкой, т.к. могут копиться люди в очереди
 			return utils.Error{ Message: fmt.Sprintf("Невозможно отправить письмо, т.к. объект [id = %v] не запущен\n", sender.GetId()),
 			}
@@ -352,9 +338,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		if err != nil {	return err }
 
 		err = account.LoadEntity(&emailBox, *emailNotification.EmailBoxId)
-		if err != nil {
-			return err
-		}
+		if err != nil {	return err }
 		
 		Subject = emailNotification.Subject
 		PreviewText = emailNotification.PreviewText
@@ -362,10 +346,8 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 
 	if sender.GetType() == EmailSenderCampaign {
 
-		if !sender.IsEnabled() {
-			// Возвращаем с ошибкой, т.к. могут копиться люди в очереди
-			return utils.Error{ Message: fmt.Sprintf("Невозможно отправить письмо, т.к. кампания [id = %v] не запущена\n", sender.GetId()),
-			}
+		if !sender.IsActive() {
+			return utils.Error{ Message: fmt.Sprintf("Невозможно отправить письмо, т.к. кампания [id = %v] не запущена\n", sender.GetId())}
 		}
 
 		emailCampaign, ok := sender.(*EmailCampaign)
@@ -417,100 +399,20 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 
 	var pkg = EmailPkg {
 		To: mail.Address{Name: user.Name, Address: user.Email},
-		accountId: account.Id,
-		userId: user.Id,
+		accountId: 	account.Id,
+		userId: 	user.Id,
 		workflowId: mtaWorkflow.Id, // мы не знаем
-		webSite: &webSite,
-		emailBox: &emailBox,
+		webSite: 	&webSite,
+		emailBox: 	&emailBox,
 		emailSender: sender,
 		emailTemplate: &emailTemplate,
-		subject: _subject,
-		viewData: vData,
+		subject: 	_subject,
+		viewData: 	vData,
 		queueStepId: queueStepId,
 	}
 
+	// можно и через go
 	SendEmail(pkg)
-
-	// todo: тут надо добавлять на сервер для отправки и все ошибки пойдут в mta-bounced
-	/*err = emailTemplate.SendMail(emailBox, user.Email, _subject, vData,  unsubscribeUrl)
-	if err != nil {
-
-		// history.Succeed = false
-
-		// Обновляем данные последней попытки
-		timeNow := time.Now().UTC()
-		if err2 := mtaWorkflow.update(map[string]interface{}{
-			"last_tried_at": &timeNow,
-			"number_of_attempts": mtaWorkflow.NumberOfAttempts + 1,
-			"expected_time_start": time.Now().UTC().Add(time.Minute * 5),
-		}); err2 != nil {
-			fmt.Println("Err mtaWorkflow update: ", err2)
-		}
-
-		return err
-	} else {
-
-		// Ставим флаг успешного выполнения
-		// history.Succeed = true
-
-		if sender.GetType() == EmailSenderQueue {
-			// 1. Получаем следующий шаг
-			emailQueue, ok := sender.(*EmailQueue)
-			if !ok {
-				log.Println("Ошибка преобразования в EmailQueue")
-				// history.QueueCompleted = true
-				if err = mtaWorkflow.delete(); err != nil {
-					log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
-				}
-				return nil
-			}
-
-			nextStep, err := emailQueue.GetNextActiveStep(QueueOrder)
-			if err != nil {
-				// history.QueueCompleted = true
-				// исключаем задачу, если не удалось ее обновить
-				if err = mtaWorkflow.delete(); err != nil {
-					log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
-				}
-				return nil
-			}
-
-			// Проверяем на его активность
-			if !nextStep.Enabled {
-				// history.QueueCompleted = true
-				if err = mtaWorkflow.delete(); err != nil {
-					log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
-				}
-				return nil
-			}
-
-			// Обновляем задачу, вместо удаления / создания новой
-			if err := mtaWorkflow.UpdateByNextStep(*nextStep); err != nil {
-
-				// исключаем задачу, если не удалось ее обновить
-				if err = mtaWorkflow.delete(); err != nil {
-					log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
-				}
-
-				// Не удалось обновить следующий шаг, значит последний был до этого
-				// history.QueueCompleted = true
-				return nil
-			}
-
-			// Если дошли сюда - значит, задача не завершена
-			// history.QueueCompleted = false
-
-			return nil
-		}
-
-		if sender.GetType() == EmailSenderCampaign || sender.GetType() == EmailSenderNotification{
-			if err = mtaWorkflow.delete(); err != nil {
-				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
-			}
-			return nil
-		}
-
-	}*/
 
 	return nil
 }

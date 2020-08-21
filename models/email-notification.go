@@ -21,7 +21,8 @@ type EmailNotification struct {
 	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"`
 	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	Enabled 		bool 	`json:"enabled" gorm:"type:bool;default:false;"` // отключить / включить
+	Status 			WorkStatus `json:"status" gorm:"type:varchar(18);default:'pending'"`
+	FailedStatus	string 		`json:"failedStatus" gorm:"type:varchar(255);"`
 
 	// Delay			uint 	`json:"delay" gorm:"type:int;default:0"` // Задержка перед отправлением в минутах: [0-180]
 	DelayTime		time.Duration `json:"delayTime" gorm:"type:int8;default:0"`// << учитывается только время [0-24]
@@ -64,7 +65,18 @@ func (emailNotification EmailNotification) GetAccountId() uint { return emailNot
 func (emailNotification *EmailNotification) setAccountId(id uint) { emailNotification.AccountId = id }
 func (EmailNotification) SystemEntity() bool { return false }
 func (EmailNotification) GetType() string { return "email_notifications" }
-func (emailNotification EmailNotification) IsEnabled() bool { return emailNotification.Enabled }
+// статус для обхода воркера
+func (emailNotification EmailNotification) IsEnabled() bool {
+
+	if emailNotification.Status == WorkStatusPending || emailNotification.Status == WorkStatusFailed || emailNotification.Status == WorkStatusCancelled {
+		return false
+	}
+
+	return true
+}
+func (emailNotification EmailNotification) IsActive() bool {
+	return emailNotification.Status == WorkStatusActive
+}
 
 // ############# Entity interface #############
 
@@ -269,8 +281,8 @@ func (emailNotification *EmailNotification) GetPreloadDb(autoUpdateOff bool, get
 func (emailNotification EmailNotification) Execute(data map[string]interface{}) error {
 
 	// Проверяем статус уведомления
-	if !emailNotification.Enabled {
-		return utils.Error{Message: "Уведомление не может быть отправлено т.к. находится в статусе - 'Отключено'"}
+	if !emailNotification.IsActive() {
+		return utils.Error{Message: fmt.Sprintf("Уведомление не может быть отправлено т.к. находится в статусе - %v\n",emailNotification.Status)}
 	}
 
 	// Проверяем тело сообщения (не должно быть пустое)
@@ -431,4 +443,15 @@ func parseSubjectByData(tpl string, data map[string]interface{}) (string, error)
 	}
 
 	return body.String(), nil
+}
+
+func (emailNotification *EmailNotification) SetWorkStatus(status WorkStatus, reason... string) error {
+	_reason := "" // обнуление
+	if len(reason) > 0 {
+		_reason = reason[0]
+	}
+	return emailNotification.update(map[string]interface{}{
+		"status":	status,
+		"failedStatus": _reason,
+	})
 }

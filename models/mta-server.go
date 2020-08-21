@@ -19,12 +19,12 @@ import (
 )
 
 var smtpCh chan EmailPkg
-const deepMTACh = 100 // Данный объем буфера регулирует сколько будет в памяти программы, а не в mta-workflow
+const deepMTACh = 10 // Объем буфера из пакетов и макс. число горутин по их отправке
 const dialTimeout = time.Second * 5 // максимальное время для установки соединения с smtp сервером получателя
 
 // число одновременных запущенных потоков отправки для email. Если один висит, два других ждут.
 // Очередь запинается, когда один поток подвисает, а другие потоки разобраны.
-var workerCount = 10
+// var workerCount = 10
 
 func init() {
 	smtpCh = make(chan EmailPkg, deepMTACh)
@@ -47,7 +47,14 @@ type ViewData struct {
 // worker MTA-Server
 func mtaServer(c <-chan EmailPkg) {
 
-	var wg sync.WaitGroup // можно доработать синхронизацию, но после тестов по отправке
+	// можно доработать синхронизацию, но после тестов по отправке
+	var wg sync.WaitGroup
+	var m sync.Mutex
+
+	if c == nil {
+		log.Println("Ошибка mtaServer: channel is null!")
+		return
+	}
 
 	// target speed: 16 mail per second (62 ms / 1 mail) [~4800 / мин]
 	for {
@@ -55,37 +62,42 @@ func mtaServer(c <-chan EmailPkg) {
 		case pkg := <- c:
 
 			// fmt.Printf("Принял сообщение: %s \n", pkg.Subject)
-			// fmt.Printf("В очереди: %d\n", len(c))
-			// fmt.Printf("Макс. длина: %d\n", cap(c))
 
 			// Если все потоки разобраны (из пула = {workerCount}) - ожидаем завершения всех текущих отправок (макс 5с), чтобы не плодить овер коннектов
-			if workerCount < 1 {
-				wg.Wait()
-			}
+			// if workerCount < 1 {wg.Wait()}
+
 
 			// обновляем счетчик WaitGroup
 			wg.Add(1)
+			
 			// -1 рабочий поток для отправки
-			workerCount--
+			// workerCount--
 
 			// Без go - ожидает отправки каждого сообщения
-			go mtaSender(pkg, &wg)
+			go mtaSender(pkg, &wg, &m)
+
+			wg.Wait()
 
 			// fix ХЗ чего
-			time.Sleep(time.Millisecond*10)
-			// mtaSender(pkg, &wg)
-		default:
-			// нет сообщений
-			time.Sleep(time.Millisecond*500)
+			// time.Sleep(time.Millisecond*10)
+			
+		case <- time.After(1 * time.Second):
+			fmt.Println("Подождали 1 секунду -)")
+		/*default:
+			time.Sleep(time.Millisecond*500)*/
 		}
 	}
 }
 
 // Функция по отправке почтового пакета, обычно, запускается воркером в отдельной горутине
-func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
+func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 
+	m.Lock()
+	defer m.Unlock()
 	defer wg.Done() // отписываемся о закрытии текущей горутины
-	defer func() {workerCount++}() // освобождаем счетчик потоков (горутин) по отправке
+
+	
+	// defer func() {workerCount++}() // освобождаем счетчик потоков (горутин) по отправке
 
 	// 1. Получаем переменные для отправки письма
 	account, err := GetAccount(pkg.accountId)
@@ -119,7 +131,7 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	// 1. Получаем compile html из email'а
 	html, err := pkg.emailTemplate.GetHTML(pkg.viewData)
 	if err != nil {
-		pkg.bounced(softBounced, fmt.Sprintf("Ошибка в синтаксисе email-шаблона id = %v: %v", pkg.emailTemplate.Id, err.Error()))
+		log.Printf("Ошибка в синтаксисе email-шаблона id = %v: %v", pkg.emailTemplate.Id, err.Error())
 		return
 	}
 	
@@ -130,13 +142,14 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 
 	// 3. Создаем тело сообщения с хедерами и html
 	if pkg.webSite.Id < 1 || pkg.emailBox.Id < 1 {
-		pkg.bounced(softBounced, "Техническая ошибка: не удалось установить отправителя: webSite || emailBox id < 1")
+		log.Printf("Техническая ошибка: не удалось установить отправителя: webSite || emailBox id < 1")
 		return
 	}
 
 	body, err := getSignBody(headers, html, pkg.webSite)
 	if err != nil {
 		pkg.bounced(softBounced, fmt.Sprintf("Ошибка в процессе DKIM-подписи письма: %v", err.Error()))
+		log.Printf("Ошибка в синтаксисе email-шаблона id = %v: %v", pkg.emailTemplate.Id, err.Error())
 		return
 	}
 

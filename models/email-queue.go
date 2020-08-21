@@ -17,8 +17,8 @@ type EmailQueue struct {
 	// Имя очереди (Label)
 	Name		string	`json:"name" gorm:"type:varchar(128);not null;"` // Welcome, Onboarding, ...
 
-	// В работе серия или нет (== нужно ли ее обходить воркером)
-	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false;"`
+	Status 			WorkStatus `json:"status" gorm:"type:varchar(18);default:'pending'"`
+	FailedStatus	string 		`json:"failedStatus" gorm:"type:varchar(255);"`
 
 	// Сколько в очереди сейчас задач (выборка по MTAWorkflow) = сколько подписчиков еще проходят, в процессе
 	Queue 		uint `json:"_queue" gorm:"-"`
@@ -119,7 +119,17 @@ func (emailQueue EmailQueue) GetAccountId() uint { return emailQueue.AccountId }
 func (emailQueue *EmailQueue) setAccountId(id uint) { emailQueue.AccountId = id }
 func (EmailQueue) SystemEntity() bool { return false }
 func (EmailQueue) GetType() string { return "email_queues" }
-func (emailQueue EmailQueue) IsEnabled() bool { return emailQueue.Enabled }
+func (emailQueue EmailQueue) IsEnabled() bool {
+	// т.к. статус для обхода воркера
+	if emailQueue.Status == WorkStatusPending || emailQueue.Status == WorkStatusFailed || emailQueue.Status == WorkStatusCancelled {
+		return false
+	}
+
+	return true
+}
+func (emailQueue EmailQueue) IsActive() bool {
+	return emailQueue.Status == WorkStatusActive
+}
 // ############# Entity interface #############
 
 // ######### CRUD Functions ############
@@ -391,4 +401,15 @@ func (emailQueue EmailQueue) GetEmailTemplateByStep(order uint) (*EmailTemplate,
 	}
 
 	return &emailTemplate, nil
+}
+
+func (emailQueue *EmailQueue) SetWorkStatus(status WorkStatus, reason... string) error {
+	_reason := "" // обнуление
+	if len(reason) > 0 {
+		_reason = reason[0]
+	}
+	return emailQueue.update(map[string]interface{}{
+		"status":	status,
+		"failedStatus": _reason,
+	})
 }

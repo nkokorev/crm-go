@@ -26,7 +26,7 @@ type EmailCampaign struct {
 	// planned - разрабатывается; pending - запланировано пользователем
 	// active - взято в разработку воркером; дальше по результату
 	Status 			WorkStatus `json:"status" gorm:"type:varchar(18);default:'pending'"`
-
+	FailedStatus	string 		`json:"failedStatus" gorm:"type:varchar(255);"`
 	// Reed to start = true | В каком состоянии кампания, на этот показатель ориентируется воркер
 	// Enabled 		bool 		`json:"enabled" gorm:"type:bool;default:false;"`
 
@@ -81,6 +81,9 @@ func (emailCampaign EmailCampaign) IsEnabled() bool {
 	}
 
 	return true
+}
+func (emailCampaign EmailCampaign) IsActive() bool {
+	return emailCampaign.Status == WorkStatusActive
 }
 // ############# End Entity interface #############
 
@@ -356,9 +359,9 @@ func (emailCampaign *EmailCampaign) Execute() error {
 
 	// 1. Проверяем все данные перед маршем -\0/-
 	
-	// Проверяем статус уведомления
-	if !emailCampaign.IsEnabled() {
-		return utils.Error{Message: fmt.Sprintf("Уведомление не может быть отправлено т.к. находится в статусе - '%v'", emailCampaign.Status)}
+	// Проверяем статус кампании
+	if !emailCampaign.IsActive() {
+		return utils.Error{Message: fmt.Sprintf("Кампания не может быть запущена т.к. находится в статусе - '%v'", emailCampaign.Status)}
 	}
 
 	// Get Account
@@ -427,9 +430,14 @@ func (emailCampaign *EmailCampaign) Execute() error {
 	return nil
 }
 
-func (emailCampaign *EmailCampaign) SetWorkStatus(status WorkStatus) error {
+func (emailCampaign *EmailCampaign) SetWorkStatus(status WorkStatus, reason... string) error {
+	_reason := "" // обнуление
+	if len(reason) > 0 {
+		_reason = reason[0]
+	}
 	return emailCampaign.update(map[string]interface{}{
 		"status":	status,
+		"failedStatus": _reason,
 	})
 }
 
