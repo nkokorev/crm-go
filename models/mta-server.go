@@ -95,7 +95,7 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	}
 	historyHashId := strings.ToLower(u.RandStringBytesMaskImprSrcUnsafe(12, true))
 
-	unsubscribeUrl := Account{Id: pkg.accountId}.GetUnsubscribeUrl(user.HashId, historyHashId)
+	unsubscribeUrl := account.GetUnsubscribeUrl(user.HashId, historyHashId)
 	pixelURL := account.GetPixelUrl(historyHashId)
 	hashAddress := mail.Address{Address: historyHashId + "@mta1.ratuscrm.com"}
 
@@ -103,7 +103,8 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	(*pkg.viewData).UnsubscribeURL = unsubscribeUrl
 	(*pkg.viewData).PixelURL = pixelURL
 
-	returnPath := "abuse@mta1.ratuscrm.com"  // тут тоже надо hash@ адресс
+	// returnPath := "abuse@mta1.ratuscrm.com"  // тут тоже надо hash@ адресс
+	returnPath := "smtp@rus-marketing.ru"  // тут тоже надо hash@ адресс
 	messageId :=  hashAddress.Address
 
 	// Готовим фидбэк по смыслу: accountId | userId | ownerId | ownerType | MTA server (= ничего не значит)
@@ -113,7 +114,7 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	// 1. Получаем compile html из email'а
 	html, err := pkg.emailTemplate.GetHTML(pkg.viewData)
 	if err != nil {
-		pkg.bounced(softBounced, fmt.Sprintf("Ошибка в синтаксисе email-шаблона id = %v", pkg.emailTemplate.Id))
+		pkg.bounced(softBounced, fmt.Sprintf("Ошибка в синтаксисе email-шаблона id = %v: %v", pkg.emailTemplate.Id, err.Error()))
 		return
 	}
 	
@@ -149,65 +150,10 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	}
 
 	// 6. Заносим в историю
-	queueCompleted := false
-	
+
 	// Обновляем / удаляем задачу в воркере отправки писем для автоматической отправки писем
-	if pkg.emailSender.GetType() == EmailSenderQueue && pkg.workflowId > 0 {
-		emailQueue, ok := pkg.emailSender.(*EmailQueue)
-		if !ok {
-			log.Printf("Ошибка преобразования emailSender [id = %v]", pkg.emailSender.GetId())
-			return
-		}
-
-		// Обновляем задачу для следующего шага или удаляем текущий
-		nextStep, err := emailQueue.GetNextActiveStep(pkg.queueStepId)
-		if err != nil {
-			// серия завершена
-			queueCompleted = true
-
-			// Удаляем задачу по отправке, т.к. нет следующего шага
-			if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
-				log.Printf("Невозможно исключить задачу [id = %v] по отправке: %v\n", pkg.workflowId, err)
-			}
-		} else {
-
-			var mtaWorkflow MTAWorkflow
-			err := account.LoadEntity(&mtaWorkflow, pkg.workflowId)
-			if err != nil {
-				log.Printf("Невозможно получить задачу [id = %v] по отпрваке: %v\n", pkg.workflowId, err)
-			} else {
-
-				// Проверяем на его активность
-				if !nextStep.Enabled {
-
-					// history.QueueCompleted = true
-					if err = mtaWorkflow.delete(); err != nil {
-						log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
-					}
-				} else {
-					// Обновляем задачу, вместо удаления / создания новой
-					if err := mtaWorkflow.UpdateByNextStep(*nextStep); err != nil {
-
-						// исключаем задачу, если не удалось ее обновить
-						if err = mtaWorkflow.delete(); err != nil {
-							log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
-						}
-
-						// если не удалось обновить - значит шаг был последним
-						queueCompleted = true
-					}
-				}
-			}
-		}
-	}
-
-	// Удаляем задачу по Notification / Campaign в mta-workflows
-	/*if (pkg.emailSender.GetType() == EmailSenderNotification || pkg.emailSender.GetType() == EmailSenderCampaign) && pkg.workflowId > 0 {
-		if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
-			log.Printf("Невозможно исключить задачу [id = %v] по отправке: %v\n", pkg.workflowId, err)
-		}
-	}*/
-
+	queueCompleted := pkg.handleQueue()
+	
 	history := &MTAHistory{
 		HashId:  historyHashId,
 		AccountId: pkg.accountId,

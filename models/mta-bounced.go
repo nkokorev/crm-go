@@ -98,7 +98,7 @@ func (mtaBounced *MTABounced) BeforeCreate(scope *gorm.Scope) error {
 	mtaBounced.PublicId = 1 + uint(lastIdx.Int64)
 
 	if len(mtaBounced.Reason) > 255 {
-		mtaBounced.Reason = mtaBounced.Reason[:254]
+		mtaBounced.Reason = mtaBounced.Reason[:250]
 	}
 
 	return nil
@@ -260,7 +260,8 @@ func (mtaBounced *MTABounced) GetPreloadDb(autoUpdateOff bool, getModel bool, pr
 
 // обработчик ошибки при отправке письма. Логика по отписке пользователя + управление mta-workflow
 func (pkg EmailPkg) bounced(b BounceType, reason string) {
-	
+
+	log.Printf("Bounced: %v | Reason: %v\n", b, reason)
 	// 1. удаляем задачу
 	if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
 		log.Printf("Ошибка удаления задачи [id = %v] при проблеме с отправкой письма: %v", pkg.accountId, err.Error())
@@ -272,7 +273,7 @@ func (pkg EmailPkg) bounced(b BounceType, reason string) {
 		UserId: 	&pkg.userId,
 		OwnerId: 	pkg.emailSender.GetId(),
 		OwnerType: 	pkg.emailSender.GetType(),
-		Reason: 	reason[:255],
+		Reason: 	reason,
 		SoftBounced:b == softBounced,
 	}
 	_,err := bounce.create()
@@ -315,6 +316,83 @@ func (pkg EmailPkg) bounced(b BounceType, reason string) {
 		}
 	}
 
+}
+
+// обработчик успешной отправки письма: решает оставлять или обновить задачу на следующий шаг
+func (pkg EmailPkg) handleQueue() bool {
+
+	// 1. Получаем переменные для отправки письма
+	account, err := GetAccount(pkg.accountId)
+	if err != nil {
+		log.Printf("Ошибка получения аккаунта [id = %v] при отправки email-сообщения: %v", pkg.accountId, err.Error())
+		if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
+			log.Printf("Невозможно исключить задачу [id = %v] по отправке: %v\n", pkg.workflowId, err)
+		}
+		return true
+	}
+
+	if pkg.emailSender.GetType() == EmailSenderQueue {
+
+		// удаляем задачу, если не передан workflowId
+		if pkg.workflowId < 1 {
+			if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
+				log.Printf("Невозможно исключить задачу [id = %v] по отправке: %v\n", pkg.workflowId, err)
+			}
+			return true
+		}
+
+		emailQueue, ok := pkg.emailSender.(*EmailQueue)
+		if !ok {
+			log.Printf("Ошибка преобразования emailSender [id = %v]", pkg.emailSender.GetId())
+			if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
+				log.Printf("Невозможно исключить задачу [id = %v] по отправке: %v\n", pkg.workflowId, err)
+			}
+			return true
+		}
+
+		// Обновляем задачу для следующего шага или удаляем текущий
+		nextStep, err := emailQueue.GetNextActiveStep(pkg.queueStepId)
+		if err != nil {
+			// серия завершена, т.к. нет следующих шагов
+			// Удаляем задачу по отправке, т.к. нет следующего шага
+			if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
+				log.Printf("Невозможно исключить задачу [id = %v] по отправке: %v\n", pkg.workflowId, err)
+			}
+			return true
+		} else {
+			// есть следующих шаг, queueCompleted = false
+
+			var mtaWorkflow MTAWorkflow
+			err := account.LoadEntity(&mtaWorkflow, pkg.workflowId)
+			if err != nil {
+				log.Printf("Невозможно получить задачу [id = %v] по отпрваке: %v\n", pkg.workflowId, err)
+				// ошибка загрузки, завершаем серию
+				return true
+			}
+
+			// Проверяем на его активность
+			if !nextStep.Enabled {
+				if err = mtaWorkflow.delete(); err != nil {
+					log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
+				}
+				return true
+			} else {
+				// Обновляем задачу, вместо удаления / создания новой
+				if err := mtaWorkflow.UpdateByNextStep(*nextStep); err != nil {
+
+					// исключаем задачу, если не удалось ее обновить
+					if err = mtaWorkflow.delete(); err != nil {
+						log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
+					}
+
+					// если не удалось обновить - значит шаг был последним
+					return true
+				}
+			}
+		}
+	}
+
+	return false
 }
 
 // Подсчитывает число мягких отскоков у пользователя в течение 1 года.

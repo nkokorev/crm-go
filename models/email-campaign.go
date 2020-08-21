@@ -429,7 +429,7 @@ func (emailCampaign *EmailCampaign) Execute() error {
 	for _, v := range users {
 		mtaWorkflow.UserId = v.Id
 		if _, err = mtaWorkflow.create(); err != nil {
-			log.Printf("Ошибка добавления пользователя [%v] в очередь: %v", v.Id, err)
+			log.Printf("Ошибка добавления пользователя [%v] в очередь при выполнении кампании: %v", v.Id, err)
 		}
 
 	}

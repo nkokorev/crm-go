@@ -10,8 +10,6 @@ import (
 // Получает данные для отправки писем
 // Добавляет письма в MTA-server
 
-var maxAttemptsMTAWorker = uint(2)
-
 func init() {
 	go mtaWorker()
 }
@@ -32,7 +30,8 @@ func mtaWorker() {
 			Joins("LEFT JOIN email_notifications ON email_notifications.id = mta_workflows.owner_id").
 			Joins("LEFT JOIN email_campaigns ON email_campaigns.id = mta_workflows.owner_id").
 			Select("email_queues.enabled,email_notifications.enabled, email_campaigns.enabled, mta_workflows.*").
-			Where("mta_workflows.expected_time_start <= ? AND (email_queues.enabled = 'true' OR email_notifications.enabled = 'true' OR email_campaigns.enabled = 'true')", time.Now().UTC()).Limit(100).Find(&workflows).Error
+			Where("mta_workflows.expected_time_start <= ? AND (email_queues.enabled = 'true' OR email_notifications.enabled = 'true' OR email_campaigns.enabled = 'true')", time.Now().UTC()).
+			Limit(100).Find(&workflows).Error
 		if err != nil {
 			log.Printf("MTAWorkflow:  %v", err)
 			time.Sleep(time.Second*10)
@@ -44,21 +43,23 @@ func mtaWorker() {
 		// todo: возможно тут надо добавлять в поток отправки через асинхронность
 		for i := range workflows {
 			if err = workflows[i].Execute(); err != nil {
-				log.Println("Неудачная отправка: ", err)
-				// Если слишком много попыток
-				/*if workflows[i].NumberOfAttempts + 1 > maxAttemptsMTAWorker {
-					_ = workflows[i].delete()
-				}*/
-			}
+				// log.Println("Ошибка подготовки письма: ", err)
 
-			// удаляем задачу, если это не серия писем
-			if workflows[i].OwnerType != EmailSenderQueue {
-				_ = workflows[i].delete()
+				// delete задача
+				if err = workflows[i].delete(); err != nil {
+					log.Printf("Неудачное удаление workflows[%v]: %v", i, err)
+				}
+			} else {
+				// удаляем задачу в этом же цикле, если это не серия писем.
+				if workflows[i].OwnerType != EmailSenderQueue {
+					if err = workflows[i].delete(); err != nil {
+						log.Printf("Неудачное удаление workflows[%v]: %v", i, err)
+					}
+				}
 			}
-
 		}
 
-		// "Pause" by worflows volume
+		// "Pause" by workflows volume
 		if len(workflows) > 1000 {
 			time.Sleep(time.Second*120)
 			continue
@@ -68,7 +69,7 @@ func mtaWorker() {
 			continue
 		}
 		// else
-		time.Sleep(time.Second*5) // 2-5s
+		time.Sleep(time.Second * 5)
 		continue
 	}
 }

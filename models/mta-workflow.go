@@ -375,9 +375,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		if err != nil {	return err }
 
 		err = account.LoadEntity(&emailBox, emailCampaign.EmailBoxId)
-		if err != nil {
-			return err
-		}
+		if err != nil {	return err}
 
 		Subject = emailCampaign.Subject
 		PreviewText = emailCampaign.PreviewText
@@ -393,7 +391,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
 	data["accountId"] = mtaWorkflow.AccountId
 	data["Account"] = account.GetDepersonalizedData() // << хз
-	data["userId"] = user.Id // << хз
+	data["userId"] = user.Id
 	data["User"] = user.GetDepersonalizedData() // << хз
 	data["unsubscribeUrl"] = unsubscribeUrl
 

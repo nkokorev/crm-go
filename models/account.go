@@ -326,7 +326,7 @@ func (account Account) UploadUsers(users []User, role Role) error {
 		if len(user.Email) > 0 {
 			email = true
 			// if err := utils.EmailValidation(user.Email); err != nil {
-			if err := utils.EmailDeepValidation(user.Email); err != nil {
+			if err := utils.EmailValidation(user.Email); err != nil {
 				continue
 			}
 		}
