@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-
-
 // Пакет необходимых данных для отправки письма
 type EmailPkg struct {
 	// From 		mail.Address
@@ -18,6 +16,7 @@ type EmailPkg struct {
 	// Если что-то в отправке пойдет не так - можно будет найти пользователя
 	accountId uint
 	userId uint
+	workflowId uint
 
 	// тех.данные для отправки
 	webSite 	*WebSite
@@ -25,13 +24,13 @@ type EmailPkg struct {
 	emailTemplate 	*EmailTemplate
 
 	// Переменные письма письма для компиляции
-	viewData	*ViewData
-	subject     string // Тема сообщения
+	viewData	*ViewData   // Шаблон письма для отправки
+	subject     string 		// Уже скомпилированная тема сообщения
 	
 	emailSender EmailSender // interface for email-notification, campaign, queue
 
-	// Ссылка для отписки (нужна ли, т.к. можно брать из viewData)
-	// UnsubscribeUrl string
+	// для серий писем. Можно ограничиться одним queueStepId
+	queueStepId uint // текущий шаг серии
 }
 
 // Types of bounces
@@ -259,10 +258,15 @@ func (mtaBounced *MTABounced) GetPreloadDb(autoUpdateOff bool, getModel bool, pr
 // ######### END OF SPECIAL Functions ############
 
 
-// обработчик ошибки при отправке письма. Логика по отписке пользователя
+// обработчик ошибки при отправке письма. Логика по отписке пользователя + управление mta-workflow
 func (pkg EmailPkg) bounced(b BounceType, reason string) {
+	
+	// 1. удаляем задачу
+	if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
+		log.Printf("Ошибка удаления задачи [id = %v] при проблеме с отправкой письма: %v", pkg.accountId, err.Error())
+	}
 
-	// 1. Регистрируем отскок в БД
+	// 2. Регистрируем отскок в БД
 	bounce := MTABounced{
 		AccountId: 	pkg.accountId,
 		UserId: 	&pkg.userId,

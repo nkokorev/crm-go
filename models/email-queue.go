@@ -341,8 +341,8 @@ func (emailQueue EmailQueue) GetNearbyActiveStep(order uint) (*EmailQueueEmailTe
 	return step, nil
 }
 
-func (emailQueue EmailQueue) GetNextActiveStep(order uint) (*EmailQueueEmailTemplate, error) {
-	return emailQueue.GetNearbyActiveStep(order+1)
+func (emailQueue EmailQueue) GetNextActiveStep(currentStep uint) (*EmailQueueEmailTemplate, error) {
+	return emailQueue.GetNearbyActiveStep(currentStep+1)
 }
 
 func (emailQueue EmailQueue) AppendUser(userId uint) error {

@@ -6,6 +6,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
+	"net/mail"
 	"strings"
 	"time"
 )
@@ -36,8 +37,12 @@ type MTAWorkflow struct {
 	UserId 	uint `json:"userId" gorm:"type:int;not null;"`
 	User	User `json:"user"`
 
+	// Результат выполнения: planned / pending / completed / failed / cancelled => планируется / выполняется / выполнена / провалена / отмена
+	// Status WorkStatus `json:"status" gorm:"type:varchar(18);default:'planned'"`
+	
 	// Число попыток отправки. Если почему-то не удалось отправить письмо есть возможность перенести отправку и повторить попытку. При 2-3х попытках, завершается неудачей.
 	NumberOfAttempts uint `json:"numberOfAttempts" gorm:"type:smallint;default:0;"`
+
 
 	// Когда была последняя попытка отправки (обычно = CreatedAt time)
 	LastTriedAt *time.Time  `json:"lastTriedAt"` // << may be null
@@ -280,13 +285,11 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	var emailBox EmailBox
 	var emailTemplate EmailTemplate
 	var Subject, PreviewText string
-
-	// wtf
-	var QueueOrder uint
+	var queueStepId = uint(0)
 
 	if sender.GetType() == EmailSenderQueue {
 
-		// Проверяем состоянии очереди
+		// Проверяем состоянии кампании/очереди/уведомления
 		if !sender.IsEnabled() {
 			// Тут могут копиться люди в очереди, поэтому возвращаем ошибку
 			return utils.Error{ Message: fmt.Sprintf("Невозможно отправить письмо, т.к. объект [id = %v] не запущен\n", sender.GetId()),
@@ -317,11 +320,10 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			return utils.Error{Message: "Этап отправки не активен"}
 		}
 
-		//////
-
+		queueStepId = step.Id
+		
 		Subject = step.Subject
 		PreviewText = step.PreviewText
-		QueueOrder = step.Order
 
 		// Находим шаблон письма
 		_et, err := emailQueue.GetEmailTemplateByStep(mtaWorkflow.QueueExpectedStepId)
@@ -383,26 +385,8 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 
 	// **************************** //
 	
-	// Объект истории, который может быть дополнен позже
+	// Готовим переменные
 	historyHashId := strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
-
-	history := &MTAHistory{
-		HashId:  historyHashId,
-		AccountId: mtaWorkflow.AccountId,
-		UserId: &user.Id,
-		Email: user.Email,
-		OwnerId: sender.GetId(),
-		OwnerType: sender.GetType(),
-		EmailTemplateId: utils.UINTp(emailTemplate.Id),
-		QueueStepId: utils.UINTp(QueueOrder),
-		QueueCompleted: false,	// по умолчанию
-		// NumberOfAttempts: mtaWorkflow.NumberOfAttempts + 1,
-		// Succeed: false, 	// по умолчанию
-	}
-	defer func() {
-		_, _ = history.create()
-	}()
-	
 	unsubscribeUrl := account.GetUnsubscribeUrl(user.HashId, historyHashId)
 	pixelURL := account.GetPixelUrl(historyHashId)
 
@@ -428,10 +412,31 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
 	}
 
+	var webSite WebSite
+	if err = account.LoadEntity(&webSite, emailBox.WebSiteId); err != nil {
+		return utils.Error{Message: "Ошибка отправления Уведомления - не удается загрузить данные по WebSite"}
+	}
+
+	var pkg = EmailPkg {
+		To: mail.Address{Name: user.Name, Address: user.Email},
+		accountId: account.Id,
+		userId: user.Id,
+		workflowId: mtaWorkflow.Id, // мы не знаем
+		webSite: &webSite,
+		emailBox: &emailBox,
+		emailSender: sender,
+		emailTemplate: &emailTemplate,
+		subject: _subject,
+		viewData: vData,
+		queueStepId: queueStepId,
+	}
+
+	SendEmail(pkg)
+
 	// todo: тут надо добавлять на сервер для отправки и все ошибки пойдут в mta-bounced
-	err = emailTemplate.SendMail(emailBox, user.Email, _subject, vData,  unsubscribeUrl)
+	/*err = emailTemplate.SendMail(emailBox, user.Email, _subject, vData,  unsubscribeUrl)
 	if err != nil {
-		
+
 		// history.Succeed = false
 
 		// Обновляем данные последней попытки
@@ -455,7 +460,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			emailQueue, ok := sender.(*EmailQueue)
 			if !ok {
 				log.Println("Ошибка преобразования в EmailQueue")
-				history.QueueCompleted = true
+				// history.QueueCompleted = true
 				if err = mtaWorkflow.delete(); err != nil {
 					log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
 				}
@@ -464,7 +469,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 
 			nextStep, err := emailQueue.GetNextActiveStep(QueueOrder)
 			if err != nil {
-				history.QueueCompleted = true
+				// history.QueueCompleted = true
 				// исключаем задачу, если не удалось ее обновить
 				if err = mtaWorkflow.delete(); err != nil {
 					log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
@@ -474,7 +479,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 
 			// Проверяем на его активность
 			if !nextStep.Enabled {
-				history.QueueCompleted = true
+				// history.QueueCompleted = true
 				if err = mtaWorkflow.delete(); err != nil {
 					log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
 				}
@@ -488,14 +493,14 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 				if err = mtaWorkflow.delete(); err != nil {
 					log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
 				}
-				
+
 				// Не удалось обновить следующий шаг, значит последний был до этого
-				history.QueueCompleted = true
+				// history.QueueCompleted = true
 				return nil
 			}
 
 			// Если дошли сюда - значит, задача не завершена
-			history.QueueCompleted = false
+			// history.QueueCompleted = false
 
 			return nil
 		}
@@ -506,8 +511,8 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			}
 			return nil
 		}
-		
-	}
+
+	}*/
 
 	return nil
 }
@@ -519,6 +524,7 @@ func (mtaWorkflow *MTAWorkflow) UpdateByNextStep(expectedStep EmailQueueEmailTem
 		"expected_time_start": time.Now().UTC().Add(expectedStep.DelayTime),
 		"number_of_attempts": 0,
 		"last_tried_at": nil,
+		// "status": WorkStatusPlanned,
 	})
 
 }

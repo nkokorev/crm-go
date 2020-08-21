@@ -79,8 +79,6 @@ func mtaServer(c <-chan EmailPkg) {
 // Функция по отправке почтового пакета, обычно, запускается воркером в отдельной горутине
 func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 
-	fmt.Println("Готовим отправку из mtaSender!")
-	
 	defer wg.Done() // отписываемся о закрытии текущей горутины
 	defer func() {workerCount++}() // освобождаем счетчик потоков (горутин) по отправке
 
@@ -105,12 +103,10 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	(*pkg.viewData).UnsubscribeURL = unsubscribeUrl
 	(*pkg.viewData).PixelURL = pixelURL
 
-	// todo: сделать осознанные messageId feedbackId
-	// todo: сделать осознанный returnPath
-	returnPath := "abuse@mta1.ratuscrm.com"  // тут тоже hash адресс
+	returnPath := "abuse@mta1.ratuscrm.com"  // тут тоже надо hash@ адресс
 	messageId :=  hashAddress.Address
 
-	// accountId | userId | ownerId | ownerType | MTA server (= ничего не значит)
+	// Готовим фидбэк по смыслу: accountId | userId | ownerId | ownerType | MTA server (= ничего не значит)
 	feedBackId := strconv.Itoa(int(pkg.accountId)) + ":" + strconv.Itoa(int(pkg.userId)) + ":" + strconv.Itoa(int(pkg.emailSender.GetId())) + ":" +
 		u.ToCamel(pkg.emailSender.GetType()) + ":1"
 
@@ -122,10 +118,9 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 	}
 	
 	// 2. Собираем хедеры
-	headers := getHeaders(
+	headers := getHeaders (
 		mail.Address{Name:pkg.emailBox.Name, Address: pkg.emailBox.Box + "@" + pkg.webSite.Hostname},
-		pkg.To, pkg.subject, messageId, feedBackId, unsubscribeUrl, historyHashId,
-		)
+		pkg.To, pkg.subject, messageId, feedBackId, unsubscribeUrl, historyHashId)
 
 	// 3. Создаем тело сообщения с хедерами и html
 	if pkg.webSite.Id < 1 || pkg.emailBox.Id < 1 {
@@ -152,6 +147,88 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 		pkg.bounced(bounceLevel, fmt.Sprintf("Ошибка во время отправки письма: %v", err.Error()))
 		return
 	}
+
+	// 6. Заносим в историю
+	queueCompleted := false
+	
+	// Обновляем / удаляем задачу в воркере отправки писем для автоматической отправки писем
+	if pkg.emailSender.GetType() == EmailSenderQueue && pkg.workflowId > 0 {
+		emailQueue, ok := pkg.emailSender.(*EmailQueue)
+		if !ok {
+			log.Printf("Ошибка преобразования emailSender [id = %v]", pkg.emailSender.GetId())
+			return
+		}
+
+		// Обновляем задачу для следующего шага или удаляем текущий
+		nextStep, err := emailQueue.GetNextActiveStep(pkg.queueStepId)
+		if err != nil {
+			// серия завершена
+			queueCompleted = true
+
+			// Удаляем задачу по отправке, т.к. нет следующего шага
+			if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
+				log.Printf("Невозможно исключить задачу [id = %v] по отправке: %v\n", pkg.workflowId, err)
+			}
+		} else {
+
+			var mtaWorkflow MTAWorkflow
+			err := account.LoadEntity(&mtaWorkflow, pkg.workflowId)
+			if err != nil {
+				log.Printf("Невозможно получить задачу [id = %v] по отпрваке: %v\n", pkg.workflowId, err)
+			} else {
+
+				// Проверяем на его активность
+				if !nextStep.Enabled {
+
+					// history.QueueCompleted = true
+					if err = mtaWorkflow.delete(); err != nil {
+						log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
+					}
+				} else {
+					// Обновляем задачу, вместо удаления / создания новой
+					if err := mtaWorkflow.UpdateByNextStep(*nextStep); err != nil {
+
+						// исключаем задачу, если не удалось ее обновить
+						if err = mtaWorkflow.delete(); err != nil {
+							log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
+						}
+
+						// если не удалось обновить - значит шаг был последним
+						queueCompleted = true
+					}
+				}
+			}
+		}
+	}
+
+	// Удаляем задачу по Notification / Campaign в mta-workflows
+	/*if (pkg.emailSender.GetType() == EmailSenderNotification || pkg.emailSender.GetType() == EmailSenderCampaign) && pkg.workflowId > 0 {
+		if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
+			log.Printf("Невозможно исключить задачу [id = %v] по отправке: %v\n", pkg.workflowId, err)
+		}
+	}*/
+
+	history := &MTAHistory{
+		HashId:  historyHashId,
+		AccountId: pkg.accountId,
+		UserId: &pkg.userId,
+		Email: user.Email,
+		OwnerId: pkg.emailSender.GetId(),
+		OwnerType: pkg.emailSender.GetType(),
+		EmailTemplateId: &pkg.emailTemplate.Id,
+		QueueStepId: &pkg.queueStepId, // выполненный шаг
+		QueueCompleted: queueCompleted,
+	}
+
+	// отлично, создаем запись в истории!
+	_, err = history.create()
+	if err != nil {
+		log.Printf("Ошибка создания записи в истории отправки email-писем. AccountId [id = %v], OwnerId: [id = %v]: %v", pkg.accountId, pkg.emailSender.GetId(), err.Error())
+	} else {
+		fmt.Println("Запись в истории создана!")
+	}
+
+
 }
 
 func SendEmail(pkg EmailPkg)  {
@@ -160,11 +237,6 @@ func SendEmail(pkg EmailPkg)  {
 		fmt.Println("add msg to message channel")
 	}*/
 	smtpCh <- pkg
-}
-
-// Обработка ошибки
-func skipSend(err error, bounced BounceType)  {
-	fmt.Println("Error: ", err)
 }
 
 func getHeaders(from, to mail.Address, subject string, messageId, feedbackId, unsubscribeUrl, historyHashId string) *map[string]string {

@@ -347,16 +347,6 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 
 		historyHashId := strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 
-	/*	history := &MTAHistory{
-			HashId:  historyHashId,
-			AccountId: emailNotification.AccountId,
-			UserId: &users[i].Id,
-			Email: users[i].Email,
-			OwnerId: emailNotification.Id,
-			OwnerType: "email_notifications",
-			EmailTemplateId: utils.UINTp(emailTemplate.Id),
-		}*/
-
 		unsubscribeUrl := account.GetUnsubscribeUrl(users[i].HashId, historyHashId)
 		pixelURL := account.GetPixelUrl(historyHashId)
 
@@ -387,6 +377,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			To: mail.Address{Name: users[i].Name, Address: users[i].Email},
 			accountId: account.Id,
 			userId: users[i].Id,
+			workflowId: 0, // мы не знаем
 			webSite: &webSite,
 			emailBox: &emailNotification.EmailBox,
 			emailSender: &emailNotification,
@@ -399,7 +390,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			fmt.Println("Отправляем сейчас же!")
 			SendEmail(pkg)
 		} else {
-			// ставим в очередь
+			// ставим в очередь с записью в БД
 
 			// 2. Add user to MTAWorkflow
 			mtaWorkflow := MTAWorkflow{

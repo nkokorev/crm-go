@@ -10,7 +10,7 @@ import (
 // Получает данные для отправки писем
 // Добавляет письма в MTA-server
 
-var maxAttemptsMTAWorker = uint(3)
+var maxAttemptsMTAWorker = uint(2)
 
 func init() {
 	go mtaWorker()
@@ -32,8 +32,6 @@ func mtaWorker() {
 			Joins("LEFT JOIN email_notifications ON email_notifications.id = mta_workflows.owner_id").
 			Joins("LEFT JOIN email_campaigns ON email_campaigns.id = mta_workflows.owner_id").
 			Select("email_queues.enabled,email_notifications.enabled, email_campaigns.enabled, mta_workflows.*").
-			// Where("email_queues.enabled = 'true' OR  email_notifications.enabled = 'true' AND mta_workflows.expected_time_start <= ?", time.Now().UTC()).Limit(100).Find(&workflows).Error
-			// Where("email_queues.enabled = 'true' AND mta_workflows.expected_time_start <= ?", time.Now().UTC()).Limit(100).Find(&workflows).Error
 			Where("mta_workflows.expected_time_start <= ? AND (email_queues.enabled = 'true' OR email_notifications.enabled = 'true' OR email_campaigns.enabled = 'true')", time.Now().UTC()).Limit(100).Find(&workflows).Error
 		if err != nil {
 			log.Printf("MTAWorkflow:  %v", err)
@@ -48,10 +46,16 @@ func mtaWorker() {
 			if err = workflows[i].Execute(); err != nil {
 				log.Println("Неудачная отправка: ", err)
 				// Если слишком много попыток
-				if workflows[i].NumberOfAttempts + 1 > maxAttemptsMTAWorker {
+				/*if workflows[i].NumberOfAttempts + 1 > maxAttemptsMTAWorker {
 					_ = workflows[i].delete()
-				}
+				}*/
 			}
+
+			// удаляем задачу, если это не серия писем
+			if workflows[i].OwnerType != EmailSenderQueue {
+				_ = workflows[i].delete()
+			}
+
 		}
 
 		// "Pause" by worflows volume

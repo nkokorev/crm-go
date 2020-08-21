@@ -434,7 +434,5 @@ func (emailCampaign *EmailCampaign) Execute() error {
 
 	}
 
-
-
 	return nil
 }

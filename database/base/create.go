@@ -1875,7 +1875,7 @@ func UploadBroUserData() {
 func Migrate_I() {
 	pool := models.GetPool()
 
-	err := pool.Exec("drop table if exists user_segments_user_segment_conditions").Error
+	/*err := pool.Exec("drop table if exists user_segments_user_segment_conditions").Error
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -1911,10 +1911,12 @@ func Migrate_I() {
 
 	for i := range emailCampaigns {
 		_, _ = account.CreateEntity(&emailCampaigns[i])
-	}
+	}*/
 
-	// pool.AutoMigrate(&models.AccountUser{})
-	// pool.AutoMigrate(&models.EmailTemplate{})
+	pool.AutoMigrate(&models.MTAWorkflow{})
+	pool.AutoMigrate(&models.MTABounced{})
+	pool.AutoMigrate(&models.MTAHistory{})
+	pool.AutoMigrate(&models.EmailTemplate{})
 	// pool.AutoMigrate(&models.AccountUser{})
 	
 	

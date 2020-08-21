@@ -57,7 +57,9 @@ type MTAHistory struct {
 	// Отписался ли человек. По этому полю будет выборка (для сбора статистики)
 	Unsubscribed 	bool 	`json:"unsubscribed" gorm:"type:bool;default:false;"`
 	UnsubscribedAt 	*time.Time  `json:"unsubscribedAt"` // << время отписки
-	// UnsubscribedReason	string `json:"unsubscribedReason" gorm:"type:varchar(32);default:null"`
+
+	Abuse		bool 		`json:"abuse" gorm:"type:bool;default:false;"`
+	AbuseAt 	*time.Time `json:"abuseAt"` // << время 1-й жалобы
 
 	// Ip адрес с которого человек открыл письмо. Может быть полезно для определения GeoLocation.
 	NetIp	*net.IP `json:"ipAddr" gorm:"type:cidr;"`
