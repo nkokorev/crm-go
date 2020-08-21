@@ -10,8 +10,6 @@ import (
 // Получает данные для отправки писем
 // Добавляет письма в MTA-server
 
-var withoutMistakesTaskWorker = true
-
 func init() {
 	go taskWorker()
 }
@@ -23,19 +21,12 @@ func taskWorker() {
 			time.Sleep(time.Millisecond*2000)
 			continue
 		}
-		if !withoutMistakesTaskWorker {
-			log.Println("Какие-то ошибки выполнения taskWorker")
-			time.Sleep(time.Minute*5)
-			continue
-		}
 
-		// fmt.Printf("Обход taskWorker : %v\n", time.Now().UTC().Format(time.Stamp))
-		
 		tasks := make([]TaskScheduler,0)
 
-		// Получаем задачи у которых серия запущена
+		// Получаем задачи у которых статус planned
 		err := db.Model(&TaskScheduler{}).
-			Where("expected_time_to_start <= ? AND status = 'planned'", time.Now().UTC()).Limit(10).
+			Where("expected_time_to_start <= ? AND status = ?", time.Now().UTC(), WorkStatusPlanned).Limit(10).
 			Find(&tasks).Error
 		if err != nil {
 			log.Printf("TaskScheduler:  %v", err)
@@ -45,35 +36,31 @@ func taskWorker() {
 
 		// Подготавливаем отправку
 		for i := range tasks {
-
-			// fmt.Println("Подготавливаем Task к запуску")
 			
-			// 1. Ставим статус в работе
+			// 1. Перед началом меняем статус у задачи с planned => pending
 			if err := tasks[i].SetStatus(WorkStatusPending); err != nil {
 				log.Printf("taskWorker: Ошибка установки статуса Pending задачи [%v]: %v", tasks[i].Id, err)
 				continue
 			}
 
-			// Запускаем исполнителя и смотрим что он вернет (может занять какое-то время...)
-			if err = tasks[i].Execute(); err != nil {
+			// 2. Запускаем выполнение задачи и ожидаем результата...
+			err = tasks[i].Execute()
 
-				// Если задача провалена
+			if err != nil {
+
+				// Если задача провалена - ставим статус failed
 				if err := tasks[i].SetStatus(WorkStatusFailed, err.Error()); err != nil {
-					log.Printf("taskWorker: Ошибка установки статуса Failed задачи [%v]: %v", tasks[i].Id, err)
+					log.Printf("taskWorker: Ошибка установки статуса Failed у задачи [%v]: %v", tasks[i].Id, err)
 				}
-				continue
-			}
-
-			// 2. Если задача выполнена
-			if err := tasks[i].SetStatus(WorkStatusCompleted); err != nil {
-				log.Printf("taskWorker: Ошибка установки статуса Completed задачи [%v]: %v", tasks[i].Id, err)
 				
-				// Останавливаем будущий обход до разбирательства
-				withoutMistakesTaskWorker = false
+			}  else {
+				// Если задача выполнена - ставим статус completed
+				if err := tasks[i].SetStatus(WorkStatusCompleted); err != nil {
+					log.Printf("taskWorker: Ошибка установки статуса Completed задачи [%v]: %v", tasks[i].Id, err)
+				}
 			}
 
 			continue
-
 		}
 
 		if len(tasks) > 100 {

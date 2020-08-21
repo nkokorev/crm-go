@@ -42,8 +42,9 @@ const (
 
 type WorkStatus = string
 const (
-	WorkStatusPlanned		WorkStatus = "planned"
-	WorkStatusPending		WorkStatus = "pending"
+	WorkStatusPending		WorkStatus = "pending" // ожидается, рассматривается еще, готовится
+	WorkStatusPlanned		WorkStatus = "planned" // запланирована
+	WorkStatusActive		WorkStatus = "active"
 	WorkStatusCompleted		WorkStatus = "completed"
 	WorkStatusFailed		WorkStatus = "failed"
 	WorkStatusCancelled		WorkStatus = "cancelled"
@@ -222,7 +223,7 @@ func (taskScheduler *TaskScheduler) GetPreloadDb(autoUpdateOff bool, getModel bo
 	}
 }
 
-// Выполнения задачи 
+// Выполнения задачи согласно ее контенту
 func (taskScheduler TaskScheduler) Execute() error {
 	// return errors.New("Тестовая ошибка")
 
@@ -234,13 +235,17 @@ func (taskScheduler TaskScheduler) Execute() error {
 	switch taskScheduler.OwnerType {
 	case TaskEmailCampaignRun:
 
-		// 1. Получаем кампанию
+		// 1. Получаем объект кампании
 		var emailCampaign EmailCampaign
 		err := account.LoadEntity(&emailCampaign, taskScheduler.OwnerId)
-		if err != nil {return err}
+		if err != nil {
+			log.Printf("Ошибка получения EmailCampaign taskScheduler: %v\n", err)
+			return err
+		}
 
-		// 2. Запускаем кампанию
+		// 2. Запускаем кампанию и ожидаем ответ (результат запуска)
 		return emailCampaign.Execute()
+		
 	default:
 		log.Printf("Тип задачи не установлен.. Id: %v Type: %v \n", taskScheduler.Id, taskScheduler.OwnerType)
 	}

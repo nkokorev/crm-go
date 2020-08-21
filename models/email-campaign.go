@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
@@ -21,11 +22,16 @@ type EmailCampaign struct {
 	// При выполнении начинает пополнять mta-workflow задачами по отправке в установленное время (ScheduleRun)
 	// Отменить старт задачи можно пока Executed = false, потом можно только приостановить выполнение (executed = true / enabled = false)
 
+	// Результат выполнения: planned / pending / active / completed / failed / cancelled .
+	// planned - разрабатывается; pending - запланировано пользователем
+	// active - взято в разработку воркером; дальше по результату
+	Status 			WorkStatus `json:"status" gorm:"type:varchar(18);default:'pending'"`
+
 	// Reed to start = true | В каком состоянии кампания, на этот показатель ориентируется воркер
-	Enabled 		bool 		`json:"enabled" gorm:"type:bool;default:false;"`
+	// Enabled 		bool 		`json:"enabled" gorm:"type:bool;default:false;"`
 
 	// exported to mta-workflows = true | В состоянии запуска, когда workflow забито задачами по отправке писем для данной кампании
-	Executed 		bool 		`json:"executed" gorm:"type:bool;default:false;"`
+	// Executed 		bool 		`json:"executed" gorm:"type:bool;default:false;"`
 
 	// Планируемое время старта
 	ScheduleRun		time.Time 	`json:"scheduleRun"`
@@ -50,7 +56,6 @@ type EmailCampaign struct {
 	UsersSegmentId	uint 		`json:"usersSegmentId" gorm:"type:int;not null;"`
 	UsersSegment 	UsersSegment `json:"usersSegment"`
 
-
 	Queue 			uint `json:"_queue" gorm:"-"` // сколько подписчиков еще в процессе отправки кампании
 	Recipients 		uint `json:"_recipients" gorm:"-"` // << всего успешно отправлено писем
 	OpenRate 		float64 `json:"_openRate" gorm:"-"`
@@ -68,7 +73,15 @@ func (emailCampaign EmailCampaign) GetAccountId() uint { return emailCampaign.Ac
 func (emailCampaign *EmailCampaign) setAccountId(id uint) { emailCampaign.AccountId = id }
 func (EmailCampaign) SystemEntity() bool { return false }
 func (EmailCampaign) GetType() string { return "email_campaigns" }
-func (emailCampaign EmailCampaign) IsEnabled() bool { return emailCampaign.Enabled }
+func (emailCampaign EmailCampaign) IsEnabled() bool {
+
+	// т.к. статус для обхода воркера
+	if emailCampaign.Status == WorkStatusPending || emailCampaign.Status == WorkStatusFailed || emailCampaign.Status == WorkStatusCancelled {
+		return false
+	}
+
+	return true
+}
 // ############# End Entity interface #############
 
 func (EmailCampaign) PgSqlCreate() {
@@ -275,9 +288,9 @@ func (emailCampaign *EmailCampaign) Planning() error {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается найти аккаунт"}
 	}
 	
-	// Проверяем статус кампании, готова ли она к запуску
-	if !emailCampaign.Enabled {
-		return utils.Error{Message: "Уведомление не может быть отправлено т.к. находится в статусе - 'Отключено'"}
+	// Проверяем статус кампании, равен ли он pending (готовящаяся кампания)
+	if emailCampaign.Status != WorkStatusPending {
+		return utils.Error{Message: fmt.Sprintf("Уведомление не может быть отправлено т.к. находится в статусе - '%v'", emailCampaign.Status)}
 	}
 
 	// Проверяем тело сообщения (не должно быть пустое)
@@ -313,30 +326,24 @@ func (emailCampaign *EmailCampaign) Planning() error {
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки сегмента пользователей"}
 	}
 
-	// Переводим Кампанию в состояние блокировки
-	if err := emailCampaign.update(map[string]interface{}{"executed":true}); err != nil {
-		log.Printf("Ошибка перевода состояния кампании executed = true [%v]: %v\n", emailCampaign.Id, err)
-		return utils.Error{Message: "Кампания не может быть запущена - ошибка отправки данных в планировщик"}
-	}
+	// Переводим в состояние "Запланирована", т.к. все проверки пройдены и можно ставить ее в планировщик
+	if err := emailCampaign.SetWorkStatus(WorkStatusPlanned); err != nil {return err}
 
-	// Добавляем кампанию в TaskScheduler
+	// Объект task для добавлении кампании в TaskScheduler
 	task := TaskScheduler {
 		AccountId: emailCampaign.AccountId,
 		OwnerType: TaskEmailCampaignRun,
 		OwnerId: emailCampaign.Id,
-		ExpectedTimeToStart: emailCampaign.ScheduleRun,// todo: мб сделать - 1 минуту?
-		IsSystem: true,
+		ExpectedTimeToStart: emailCampaign.ScheduleRun.Add(-time.Minute*5),// запускаем задачу (но не кампанию) за 5 минут (= с запасом)
+		IsSystem: true, // системная задача ли ?
 		Status: WorkStatusPlanned,
 	}
 
+	// Создаем задачу по отправке рекламной кампании
 	_, err = account.CreateEntity(&task)
 	if err != nil {
-		log.Printf("Ошибка создания задачи по запуску кампании [%v]: %v\n", emailCampaign.Id, err)
-
-		// Возвращаем статус кампании 
-		if err := emailCampaign.update(map[string]interface{}{"executed":false}); err != nil {
-			log.Printf("Ошибка перевода состояния кампании в executed = false[%v]: %v\n", emailCampaign.Id, err)
-		}
+		// Откатываем назад статус - pending (ожидающая запуска)
+		if err := emailCampaign.SetWorkStatus(WorkStatusPending); err != nil { return err }
 		return utils.Error{Message: "Ошибка создания задания по запуску кампании"}
 	}
 
@@ -344,14 +351,14 @@ func (emailCampaign *EmailCampaign) Planning() error {
 	return nil
 }
 
-// Запускает процесс отправки письма
+// Подготавливает рассылку: извлекает сегмент и добавляет пользователей в mta-workflow
 func (emailCampaign *EmailCampaign) Execute() error {
 
-	// 1. Проверяем все данные перед маршем
+	// 1. Проверяем все данные перед маршем -\0/-
 	
 	// Проверяем статус уведомления
-	if !emailCampaign.Enabled {
-		return utils.Error{Message: "Уведомление не может быть отправлено т.к. находится в статусе - 'Отключено'"}
+	if !emailCampaign.IsEnabled() {
+		return utils.Error{Message: fmt.Sprintf("Уведомление не может быть отправлено т.к. находится в статусе - '%v'", emailCampaign.Status)}
 	}
 
 	// Get Account
@@ -393,7 +400,40 @@ func (emailCampaign *EmailCampaign) Execute() error {
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки сегмента пользователей"}
 	}
 
-	// 2. Начинаем собирать пользователей из базы согласно сегменту
+	// 2. Переводим Кампанию в состояние "Выполняется" - т.е. ее отмена дело уже затратно (надо проходиться по mta-workflow)
+	if err := emailCampaign.SetWorkStatus(WorkStatusActive); err != nil {return err}
+
+	// 3. Начинаем собирать пользователей из базы согласно сегменту
+	users := emailCampaign.getUsersBySegment()
+
+	// Шаблон-заготовка для каждого пользователя под задачу в mta-workflow
+	mtaWorkflow := MTAWorkflow{
+		AccountId: emailCampaign.AccountId,
+		OwnerId: emailCampaign.Id,
+		OwnerType: EmailSenderCampaign,
+		ExpectedTimeStart: emailCampaign.ScheduleRun, // указываем время запуска кампании
+		// UserId: users[i].Id, // << ставим во время цикла
+		NumberOfAttempts: 0,
+	}
+
+	// Создаем под каждого пользователя задачу в mta-workflow
+	for i := range users {
+		mtaWorkflow.UserId = users[i].Id
+		if _, err = mtaWorkflow.create(); err != nil {
+			log.Printf("Ошибка добавления пользователя [%v] в очередь при выполнении кампании: %v", users[i].Id, err)
+		}
+	}
+
+	return nil
+}
+
+func (emailCampaign *EmailCampaign) SetWorkStatus(status WorkStatus) error {
+	return emailCampaign.update(map[string]interface{}{
+		"status":	status,
+	})
+}
+
+func (emailCampaign *EmailCampaign) getUsersBySegment() []User {
 	segment := emailCampaign.UsersSegment
 	users := make([]User,0)
 
@@ -412,30 +452,7 @@ func (emailCampaign *EmailCampaign) Execute() error {
 		users = append(users, _users...)
 		offset = offset + uint(len(_users))
 		total = _total
-
-		time.Sleep(time.Millisecond * 10)
 	}
 
-	// Добавляем для каждого пользователя задачу в mta-workflow
-	mtaWorkflow := MTAWorkflow{
-		AccountId: emailCampaign.AccountId,
-		OwnerId: emailCampaign.Id,
-		OwnerType: EmailSenderCampaign,
-		ExpectedTimeStart: emailCampaign.ScheduleRun,
-		// UserId: users[i].Id, // << ставим во время цикла
-		NumberOfAttempts: 0,
-	}
-	
-	for i, v := range users {
-		if users[i].Id < 165 {
-			continue
-		}
-		mtaWorkflow.UserId = users[i].Id
-		if _, err = mtaWorkflow.create(); err != nil {
-			log.Printf("Ошибка добавления пользователя [%v] в очередь при выполнении кампании: %v", v.Id, err)
-		}
-
-	}
-
-	return nil
+	return users
 }
