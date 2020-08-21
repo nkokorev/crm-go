@@ -1442,18 +1442,18 @@ func UploadTestDataPart_III() {
 	num7 := uint(7)
 	emailNotifications := []models.EmailNotification {
 		{
-			Enabled: false, DelayTime: 0, Name:"Оповещение менеджера", Subject: "Поступил новый заказ", EmailTemplateId: &numOne,
+			Status: models.WorkStatusPending, DelayTime: 0, Name:"Оповещение менеджера", Subject: "Поступил новый заказ", EmailTemplateId: &numOne,
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{2})},
 			EmailBoxId: &num5,
 
 		},
 		{
-			Enabled: false, DelayTime: 0, Name:"Оповещение клиента", Subject: "Ваш заказ получен", EmailTemplateId: &numOne,
+			Status: models.WorkStatusPending, DelayTime: 0, Name:"Оповещение клиента", Subject: "Ваш заказ получен", EmailTemplateId: &numOne,
 			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{7})},
 			EmailBoxId: &num6,
 		},
 		{
-			Enabled: false, DelayTime: 0, Name:"Оповещение об отправке заказа",Subject: "Ваш заказ отправлен по почте",  EmailTemplateId: &numOne,
+			Status: models.WorkStatusPending, DelayTime: 0, Name:"Оповещение об отправке заказа",Subject: "Ваш заказ отправлен по почте",  EmailTemplateId: &numOne,
 			EmailBoxId: &num7,
 		},
 
@@ -1833,7 +1833,7 @@ func UploadBroUserData() {
 
 	emailQueueE, _ := account.CreateEntity(&models.EmailQueue{
 		Name: "Onboarding",
-		Enabled: false,
+		Status: models.WorkStatusPending,
 	})
 
 	Iuint4 := uint(4)
