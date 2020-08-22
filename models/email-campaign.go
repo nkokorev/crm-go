@@ -360,7 +360,7 @@ func (emailCampaign *EmailCampaign) Execute() error {
 	// 1. Проверяем все данные перед маршем -\0/-
 	
 	// Проверяем статус кампании
-	if !emailCampaign.IsActive() {
+	if emailCampaign.Status != WorkStatusPlanned {
 		return utils.Error{Message: fmt.Sprintf("Кампания не может быть запущена т.к. находится в статусе - '%v'", emailCampaign.Status)}
 	}
 

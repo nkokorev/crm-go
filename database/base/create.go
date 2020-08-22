@@ -1916,7 +1916,9 @@ func Migrate_I() {
 	pool.AutoMigrate(&models.MTAWorkflow{})
 	pool.AutoMigrate(&models.MTABounced{})
 	pool.AutoMigrate(&models.MTAHistory{})
-	pool.AutoMigrate(&models.EmailTemplate{})
+	pool.AutoMigrate(&models.EmailCampaign{})
+	pool.AutoMigrate(&models.EmailNotification{})
+	pool.AutoMigrate(&models.EmailQueue{})
 	// pool.AutoMigrate(&models.AccountUser{})
 	
 	

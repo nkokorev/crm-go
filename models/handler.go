@@ -88,7 +88,7 @@ func (handler EventListener) EmailNotificationRun(e event.Event) error {
 		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить Email Notification id = %v, уведомление не найдено!", handler.EntityId)}
 	}
 
-	if !en.Enabled {
+	if !en.IsActive() {
 		return utils.Error{Message: fmt.Sprintf("Уведомление id = %v не может быть отправлено т.к. находится в статусе - 'Отключено'", handler.EntityId)}
 	}
 

@@ -16,7 +16,7 @@ func init() {
 }
 
 // Объем выборки задач за один цикл mtaWorker
-const workflowsOneTick = 50
+const workflowsOneTick = 9
 
 func mtaWorker() {
 
@@ -34,7 +34,7 @@ func mtaWorker() {
 		// Буфер MTA-сервера должен вместить нашу пачку писем на отправку
 		if (MTACapChannel() - MTALenChannel()) < uint(workflowsOneTick) {
 			time.Sleep(time.Second * 2) // <<< надо вообще настроить этот параметр
-			log.Printf("Не хватает места в mta-буфере, сободных мест: %v\n", MTACapChannel() - MTALenChannel())
+			log.Printf("mtaWorker: нехватка mta-буфера, сободных мест: %v\n", MTACapChannel() - MTALenChannel())
 			continue
 		}
 		

@@ -82,7 +82,7 @@ func mtaServer(c <-chan EmailPkg) {
 			// time.Sleep(time.Millisecond*10)
 			
 		case <- time.After(1 * time.Second):
-			fmt.Println("Подождали 1 секунду -)")
+			// fmt.Println("Подождали 1 секунду -)")
 		/*default:
 			time.Sleep(time.Millisecond*500)*/
 		}
@@ -96,18 +96,22 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 	defer m.Unlock()
 	defer wg.Done() // отписываемся о закрытии текущей горутины
 
-	
+
+	fmt.Println("Типа отправляем...")
+	time.Sleep(time.Second*3)
+	return
+
 	// defer func() {workerCount++}() // освобождаем счетчик потоков (горутин) по отправке
 
 	// 1. Получаем переменные для отправки письма
 	account, err := GetAccount(pkg.accountId)
 	if err != nil {
-		log.Printf("Ошибка получения аккаунта [id = %v] при отправки email-сообщения: %v", pkg.accountId, err.Error())
+		pkg.stopEmailSender(fmt.Sprintf("Ошибка получения аккаунта [id = %v] при отправки email-сообщения: %v", pkg.accountId, err.Error()))
 		return
 	}
 
 	user, err := account.GetUser(pkg.userId); if err != nil {
-		log.Printf("Ошибка получения пользователя [id = %v] при отправки email-сообщения: %v", pkg.userId, err.Error())
+		pkg.stopEmailSender(fmt.Sprintf("Ошибка получения пользователя [id = %v] при отправки email-сообщения: %v", pkg.userId, err.Error()))
 		return
 	}
 	historyHashId := strings.ToLower(u.RandStringBytesMaskImprSrcUnsafe(12, true))
@@ -131,7 +135,7 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 	// 1. Получаем compile html из email'а
 	html, err := pkg.emailTemplate.GetHTML(pkg.viewData)
 	if err != nil {
-		log.Printf("Ошибка в синтаксисе email-шаблона id = %v: %v", pkg.emailTemplate.Id, err.Error())
+		pkg.stopEmailSender(fmt.Sprintf("Ошибка в синтаксисе email-шаблона id = %v: %v", pkg.emailTemplate.Id, err.Error()))
 		return
 	}
 	
@@ -142,7 +146,7 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 
 	// 3. Создаем тело сообщения с хедерами и html
 	if pkg.webSite.Id < 1 || pkg.emailBox.Id < 1 {
-		log.Printf("Техническая ошибка: не удалось установить отправителя: webSite || emailBox id < 1")
+		pkg.stopEmailSender("Техническая ошибка: не удалось установить отправителя: webSite || emailBox id < 1")
 		return
 	}
 

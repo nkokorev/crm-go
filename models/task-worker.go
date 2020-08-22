@@ -37,8 +37,8 @@ func taskWorker() {
 		// Подготавливаем отправку
 		for i := range tasks {
 			
-			// 1. Перед началом меняем статус у задачи с planned => pending
-			if err := tasks[i].SetStatus(WorkStatusPending); err != nil {
+			// 1. Перед началом меняем статус у задачи с pending на planned
+			if err := tasks[i].SetStatus(WorkStatusPlanned); err != nil {
 				log.Printf("taskWorker: Ошибка установки статуса Pending задачи [%v]: %v", tasks[i].Id, err)
 				continue
 			}
