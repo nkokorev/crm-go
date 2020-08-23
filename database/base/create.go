@@ -1874,6 +1874,7 @@ func UploadBroUserData() {
 
 func Migrate_I() {
 	pool := models.GetPool()
+	
 
 	/*err := pool.Exec("drop table if exists user_segments_user_segment_conditions").Error
 	if err != nil {
