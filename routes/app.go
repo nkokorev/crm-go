@@ -291,4 +291,11 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/delivery-statuses/{deliveryStatusId:[0-9]+}", appCr.DeliveryStatusGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/delivery-statuses/{deliveryStatusId:[0-9]+}", appCr.DeliveryStatusUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/delivery-statuses/{deliveryStatusId:[0-9]+}", appCr.DeliveryStatusDelete).Methods(http.MethodDelete, http.MethodOptions)
+
+	// ### Users Segment ####
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/users-segments", appCr.UsersSegmentCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/users-segments", appCr.UsersSegmentPaginationGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/users-segments/{usersSegmentId}", appCr.UsersSegmentGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/users-segments/{usersSegmentId}", appCr.UsersSegmentUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/users-segments/{usersSegmentId}", appCr.UsersSegmentDelete).Methods(http.MethodDelete, http.MethodOptions)
 }

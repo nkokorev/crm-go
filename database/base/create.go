@@ -1920,6 +1920,33 @@ func Migrate_I() {
 	pool.AutoMigrate(&models.EmailNotification{})
 	pool.AutoMigrate(&models.EmailQueue{})
 	// pool.AutoMigrate(&models.AccountUser{})
+
+	account,err := models.GetAccount(2)
+	if err != nil { log.Fatal(err)}
+
+	roleClientMain, err := account.GetRoleByTag(models.RoleClient)
+	if err != nil {
+		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
+	}
+
+	var clients []models.User
+
+
+	for i:=1; i < 500 ;i++ {
+		clients = append(clients, models.User{
+			Name: fmt.Sprintf("Name #%d", i),
+			Email: fmt.Sprintf("email%d@mail.ru", i),
+			Phone: fmt.Sprintf("+7925195221%d", i),
+			Password: "asdfg109#QW",
+		})
+	}
+	for i,_ := range clients {
+		_, err := account.CreateUser(clients[i], *roleClientMain)
+		if err != nil {
+			log.Printf("Не удалось добавить клиента id: %v", i)
+			return
+		}
+	}
 	
 	
 

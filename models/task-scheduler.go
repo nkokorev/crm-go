@@ -97,7 +97,6 @@ func (taskScheduler TaskScheduler) create() (Entity, error)  {
 
 	return newItem, nil
 }
-
 func (TaskScheduler) get(id uint) (Entity, error) {
 
 	var taskScheduler TaskScheduler

@@ -8,6 +8,7 @@ import (
 	u "github.com/nkokorev/crm-go/utils"
 	"github.com/toorop/go-dkim"
 	"log"
+	"math/rand"
 	"mime/quotedprintable"
 	"net"
 	"net/mail"
@@ -49,7 +50,7 @@ func mtaServer(c <-chan EmailPkg) {
 
 	// можно доработать синхронизацию, но после тестов по отправке
 	var wg sync.WaitGroup
-	var m sync.Mutex
+	// var m sync.Mutex
 
 	if c == nil {
 		log.Println("Ошибка mtaServer: channel is null!")
@@ -74,34 +75,30 @@ func mtaServer(c <-chan EmailPkg) {
 			// workerCount--
 
 			// Без go - ожидает отправки каждого сообщения
-			go mtaSender(pkg, &wg, &m)
+			go mtaSender(pkg, &wg)
 
 			wg.Wait()
 
 			// fix ХЗ чего
 			// time.Sleep(time.Millisecond*10)
-			
+
+			// спим 1 секунду, если нет задач на отправку
 		case <- time.After(1 * time.Second):
 			// fmt.Println("Подождали 1 секунду -)")
-		/*default:
-			time.Sleep(time.Millisecond*500)*/
 		}
 	}
 }
 
 // Функция по отправке почтового пакета, обычно, запускается воркером в отдельной горутине
-func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
+// func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
+func mtaSender(pkg EmailPkg, wg *sync.WaitGroup) {
 
-	m.Lock()
-	defer m.Unlock()
+	// псевдо отправка
+	var mock= true
+
+	// m.Lock()
+	// defer m.Unlock()
 	defer wg.Done() // отписываемся о закрытии текущей горутины
-
-
-	fmt.Println("Типа отправляем...")
-	time.Sleep(time.Second*3)
-	return
-
-	// defer func() {workerCount++}() // освобождаем счетчик потоков (горутин) по отправке
 
 	// 1. Получаем переменные для отправки письма
 	account, err := GetAccount(pkg.accountId)
@@ -157,19 +154,24 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 		return
 	}
 
-	// 4. Делаем коннект к почтовому серверу получателя
-	client, bounceLevel, err := getClientByEmail(pkg.To.Address)
-	if err != nil {
-		pkg.bounced(bounceLevel, fmt.Sprintf("Неудается установить connect с MX-сервером: %v", err.Error()))
-		return
+	if mock {
+		time.Sleep(time.Second * time.Duration(rand.Intn(5)))
+	} else {
+		// 4. Делаем коннект к почтовому серверу получателя
+		client, bounceLevel, err := getClientByEmail(pkg.To.Address)
+		if err != nil {
+			pkg.bounced(bounceLevel, fmt.Sprintf("Неудается установить connect с MX-сервером: %v", err.Error()))
+			return
+		}
+
+		// 5. Отсылаем сообщение | требует времени !
+		bounceLevel, err = sendMailByClient(client, body, pkg.To.Address, returnPath)
+		if err != nil {
+			pkg.bounced(bounceLevel, fmt.Sprintf("Ошибка во время отправки письма: %v", err.Error()))
+			return
+		}
 	}
 
-	// 5. Отсылаем сообщение | требует времени !
-	bounceLevel, err = sendMailByClient(client, body, pkg.To.Address, returnPath)
-	if err != nil {
-		pkg.bounced(bounceLevel, fmt.Sprintf("Ошибка во время отправки письма: %v", err.Error()))
-		return
-	}
 
 	// 6. Заносим в историю
 
