@@ -44,7 +44,8 @@ type WorkStatus = string
 const (
 	WorkStatusPending		WorkStatus = "pending" // ожидается, рассматривается еще, готовится
 	WorkStatusPlanned		WorkStatus = "planned" // запланирована
-	WorkStatusActive		WorkStatus = "active"
+	WorkStatusActive		WorkStatus = "active"  // выполняется
+	WorkStatusPaused		WorkStatus = "paused"
 	WorkStatusCompleted		WorkStatus = "completed"
 	WorkStatusFailed		WorkStatus = "failed"
 	WorkStatusCancelled		WorkStatus = "cancelled"

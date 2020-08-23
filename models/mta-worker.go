@@ -16,7 +16,7 @@ func init() {
 }
 
 // Объем выборки задач за один цикл mtaWorker
-const workflowsOneTick = 9
+const workflowsOneTick = 8
 
 func mtaWorker() {
 

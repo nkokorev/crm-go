@@ -480,3 +480,16 @@ func (emailTemplate *EmailTemplate) GetPreloadDb(autoUpdateOff bool, getModel bo
 		return _db
 	}
 }
+
+func (emailTemplate EmailTemplate) Validate(viewData *ViewData) error {
+	
+	body := new(bytes.Buffer)
+
+	tmpl, err := template.New(emailTemplate.Name).Parse(emailTemplate.HTMLData)
+	if err != nil { return err }
+
+	err = tmpl.Execute(body, viewData)
+	if err != nil { return err }
+
+	return nil
+}
