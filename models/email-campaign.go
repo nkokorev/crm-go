@@ -16,22 +16,9 @@ type EmailCampaign struct {
 	AccountId 		uint 		`json:"-" gorm:"type:int;index;not null;"`
 	HashId 			string 		`json:"hashId" gorm:"type:varchar(12);unique_index;not null;"`
 
-	// Кнопка Старт => enabled = true  / enabled = false
-	// Появляется задача планирования => запустить рассылку в time(ScheduleRun)
-	// За 5 минут задача из планирования начинает выполняться и Executed = true
-	// При выполнении начинает пополнять mta-workflow задачами по отправке в установленное время (ScheduleRun)
-	// Отменить старт задачи можно пока Executed = false, потом можно только приостановить выполнение (executed = true / enabled = false)
-
 	// Результат выполнения: planned / pending / active / completed / failed / cancelled .
-	// planned - разрабатывается; pending - запланировано пользователем
-	// active - взято в разработку воркером; дальше по результату
 	Status 			WorkStatus `json:"status" gorm:"type:varchar(18);default:'pending'"`
 	FailedStatus	string 		`json:"failedStatus" gorm:"type:varchar(255);"`
-	// Reed to start = true | В каком состоянии кампания, на этот показатель ориентируется воркер
-	// Enabled 		bool 		`json:"enabled" gorm:"type:bool;default:false;"`
-
-	// exported to mta-workflows = true | В состоянии запуска, когда workflow забито задачами по отправке писем для данной кампании
-	// Executed 		bool 		`json:"executed" gorm:"type:bool;default:false;"`
 
 	// Планируемое время старта
 	ScheduleRun		time.Time 	`json:"scheduleRun"`
@@ -44,16 +31,16 @@ type EmailCampaign struct {
 	PreviewText		string 	`json:"previewText" gorm:"type:varchar(255);default:''"`
 
 	// Шаблон email-сообщения
-	EmailTemplateId uint 	`json:"emailTemplateId" gorm:"type:int;not null;"`
+	EmailTemplateId uint 	`json:"emailTemplateId" gorm:"type:int;default:null;"`
 	EmailTemplate 	EmailTemplate 	`json:"emailTemplate"`
 
 	// Отправитель, может устанавливаться в конце
-	EmailBoxId		uint 		`json:"emailBoxId" gorm:"type:int;not null;"`
+	EmailBoxId		uint 		`json:"emailBoxId" gorm:"type:int;default:null;"`
 	EmailBox 		EmailBox 	`json:"emailBox"`
 
 	// RecipientList	postgres.Jsonb 	`json:"recipientList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 	// UserSegments	[]UserSegment `json:"userSegments"`
-	UsersSegmentId	uint 		`json:"usersSegmentId" gorm:"type:int;not null;"`
+	UsersSegmentId	uint 		`json:"usersSegmentId" gorm:"type:int;default:null;"`
 	UsersSegment 	UsersSegment `json:"usersSegment"`
 
 	Queue 			uint `json:"_queue" gorm:"-"` // сколько подписчиков еще в процессе отправки кампании
@@ -90,7 +77,9 @@ func (emailCampaign EmailCampaign) IsActive() bool {
 func (EmailCampaign) PgSqlCreate() {
 	db.CreateTable(&EmailCampaign{})
 	db.Model(&EmailCampaign{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&EmailCampaign{}).AddForeignKey("email_template_id", "email_templates(id)", "RESTRICT", "CASCADE")
+	db.Model(&EmailCampaign{}).AddForeignKey("email_template_id", "email_templates(id)", "SET NULL", "CASCADE")
+	db.Model(&EmailCampaign{}).AddForeignKey("email_box_id", "email_boxes(id)", "SET NULL", "CASCADE")
+	db.Model(&EmailCampaign{}).AddForeignKey("users_segment_id", "users_segments(id)", "SET NULL", "CASCADE")
 }
 func (emailCampaign *EmailCampaign) BeforeCreate(scope *gorm.Scope) error {
 	emailCampaign.Id = 0
@@ -216,7 +205,7 @@ func (EmailCampaign) getPaginationList(accountId uint, offset, limit int, sortBy
 		}
 
 	} else {
-
+		
 		err := (&EmailCampaign{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailCampaigns).Error
 		if err != nil && err != gorm.ErrRecordNotFound{

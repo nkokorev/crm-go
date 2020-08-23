@@ -6,7 +6,6 @@ import (
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
-
 )
 
 func UsersSegmentCreate(w http.ResponseWriter, r *http.Request) {
@@ -119,7 +118,7 @@ func UsersSegmentPaginationGet(w http.ResponseWriter, r *http.Request) {
 		// usersSegments, total, err = account.GetUsersSegmentsPaginationList(offset, limit, search)
 		usersSegments, total, err = account.GetPaginationListEntity(&models.UsersSegment{}, offset, limit, sortBy, search, nil)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	}

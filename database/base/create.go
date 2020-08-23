@@ -128,20 +128,17 @@ func RefreshTablesPart_I() {
 	models.ProductCard{}.PgSqlCreate()
 	models.Product{}.PgSqlCreate()
 
-
 	models.HandlerItem{}.PgSqlCreate()
 	models.EventItem{}.PgSqlCreate()
 	models.EventListener{}.PgSqlCreate()
 
 	models.WebHook{}.PgSqlCreate()
-
-
-	// Уведомления
 	models.EmailNotification{}.PgSqlCreate()
 	models.OrderComment{}.PgSqlCreate()
 
 	models.EmailQueue{}.PgSqlCreate()
 	models.EmailQueueEmailTemplate{}.PgSqlCreate()
+	models.UsersSegment{}.PgSqlCreate()
 	models.EmailCampaign{}.PgSqlCreate()
 	models.TaskScheduler{}.PgSqlCreate()
 	models.MTAWorkflow{}.PgSqlCreate()
@@ -149,7 +146,7 @@ func RefreshTablesPart_I() {
 	models.MTAHistory{}.PgSqlCreate()
 	models.MTABounced{}.PgSqlCreate()
 	models.UserSegmentConditions{}.PgSqlCreate()
-	models.UsersSegment{}.PgSqlCreate()
+
 
 
 	models.PaymentMode{}.PgSqlCreate()
@@ -407,7 +404,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	if true {
 		var clients []models.User
 
-		for i:=0; i < 1 ;i++ {
+		for i:=1; i < 1000 ;i++ {
 			clients = append(clients, models.User{
 				Name: fmt.Sprintf("Name #%d", i),
 				Email: fmt.Sprintf("email%d@mail.ru", i),
@@ -1875,7 +1872,8 @@ func UploadBroUserData() {
 func Migrate_I() {
 	pool := models.GetPool()
 	
-
+	// pool.Raw("")
+	// pool.Exec("alter table email_campaigns alter column email_template_id drop not null;\nalter table email_campaigns alter column email_box_id drop not null;\nalter table email_campaigns alter column users_segment_id drop not null;\n\nALTER TABLE email_campaigns\n    ADD CONSTRAINT email_campaigns_email_template_id_fkey FOREIGN KEY (email_template_id) REFERENCES email_templates(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT email_campaigns_email_box_id_fkey FOREIGN KEY (email_box_id) REFERENCES email_boxes(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT email_campaigns_users_segment_id_fkey FOREIGN KEY (users_segment_id) REFERENCES users_segments(id) ON DELETE SET NULL ON UPDATE CASCADE;")
 	/*err := pool.Exec("drop table if exists user_segments_user_segment_conditions").Error
 	if err != nil {
 		log.Fatal(err)
@@ -1922,6 +1920,7 @@ func Migrate_I() {
 	pool.AutoMigrate(&models.EmailQueue{})
 	// pool.AutoMigrate(&models.AccountUser{})
 
+	return 
 	account,err := models.GetAccount(2)
 	if err != nil { log.Fatal(err)}
 

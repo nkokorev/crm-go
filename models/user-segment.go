@@ -5,7 +5,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
-	"time"
 )
 
 type UsersSegment struct {
@@ -17,13 +16,10 @@ type UsersSegment struct {
 	Name 			string 		`json:"name" gorm:"type:varchar(128);"`
 
 	// true = AND ; false = ANY
-	StrictMatching 		bool 	`json:"enabled" gorm:"type:bool;default:false;"`
+	StrictMatching 		bool 	`json:"strictMatching" gorm:"type:bool;default:true;"`
 
 	// персональные настройки сегмента
 	UserSegmentRules []UserSegmentConditions `json:"userSegmentRules" gorm:"many2many:user_segments_user_segment_conditions"`
-
-	// =============   Настройки получателей    ===================
-	CreatedAt 		time.Time `json:"createdAt"`
 }
 
 // ############# Entity interface #############
@@ -133,7 +129,7 @@ func (UsersSegment) getPaginationList(accountId uint, offset, limit int, sortBy,
 		}
 
 	} else {
-
+		
 		err := (&UsersSegment{}).GetPreloadDb(true,false,true).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&usersSegments).Error
