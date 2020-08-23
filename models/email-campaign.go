@@ -565,6 +565,11 @@ func (emailCampaign *EmailCampaign) SetFailedStatus(reason string) error {
 		return utils.Error{Message: "Ошибка завершения кампании - невозможно удалить остаток задач"}
 	}
 
+	// На всякий случай удаляем задачу по запуску этой кампании, чтобы не было дубля (прошлые не удаляются)
+	if err := emailCampaign.RemoveRunTask(); err != nil {
+		return err
+	}
+
 	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
 	return emailCampaign.updateWorkStatus(WorkStatusFailed, reason)
 }
@@ -632,6 +637,7 @@ func (emailCampaign EmailCampaign) Validate() error {
 	if err != nil {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается найти аккаунт"}
 	}
+	
 
 	// Проверяем тело сообщения (не должно быть пустое)
 	if emailCampaign.Subject == "" {
@@ -656,6 +662,16 @@ func (emailCampaign EmailCampaign) Validate() error {
 		log.Printf("Ошибка загрузки адреса отправителя для кампании [%v]: %v\n", emailCampaign.Id, err)
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки адреса отправителя"}
 	}
+
+	// Проверяем DKIM подпись
+	var webSite WebSite
+	err = account.LoadEntity(&webSite, emailCampaign.EmailBox.WebSiteId)
+	if err != nil {
+		log.Printf("Ошибка загрузки web site отправителя для кампании [%v]: %v\n", emailCampaign.Id, err)
+		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки адреса отправителя"}
+	}
+
+	if err := webSite.ValidateDKIM(); err != nil { return err }
 
 	if emailCampaign.UsersSegmentId < 1 {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного сегмента пользователей"}
@@ -693,7 +709,7 @@ func (emailCampaign EmailCampaign) Validate() error {
 func (emailCampaign EmailCampaign) RemoveRunTask() error {
 
 	// Удаляем все задачи, которые можно "выполнить" в будущем
-	err := db.Where("owner_id = ? AND owner_type = ? AND (status != ? OR status != ? OR status != ?",
+	err := db.Where("owner_id = ? AND owner_type = ? AND (status != ? OR status != ? OR status != ?)",
 		emailCampaign.Id, TaskEmailCampaignRun, WorkStatusCompleted, WorkStatusCancelled, WorkStatusFailed).Delete(TaskScheduler{}).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		log.Printf("Ошибка удаления очереди из TaskScheduler: %v\b", err)

@@ -19,8 +19,8 @@ type WebSite struct {
 	URL 		string `json:"url" gorm:"type:varchar(255);not_null;"` // https://ratuscrm.com, https://airoclimate.ru, http://vetvent.ru, ..
 
 	// Email DKIM
-	DKIMPublicRSAKey 	string `json:"dkimPublicRsaKey" gorm:"type:text;"` // публичный ключ
-	DKIMPrivateRSAKey 	string `json:"dkimPrivateRsaKey" gorm:"type:text;"` // приватный ключ
+	DKIMPublicRSAKey 	string `json:"dkimPublicRSAKey" gorm:"type:text;"` // публичный ключ
+	DKIMPrivateRSAKey 	string `json:"dkimPrivateRSAKey" gorm:"type:text;"` // приватный ключ
 	DKIMSelector 		string `json:"dkimSelector" gorm:"type:varchar(255);default:'dk1'"` // dk1
 
 	// Контактные данные
@@ -528,4 +528,18 @@ func (webSite WebSite) CreateEmailBox(emailBox EmailBox) (Entity, error) {
 }
 func (webSite WebSite) GetEmailBoxList(sortBy string) ([]EmailBox, error) {
 	return EmailBox{}.getListByWebSite(webSite.AccountId, webSite.Id, sortBy)
+}
+
+func (webSite WebSite) ValidateDKIM() error {
+	if len(webSite.DKIMPrivateRSAKey) < 1 {
+		return utils.Error{Message: "Необходимо указать валидный DKIM Private Key"}
+	}
+	if len(webSite.DKIMPublicRSAKey) < 1 {
+		return utils.Error{Message: "Необходимо указать валидный DKIM Public Key"}
+	}
+	if len(webSite.DKIMSelector) < 1 {
+		return utils.Error{Message: "Необходимо указать селектор DKIM"}
+	}
+
+	return nil
 }

@@ -404,7 +404,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	if true {
 		var clients []models.User
 
-		for i:=1; i < 1000 ;i++ {
+		for i:=1; i < 500 ;i++ {
 			clients = append(clients, models.User{
 				Name: fmt.Sprintf("Name #%d", i),
 				Email: fmt.Sprintf("email%d@mail.ru", i),
@@ -425,8 +425,29 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	// 4. Создаем домен для 357gr
 	_webSite357, err := acc357.CreateEntity(&models.WebSite{
 		Hostname: "357gr.ru",
-		DKIMPublicRSAKey: ``,
-		DKIMPrivateRSAKey: ``,
+		DKIMPublicRSAKey: `-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDYq5m0HLzmuGrIvghDA3uHR8rF
+JTmhGutraXmqrHT3dLx4en15H8y7ml37dLrqUraDQTcm7Xmi/zJaJl5i9WLOUui0
+pjg2ee1PxllVduwzzwzIUfo3k6Z9I+RiTLWtjtUCGvR1eJ7K7uzUdQOVv94M4nIp
+FeTiqGsEKHqAbsiq0QIDAQAB
+-----END PUBLIC KEY-----
+`,
+		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
+MIICXQIBAAKBgQDYq5m0HLzmuGrIvghDA3uHR8rFJTmhGutraXmqrHT3dLx4en15
+H8y7ml37dLrqUraDQTcm7Xmi/zJaJl5i9WLOUui0pjg2ee1PxllVduwzzwzIUfo3
+k6Z9I+RiTLWtjtUCGvR1eJ7K7uzUdQOVv94M4nIpFeTiqGsEKHqAbsiq0QIDAQAB
+AoGBAIwqFnipzpoC2zGZnYacjiDplIcMmcdavsjxpr9+aPxcDEB0HQ9qPutt5TZy
+QSis8Vzfp2oLXhDPvicLgyvJSmy1lsevb8KtXR7sUR6OOsSk9UDxdkziSpCxn3b1
+1cTHeS+iH5vT7oNAMl4bczA/Mf+5HbYYZOVBkAK0XZgfPlgBAkEA+HgODNGFcakr
+npk9nIYO3fQ47j3yE0WH2a7LXcMaqcqSc7+rOPI1xNqmNY1wInYKrE3nVIbt94Hp
+zEYvbo1JYQJBAN88z23O09SOK0vDNztqHLs5CONXaulHjhsumxRz/sFnJEA+39IB
+H7cLKY0bNj32naSPvlMvpOXrUs3RvoGtp3ECQA3+XPQ13KkhGPbOtJybJD014vrv
+/DE/qj4FTSjTsy263fKs6czEP2j903ySoa0fLsyzeoLVMpPM+kjp7wPv6yECQQDC
+1SH8ply+0G39K53S3yPAS2D0eeE3RFpEYwK6cRpQ1aIP6FATyyNQ8A8Ntkg7ADhJ
+3aKwm46BlEaql3p7V4IhAkBTq1wkY0mGjIfgfN5sTg8B4SbL/dhfLrl9xeRbc5qA
+AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
+-----END RSA PRIVATE KEY-----
+`,
 		DKIMSelector: "dk1",
 	})
 	if err != nil {
