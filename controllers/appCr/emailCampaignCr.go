@@ -173,7 +173,7 @@ func EmailCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 
-func EmailCampaignPlanning(w http.ResponseWriter, r *http.Request) {
+/*func EmailCampaignPlanning(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -198,6 +198,85 @@ func EmailCampaignPlanning(w http.ResponseWriter, r *http.Request) {
 	if err := emailCampaign.Planning(); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка запуска кампании"))
 		return
+	}
+
+	resp := u.Message(true, "GET Email Campaign Execute")
+	resp["emailCampaign"] = emailCampaign
+	u.Respond(w, resp)
+}*/
+func EmailCampaignChangeStatus(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	emailCampaignId, err := utilsCr.GetUINTVarFromRequest(r, "emailCampaignId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
+		return
+	}
+
+	var emailCampaign models.EmailCampaign
+	err = account.LoadEntity(&emailCampaign, emailCampaignId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		return
+	}
+
+	var input struct{
+		Status string `json:"status"`
+		Reason string `json:"reason"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	switch input.Status {
+	case models.WorkStatusPending:
+		err := emailCampaign.SetPendingStatus()
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			return
+		}
+	case models.WorkStatusPlanned:
+		err := emailCampaign.SetPlannedStatus()
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			return
+		}
+	case models.WorkStatusActive:
+		err := emailCampaign.SetActiveStatus()
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			return
+		}
+	case models.WorkStatusPaused:
+		err := emailCampaign.SetPausedStatus()
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			return
+		}
+	case models.WorkStatusCompleted:
+		err := emailCampaign.SetCompletedStatus()
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			return
+		}
+	case models.WorkStatusFailed:
+		err := emailCampaign.SetFailedStatus(input.Reason)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			return
+		}
+	case models.WorkStatusCancelled:
+		err := emailCampaign.SetCancelledStatus()
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			return
+		}
 	}
 
 	resp := u.Message(true, "GET Email Campaign Execute")

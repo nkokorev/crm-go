@@ -12,7 +12,7 @@ type EmailSender interface {
 	IsActive() bool
 
 	// Устанавливает статус + может дописывать ошибку
-	SetWorkStatus(status WorkStatus, reason... string) error
+	changeWorkStatus(status WorkStatus, reason... string) error
 }
 
 type EmailSenderType = string

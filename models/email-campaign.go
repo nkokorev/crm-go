@@ -271,84 +271,12 @@ func (emailCampaign *EmailCampaign) GetPreloadDb(autoUpdateOff bool, getModel bo
 	}
 }
 
-// Добавляет кампанию в планировщик задач
-func (emailCampaign *EmailCampaign) Planning() error {
-
-	// Get Account
-	account, err := GetAccount(emailCampaign.AccountId)
-	if err != nil {
-		return utils.Error{Message: "Ошибка отправления Уведомления - не удается найти аккаунт"}
-	}
-	
-	// Проверяем статус кампании, равен ли он pending (готовящаяся кампания)
-	if emailCampaign.Status != WorkStatusPending {
-		return utils.Error{Message: fmt.Sprintf("Уведомление не может быть отправлено т.к. находится в статусе - '%v'", emailCampaign.Status)}
-	}
-
-	// Проверяем тело сообщения (не должно быть пустое)
-	if emailCampaign.Subject == "" {
-		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет темы сообщения"}
-	}
-
-	// Проверяем ключи и загружаем еще раз все данные для отправки сообщения
-	if emailCampaign.EmailTemplateId < 1 {
-		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного шаблона email-сообщения"}
-	}
-	err = account.LoadEntity(&emailCampaign.EmailTemplate, emailCampaign.EmailTemplateId)
-	if err != nil {
-		log.Printf("Ошибка загрузки шаблона email-сообщения для кампании [%v]: %v\n", emailCampaign.Id, err)
-		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки шаблона email-сообщения"}
-	}
-
-	if emailCampaign.EmailBoxId < 1 {
-		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного адреса отправителя"}
-	}
-	err = account.LoadEntity(&emailCampaign.EmailBox, emailCampaign.EmailBoxId)
-	if err != nil {
-		log.Printf("Ошибка загрузки адреса отправителя для кампании [%v]: %v\n", emailCampaign.Id, err)
-		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки адреса отправителя"}
-	}
-	
-	if emailCampaign.UsersSegmentId < 1 {
-		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного сегмента пользователей"}
-	}
-	err = account.LoadEntity(&emailCampaign.UsersSegment, emailCampaign.UsersSegmentId)
-	if err != nil {
-		log.Printf("Ошибка загрузка сегмента пользователей для кампании [%v]: %v\n", emailCampaign.Id, err)
-		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки сегмента пользователей"}
-	}
-
-	// Переводим в состояние "Запланирована", т.к. все проверки пройдены и можно ставить ее в планировщик
-	if err := emailCampaign.SetWorkStatus(WorkStatusPlanned); err != nil {return err}
-
-	// Объект task для добавлении кампании в TaskScheduler
-	task := TaskScheduler {
-		AccountId: emailCampaign.AccountId,
-		OwnerType: TaskEmailCampaignRun,
-		OwnerId: emailCampaign.Id,
-		ExpectedTimeToStart: emailCampaign.ScheduleRun.Add(-time.Minute*5),// запускаем задачу (но не кампанию) за 5 минут (= с запасом)
-		IsSystem: true, // системная задача ли ?
-		Status: WorkStatusPlanned,
-	}
-
-	// Создаем задачу по отправке рекламной кампании
-	_, err = account.CreateEntity(&task)
-	if err != nil {
-		// Откатываем назад статус - pending (ожидающая запуска)
-		if err := emailCampaign.SetWorkStatus(WorkStatusPending); err != nil { return err }
-		return utils.Error{Message: "Ошибка создания задания по запуску кампании"}
-	}
-
-	// Создании задачи успешно завершено...
-	return nil
-}
-
-// Подготавливает рассылку: извлекает сегмент и добавляет пользователей в mta-workflow
+// Подготавливает рассылку к первичному: извлекает сегмент и добавляет пользователей в mta-workflow
 func (emailCampaign *EmailCampaign) Execute() error {
 
 	// 1. Проверяем все данные перед маршем -\0/-
 	
-	// Проверяем статус кампании
+	// Проверяем статус кампании, может быть только planned, т.к. это первоначальный (!!!) запуску кампании
 	if emailCampaign.Status != WorkStatusPlanned {
 		return utils.Error{Message: fmt.Sprintf("Кампания не может быть запущена т.к. находится в статусе - '%v'", emailCampaign.Status)}
 	}
@@ -392,8 +320,8 @@ func (emailCampaign *EmailCampaign) Execute() error {
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки сегмента пользователей"}
 	}
 
-	// 2. Переводим Кампанию в состояние "Выполняется" - т.е. ее отмена дело уже затратно (надо проходиться по mta-workflow)
-	if err := emailCampaign.SetWorkStatus(WorkStatusActive); err != nil {return err}
+	// 2. Переводим Кампанию в состояние "Выполняется"
+	if err := emailCampaign.SetActiveStatus(); err != nil {return err}
 
 	// 3. Начинаем собирать пользователей из базы согласно сегменту
 	users := emailCampaign.getUsersBySegment()
@@ -420,11 +348,39 @@ func (emailCampaign *EmailCampaign) Execute() error {
 }
 
 // Прямая функция для обновления, без проверок
-func (emailCampaign *EmailCampaign) SetWorkStatus(status WorkStatus, reason... string) error {
-	_reason := "" // обнуление
+func (emailCampaign *EmailCampaign) changeWorkStatus(status WorkStatus, reason... string) error {
+
+	switch status {
+	case WorkStatusPending:
+		return emailCampaign.SetPendingStatus()
+	case WorkStatusPlanned:
+		return emailCampaign.SetPlannedStatus()
+	case WorkStatusActive:
+		return emailCampaign.SetActiveStatus()
+	case WorkStatusPaused:
+		return emailCampaign.SetPausedStatus()
+	case WorkStatusFailed:
+		_reason := "" 
+		if len(reason) > 0 {
+			_reason = reason[0]
+		}
+		return emailCampaign.SetFailedStatus(_reason)
+	case WorkStatusCompleted:
+		return emailCampaign.SetCompletedStatus()
+	case WorkStatusCancelled:
+		return emailCampaign.SetCancelledStatus()
+	default:
+		return utils.Error{Message: "Статус не опознан"}
+	}
+
+}
+
+func (emailCampaign *EmailCampaign) updateWorkStatus(status WorkStatus, reason... string) error {
+	_reason := ""
 	if len(reason) > 0 {
 		_reason = reason[0]
 	}
+	
 	return emailCampaign.update(map[string]interface{}{
 		"status":	status,
 		"failedStatus": _reason,
@@ -453,7 +409,12 @@ func (emailCampaign *EmailCampaign) SetPendingStatus() error {
 		return utils.Error{Message: reason}
 	}
 
-	return emailCampaign.SetWorkStatus(WorkStatusPending)
+	// fix: удаляем задачу в TaskScheduler
+	if err := emailCampaign.RemoveRunTask(); err != nil {
+		return err
+	}
+
+	return emailCampaign.updateWorkStatus(WorkStatusPending)
 }
 func (emailCampaign *EmailCampaign) SetPlannedStatus() error {
 
@@ -486,7 +447,12 @@ func (emailCampaign *EmailCampaign) SetPlannedStatus() error {
 	// Проверяем кампанию и шаблон, чтобы не ставить в план не рабочую кампанию.
 	if err := emailCampaign.Validate(); err != nil { return err  }
 
-	// Объект task для добавлении кампании в TaskScheduler
+	// На всякий случай удаляем задачу по запуску этой кампании, чтобы не было дубля
+	if err := emailCampaign.RemoveRunTask(); err != nil {
+		return err
+	}
+
+	// Создаем новый объект task для добавлении кампании в TaskScheduler
 	task := TaskScheduler {
 		AccountId: emailCampaign.AccountId,
 		OwnerType: TaskEmailCampaignRun,
@@ -499,13 +465,11 @@ func (emailCampaign *EmailCampaign) SetPlannedStatus() error {
 	// Создаем задачу по отправке рекламной кампании
 	_, err = account.CreateEntity(&task)
 	if err != nil {
-		// Откатываем назад статус - pending (ожидающая запуска)
-		if err := emailCampaign.SetWorkStatus(WorkStatusPending); err != nil { return err }
 		return utils.Error{Message: "Ошибка создания задания по запуску кампании"}
 	}
 
 	// Переводим в состояние "Запланирована", т.к. все проверки пройдены и можно ставить ее в планировщик
-	return emailCampaign.SetWorkStatus(WorkStatusPlanned)
+	return emailCampaign.updateWorkStatus(WorkStatusPlanned)
 }
 func (emailCampaign *EmailCampaign) SetActiveStatus() error {
 
@@ -531,7 +495,7 @@ func (emailCampaign *EmailCampaign) SetActiveStatus() error {
 	if err := emailCampaign.Validate(); err != nil { return err  }
 
 	// Переводим в состояние "Активна", т.к. все проверки пройдены и можно продолжить ее выполнение
-	return emailCampaign.SetWorkStatus(WorkStatusActive)
+	return emailCampaign.updateWorkStatus(WorkStatusActive)
 }
 func (emailCampaign *EmailCampaign) SetPausedStatus() error {
 
@@ -556,7 +520,7 @@ func (emailCampaign *EmailCampaign) SetPausedStatus() error {
 	}
 
 	// Переводим в состояние "Приостановлена", т.к. все проверки пройдены и можно приостановить кампанию
-	return emailCampaign.SetWorkStatus(WorkStatusPaused)
+	return emailCampaign.updateWorkStatus(WorkStatusPaused)
 }
 func (emailCampaign *EmailCampaign) SetCompletedStatus() error {
 
@@ -587,7 +551,7 @@ func (emailCampaign *EmailCampaign) SetCompletedStatus() error {
 	}
 
 	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
-	return emailCampaign.SetWorkStatus(WorkStatusCompleted)
+	return emailCampaign.updateWorkStatus(WorkStatusCompleted)
 }
 func (emailCampaign *EmailCampaign) SetFailedStatus(reason string) error {
 
@@ -602,7 +566,7 @@ func (emailCampaign *EmailCampaign) SetFailedStatus(reason string) error {
 	}
 
 	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
-	return emailCampaign.SetWorkStatus(WorkStatusFailed, reason)
+	return emailCampaign.updateWorkStatus(WorkStatusFailed, reason)
 }
 func (emailCampaign *EmailCampaign) SetCancelledStatus() error {
 
@@ -629,8 +593,13 @@ func (emailCampaign *EmailCampaign) SetCancelledStatus() error {
 		return utils.Error{Message: "Ошибка завершения кампании - невозможно удалить остаток задач"}
 	}
 
+	// На всякий случай удаляем задачу по запуску этой кампании, чтобы не было дубля
+	if err := emailCampaign.RemoveRunTask(); err != nil {
+		return err
+	}
+
 	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
-	return emailCampaign.SetWorkStatus(WorkStatusCancelled)
+	return emailCampaign.updateWorkStatus(WorkStatusCancelled)
 }
 
 func (emailCampaign *EmailCampaign) getUsersBySegment() []User {
@@ -718,4 +687,18 @@ func (emailCampaign EmailCampaign) Validate() error {
 	}
 
 	return emailCampaign.EmailTemplate.Validate(&viewData)
+}
+
+// Удаляет связанную задачу по запуск
+func (emailCampaign EmailCampaign) RemoveRunTask() error {
+
+	// Удаляем все задачи, которые можно "выполнить" в будущем
+	err := db.Where("owner_id = ? AND owner_type = ? AND (status != ? OR status != ? OR status != ?",
+		emailCampaign.Id, TaskEmailCampaignRun, WorkStatusCompleted, WorkStatusCancelled, WorkStatusFailed).Delete(TaskScheduler{}).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		log.Printf("Ошибка удаления очереди из TaskScheduler: %v\b", err)
+		return utils.Error{Message: "Ошибка удаления задачи по запуску кампании"}
+	}
+
+	return nil
 }

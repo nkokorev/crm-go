@@ -403,7 +403,7 @@ func (emailQueue EmailQueue) GetEmailTemplateByStep(order uint) (*EmailTemplate,
 	return &emailTemplate, nil
 }
 
-func (emailQueue *EmailQueue) SetWorkStatus(status WorkStatus, reason... string) error {
+func (emailQueue *EmailQueue) changeWorkStatus(status WorkStatus, reason... string) error {
 	_reason := "" // обнуление
 	if len(reason) > 0 {
 		_reason = reason[0]

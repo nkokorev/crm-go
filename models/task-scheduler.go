@@ -13,7 +13,7 @@ type TaskScheduler struct {
 	PublicId		uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"`
 	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	// email_campaigns_run, email_queues_run, email_notifications_run
+	// email_campaign_run, email_queues_run, email_notifications_run
 	OwnerType	Task	`json:"ownerType" gorm:"varchar(32);not null;"` // << тип события:
 	OwnerId		uint	`json:"ownerId" gorm:"type:smallint;not null;"` // ID типа события: id типа
 
@@ -24,7 +24,7 @@ type TaskScheduler struct {
 	IsSystem	bool	`json:"isSystem" gorm:"type:bool;default:true"`
 
 	// Результат выполнения: planned / pending / completed / failed / cancelled => планируется / выполняется / выполнена / провалена / отмена
-	Status WorkStatus `json:"status" gorm:"type:varchar(18);default:'planned'"`
+	Status 		WorkStatus `json:"status" gorm:"type:varchar(18);default:'planned'"`
 
 	// Причина провала / отмены (необязательный параметр)
 	Reason string `json:"reason" gorm:"type:varchar(128);default:null"`
@@ -35,9 +35,9 @@ type TaskScheduler struct {
 
 type Task = string
 const (
-	TaskEmailCampaignRun		Task = "email_campaigns_run"
-	TaskEmailQueueRun			Task = "email_queues_run"
-	TaskEmailNotificationRun	Task = "email_notifications_run"
+	TaskEmailCampaignRun		Task = "email_campaign_run"
+	TaskEmailQueueRun			Task = "email_queue_run"
+	TaskEmailNotificationRun	Task = "email_notification_run"
 )
 
 type WorkStatus = string

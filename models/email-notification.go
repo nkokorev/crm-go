@@ -445,7 +445,7 @@ func parseSubjectByData(tpl string, data map[string]interface{}) (string, error)
 	return body.String(), nil
 }
 
-func (emailNotification *EmailNotification) SetWorkStatus(status WorkStatus, reason... string) error {
+func (emailNotification *EmailNotification) changeWorkStatus(status WorkStatus, reason... string) error {
 	_reason := "" // обнуление
 	if len(reason) > 0 {
 		_reason = reason[0]
