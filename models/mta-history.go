@@ -156,11 +156,9 @@ func (mtaHistory *MTAHistory) load() error {
 func (mtaHistory *MTAHistory) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-
 func (MTAHistory) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
 	return MTAHistory{}.getPaginationList(accountId, 0, 25, sortBy, "",nil)
 }
-
 func (MTAHistory) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
 
 	emailQueueHistories := make([]MTAHistory,0)
@@ -209,11 +207,28 @@ func (MTAHistory) getPaginationList(accountId uint, offset, limit int, sortBy, s
 
 	return entities, total, nil
 }
+func (MTAHistory) getPaginationListByOwner(owner EmailSender, offset, limit int, sortBy string) ([]MTAHistory, uint, error) {
 
+	emailQueueHistories := make([]MTAHistory,0)
+	var total uint
+
+	err := db.Model(&MTAHistory{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ? AND owner_id = ? AND owner_type = ?", owner.GetAccountId(), owner.GetId(), owner.GetType()).
+		Find(&emailQueueHistories).Error
+	if err != nil && err != gorm.ErrRecordNotFound{
+		return nil, 0, err
+	}
+
+	// Определяем total
+	err = db.Model(&MTAHistory{}).Where("account_id = ? AND owner_id = ? AND owner_type = ?", owner.GetAccountId(), owner.GetId(), owner.GetType()).Count(&total).Error
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+	}
+
+	return emailQueueHistories, total, nil
+}
 func (mtaHistory *MTAHistory) update(input map[string]interface{}) error {
 	return mtaHistory.GetPreloadDb(false,false,false).Where("id = ?", mtaHistory.Id).Omit("id", "account_id").Updates(input).Error
 }
-
 func (mtaHistory *MTAHistory) delete () error {
 
 	return mtaHistory.GetPreloadDb(true,false,false).Where("id = ?", mtaHistory.Id).Delete(mtaHistory).Error
@@ -230,7 +245,6 @@ func (account Account) GetMTAHistoryByHashId(hashId string) (*MTAHistory, error)
 	}
 	return &et, nil
 }
-
 func (mtaHistory *MTAHistory) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
 	_db := db
 
@@ -250,8 +264,6 @@ func (mtaHistory *MTAHistory) GetPreloadDb(autoUpdateOff bool, getModel bool, pr
 		return _db
 	}
 }
-
-// 
 func (mtaHistory *MTAHistory) UpdateSetUnsubscribeUser(ipV4 string) error {
 	return mtaHistory.update(map[string]interface{}{
 		"unsubscribed"		: 	true,
@@ -259,7 +271,6 @@ func (mtaHistory *MTAHistory) UpdateSetUnsubscribeUser(ipV4 string) error {
 		// "net_ip"	:	ipV4,
 	})
 }
-
 func (mtaHistory *MTAHistory) UpdateOpenUser(ipV4 string) error {
 	
 	input := map[string]interface{} {

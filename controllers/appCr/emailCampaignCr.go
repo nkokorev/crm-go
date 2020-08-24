@@ -284,7 +284,7 @@ func EmailCampaignChangeStatus(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func EmailCampaignExecute(w http.ResponseWriter, r *http.Request) {
+func EmailCampaignCheckDouble(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -307,13 +307,14 @@ func EmailCampaignExecute(w http.ResponseWriter, r *http.Request) {
 
 	// Запускает кампанию прямо сейчас
 	// todo: надо сделать проверку на планировку задачи
-	if err := emailCampaign.Execute(); err != nil {
+	count, err := emailCampaign.CheckDoubleFromHistory()
+	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка запуска кампании"))
 		return
 	}
 
-	resp := u.Message(true, "GET Email Campaign Execute")
-	resp["emailCampaign"] = emailCampaign
+	resp := u.Message(true, "GET Email Campaign Check doubles")
+	resp["count"] = count
 	u.Respond(w, resp)
 }
 

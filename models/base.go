@@ -1,11 +1,12 @@
 package models
 
 import (
-	"github.com/jinzhu/gorm"
+	// "github.com/jinzhu/gorm"
+	"github.com/go-gorm/gorm"
 	"github.com/joho/godotenv"
 	"log"
 
-	//_ "github.com/go-sql-driver/mysql"
+	// _ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 
 	"os"
@@ -49,9 +50,16 @@ func Connect() *gorm.DB {
 	}
 
 	db, err := gorm.Open("postgres", os.Getenv("DATABASE_URL"))
+	// db, err := gorm.Open(postgres.Open(os.Getenv("DATABASE_URL")), &gorm.Config{}
 	if err != nil {
 		log.Fatal("Error connect to DB")
 	}
+
+	db.DB().SetConnMaxLifetime(0)
+	db.DB().SetMaxIdleConns(10)
+	db.DB().SetMaxOpenConns(100)
+	
+
 	//db = db.Set("gorm:auto_preload", true)
 
 	// db = db.LogMode(true)

@@ -20,9 +20,7 @@ func main() {
 	pool := models.Connect()
 	defer pool.Close()
 
-	pool.DB().SetConnMaxLifetime(0)
-	pool.DB().SetMaxIdleConns(10)
-	pool.DB().SetMaxOpenConns(100)
+
 
 	// base.RefreshTablesPart_I()
 	// base.UploadTestDataPart_I()

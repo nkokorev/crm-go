@@ -21,7 +21,7 @@ const workflowsOneTick = 10
 func mtaWorker() {
 
 	// Разминка перед стартом
-	time.Sleep(time.Second*3)
+	// time.Sleep(time.Second*3)
 
 	fmt.Printf("Start mtaWorker: %v\n", time.Now().UTC())
 

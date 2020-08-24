@@ -8,7 +8,6 @@ import (
 	u "github.com/nkokorev/crm-go/utils"
 	"github.com/toorop/go-dkim"
 	"log"
-	"math/rand"
 	"mime/quotedprintable"
 	"net"
 	"net/mail"
@@ -56,7 +55,19 @@ func mtaServer(c <-chan EmailPkg) {
 	}
 
 	// target speed: 16 mail per second (62 ms / 1 mail) [~4800 / мин]
-	for {
+	for pkg := range c {
+
+		if gorutines < 1 {
+			fmt.Println("gorutines: ", gorutines)
+			wg.Wait()
+		}
+		wg.Add(1)
+		gorutines--
+
+		go mtaSender(pkg, &wg, &m)
+		// time.Sleep(100*time.Millisecond)
+	}
+	/*for {
 		select {
 		case pkg := <- c:
 
@@ -79,10 +90,10 @@ func mtaServer(c <-chan EmailPkg) {
 			// спим 1 секунду, если нет задач на отправку
 		case <- time.After(1 * time.Second):
 			 // fmt.Println("Подождали 1 sec: ", time.Now().String())
-		/*default:
-			time.Sleep(500*time.Millisecond)*/
+		default:
+			time.Sleep(500*time.Millisecond)
 		}
-	}
+	}*/
 }
 
 // Функция по отправке почтового пакета, обычно, запускается воркером в отдельной горутине
@@ -157,9 +168,9 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 
 	if mock {
 		// fmt.Println("Типа отсылаем...: ", time.Now().String())
-		n := rand.Intn(3) // n will be between 0 and 10
+		// n := rand.Intn(3) // n will be between 0 and 10
 		// fmt.Printf("Sleeping %d seconds...\n", n)
-		time.Sleep(time.Duration(n)*time.Second)
+		// time.Sleep(time.Duration(n)*time.Second)
 
 		// time.Sleep(time.Second * 5)
 	} else {

@@ -271,7 +271,7 @@ func (emailCampaign *EmailCampaign) GetPreloadDb(autoUpdateOff bool, getModel bo
 	}
 }
 
-// Подготавливает рассылку к первичному: извлекает сегмент и добавляет пользователей в mta-workflow
+// Подготавливает рассылку к первичному запуску: извлекает сегмент пользователей и добавляет пользователей в mta-workflow
 func (emailCampaign *EmailCampaign) Execute() error {
 
 	// 1. Проверяем все данные перед маршем -\0/-
@@ -717,4 +717,46 @@ func (emailCampaign EmailCampaign) RemoveRunTask() error {
 	}
 
 	return nil
+}
+func (emailCampaign *EmailCampaign) CheckDoubleFromHistory() (uint, error) {
+
+	// Get Account
+
+	histories := make([]MTAHistory,0)
+
+	offset := uint(0)
+	limit := uint(100)
+	total := uint(1)
+
+	for offset < total {
+
+		_histories, _total, err := (MTAHistory{}).getPaginationListByOwner(emailCampaign, int(offset), int(limit), "id")
+		if err != nil {
+			break
+		}
+
+		// добавляем в общий массив пользователей
+		histories = append(histories, _histories...)
+		offset = offset + uint(len(_histories))
+		total = _total
+	}
+
+	count := 0
+	dobules := uint(0)
+
+	// Создаем под каждого пользователя задачу в mta-workflow
+	for i := range histories {
+		email := histories[i].Email
+		err := db.Model(&MTAHistory{}).Where("account_id = ? AND owner_id = ? AND owner_type = ? AND email = ?",
+			emailCampaign.GetAccountId(), emailCampaign.GetId(), emailCampaign.GetType(), email).Count(&count).Error
+		if err != nil {
+			return 0, utils.Error{Message: fmt.Sprintf("Ошибка извлечения данных из истории рассылок: %v\n", err)}
+		}
+		if count > 1 {
+			fmt.Printf("Дубль [%v]: %v\n", count, email)
+			dobules++
+		}
+	}
+
+	return dobules, nil
 }
