@@ -2,17 +2,18 @@ package models
 
 import (
 	"database/sql"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
+	"log"
 	"strings"
 	"time"
 )
 
 type Article struct {
-	Id     		uint   `json:"id" gorm:"primary_key"`
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
+	Id     		uint   `json:"id" gorm:"primaryKey"`
+	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
-	HashId 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	HashId 		string `json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
 
 	Public	 	bool 	`json:"public" gorm:"type:bool;default:false"` // Опубликована ли статья
 	Shared	 	bool 	`json:"shared" gorm:"type:bool;default:false"` // Расшарена ли статья
@@ -21,15 +22,15 @@ type Article struct {
 	Breadcrumb 	string `json:"breadcrumb" gorm:"type:varchar(255);default:null;"`
 	
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // Полное имя Имя статьи
-	ShortName 	string `json:"shortName" gorm:"type:varchar(255);default:NULL"` // Короткое имя статьи
+	ShortName 	string `json:"short_name" gorm:"type:varchar(255);default:NULL"` // Короткое имя статьи
 
 
 	Body 		string `json:"body" gorm:"type:text;"` // pgsql: text
 	Description string `json:"description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 
-	MetaTitle 			string `json:"metaTitle" gorm:"type:varchar(255);default:null;"`
-	MetaKeywords 		string `json:"metaKeywords" gorm:"type:varchar(255);default:null;"`
-	MetaDescription 	string `json:"metaDescription" gorm:"type:varchar(255);default:null;"`
+	MetaTitle 			string `json:"meta_title" gorm:"type:varchar(255);default:null;"`
+	MetaKeywords 		string `json:"meta_keywords" gorm:"type:varchar(255);default:null;"`
+	MetaDescription 	string `json:"meta_description" gorm:"type:varchar(255);default:null;"`
 
 	// Обновлять только через AppendImage
 	Image 				*Storage	`json:"image" gorm:"polymorphic:Owner;"` //association_autoupdate:false;
@@ -39,17 +40,23 @@ type Article struct {
 	// Questions []question // вопросы по товару
 	// Video []Video // видеообзоры по товару на ютубе
 
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }
 
 func (Article) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
-	db.CreateTable(&Article{})
-	db.Model(&Article{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	if err := db.Migrator().CreateTable(&Article{}); err != nil {
+		log.Fatal(err)
+	}
+	// db.Model(&Article{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE articles ADD CONSTRAINT articles_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (article *Article) BeforeCreate(scope *gorm.Scope) error {
+func (article *Article) BeforeCreate(tx *gorm.DB) error {
 	article.Id = 0
 
 	article.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
@@ -63,7 +70,7 @@ func (article *Article) BeforeCreate(scope *gorm.Scope) error {
 
 	return nil
 }
-func (article *Article) AfterFind() (err error) {
+func (article *Article) AfterFind(tx *gorm.DB) (err error) {
 	return nil
 }
 
@@ -134,13 +141,13 @@ func (article *Article) loadByPublicId() error {
 	return nil
 }
 
-func (Article) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (Article) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return Article{}.getPaginationList(accountId, 0, 25, sortBy, "",nil)
 }
-func (Article) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (Article) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	articles := make([]Article,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -191,8 +198,14 @@ func (Article) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 func (article *Article) update(input map[string]interface{}) error {
 
+	delete(input,"image")
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
+		return err
+	}
+
 	if err := article.GetPreloadDb(true,false,false).Where(" id = ?", article.Id).
-		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
+		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
 		return err
 	}
 
@@ -222,7 +235,6 @@ func (article *Article) GetPreloadDb(autoUpdateOff bool, getModel bool, preload 
 	}
 
 	if preload {
-		// return _db.Preload("")
 		return _db.Preload("Image", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		})

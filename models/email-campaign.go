@@ -3,53 +3,53 @@ package models
 import (
 	"database/sql"
 	"fmt"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 	"strings"
 	"time"
 )
 
 type EmailCampaign struct {
-	Id     			uint   		`json:"id" gorm:"primary_key"`
-	PublicId		uint   		`json:"publicId" gorm:"type:int;index;not null;default:1"`
+	Id     			uint   		`json:"id" gorm:"primaryKey"`
+	PublicId		uint   		`json:"public_id" gorm:"type:int;index;not null;default:1"`
 	AccountId 		uint 		`json:"-" gorm:"type:int;index;not null;"`
-	HashId 			string 		`json:"hashId" gorm:"type:varchar(12);unique_index;not null;"`
+	HashId 			string 		`json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"`
 
 	// Результат выполнения: planned / pending / active / completed / failed / cancelled .
-	Status 			WorkStatus `json:"status" gorm:"type:varchar(18);default:'pending'"`
-	FailedStatus	string 		`json:"failedStatus" gorm:"type:varchar(255);"`
+	Status 			WorkStatus 	`json:"status" gorm:"type:varchar(18);default:'pending'"`
+	FailedStatus	string 		`json:"failed_status" gorm:"type:varchar(255);"`
 
 	// Планируемое время старта
-	ScheduleRun		time.Time 	`json:"scheduleRun"`
+	ScheduleRun		time.Time 	`json:"schedule_run"`
 
 	// Имя кампании - Ежемесячный дайджест !
 	Name 			string 	`json:"name" gorm:"type:varchar(128);default:''"`
 
 	// Тема сообщения и preview-текст, компилируются
-	Subject			string 	`json:"subject" gorm:"type:varchar(128);not null;"`
-	PreviewText		string 	`json:"previewText" gorm:"type:varchar(255);default:''"`
+	Subject			string 	`json:"subject" gorm:"type:varchar(128);default:''"`
+	PreviewText		string 	`json:"preview_text" gorm:"type:varchar(255);default:''"`
 
 	// Шаблон email-сообщения
-	EmailTemplateId uint 	`json:"emailTemplateId" gorm:"type:int;default:null;"`
-	EmailTemplate 	EmailTemplate 	`json:"emailTemplate"`
+	EmailTemplateId *uint 	`json:"email_template_id" gorm:"type:int;"`
+	EmailTemplate 	EmailTemplate 	`json:"email_template"`
 
 	// Отправитель, может устанавливаться в конце
-	EmailBoxId		uint 		`json:"emailBoxId" gorm:"type:int;default:null;"`
-	EmailBox 		EmailBox 	`json:"emailBox"`
+	EmailBoxId		*uint 		`json:"email_box_id" gorm:"type:int;"`
+	EmailBox 		EmailBox 	`json:"email_box"`
 
 	// RecipientList	postgres.Jsonb 	`json:"recipientList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 	// UserSegments	[]UserSegment `json:"userSegments"`
-	UsersSegmentId	uint 		`json:"usersSegmentId" gorm:"type:int;default:null;"`
-	UsersSegment 	UsersSegment `json:"usersSegment"`
+	UsersSegmentId	*uint 		`json:"users_segment_id" gorm:"type:int;"`
+	UsersSegment 	UsersSegment `json:"users_segment"`
 
-	Queue 			uint `json:"_queue" gorm:"-"` // сколько подписчиков еще в процессе отправки кампании
-	Recipients 		uint `json:"_recipients" gorm:"-"` // << всего успешно отправлено писем
-	OpenRate 		float64 `json:"_openRate" gorm:"-"`
-	UnsubscribeRate float64 `json:"_unsubscribeRate" gorm:"-"`
+	Queue 			int64 	`json:"_queue" gorm:"-"` // сколько подписчиков еще в процессе отправки кампании
+	Recipients 		uint 	`json:"_recipients" gorm:"-"` // << всего успешно отправлено писем
+	OpenRate 		float64 `json:"_open_rate" gorm:"-"`
+	UnsubscribeRate float64 `json:"_unsubscribe_rate" gorm:"-"`
 
-	CreatedAt 		time.Time `json:"createdAt"`
-	UpdatedAt 		time.Time `json:"updatedAt"`
+	CreatedAt 		time.Time `json:"created_at"`
+	UpdatedAt 		time.Time `json:"updated_at"`
 }
 
 // ############# Entity interface #############
@@ -75,13 +75,21 @@ func (emailCampaign EmailCampaign) IsActive() bool {
 // ############# End Entity interface #############
 
 func (EmailCampaign) PgSqlCreate() {
-	db.CreateTable(&EmailCampaign{})
-	db.Model(&EmailCampaign{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&EmailCampaign{}).AddForeignKey("email_template_id", "email_templates(id)", "SET NULL", "CASCADE")
-	db.Model(&EmailCampaign{}).AddForeignKey("email_box_id", "email_boxes(id)", "SET NULL", "CASCADE")
-	db.Model(&EmailCampaign{}).AddForeignKey("users_segment_id", "users_segments(id)", "SET NULL", "CASCADE")
+	db.Migrator().CreateTable(&EmailCampaign{})
+	// db.Model(&EmailCampaign{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&EmailCampaign{}).AddForeignKey("email_template_id", "email_templates(id)", "SET NULL", "CASCADE")
+	// db.Model(&EmailCampaign{}).AddForeignKey("email_box_id", "email_boxes(id)", "SET NULL", "CASCADE")
+	// db.Model(&EmailCampaign{}).AddForeignKey("users_segment_id", "users_segments(id)", "SET NULL", "CASCADE")
+	err := db.Exec("ALTER TABLE email_campaigns " +
+		"ADD CONSTRAINT email_campaigns_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT email_campaigns_email_template_id_fkey FOREIGN KEY (email_template_id) REFERENCES email_templates(id) ON DELETE SET NULL ON UPDATE CASCADE," +
+		"ADD CONSTRAINT email_campaigns_email_box_id_fkey FOREIGN KEY (email_box_id) REFERENCES email_boxes(id) ON DELETE SET NULL ON UPDATE CASCADE," +
+		"ADD CONSTRAINT email_campaigns_users_segment_id_fkey FOREIGN KEY (users_segment_id) REFERENCES users_segments(id) ON DELETE SET NULL ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (emailCampaign *EmailCampaign) BeforeCreate(scope *gorm.Scope) error {
+func (emailCampaign *EmailCampaign) BeforeCreate(tx *gorm.DB) error {
 	emailCampaign.Id = 0
 	emailCampaign.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 
@@ -94,10 +102,10 @@ func (emailCampaign *EmailCampaign) BeforeCreate(scope *gorm.Scope) error {
 
 	return nil
 }
-func (emailCampaign *EmailCampaign) AfterFind() (err error) {
+func (emailCampaign *EmailCampaign) AfterFind(tx *gorm.DB) (err error) {
 
 	// Рассчитываем сколько пользователей сейчас в очереди
-	inQueue := uint(0)
+	inQueue := int64(0)
 	err = db.Model(&MTAWorkflow{}).Where("account_id = ? AND owner_id = ? AND owner_type = ?", emailCampaign.AccountId, emailCampaign.Id, EmailSenderCampaign).Count(&inQueue).Error
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
 	if err == gorm.ErrRecordNotFound {emailCampaign.Queue = 0} else { emailCampaign.Queue = inQueue}
@@ -176,13 +184,13 @@ func (emailCampaign *EmailCampaign) loadByPublicId() error {
 	return nil
 }
 
-func (EmailCampaign) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (EmailCampaign) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return EmailCampaign{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-func (EmailCampaign) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (EmailCampaign) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	emailCampaigns := make([]EmailCampaign,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -230,11 +238,22 @@ func (EmailCampaign) getPaginationList(accountId uint, offset, limit int, sortBy
 
 func (emailCampaign *EmailCampaign) update(input map[string]interface{}) error {
 
-	input = utils.FixInputHiddenVars(input)
+	utils.FixInputHiddenVars(&input)
 	input = utils.FixInputDataTimeVars(input,[]string{"scheduleRun"})
+	delete(input,"email_template")
+	delete(input,"email_box")
+	delete(input,"users_segment")
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
+		return err
+	}
+
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","email_template_id","email_box_id","users_segment_id"}); err != nil {
+		return err
+	}
 	
 	if err := emailCampaign.GetPreloadDb(true,false,false).Where(" id = ?", emailCampaign.Id).
-		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
+		Omit("id", "account_id","public_id","created_at").Updates(input).Error; err != nil {
 		return err
 	}
 
@@ -293,28 +312,28 @@ func (emailCampaign *EmailCampaign) Execute() error {
 	}
 
 	// Проверяем ключи и загружаем еще раз все данные для отправки сообщения
-	if emailCampaign.EmailTemplateId < 1 {
+	if *emailCampaign.EmailTemplateId < 1 {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного шаблона email-сообщения"}
 	}
-	err = account.LoadEntity(&emailCampaign.EmailTemplate, emailCampaign.EmailTemplateId)
+	err = account.LoadEntity(&emailCampaign.EmailTemplate, *emailCampaign.EmailTemplateId)
 	if err != nil {
 		log.Printf("Ошибка загрузки шаблона email-сообщения для кампании [%v]: %v\n", emailCampaign.Id, err)
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки шаблона email-сообщения"}
 	}
 
-	if emailCampaign.EmailBoxId < 1 {
+	if *emailCampaign.EmailBoxId < 1 {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного адреса отправителя"}
 	}
-	err = account.LoadEntity(&emailCampaign.EmailBox, emailCampaign.EmailBoxId)
+	err = account.LoadEntity(&emailCampaign.EmailBox, *emailCampaign.EmailBoxId)
 	if err != nil {
 		log.Printf("Ошибка загрузки адреса отправителя для кампании [%v]: %v\n", emailCampaign.Id, err)
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки адреса отправителя"}
 	}
 
-	if emailCampaign.UsersSegmentId < 1 {
+	if *emailCampaign.UsersSegmentId < 1 {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного сегмента пользователей"}
 	}
-	err = account.LoadEntity(&emailCampaign.UsersSegment, emailCampaign.UsersSegmentId)
+	err = account.LoadEntity(&emailCampaign.UsersSegment, *emailCampaign.UsersSegmentId)
 	if err != nil {
 		log.Printf("Ошибка загрузка сегмента пользователей для кампании [%v]: %v\n", emailCampaign.Id, err)
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки сегмента пользователей"}
@@ -383,7 +402,7 @@ func (emailCampaign *EmailCampaign) updateWorkStatus(status WorkStatus, reason..
 	
 	return emailCampaign.update(map[string]interface{}{
 		"status":	status,
-		"failedStatus": _reason,
+		"failed_status": _reason,
 	})
 }
 
@@ -611,9 +630,9 @@ func (emailCampaign *EmailCampaign) getUsersBySegment() []User {
 	segment := emailCampaign.UsersSegment
 	users := make([]User,0)
 
-	offset := uint(0)
+	offset := int64(0)
 	limit := uint(100)
-	total := uint(1)
+	total := int64(1)
 
 	for offset < total {
 
@@ -624,7 +643,7 @@ func (emailCampaign *EmailCampaign) getUsersBySegment() []User {
 
 		// добавляем в общий массив пользователей
 		users = append(users, _users...)
-		offset = offset + uint(len(_users))
+		offset = offset + int64(len(_users))
 		total = _total
 	}
 
@@ -645,19 +664,19 @@ func (emailCampaign EmailCampaign) Validate() error {
 	}
 
 	// Проверяем ключи и загружаем еще раз все данные для отправки сообщения
-	if emailCampaign.EmailTemplateId < 1 {
+	if *emailCampaign.EmailTemplateId < 1 {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного шаблона email-сообщения"}
 	}
-	err = account.LoadEntity(&emailCampaign.EmailTemplate, emailCampaign.EmailTemplateId)
+	err = account.LoadEntity(&emailCampaign.EmailTemplate, *emailCampaign.EmailTemplateId)
 	if err != nil {
 		log.Printf("Ошибка загрузки шаблона email-сообщения для кампании [%v]: %v\n", emailCampaign.Id, err)
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки шаблона email-сообщения"}
 	}
 
-	if emailCampaign.EmailBoxId < 1 {
+	if *emailCampaign.EmailBoxId < 1 {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного адреса отправителя"}
 	}
-	err = account.LoadEntity(&emailCampaign.EmailBox, emailCampaign.EmailBoxId)
+	err = account.LoadEntity(&emailCampaign.EmailBox, *emailCampaign.EmailBoxId)
 	if err != nil {
 		log.Printf("Ошибка загрузки адреса отправителя для кампании [%v]: %v\n", emailCampaign.Id, err)
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки адреса отправителя"}
@@ -673,10 +692,10 @@ func (emailCampaign EmailCampaign) Validate() error {
 
 	if err := webSite.ValidateDKIM(); err != nil { return err }
 
-	if emailCampaign.UsersSegmentId < 1 {
+	if *emailCampaign.UsersSegmentId < 1 {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного сегмента пользователей"}
 	}
-	err = account.LoadEntity(&emailCampaign.UsersSegment, emailCampaign.UsersSegmentId)
+	err = account.LoadEntity(&emailCampaign.UsersSegment, *emailCampaign.UsersSegmentId)
 	if err != nil {
 		log.Printf("Ошибка загрузка сегмента пользователей для кампании [%v]: %v\n", emailCampaign.Id, err)
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки сегмента пользователей"}
@@ -689,7 +708,8 @@ func (emailCampaign EmailCampaign) Validate() error {
 	data["accountId"] = account.Id
 	data["Account"] = account.GetDepersonalizedData() // << хз
 	data["userId"] = 0
-	data["User"] = User{Id: 1,Name: "TIvan", Username: "TUsername", Surname: "TSurname", Patronymic: "TPatronymic", PhoneRegion: "RU", Phone: "+79251000000"} // << хз
+	data["User"] = User{Id: 1,Name: utils.STRp("TIvan"), Username: utils.STRp("TUsername"), Surname: utils.STRp("TSurname"), Patronymic: utils.STRp("TPatronymic"),
+		PhoneRegion: utils.STRp("RU"), Phone: utils.STRp("+79251000000")} // << хз
 	data["unsubscribeUrl"] = "/unsubscribe_url"
 
 	viewData := ViewData {
@@ -724,9 +744,9 @@ func (emailCampaign *EmailCampaign) CheckDoubleFromHistory() (uint, error) {
 
 	histories := make([]MTAHistory,0)
 
-	offset := uint(0)
+	offset := int64(0)
 	limit := uint(100)
-	total := uint(1)
+	total := int64(1)
 
 	for offset < total {
 
@@ -737,11 +757,11 @@ func (emailCampaign *EmailCampaign) CheckDoubleFromHistory() (uint, error) {
 
 		// добавляем в общий массив пользователей
 		histories = append(histories, _histories...)
-		offset = offset + uint(len(_histories))
+		offset = offset + int64(len(_histories))
 		total = _total
 	}
 
-	count := 0
+	count := int64(0)
 	dobules := uint(0)
 
 	// Создаем под каждого пользователя задачу в mta-workflow

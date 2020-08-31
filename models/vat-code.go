@@ -2,22 +2,22 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 )
 
 // Признак предмета расчета
 type VatCode struct {
 	
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	AccountId 	uint	`json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	AccountId 	uint	`json:"account_id" gorm:"index;not null"` // аккаунт-владелец ключа
 
 	Name	string	`json:"name" gorm:"type:varchar(128);unique;not null;"`
 	Code	string	`json:"code" gorm:"type:varchar(32);unique;not null;"`
 
 	// Системный ID у яндекса, подробнее: https://kassa.yandex.ru/developers/54fz/parameters-values#vat-codes
-	YandexCode	uint	`json:"yandexCode" gorm:"type:int;unique;not null;"`
+	YandexCode	uint	`json:"yandex_code" gorm:"type:int;unique;not null;"`
 }
 
 // ############# Entity interface #############
@@ -31,8 +31,12 @@ func (vatCode VatCode) SystemEntity() bool { return vatCode.AccountId == 1 }
 // ############# Entity interface #############
 
 func (VatCode) PgSqlCreate() {
-	db.CreateTable(&VatCode{})
-	db.Model(&VatCode{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	if err := db.Migrator().CreateTable(&VatCode{}); err != nil {log.Fatal(err)}
+	// db.Model(&VatCode{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE vat_codes ADD CONSTRAINT vat_codes_conditions_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 
 	vatCodes := []VatCode {
 		{Name:   "Без НДС",				Code: "without", YandexCode: 1},
@@ -51,7 +55,7 @@ func (VatCode) PgSqlCreate() {
 	}
 	
 }
-func (vatCode *VatCode) BeforeCreate(scope *gorm.Scope) error {
+func (vatCode *VatCode) BeforeCreate(tx *gorm.DB) error {
 	vatCode.Id = 0
 	return nil
 }
@@ -92,14 +96,14 @@ func (vatCode *VatCode) load() error {
 func (*VatCode) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-func (VatCode) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (VatCode) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return VatCode{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
 }
 
-func (VatCode) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (VatCode) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	vatCodes := make([]VatCode,0)
-	var total uint
+	var total int64
 
 	if len(search) > 0 {
 

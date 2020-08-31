@@ -20,7 +20,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 
 	var input struct {
 		models.User
-		RoleId uint `json:"roleId"`
+		RoleId uint `json:"role_id"`
 		Password string `json:"password"`
 	}
 
@@ -41,7 +41,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Т.к. пароль не передается, читаем и назначем отдельно json -
-	input.User.Password = input.Password
+	input.User.Password = &input.Password
 
 	user, err := account.CreateUser(input.User, role)
 	if err != nil {
@@ -63,7 +63,7 @@ func UserUpload(w http.ResponseWriter, r *http.Request) {
 
 	var input struct {
 		Users []models.User `json:"users"`
-		RoleId uint `json:"roleId"`
+		RoleId uint `json:"role_id"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -134,13 +134,13 @@ func UsersGetListPagination(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
 	}
 
-	var total uint
+	var total int64
 	// users := make([]models.UserAndRole,0)
 	users := make([]models.User,0)
 

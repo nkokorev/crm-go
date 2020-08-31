@@ -2,82 +2,94 @@ package models
 
 import (
 	"database/sql"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
+	"log"
 	"time"
 )
 
 type Order struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
-	AccountId 	uint 	`json:"accountId" gorm:"type:int;index;not null"` // аккаунт-владелец ключа
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
+	AccountId 	uint 	`json:"account_id" gorm:"type:int;index;not null"` // аккаунт-владелец ключа
 	
 	// Ответственный менеджер, назначается внутри системы
-	ManagerId 	uint	`json:"managerId" gorm:"type:int;not null"`
+	ManagerId 	*uint	`json:"manager_id" gorm:"type:int;"`
 	Manager		User	`json:"manager"`
 
 	////// Данные заказа ///////
 	Individual	bool 	`json:"individual" gorm:"type:bool;default:true;not null;"` // Физ.лицо - true, Юрлицо - false
 
 	// Комментарий клиента к заказу
-	CustomerComment string	`json:"customerComment" gorm:"type:varchar(255);"`
+	CustomerComment *string	`json:"customer_comment" gorm:"type:varchar(255);"`
 
 	// Магазин (сайт) с которого пришел заказ. НЕ может быть null.
-	WebSiteId 	uint	`json:"webSiteId" gorm:"type:int;not null;"`
-	WebSite		WebSite	`json:"webSite"`
+	WebSiteId 	uint	`json:"web_site_id" gorm:"type:int;not null;"`
+	WebSite		WebSite	`json:"web_site"`
 
 	// Данные клиента
-	CustomerId 	uint	`json:"customerId" gorm:"type:int;"`
+	CustomerId 	uint	`json:"customer_id" gorm:"type:int;"`
 	Customer	User	`json:"customer"`
 
 	// Данные компании-заказчика
-	CompanyId 	uint	`json:"companyId" gorm:"type:int;"`
-	Company		User	`json:"company"`
+	CompanyId 	*uint	`json:"company_id" gorm:"type:int;"`
+	Company		User	`json:"company"` //todo: создать компании
 
 	// Способ (канал) заказа: "Заказ из корзины", "Заказ по телефону", "Пропущенный звонок", "Письмо.."
-	OrderChannelId 	uint	`json:"orderChannelId" gorm:"type:int;not null;"`
-	OrderChannel 	OrderChannel `json:"orderChannel"`
+	OrderChannelId 	uint	`json:"order_channel_id" gorm:"type:int;not null;"`
+	OrderChannel 	OrderChannel `json:"order_channel" gorm:"preload"`
 
 	//	Выбранный клиентом способ оплаты:
-	PaymentMethodId 	uint	`json:"paymentMethodId" gorm:"type:int;"`
-	PaymentMethodType 	string	`json:"paymentMethodType" gorm:"type:varchar(32);default:'payment_yandexes'"`
-	PaymentMethod 		PaymentMethod `json:"paymentMethod" gorm:"-"`
+	PaymentMethodId 	uint	`json:"payment_method_id" gorm:"type:int;"`
+	PaymentMethodType 	string	`json:"payment_method_type" gorm:"type:varchar(32);default:'payment_yandexes'"`
+	PaymentMethod 		PaymentMethod `json:"payment_method" gorm:"-"` // <<< интерфейс
 
 	// Фиксируем стоимость заказа
-	AmountId  	uint	`json:"amountId" gorm:"type:int;"`
+	AmountId  	uint			`json:"amount_id" gorm:"type:int;"`
 	Amount		PaymentAmount	`json:"amount"`
 
 	// Состав заказа
-	CartItems	[]CartItem		`json:"cartItems"`
-	Payment	Payment	`json:"payment"`
+	CartItems	[]CartItem	`json:"cart_items"`
+	Payment		Payment		`json:"payment" gorm:"preload"`
 
 	// Данные о доставке
 	// DeliveryOrderId	*uint	`json:"deliveryOrderId" gorm:"type:int;"`
-	DeliveryOrder	DeliveryOrder	`json:"deliveryOrder"`
+	DeliveryOrder	DeliveryOrder	`json:"delivery_order"`
 
 	// Комментарии менеджеров к заказу
-	Comments	[]OrderComment `json:"comments"`
+	Comments	[]Comment `json:"comments" gorm:"many2many:order_comment;"`
 
 	// Статус заказа
-	StatusId  	uint	`json:"statusId" gorm:"type:int;default:1;"`
-	Status		OrderStatus	`json:"status"`
+	StatusId  	uint		`json:"status_id" gorm:"type:int;default:1;"`
+	Status		OrderStatus	`json:"status" gorm:"preload"`
 
 	// IpV4	Ipv
 
-	CreatedAt time.Time 	`json:"createdAt"`
-	UpdatedAt time.Time 	`json:"updatedAt"`
-	DeletedAt *time.Time 	`json:"deletedAt"`
+	CreatedAt time.Time 	`json:"created_at"`
+	UpdatedAt time.Time 	`json:"updated_at"`
+	DeletedAt *time.Time 	`json:"deleted_at"`
 }
 
 func (Order) PgSqlCreate() {
-	db.AutoMigrate(&Order{})
-	db.Model(&Order{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&Order{}).AddForeignKey("amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
-	db.Model(&Order{}).AddForeignKey("order_channel_id", "order_channels(id)", "RESTRICT", "CASCADE")
-	db.Model(&Order{}).AddForeignKey("status_id", "order_statuses(id)", "RESTRICT", "CASCADE")
+	if err := db.Migrator().AutoMigrate(&Order{});err != nil {log.Fatal(err)}
+	// db.Model(&Order{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&Order{}).AddForeignKey("amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
+	// db.Model(&Order{}).AddForeignKey("order_channel_id", "order_channels(id)", "RESTRICT", "CASCADE")
+	// db.Model(&Order{}).AddForeignKey("status_id", "order_statuses(id)", "RESTRICT", "CASCADE")
+	err := db.Exec("ALTER TABLE orders " +
+		"ADD CONSTRAINT orders_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT orders_amount_id_fkey FOREIGN KEY (amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
+		"ADD CONSTRAINT orders_order_channel_id_fkey FOREIGN KEY (order_channel_id) REFERENCES order_channels(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
+		"DROP CONSTRAINT IF EXISTS fk_orders_customer," +
+		"DROP CONSTRAINT IF EXISTS fk_orders_manager," +
+		"DROP CONSTRAINT IF EXISTS fk_orders_company," +
+		"ADD CONSTRAINT orders_status_id_fkey FOREIGN KEY (status_id) REFERENCES order_statuses(id) ON DELETE RESTRICT ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (order *Order) BeforeCreate(scope *gorm.Scope) error {
+func (order *Order) BeforeCreate(tx *gorm.DB) error {
 	order.Id = 0
 
 	// 1. Рассчитываем PublicId (#id заказа) внутри аккаунта
@@ -92,7 +104,7 @@ func (order *Order) BeforeCreate(scope *gorm.Scope) error {
 	
 	return nil
 }
-func (order *Order) AfterCreate(scope *gorm.Scope) (error) {
+func (order *Order) AfterCreate(tx *gorm.DB) (error) {
 	event.AsyncFire(Event{}.OrderCreated(order.AccountId, order.Id))
 	return nil
 }
@@ -117,7 +129,7 @@ func (order *Order) AfterDelete(tx *gorm.DB) (err error) {
 	event.AsyncFire(Event{}.OrderDeleted(order.AccountId, order.Id))
 	return nil
 }
-func (order *Order) AfterFind() (err error) {
+func (order *Order) AfterFind(tx *gorm.DB) (err error) {
 
 	if order.PaymentMethodType != "" && order.PaymentMethodId > 0 {
 		// Get ALL Payment Methods
@@ -150,7 +162,9 @@ func (order Order) create() (Entity, error)  {
 
 	wb := order
 
-	if err := db.Create(&wb).First(&wb,wb.Id).Error; err != nil {
+	// fmt.Println(wb.ManagerId)
+	// fmt.Println(wb.Manager)
+	if err := db.Create(&wb).Error; err != nil {
 		return nil, err
 	}
 	if err := wb.GetPreloadDb(false,false, true).First(&wb,wb.Id).Error; err != nil {
@@ -197,13 +211,13 @@ func (order *Order) loadByPublicId() error {
 
 	return nil
 }
-func (Order) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (Order) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return Order{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
 }
-func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 	
 	orders := make([]Order,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -229,6 +243,7 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 	} else {
 
 		err := (&Order{}).GetPreloadDb(false,false, true).
+		// err := db.Model(&Order{}).Preload("Status").Preload("Payment").
 				Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -287,7 +302,7 @@ func (order *Order) delete () error {
 
 // ########## Work function ############
 func (order *Order) AppendProducts (products []Product) error {
-	if err := db.Model(order).Association("CartItems").Replace(products).Error; err != nil {
+	if err := db.Model(order).Association("CartItems").Replace(products); err != nil {
 		return err
 	}
 
@@ -308,7 +323,7 @@ func (order *Order) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool
 
 	if preload {
 		return _db.Preload("Status").Preload("Payment").Preload("Customer").Preload("DeliveryOrder").Preload("DeliveryOrder.Amount").
-			Preload("Amount").Preload("CartItems").Preload("CartItems.Product").Preload("CartItems.Amount").Preload("CartItems.PaymentMode").
+			Preload("Amount").Preload("CartItems").	Preload("CartItems.Product").Preload("CartItems.Amount").Preload("CartItems.PaymentMode").
 			Preload("Manager").Preload("WebSite").Preload("OrderChannel")
 	} else {
 		return _db

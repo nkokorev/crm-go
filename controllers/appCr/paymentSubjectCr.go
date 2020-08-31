@@ -38,7 +38,7 @@ func PaymentSubjectCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST PaymentSubject Created")
-	resp["paymentSubject"] = paymentSubject
+	resp["payment_subject"] = paymentSubject
 	u.Respond(w, resp)
 }
 
@@ -63,7 +63,7 @@ func PaymentSubjectGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET PaymentSubject")
-	resp["paymentSubject"] = paymentSubject
+	resp["payment_subject"] = paymentSubject
 	u.Respond(w, resp)
 }
 
@@ -97,7 +97,7 @@ func PaymentSubjectGetListPagination(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 
-	var total uint = 0
+	var total int64 = 0
 	paymentSubjects := make([]models.Entity,0)
 	
 	paymentSubjects, total, err = account.GetPaginationListEntity(&models.PaymentSubject{}, offset, limit, sortBy, search, nil)
@@ -108,7 +108,7 @@ func PaymentSubjectGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET PaymentSubject Pagination List")
 	resp["total"] = total
-	resp["paymentSubjects"] = paymentSubjects
+	resp["payment_subjects"] = paymentSubjects
 	u.Respond(w, resp)
 }
 
@@ -151,7 +151,7 @@ func PaymentSubjectUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH PaymentSubject Update")
-	resp["paymentSubject"] = paymentSubject
+	resp["payment_subject"] = paymentSubject
 	u.Respond(w, resp)
 }
 

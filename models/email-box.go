@@ -2,33 +2,40 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
+	"log"
 	"net/mail"
 )
 
 type EmailBox struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	AccountId uint `json:"-" gorm:"type:int;index;not null;"`
-	WebSiteId uint `json:"webSiteId" gorm:"type:int;not null;"` // какой сайт обязательно!
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
+	WebSiteId 	uint 	`json:"web_site_id" gorm:"type:int;not null;"` // какой сайт обязательно!
 	
-	Default bool `json:"default" gorm:"type:bool;default:false"` // является ли дефолтным почтовым ящиком для домена
-	Allowed bool `json:"allowed" gorm:"type:bool;default:true"` // прошел ли проверку домен на право отправлять с него почту
+	Default 	bool 	`json:"default" gorm:"type:bool;default:false"` // является ли дефолтным почтовым ящиком для домена
+	Allowed 	bool 	`json:"allowed" gorm:"type:bool;default:true"` // прошел ли проверку домен на право отправлять с него почту
 	
-	Name string `json:"name" gorm:"type:varchar(32);not null;"` // от имени кого отправляется RatusCRM, Магазин 357 грамм..
-	Box string `json:"box" gorm:"type:varchar(32);not null;"` // обратный адрес info@, news@, mail@...
+	Name 		string 	`json:"name" gorm:"type:varchar(32);not null;"` // от имени кого отправляется RatusCRM, Магазин 357 грамм..
+	Box 		string 	`json:"box" gorm:"type:varchar(32);not null;"` // обратный адрес info@, news@, mail@...
 
-	WebSite WebSite `json:"-"`
+	WebSite 	WebSite `json:"-"`
 }
 
 func (EmailBox) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
-	db.CreateTable(&EmailBox{})
-	db.Model(&EmailBox{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&EmailBox{}).AddForeignKey("web_site_id", "web_sites(id)", "CASCADE", "CASCADE")
+	if err := db.Migrator().CreateTable(&EmailBox{});err != nil {log.Fatal(err)}
+	// db.Model(&EmailBox{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&EmailBox{}).AddForeignKey("web_site_id", "web_sites(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE email_boxes " +
+		"ADD CONSTRAINT email_boxes_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT email_boxes_web_site_id_fkey FOREIGN KEY (web_site_id) REFERENCES web_sites(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (emailBox *EmailBox) BeforeCreate(scope *gorm.Scope) error {
+func (emailBox *EmailBox) BeforeCreate(tx *gorm.DB) error {
 	emailBox.Id = 0
 	return nil
 }
@@ -86,30 +93,8 @@ func (emailBox *EmailBox) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
-func (EmailBox) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-
-	webHooks := make([]EmailBox,0)
-	var total uint
-
-	err := db.Model(&EmailBox{}).Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
-		Find(&webHooks).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&EmailBox{}).Where("account_id = ?", accountId).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(webHooks))
-	for i := range webHooks {
-		entities[i] = &webHooks[i]
-	}
-
-	return entities, total, nil
+func (EmailBox) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+	return EmailBox{}.getPaginationList(accountId,0,10,sortBy, "", nil)
 }
 
 func (EmailBox) getListByWebSite(accountId uint, webSiteId uint, sortBy string) ([]EmailBox, error) {
@@ -125,10 +110,10 @@ func (EmailBox) getListByWebSite(accountId uint, webSiteId uint, sortBy string) 
 	return emailBoxes, nil
 }
 
-func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	webHooks := make([]EmailBox,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -175,6 +160,11 @@ func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 }
 
 func (emailBox *EmailBox) update(input map[string]interface{}) error {
+	delete(input,"web_site")
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"web_site_id"}); err != nil {
+		return err
+	}
 	return db.Set("gorm:association_autoupdate", false).Model(emailBox).Omit("id", "account_id").Updates(input).Error
 }
 

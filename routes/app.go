@@ -119,10 +119,10 @@ var AppRoutes = func(r *mux.Router) {
 
 	// ### Product Group ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups", appCr.ProductGroupCreate).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups", appCr.ProductGroupListPaginationByShopGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups/{productGroupId:[0-9]+}", appCr.ProductGroupByShopGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups/{productGroupId:[0-9]+}", appCr.ProductGroupUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups/{productGroupId:[0-9]+}", appCr.ProductGroupDelete).Methods(http.MethodDelete, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups", appCr.ProductGroupListPaginationByShopGet).Methods(http.MethodGet, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups/{productGroupId:[0-9]+}", appCr.ProductGroupByShopGet).Methods(http.MethodGet, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups/{productGroupId:[0-9]+}", appCr.ProductGroupUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups/{productGroupId:[0-9]+}", appCr.ProductGroupDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/product-cards", appCr.ProductCardCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-cards", appCr.ProductCardByShopCreate).Methods(http.MethodPost, http.MethodOptions)

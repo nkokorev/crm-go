@@ -2,16 +2,18 @@ package models
 
 import (
 	"database/sql"
-	"github.com/jinzhu/gorm"
+	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
+	"log"
 )
 
 // Прообраз торговой точки
 type WebSite struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"`
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	PublicId	uint   	`json:"public_id" gorm:"index;precision:0;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name 		string `json:"name" gorm:"type:varchar(255);default:'Новый магазин';not null;"` // Внутреннее имя сайта
@@ -19,28 +21,35 @@ type WebSite struct {
 	URL 		string `json:"url" gorm:"type:varchar(255);not_null;"` // https://ratuscrm.com, https://airoclimate.ru, http://vetvent.ru, ..
 
 	// Email DKIM
-	DKIMPublicRSAKey 	string `json:"dkimPublicRSAKey" gorm:"type:text;"` // публичный ключ
-	DKIMPrivateRSAKey 	string `json:"dkimPrivateRSAKey" gorm:"type:text;"` // приватный ключ
-	DKIMSelector 		string `json:"dkimSelector" gorm:"type:varchar(255);default:'dk1'"` // dk1
+	DKIMPublicRSAKey 	string `json:"dkim_public_rsa_key" gorm:"type:text;"` // публичный ключ
+	DKIMPrivateRSAKey 	string `json:"dkim_private_rsa_key" gorm:"type:text;"` // приватный ключ
+	DKIMSelector 		string `json:"dkim_selector" gorm:"type:varchar(255);default:'dk1'"` // dk1
 
 	// Контактные данные
-	Address 	string `json:"address" gorm:"type:varchar(255);default:null;"` // Публичный физический адрес
-	Email 		string `json:"email" gorm:"type:varchar(255);default:null;"` // Публичный email магазина
-	Phone 		string `json:"phone" gorm:"type:varchar(255);default:null;"` // Публичный телефон
+	Address 	*string `json:"address" gorm:"type:varchar(255);"` // Публичный физический адрес
+	Email 		*string `json:"email" gorm:"type:varchar(255);"` // Публичный email магазина
+	Phone 		*string `json:"phone" gorm:"type:varchar(255);"` // Публичный телефон
 
 	Type		string 	`json:"type" gorm:"type:varchar(50);not null;"` // имя типа shop, site, ... хз как это использовать, на будущее
-	Description string `json:"description" gorm:"type:text;default:''"` // html-описание магазина
+	Description *string `json:"description" gorm:"type:text;"` // html-описание магазина
 
 	Deliveries 		[]Delivery  `json:"deliveries" gorm:"-"`// `gorm:"polymorphic:Owner;"`
-	ProductGroups 	[]ProductGroup `json:"productGroups"`
-	EmailBoxes 		[]EmailBox `json:"emailBoxes"` // доступные почтовые ящики с которых можно отправлять
+	// ProductGroups 	[]ProductGroup `json:"productGroups" gorm:"-"`
+	WebPages 		[]WebPage 	`json:"web_pages"`
+	EmailBoxes 		[]EmailBox `json:"email_boxes" gorm:"preload"` // доступные почтовые ящики с которых можно отправлять
 	// PaymentOptions 	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_web_sites;preload"` // доступные почтовые ящики с которых можно отправлять
 }
 
 func (WebSite) PgSqlCreate() {
 	
-	db.CreateTable(&WebSite{})
-	db.Model(&WebSite{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	if err := db.Migrator().CreateTable(&WebSite{}); err != nil {
+		log.Fatal(err)
+	}
+	// db.Model(&WebSite{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE web_sites ADD CONSTRAINT web_sites_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n-- alter table web_sites alter column default_account_id set default null;\n-- alter table web_sites alter column invited_user_id set default null;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
 
 // ############# Entity interface #############
@@ -71,7 +80,7 @@ func (webSite *WebSite) GetPreloadDb(autoUpdateOff bool, getModel bool, preload 
 	}
 
 }
-func (webSite *WebSite) BeforeCreate(scope *gorm.Scope) error {
+func (webSite *WebSite) BeforeCreate(tx *gorm.DB) error {
 	webSite.Id = 0
 
 	var lastIdx sql.NullInt64
@@ -86,13 +95,22 @@ func (webSite *WebSite) BeforeCreate(scope *gorm.Scope) error {
 	webSite.PublicId = 1 + uint(lastIdx.Int64)
 	return nil
 }
-func (webSite *WebSite) AfterFind() (err error) {
+func (webSite *WebSite) BeforeUpdate(tx *gorm.DB) (err error) {
+	// fmt.Println(tx.Statement.Select("public_id"))
+	// fmt.Println(tx.Statement.Clauses)
+	// fmt.Println(tx.Statement.Context.Value("public_id"))
+	/*if tx.Statement.Changed("public_id") {
+		tx.Statement.SetColumn("public_id", webSite.PublicId)
+	}*/
+	return
+}
+func (webSite *WebSite) AfterFind(tx *gorm.DB) (err error) {
 	
 	webSite.Deliveries = webSite.GetDeliveryMethods()
 	return nil
 }
 
-func (webSite *WebSite) AfterCreate(scope *gorm.Scope) (error) {
+func (webSite *WebSite) AfterCreate(tx *gorm.DB) error {
 	event.AsyncFire(Event{}.WebSiteCreated(webSite.AccountId, webSite.Id))
 	return nil
 }
@@ -153,13 +171,13 @@ func (webSite *WebSite) loadByPublicId() error {
 
 	return nil
 }
-func (WebSite) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (WebSite) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return WebSite{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	webSites := make([]WebSite,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -205,10 +223,21 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 	return entities, total, nil
 }
 func (webSite *WebSite) update(input map[string]interface{}) error {
-	delete(input,"emailBoxes")
+	delete(input,"email_boxes")
+	delete(input,"web_pages")
 	delete(input,"deliveries")
 
-	return webSite.GetPreloadDb(true, true, false).Where("id = ?", webSite.Id).Omit("id", "account_id").Updates(input).Error
+	// fmt.Printf("Type: %T | %v\n", input["public_id"], input["public_id"])
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
+		return err
+	}
+
+	if err := webSite.GetPreloadDb(true, true, false).
+		Where("id = ?", webSite.Id).Omit("id", "account_id","public_id").Updates(input).Error;err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
 }
 func (webSite *WebSite) delete () error {
 	return webSite.GetPreloadDb(false, true, false).Where("id = ?", webSite.Id).Delete(webSite).Error
@@ -217,17 +246,48 @@ func (webSite *WebSite) delete () error {
 
 // ######### ACCOUNT Functions ############
 
-func (account Account) ExistProductGroups(groupId uint) bool {
+/*func (account Account) ExistProductGroups(groupId uint) bool {
 	if groupId < 1 {
 		return false
 	}
 
-	return !db.Model(&ProductGroup{}).Where("account_id = ? AND id = ?", account.Id, groupId).First(&ProductGroup{}).RecordNotFound()
+	if err := db.Model(&ProductGroup{}).Where("account_id = ? AND id = ?", account.Id, groupId).First(&ProductGroup{}).Error;err != nil {
+		return false
+	}
+	return true
+}*/
+func (webSite WebSite) CreatePage(input WebPage) (*WebPage, error) {
+	input.AccountId = webSite.AccountId
+	input.WebSiteId = webSite.Id
+	
+	pEntity, err := input.create(); if err != nil {
+		return nil, err
+	}
+	page, ok := pEntity.(*WebPage)
+	if !ok {
+		return nil, utils.Error{Message: "Ошибка преобразования WebPage"}
+	}
+
+	if err := db.Model(&webSite).Association("WebPages").Append(page); err != nil {
+		return nil, err
+	}
+
+	return page, nil
+}
+func (webSite WebSite) CreateProductCard(input ProductCard) (*ProductCard, error) {
+	input.AccountId = webSite.AccountId
+	input.WebSiteId = webSite.Id
+
+	card, err := input.create(); if err != nil {
+		return nil, err
+	}
+
+	return card, nil
 }
 // ######### END OF ACCOUNT Functions ############
 
 // ######### SHOP PRODUCT Functions ############
-func (webSite WebSite) CreateProduct(input Product, card *ProductCard) (*Product, error) {
+func (webSite WebSite) CreateProduct(input Product, card ProductCard) (*Product, error) {
 	input.AccountId = webSite.AccountId
 
 	if input.ExistSKU() {
@@ -244,10 +304,8 @@ func (webSite WebSite) CreateProduct(input Product, card *ProductCard) (*Product
 	}
 
 	// Добавляем продукт в карточку товара
-	if card != nil {
-		if err = card.AppendProduct(product); err != nil {
-			return nil, err
-		}
+	if err = card.AppendProduct(product); err != nil {
+		return nil, err
 	}
 	
 	return product, nil
@@ -266,7 +324,8 @@ func (webSite WebSite) GetProduct(productId uint) (*Product, error) {
 
 	return product, nil
 }
-func (webSite WebSite) CreateProductWithCardAndGroup(input Product, newCard ProductCard, groupId *uint) (*Product, error) {
+func (webSite WebSite) CreateProductWithProductCard(input Product, newCard ProductCard, webPageId uint) (*Product, error) {
+
 	input.AccountId = webSite.AccountId
 
 	if input.ExistSKU() {
@@ -285,12 +344,11 @@ func (webSite WebSite) CreateProductWithCardAndGroup(input Product, newCard Prod
 	// Создаем карточку товара
 	newCard.AccountId = webSite.AccountId
 	newCard.WebSiteId = webSite.Id
-	if groupId != nil {
-		newCard.ProductGroupId = groupId
-	}
+	newCard.WebPageId = webPageId
+	
 	card, err := newCard.create()
 	if err != nil {
-		return product, err
+		return nil, err
 	}
 
 	// Добавляем товар в новую карточку
@@ -298,8 +356,9 @@ func (webSite WebSite) CreateProductWithCardAndGroup(input Product, newCard Prod
 		return nil, err
 	}
 
-	return product, nil
+	return nil, nil
 }
+
 /////////////////////////
 
 func (webSite WebSite) AppendDeliveryMethod(entity Entity) error {
@@ -511,7 +570,7 @@ func (webSite WebSite) DeliveryCodeList() map[string]interface{} {
 // Вспомогательная функция
 func GetAccountIdByWebSiteId(webSiteId uint) (uint, error) {
 	type Result struct {
-		AccountId uint `json:"accountId"`
+		AccountId uint `json:"account_id"`
 	}
 	var result Result
 	if err := db.Model(&WebSite{}).Where("id = ?", webSiteId).Scan(&result).Error; err != nil {

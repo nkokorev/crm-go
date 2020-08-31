@@ -2,21 +2,21 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 	"time"
 )
 
 // Список системных функций обработки, которые можно вызвать в Observer
 type HandlerItem struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name		string 	`json:"name" gorm:"type:varchar(255);unique;not null;"`  // Вызов WebHook'а
 
 	Code		string 	`json:"code" gorm:"type:varchar(255);unique;not null;"` // Имя функции 'WebHookCall'
-	EntityType	string 	`json:"entityType" gorm:"type:varchar(50);not null;"` // имя типа (таблицы): 'web_hooks'
+	EntityType	string 	`json:"entity_type" gorm:"type:varchar(50);not null;"` // имя типа (таблицы): 'web_hooks'
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false;"` // Глобальный статус Observer
 
@@ -24,13 +24,17 @@ type HandlerItem struct {
 
 	Description string 	`json:"description" gorm:"type:text;"` // pgsql: text
 
-	CreatedAt time.Time `json:"createdAt"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 
 func (HandlerItem) PgSqlCreate() {
-	db.CreateTable(&HandlerItem{})
-	db.Model(&HandlerItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Migrator().CreateTable(&HandlerItem{})
+	// db.Model(&HandlerItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE handler_items ADD CONSTRAINT handler_items_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 
 	mainAccount, err := GetMainAccount()
 	if err != nil {
@@ -52,7 +56,7 @@ func (HandlerItem) PgSqlCreate() {
 
 }
 
-func (obItem *HandlerItem) BeforeCreate(scope *gorm.Scope) error {
+func (obItem *HandlerItem) BeforeCreate(tx *gorm.DB) error {
 	obItem.Id = 0
 	return nil
 }
@@ -101,35 +105,13 @@ func (obItem *HandlerItem) load() error {
 func (*HandlerItem) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-func (HandlerItem) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-
-	obItems := make([]HandlerItem,0)
-	var total uint
-
-	err := db.Model(&HandlerItem{}).Limit(100).Order(sortBy).Where( "account_id IN (?)", []uint{1, accountId}).
-		Find(&obItems).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&HandlerItem{}).Where( "account_id IN (?)", []uint{1, accountId}).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(obItems))
-	for i := range obItems {
-		entities[i] = &obItems[i]
-	}
-
-	return entities, total, nil
+func (HandlerItem) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+	return HandlerItem{}.getPaginationList(accountId,0,100,sortBy,"", nil)
 }
-func (HandlerItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (HandlerItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	obItems := make([]HandlerItem,0)
-	var total uint
+	var total int64
 
 	if len(search) > 0 {
 

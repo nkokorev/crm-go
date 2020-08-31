@@ -76,7 +76,8 @@ func StringArrToRawJson(input []string) json.RawMessage {
 
 	b, err := json.Marshal(input)
 	if err != nil {
-		return json.RawMessage(`{}`)
+		// return json.RawMessage(`{}`)
+		return json.RawMessage(`[]`)
 	}
 	return b
 }
@@ -85,7 +86,8 @@ func UINTArrToRawJson(input []uint) json.RawMessage {
 
 	b, err := json.Marshal(input)
 	if err != nil {
-		return json.RawMessage(`{}`)
+		// return json.RawMessage(`{}`)
+		return json.RawMessage(`[]`)
 	}
 	return b
 }

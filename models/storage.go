@@ -3,9 +3,10 @@ package models
 import (
 	"errors"
 	"github.com/fatih/structs"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -13,60 +14,68 @@ import (
 
 type Storage struct {
 
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	HashId 		string 	`json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	HashId 		string 	`json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	OwnerId   	uint	//`json:"-"`   // ?? gorm:"association_foreignkey:Id"
-	OwnerType	string	//`json:"ownerType" gorm:"type:varchar(80);column:owner_type"`
+	OwnerID   	uint	`json:"-" `   // ?? gorm:"association_foreignkey:Id"
+	// OwnerID   	uint	`json:"-" `   // ?? gorm:"association_foreignkey:Id"
+	OwnerType	string	`json:"owner_type" gorm:"type:varchar(80);column:owner_type"`
 
 	//Product		Product	`json:"-" gorm:"polymorphic:Owner;"`
 
-	//ProductId 	uint	`json:"productId" gorm:"type:int;default:null;"` // id of products
+	//ProductId 	uint	`json:"product_id" gorm:"type:int;default:null;"` // id of products
 	//EmailId 	uint	`json:"emailId" gorm:"type:int;default:null;"` // id of email template
 
-	Priority 	int		`json:"priority" gorm:"type:int;default:null;"` // Порядок отображения (часто нужно файлам)
+	Priority 	int		`json:"priority" gorm:"type:int;"` // Порядок отображения (часто нужно файлам)
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // выводить ли где-то это изображение или нет
 
 	Name 				string `json:"name" gorm:"type:varchar(255);"` // имя файла (оно же при отдаче)
 	Alt 				string `json:"alt" gorm:"type:varchar(255);"` // alt для изображений
-	ShortDescription 	string `json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
+	ShortDescription 	string `json:"short_description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 	Description 		string `json:"description" gorm:"type:text;"` // pgsql: text // большое описание изображения (не, ну мало ли фанаты фото)
 
 	// MetaData
 	MIME 		string 	`json:"mime" gorm:"type:varchar(90);"` // мета тип файла
-	Size 		uint 	`json:"size" gorm:"type:int;"` // Kb
+	Size 		int64 	`json:"size" gorm:"type:int;"` // Kb
 
 	Data 		[]byte `json:"data" gorm:"type:bytea;"` // тело файла
 	URL 		string 	`json:"url" sql:"-"` // see AfterFind
 
-	CreatedAt 	time.Time  `json:"createdAt"`
-	UpdatedAt 	time.Time  `json:"updatedAt"`
+	// Время жизни файла, по умолчанию - null (без ограничений)
+	ExpiredAt 	*time.Time  `json:"expired_at"`
+
+	CreatedAt 	time.Time  `json:"created_at"`
+	UpdatedAt 	time.Time  `json:"updated_at"`
 }
 
 func (Storage) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
-	db.CreateTable(&Storage{})
-	db.Model(&Storage{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Migrator().CreateTable(&Storage{})
+	// db.Model(&Storage{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE storage ADD CONSTRAINT storages_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 
 }
 func (Storage) TableName() string {
 	return "storage"
 }
 
-func (fs *Storage) BeforeCreate(scope *gorm.Scope) error {
+func (fs *Storage) BeforeCreate(tx *gorm.DB) error {
 	fs.Id = 0
 	fs.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	fs.CreatedAt = time.Now().UTC()
 	return nil
 }
-func (fs *Storage) AfterCreate(scope *gorm.Scope) (error) {
+func (fs *Storage) AfterCreate(tx *gorm.DB) (error) {
 	switch fs.OwnerType {
 	case "products":
-		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, fs.OwnerId))
+		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, uint(fs.OwnerID)))
 	case "articles":
-		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, fs.OwnerId))
+		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
 	default:
 		event.AsyncFire(Event{}.StorageCreated(fs.AccountId, fs.Id))
 	}
@@ -76,9 +85,9 @@ func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
 	
 	switch fs.OwnerType {
 	case "products":
-		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, fs.OwnerId))
+		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, uint(fs.OwnerID)))
 	case "articles":
-		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, fs.OwnerId))
+		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
 	default:
 		event.AsyncFire(Event{}.StorageUpdated(fs.AccountId, fs.Id))
 	}
@@ -88,16 +97,16 @@ func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
 func (fs *Storage) AfterDelete(tx *gorm.DB) (err error) {
 	switch fs.OwnerType {
 	case "products":
-		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, fs.OwnerId))
+		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, uint(fs.OwnerID)))
 	case "articles":
-		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, fs.OwnerId))
+		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
 	default:
 		event.AsyncFire(Event{}.StorageDeleted(fs.AccountId, fs.Id))
 	}
 	return nil
 }
 
-func (fs *Storage) AfterFind() (err error) {
+func (fs *Storage) AfterFind(tx *gorm.DB) (err error) {
 
 	fs.LoadURL()
 	/*
@@ -226,14 +235,14 @@ func (fs *Storage) load() error {
 func (*Storage) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-func (Storage) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (Storage) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return Storage{}.getPaginationList(accountId,0,100,sortBy,"",nil)
 }
 
-func (Storage) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (Storage) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	files := make([]Storage,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -316,11 +325,11 @@ func (fs *Storage) delete () error {
 // ########### ACCOUNT FUNCTIONAL ###########
 
 // Возвращает объем использованного диска в КБ
-func (account Account) StorageDiskSpaceUsed() (uint, error) {
-	var sum,count uint
+func (account Account) StorageDiskSpaceUsed() (int64, error) {
+	var sum,count int64
 
-	sum = 0
-	count = 0
+	// sum = 0
+	// count := int64(0)
 	err := db.Table("storage").Where("account_id = ?", account.Id).Count(&count).Error
 	if err != nil {
 		return 0, err
@@ -361,7 +370,7 @@ func (Account) StorageGetPublicByHashId(hashId string) (*Storage, error) {
 	
 	return fs, nil
 }
-func (account Account) GetStoragePaginationListByOwner(offset, limit int, sortBy, search string, ownerId uint, ownerType string) ([]Entity, uint, error) {
+func (account Account) GetStoragePaginationListByOwner(offset, limit int, sortBy, search string, ownerId uint, ownerType string) ([]Entity, int64, error) {
 
 	if ownerType == "" {
 		return  Storage{}.getPaginationList(account.Id, offset, limit, sortBy, search,nil)
@@ -369,7 +378,7 @@ func (account Account) GetStoragePaginationListByOwner(offset, limit int, sortBy
 
 
 	files := make([]Storage,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -420,19 +429,19 @@ func (account Account) GetStoragePaginationListByOwner(offset, limit int, sortBy
 func (account Account) CallEventByStorageCreated(fs Storage) {
 	switch fs.OwnerType {
 	case "products":
-		event.AsyncFire(Event{}.ProductUpdated(account.Id, fs.OwnerId))
+		event.AsyncFire(Event{}.ProductUpdated(account.Id, uint(fs.OwnerID)))
 	case "articles":
-		event.AsyncFire(Event{}.ArticleUpdated(account.Id, fs.OwnerId))
+		event.AsyncFire(Event{}.ArticleUpdated(account.Id, uint(fs.OwnerID)))
 	default:
-		event.AsyncFire(Event{}.StorageCreated(account.Id, fs.OwnerId))
+		event.AsyncFire(Event{}.StorageCreated(account.Id, uint(fs.OwnerID)))
 	}
 }
 func (account Account) CallEventByStorageUpdated(fs Storage) {
 	switch fs.OwnerType {
 	case "products":
-		event.AsyncFire(Event{}.ProductUpdated(account.Id, fs.OwnerId))
+		event.AsyncFire(Event{}.ProductUpdated(account.Id, uint(fs.OwnerID)))
 	case "articles":
-		event.AsyncFire(Event{}.ArticleUpdated(account.Id, fs.OwnerId))
+		event.AsyncFire(Event{}.ArticleUpdated(account.Id, uint(fs.OwnerID)))
 	default:
 		event.AsyncFire(Event{}.StorageUpdated(account.Id, fs.Id))
 	}
@@ -440,13 +449,13 @@ func (account Account) CallEventByStorageUpdated(fs Storage) {
 func (account Account) CallEventByStorageDeletes(fs Storage) {
 	switch fs.OwnerType {
 	case "products":
-		event.AsyncFire(Event{}.ProductUpdated(account.Id, fs.OwnerId))
-		// go account.CallWebHookIfExist(EventArticleUpdated, Product{Id: fs.OwnerId})
+		event.AsyncFire(Event{}.ProductUpdated(account.Id, uint(fs.OwnerID)))
+		// go account.CallWebHookIfExist(EventArticleUpdated, Product{Id: fs.OwnerID})
 	case "articles":
-		event.AsyncFire(Event{}.ArticleUpdated(account.Id, fs.OwnerId))
-		// go account.CallWebHookIfExist(EventArticleUpdated, Article{Id: fs.OwnerId})
+		event.AsyncFire(Event{}.ArticleUpdated(account.Id, uint(fs.OwnerID)))
+		// go account.CallWebHookIfExist(EventArticleUpdated, Article{Id: fs.OwnerID})
 	default:
-		event.AsyncFire(Event{}.StorageDeleted(account.Id, fs.OwnerId))
+		event.AsyncFire(Event{}.StorageDeleted(account.Id, uint(fs.OwnerID)))
 	}
 }
 
@@ -469,9 +478,17 @@ func (product Product) AppendAssociationImage(fs Entity) error {
 	if !ok {
 		return utils.Error{Message: "Не возможно добавить изображение продукту"}
 	}
-	if err := db.Model(&product).Association("Images").Append(file).Error; err != nil {
-		return err
+
+	if file.Id > 0 {
+		 if err := fs.update(map[string]interface{}{"owner_id":product.Id,"owner_type":"products"}); err != nil {
+		 	return err
+		 }
+	} else {
+		if err := db.Model(&product).Association("Images").Append(file); err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 
@@ -481,8 +498,15 @@ func (article Article) AppendAssociationImage(fs Entity) error {
 		return utils.Error{Message: "Не возможно добавить изображение продукту"}
 	}
 
-	if err := db.Model(&article).Association("Image").Append(file).Error; err != nil {
-		return err
+	if file.Id > 0 {
+		if err := fs.update(map[string]interface{}{"owner_id":article.Id,"owner_type":"articles"}); err != nil {
+			return err
+		}
+	} else {
+		if err := db.Model(&article).Association("Image").Append(file); err != nil {
+			return err
+		}
 	}
+
 	return nil
 }

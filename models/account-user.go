@@ -4,41 +4,55 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/fatih/structs"
-	"github.com/jinzhu/gorm"
-	"github.com/jinzhu/gorm/dialects/postgres"
+	"log"
+
+	// "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
 // M<>M
 type AccountUser struct {
 	
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"`
+	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"`
 
-	AccountId uint	`json:"accountId" gorm:"type:int;index;not null;"`
-	UserId uint	`json:"userId" gorm:"type:int;index;not null;"`
-	RoleId uint	`json:"roleId" gorm:"type:int;not null;"`
+	AccountId 	uint	`json:"account_id" gorm:"type:int;index;not null;"`
+	UserId 		uint	`json:"user_id" gorm:"type:int;index;not null;"`
+	RoleId 		uint	`json:"role_id" gorm:"type:int;not null;"`
 
 	// Данные пользователя в контексте аккаунта
-	JsonData postgres.Jsonb `json:"jsonData" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	// JsonData postgres.Jsonb `json:"json_data" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	JsonData 	datatypes.JSON `json:"json_data"`
 
 	// rating [0-5]
-	EmailMarketingRating int8 `json:"emailMarketingRating" gorm:"type:smallint;default:3;"`
+	EmailMarketingRating int8 `json:"email_marketing_rating" gorm:"type:smallint;default:3;"`
 
 	User    User    `json:"-"  gorm:"preload:true"`
-	Account Account `json:"-" gorm:"preload:true"`
+	Account Account `json:"account" gorm:"preload:true"`
 	Role    Role    `json:"role" gorm:"preload:true"`
 }
 
 func (AccountUser) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
-	db.AutoMigrate(&AccountUser{})
-	db.Model(&AccountUser{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&AccountUser{}).AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
-	db.Model(&AccountUser{}).AddForeignKey("role_id", "roles(id)", "RESTRICT", "CASCADE")
+	if err := db.Migrator().DropTable(&AccountUser{}); err != nil {log.Fatal(err)}
+	if err := db.Migrator().CreateTable(&AccountUser{}); err != nil {
+		log.Fatal(err)
+	}
+	// db.Model(&AccountUser{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&AccountUser{}).AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
+	// db.Model(&AccountUser{}).AddForeignKey("role_id", "roles(id)", "RESTRICT", "CASCADE")
 	db.Exec("create unique index uix_account_users_account_id_user_id_role_id ON account_users (account_id,user_id,role_id);")
+	err := db.Exec("ALTER TABLE account_users " +
+		"ADD CONSTRAINT account_users_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT account_users_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT account_users_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (aUser *AccountUser) BeforeCreate(scope *gorm.Scope) error {
+func (aUser *AccountUser) BeforeCreate(tx *gorm.DB) error {
 
 	// 1. Рассчитываем PublicId (#id заказа) внутри аккаунта
 	var lastIdx sql.NullInt64
@@ -98,7 +112,10 @@ func (aUser AccountUser) create () (*AccountUser, error) {
 }
 
 func (aUser *AccountUser) update (input interface{}) error {
-	return db.Model(AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).
+	/*if err := utils.ConvertMapVarsToUINT(&input, []string{"role_id"}); err != nil {
+		return err
+	}*/
+	return db.Model(AccountUser{}).Where("account_id = ? AND user_id = ?", aUser.AccountId, aUser.UserId).Omit("public_id").
 		Updates(input).Preload("Account").Preload("User").Preload("Role").First(aUser).Error
 }
 

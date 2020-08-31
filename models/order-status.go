@@ -2,30 +2,30 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 	"time"
 )
 
 type OrderStatus struct {
-	Id     			uint   	`json:"id" gorm:"primary_key"`
-	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// new, canceled, ...
-	Code	string 	`json:"code" gorm:"type:varchar(32);"`
+	Code		string 	`json:"code" gorm:"type:varchar(32);"`
 
 	// new, agreement, equipment, delivery, completed, canceled
-	Group	string 	`json:"group" gorm:"type:varchar(32);"`
-	GroupName	string 	`json:"groupName" gorm:"type:varchar(128);"`
+	Group		string 	`json:"group" gorm:"type:varchar(32);"`
+	GroupName	string 	`json:"group_name" gorm:"type:varchar(128);"`
 
 	// 'Новый заказ', 'Передан в комплектацию', 'Отменен'
-	Name	string `json:"name" gorm:"type:varchar(128);"`
+	Name		string `json:"name" gorm:"type:varchar(128);"`
 
 	Description string 	`json:"description" gorm:"type:varchar(255);"` // Описание назначения канала
 
-	CreatedAt 		time.Time `json:"createdAt"`
-	UpdatedAt 		time.Time `json:"updatedAt"`
+	CreatedAt 		time.Time `json:"created_at"`
+	UpdatedAt 		time.Time `json:"updated_at"`
 }
 
 // ############# Entity interface #############
@@ -39,8 +39,12 @@ func (orderStatus OrderStatus) SystemEntity() bool { return orderStatus.AccountI
 // ############# Entity interface #############
 
 func (OrderStatus) PgSqlCreate() {
-	db.AutoMigrate(&OrderStatus{})
-	db.Model(&OrderStatus{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Migrator().CreateTable(&OrderStatus{})
+	// db.Model(&OrderStatus{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE order_statuses ADD CONSTRAINT order_statuses_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 
 	mainAccount, err := GetMainAccount()
 	if err != nil {
@@ -73,7 +77,7 @@ func (OrderStatus) PgSqlCreate() {
 		}
 	}
 }
-func (orderStatus *OrderStatus) BeforeCreate(scope *gorm.Scope) error {
+func (orderStatus *OrderStatus) BeforeCreate(tx *gorm.DB) error {
 	orderStatus.Id = 0
 	return nil
 }
@@ -115,13 +119,13 @@ func (*OrderStatus) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
-func (OrderStatus) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (OrderStatus) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return OrderStatus{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-func (OrderStatus) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (OrderStatus) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	orderStatuses := make([]OrderStatus,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {

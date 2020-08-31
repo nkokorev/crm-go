@@ -3,11 +3,11 @@ package models
 import (
 	"bytes"
 	"database/sql"
-	"encoding/json"
 	"fmt"
-	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
 	"html/template"
 	"log"
 	"net/mail"
@@ -17,44 +17,44 @@ import (
 )
 
 type EmailNotification struct {
-	Id     			uint   	`json:"id" gorm:"primary_key"`
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"`
+	Id     			uint   	`json:"id" gorm:"primaryKey"`
+	PublicId		uint   	`json:"public_id" gorm:"type:int;index;not null;default:1"`
 	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Status 			WorkStatus `json:"status" gorm:"type:varchar(18);default:'pending'"`
-	FailedStatus	string 		`json:"failedStatus" gorm:"type:varchar(255);"`
+	FailedStatus	string 		`json:"failed_status" gorm:"type:varchar(255);"`
 
 	// Delay			uint 	`json:"delay" gorm:"type:int;default:0"` // Задержка перед отправлением в минутах: [0-180]
-	DelayTime		time.Duration `json:"delayTime" gorm:"type:int8;default:0"`// << учитывается только время [0-24]
+	DelayTime		time.Duration `json:"delay_time" gorm:"type:int8;default:0"`// << учитывается только время [0-24]
 	
 	Name 			string 	`json:"name" gorm:"type:varchar(128);default:''"` // "Оповещение менеджера", "Оповещение клиента"
 
 	Subject			string 	`json:"subject" gorm:"type:varchar(128);not null;"` // Тема сообщения, компилируются
-	PreviewText		string 	`json:"previewText" gorm:"type:varchar(255);default:''"` // Тема сообщения, компилируются
+	PreviewText		string 	`json:"preview_text" gorm:"type:varchar(255);default:''"` // Тема сообщения, компилируются
 	
-	EmailTemplateId *uint 	`json:"emailTemplateId" gorm:"type:int;default:null;"` // всегда должен быть шаблон, иначе смысла в нем нет
-	EmailTemplate 	EmailTemplate 	`json:"emailTemplate" gorm:"preload:true"`
+	EmailTemplateId *uint 	`json:"email_template_id" gorm:"type:int;default:null;"` // всегда должен быть шаблон, иначе смысла в нем нет
+	EmailTemplate 	EmailTemplate 	`json:"email_template" gorm:"preload:true"`
 
-	EmailBoxId		*uint 	`json:"emailBoxId" gorm:"type:int;default:null;"` // С какого ящика идет отправка
-	EmailBox		EmailBox `json:"emailBox" gorm:"preload:false"`
+	EmailBoxId		*uint 	`json:"email_box_id" gorm:"type:int;default:null;"` // С какого ящика идет отправка
+	EmailBox		EmailBox `json:"email_box" gorm:"preload:false"`
 	// =============   Настройки получателей    ===================
 
 	// Список пользователей позволяет сделать "рассылку" уведомления по email-адреса пользователей, до 10 человек.
 	// SendingToUsers		bool			`json:"sendingToUsers" gorm:"type:bool;default:false"` // Отправлять пользователем RatusCRM (на их почтовые адреса, при их наличии)
-	RecipientUsersList	postgres.Jsonb 	`json:"recipientUsersList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // список id пользователей, которые получат уведомление
+	RecipientUsersList	datatypes.JSON	`json:"recipient_users_list" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // список id пользователей, которые получат уведомление
 
 	// Динамический список пользователей
-	ParseRecipientUser	bool	`json:"parseRecipientUser" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя(ей) по userId / users: ['email@mail.ru']
-	ParseRecipientCustomer	bool	`json:"parseRecipientCustomer" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя по customerId / users: ['email@mail.ru']
-	ParseRecipientManager	bool	`json:"parseRecipientManager" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя по customerId / users: ['email@mail.ru']
+	ParseRecipientUser	bool	`json:"parse_recipient_user" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя(ей) по userId / users: ['email@mail.ru']
+	ParseRecipientCustomer	bool	`json:"parse_recipient_customer" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя по customerId / users: ['email@mail.ru']
+	ParseRecipientManager	bool	`json:"parse_recipient_manager" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя по customerId / users: ['email@mail.ru']
 
 	// ==========================================
 
 	// Скрытый список пользователей для Data и фронтенда
-	RecipientUsers []User	`json:"_recipientUsers" gorm:"-"`
+	RecipientUsers []User	`json:"recipient_users" gorm:"-"`
 
-	CreatedAt 		time.Time `json:"createdAt"`
-	UpdatedAt 		time.Time `json:"updatedAt"`
+	CreatedAt 		time.Time `json:"created_at"`
+	UpdatedAt 		time.Time `json:"updated_at"`
 }
 
 // ############# Entity interface #############
@@ -81,11 +81,17 @@ func (emailNotification EmailNotification) IsActive() bool {
 // ############# Entity interface #############
 
 func (EmailNotification) PgSqlCreate() {
-	db.CreateTable(&EmailNotification{})
-	db.Model(&EmailNotification{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&EmailNotification{}).AddForeignKey("email_template_id", "email_templates(id)", "RESTRICT", "CASCADE")
+	db.Migrator().CreateTable(&EmailNotification{})
+	// db.Model(&EmailNotification{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&EmailNotification{}).AddForeignKey("email_template_id", "email_templates(id)", "RESTRICT", "CASCADE")
+	err := db.Exec("ALTER TABLE email_notifications " +
+		"ADD CONSTRAINT email_notifications_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT email_notifications_email_template_id_fkey FOREIGN KEY (email_template_id) REFERENCES email_templates(id) ON DELETE SET NULL ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (emailNotification *EmailNotification) BeforeCreate(scope *gorm.Scope) error {
+func (emailNotification *EmailNotification) BeforeCreate(tx *gorm.DB) error {
 	emailNotification.Id = 0
 
 	// PublicId
@@ -97,19 +103,23 @@ func (emailNotification *EmailNotification) BeforeCreate(scope *gorm.Scope) erro
 
 	return nil
 }
-func (emailNotification *EmailNotification) AfterFind() (err error) {
+func (emailNotification *EmailNotification) AfterFind(tx *gorm.DB) (err error) {
 
 	// Собираем пользователей
-	b, err := emailNotification.RecipientUsersList.MarshalJSON()
+	/*b, err := emailNotification.RecipientUsersList.MarshalJSON()
 	if err != nil {
 		return err
 	}
 
 	var arr []uint
 	err = json.Unmarshal(b, &arr)
+	if err != nil { return err }*/
+
+	b, err := emailNotification.RecipientUsersList.MarshalJSON()
 	if err != nil { return err }
 
-	err = db.Find(&emailNotification.RecipientUsers, "id IN (?)", arr).Error
+	// err = db.Find(&emailNotification.RecipientUsers, "id IN (?)", arr).Error
+	err = db.Find(&emailNotification.RecipientUsers, "id IN (?)", b).Error
 	if err != nil  {return err}
 
 	// fix nono to ms
@@ -119,7 +129,7 @@ func (emailNotification *EmailNotification) AfterFind() (err error) {
 	/////////////////////////////////////
 
 	if reflect.DeepEqual(emailNotification.RecipientUsersList, *new(postgres.Jsonb)) {
-		emailNotification.RecipientUsersList = postgres.Jsonb{RawMessage: []byte("[]")}
+		emailNotification.RecipientUsersList = []byte("[]")
 	}
 
 
@@ -175,13 +185,13 @@ func (emailNotification *EmailNotification) loadByPublicId() error {
 	return nil
 }
 
-func (EmailNotification) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (EmailNotification) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return EmailNotification{}.getPaginationList(accountId, 0, 25, sortBy, "",nil)
 }
-func (EmailNotification) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (EmailNotification) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	emailNotifications := make([]EmailNotification,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -327,7 +337,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		if userSTR, ok := data["userId"]; ok {
 			if userId, ok := userSTR.(uint); ok {
 				user, err := account.GetUser(userId)
-				if err == nil && user.Email != "" {
+				if err == nil && user.Email != nil {
 					users = append(users, *user)
 				}
 			}
@@ -337,7 +347,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		if customerSTR, ok := data["customerId"]; ok {
 			if customerId, ok := customerSTR.(uint); ok {
 				customer, err := account.GetUser(customerId)
-				if err == nil && customer.Email != "" {
+				if err == nil && customer.Email != nil {
 					users = append(users, *customer)
 				}
 			}
@@ -347,7 +357,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		if managerSTR, ok := data["managerId"]; ok {
 			if managerId, ok := managerSTR.(uint); ok {
 				manager, err := account.GetUser(managerId)
-				if err == nil && manager.Email != "" {
+				if err == nil && *manager.Email != "" {
 					users = append(users, *manager)
 				}
 			}
@@ -386,7 +396,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 
 		// Пакет для добавления в MTA-сервер
 		var pkg = EmailPkg {
-			To: mail.Address{Name: users[i].Name, Address: users[i].Email},
+			To: mail.Address{Name: *users[i].Name, Address: *users[i].Email},
 			accountId: account.Id,
 			userId: users[i].Id,
 			workflowId: 0, // мы не знаем
@@ -452,6 +462,6 @@ func (emailNotification *EmailNotification) changeWorkStatus(status WorkStatus, 
 	}
 	return emailNotification.update(map[string]interface{}{
 		"status":	status,
-		"failedStatus": _reason,
+		"failed_status": _reason,
 	})
 }

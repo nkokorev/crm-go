@@ -38,7 +38,7 @@ func OrderStatusCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST OrderStatus Created")
-	resp["orderStatus"] = orderStatus
+	resp["order_status"] = orderStatus
 	u.Respond(w, resp)
 }
 
@@ -63,7 +63,7 @@ func OrderStatusGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET OrderStatus")
-	resp["orderStatus"] = orderStatus
+	resp["order_status"] = orderStatus
 	u.Respond(w, resp)
 }
 
@@ -74,7 +74,7 @@ func OrderStatusGetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var total uint = 0
+	var total int64 = 0
 	orderStatuses := make([]models.Entity,0)
 	
 	orderStatuses, total, err = account.GetListEntity(&models.OrderStatus{},"id")
@@ -85,7 +85,7 @@ func OrderStatusGetList(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET OrderStatus List")
 	resp["total"] = total
-	resp["orderStatuses"] = orderStatuses
+	resp["order_statuses"] = orderStatuses
 	u.Respond(w, resp)
 }
 
@@ -128,7 +128,7 @@ func OrderStatusUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH OrderStatus Update")
-	resp["orderStatus"] = orderStatus
+	resp["order_status"] = orderStatus
 	u.Respond(w, resp)
 }
 

@@ -33,7 +33,7 @@ func EmailBoxCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST EmailBox Created")
-	resp["emailBox"] = emailBox
+	resp["email_box"] = emailBox
 	u.Respond(w, resp)
 }
 
@@ -53,7 +53,7 @@ func EmailBoxGet(w http.ResponseWriter, r *http.Request) {
 	var emailBox models.EmailBox
 
 	// 2. Узнаем, какой id учитывается нужен
-	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
 		err = account.LoadEntityByPublicId(&emailBox, emailBoxId)
@@ -69,10 +69,8 @@ func EmailBoxGet(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-
-
 	resp := u.Message(true, "GET EmailBox ")
-	resp["emailBox"] = emailBox
+	resp["email_box"] = emailBox
 	u.Respond(w, resp)
 }
 
@@ -98,7 +96,7 @@ func EmailBoxListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -111,27 +109,27 @@ func EmailBoxListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
 
-	var total uint = 0
+	var total int64 = 0
 	emailBoxes := make([]models.Entity,0)
 
 	if all == "true" && allOk {
 		emailBoxes, total, err = account.GetListEntity(&models.EmailBox{}, sortBy)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить список почтовых ящиков"))
 			return
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
 		emailBoxes, total, err = account.GetPaginationListEntity(&models.EmailBox{}, offset, limit, sortBy, search, nil)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить список почтовых ящиков"))
 			return
 		}
 	}
 
 
 	resp := u.Message(true, "GET Web Sites PaginationList")
-	resp["emailBoxes"] = emailBoxes
+	resp["email_boxes"] = emailBoxes
 	resp["total"] = total
 	u.Respond(w, resp)
 }
@@ -172,7 +170,7 @@ func EmailBoxUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH EmailBox Update")
-	resp["emailBox"] = emailBox
+	resp["email_box"] = emailBox
 	u.Respond(w, resp)
 }
 

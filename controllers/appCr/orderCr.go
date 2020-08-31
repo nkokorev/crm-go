@@ -2,6 +2,7 @@ package appCr
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -29,7 +30,9 @@ func OrderCreate(w http.ResponseWriter, r *http.Request) {
 
 	order, err := account.CreateEntity(&input.Order)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заявки"}))
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Ошибка во время создания заказа"))
+		// u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заявки"}))
 		return
 	}
 
@@ -54,7 +57,7 @@ func OrderGet(w http.ResponseWriter, r *http.Request) {
 	var order models.Order
 
 	// 2. Узнаем, какой объект нужен
-	publicIdOk:= utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+	publicIdOk:= utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicIdOk {
 		err = account.LoadEntityByPublicId(&order, orderId)
@@ -94,7 +97,7 @@ func OrderGetListPagination(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -105,7 +108,7 @@ func OrderGetListPagination(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 
-	var total uint = 0
+	var total int64 = 0
 	orders := make([]models.Entity,0)
 	
 	orders, total, err = account.GetPaginationListEntity(&models.Order{}, offset, limit, sortBy, search, nil)

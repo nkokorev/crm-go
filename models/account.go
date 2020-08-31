@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/jinzhu/gorm"
-	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
 	"log"
 	"strings"
 	"time"
@@ -22,10 +22,9 @@ const (
 )
 
 type Account struct {
-	Id     uint   `json:"id" gorm:"primary_key"`
-	HashId string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	Id     	uint   `json:"id" gorm:"primaryKey"`
+	HashId 	string `json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
 
-	// данные аккаунта
 	Name    string `json:"name" gorm:"type:varchar(255)"`
 
 	// todo: ой бы доработать это все, брат! Ввести типы аккаунтов (первоначальные настройки). А список вебсайтов отдельным объектом.
@@ -33,55 +32,57 @@ type Account struct {
 	Type    string `json:"type" gorm:"type:varchar(255)"`    // нужно имхо
 
 	// API Интерфейс
-	ApiEnabled bool `json:"apiEnabled" gorm:"default:true;not null"` // включен ли API интерфейс у аккаунта (false - все ключи отключаются, есть ли смысл в нем?)
+	ApiEnabled bool `json:"api_enabled" gorm:"default:true;not null"` // включен ли API интерфейс у аккаунта (false - все ключи отключаются, есть ли смысл в нем?)
 
 	// UI-API Интерфейс (https://ui.api.ratuscrm.com / https://ratuscrm.com/ui-api)
-	UiApiEnabled    bool   `json:"uiApiEnabled" gorm:"default:false;not null"`         // Принимать ли запросы через публичный UI-API интерфейсу (через https://ui.api.ratuscrm.com)
-	UiApiAesEnabled bool   `json:"uiApiAesEnabled" gorm:"default:true;not null"`          // Включение AES-128/CFB шифрования для публичного UI-API
-	UiApiAesKey     string `json:"-" gorm:"type:varchar(16);default:null;"` // 128-битный ключ шифрования
-	UiApiJwtKey     string `json:"-" gorm:"type:varchar(32);default:null;"` // 128-битный ключ шифрования
+	UiApiEnabled    bool   `json:"ui_api_enabled" gorm:"default:false;not null"`        // Принимать ли запросы через публичный UI-API интерфейсу (через https://ui.api.ratuscrm.com)
+	UiApiAesEnabled bool   `json:"ui_api_aes_enabled" gorm:"default:true;not null"`     // Включение AES-128/CFB шифрования для публичного UI-API
+	UiApiAesKey     string `json:"-" gorm:"type:varchar(16);default:null;"` 			// 128-битный ключ шифрования
+	UiApiJwtKey     string `json:"-" gorm:"type:varchar(32);default:null;"` 			// 128-битный ключ шифрования
 
 	// Регистрация новых пользователей через UI/API
-	UiApiAuthMethods                    pq.StringArray `json:"-" sql:"type:varchar(32)[];default:'{email}'"`  // Доступные способы авторизации (проверяется в контроллере)
+	// UiApiAuthMethods                    datatypes.JSON `json:"-" sql:"type:varchar(32)[];default:'{email}'"`  // Доступные способы авторизации (проверяется в контроллере)
+	UiApiAuthMethods                    datatypes.JSON `json:"-" `  // Доступные способы авторизации (проверяется в контроллере)
 	UiApiEnabledUserRegistration        bool           `json:"-" gorm:"default:true;not null"`                // Разрешить регистрацию новых пользователей?
 	UiApiUserRegistrationInvitationOnly bool           `json:"-" gorm:"default:false;not null"`               // Регистрация новых пользователей только по приглашению (в том числе и клиентов)
-	UiApiUserRegistrationRequiredFields pq.StringArray `json:"-" gorm:"type:varchar(32)[];default:'{email}'"` // список обязательных НЕ нулевых полей при регистрации новых пользователей через UI/API
+	UiApiUserRegistrationRequiredFields datatypes.JSON `json:"-" ` // список обязательных НЕ нулевых полей при регистрации новых пользователей через UI/API
 	UiApiUserEmailDeepValidation        bool           `json:"-" gorm:"default:false;not null"`               // глубокая проверка почты пользователя на предмет существования
 
 	UserVerificationMethodId         uint `json:"-" gorm:"type:int;default:null"` // метод
 	UiApiEnabledLoginNotVerifiedUser bool `json:"-" gorm:"default:false;"`        // разрешать ли пользователю входить в аккаунт без завершенной верфикации?
 
 	// Storage
-	DiskSpaceAvailable uint `json:"diskSpaceAvailable" gorm:"type:bigint;default:524288000"` // в байтах - общий размер дискового пр-а (def: 500mb)
+	DiskSpaceAvailable 	int64 `json:"disk_space_available" gorm:"type:bigint;default:524288000"` // в байтах - общий размер дискового пр-а (def: 500mb)
 
 	// настройки авторизации.
 	// Разделяется AppAuth и ApiAuth -
-	VisibleToClients         bool `json:"visibleToClients" gorm:"default:false"` // отображать аккаунт в списке доступных для пользователей с ролью 'client'. Нужно для системных аккаунтов.
-	ClientsAreAllowedToLogin bool `json:"clientsAreAllowedToLogin" gorm:"default:true"`                 // запрет на вход в ratuscrm для пользователей с ролью 'client' (им не будет выдана авторизация).
-	AuthForbiddenForClients bool `json:"-" gorm:"default:true"` // запрет авторизации для для пользователей с ролью 'client'.
+	VisibleToClients         bool `json:"visible_to_clients" gorm:"default:false"` // отображать аккаунт в списке доступных для пользователей с ролью 'client'. Нужно для системных аккаунтов.
+	ClientsAreAllowedToLogin bool `json:"clients_are_allowed_to_login" gorm:"default:true"`                 // запрет на вход в ratuscrm для пользователей с ролью 'client' (им не будет выдана авторизация).
+	AuthForbiddenForClients  bool `json:"-" gorm:"default:true"` // запрет авторизации для для пользователей с ролью 'client'.
 
 	// до этого место принимаются изменения для UPDATE метода
 	//ForbiddenForClient bool `json:"forbidden_for_client" gorm:"default:false"` // запрет на вход через приложение app.ratuscrm.com для пользователей с ролью 'client'
 
-	CreatedAt time.Time  `json:"-"`
-	UpdatedAt time.Time  `json:"-"`
-	DeletedAt *time.Time `json:"-" sql:"index"`
+	CreatedAt 	time.Time  `json:"-"`
+	UpdatedAt 	time.Time  `json:"-"`
+	// DeletedAt *time.Time `json:"-" sql:"index"`
+	DeletedAt 	gorm.DeletedAt `json:"-" sql:"index"`
 
 	//Users 		[]User `json:"-" gorm:"many2many:user_accounts"`
 	AccountUsers []AccountUser `json:"-"`
-	Users   []User   `json:"-" gorm:"many2many:account_users"`
-	ApiKeys []ApiKey `json:"-"`
-
-	Products []Product `json:"-"`
+	Users   	[]*User   	`json:"-" gorm:"many2many:account_users"`
+	ApiKeys 	[]ApiKey 	`json:"-" gorm:"-"`
+	Products 	[]*Product 	`json:"-" gorm:"-"`
 	// Stocks   []Stock   `json:"-"`
 }
 
 // ###
 func (Account) PgSqlCreate() {
+	if db.Migrator().HasTable(&Account{}) { return }
 
 	// 1. Создаем таблицу и настройки в pgSql
-	db.CreateTable(&Account{})
-	// db.AutoMigrate(&Account{})
+	if err := db.Migrator().AutoMigrate(&Account{}); err != nil {log.Fatal(err)}
+	// db.CreateTable(&Account{})
 
 	// 2. Создаем Главный аккаунт через спец. функцию
 	_, err := CreateMainAccount()
@@ -90,7 +91,7 @@ func (Account) PgSqlCreate() {
 	}
 }
 
-func (account *Account) BeforeCreate(scope *gorm.Scope) (err error) {
+func (account *Account) BeforeCreate(tx *gorm.DB) (err error) {
 
 	account.Id = 0
 	
@@ -117,7 +118,7 @@ func (account Account) create() (*Account, error) {
 		return nil, err
 	}
 	acc := account
-	if err := db.Create(&acc).Error; err != nil {return nil, err}
+	if err := db.Create(&acc).Error; err != nil { return nil, err }
 
 	return &acc, nil
 }
@@ -135,6 +136,10 @@ func CreateMainAccount() (*Account, error) {
 		return nil, errors.New("Не удалось получить код двойной верификации по телефону и почте")
 	}
 
+	// ar := `["username","email","phone"]`
+	// ar := `{}`
+	// user1Attrs := `{"age":18,"name":"json-1","orgs":{"orga":"orga"},"tags":["tag1","tag2"]}`
+	
 	acc, err := (Account{
 		Name:                                "RatusCRM",
 		HashId: "",
@@ -144,8 +149,9 @@ func CreateMainAccount() (*Account, error) {
 		UiApiEnabledUserRegistration:        false,
 		UiApiUserRegistrationInvitationOnly: false,
 		ApiEnabled:                          false,
-		UiApiAuthMethods:                    pq.StringArray{"username,email,phone"},
-		UiApiUserRegistrationRequiredFields: pq.StringArray{"username,email,phone"},
+		UiApiAuthMethods:                    datatypes.JSON(utils.StringArrToRawJson([]string{"username","email","phone"})),
+		// UiApiUserRegistrationRequiredFields: datatypes.JSON(utils.StringArrToRawJson([]string{"username","email","phone"})),
+		UiApiUserRegistrationRequiredFields: datatypes.JSON(utils.StringArrToRawJson([]string{"username","email","phone"})),
 
 		UserVerificationMethodId:         dvc.Id,
 		UiApiEnabledLoginNotVerifiedUser: false,
@@ -190,9 +196,9 @@ func GetAccount(id uint) (*Account, error) {
 
 func GetMainAccount() (*Account, error) {
 	var account Account
-	err := db.Model(&Account{}).First(&account, "id = 1 AND name = 'RatusCRM'").Error
-	//if err != nil { account.Reset() }
-	return &account, err
+	if err := db.First(&account, "id = 1 AND name = 'RatusCRM'").Error; err != nil { return nil, err}
+
+	return &account, nil
 }
 
 func (account Account) IsMainAccount() bool {
@@ -213,7 +219,8 @@ func (account *Account) Update(input map[string]interface{}) error {
 }
 
 func (Account) Exist(id uint) bool {
-	return !db.Model(Account{}).First(&Account{}, id).RecordNotFound()
+	if err := db.Model(Account{}).First(&Account{}, id).Error; err != nil { return false }
+	return true
 }
 
 // ########### User ###########
@@ -236,7 +243,7 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 	input.IssuerAccountId = account.Id
 
 	// ### !!!! Проверка входящих данных !!! ### ///
-	if len(input.Username) > 0 {
+	if input.Username != nil {
 
 		username = true
 		if err := utils.VerifyUsername(input.Username); err != nil {
@@ -244,25 +251,26 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 		}
 	}
 
-	if len(input.Email) > 0 {
+	if input.Email != nil {
 		email = true
-		if err := utils.EmailValidation(input.Email); err != nil {
+		if err := utils.EmailValidation(*input.Email); err != nil {
 			return nil, utils.Error{Message: "Проверьте правильность заполнения формы", Errors: map[string]interface{}{"email": err.Error()}}
 		}
 	}
 
-	if len(input.Phone) > 0 {
+	if input.Phone != nil {
 		phone = true
 
-		if input.PhoneRegion == "" {
-			input.PhoneRegion = "RU"
+		if *input.PhoneRegion == "" {
+			input.PhoneRegion = utils.STRp("RU")
 		}
 
 		// Устанавливаем нужный формат
-		input.Phone, err = utils.ParseE164Phone(input.Phone, input.PhoneRegion)
+		_phone, err := utils.ParseE164Phone(*input.Phone, *input.PhoneRegion)
 		if err != nil {
 			return nil, utils.Error{Message: "Ошибка в формате телефонного номера", Errors: map[string]interface{}{"inviteToken": "Пожалуйста, укажите номер телефона в международном формате"}}
 		}
+		input.Phone = utils.STRp(_phone)
 
 	}
 
@@ -293,7 +301,6 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	user, err = account.GetUserWithAUser(user.Id)
 	if err != nil {
 		return nil, err
@@ -315,7 +322,7 @@ func (account Account) UploadUsers(users []User, role Role) error {
 		user.IssuerAccountId = account.Id
 
 		// ### !!!! Проверка входящих данных !!! ### ///
-		if len(user.Username) > 0 {
+		if len(*user.Username) > 0 {
 
 			username = true
 			if err := utils.VerifyUsername(user.Username); err != nil {
@@ -323,26 +330,27 @@ func (account Account) UploadUsers(users []User, role Role) error {
 			}
 		}
 
-		if len(user.Email) > 0 {
+		if len(*user.Email) > 0 {
 			email = true
 			// if err := utils.EmailValidation(user.Email); err != nil {
-			if err := utils.EmailValidation(user.Email); err != nil {
+			if err := utils.EmailValidation(*user.Email); err != nil {
 				continue
 			}
 		}
 
-		if len(user.Phone) > 0 {
+		if len(*user.Phone) > 0 {
 			phone = true
 
-			if user.PhoneRegion == "" {
-				user.PhoneRegion = "RU"
+			if *user.PhoneRegion == "" {
+				user.PhoneRegion = utils.STRp("RU")
 			}
 
 			// Устанавливаем нужный формат
-			user.Phone, err = utils.ParseE164Phone(user.Phone, user.PhoneRegion)
+			_phone, err := utils.ParseE164Phone(*user.Phone, *user.PhoneRegion)
 			if err != nil {
 				continue
 			}
+			user.Phone = utils.STRp(_phone)
 
 		}
 
@@ -388,7 +396,7 @@ func (account Account) GetUser(userId uint) (*User, error) {
 
 	// Проверим, что пользователь имеет доступ к аккаунту
 	aUser := AccountUser{}
-	if db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.Id, user.Id).RecordNotFound() {
+	if err := db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.Id, user.Id).Error;err != nil {
 		return nil, errors.New("Пользователь не найден")
 	}
 
@@ -415,7 +423,7 @@ func (account Account) GetUserByHashId(hashId string) (*User, error) {
 
 	// Проверим, что пользователь имеет доступ к аккаунта
 	aUser := AccountUser{}
-	if db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.Id, user.Id).RecordNotFound() {
+	if err := db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.Id, user.Id).Error;err != nil {
 		return nil, errors.New("Пользователь не найден")
 	}
 
@@ -519,10 +527,10 @@ func (account Account) GetUserByPhone(phone string, regions... string) (*User, e
 
 
 // pagination user list, учитывая роли по списку id
-func (account Account) GetUsersByList(list []uint, sortBy string) ([]User, uint, error) {
+func (account Account) GetUsersByList(list []uint, sortBy string) ([]User, int64, error) {
 
 	users := make([]User,0)
-	var total uint
+	var total int64
 
 
 	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
@@ -544,27 +552,15 @@ func (account Account) GetUsersByList(list []uint, sortBy string) ([]User, uint,
 	return users, total, nil
 }
 
-func (account Account) GetUserListPagination(offset, limit int, sortBy, search string, role []uint) ([]User, uint, error) {
+func (account Account) GetUserListPagination(offset, limit int, sortBy, search string, role []uint) ([]User, int64, error) {
 
 	users := make([]User,0)
-	var total uint
+	var total int64
 
 	if len(search) > 0 {
 
 		search = "%"+search+"%"
-
-	/*	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
-			Select("account_users.public_id, account_users.account_id, account_users.role_id, users.*").
-			Order(sortBy).Limit(limit).
-			Preload("AccountUser", func(db *gorm.DB) *gorm.DB {
-				return db.Select(AccountUser{}.SelectArrayWithoutBigObject())
-			}).
-			Where("account_id = ? AND role_id IN (?)", account.Id, role).Preload("Roles").
-			Find(&users, "hash_id ILIKE ? OR username ILIKE ? OR email ILIKE ? OR phone ILIKE ? OR name ILIKE ? OR surname ILIKE ? OR patronymic ILIKE ?", search,search,search,search,search,search,search).Error
-		if err != nil {
-			return nil, 0, err
-		}*/
-
+		
 		err := db.Table("users").Joins("left join account_users ON account_users.user_id = users.id").
 			Select("account_users.account_id, account_users.role_id, users.*").
 			Where("account_users.account_id = ? AND account_users.role_id IN (?)", account.Id, role).
@@ -593,15 +589,6 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 		}
 
 	} else {
-
-		/*err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
-			Select("account_users.account_id, account_users.role_id, users.*").
-			Where("account_users.account_id = ? AND account_users.role_id IN (?)", account.Id, role).
-			Order(sortBy).Offset(offset).Limit(limit).
-			Preload("AccountUser", func(db *gorm.DB) *gorm.DB {
-				return db.Select(AccountUser{}.SelectArrayWithoutBigObject())
-			}).
-			Find(&users).Error*/
 
 		err := db.Table("users").Joins("left join account_users ON account_users.user_id = users.id").
 			Select("account_users.account_id, account_users.role_id, users.*").
@@ -632,29 +619,35 @@ func (account Account) GetUserListPagination(offset, limit int, sortBy, search s
 		}
 
 	}
-
-	/*for i := range users {
-		// delete users["aUser.account"]
-		delete(users[i].AccountUser, "aUser.account")
-	}*/
+	
 
 	return users, total, nil
 }
 
 func (account Account) ExistUser(user User) bool {
 
-	return !db.Model(&User{}).First(&User{}, user.Id).RecordNotFound()
+	// return !db.Model(&User{}).First(&User{}, user.Id).RecordNotFound()
+	err := db.Model(&User{}).First(&User{}, user.Id).Error
+	if err != nil {
+		return false
+	}
+
+	return true
 }
 
 // Тоже, что и ExitUser, только в контексте аккаунта
 func (account Account) ExistAccountUser(userId uint) bool {
 
-	if db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.Id, userId).Find(&AccountUser{}).RecordNotFound() {
+	// var aUser AccountUser
+	var count int64
+	err := db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.Id, userId).Count(&count).Error
+	if err != nil {
 		return false
-	} else {
-		return true
 	}
-
+	if count > 0 { return true }
+	// fmt.Println("count: ", count)
+	// fmt.Println("Пользователь есть!")
+	return false
 }
 
 // Если пользователь не найден - вернет gorm.ErrRecordNotFound
@@ -723,14 +716,15 @@ func (account Account) AppendUser(user User, role Role) (*AccountUser, error) {
 
 	acs := AccountUser{} // return value
 
-	if db.NewRecord(user) || !account.ExistUser(user) {
+	if user.Id < 1 || !account.ExistUser(user) {
 		return nil, errors.New("Необходимо создать сначала пользователя!")
 	}
-
+	
 	// проверяем, относится ли пользователь к аккаунту
 	if account.ExistAccountUser(user.Id) {
 		// обновляем роль
 		// todo дописать..
+		
 		return nil, errors.New("Невозможно добавить пользователя в аккаунт, т.к. он в нем уже есть.")
 
 	} else {
@@ -773,18 +767,6 @@ func (account Account) AuthorizationUserByUsername(username, password string, on
 		return nil, "", e
 	}
 
-
-
-	/*if rememberChoice {
-		user.DefaultAccountHashId = account.HashId
-		updateData := struct {
-			DefaultAccountHashId string
-		}{account.HashId}
-		if err := user.update(&updateData); err != nil {
-			return nil, "", errors.New("Не удалось авторизовать пользователя")
-		}
-	}*/
-
 	token, err := account.AuthorizationUser(*user, false, issuerAccount)
 	if err != nil || token == "" {
 		return nil, "", errors.New("Не удалось авторизовать пользователя")
@@ -797,14 +779,21 @@ func (account Account) AuthorizationUserByUsername(username, password string, on
 func (account Account) AccessUserById(userId uint) bool {
 	if userId < 1 {return false}
 	// fmt.Printf("issuer_account_id = %v AND email = %v\n", account.Id, email)
-	return !db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.Id, userId).First(&AccountUser{}).RecordNotFound()
+	err := db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.Id, userId).First(&AccountUser{}).Error
+	if err != nil {
+		return false
+	}
+
+	return true
 }
 
 // *** New functions ****
 
 // Обязательно ли поле при создании пользователя (username, email, phone)
 func (account Account) userRequiredField(field string) bool {
-	for _, v := range account.UiApiUserRegistrationRequiredFields {
+	jsonData := utils.ParseJSONBToString(account.UiApiUserRegistrationRequiredFields)
+
+	for _, v := range jsonData {
 		if v == field {
 			return true
 		}
@@ -815,20 +804,21 @@ func (account Account) userRequiredField(field string) bool {
 // Проверяет поля в input на не нулевость в соответствие настройкам аккаунта
 func (account Account) ValidationUserRegReqFields(input User) error {
 	var e utils.Error
-	for _, v := range account.UiApiUserRegistrationRequiredFields {
+	jsonData := utils.ParseJSONBToString(account.UiApiUserRegistrationRequiredFields)
+	for _, v := range jsonData {
 		switch v {
 		case "username":
-			if len(input.Username) == 0 {
+			if len(*input.Username) == 0 {
 				e.AddErrors("username", "Поле обязательно к заполнению")
 			}
 
 		case "email":
-			if len(input.Email) == 0 {
+			if len(*input.Email) == 0 {
 				e.AddErrors("email", "Поле обязательно к заполнению")
 			}
 
 		case "phone":
-			if len(input.Phone) == 0 {
+			if len(*input.Phone) == 0 {
 				e.AddErrors("phone", "Поле обязательно к заполнению")
 			}
 
@@ -873,7 +863,7 @@ func (account *Account) DeleteUser(user *User) error {
 	if user.IssuerAccountId != account.Id {
 		return utils.Error{Message: "Невозможно удалить пользователя т.к. он привязан к другому аккаунту"}
 	}
-	if err := db.Model(&user).Association("accounts").Delete(account).Error; err != nil {
+	if err := db.Model(&user).Association("accounts").Delete(account); err != nil {
 		return err
 	}
 
@@ -893,12 +883,13 @@ func (account *Account) RemoveUser(user *User) error {
 			return err
 		}
 	} else {
-	 	if err := db.Model(&user).Association("accounts").Delete(account).Error; err != nil {
+	 	if err := db.Model(&user).Association("Accounts").Delete(account); err != nil {
 	 		return err
 		}
 	}
 
-	if err := db.Model(&user).Association("accounts").Delete(account).Error; err != nil {
+	if err := db.Model(&user).Association("Accounts").Delete(account); err != nil {
+		fmt.Println(err)
 		return err
 	}
 
@@ -910,7 +901,7 @@ func (account *Account) RemoveUser(user *User) error {
 func (account Account) GetUserRole(user User) (*Role, error) {
 
 	var role Role
-	if db.NewRecord(account) || db.NewRecord(user) {
+	if account.Id < 1 || user.Id < 1 {
 		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
 	}
 
@@ -929,12 +920,12 @@ func (account Account) GetUserRole(user User) (*Role, error) {
 
 func (account Account) GetUserAccessRole(user User) (*AccessRole, error) {
 
-	if db.NewRecord(account) || db.NewRecord(user) {
+	if account.Id < 1 || user.Id < 1 {
 		return nil, errors.New("Аккаунта или пользователя не существует!")
 	}
 	// Сначала получаем общую роль
 	role, err := account.GetUserRole(user)
-	if err != nil || role == nil || db.NewRecord(role) {
+	if err != nil || role == nil || role.Id < 1 {
 		return nil, err
 	}
 	aRole := role.Tag
@@ -945,7 +936,7 @@ func (account Account) GetUserAccessRole(user User) (*AccessRole, error) {
 // Обновление роли пользователя для текущего аккаунта
 func (account Account) UpdateUserRole(user *User, role Role) error {
 
-	if db.NewRecord(account) || db.NewRecord(user) {
+	if account.Id < 1 || user.Id < 1 {
 		return errors.New("GetUserRole: Аккаунта или пользователя не существует!")
 	}
 
@@ -965,7 +956,7 @@ func (account Account) UpdateUserRole(user *User, role Role) error {
 
 func (account Account) SetUserRole(user *User, role Role) (*AccountUser, error) {
 
-	if db.NewRecord(account) || db.NewRecord(user) {
+	if account.Id < 1 || user.Id < 1 {
 		return nil, errors.New("GetUserRole: Аккаунта или пользователя не существует!")
 	}
 
@@ -973,7 +964,7 @@ func (account Account) SetUserRole(user *User, role Role) (*AccountUser, error) 
 
 	err := db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.Id, user.Id).
 		FirstOrCreate(&aUser).
-		Updates(map[string]interface{}{"roleId":role.Id}).Find(&aUser).Error
+		Updates(map[string]interface{}{"role_id":role.Id}).Find(&aUser).Error
 	if err != nil {
 		fmt.Println("Ошибка: ", err)
 		return nil, err
@@ -1004,26 +995,38 @@ func (account Account) getUserJwt(userId uint) (jwt string, err error) {
 }
 
 // Дотошно ищет схожего пользователя по username, email и телефону.
-func (account Account) existUserByUsername(username string) bool {
-	if username == "" {
+func (account Account) existUserByUsername(username *string) bool {
+	if username == nil {
 		return false
 	}
-	return !db.Model(&User{}).Where("issuer_account_id = ? AND username = ?", account.Id, username).First(&User{}).RecordNotFound()
+	if err := db.Model(&User{}).Where("issuer_account_id = ? AND username = ?", account.Id, username).First(&User{}).Error;err != nil {
+		return false
+	} else {
+		return true
+	}
 }
 
-func (account Account) existUserByEmail(email string) bool {
-	if email == "" {
+func (account Account) existUserByEmail(email *string) bool {
+	if email == nil {
 		return false
 	}
 	// fmt.Printf("issuer_account_id = %v AND email = %v\n", account.Id, email)
-	return !db.Model(&User{}).Where("issuer_account_id = ? AND email = ?", account.Id, email).First(&User{}).RecordNotFound()
+	if err := db.Model(&User{}).Where("issuer_account_id = ? AND email = ?", account.Id, email).First(&User{}).Error; err != nil {
+		return false
+	} else {
+		return true
+	}
 }
 
-func (account Account) existUserByPhone(phone string) bool {
-	if phone == "" {
+func (account Account) existUserByPhone(phone *string) bool {
+	if phone == nil {
 		return false
 	}
-	return !db.Model(&User{}).Where("issuer_account_id = ? AND phone = ?", account.Id, phone).First(&User{}).RecordNotFound()
+	if err := db.Model(&User{}).Where("issuer_account_id = ? AND phone = ?", account.Id, phone).First(&User{}).Error; err != nil {
+		return false
+	} else {
+		return true
+	}
 }
 
 // Возвращает наиболее похожего пользователя (пользователей?) по username, email или телефону в зависимости от типа авторизации

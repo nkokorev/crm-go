@@ -2,31 +2,36 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
+	"log"
 	"strings"
 	"time"
 )
 
 type ApiKey struct {
-	Id     uint   `json:"id" gorm:"primary_key"`
-	Token string `json:"token" gorm:"unique_index;not null;"` // Id
-	AccountId uint `json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
+	Id     	uint   `json:"id" gorm:"primaryKey"`
+	Token 	string `json:"token" gorm:"unique_index;not null;"` // Id
+	AccountId uint `json:"account_id" gorm:"index;not null"` // аккаунт-владелец ключа
 
-	Name string `json:"name" gorm:"type:varchar(255);default:'New api key';"` // имя ключа "Для сайта", "Для CRM"
+	Name 	string `json:"name" gorm:"type:varchar(255);default:'New api key';"` // имя ключа "Для сайта", "Для CRM"
 	Enabled bool `json:"enabled" gorm:"type:bool;default:true"` // активен ли ключ
 
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func (ApiKey) PgSqlCreate() {
 	
-	db.CreateTable(&ApiKey{})
-	db.Model(&ApiKey{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Migrator().CreateTable(&ApiKey{})
+	// db.Model(&ApiKey{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE api_keys ADD CONSTRAINT api_keys_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
 
-func (apiKey *ApiKey) BeforeCreate(scope *gorm.Scope) error {
+func (apiKey *ApiKey) BeforeCreate(tx *gorm.DB) error {
 
 	apiKey.Id = 0
 

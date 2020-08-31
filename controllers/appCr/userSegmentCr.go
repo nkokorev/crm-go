@@ -32,7 +32,7 @@ func UsersSegmentCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST UsersSegment Create")
-	resp["usersSegment"] = entity
+	resp["users_segment"] = entity
 	u.Respond(w, resp)
 }
 
@@ -51,7 +51,7 @@ func UsersSegmentGet(w http.ResponseWriter, r *http.Request) {
 
 	var usersSegment models.UsersSegment
 	// 2. Узнаем, какой id учитывается нужен
-	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
 		err = account.LoadEntityByPublicId(&usersSegment, usersSegmentId)
@@ -70,7 +70,7 @@ func UsersSegmentGet(w http.ResponseWriter, r *http.Request) {
 
 
 	resp := u.Message(true, "GET Web Hook")
-	resp["usersSegment"] = usersSegment
+	resp["users_segment"] = usersSegment
 	u.Respond(w, resp)
 }
 
@@ -92,7 +92,7 @@ func UsersSegmentPaginationGet(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -105,13 +105,13 @@ func UsersSegmentPaginationGet(w http.ResponseWriter, r *http.Request) {
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
 
-	var total uint = 0
+	var total int64 = 0
 	usersSegments := make([]models.Entity,0)
 
 	if all == "true" && allOk {
 		usersSegments, total, err = account.GetListEntity(&models.UsersSegment{}, sortBy)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить список пользовательских сегментов"))
 			return
 		}
 	} else {
@@ -125,7 +125,7 @@ func UsersSegmentPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 
 	resp := u.Message(true, "GET UsersSegments PaginationList")
-	resp["usersSegments"] = usersSegments
+	resp["users_segments"] = usersSegments
 	resp["total"] = total
 	u.Respond(w, resp)
 }
@@ -166,7 +166,7 @@ func UsersSegmentUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH UsersSegment Update")
-	resp["usersSegment"] = usersSegment
+	resp["users_segment"] = usersSegment
 	u.Respond(w, resp)
 }
 

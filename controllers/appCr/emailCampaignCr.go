@@ -2,6 +2,7 @@ package appCr
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -33,7 +34,7 @@ func EmailCampaignCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST EmailCampaign Created")
-	resp["emailCampaign"] = emailCampaign
+	resp["email_campaign"] = emailCampaign
 	u.Respond(w, resp)
 }
 
@@ -54,7 +55,7 @@ func EmailCampaignGet(w http.ResponseWriter, r *http.Request) {
 	var emailCampaign models.EmailCampaign
 
 	// 2. Узнаем, какой id учитывается нужен
-	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
 		err = account.LoadEntityByPublicId(&emailCampaign, emailCampaignId)
@@ -71,7 +72,7 @@ func EmailCampaignGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET EmailCampaign")
-	resp["emailCampaign"] = emailCampaign
+	resp["email_campaign"] = emailCampaign
 	u.Respond(w, resp)
 }
 
@@ -94,7 +95,7 @@ func EmailCampaignGetListPagination(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -106,7 +107,7 @@ func EmailCampaignGetListPagination(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// возвращаемые переменные
-	var total uint = 0
+	var total int64 = 0
 	emailCampaigns := make([]models.Entity,0)
 
 	// 2. Узнаем, какой список нужен
@@ -130,7 +131,7 @@ func EmailCampaignGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET EmailCampaign Pagination List")
 	resp["total"] = total
-	resp["emailCampaigns"] = emailCampaigns
+	resp["email_campaigns"] = emailCampaigns
 	u.Respond(w, resp)
 }
 
@@ -168,7 +169,7 @@ func EmailCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH EmailCampaign Update")
-	resp["emailCampaign"] = emailCampaign
+	resp["email_campaign"] = emailCampaign
 	u.Respond(w, resp)
 }
 
@@ -206,6 +207,7 @@ func EmailCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 }*/
 func EmailCampaignChangeStatus(w http.ResponseWriter, r *http.Request) {
 
+
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
@@ -221,7 +223,8 @@ func EmailCampaignChangeStatus(w http.ResponseWriter, r *http.Request) {
 	var emailCampaign models.EmailCampaign
 	err = account.LoadEntity(&emailCampaign, emailCampaignId)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Не удалось получить кампанию"))
 		return
 	}
 
@@ -244,6 +247,7 @@ func EmailCampaignChangeStatus(w http.ResponseWriter, r *http.Request) {
 	case models.WorkStatusPlanned:
 		err := emailCampaign.SetPlannedStatus()
 		if err != nil {
+			fmt.Println(err)
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
@@ -280,7 +284,7 @@ func EmailCampaignChangeStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET Email Campaign Execute")
-	resp["emailCampaign"] = emailCampaign
+	resp["email_campaign"] = emailCampaign
 	u.Respond(w, resp)
 }
 

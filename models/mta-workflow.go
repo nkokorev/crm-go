@@ -3,8 +3,8 @@ package models
 import (
 	"errors"
 	"fmt"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 	"net/mail"
 	"strings"
@@ -14,54 +14,61 @@ import (
 // активная база с реальными задачами по отправке
 type MTAWorkflow struct {
 
-	Id     		uint   	`json:"id" gorm:"primary_key"`
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// email_queues, email_campaigns, email_notifications
-	OwnerType	EmailSenderType	`json:"ownerType" gorm:"varchar(32);not null;"` // << тип события: кампания, серия, уведомление
-	OwnerId		uint	`json:"ownerId" gorm:"type:smallint;not null;"` // ID типа события: какая серия, компания или уведомление
+	OwnerType	EmailSenderType	`json:"owner_type" gorm:"varchar(32);not null;"` // << тип события: кампания, серия, уведомление
+	OwnerId		uint			`json:"owner_id" gorm:"type:smallint;not null;"` // ID типа события: какая серия, компания или уведомление
 
-	// К какой серии писем относится задача
-	EmailQueue			EmailQueue `json:"_emailQueue" gorm:"-"`
-	EmailNotification	EmailNotification `json:"_emailNotification" gorm:"-"`
-	EmailCampaign		EmailCampaign `json:"_emailCampaign" gorm:"-"`
+	// К какой серии писем относится задача (gorm - т.к. это AfterFind загружается)
+	EmailQueue			EmailQueue 			`json:"_email_queue" gorm:"-"`
+	EmailNotification	EmailNotification 	`json:"_email_notification" gorm:"-"`
+	EmailCampaign		EmailCampaign 		`json:"_email_campaign" gorm:"-"`
 
 	// Номер необходимого шага в серии EmailQueue. Шаг определяется ситуационно в момент Expected Time. Если шага нет - серия завершается за пользователя.
 	// После выполнения - № шага увеличивается на 1
-	QueueExpectedStepId	uint	`json:"queueExpectedStepId" gorm:"type:int;not null;"`
+	QueueExpectedStepId	uint	`json:"queue_expected_step_id" gorm:"type:int;not null;"`
 
 	// Запланированное время отправки
-	ExpectedTimeStart 	time.Time `json:"expectedTimeStart"`
+	ExpectedTimeStart 	time.Time `json:"expected_time_start"`
 
 	// Id пользователя, которому отправляется серия. Обязательный параметр.
-	UserId 	uint `json:"userId" gorm:"type:int;not null;"`
+	UserId 	uint `json:"user_id" gorm:"type:int;not null;"`
 	User	User `json:"user"`
 
 	// Результат выполнения: planned / pending / completed / failed / cancelled => планируется / выполняется / выполнена / провалена / отмена
 	// Status WorkStatus `json:"status" gorm:"type:varchar(18);default:'planned'"`
 	
 	// Число попыток отправки. Если почему-то не удалось отправить письмо есть возможность перенести отправку и повторить попытку. При 2-3х попытках, завершается неудачей.
-	NumberOfAttempts uint `json:"numberOfAttempts" gorm:"type:smallint;default:0;"`
+	NumberOfAttempts uint `json:"number_of_attempts" gorm:"type:smallint;default:0;"`
 
 
 	// Когда была последняя попытка отправки (обычно = CreatedAt time)
-	LastTriedAt *time.Time  `json:"lastTriedAt"` // << may be null
+	LastTriedAt *time.Time  `json:"last_tried_at"` // << may be null
 
-	CreatedAt time.Time  `json:"createdAt"`
+	CreatedAt 	time.Time  `json:"created_at"`
 }
 
 func (MTAWorkflow) PgSqlCreate() {
-	db.CreateTable(&MTAWorkflow{})
-	db.Model(&MTAWorkflow{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	// db.Model(&MTAWorkflow{}).AddForeignKey("email_queue_id", "email_queues(id)", "CASCADE", "CASCADE")
-	db.Model(&MTAWorkflow{}).AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
+	if err := db.Migrator().CreateTable(&MTAWorkflow{}); err != nil {
+		log.Fatal(err)
+	}
+	// db.Model(&MTAWorkflow{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&MTAWorkflow{}).AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE mta_workflows " +
+		"ADD CONSTRAINT mta_workflows_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT mta_workflows_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
 
-func (mtaWorkflow *MTAWorkflow) BeforeCreate(scope *gorm.Scope) error {
+func (mtaWorkflow *MTAWorkflow) BeforeCreate(tx *gorm.DB) error {
 	mtaWorkflow.Id = 0
 	return nil
 }
-func (mtaWorkflow *MTAWorkflow) AfterCreate(scope *gorm.Scope) error {
+func (mtaWorkflow *MTAWorkflow) AfterCreate(tx *gorm.DB) error {
 	// event.AsyncFire(Event{}.PaymentCreated(mtaWorkflow.AccountId, mtaWorkflow.Id))
 	return nil
 }
@@ -75,12 +82,7 @@ func (mtaWorkflow *MTAWorkflow) AfterDelete(tx *gorm.DB) (err error) {
 	// event.AsyncFire(Event{}.PaymentDeleted(mtaWorkflow.AccountId, mtaWorkflow.Id))
 	return nil
 }
-func (mtaWorkflow *MTAWorkflow) AfterFind() (err error) {
-	/*_t, err := time.Parse(time.RFC3339, mtaWorkflow.ExpectedTimeStart.String())
-	if err != nil { return err }
-	mtaWorkflow.ExpectedTimeStart = _t*/
-
-	// fmt.Println("Найдено: ", _t)
+func (mtaWorkflow *MTAWorkflow) AfterFind(tx *gorm.DB) (err error) {
 	return nil
 }
 
@@ -145,14 +147,14 @@ func (mtaWorkflow *MTAWorkflow) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
-func (MTAWorkflow) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (MTAWorkflow) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return MTAWorkflow{}.getPaginationList(accountId, 0, 25, sortBy, "",nil)
 }
 
-func (MTAWorkflow) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (MTAWorkflow) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	webHooks := make([]MTAWorkflow,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -199,7 +201,7 @@ func (MTAWorkflow) getPaginationList(accountId uint, offset, limit int, sortBy, 
 }
 
 func (mtaWorkflow *MTAWorkflow) update(input map[string]interface{}) error {
-	input = utils.FixInputHiddenVars(input)
+	utils.FixInputHiddenVars(&input)
 	return mtaWorkflow.GetPreloadDb(false,false,false).Where("id = ?", mtaWorkflow.Id).Omit("id", "account_id").Updates(input).Error
 }
 
@@ -353,10 +355,10 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		emailCampaign, ok := sender.(*EmailCampaign)
 		if !ok { return errors.New("Ошибка преобразования в email campaign")}
 
-		err := account.LoadEntity(&emailTemplate, emailCampaign.EmailTemplateId)
+		err := account.LoadEntity(&emailTemplate, *emailCampaign.EmailTemplateId)
 		if err != nil {	return err }
 
-		err = account.LoadEntity(&emailBox, emailCampaign.EmailBoxId)
+		err = account.LoadEntity(&emailBox, *emailCampaign.EmailBoxId)
 		if err != nil {	return err}
 
 		Subject = emailCampaign.Subject
@@ -398,7 +400,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	}
 
 	var pkg = EmailPkg {
-		To: mail.Address{Name: user.Name, Address: user.Email},
+		To: mail.Address{Name: *user.Name, Address: *user.Email},
 		accountId: 	account.Id,
 		userId: 	user.Id,
 		workflowId: mtaWorkflow.Id, // мы не знаем

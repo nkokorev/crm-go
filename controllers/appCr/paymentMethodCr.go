@@ -34,7 +34,7 @@ func PaymentMethodCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST PaymentMethod Created")
-	resp["paymentMethod"] = paymentMethod
+	resp["payment_method"] = paymentMethod
 	u.Respond(w, resp)
 }
 
@@ -66,7 +66,7 @@ func PaymentMethodGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET PaymentMethod")
-	resp["paymentMethod"] = paymentMethod
+	resp["payment_method"] = paymentMethod
 	u.Respond(w, resp)
 }
 
@@ -86,7 +86,7 @@ func PaymentMethodGetList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET PaymentMethod List")
-	resp["paymentMethods"] =  paymentMethods
+	resp["payment_methods"] =  paymentMethods
 	u.Respond(w, resp)
 }
 
@@ -131,7 +131,7 @@ func PaymentMethodUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH PaymentMethod Update")
-	resp["paymentMethod"] = paymentMethod
+	resp["payment_method"] = paymentMethod
 	u.Respond(w, resp)
 }
 

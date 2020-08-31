@@ -2,61 +2,74 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
+	"log"
 	"time"
 )
 
 // Корзины товаров
 type CartItem struct {
 	
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	AccountId 	uint	`json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
-	OrderId 	uint	`json:"orderId" gorm:"index;not null"` // заказ, к которому относится корзина
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	AccountId 	uint	`json:"account_id" gorm:"index;not null;"` // аккаунт-владелец ключа
+	OrderId 	uint	`json:"order_id" gorm:"index;not null"` // заказ, к которому относится корзина
 
-	ProductId	uint 	`json:"productId" gorm:"type:int;default:null;"`// Id позиции товара
+	ProductId	uint 	`json:"product_id" gorm:"type:int;not null;"`// Id позиции товара
 	Description	string 	`json:"description" gorm:"type:varchar(128);not null;"`
 	Quantity	uint	`json:"quantity" gorm:"type:int;not null;"`// число ед. товара
 
 	// Фиксируем стоимость 
-	AmountId  	uint			`json:"amountId" gorm:"type:int;not null;"`
+	AmountId  	uint			`json:"amount_id" gorm:"type:int;not null;"`
 	Amount  	PaymentAmount	`json:"amount"`
+	// Amount  	PaymentAmount	`json:"amount" gorm:"polymorphic:Owner;"`
 
 	// Признак предмета расчета
-	PaymentSubjectId	uint	`json:"paymentSubjectId" gorm:"type:int;not null;default:1"`// товар или услуга ? [вид номенклатуры]
-	PaymentSubject 		PaymentSubject `json:"paymentSubject"`
-	PaymentSubjectYandex	string `json:"payment_subject" gorm:"-"`
+	PaymentSubjectId	uint			`json:"payment_subject_id" gorm:"type:int;not null;default:1"`// товар или услуга ? [вид номенклатуры]
+	PaymentSubject 		PaymentSubject 	`json:"payment_subject"`
+	PaymentSubjectYandex	string 		`json:"payment_subject_yandex"`
 
 	// Признак способа расчета
-	PaymentModeId	uint	`json:"paymentModeId" gorm:"type:int;not null;default:1"`//
-	PaymentMode 	PaymentMode `json:"paymentMode"`
-	PaymentModeYandex 	string `json:"payment_mode" gorm:"-"`
+	PaymentModeId	uint	`json:"payment_mode_id" gorm:"type:int;not null;default:1"`//
+	PaymentMode 	PaymentMode `json:"payment_mode"`
+	PaymentModeYandex 	string `json:"payment_mode_yandex"`
 
 	// Ставка НДС
 	VatCode	uint	`json:"vat_code"`
 
 	Product Product `json:"product"`
-	Order	Order `json:"-" gorm:"preload:false"`
+	Order	Order `json:"-"`
 
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func (CartItem) PgSqlCreate() {
-	db.CreateTable(&CartItem{})
-	db.Model(&CartItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&CartItem{}).AddForeignKey("amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
-	db.Model(&CartItem{}).AddForeignKey("order_id", "orders(id)", "CASCADE", "CASCADE")
-	db.Model(&CartItem{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "RESTRICT", "CASCADE")
-	db.Model(&CartItem{}).AddForeignKey("payment_mode_id", "payment_modes(id)", "RESTRICT", "CASCADE")
+	if err := db.Migrator().CreateTable(&CartItem{}); err != nil {
+		log.Fatal(err)
+	}
+	// db.Model(&CartItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&CartItem{}).AddForeignKey("amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&CartItem{}).AddForeignKey("order_id", "orders(id)", "CASCADE", "CASCADE")
+	// db.Model(&CartItem{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "RESTRICT", "CASCADE")
+	// db.Model(&CartItem{}).AddForeignKey("payment_mode_id", "payment_modes(id)", "RESTRICT", "CASCADE")
+	err := db.Exec("ALTER TABLE cart_items " +
+		"ADD CONSTRAINT cart_items_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT cart_items_amount_id_fkey FOREIGN KEY (amount_id) REFERENCES payment_amounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT cart_items_order_id_fkey FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT cart_items_payment_subject_id_fkey FOREIGN KEY (payment_subject_id) REFERENCES payment_subjects(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
+		"ADD CONSTRAINT cart_items_payment_mode_id_fkey FOREIGN KEY (payment_mode_id) REFERENCES payment_modes(id) ON DELETE RESTRICT ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 
 }
-func (cartItem *CartItem) BeforeCreate(scope *gorm.Scope) error {
+func (cartItem *CartItem) BeforeCreate(tx *gorm.DB) error {
 	cartItem.Id = 0
-	cartItem.Amount.AccountId = cartItem.AccountId
+	// cartItem.Amount.AccountId = cartItem.AccountId
 	return nil
 }
-func (cartItem *CartItem) AfterFind() (err error) {
+func (cartItem *CartItem) AfterFind(tx *gorm.DB) (err error) {
 
 	cartItem.PaymentSubjectYandex = cartItem.PaymentSubject.Code
 
@@ -77,7 +90,7 @@ func (cartItem CartItem) SystemEntity() bool { return false; }
 func (cartItem CartItem) create() (Entity, error)  {
 
 	// fix id
-	cartItem.Amount.AccountId = cartItem.AccountId
+	// cartItem.Amount.AccountId = cartItem.AccountId
 	
 	_orderChannel := cartItem
 	if err := db.Create(&_orderChannel).Error; err != nil {
@@ -118,14 +131,13 @@ func (cartItem *CartItem) loadByPublicId() error {
 	return errors.New("Нет возможности найти объект по public Id")
 }
 
-func (CartItem) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (CartItem) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return CartItem{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
 }
-
-func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	orderChannels := make([]CartItem,0)
-	var total uint
+	var total int64
 
 	if len(search) > 0 {
 
@@ -168,17 +180,27 @@ func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 
 	return entities, total, nil
 }
-
 func (cartItem *CartItem) update(input map[string]interface{}) error {
+	delete(input,"amount")
+	delete(input,"payment_subject")
+	delete(input,"payment_mode")
+	delete(input,"product")
+	delete(input,"order")
+	utils.FixInputHiddenVars(&input)
+	/*if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
+		return err
+	}*/
+	
 	return cartItem.GetPreloadDb(false, true, false).Where("id = ?", cartItem.Id).Omit("id", "account_id").Updates(input).Error
 }
 
 func (cartItem *CartItem) delete () error {
-	if err := cartItem.Amount.delete(); err != nil {
+	/*if err := cartItem.Amount.delete(); err != nil {
 		return err
 	}
 	
-	return db.Where("id = ?", cartItem.Id).Delete(cartItem).Error
+	return db.Where("id = ?", cartItem.Id).Delete(cartItem).Error*/
+	return nil
 }
 // ######### END CRUD Functions ############
 

@@ -2,22 +2,27 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
+	"log"
 )
 
 //Объект платежа - кто-то, что-то вам заплатил. Или хочет заплатить. Или должен...
 
 type PaymentAmount struct {
 	
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	AccountId 	uint	`json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	AccountId 	uint	`json:"account_id" gorm:"index;not null"` // аккаунт-владелец ключа
 
 	// Сумма расчета
-	Value 	float64	`json:"value" gorm:"type:numeric(15,2);default:0"`
+	// Value 	float64	`json:"value" gorm:"type:numeric(15,2);"`
+	Value 		float64	`json:"value" gorm:"type:numeric;"`
 
 	// КОД валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
 	Currency 	string 	`json:"currency" gorm:"type:varchar(3);default:'RUB'"`
+
+	// OwnerID		uint	`json:"owner_id" gorm:"index;type:smallint;not null;"`
+	// OwnerType	string	`json:"owner_type" gorm:"varchar(32);default:'payments';not null;"`
 }
 
 // ############# Entity interface #############
@@ -31,10 +36,16 @@ func (paymentAmount PaymentAmount) SystemEntity() bool { return false }
 // ############# Entity interface #############
 
 func (PaymentAmount) PgSqlCreate() {
-	db.AutoMigrate(&PaymentAmount{})
-	db.Model(&PaymentAmount{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	if err := db.Migrator().CreateTable(&PaymentAmount{}); err != nil {
+		log.Fatal(err)
+	}
+	// db.Model(&PaymentAmount{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE payment_amounts ADD CONSTRAINT payment_amounts_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (paymentAmount *PaymentAmount) BeforeCreate(scope *gorm.Scope) error {
+func (paymentAmount *PaymentAmount) BeforeCreate(tx *gorm.DB) error {
 	paymentAmount.Id = 0
 	return nil
 }
@@ -75,14 +86,14 @@ func (paymentAmount *PaymentAmount) load() error {
 func (*PaymentAmount) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-func (PaymentAmount) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (PaymentAmount) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return PaymentAmount{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
 }
 
-func (PaymentAmount) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (PaymentAmount) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	paymentSubjects := make([]PaymentAmount,0)
-	var total uint
+	var total int64
 
 	if len(search) > 0 {
 

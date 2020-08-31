@@ -37,14 +37,14 @@ func ProductGroupCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Get JSON-request
 	var input struct{
-		models.ProductGroup
+		models.WebPage
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	group, err := webSite.CreateProductGroup(input.ProductGroup)
+	group, err := webSite.CreatePage(input.WebPage)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания группы"}))
 		return
@@ -55,7 +55,7 @@ func ProductGroupCreate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
+/*func ProductGroupByShopGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -123,7 +123,7 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -136,7 +136,7 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
 
-	var total uint = 0
+	var total int64 = 0
 	productGroups := make([]models.ProductGroup,0)
 
 	if all == "true" && allOk {
@@ -162,8 +162,8 @@ func ProductGroupListPaginationByShopGet(w http.ResponseWriter, r *http.Request)
 	resp["productGroups"] = productGroups
 	resp["total"] = total
 	u.Respond(w, resp)
-}
-
+}*/
+/*
 func ProductGroupListGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
@@ -265,7 +265,7 @@ func ProductGroupDelete(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "DELETE ProductGroup Successful")
 	u.Respond(w, resp)
-}
+}*/
 
 
 /////////////////////////////////////
@@ -304,14 +304,14 @@ func ProductCardByShopCreate(w http.ResponseWriter, r *http.Request) {
 	// special fix!
 	input.ProductCard.WebSiteId = webSiteId
 
-	card, err := webSite.CreateProductCard(input.ProductCard, nil)
+	card, err := webSite.CreateProductCard(input.ProductCard)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания группы"}))
 		return
 	}
 
 	resp := u.Message(true, "POST ProductCard Created")
-	resp["card"] = *card
+	resp["product_card"] = *card
 	u.Respond(w, resp)
 }
 
@@ -340,7 +340,7 @@ func ProductCardCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST ProductCard Created")
-	resp["card"] = *card
+	resp["product_card"] = *card
 	u.Respond(w, resp)
 }
 
@@ -379,7 +379,7 @@ func ProductCardByShopGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET Product Card")
-	resp["productCard"] = productCard
+	resp["product_card"] = productCard
 	u.Respond(w, resp)
 }
 
@@ -428,7 +428,7 @@ func ProductCardListPaginationByShopGet(w http.ResponseWriter, r *http.Request) 
 
 	resp := u.Message(true, "GET Product Card List")
 	resp["total"] = total
-	resp["productCards"] = productCards
+	resp["product_cards"] = productCards
 	u.Respond(w, resp)
 }
 
@@ -469,7 +469,7 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH Product Card Update")
-	resp["card"] = card
+	resp["product_card"] = card
 	u.Respond(w, resp)
 }
 
@@ -542,7 +542,7 @@ func ProductGet(w http.ResponseWriter, r *http.Request) {
 
 	var product models.Product
 	// 2. Узнаем, какой список нужен
-	publicIdOk:= utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+	publicIdOk:= utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicIdOk {
 		_product, err := account.GetProductByPublicId(productId)
@@ -587,7 +587,7 @@ func ProductListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"

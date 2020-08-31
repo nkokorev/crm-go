@@ -109,8 +109,8 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 			Name: strings.ToLower(header.Filename),
 			Data: buf.Bytes(),
 			MIME: header.Header.Get("Content-Type"),
-			Size: uint(header.Size),
-			OwnerId: ownerId, // нуу хз
+			Size: int64(header.Size),
+			OwnerID: ownerId, // нуу хз
 			OwnerType: ownerType,
 		}
 	} else {
@@ -118,7 +118,7 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 			Name: strings.ToLower(header.Filename),
 			Data: buf.Bytes(),
 			MIME: header.Header.Get("Content-Type"),
-			Size: uint(header.Size),
+			Size: int64(header.Size),
 		}
 	}
 
@@ -235,7 +235,7 @@ func StorageGetListPagination(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -257,12 +257,12 @@ func StorageGetListPagination(w http.ResponseWriter, r *http.Request) {
 	
 	// without Data (body of file)
 	// todo тут надо тип файлов дописать
-	var total uint = 0
+	var total int64 = 0
 	files := make([]models.Entity,0)
 
 	files, total, err = account.GetStoragePaginationListByOwner(offset, limit, sortBy, search, ownerId, ownerType)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список файлов"))
 		return
 	}
 

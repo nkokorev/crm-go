@@ -17,29 +17,37 @@ func init() {
 }
 
 func main() {
-	pool := models.Connect()
-	defer pool.Close()
+	models.ConnectDb()
+	// defer db.Close()
+	// defer pool.Close()
 
 
 
-	// base.RefreshTablesPart_I()
-	// base.UploadTestDataPart_I()
-	// base.LoadImagesAiroClimate(13)
-	// base.LoadArticlesAiroClimate()
-	// base.LoadProductDescriptionAiroClimate()
-	// base.LoadProductCategoryDescriptionAiroClimate()
-	// base.UploadTestDataPart_II()
-	// base.UploadTestDataPart_III()
-	// base.UploadTestDataPart_IV()
-	// base.UploadBroUserData()
+	// base.Test()
+
+	if false {
+		base.RefreshTablesPart_I()
+		base.UploadTestDataPart_I()
+		base.LoadImagesAiroClimate(13)
+		base.LoadArticlesAiroClimate()
+		base.LoadProductDescriptionAiroClimate()
+		base.LoadProductCategoryDescriptionAiroClimate()
+		base.UploadTestDataPart_II()
+		base.UploadTestDataPart_III()
+		base.UploadTestDataPart_IV()
+		base.UploadBroUserData()
+	}
+
 
 	// base.Migrate_I()
 	
-	if err := (models.EventListener{}).ReloadEventHandlers(); err != nil {
+	/*if err := (models.EventListener{}).ReloadEventHandlers(); err != nil {
 		log.Fatal(fmt.Sprintf("Не удалось зарегистрировать EventHandler: %v", err))
-	}
+	}*/
 
 	models.RunHttpServer(routes.Handlers())
+
+
 	// controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
 }
 

@@ -2,15 +2,16 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
+	"fmt"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
+	"log"
 	"time"
 )
-
 type DeliveryPickup struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
 	AccountId 	uint	`json:"-" gorm:"index;not null"` // аккаунт-владелец ключа
-	WebSiteId	uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	WebSiteId	uint 	`json:"web_site_id" gorm:"type:int;index;"` // магазин, к которому относится
 
 	Code 		string	`json:"code" gorm:"type:varchar(16);default:'pickup';"` // Для идентификации во фронтенде
 	Type 		string	`json:"type" gorm:"type:varchar(32);default:'delivery_pickups';"` // Для идентификации
@@ -19,29 +20,38 @@ type DeliveryPickup struct {
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // "Самовывоз со основного склада"
 	Price 		float64 `json:"price" gorm:"type:numeric;default:0"` // стоимость доставки при самовывозе (может быть и не 0, если через сервис)
 
-	AddressRequired	bool	`json:"addressRequired" gorm:"type:bool;default:false"` // Требуется ли адрес доставки
-	PostalCodeRequired	bool	`json:"postalCodeRequired" gorm:"type:bool;default:false"` // Требуется ли индекс в адресе доставки
+	MaxWeight 	float64 `json:"max_weight" gorm:"type:numeric;default:200"` // максимальная масса в кг
+
+	AddressRequired		bool	`json:"address_required" gorm:"type:bool;default:false"` // Требуется ли адрес доставки
+	PostalCodeRequired	bool	`json:"postal_code_required" gorm:"type:bool;default:false"` // Требуется ли индекс в адресе доставки
 
 	// Признак предмета расчета
-	PaymentSubjectId	uint	`json:"paymentSubjectId" gorm:"type:int;not null;"`//
-	PaymentSubject 		PaymentSubject `json:"paymentSubject"`
+	PaymentSubjectId	uint	`json:"payment_subject_id" gorm:"type:int;not null;"`//
+	PaymentSubject 		PaymentSubject `json:"payment_subject"`
 
-	VatCodeId	uint	`json:"vatCodeId" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
-	VatCode		VatCode	`json:"vatCode"`
+	VatCodeId	uint	`json:"vat_code_id" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
+	VatCode		VatCode	`json:"vat_code"`
 
 	// загружаемый интерфейс
-	PaymentMethods		[]PaymentMethod `json:"paymentMethods" gorm:"-"`
+	PaymentMethods		[]PaymentMethod `json:"payment_methods" gorm:"-"`
 
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }
 
 func (DeliveryPickup) PgSqlCreate() {
-	db.CreateTable(&DeliveryPickup{})
+	db.Migrator().CreateTable(&DeliveryPickup{})
 	
-	db.Model(&DeliveryPickup{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&DeliveryPickup{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "RESTRICT", "CASCADE")
-	db.Model(&DeliveryPickup{}).AddForeignKey("vat_code_id", "vat_codes(id)", "RESTRICT", "CASCADE")
+	// db.Model(&DeliveryPickup{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&DeliveryPickup{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "RESTRICT", "CASCADE")
+	// db.Model(&DeliveryPickup{}).AddForeignKey("vat_code_id", "vat_codes(id)", "RESTRICT", "CASCADE")
+	err := db.Exec("ALTER TABLE delivery_pickups " +
+		"ADD CONSTRAINT delivery_pickups_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT delivery_pickups_payment_subject_id_fkey FOREIGN KEY (payment_subject_id) REFERENCES payment_subjects(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
+		"ADD CONSTRAINT delivery_pickups_vat_code_id_fkey FOREIGN KEY (vat_code_id) REFERENCES vat_codes(id) ON DELETE RESTRICT ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
 
 // ############# Entity interface #############
@@ -65,13 +75,12 @@ func (deliveryPickup DeliveryPickup) GetPaymentSubject() PaymentSubject {
 }
 // ############# Entity interface #############
 
-
 // ###### GORM Functional #######
-func (deliveryPickup *DeliveryPickup) BeforeCreate(scope *gorm.Scope) error {
+func (deliveryPickup *DeliveryPickup) BeforeCreate(tx *gorm.DB) error {
 	deliveryPickup.Id = 0
 	return nil
 }
-func (deliveryPickup *DeliveryPickup) AfterFind() (err error) {
+func (deliveryPickup *DeliveryPickup) AfterFind(tx *gorm.DB) (err error) {
 
 	// Get ALL Payment Methods
 	methods, err := GetPaymentMethodsByDelivery(deliveryPickup)
@@ -83,7 +92,6 @@ func (deliveryPickup *DeliveryPickup) AfterFind() (err error) {
 // ###### End of GORM Functional #######
 
 // ############# CRUD Entity interface #############
-
 func (deliveryPickup DeliveryPickup) create() (Entity, error)  {
 	dp := deliveryPickup
 	
@@ -115,10 +123,9 @@ func (deliveryPickup *DeliveryPickup) load() error {
 func (deliveryPickup *DeliveryPickup) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-func (DeliveryPickup) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (DeliveryPickup) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return DeliveryPickup{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-
 func (DeliveryPickup) getListByShop(accountId, websiteId uint) ([]DeliveryPickup, error) {
 
 	deliveryPickups := make([]DeliveryPickup,0)
@@ -132,11 +139,10 @@ func (DeliveryPickup) getListByShop(accountId, websiteId uint) ([]DeliveryPickup
 
 	return deliveryPickups, nil
 }
-
-func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	deliveryPickups := make([]DeliveryPickup,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -182,6 +188,13 @@ func (DeliveryPickup) getPaginationList(accountId uint, offset, limit int, sortB
 	return entities, total, nil
 }
 func (deliveryPickup *DeliveryPickup) update(input map[string]interface{}) error {
+	delete(input,"payment_subject")
+	delete(input,"vat_code")
+	delete(input,"payment_methods")
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"web_site_id","payment_subject_id","vat_code_id"}); err != nil {
+		return err
+	}
 	return deliveryPickup.GetPreloadDb(true,false,false).Where("id = ?", deliveryPickup.Id).
 		Omit("id", "account_id").Updates(input).Error
 }
@@ -202,6 +215,11 @@ func (deliveryPickup DeliveryPickup) CalculateDelivery(deliveryData DeliveryData
 	// deliveryData.TotalCost = 0
 }
 func (deliveryPickup DeliveryPickup) checkMaxWeight(weight float64) error {
+	// проверяем максимальную массу:
+	if weight > deliveryPickup.MaxWeight {
+		return utils.Error{Message: fmt.Sprintf("Превышен максимальный вес посылки в %vкг.", deliveryPickup.MaxWeight)}
+	}
+
 	return nil
 }
 
@@ -230,7 +248,7 @@ func (deliveryPickup DeliveryPickup) CreateDeliveryOrder(deliveryData DeliveryDa
 
 	deliveryOrder := DeliveryOrder{
 		AccountId: deliveryPickup.AccountId,
-		OrderId:   order.Id,
+		OrderId:   &order.Id,
 		CustomerId: order.CustomerId,
 		WebSiteId: order.WebSiteId,
 		Code:  deliveryPickup.Code,

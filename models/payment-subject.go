@@ -2,15 +2,15 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 )
 
 // Признак предмета расчета
 type PaymentSubject struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	AccountId 	uint	`json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	AccountId 	uint	`json:"account_id" gorm:"index;not null"` // аккаунт-владелец ключа
 
 	Name	string	`json:"name" gorm:"type:varchar(128);unique;not null;"`
 	Code	string	`json:"code" gorm:"type:varchar(32);unique;not null;"`
@@ -27,8 +27,14 @@ func (paymentSubject PaymentSubject) SystemEntity() bool { return paymentSubject
 // ############# Entity interface #############
 
 func (PaymentSubject) PgSqlCreate() {
-	db.CreateTable(&PaymentSubject{})
-	db.Model(&PaymentSubject{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	if err := db.Migrator().CreateTable(&PaymentSubject{}); err != nil {
+		log.Fatal(err)
+	}
+	// db.Model(&PaymentSubject{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE payment_subjects ADD CONSTRAINT payment_subjects_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 
 	paymentSubjects := []PaymentSubject {
 		{Name:   "Товар",		Code: "commodity"},
@@ -59,7 +65,7 @@ func (PaymentSubject) PgSqlCreate() {
 	}
 	
 }
-func (paymentSubject *PaymentSubject) BeforeCreate(scope *gorm.Scope) error {
+func (paymentSubject *PaymentSubject) BeforeCreate(tx *gorm.DB) error {
 	paymentSubject.Id = 0
 	return nil
 }
@@ -101,14 +107,14 @@ func (*PaymentSubject) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
-func (PaymentSubject) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (PaymentSubject) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return PaymentSubject{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
 }
 
-func (PaymentSubject) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (PaymentSubject) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	paymentSubjects := make([]PaymentSubject,0)
-	var total uint
+	var total int64
 
 	if len(search) > 0 {
 

@@ -29,7 +29,7 @@ func GetDataUserRegistration(r *http.Request) (*inputUserData, error) {
 	}
 
 	// Сохраняем незашифрованный пароль в User
-	input.User.Password = input.NativePwd
+	input.User.Password = &input.NativePwd
 
 	return &input, nil
 }
@@ -65,13 +65,25 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Проверим, все ли поля нужные поля на месте и не пустые
-	if err := u.CheckNotNullFields(input.User, account.UiApiUserRegistrationRequiredFields); err != nil {
+	b, err := account.UiApiUserRegistrationRequiredFields.MarshalJSON()
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+	var arr []string
+	err = json.Unmarshal(b, &arr)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	if err := u.CheckNotNullFields(input.User, arr); err != nil {
 		u.Respond(w, u.MessageError(err, "Не верно заполнены поля"))
 		return
 	}
 
 	// Сохраняем незашифрованный пароль в User
-	input.User.Password = input.NativePwd
+	input.User.Password = &input.NativePwd
 
 	// глобальная переменная для регистрации по инвайтам
 	var emailToken *models.EmailAccessToken
@@ -93,12 +105,12 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if input.Email != emailToken.DestinationEmail {
+		if *input.Email != emailToken.DestinationEmail {
 			u.Respond(w, u.MessageError(u.Error{Message: "Неверный код приглашения", Errors: map[string]interface{}{"inviteToken": "Код приглашения не найден"}})) // что это?)
 			return
 		}
 
-		input.User.InvitedUserId = emailToken.OwnerId
+		input.User.InvitedUserId = &emailToken.OwnerId
 
 		defer func() {
 			if user != nil {
@@ -198,12 +210,12 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if input.Email != emailToken.DestinationEmail {
+		if *input.Email != emailToken.DestinationEmail {
 			u.Respond(w, u.MessageError(u.Error{Message: "Неверный код приглашения", Errors: map[string]interface{}{"inviteToken": "Код приглашения не найден"}})) // что это?)
 			return
 		}
 
-		input.User.InvitedUserId = emailToken.OwnerId
+		input.User.InvitedUserId = &emailToken.OwnerId
 
 		defer func() {
 			if input.User != nil {
@@ -355,7 +367,7 @@ func UserRecoveryUsername(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user = models.User{Email: AccessData.Email}
+	var user = models.User{Email: &AccessData.Email}
 
 	// 1. Пробуем найти пользователя с таким email
 	if err := user.GetByEmail(); err != nil {

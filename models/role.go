@@ -2,8 +2,8 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 )
 
@@ -31,8 +31,9 @@ const (
 )
 
 type Role struct {
-	Id     uint   `json:"id" gorm:"primary_key"`
-	AccountId uint `json:"accountId" gorm:"type:int;index;not null;"` // у системных ролей = 1. Из-под RatusCRM аккаунта их можно изменять.
+	Id     uint    `json:"id" gorm:"primaryKey"`
+	AccountId uint `json:"account_id" gorm:"type:int;index;not null;"` // у системных ролей = 1. Из-под RatusCRM аккаунта их можно изменять.
+	// Account Account `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	// IssuerAccountId uint       `json:"issuerAccountId" gorm:"index;not null;default:1"`
 	Tag             AccessRole `json:"tag" gorm:"type:varchar(32);not null;"`	// client, admin, manager, ...
@@ -56,19 +57,30 @@ var systemRoles = []Role{
 }
 
 func (Role) PgSqlCreate() {
-	db.CreateTable(&Role{})
+
+	if !db.Migrator().HasTable(&Role{}) {
+		if err := db.Migrator().CreateTable(&Role{}); err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	db.Exec("create unique index uix_roles_issuer_account_id_tag_code ON roles (account_id, tag);")
-	db.Model(&Role{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&Role{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+
+	err := db.Exec("ALTER TABLE roles ADD CONSTRAINT roles_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 
 	// Создаем системные роли
 	for i, v := range systemRoles {
-		_, err := v.create();
+		_, err := v.create()
 		if err != nil {
 			log.Fatalf("Cant create role[%v]: %v", i, err)
 		}
 	}
 }
-func (role *Role) BeforeCreate(scope *gorm.Scope) error {
+func (role *Role) BeforeCreate(tx *gorm.DB) error {
 	role.Id = 0
 	return nil
 }
@@ -138,36 +150,13 @@ func (*Role) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
-func (Role) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-
-	roles := make([]Role,0)
-	var total uint
-
-	err := db.Model(&Role{}).Order(sortBy).Limit(100).
-		Where("account_id IN (?)", []uint{1, accountId}).
-		Find(&roles).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&Role{}).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(roles))
-	for i := range roles {
-		entities[i] = &roles[i]
-	}
-
-	return entities, total, nil
+func (Role) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+	return Role{}.getPaginationList(accountId,0,100,sortBy,"", nil)
 }
-func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	roles := make([]Role,0)
-	var total uint
+	var total int64
 
 	if len(search) > 0 {
 
@@ -268,7 +257,10 @@ func (account Account) GetRoleList() ([]Role, error) {
 
 // хз
 func (role Role) Exist() bool {
-	return !db.Model(&Role{}).Unscoped().First(&Role{}, role.Id).RecordNotFound()
+	if err := db.Model(&Role{}).Unscoped().First(&Role{}, role.Id).Error;err != nil {
+		return false
+	}
+	return true
 }
 
 // хз хз хз 

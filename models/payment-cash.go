@@ -3,19 +3,20 @@ package models
 import (
 	"errors"
 	"fmt"
-	"github.com/jinzhu/gorm"
-	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
+	"log"
 	"strings"
 )
 
 // Условный метод оплаты кешем. Это либо нал, либо перевод на карту.
 type PaymentCash struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
 
-	HashId 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	HashId 		string `json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
-	WebSiteId	uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	WebSiteId	uint 	`json:"web_site_id" gorm:"type:int;index;"` // магазин, к которому относится
 
 	Code 		string `json:"code" gorm:"type:varchar(32);default:'payment_cash'"`
 	Type 		string	`json:"type" gorm:"type:varchar(32);default:'payment_cashes';"` // Для идентификации
@@ -24,19 +25,25 @@ type PaymentCash struct {
 
 	// Включен ли данный способ оплаты ??
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"`
-	InstantDelivery bool 	`json:"instantDelivery" gorm:"type:bool;default:false"`
+	InstantDelivery bool 	`json:"instant_delivery" gorm:"type:bool;default:false"`
 
-	WebSite		WebSite `json:"webSite" gorm:"preload"`
+	WebSite		WebSite `json:"web_site" gorm:"preload"`
 	// !!! deprecated !!!
 	
 	// PaymentOption   PaymentOption `gorm:"polymorphic:Owner;"`
 }
 func (PaymentCash) PgSqlCreate() {
-	db.CreateTable(&PaymentCash{})
-	db.Model(&PaymentCash{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&PaymentCash{}).AddForeignKey("web_site_id", "web_sites(id)", "CASCADE", "CASCADE")
+	db.Migrator().CreateTable(&PaymentCash{})
+	// db.Model(&PaymentCash{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&PaymentCash{}).AddForeignKey("web_site_id", "web_sites(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE payment_cashes " +
+		"ADD CONSTRAINT payment_cashes_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT payment_cashes_web_site_id_fkey FOREIGN KEY (web_site_id) REFERENCES web_sites(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (paymentCash *PaymentCash) BeforeCreate(scope *gorm.Scope) error {
+func (paymentCash *PaymentCash) BeforeCreate(tx *gorm.DB) error {
 	paymentCash.Id = 0
 	paymentCash.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	return nil
@@ -64,10 +71,14 @@ func (paymentCash PaymentCash) CreatePaymentByOrder(order Order, mode PaymentMod
 		PaymentMethodData: PaymentMethodData{Type: "bank_card"}, // вообще еще вопрос
 
 		// Чтобы понять какой платеж был оплачен!!!
-		Metadata: postgres.Jsonb{ RawMessage: utils.MapToRawJson(map[string]interface{}{
+		/*Metadata: postgres.Jsonb{ RawMessage: utils.MapToRawJson(map[string]interface{}{
 			"orderId":order.Id,
 			"accountId":paymentCash.AccountId,
-		})},
+		})},*/
+		Metadata: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+			"orderId":order.Id,
+			"accountId":paymentCash.AccountId,
+		})),
 		SavePaymentMethod: false,
 		OwnerId: paymentCash.Id,
 		OwnerType: "payment_cashes",
@@ -133,13 +144,13 @@ func (paymentCash *PaymentCash) load() error {
 func (*PaymentCash) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-func (PaymentCash) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (PaymentCash) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return  PaymentCash{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	paymentCashs := make([]PaymentCash,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {

@@ -34,7 +34,7 @@ func EmailQueueCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST EmailQueue Created")
-	resp["emailQueue"] = emailQueue
+	resp["email_queue"] = emailQueue
 	u.Respond(w, resp)
 }
 
@@ -55,7 +55,7 @@ func EmailQueueGet(w http.ResponseWriter, r *http.Request) {
 	var emailQueue models.EmailQueue
 
 	// 2. Узнаем, какой id учитывается нужен
-	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
 		err = account.LoadEntityByPublicId(&emailQueue, emailQueueId)
@@ -72,7 +72,7 @@ func EmailQueueGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET EmailQueue")
-	resp["emailQueue"] = emailQueue
+	resp["email_queue"] = emailQueue
 	u.Respond(w, resp)
 }
 
@@ -95,7 +95,7 @@ func EmailQueueGetListPagination(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -107,7 +107,7 @@ func EmailQueueGetListPagination(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// возвращаемые переменные
-	var total uint = 0
+	var total int64 = 0
 	emailQueues := make([]models.Entity,0)
 
 	// 2. Узнаем, какой список нужен
@@ -131,7 +131,7 @@ func EmailQueueGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET EmailQueue Pagination List")
 	resp["total"] = total
-	resp["emailQueues"] = emailQueues
+	resp["email_queues"] = emailQueues
 	u.Respond(w, resp)
 }
 
@@ -169,7 +169,7 @@ func EmailQueueUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH EmailQueue Update")
-	resp["emailQueue"] = emailQueue
+	resp["email_queue"] = emailQueue
 	u.Respond(w, resp)
 }
 

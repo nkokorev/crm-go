@@ -2,35 +2,35 @@ package models
 
 import (
 	"database/sql"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 	"time"
 )
 
 type TaskScheduler struct {
-	Id     			uint   	`json:"id" gorm:"primary_key"`
-	PublicId		uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"`
+	Id     			uint   	`json:"id" gorm:"primaryKey"`
+	PublicId		uint   	`json:"public_id" gorm:"type:int;index;not null;default:1"`
 	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// email_campaign_run, email_queues_run, email_notifications_run
-	OwnerType	Task	`json:"ownerType" gorm:"varchar(32);not null;"` // << тип события:
-	OwnerId		uint	`json:"ownerId" gorm:"type:smallint;not null;"` // ID типа события: id типа
+	OwnerType	Task	`json:"owner_type" gorm:"varchar(32);not null;"` // << тип события:
+	OwnerId		uint	`json:"owner_id" gorm:"type:smallint;not null;"` // ID типа события: id типа
 
 	// Запланированное время выполнения
-	ExpectedTimeToStart 	time.Time `json:"expectedTimeToStart"`
+	ExpectedTimeToStart 	time.Time `json:"expected_time_to_start"`
 
 	// системная ли задача
-	IsSystem	bool	`json:"isSystem" gorm:"type:bool;default:true"`
+	IsSystem	bool	`json:"is_system" gorm:"type:bool;default:true"`
 
 	// Результат выполнения: planned / pending / completed / failed / cancelled => планируется / выполняется / выполнена / провалена / отмена
-	Status 		WorkStatus `json:"status" gorm:"type:varchar(18);default:'planned'"`
+	Status	WorkStatus `json:"status" gorm:"type:varchar(18);default:'planned'"`
 
 	// Причина провала / отмены (необязательный параметр)
-	Reason string `json:"reason" gorm:"type:varchar(128);default:null"`
+	Reason 	string `json:"reason" gorm:"type:varchar(128);default:null"`
 
-	CreatedAt 		time.Time `json:"createdAt"`
-	UpdatedAt 		time.Time `json:"updatedAt"`
+	CreatedAt 		time.Time `json:"created_at"`
+	UpdatedAt 		time.Time `json:"updated_at"`
 }
 
 type Task = string
@@ -61,10 +61,14 @@ func (TaskScheduler) SystemEntity() bool { return false }
 // ############# End Entity interface #############
 
 func (TaskScheduler) PgSqlCreate() {
-	db.CreateTable(&TaskScheduler{})
-	db.Model(&TaskScheduler{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Migrator().CreateTable(&TaskScheduler{})
+	// db.Model(&TaskScheduler{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE task_schedulers ADD CONSTRAINT task_schedulers_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (taskScheduler *TaskScheduler) BeforeCreate(scope *gorm.Scope) error {
+func (taskScheduler *TaskScheduler) BeforeCreate(tx *gorm.DB) error {
 	taskScheduler.Id = 0
 
 	// PublicId
@@ -76,7 +80,7 @@ func (taskScheduler *TaskScheduler) BeforeCreate(scope *gorm.Scope) error {
 
 	return nil
 }
-func (taskScheduler *TaskScheduler) AfterFind() (err error) {
+func (taskScheduler *TaskScheduler) AfterFind(tx *gorm.DB) (err error) {
 	return nil
 }
 
@@ -128,13 +132,13 @@ func (taskScheduler *TaskScheduler) loadByPublicId() error {
 	return nil
 }
 
-func (TaskScheduler) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (TaskScheduler) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return TaskScheduler{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-func (TaskScheduler) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (TaskScheduler) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	emailCampaigns := make([]TaskScheduler,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -182,7 +186,7 @@ func (TaskScheduler) getPaginationList(accountId uint, offset, limit int, sortBy
 
 func (taskScheduler *TaskScheduler) update(input map[string]interface{}) error {
 
-	input = utils.FixInputHiddenVars(input)
+	utils.FixInputHiddenVars(&input)
 	input = utils.FixInputDataTimeVars(input,[]string{"scheduleRun"})
 	
 	if err := taskScheduler.GetPreloadDb(true,false,false).Where(" id = ?", taskScheduler.Id).

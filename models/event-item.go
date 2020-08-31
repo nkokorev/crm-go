@@ -2,15 +2,15 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 	"time"
 )
 
 // Список событий, на которые можно навесить обработчик EventHandler
 type EventItem struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name		string 	`json:"name" gorm:"type:varchar(255);unique;not null;"`  // 'Пользователь создан'
@@ -19,12 +19,16 @@ type EventItem struct {
 
 	Description string 	`json:"description" gorm:"type:text;"` // pgsql: text
 
-	CreatedAt time.Time `json:"createdAt"`
+	CreatedAt 	time.Time `json:"created_at"`
 }
 
 func (EventItem) PgSqlCreate() {
-	db.CreateTable(&EventItem{})
-	db.Model(&EventItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Migrator().CreateTable(&EventItem{})
+	// db.Model(&EventItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE event_items ADD CONSTRAINT event_items_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 
 	mainAccount, err := GetMainAccount()
 	if err != nil {
@@ -96,7 +100,7 @@ func (EventItem) PgSqlCreate() {
 	}
 }
 
-func (eventItem *EventItem) BeforeCreate(scope *gorm.Scope) error {
+func (eventItem *EventItem) BeforeCreate(tx *gorm.DB) error {
 	eventItem.Id = 0
 	return nil
 }
@@ -147,14 +151,14 @@ func (*EventItem) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
-func (EventItem) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (EventItem) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return EventItem{}.getPaginationList(accountId,0,300, sortBy, "",nil)
 }
 
-func (EventItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (EventItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	eventItems := make([]EventItem,0)
-	var total uint
+	var total int64
 
 	if len(search) > 0 {
 

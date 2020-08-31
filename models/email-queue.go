@@ -3,45 +3,50 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
+	"log"
 	"time"
 )
 
 type EmailQueue struct {
 
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"`
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Имя очереди (Label)
 	Name		string	`json:"name" gorm:"type:varchar(128);not null;"` // Welcome, Onboarding, ...
 
-	Status 			WorkStatus `json:"status" gorm:"type:varchar(18);default:'pending'"`
-	FailedStatus	string 		`json:"failedStatus" gorm:"type:varchar(255);"`
+	Status 			WorkStatus 		`json:"status" gorm:"type:varchar(18);default:'pending'"`
+	FailedStatus	*string 		`json:"failed_status" gorm:"type:varchar(255);"`
 
 	// Сколько в очереди сейчас задач (выборка по MTAWorkflow) = сколько подписчиков еще проходят, в процессе
-	Queue 		uint `json:"_queue" gorm:"-"`
+	Queue 		int64 `json:"_queue" gorm:"-"`
 
 	// Из скольких активных писем состоит цепочка      activeEmailTemplates
-	ActiveEmailTemplates uint `json:"_activeEmailTemplates" gorm:"-"`
+	ActiveEmailTemplates int64 `json:"_active_email_templates" gorm:"-"`
 
 	// Сколько прошло через нее. На это число навешивается статистика открытий / отписок / кликов
-	Recipients uint `json:"_recipients" gorm:"-"` // <<< всего успешно отправлено писем
-	Completed uint `json:"_completed" gorm:"-"` /// << число завершивших серию
-	OpenRate 		float64 `json:"_openRate" gorm:"-"`
-	UnsubscribeRate float64 `json:"_unsubscribeRate" gorm:"-"`
+	Recipients 	uint `json:"_recipients" gorm:"-"` // <<< всего успешно отправлено писем
+	Completed 	uint `json:"_completed" gorm:"-"` /// << число завершивших серию
+	OpenRate 		float64 `json:"_open_rate" gorm:"-"`
+	UnsubscribeRate float64 `json:"_unsubscribe_rate" gorm:"-"`
 
 	// Внутреннее время
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }
 
 func (EmailQueue) PgSqlCreate() {
-	db.CreateTable(&EmailQueue{})
-	db.Model(&EmailQueue{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Migrator().CreateTable(&EmailQueue{})
+	// db.Model(&EmailQueue{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE email_queues ADD CONSTRAINT email_queues_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (emailQueue *EmailQueue) BeforeCreate(scope *gorm.Scope) error {
+func (emailQueue *EmailQueue) BeforeCreate(tx *gorm.DB) error {
 	emailQueue.Id = 0
 
 	// PublicId
@@ -54,7 +59,7 @@ func (emailQueue *EmailQueue) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
-func (emailQueue *EmailQueue) AfterCreate(scope *gorm.Scope) (error) {
+func (emailQueue *EmailQueue) AfterCreate(tx *gorm.DB) (error) {
 	// event.AsyncFire(Event{}.PaymentCreated(emailQueue.AccountId, emailQueue.Id))
 	return nil
 }
@@ -68,16 +73,16 @@ func (emailQueue *EmailQueue) AfterDelete(tx *gorm.DB) (err error) {
 	// event.AsyncFire(Event{}.PaymentDeleted(emailQueue.AccountId, emailQueue.Id))
 	return nil
 }
-func (emailQueue *EmailQueue) AfterFind() (err error) {
+func (emailQueue *EmailQueue) AfterFind(tx *gorm.DB) (err error) {
 
 	// Рассчитываем сколько активных писем в серии
-	countTemplates := uint(0)
+	countTemplates := int64(0)
 	err = db.Model(&EmailQueueEmailTemplate{}).Where("account_id = ? AND email_queue_id = ? AND enabled = 'true'", emailQueue.AccountId, emailQueue.Id).Count(&countTemplates).Error;
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
 	if err == gorm.ErrRecordNotFound {countTemplates = 0} else { emailQueue.ActiveEmailTemplates = countTemplates}
 
 	// Рассчитываем сколько пользователей сейчас в очереди
-	inQueue := uint(0)
+	inQueue := int64(0)
 	err = db.Model(&MTAWorkflow{}).Where("account_id = ? AND owner_id = ? AND owner_type = ?", emailQueue.AccountId, emailQueue.Id, EmailSenderQueue).Count(&inQueue).Error
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
 	if err == gorm.ErrRecordNotFound {emailQueue.Queue = 0} else { emailQueue.Queue = inQueue}
@@ -192,14 +197,13 @@ func (emailQueue *EmailQueue) loadByPublicId() error {
 	return nil
 }
 
-func (EmailQueue) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (EmailQueue) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return EmailQueue{}.getPaginationList(accountId, 0, 25, sortBy, "", nil)
 }
-
-func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	emailQueues := make([]EmailQueue,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -249,11 +253,13 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 
 	return entities, total, nil
 }
-
 func (emailQueue *EmailQueue) update(input map[string]interface{}) error {
-	input = utils.FixInputHiddenVars(input)
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
+		return err
+	}
 	err := emailQueue.GetPreloadDb(true,false,false).Where("id = ?", emailQueue.Id).
-		Omit("id", "account_id", "created_at").Update(input).Error
+		Omit("id", "account_id", "created_at","public_id").Updates(input).Error
 	if err != nil {	return err	}
 	if err = emailQueue.GetPreloadDb(false,true,true).First(emailQueue).Error; err != nil {
 		return err
@@ -410,6 +416,6 @@ func (emailQueue *EmailQueue) changeWorkStatus(status WorkStatus, reason... stri
 	}
 	return emailQueue.update(map[string]interface{}{
 		"status":	status,
-		"failedStatus": _reason,
+		"failed_status": _reason,
 	})
 }

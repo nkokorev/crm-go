@@ -31,7 +31,7 @@ func DeliveryOrderCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST DeliveryOrder Created")
-	resp["deliveryOrder"] = deliveryOrder
+	resp["delivery_order"] = deliveryOrder
 	u.Respond(w, resp)
 }
 
@@ -57,7 +57,7 @@ func DeliveryOrderGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET DeliveryOrder")
-	resp["deliveryOrder"] = deliveryOrder
+	resp["delivery_order"] = deliveryOrder
 	u.Respond(w, resp)
 }
 
@@ -80,7 +80,7 @@ func DeliveryOrderGetListPagination(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -91,7 +91,7 @@ func DeliveryOrderGetListPagination(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 
-	var total uint = 0
+	var total int64 = 0
 	deliveryOrders := make([]models.Entity,0)
 	
 	deliveryOrders, total, err = account.GetPaginationListEntity(&models.DeliveryOrder{}, offset, limit, sortBy, search, nil)
@@ -102,7 +102,7 @@ func DeliveryOrderGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET DeliveryOrder Pagination List")
 	resp["total"] = total
-	resp["deliveryOrders"] = deliveryOrders
+	resp["delivery_orders"] = deliveryOrders
 	u.Respond(w, resp)
 }
 
@@ -140,7 +140,7 @@ func DeliveryOrderUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH DeliveryOrder Update")
-	resp["deliveryOrder"] = deliveryOrder
+	resp["delivery_order"] = deliveryOrder
 	u.Respond(w, resp)
 }
 

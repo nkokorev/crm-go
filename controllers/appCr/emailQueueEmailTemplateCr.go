@@ -61,7 +61,7 @@ func EmailQueueEmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET EmailQueueEmailTemplate")
-	resp["emailQueueEmailTemplate"] = emailQueueEmailTemplate
+	resp["email_queue_email_template"] = emailQueueEmailTemplate
 	u.Respond(w, resp)
 }
 
@@ -84,7 +84,7 @@ func EmailQueueEmailTemplateGetListPagination(w http.ResponseWriter, r *http.Req
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -104,9 +104,9 @@ func EmailQueueEmailTemplateGetListPagination(w http.ResponseWriter, r *http.Req
 	filter := make(map[string]interface{},0)
 	filter["email_queue_id"] = emailQueueId
 
-	var total uint = 0
+	var total int64 = 0
 	emailQueueEmailTemplates := make([]models.Entity,0)
-	
+
 	emailQueueEmailTemplates, total, err = account.GetPaginationListEntity(&models.EmailQueueEmailTemplate{}, offset, limit, sortBy, search, filter)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
@@ -115,7 +115,7 @@ func EmailQueueEmailTemplateGetListPagination(w http.ResponseWriter, r *http.Req
 
 	resp := u.Message(true, "GET EmailQueueEmailTemplate Pagination List")
 	resp["total"] = total
-	resp["emailQueueEmailTemplates"] = emailQueueEmailTemplates
+	resp["email_queue_email_templates"] = emailQueueEmailTemplates
 	u.Respond(w, resp)
 }
 
@@ -148,12 +148,13 @@ func EmailQueueEmailTemplateUpdate(w http.ResponseWriter, r *http.Request) {
 
 	err = account.UpdateEntity(&emailQueueEmailTemplate, input)
 	if err != nil {
+		// fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
 	resp := u.Message(true, "PATCH EmailQueueEmailTemplate Update")
-	resp["emailQueueEmailTemplate"] = emailQueueEmailTemplate
+	resp["email_queue_email_template"] = emailQueueEmailTemplate
 	u.Respond(w, resp)
 }
 
@@ -193,7 +194,7 @@ func EmailQueueEmailTemplateMassUpdates(w http.ResponseWriter, r *http.Request) 
 	filter := make(map[string]interface{},0)
 	filter["email_queue_id"] = emailQueueId
 
-	var total uint = 0
+	var total int64 = 0
 	emailQueueEmailTemplates := make([]models.Entity,0)
 
 	emailQueueEmailTemplates, total, err = account.GetPaginationListEntity(&models.EmailQueueEmailTemplate{}, 0, 100, "order", "", filter)
@@ -203,7 +204,7 @@ func EmailQueueEmailTemplateMassUpdates(w http.ResponseWriter, r *http.Request) 
 	}
 
 	resp := u.Message(true, "PATCH EmailQueueEmailTemplate MassUpdates")
-	resp["emailQueueEmailTemplates"] = emailQueueEmailTemplates
+	resp["email_queue_email_templates"] = emailQueueEmailTemplates
 	resp["total"] = total
 	u.Respond(w, resp)
 }

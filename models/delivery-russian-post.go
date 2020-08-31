@@ -5,57 +5,65 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
+	"log"
 	"net/http"
 	"time"
 )
 
 type DeliveryRussianPost struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
 	AccountId 	uint	`json:"-" gorm:"index;not null"` // аккаунт-владелец ключа
-	WebSiteId		uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	WebSiteId	uint 	`json:"web_site_id" gorm:"type:int;index;"` // магазин, к которому относится
 	Code 		string	`json:"code" gorm:"type:varchar(16);default:'russianPost';"` // Для идентификации во фронтенде
 	Type 		string	`json:"type" gorm:"type:varchar(32);default:'delivery_russian_posts';"` // Для идентификации
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // активен ли способ доставки
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // "Курьерская доставка", "Почта России", "Самовывоз"
 
-	AccessToken 		string `json:"accessToken" gorm:"type:varchar(255);"` // accessToken
-	XUserAuthorization 	string `json:"xUserAuthorization" gorm:"type:varchar(255);"` // XUserAuthorization в base64
-	MaxWeight 	float64 `json:"maxWeight" gorm:"type:int;default:20"` // максимальная масса в кг
+	AccessToken 		string 	`json:"access_token" gorm:"type:varchar(255);"` // accessToken
+	XUserAuthorization 	string 	`json:"x_user_authorization" gorm:"type:varchar(255);"` // XUserAuthorization в base64
+	MaxWeight 			float64 `json:"max_weight" gorm:"type:numeric;default:20"` // максимальная масса в кг
 
-	PostalCodeFrom	string	`json:"postalCodeFrom" gorm:"type:varchar(255);"` // индекс отправки с почты России
-	MailCategory 	string	`json:"mailCategory" gorm:"type:varchar(50);"` // https://otpravka.pochta.ru/specification#/enums-base-mail-category
-	MailType 		string	`json:"mailType" gorm:"type:varchar(50);"` // https://otpravka.pochta.ru/specification#/enums-base-mail-type
+	PostalCodeFrom	string	`json:"postal_code_from" gorm:"type:varchar(255);"` // индекс отправки с почты России
+	MailCategory 	string	`json:"mail_category" gorm:"type:varchar(50);"` // https://otpravka.pochta.ru/specification#/enums-base-mail-category
+	MailType 		string	`json:"mail_type" gorm:"type:varchar(50);"` // https://otpravka.pochta.ru/specification#/enums-base-mail-type
 	Fragile 		bool	`json:"fragile" gorm:"type:bool;default:false"`  // отметка "Осторожно хрупкое"
-	WithElectronicNotice	bool	`json:"withElectronicNotice" gorm:"type:bool;default:true"`  // отметка "Осторожно хрупкое"
-	WithOrderOfNotice		bool	`json:"withOrderOfNotice" gorm:"type:bool;default:true"`  // отметка "Осторожно хрупкое"
-	WithSimpleNotice		bool	`json:"withSimpleNotice" gorm:"type:bool;default:false"`  // отметка "Осторожно хрупкое"
+	WithElectronicNotice	bool	`json:"with_electronic_notice"" gorm:"type:bool;default:true"`  // отметка "Осторожно хрупкое"
+	WithOrderOfNotice		bool	`json:"with_order_of_notice" gorm:"type:bool;default:true"`  // отметка "Осторожно хрупкое"
+	WithSimpleNotice		bool	`json:"with_simple_notice" gorm:"type:bool;default:false"`  // отметка "Осторожно хрупкое"
 
-	AddressRequired	bool	`json:"addressRequired" gorm:"type:bool;default:true"` // Требуется ли адрес доставки
-	PostalCodeRequired	bool	`json:"postalCodeRequired" gorm:"type:bool;default:true"` // Требуется ли индекс в адресе доставки
+	AddressRequired		bool	`json:"address_required" gorm:"type:bool;default:true"` // Требуется ли адрес доставки
+	PostalCodeRequired	bool	`json:"postal_code_required" gorm:"type:bool;default:true"` // Требуется ли индекс в адресе доставки
 
 	// Признак предмета расчета
-	PaymentSubjectId	uint	`json:"paymentSubjectId" gorm:"type:int;not null;"`//
-	PaymentSubject 		PaymentSubject `json:"paymentSubject"`
+	PaymentSubjectId	uint	`json:"payment_subject_id" gorm:"type:int;not null;"`//
+	PaymentSubject 		PaymentSubject `json:"payment_subject"`
 
-	VatCodeId	uint	`json:"vatCodeId" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
-	VatCode		VatCode	`json:"vatCode"`
+	VatCodeId	uint	`json:"vat_code_id" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
+	VatCode		VatCode	`json:"vat_code"`
 
 	// загружаемый интерфейс
-	PaymentMethods		[]PaymentMethod `json:"paymentMethods" gorm:"-"`
+	PaymentMethods		[]PaymentMethod `json:"payment_methods" gorm:"-"`
 
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }
 
 func (DeliveryRussianPost) PgSqlCreate() {
-	db.CreateTable(&DeliveryRussianPost{})
+	db.Migrator().CreateTable(&DeliveryRussianPost{})
 
-	db.Model(&DeliveryRussianPost{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&DeliveryRussianPost{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "RESTRICT", "CASCADE")
-	db.Model(&DeliveryRussianPost{}).AddForeignKey("vat_code_id", "vat_codes(id)", "RESTRICT", "CASCADE")
+	// db.Model(&DeliveryRussianPost{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&DeliveryRussianPost{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "RESTRICT", "CASCADE")
+	// db.Model(&DeliveryRussianPost{}).AddForeignKey("vat_code_id", "vat_codes(id)", "RESTRICT", "CASCADE")
+	err := db.Exec("ALTER TABLE delivery_russian_posts " +
+		"ADD CONSTRAINT delivery_russian_posts_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT delivery_russian_posts_payment_subject_id_fkey FOREIGN KEY (payment_subject_id) REFERENCES payment_subjects(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
+		"ADD CONSTRAINT delivery_russian_posts_vat_code_id_fkey FOREIGN KEY (vat_code_id) REFERENCES vat_codes(id) ON DELETE RESTRICT ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
 
 // ############# Entity interface #############
@@ -80,11 +88,11 @@ func (deliveryRussianPost DeliveryRussianPost) GetPaymentSubject() PaymentSubjec
 // ############# Entity interface #############
 
 // ###### GORM Functional #######
-func (deliveryRussianPost *DeliveryRussianPost) BeforeCreate(scope *gorm.Scope) error {
+func (deliveryRussianPost *DeliveryRussianPost) BeforeCreate(tx *gorm.DB) error {
 	deliveryRussianPost.Id = 0
 	return nil
 }
-func (deliveryRussianPost *DeliveryRussianPost) AfterFind() (err error) {
+func (deliveryRussianPost *DeliveryRussianPost) AfterFind(tx *gorm.DB) (err error) {
 
 	methods, err := GetPaymentMethodsByDelivery(deliveryRussianPost)
 	if err != nil { return err }
@@ -129,7 +137,7 @@ func (deliveryRussianPost *DeliveryRussianPost) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
-func (DeliveryRussianPost) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (DeliveryRussianPost) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return DeliveryRussianPost{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
 func (DeliveryRussianPost) getListByShop(accountId, websiteId uint) ([]DeliveryRussianPost, error) {
@@ -146,10 +154,10 @@ func (DeliveryRussianPost) getListByShop(accountId, websiteId uint) ([]DeliveryR
 	return deliveryRussianPosts, nil
 }
 
-func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	deliveryRussianPosts := make([]DeliveryRussianPost,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -196,8 +204,17 @@ func (DeliveryRussianPost) getPaginationList(accountId uint, offset, limit int, 
 }
 
 func (deliveryRussianPost *DeliveryRussianPost) update(input map[string]interface{}) error {
-	return deliveryRussianPost.GetPreloadDb(true,true,false).Where("id = ?", deliveryRussianPost.Id).
+	delete(input,"payment_subject")
+	delete(input,"vat_code")
+	delete(input,"payment_methods")
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"web_site_id","payment_subject_id","vat_code_id"}); err != nil {
+		return err
+	}
+
+	return deliveryRussianPost.GetPreloadDb(true,false,false).Where("id = ?", deliveryRussianPost.Id).
 		Omit("id", "account_id").Updates(input).Error
+
 }
 
 func (deliveryRussianPost *DeliveryRussianPost) delete () error {
@@ -318,7 +335,7 @@ func (deliveryRussianPost DeliveryRussianPost) CreateDeliveryOrder(deliveryData 
 
 	deliveryOrder := DeliveryOrder{
 		AccountId: deliveryRussianPost.AccountId,
-		OrderId:   order.Id,
+		OrderId:   &order.Id,
 		CustomerId: order.CustomerId,
 		WebSiteId: order.WebSiteId,
 		Code:  deliveryRussianPost.Code,

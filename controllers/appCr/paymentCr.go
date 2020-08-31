@@ -24,7 +24,7 @@ func PaymentGet(w http.ResponseWriter, r *http.Request) {
 
 	var payment models.Payment
 	
-	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
 		err = account.LoadEntityByPublicId(&payment, paymentId)
@@ -78,7 +78,7 @@ func PaymentGetListPagination(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 
-	var total uint = 0
+	var total int64 = 0
 	payments := make([]models.Entity,0)
 	
 	payments, total, err = account.GetPaginationListEntity(&models.Payment{}, offset, limit, sortBy, search, nil)

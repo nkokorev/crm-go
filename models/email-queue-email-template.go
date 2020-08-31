@@ -2,51 +2,53 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
-	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
+	"log"
 	"time"
 )
 
 // M <> M : email queue  <> email templates
 type EmailQueueEmailTemplate struct {
 
-	Id     		uint   	`json:"id" gorm:"primary_key"`
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	EmailQueueId	uint	`json:"emailQueueId" gorm:"type:int;"`
+	EmailQueueId	uint	`json:"email_queue_id" gorm:"type:int;"`
 	EmailQueue		EmailQueue `json:"-"`
 	
 	// В работе данное письмо в указанной серии
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false;"`
-	Order 	uint 	`json:"order" gorm:"type:int;not null;"` // порядок
+	Order 		uint 	`json:"order" gorm:"type:int;not null;"` // порядок
 
-	EmailTemplateId	uint	`json:"emailTemplateId" gorm:"type:int;"`
-	EmailTemplate	EmailTemplate `json:"emailTemplate"`
+	EmailTemplateId	uint	`json:"email_template_id" gorm:"type:int;"`
+	EmailTemplate	EmailTemplate `json:"email_template"`
 
 	// С какого почтового ящика отправляем
-	EmailBoxId		*uint 	`json:"emailBoxId" gorm:"type:int;default:null;"` // С какого ящика идет отправка
-	EmailBox		EmailBox `json:"emailBox" gorm:"preload:false"`
+	EmailBoxId		*uint 	`json:"email_box_id" gorm:"type:int;"` // С какого ящика идет отправка
+	EmailBox		EmailBox `json:"email_box" gorm:"preload:false"`
 
 	// Через сколько запускать письмо в серии. hours / days / week
-	DelayTime		time.Duration `json:"delayTime" gorm:"default:0"`// << учитывается только время [0-24]
+	DelayTime		time.Duration `json:"delay_time" gorm:"default:0"`// << учитывается только время [0-24]
 
 	// С каким текстом отправляется это сообщение.
 	Subject			string 	`json:"subject" gorm:"type:varchar(128);not null;"` // Тема сообщения, компилируются
-	PreviewText		string 	`json:"previewText" gorm:"type:varchar(255);default:''"` // Тема сообщения, компилируются
+	PreviewText		string 	`json:"preview_text" gorm:"type:varchar(255);"` // Тема сообщения, компилируются
 
 
 	// График: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday | weekends, workday
-	// Schedule	string `json:"emailTemplate"`     `json:"switchProducts"`
+	// Schedule	string `json:"email_template"`     `json:"switch_products"`
 	// 1- mondey, workday = 8, weekend = 9, everyday = 10
-	Schedule	postgres.Jsonb `json:"schedule" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	// Schedule	postgres.Jsonb `json:"schedule" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	Schedule	datatypes.JSON `json:"schedule"`
 
 	// В какое время следует отправлять электронные письма:
 	// инста отправка GateStart = GateEnd = null
 	// В указанное время: GateStart = <...>, GateEnd = null
 	// В указанный промежуток: между GateStart <> GateEnd
-	GateStart 	*time.Time `json:"gateStart" gorm:"default:null"`// << учитывается только время [0-24]
-	GateEnd		*time.Time `json:"gateEnd" gorm:"default:null"`	// << учитывается только время [0-24]
+	GateStart 	*time.Time `json:"gate_start"`// << учитывается только время [0-24]
+	GateEnd		*time.Time `json:"gate_end"`	// << учитывается только время [0-24]
 
 	// Что делать, если Gate не подходит? перенести на 1-24 часа / пропустить письмо и перейти к следующему
 
@@ -54,22 +56,29 @@ type EmailQueueEmailTemplate struct {
 	// SkipIfDisabled bool `json:"skipIfDisabled" gorm:"type:bool;default:true;"`
 
 	// Внутреннее время
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }
 
 func (EmailQueueEmailTemplate) PgSqlCreate() {
-	db.CreateTable(&EmailQueueEmailTemplate{})
-	db.Model(&EmailQueueEmailTemplate{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&EmailQueueEmailTemplate{}).AddForeignKey("email_queue_id", "email_queues(id)", "CASCADE", "CASCADE")
-	db.Model(&EmailQueueEmailTemplate{}).AddForeignKey("email_template_id", "email_templates(id)", "RESTRICT", "CASCADE")
+	db.Migrator().CreateTable(&EmailQueueEmailTemplate{})
+	// db.Model(&EmailQueueEmailTemplate{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&EmailQueueEmailTemplate{}).AddForeignKey("email_queue_id", "email_queues(id)", "CASCADE", "CASCADE")
+	// db.Model(&EmailQueueEmailTemplate{}).AddForeignKey("email_template_id", "email_templates(id)", "RESTRICT", "CASCADE")
+	err := db.Exec("ALTER TABLE email_queue_email_templates " +
+		"ADD CONSTRAINT email_queue_email_templates_notifications_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT email_queue_email_templates_email_queue_id_fkey FOREIGN KEY (email_queue_id) REFERENCES email_queues(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT email_queue_email_templates_email_template_id_fkey FOREIGN KEY (email_template_id) REFERENCES email_templates(id) ON DELETE SET NULL ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (emailQueueEmailTemplate *EmailQueueEmailTemplate) BeforeCreate(scope *gorm.Scope) error {
+func (emailQueueEmailTemplate *EmailQueueEmailTemplate) BeforeCreate(tx *gorm.DB) error {
 	emailQueueEmailTemplate.Id = 0
 	return nil
 }
 
-func (emailQueueEmailTemplate *EmailQueueEmailTemplate) AfterCreate(scope *gorm.Scope) (error) {
+func (emailQueueEmailTemplate *EmailQueueEmailTemplate) AfterCreate(tx *gorm.DB) error {
 	// event.AsyncFire(Event{}.PaymentCreated(emailQueueEmailTemplate.AccountId, emailQueueEmailTemplate.Id))
 	return nil
 }
@@ -83,7 +92,7 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) AfterDelete(tx *gorm.DB)
 	// event.AsyncFire(Event{}.PaymentDeleted(emailQueueEmailTemplate.AccountId, emailQueueEmailTemplate.Id))
 	return nil
 }
-func (emailQueueEmailTemplate *EmailQueueEmailTemplate) AfterFind() (err error) {
+func (emailQueueEmailTemplate *EmailQueueEmailTemplate) AfterFind(tx *gorm.DB) (err error) {
 
 	return nil
 }
@@ -150,14 +159,14 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
-func (EmailQueueEmailTemplate) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (EmailQueueEmailTemplate) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return EmailQueueEmailTemplate{}.getPaginationList(accountId, 0, 50, sortBy, "",nil)
 }
 
-func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	emailQueueEmailTemplates := make([]EmailQueueEmailTemplate,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {

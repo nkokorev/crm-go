@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
+	"log"
 	"net/http"
 	"strings"
 	"text/template"
@@ -43,8 +44,8 @@ const (
 )
 
 type WebHook struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"`
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя вебхука
@@ -55,8 +56,7 @@ type WebHook struct {
 	
 	Description 		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
 	URL 		string 	`json:"url" gorm:"type:varchar(255);"` // вызов, который совершается
-	HttpMethod		string `json:"httpMethod" gorm:"type:varchar(15);default:'get';"` // Тип вызова (GET, POST, PUT, puth и т.д.)
-	//URLTemplate 		template.Template 	`json:"url" gorm:"type:varchar(255);"` // вызов, который совершается
+	HttpMethod	string `json:"http_method" gorm:"type:varchar(15);default:'get';"` // Тип вызова (GET, POST, PUT, puth и т.д.)
 }
 
 // ############# Entity interface #############
@@ -70,14 +70,14 @@ func (WebHook) SystemEntity() bool { return false }
 // ############# Entity interface #############
 
 func (WebHook) PgSqlCreate() {
-
-	if !db.HasTable(&WebHook{}) {
-		db.CreateTable(&WebHook{})
+	db.Migrator().CreateTable(&WebHook{})
+	// db.Model(&WebHook{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE web_hooks ADD CONSTRAINT web_hooks_conditions_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
 	}
-
-	db.Model(&WebHook{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 }
-func (webHook *WebHook) BeforeCreate(scope *gorm.Scope) error {
+func (webHook *WebHook) BeforeCreate(tx *gorm.DB) error {
 	webHook.Id = 0
 	var lastIdx sql.NullInt64
 
@@ -141,13 +141,13 @@ func (webHook *WebHook) loadByPublicId() error {
 
 	return nil
 }
-func (WebHook) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (WebHook) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return WebHook{}.getPaginationList(accountId,0,25,sortBy, "", nil)
 }
-func (WebHook) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (WebHook) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	webHooks := make([]WebHook,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {

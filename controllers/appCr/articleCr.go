@@ -52,7 +52,7 @@ func ArticleGet(w http.ResponseWriter, r *http.Request) {
 	var article models.Article
 
 	// 2. Узнаем, какой id учитывается нужен
-	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
 		err = account.LoadEntityByPublicId(&article, articleId)
@@ -93,7 +93,7 @@ func ArticleListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -105,7 +105,7 @@ func ArticleListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
-	var total uint = 0
+	var total int64 = 0
 	articles := make([]models.Entity, 0)
 
 	if all == "true" && allOk {

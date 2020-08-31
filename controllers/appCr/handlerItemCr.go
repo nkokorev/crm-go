@@ -40,7 +40,7 @@ func HandlerItemCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST HandlerItem Created")
-	resp["handlerItem"] = handlerItem
+	resp["handler_item"] = handlerItem
 	u.Respond(w, resp)
 }
 
@@ -65,7 +65,7 @@ func HandlerItemGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET HandlerItem List")
-	resp["handlerItem"] = handlerItem
+	resp["handler_item"] = handlerItem
 	u.Respond(w, resp)
 }
 
@@ -87,7 +87,7 @@ func HandlerItemGetList(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -100,7 +100,7 @@ func HandlerItemGetList(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
-	var total uint = 0
+	var total int64 = 0
 	handlerItems := make([]models.Entity,0)
 	if all == "true" && allOk {
 		handlerItems, total, err = account.GetListEntity(&models.HandlerItem{}, sortBy)
@@ -120,7 +120,7 @@ func HandlerItemGetList(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET System Observers Pagination List")
 	resp["total"] = total
-	resp["handlerItems"] = handlerItems
+	resp["handler_items"] = handlerItems
 	u.Respond(w, resp)
 }
 
@@ -142,7 +142,7 @@ func HandlerItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -154,7 +154,7 @@ func HandlerItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
-	var total uint = 0
+	var total int64 = 0
 	handlerItems := make([]models.Entity,0)
 
 	if all == "true" && allOk {
@@ -175,7 +175,7 @@ func HandlerItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET System Observers Pagination List")
 	resp["total"] = total
-	resp["handlerItems"] = handlerItems
+	resp["handler_items"] = handlerItems
 	u.Respond(w, resp)
 }
 
@@ -219,7 +219,7 @@ func HandlerItemUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH HandlerItem Update")
-	resp["handlerItem"] = handlerItem
+	resp["handler_item"] = handlerItem
 	u.Respond(w, resp)
 }
 

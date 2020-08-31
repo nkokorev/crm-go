@@ -30,7 +30,7 @@ func EmailNotificationCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST EmailNotification Create")
-	resp["emailNotification"] = entity
+	resp["email_notification"] = entity
 	u.Respond(w, resp)
 }
 
@@ -50,7 +50,7 @@ func EmailNotificationGet(w http.ResponseWriter, r *http.Request) {
 	var emailNotification models.EmailNotification
 
 	// 2. Узнаем, какой id учитывается нужен
-	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
 		err = account.LoadEntityByPublicId(&emailNotification, emailNotificationId)
@@ -67,7 +67,7 @@ func EmailNotificationGet(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	resp := u.Message(true, "GET Email Notification")
-	resp["emailNotification"] = emailNotification
+	resp["email_notification"] = emailNotification
 	u.Respond(w, resp)
 }
 
@@ -89,7 +89,7 @@ func EmailNotificationGetListPagination(w http.ResponseWriter, r *http.Request) 
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -102,7 +102,7 @@ func EmailNotificationGetListPagination(w http.ResponseWriter, r *http.Request) 
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
 
-	var total uint = 0
+	var total int64 = 0
 	emailNotifications := make([]models.Entity,0)
 
 	if all == "true" && allOk {
@@ -122,7 +122,7 @@ func EmailNotificationGetListPagination(w http.ResponseWriter, r *http.Request) 
 
 
 	resp := u.Message(true, "GET Email Notification PaginationList")
-	resp["emailNotifications"] = emailNotifications
+	resp["email_notifications"] = emailNotifications
 	resp["total"] = total
 	u.Respond(w, resp)
 }
@@ -158,7 +158,7 @@ func EmailNotificationUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH Email Notification Update")
-	resp["emailNotification"] = emailNotification
+	resp["email_notification"] = emailNotification
 	u.Respond(w, resp)
 }
 

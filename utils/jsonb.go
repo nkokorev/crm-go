@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"github.com/jinzhu/gorm/dialects/postgres"
+	"gorm.io/datatypes"
 	"time"
 )
 
@@ -104,7 +105,7 @@ func FixJSONB_MapString(input map[string]interface{}, keys []string) map[string]
 	return input
 }
 
-func ParseJSONBToString(jsonb postgres.Jsonb) []string {
+func ParseJSONBToString(jsonb datatypes.JSON) []string {
 
 	var data = make([]string,0)
 
@@ -121,10 +122,10 @@ func ParseJSONBToString(jsonb postgres.Jsonb) []string {
 }
 
 
-func ParseJSONBToMapString(jsonb postgres.Jsonb) map[string]interface{} {
+// func ParseJSONBToMapString(jsonb postgres.Jsonb) map[string]interface{} {
+func ParseJSONBToMapString(jsonb datatypes.JSON) map[string]interface{} {
 
 	var data map[string]interface{}
-
 	b, err := jsonb.MarshalJSON()
 	if err != nil {
 		return data
@@ -139,13 +140,13 @@ func ParseJSONBToMapString(jsonb postgres.Jsonb) map[string]interface{} {
 
 
 // удаляет все переменные которые с '_name'
-func FixInputHiddenVars(input map[string]interface{}) map[string]interface{} {
-	for key := range input {
+func FixInputHiddenVars(input *map[string]interface{}) {
+	for key := range *input {
 		if string(key[0]) == "_" {
-			delete(input, key)
+			delete(*input, key)
 		}
 	}
-	return input
+
 }
 
 // удаляет все переменные которые с '_name'

@@ -3,15 +3,16 @@ package models
 import (
 	"errors"
 	"fmt"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
+	"log"
 	"time"
 )
 
 type DeliveryCourier struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
 	AccountId 	uint	`json:"-" gorm:"index;not null"` // аккаунт-владелец ключа
-	WebSiteId	uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	WebSiteId	uint 	`json:"web_site_id" gorm:"type:int;index;"` // магазин, к которому относится
 	Code 		string	`json:"code" gorm:"type:varchar(16);default:'courier';"` // Для идентификации во фронтенде
 	Type 		string	`json:"type" gorm:"type:varchar(32);default:'delivery_couriers';"` // Для идентификации
 
@@ -19,33 +20,40 @@ type DeliveryCourier struct {
 	Name 		string `json:"name" gorm:"type:varchar(255);"` // "Курьерская доставка", "Почта России", "Самовывоз"
 	Price 		float64 `json:"price" gorm:"type:numeric;default:0"` // стоимость доставки
 
-	MaxWeight 	float64 `json:"maxWeight" gorm:"type:int;default:40"` // максимальная масса в кг
+	MaxWeight 	float64 `json:"max_weight" gorm:"type:numeric;default:40"` // максимальная масса в кг
 
-	AddressRequired	bool	`json:"addressRequired" gorm:"type:bool;default:true"` // Требуется ли адрес доставки
-	PostalCodeRequired	bool	`json:"postalCodeRequired" gorm:"type:bool;default:false"` // Требуется ли индекс в адресе доставки
+	AddressRequired		bool	`json:"address_required" gorm:"type:bool;default:true"` // Требуется ли адрес доставки
+	PostalCodeRequired	bool	`json:"postal_code_required" gorm:"type:bool;default:false"` // Требуется ли индекс в адресе доставки
 
 	// Признак предмета расчета
-	PaymentSubjectId	uint	`json:"paymentSubjectId" gorm:"type:int;not null;"`//
-	PaymentSubject 		PaymentSubject `json:"paymentSubject"`
+	PaymentSubjectId	uint	`json:"payment_subject_id" gorm:"type:int;not null;"`//
+	PaymentSubject 		PaymentSubject `json:"payment_subject"`
 
-	VatCodeId	uint	`json:"vatCodeId" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
-	VatCode		VatCode	`json:"vatCode"`
+	VatCodeId	uint	`json:"vat_code_id" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
+	VatCode		VatCode	`json:"vat_code"`
 
 	// загружаемый интерфейс
-	PaymentMethods		[]PaymentMethod `json:"paymentMethods" gorm:"-"`
+	PaymentMethods		[]PaymentMethod `json:"payment_methods" gorm:"-"`
 
 	// Список вариантов оплат для указанного магазина. {shopId:}
 	// PaymentMethodList 	postgres.Jsonb 	`json:"paymentMethodList" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }
 
 func (DeliveryCourier) PgSqlCreate() {
-	db.CreateTable(&DeliveryCourier{})
-	db.Model(&DeliveryCourier{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&DeliveryCourier{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "RESTRICT", "CASCADE")
-	db.Model(&DeliveryCourier{}).AddForeignKey("vat_code_id", "vat_codes(id)", "RESTRICT", "CASCADE")
+	db.Migrator().CreateTable(&DeliveryCourier{})
+	// db.Model(&DeliveryCourier{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&DeliveryCourier{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "RESTRICT", "CASCADE")
+	// db.Model(&DeliveryCourier{}).AddForeignKey("vat_code_id", "vat_codes(id)", "RESTRICT", "CASCADE")
+	err := db.Exec("ALTER TABLE delivery_couriers " +
+		"ADD CONSTRAINT delivery_couriers_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT delivery_couriers_payment_subject_id_fkey FOREIGN KEY (payment_subject_id) REFERENCES payment_subjects(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
+		"ADD CONSTRAINT delivery_couriers_vat_code_id_fkey FOREIGN KEY (vat_code_id) REFERENCES vat_codes(id) ON DELETE RESTRICT ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
 
 // ############# Entity interface #############
@@ -64,11 +72,11 @@ func (deliveryCourier DeliveryCourier) GetType() string {
 	return deliveryCourier.Type
 }
 // ############# Entity interface #############
-func (deliveryCourier *DeliveryCourier) BeforeCreate(scope *gorm.Scope) error {
+func (deliveryCourier *DeliveryCourier) BeforeCreate(tx *gorm.DB) error {
 	deliveryCourier.Id = 0
 	return nil
 }
-func (deliveryCourier *DeliveryCourier) AfterFind() (err error) {
+func (deliveryCourier *DeliveryCourier) AfterFind(tx *gorm.DB) (err error) {
 
 	methods, err := GetPaymentMethodsByDelivery(deliveryCourier)
 	if err != nil { return err }
@@ -112,7 +120,7 @@ func (deliveryCourier *DeliveryCourier) load() error {
 func (deliveryCourier *DeliveryCourier) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-func (DeliveryCourier) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (DeliveryCourier) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 
 	return DeliveryCourier{}.getPaginationList(accountId, 0, 100, sortBy, "", nil)
 }
@@ -130,10 +138,10 @@ func (DeliveryCourier) getListByShop(accountId, websiteId uint) ([]DeliveryCouri
 	return deliveryCouriers, nil
 }
 
-func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	deliveryCouriers := make([]DeliveryCourier,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -179,6 +187,14 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 	return entities, total, nil
 }
 func (deliveryCourier *DeliveryCourier) update(input map[string]interface{}) error {
+	delete(input,"payment_subject")
+	delete(input,"vat_code")
+	delete(input,"payment_methods")
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"web_site_id","payment_subject_id","vat_code_id"}); err != nil {
+		return err
+	}
+
 	return deliveryCourier.GetPreloadDb(true,false,false).Where("id = ?", deliveryCourier.Id).
 		Omit("id", "account_id").Updates(input).Error
 }
@@ -226,7 +242,7 @@ func (deliveryCourier DeliveryCourier) CreateDeliveryOrder(deliveryData Delivery
 
 	deliveryOrder := DeliveryOrder{
 		AccountId: deliveryCourier.AccountId,
-		OrderId:   order.Id,
+		OrderId:   &order.Id,
 		CustomerId: order.CustomerId,
 		WebSiteId: order.WebSiteId,
 		Code:  deliveryCourier.Code,

@@ -38,7 +38,7 @@ func VatCodeCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST VatCode Created")
-	resp["vatCode"] = vatCode
+	resp["vat_code"] = vatCode
 	u.Respond(w, resp)
 }
 
@@ -63,7 +63,7 @@ func VatCodeGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET VatCode")
-	resp["vatCode"] = vatCode
+	resp["vat_code"] = vatCode
 	u.Respond(w, resp)
 }
 
@@ -97,7 +97,7 @@ func VatCodeGetListPagination(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 
-	var total uint = 0
+	var total int64 = 0
 	vatCodes := make([]models.Entity,0)
 	
 	vatCodes, total, err = account.GetPaginationListEntity(&models.VatCode{}, offset, limit, sortBy, search, nil)
@@ -108,7 +108,7 @@ func VatCodeGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET VatCode Pagination List")
 	resp["total"] = total
-	resp["vatCodes"] = vatCodes
+	resp["vat_codes"] = vatCodes
 	u.Respond(w, resp)
 }
 
@@ -151,7 +151,7 @@ func VatCodeUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH VatCode Update")
-	resp["vatCode"] = vatCode
+	resp["vat_code"] = vatCode
 	u.Respond(w, resp)
 }
 

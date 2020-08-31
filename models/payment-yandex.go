@@ -5,19 +5,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jinzhu/gorm"
-	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
 	"github.com/satori/go.uuid"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
+	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
 type PaymentYandex struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	HashId 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	HashId 		string  `json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
-	WebSiteId	uint 	`json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
+	WebSiteId	uint 	`json:"web_site_id" gorm:"type:int;index;"` // магазин, к которому относится
 
 	Code 		string `json:"code" gorm:"type:varchar(32);default:'payment_yandex'"`
 	Type 		string `json:"type" gorm:"type:varchar(32);default:'payment_yandexes';"` // Для идентификации
@@ -28,29 +30,29 @@ type PaymentYandex struct {
 	// ####### API PaymentYandex ####### //
 
 	// Для авторизации Basic Auth: username:password
-	ApiKey	string	`json:"apiKey" gorm:"type:varchar(128);"` // ApiKey от яндекс кассы
-	ShopId	string	`json:"shopId" gorm:"type:int;"` // shop id от яндекс кассы
+	ApiKey	string	`json:"api_key" gorm:"type:varchar(128);"` // ApiKey от яндекс кассы
+	ShopId	int	`json:"shop_id" gorm:"type:int;"` // shop id от яндекс кассы
 
 	// URL для уведомлений со стороны Я.Кассы.
 	// URL		string 	`json:"url" gorm:"type:varchar(255);"`
-	EnabledIncomingNotifications	bool	`json:"enabledIncomingNotifications" gorm:"type:bool;default:true"` // обрабатывать ли уведомления от Я.Кассы.
+	EnabledIncomingNotifications	bool	`json:"enabled_incoming_notifications" gorm:"type:bool;default:true"` // обрабатывать ли уведомления от Я.Кассы.
 
 	// ####### Внутренние данные ####### //
 	// Возврат после платежа или отмена для пользователя
-	ReturnUrl		string 	`json:"returnUrl" gorm:"type:varchar(255);"`
+	ReturnUrl		string 	`json:"return_url" gorm:"type:varchar(255);"`
 
 	// Включен ли данный способ оплаты
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // обрабатывать ли вебхук
 	// Description 		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
-	InstantDelivery 	bool 	`json:"instantDelivery" gorm:"type:bool;default:false"`
+	InstantDelivery 	bool 	`json:"instant_delivery" gorm:"type:bool;default:false"`
 
 	// Сохранение платежных данных (с их помощью можно проводить повторные безакцептные списания ).
-	SavePaymentMethod 	bool 	`json:"savePaymentMethod" gorm:"type:bool;default:false"`
+	SavePaymentMethod 	bool 	`json:"save_payment_method" gorm:"type:bool;default:false"`
 
 	// Автоматический прием  поступившего платежа. Со стороны Я.Кассы
 	Capture	bool	`json:"capture" gorm:"type:bool;default:true"`
 
-	WebSite	WebSite `json:"webSite" gorm:"preload"`
+	WebSite	WebSite `json:"web_site" gorm:"preload"`
 
 	// !!! deprecated !!!
 	// PaymentOption   PaymentOption `gorm:"polymorphic:Owner;"`
@@ -58,11 +60,17 @@ type PaymentYandex struct {
 }
 
 func (PaymentYandex) PgSqlCreate() {
-	db.CreateTable(&PaymentYandex{})
-	db.Model(&PaymentYandex{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&PaymentYandex{}).AddForeignKey("web_site_id", "web_sites(id)", "CASCADE", "CASCADE")
+	db.Migrator().CreateTable(&PaymentYandex{})
+	// db.Model(&PaymentYandex{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&PaymentYandex{}).AddForeignKey("web_site_id", "web_sites(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE payment_yandexes " +
+		"ADD CONSTRAINT payment_yandexes_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT payment_yandexes_web_site_id_fkey FOREIGN KEY (web_site_id) REFERENCES web_sites(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (paymentYandex *PaymentYandex) BeforeCreate(scope *gorm.Scope) error {
+func (paymentYandex *PaymentYandex) BeforeCreate(tx *gorm.DB) error {
 	paymentYandex.Id = 0
 	paymentYandex.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	return nil
@@ -98,23 +106,23 @@ func (paymentYandex PaymentYandex) CreatePaymentByOrder(order Order, mode Paymen
 		Confirmation: Confirmation{Type: "redirect", ReturnUrl: paymentYandex.ReturnUrl},
 		Receipt: Receipt{
 			Customer: Customer{
-				Email: order.Customer.Email,
-				Phone: order.Customer.Phone,
-				FullName: order.Customer.Name + " " + order.Customer.Surname,
+				Email: *order.Customer.Email,
+				Phone: *order.Customer.Phone,
+				FullName: *order.Customer.Name + " " + *order.Customer.Surname,
 			},
 			Items: order.CartItems, // <<< Признак предмета расчета(?) & Признак способа расчета (?)
-			Email: order.Customer.Email,
-			Phone: order.Customer.Phone,
+			Email: *order.Customer.Email,
+			Phone: *order.Customer.Phone,
 		},
 		/*Recipient: Recipient{
 			AccountId: paymentYandex.ShopId,
 		},*/
 
 		// Чтобы понять какой платеж был оплачен!!!
-		Metadata: postgres.Jsonb{ RawMessage: utils.MapToRawJson(map[string]interface{}{
+		Metadata: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
 			"orderId":order.Id,
 			"accountId":paymentYandex.AccountId,
-		})},
+		})),
 		SavePaymentMethod: paymentYandex.SavePaymentMethod,
 		OwnerId: paymentYandex.Id,
 		OwnerType: "payment_yandexes",
@@ -194,7 +202,7 @@ func (paymentYandex *PaymentYandex) load() error {
 func (*PaymentYandex) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-func (PaymentYandex) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (PaymentYandex) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return  PaymentYandex{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
 func (PaymentYandex) GetListByWebSiteAndDelivery(delivery Delivery) ([]PaymentYandex, error) {
@@ -213,10 +221,10 @@ func (PaymentYandex) GetListByWebSiteAndDelivery(delivery Delivery) ([]PaymentYa
 
 	return methods,nil
 }
-func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	paymentYandexs := make([]PaymentYandex,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -285,7 +293,7 @@ func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 		Capture	bool	`json:"capture" `
 		Confirmation	Confirmation	`json:"confirmation"`
 		Description 	string 	`json:"description"`
-		Metadata	postgres.Jsonb	`json:"metadata"`
+		Metadata	datatypes.JSON	`json:"metadata"`
 		Receipt Receipt `json:"receipt"`
 
 	}{
@@ -310,10 +318,7 @@ func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 		return utils.Error{Message: "Не удалось разобрать JSON платежа", Errors: map[string]interface{}{"paymentOption":err.Error()}}
 	}
 
-	uuidV4, err := uuid.NewV4()
-	if err != nil {
-		return utils.Error{Message: "Не удалось создать UUID для создания платежа", Errors: map[string]interface{}{"paymentOption":err.Error()}}
-	}
+	uuidV4 := uuid.NewV4()
 
 	// crate new request
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
@@ -324,7 +329,7 @@ func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 
 	request.Header.Set("Idempotence-Key", uuidV4.String())
 	request.Header.Set("Content-Type", "application/json")
-	request.SetBasicAuth(paymentYandex.ShopId, paymentYandex.ApiKey)
+	request.SetBasicAuth(strconv.Itoa(paymentYandex.ShopId), paymentYandex.ApiKey)
 
 	// Делаем вызов
 	client := &http.Client{}
@@ -433,9 +438,9 @@ func (paymentYandex PaymentYandex) PrepaymentCheck(payment *Payment, order Order
 		Settlements []Settlements `json:"settlements"`
 	}{
 		Customer: Customer{
-			FullName: order.Customer.Name,
-			Email: order.Customer.Email,
-			Phone: order.Customer.Phone,
+			FullName: *order.Customer.Name,
+			Email: *order.Customer.Email,
+			Phone: *order.Customer.Phone,
 		},
 		PaymentId: payment.ExternalId,
 		Type: "payment",
@@ -454,10 +459,7 @@ func (paymentYandex PaymentYandex) PrepaymentCheck(payment *Payment, order Order
 		return nil, utils.Error{Message: "Не удалось разобрать JSON платежа", Errors: map[string]interface{}{"prepaymentCheck":err.Error()}}
 	}
 
-	uuidV4, err := uuid.NewV4()
-	if err != nil {
-		return nil, utils.Error{Message: "Не удалось создать UUID для создания платежа", Errors: map[string]interface{}{"prepaymentCheck":err.Error()}}
-	}
+	uuidV4 := uuid.NewV4()
 
 	// crate new request
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
@@ -468,7 +470,7 @@ func (paymentYandex PaymentYandex) PrepaymentCheck(payment *Payment, order Order
 
 	request.Header.Set("Idempotence-Key", uuidV4.String())
 	request.Header.Set("Content-Type", "application/json")
-	request.SetBasicAuth(paymentYandex.ShopId, paymentYandex.ApiKey)
+	request.SetBasicAuth(strconv.Itoa(paymentYandex.ShopId), paymentYandex.ApiKey)
 
 	// Делаем вызов
 	client := &http.Client{}

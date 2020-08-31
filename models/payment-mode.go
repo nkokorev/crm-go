@@ -2,15 +2,15 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 )
 
 // Признак способа расчета
 type PaymentMode struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	AccountId 	uint	`json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	AccountId 	uint	`json:"account_id" gorm:"index;not null"` // аккаунт-владелец ключа
 
 	Name	string	`json:"name" gorm:"type:varchar(128);unique;not null;"`
 	Code	string	`json:"code" gorm:"type:varchar(32);unique;not null;"`
@@ -28,9 +28,13 @@ func (paymentMode PaymentMode) SystemEntity() bool { return paymentMode.AccountI
 
 func (PaymentMode) PgSqlCreate() {
 
-	db.AutoMigrate(&PaymentMode{})
+	db.Migrator().CreateTable(&PaymentMode{})
 
-	db.Model(&PaymentMode{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&PaymentMode{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE payment_modes ADD CONSTRAINT payment_modes_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 
 	paymentModes := []PaymentMode {
 		{Name:   "Полная предоплата",		Code: "full_prepayment"},
@@ -51,7 +55,7 @@ func (PaymentMode) PgSqlCreate() {
 	}
 	
 }
-func (paymentMode *PaymentMode) BeforeCreate(scope *gorm.Scope) error {
+func (paymentMode *PaymentMode) BeforeCreate(tx *gorm.DB) error {
 	paymentMode.Id = 0
 	return nil
 }
@@ -91,13 +95,13 @@ func (paymentMode *PaymentMode) load() error {
 func (*PaymentMode) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-func (PaymentMode) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (PaymentMode) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return PaymentMode{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
 }
-func (PaymentMode) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (PaymentMode) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	paymentModes := make([]PaymentMode,0)
-	var total uint
+	var total int64
 
 	if len(search) > 0 {
 

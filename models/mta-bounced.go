@@ -2,12 +2,37 @@ package models
 
 import (
 	"database/sql"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 	"net/mail"
 	"time"
 )
+
+type MTABounced struct {
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"`
+	AccountId 	uint	`json:"-" gorm:"type:int;index;not null;"`
+
+	// ID типа события: какая серия, компания или уведомление
+	OwnerId		uint	`json:"owner_id" gorm:"index;type:smallint;not null;"`
+	// email_queues, email_campaigns, email_notifications
+	OwnerType	EmailSenderType	`json:"owner_type" gorm:"varchar(32);default:'email_queues';not null;"`
+
+	// Получатель
+	UserId		*uint 	`json:"user_id" gorm:"type:int;default:null;"`
+	User		User	`json:"user"`
+
+	// Почтовый ящик, с которым произошли проблемы
+	EmailBoxId	*uint 		`json:"email_box_id" gorm:"type:int;default:null;"`
+	EmailBox 	EmailBox 	`json:"email_box"`
+
+	// true = soft, false = hard
+	SoftBounced bool 	`json:"soft_bounced" gorm:"type:bool;default:true;"`
+	Reason 		string 	`json:"reason" gorm:"type:varchar(255);"`
+
+	CreatedAt 	time.Time 	`json:"created_at"`
+}
 
 // Пакет необходимых данных для отправки письма
 type EmailPkg struct {
@@ -44,31 +69,6 @@ const(
 	softBounced 	BounceType 	= 	"soft"
 )
 
-type MTABounced struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"`
-	AccountId 	uint	`json:"-" gorm:"type:int;index;not null;"`
-
-	// ID типа события: какая серия, компания или уведомление
-	OwnerId		uint	`json:"ownerId" gorm:"index;type:smallint;not null;"`
-	// email_queues, email_campaigns, email_notifications
-	OwnerType	EmailSenderType	`json:"ownerType" gorm:"varchar(32);default:'email_queues';not null;"`
-
-	// Получатель
-	UserId		*uint 	`json:"userId" gorm:"type:int;default:null;"`
-	User		User	`json:"user"`
-
-	// Почтовый ящик, с которым произошли проблемы
-	EmailBoxId	*uint 		`json:"emailBoxId" gorm:"type:int;default:null;"`
-	EmailBox 	EmailBox 	`json:"emailBox"`
-
-	// true = soft, false = hard
-	SoftBounced bool 	`json:"softBounced" gorm:"type:bool;default:true;"`
-	Reason 		string 	`json:"reason" gorm:"type:varchar(255);"`
-
-	CreatedAt 	time.Time 	`json:"createdAt"`
-}
-
 // ############# Entity interface #############
 func (mtaBounced MTABounced) GetId() uint { return mtaBounced.Id }
 func (mtaBounced *MTABounced) setId(id uint) { mtaBounced.Id = id }
@@ -79,15 +79,22 @@ func (MTABounced) SystemEntity() bool { return false }
 // ############# End Entity interface #############
 
 func (MTABounced) PgSqlCreate() {
-	db.CreateTable(&MTABounced{})
-	db.Model(&MTABounced{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&MTABounced{}).AddForeignKey("user_id", "users(id)", "SET NULL", "CASCADE")
-	db.Model(&MTABounced{}).AddForeignKey("email_box_id", "email_boxes(id)", "SET NULL", "CASCADE")
+	db.Migrator().CreateTable(&MTABounced{})
+	// db.Model(&MTABounced{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&MTABounced{}).AddForeignKey("user_id", "users(id)", "SET NULL", "CASCADE")
+	// db.Model(&MTABounced{}).AddForeignKey("email_box_id", "email_boxes(id)", "SET NULL", "CASCADE")
+	err := db.Exec("ALTER TABLE mta_bounces " +
+		"ADD CONSTRAINT mta_bounces_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT mta_bounces_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE," +
+		"ADD CONSTRAINT mta_bounces_email_box_id_fkey FOREIGN KEY (email_box_id) REFERENCES email_boxes(id) ON DELETE SET NULL ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
 func (MTABounced) TableName() string {
 	return "mta_bounces"
 }
-func (mtaBounced *MTABounced) BeforeCreate(scope *gorm.Scope) error {
+func (mtaBounced *MTABounced) BeforeCreate(tx *gorm.DB) error {
 	mtaBounced.Id = 0
 
 	// PublicId
@@ -103,7 +110,7 @@ func (mtaBounced *MTABounced) BeforeCreate(scope *gorm.Scope) error {
 
 	return nil
 }
-func (mtaBounced *MTABounced) AfterFind() (err error) {
+func (mtaBounced *MTABounced) AfterFind(tx *gorm.DB) (err error) {
 	return nil
 }
 
@@ -155,13 +162,13 @@ func (mtaBounced *MTABounced) loadByPublicId() error {
 
 	return nil
 }
-func (MTABounced) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (MTABounced) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return MTABounced{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-func (MTABounced) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (MTABounced) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	mtaBounces := make([]MTABounced,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -209,7 +216,7 @@ func (MTABounced) getPaginationList(accountId uint, offset, limit int, sortBy, s
 
 func (mtaBounced *MTABounced) update(input map[string]interface{}) error {
 
-	input = utils.FixInputHiddenVars(input)
+	utils.FixInputHiddenVars(&input)
 	input = utils.FixInputDataTimeVars(input,[]string{"scheduleRun"})
 
 	if err := mtaBounced.GetPreloadDb(true,false,false).Where(" id = ?", mtaBounced.Id).
@@ -409,9 +416,9 @@ func (pkg EmailPkg) stopEmailSender(reason string) {
 }
 
 // Подсчитывает число мягких отскоков у пользователя в течение 1 года.
-func (MTABounced) NumSoftByUserId(userId uint) (uint, error) {
+func (MTABounced) NumSoftByUserId(userId uint) (int64, error) {
 
-	var total = uint(0)
+	var total = int64(0)
 
 	err := db.Table("mta_bounces").
 		Where("user_id = ? AND soft_bounced = 'true' AND created_at <= ?", userId, time.Now().UTC().AddDate(-1, 0, 0)).Count(&total).Error

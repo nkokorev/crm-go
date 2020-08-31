@@ -39,8 +39,10 @@ func mtaWorker() {
 		}
 		
 		workflows := make([]MTAWorkflow,0)
+		// var workflows []MTAWorkflow
 
 		// Собираем по {workflowsOneTick} задач на отправку
+		// err := db.Model(&MTAWorkflow{}).
 		err := db.Model(&MTAWorkflow{}).
 			Joins("LEFT JOIN email_queues ON email_queues.id = mta_workflows.owner_id").
 			Joins("LEFT JOIN email_notifications ON email_notifications.id = mta_workflows.owner_id").
@@ -57,6 +59,7 @@ func mtaWorker() {
 
 		// Готовим пакеты на отправку в одном потоке. 
 		for i := range workflows {
+			fmt.Println("workflows - отправляем! ")
 			if err = workflows[i].Execute(); err != nil {
 				// невозможно почему-то отправить письмо
 				if err = workflows[i].delete(); err != nil {

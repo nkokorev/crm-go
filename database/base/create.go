@@ -2,10 +2,9 @@ package base
 
 import (
 	"fmt"
-	"github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/lib/pq"
 	"github.com/nkokorev/crm-go/models"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/datatypes"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -21,7 +20,7 @@ func RefreshTables() {
 	var err error
 	pool := models.GetPool()
 
-	pool.DropTableIfExists(models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
+	pool.Migrator().DropTable(models.DeliveryPickup{},models.DeliveryRussianPost{}, models.DeliveryCourier{})
 
 	err = pool.Exec("drop table if exists web_hooks, articles").Error
 	if err != nil {
@@ -64,78 +63,73 @@ func RefreshTables() {
 
 }
 
-func RefreshTablesPart_I() {
+func Test() {
 
-	pool := models.GetPool()
+	pool := models.GetDB()
+	if pool == nil {
+		log.Fatal("Not db in crate models")
+	}
 
-	// not there
-	err := pool.Exec("drop table if exists user_segments_user_segment_conditions, orders_products, payment_methods_web_sites").Error
+	err := pool.Exec("DROP SCHEMA public CASCADE;\nCREATE SCHEMA public;").Error
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	/*pool.Migrator().DropTable(
+		&models.CrmSetting{},&models.UserVerificationMethod{},
+		&models.UsersSegment{},&models.UserSegmentConditions{},
+		&models.Storage{},&models.Account{},
 
-	pool.DropTableIfExists(
-		models.UsersSegment{},
-		models.UserSegmentConditions{},
-		models.MTABounced{},
-		models.MTAHistory{},
-		models.MTAWorkflow{},
-		models.EmailQueueEmailTemplate{},
-		models.EmailQueue{},
-		models.EmailCampaign{},
-		models.TaskScheduler{},
-	)
+		&models.MTABounced{},&models.MTAHistory{},&models.MTAWorkflow{},
+		&models.EmailQueueEmailTemplate{},&models.EmailQueue{},&models.EmailCampaign{},&models.TaskScheduler{},&models.Payment2Delivery{},
+		&models.DeliveryOrder{},&models.DeliveryStatus{},&models.OrderChannel{},&models.Order{},&models.OrderStatus{},
+		&models.Payment{},&models.PaymentAmount{},&models.CartItem{},&models.Comment{},&models.PaymentMode{},&models.PaymentYandex{},
+		&models.PaymentCash{},&models.Product{},&models.ProductCard{},&models.ProductGroup{},
+		&models.EmailNotification{}, &models.EmailBox{}, &models.WebSite{},&models.EmailTemplate{},
+		&models.WebHook{}, &models.EventListener{}, &models.EventItem{},&models.HandlerItem{}, &models.DeliveryPickup{},
+		&models.DeliveryRussianPost{}, &models.DeliveryCourier{},
+		&models.Article{},  &models.UnitMeasurement{}, &models.ApiKey{}, &models.AccountUser{}, &models.User{},
+		&models.VatCode{}, &models.PaymentSubject{},
+		&models.Role{},
+	)*/
 
-	pool.DropTableIfExists(models.Payment2Delivery{}, models.DeliveryOrder{}, models.DeliveryStatus{},models.OrderChannel{},  models.Order{}, models.OrderStatus{},models.Payment{},
-	models.PaymentAmount{})
-
-	pool.DropTableIfExists(models.CartItem{}, models.OrderComment{}, models.PaymentMode{},models.PaymentYandex{}, models.PaymentCash{} )
-
-
-	pool.DropTableIfExists(models.Product{}, models.ProductCard{}, models.ProductGroup{})
-	pool.DropTableIfExists(models.EmailNotification{}, models.EmailBox{}, models.WebSite{},models.EmailTemplate{})
-	pool.DropTableIfExists(models.WebHook{}, models.EventListener{}, models.EventItem{},models.HandlerItem{}, models.DeliveryPickup{}, models.DeliveryRussianPost{}, models.DeliveryCourier{})
-
-	pool.DropTableIfExists(models.Article{}, models.Storage{}, models.UnitMeasurement{}, models.ApiKey{}, models.AccountUser{}, models.User{})
-	pool.DropTableIfExists(models.VatCode{}, models.PaymentSubject{})
-	pool.DropTableIfExists(models.Role{}, models.UserVerificationMethod{}, models.Account{}, models.CrmSetting{})
-
-	
 	models.CrmSetting{}.PgSqlCreate()
-
 	models.UserVerificationMethod{}.PgSqlCreate()
 	models.Account{}.PgSqlCreate()
-	models.Role{}.PgSqlCreate()
 	models.User{}.PgSqlCreate()
-
-
 	models.AccountUser{}.PgSqlCreate()
-	models.ApiKey{}.PgSqlCreate()
 
+	models.Role{}.PgSqlCreate()
+	models.ApiKey{}.PgSqlCreate()
 	models.UnitMeasurement{}.PgSqlCreate()
 
-	models.Storage{}.PgSqlCreate()
-	models.Article{}.PgSqlCreate()
-
-	/////////////////////
-
 	models.WebSite{}.PgSqlCreate()
+	models.WebPage{}.PgSqlCreate()
+
+	// models.ProductGroup{}.PgSqlCreate()
+	models.PaymentMode{}.PgSqlCreate()
+	models.PaymentAmount{}.PgSqlCreate()
+
+	models.OrderChannel{}.PgSqlCreate()
+	models.Payment2Delivery{}.PgSqlCreate()
+	models.PaymentSubject{}.PgSqlCreate()
+	models.PaymentYandex{}.PgSqlCreate()
+	models.PaymentCash{}.PgSqlCreate()
+
+	models.Product{}.PgSqlCreate()
+	models.ProductCard{}.PgSqlCreate()
+
+
 	models.EmailBox{}.PgSqlCreate()
 	models.EmailTemplate{}.PgSqlCreate()
-
-	models.ProductGroup{}.PgSqlCreate()
-	models.ProductCard{}.PgSqlCreate()
-	models.Product{}.PgSqlCreate()
-
+	models.Storage{}.PgSqlCreate()
+	models.Article{}.PgSqlCreate()
 	models.HandlerItem{}.PgSqlCreate()
 	models.EventItem{}.PgSqlCreate()
 	models.EventListener{}.PgSqlCreate()
-
 	models.WebHook{}.PgSqlCreate()
 	models.EmailNotification{}.PgSqlCreate()
-	models.OrderComment{}.PgSqlCreate()
-
+	models.Comment{}.PgSqlCreate()
 	models.EmailQueue{}.PgSqlCreate()
 	models.EmailQueueEmailTemplate{}.PgSqlCreate()
 	models.UsersSegment{}.PgSqlCreate()
@@ -145,26 +139,23 @@ func RefreshTablesPart_I() {
 
 	models.MTAHistory{}.PgSqlCreate()
 	models.MTABounced{}.PgSqlCreate()
-	models.UserSegmentConditions{}.PgSqlCreate()
+	models.UserSegmentCondition{}.PgSqlCreate()
 
 
 
-	models.PaymentMode{}.PgSqlCreate()
+	/*models.PaymentMode{}.PgSqlCreate()
 	models.PaymentAmount{}.PgSqlCreate()
-	models.Payment{}.PgSqlCreate()
+
 	models.OrderChannel{}.PgSqlCreate()
 	models.Payment2Delivery{}.PgSqlCreate()
 	models.PaymentSubject{}.PgSqlCreate()
 	models.PaymentYandex{}.PgSqlCreate()
-	models.PaymentCash{}.PgSqlCreate()
+	models.PaymentCash{}.PgSqlCreate()*/
 
 	models.DeliveryStatus{}.PgSqlCreate()
 	models.OrderStatus{}.PgSqlCreate()
-	
-	models.DeliveryOrder{}.PgSqlCreate()
-	models.Order{}.PgSqlCreate()
-	models.CartItem{}.PgSqlCreate()
 
+	models.DeliveryOrder{}.PgSqlCreate()
 	models.VatCode{}.PgSqlCreate()
 
 	models.DeliveryRussianPost{}.PgSqlCreate()
@@ -172,6 +163,86 @@ func RefreshTablesPart_I() {
 	models.DeliveryCourier{}.PgSqlCreate()
 
 
+	models.Order{}.PgSqlCreate()
+	models.CartItem{}.PgSqlCreate()
+	models.Payment{}.PgSqlCreate()
+
+}
+
+func RefreshTablesPart_I() {
+
+	pool := models.GetPool()
+
+	err := pool.Exec("DROP SCHEMA public CASCADE;\nCREATE SCHEMA public;").Error
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	models.CrmSetting{}.PgSqlCreate()
+	models.UserVerificationMethod{}.PgSqlCreate()
+	models.Account{}.PgSqlCreate()
+	models.User{}.PgSqlCreate()
+	models.AccountUser{}.PgSqlCreate()
+
+	// не зависящие
+	models.PaymentSubject{}.PgSqlCreate()
+	models.PaymentMode{}.PgSqlCreate()
+	models.VatCode{}.PgSqlCreate()
+	models.OrderStatus{}.PgSqlCreate()
+	models.UnitMeasurement{}.PgSqlCreate()
+	models.Role{}.PgSqlCreate()
+	models.ApiKey{}.PgSqlCreate()
+
+	models.WebSite{}.PgSqlCreate()
+	models.WebPage{}.PgSqlCreate()
+
+
+	models.Product{}.PgSqlCreate()
+	models.ProductCard{}.PgSqlCreate()
+
+	models.EmailBox{}.PgSqlCreate()
+	models.EmailTemplate{}.PgSqlCreate()
+	models.Storage{}.PgSqlCreate()
+	models.Article{}.PgSqlCreate()
+	models.HandlerItem{}.PgSqlCreate()
+	models.EventItem{}.PgSqlCreate()
+	models.EventListener{}.PgSqlCreate()
+	models.WebHook{}.PgSqlCreate()
+	models.EmailNotification{}.PgSqlCreate()
+	models.Comment{}.PgSqlCreate()
+	models.EmailQueue{}.PgSqlCreate()
+	models.EmailQueueEmailTemplate{}.PgSqlCreate()
+	models.UsersSegment{}.PgSqlCreate()
+	models.EmailCampaign{}.PgSqlCreate()
+	models.TaskScheduler{}.PgSqlCreate()
+	models.MTAWorkflow{}.PgSqlCreate()
+
+	models.MTAHistory{}.PgSqlCreate()
+	models.MTABounced{}.PgSqlCreate()
+	models.UserSegmentCondition{}.PgSqlCreate()
+
+	models.PaymentAmount{}.PgSqlCreate()
+	models.OrderChannel{}.PgSqlCreate()
+	models.Payment2Delivery{}.PgSqlCreate()
+
+	models.PaymentYandex{}.PgSqlCreate()
+	models.PaymentCash{}.PgSqlCreate()
+
+	models.DeliveryStatus{}.PgSqlCreate()
+
+
+
+	models.DeliveryOrder{}.PgSqlCreate()
+
+
+	models.DeliveryRussianPost{}.PgSqlCreate()
+	models.DeliveryPickup{}.PgSqlCreate()
+	models.DeliveryCourier{}.PgSqlCreate()
+
+
+	models.Order{}.PgSqlCreate()
+	models.CartItem{}.PgSqlCreate()
+	models.Payment{}.PgSqlCreate()
 }
 
 // загрузка первоначальных данных в EAV-таблицы
@@ -229,14 +300,14 @@ func UploadTestDataPart_I() {
 	timeNow := time.Now().UTC()
 	owner, err := mAcc.CreateUser(
 			models.User{
-			Username:"admin",
-			Email:"kokorevn@gmail.com",
-			PhoneRegion: "RU",
-			Phone: "89251952295",
-			Password:"qwerty109#QW",
-			Name:"Никита",
-			Surname:"Кокорев",
-			Patronymic:"Романович",
+			Username: 	utils.STRp("admin"),
+			Email:utils.STRp("kokorevn@gmail.com"),
+			PhoneRegion: utils.STRp("RU"),
+			Phone: utils.STRp("89251952295"),
+			Password:utils.STRp("qwerty109#QW"),
+			Name:	utils.STRp("Никита"),
+			Surname:utils.STRp("Кокорев"),
+			Patronymic:utils.STRp("Романович"),
 			EmailVerifiedAt:&timeNow,
 			},
 		*roleOwnerMain,
@@ -247,14 +318,14 @@ func UploadTestDataPart_I() {
 
 	mex388, err := mAcc.CreateUser(
 		models.User{
-			Username:"mex388",
-			Email:"nkokorev@rus-marketing.ru",
-			PhoneRegion: "RU",
-			Phone: "79251952222",
-			Password:"qwerty109#QW",
-			Name:"Никита",
-			Surname:"Кокорев",
-			Patronymic:"Романович",
+			Username:	utils.STRp("mex388"),
+			Email:		utils.STRp("nkokorev@rus-marketing.ru"),
+			PhoneRegion: utils.STRp("RU"),
+			Phone: 		utils.STRp("79251952222"),
+			Password:	utils.STRp("qwerty109#QW"),
+			Name:		utils.STRp("Никита"),
+			Surname:	utils.STRp("Кокорев"),
+			Patronymic:	utils.STRp("Романович"),
 			EmailVerifiedAt:&timeNow,
 		},
 		*roleAdminMain,
@@ -265,14 +336,14 @@ func UploadTestDataPart_I() {
 
 	markPlatov, err := mAcc.CreateUser(
 		models.User{
-			Username:"MarkPlatov",
-			Email:"markPlatov@rus-marketing.ru",
-			PhoneRegion: "RU",
-			Phone: "79777201164",
-			Password:"daUw#92QapZ",
-			Name:"Михаил",
-			Surname:"Коротченко",
-			Patronymic:"-",
+			Username:	utils.STRp("MarkPlatov"),
+			Email:		utils.STRp("markPlatov@rus-marketing.ru"),
+			PhoneRegion: utils.STRp("RU"),
+			Phone: 		utils.STRp("79777201164"),
+			Password:	utils.STRp("daUw#92QapZ"),
+			Name:		utils.STRp("Михаил"),
+			Surname:	utils.STRp("Коротченко"),
+			Patronymic:	utils.STRp("-"),
 			EmailVerifiedAt:&timeNow,
 		},
 		*roleManagerMain,
@@ -337,21 +408,21 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	// 1. Создаем Василия (^_^)
 	vpopov, err := mAcc.CreateUser(
 		models.User{
-			Username:"antiglot",
+			Username:	utils.STRp("antiglot"),
 			// Email:"vp@357gr.ru",
-			Email:"mail-test@ratus-dev.ru",
-			PhoneRegion: "RU",
-			Phone: "89055294696",
-			Password:"qwerty109#QW",
-			Name:"Василий",
-			Surname:"Попов",
-			Patronymic:"Николаевич",
+			Email:		utils.STRp("mail-test@ratus-dev.ru"),
+			PhoneRegion: utils.STRp("RU"),
+			Phone: 		utils.STRp("89055294696"),
+			Password:	utils.STRp("qwerty109#QW"),
+			Name:		utils.STRp("Василий"),
+			Surname:	utils.STRp("Попов"),
+			Patronymic:	utils.STRp("Николаевич"),
 			EmailVerifiedAt:&timeNow,
 		},
 		*roleClientMain,
 	)
 	if err != nil || owner == nil {
-		log.Fatal("Не удалось создать admin'a: ", err)
+		log.Fatal("Не удалось создать vpopov'a: ", err)
 	}
 	
 	dvc, err := models.GetUserVerificationTypeByCode(models.VerificationMethodEmailAndPhone)
@@ -368,10 +439,10 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 		ApiEnabled:                          true,
 		UiApiEnabled:                        true,
 		UiApiAesEnabled:                     true,
-		UiApiAuthMethods:                    pq.StringArray{"email, phone"}, // !!
+		UiApiAuthMethods:                    datatypes.JSON(utils.StringArrToRawJson([]string{"email","phone"})), 
 		UiApiEnabledUserRegistration:        true,
 		UiApiUserRegistrationInvitationOnly: false,
-		UiApiUserRegistrationRequiredFields: pq.StringArray{"email, phone, name"}, // !! хз хз
+		UiApiUserRegistrationRequiredFields: datatypes.JSON(utils.StringArrToRawJson([]string{"email","phone","name"})),
 		UiApiUserEmailDeepValidation:        true, // хз
 		UserVerificationMethodId:            dvc.Id,
 		UiApiEnabledLoginNotVerifiedUser:    true, // really?
@@ -401,7 +472,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	}
 
 	// 3.2. добавляем кучу других клиентов
-	if true {
+	/*if true {
 		var clients []models.User
 
 		for i:=1; i < 500 ;i++ {
@@ -419,7 +490,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 				return
 			}
 		}
-	}
+	}*/
 
 
 	// 4. Создаем домен для 357gr
@@ -476,21 +547,21 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 	// 1. Создаем Станислава
 	stas, err := mAcc.CreateUser(
 		models.User{
-			Username:"ikomastas",
-			Email:"sa-tolstov@yandex.ru",
+			Username:	utils.STRp("ikomastas"),
+			Email:		utils.STRp("sa-tolstov@yandex.ru"),
 			// Email:"info@rus-marketing.ru",
-			PhoneRegion: "RU",
-			Phone: "",
-			Password:"qwerty123#Q",
-			Name:"Станислав",
-			Surname:"Толстов",
-			Patronymic:"",
+			PhoneRegion: utils.STRp("RU"),
+			// Phone: nil,
+			Password:	utils.STRp("qwerty123#Q"),
+			Name:		utils.STRp("Станислав"),
+			Surname:	utils.STRp("Толстов"),
+			// Patronymic: nil,
 			EmailVerifiedAt:&timeNow,
 		},
 		*roleClientMain,
 	)
 	if err != nil || owner == nil {
-		log.Fatal("Не удалось создать admin'a: ", err)
+		log.Fatal("Не удалось создать stas'a: ", err)
 	}
 	
 	// 1. Создаем синдикат из-под Станислава
@@ -641,15 +712,15 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	// 1. Создаем Коротаева
 	korotaev, err := mAcc.CreateUser(
 		models.User{
-			Username:"korotaev",
+			Username:	utils.STRp("korotaev"),
 			// Email:"sa-tolstov@yandex.ru",
-			Email:"korotaev@vtvent.ru",
-			PhoneRegion: "RU",
-			Phone: "",
-			Password:"jv92sA#qpx2S",
-			Name:"Максим",
-			Surname:"Коротаев",
-			Patronymic:"Валерьевич",
+			Email:	utils.STRp("korotaev@vtvent.ru"),
+			PhoneRegion: utils.STRp("RU"),
+			Phone: nil,
+			Password:	utils.STRp("jv92sA#qpx2S"),
+			Name:		utils.STRp("Максим"),
+			Surname:	utils.STRp("Коротаев"),
+			Patronymic:	utils.STRp("Валерьевич"),
 			EmailVerifiedAt:&timeNow,
 		},
 		*roleClientMain,
@@ -660,15 +731,15 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	ivlev, err := mAcc.CreateUser(
 		models.User{
-			Username:"ivlev",
+			Username:	utils.STRp("ivlev"),
 			// Email:"sa-tolstov@yandex.ru",
-			Email:"ivlev@vtvent.ru",
-			PhoneRegion: "RU",
-			Phone: "",
-			Password:"uisNKs82#Mr2A",
-			Name:"Владислав",
-			Surname:"Ивлев",
-			Patronymic:"",
+			Email:	utils.STRp("ivlev@vtvent.ru"),
+			PhoneRegion: 	utils.STRp("RU"),
+			Phone: nil,
+			Password:utils.STRp("uisNKs82#Mr2A"),
+			Name:	utils.STRp("Владислав"),
+			Surname:	utils.STRp("Ивлев"),
+			Patronymic:	nil,
 			EmailVerifiedAt:&timeNow,
 		},
 		*roleClientMain,
@@ -724,7 +795,8 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 	// 4. !!! Создаем магазин
 	airoShopE, err := airoClimat.CreateEntity(
 		&models.WebSite{
-			Name: "Сайт по продаже бактерицидных рециркуляторов", Address: "г. Москва, р-н Текстильщики", Email: "info@airoclimate.ru", Phone: "+7 (4832) 77-03-73",
+			Name: "Сайт по продаже бактерицидных рециркуляторов", Address: utils.STRp("г. Москва, р-н Текстильщики"),
+			Email: utils.STRp("info@airoclimate.ru"), Phone: utils.STRp("+7 (4832) 77-03-73"),
 			Hostname: "airoclimate.ru",
 			URL: "https://airoclimate.ru",
 			DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDFS3EibqbaeWQvH8+2CRw5ijKV
@@ -776,36 +848,36 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
 	}
-	
-	groupAiroRoot, err := webSiteAiro.CreateProductGroup(
-		models.ProductGroup{
-			Code: "root", Name: "", URL: "/", IconName: "far fa-home", RouteName: "info.index",
-		})
+
+	mPage, err := airoClimat.CreateEntity(&models.WebPage{
+		AccountId: airoClimat.Id, WebSiteId: webSiteAiro.Id,Code: "root", Name: "", URL: "/", IconName: "far fa-home", RouteName: "info.index",
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать mPage для airoClimat webSite: ", err)
+		return
+	}
+	webPageRoot := mPage.(*models.WebPage)
+
+	catE, err := webPageRoot.CreateChild(models.WebPage {
+		AccountId: airoClimat.Id, Code: "catalog", Name: "Весь каталог", URL: "catalog", IconName: "far fa-th-large", RouteName: "catalog",
+	})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 		return
 	}
 
-	groupAiroCatalogRoot, err := groupAiroRoot.CreateChild(
-		models.ProductGroup{
-			Code: "catalog", Name: "Весь каталог", URL: "catalog", IconName: "far fa-th-large", RouteName: "catalog",
-		})
+	webCatalogRoot := catE.(*models.WebPage)
+
+	catGr1, err := webCatalogRoot.CreateChild(models.WebPage{
+		AccountId: airoClimat.Id, Code: "catalog",Name: "Бактерицидные рециркуляторы", URL: "bactericidal-recirculators", IconName: "far fa-fan-table", RouteName: "catalog.recirculators",
+	})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 		return
 	}
-	groupAiro1, err := groupAiroCatalogRoot.CreateChild(
-		models.ProductGroup{
-			Code: "catalog",Name: "Бактерицидные рециркуляторы", URL: "bactericidal-recirculators", IconName: "far fa-fan-table", RouteName: "catalog.recirculators",
-		})
-	if err != nil {
-		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
-		return
-	}
-	groupAiro2, err := groupAiroCatalogRoot.CreateChild(
-		models.ProductGroup{
-			Code: "catalog",Name: "Бактерицидные камеры", URL: "bactericidal-chambers", IconName: "far fa-box-full", RouteName: "catalog.chambers",
-			})
+	catGr2, err := webCatalogRoot.CreateChild(models.WebPage{
+		AccountId: airoClimat.Id, Code: "catalog",Name: "Бактерицидные камеры", URL: "bactericidal-chambers", IconName: "far fa-box-full", RouteName: "catalog.chambers",
+	})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 		return
@@ -813,55 +885,58 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 
 	//////////////
 
-	_, err = groupAiroRoot.CreateChild(
-
-		models.ProductGroup{
-			Code: "info", Name: "Статьи", URL: "articles", IconName: "far fa-books", RouteName: "info.articles", Order: 1,
+	_, err = webPageRoot.CreateChild(
+		models.WebPage{
+			AccountId: airoClimat.Id, Code: "info", Name: "Статьи", URL: "articles", IconName: "far fa-books", RouteName: "info.articles", Order: 1,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
-	deliveryGroupRoute, err := groupAiroRoot.CreateChild(
-		models.ProductGroup{
-			Code: "delivery", Name: "Доставка товара", URL: "delivery", IconName: "far fa-shipping-fast", RouteName: "delivery", Order: 1,
+	deliveryGrE, err := webPageRoot.CreateChild(
+		models.WebPage{
+			AccountId: airoClimat.Id, Code: "delivery", Name: "Доставка товара", URL: "delivery", IconName: "far fa-shipping-fast", RouteName: "delivery", Order: 1,
+		})
+	if err != nil {
+		log.Fatal(err)
+	}
+	deliveryGroupRoute := deliveryGrE.(*models.WebPage)
+	_, err = deliveryGroupRoute.CreateChild(
+		models.WebPage{
+			AccountId: airoClimat.Id, Code: "delivery", Name: "Способы оплаты", URL: "payment", IconName: "far fa-hand-holding-usd", RouteName: "delivery.payment", Order: 2,
 		})
 	_, err = deliveryGroupRoute.CreateChild(
-		models.ProductGroup{
-			Code: "delivery", Name: "Способы оплаты", URL: "payment", IconName: "far fa-hand-holding-usd", RouteName: "delivery.payment", Order: 2,
-		})
-	_, err = deliveryGroupRoute.CreateChild(
-		models.ProductGroup{
-			Code: "delivery", Name: "Возврат товара", URL: "moneyback", IconName: "far fa-exchange-alt", RouteName: "delivery.moneyback", Order: 3,
+		models.WebPage{
+			AccountId: airoClimat.Id, Code: "delivery", Name: "Возврат товара", URL: "moneyback", IconName: "far fa-exchange-alt", RouteName: "delivery.moneyback", Order: 3,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
-	_, err = groupAiroRoot.CreateChild(
-		models.ProductGroup{
-			Code: "info", Name: "О компании", URL: "about", IconName: "far fa-home-heart", RouteName: "info.about",      Order: 5,
+	_, err = webPageRoot.CreateChild(
+		models.WebPage{
+			AccountId: airoClimat.Id, Code: "info", Name: "О компании", URL: "about", IconName: "far fa-home-heart", RouteName: "info.about",      Order: 5,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
-	_, err = groupAiroRoot.CreateChild(
-		models.ProductGroup{
-			Code: "info", Name: "Политика конфиденциальности", URL: "privacy-policy", IconName: "far fa-home-heart", RouteName: "info.privacy-policy",      Order: 6,
+	_, err = webPageRoot.CreateChild(
+		models.WebPage{
+			AccountId: airoClimat.Id, Code: "info", Name: "Политика конфиденциальности", URL: "privacy-policy", IconName: "far fa-home-heart", RouteName: "info.privacy-policy",      Order: 6,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
-	_, err = groupAiroRoot.CreateChild(
-		models.ProductGroup{
-			Code: "info", Name: "Контакты", URL: "contacts", IconName: "far fa-address-book", RouteName: "info.contacts",  Order: 10,
+	_, err = webPageRoot.CreateChild(
+		models.WebPage{
+			AccountId: airoClimat.Id, Code: "info", Name: "Контакты", URL: "contacts", IconName: "far fa-address-book", RouteName: "info.contacts",  Order: 10,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
 
 	////////
-	_, err = groupAiroRoot.CreateChild(
-		models.ProductGroup{
-			Code: "cart", Name: "Корзина", URL: "cart", IconName: "far fa-cart-arrow-down", RouteName: "cart", Order: 1,
+	_, err = webPageRoot.CreateChild(
+		models.WebPage{
+			AccountId: airoClimat.Id, Code: "cart", Name: "Корзина", URL: "cart", IconName: "far fa-cart-arrow-down", RouteName: "cart", Order: 1,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
@@ -870,26 +945,24 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	// 6. Создаем карточки товара
 	cards := []models.ProductCard{
 		{Id: 0, URL: "airo-dez-adjustable-black", 	Label:"Рециркулятор AIRO-DEZ черный с регулировкой", Breadcrumb: "Рециркулятор AIRO-DEZ черный с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ черный с регулировкой",
-			SwitchProducts: postgres.Jsonb{
-				RawMessage: utils.MapToRawJson(map[string]interface{}{
-					"color":"черный",
-					"bodyMaterial":"металл",
-					"filterType":"угольно-фотокаталитический",
-					"performance":150, // m3/час
-					"rangeUVRadiation":"250-260Hm",
-					"powerLampRecirculator":10.8, // Вт/m2
-					"powerConsumption":60, // Вт
-					"lifeTimeDevice":100000, // часов
-					"lifeTimeLamp":9000, // часов
-					"baseTypeLamp":"", //Тип цоколя лампы
-					"degreeProtection":"IP20",
-					"supplyVoltage":"175-265В",
-					"temperatureMode":"+2...+50C",
-					"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
-					"noiseLevel":35, //дБ
-					"grossWeight": 5.5, // Брутто, кг
-				}),
-			}},
+			SwitchProducts: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"черный",
+				"bodyMaterial":"металл",
+				"filterType":"угольно-фотокаталитический",
+				"performance":150, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				"powerLampRecirculator":10.8, // Вт/m2
+				"powerConsumption":60, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
+				"noiseLevel":35, //дБ
+				"grossWeight": 5.5, // Брутто, кг
+			}))},
 		{Id: 0, URL: "airo-dez-black", 				Label:"Рециркулятор AIRO-DEZ черный", Breadcrumb: "Рециркулятор AIRO-DEZ черный", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ черный"},
 		{Id: 0, URL: "airo-dez-adjustable-white", 	Label:"Рециркулятор AIRO-DEZ белый с регулировкой", Breadcrumb: "Рециркулятор AIRO-DEZ белый с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ белый с регулировкой"},
 		{Id: 0, URL: "airo-dez-white", 				Label:"Рециркулятор AIRO-DEZ белый", Breadcrumb: "Рециркулятор AIRO-DEZ белый",MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ белый"},
@@ -912,364 +985,341 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	// 7. Создаем список товаров
 	products := []models.Product{
 		{
-			Model: ToStringPointer("AIRO-DEZ с регулировкой черный"), //,
+			Model: "AIRO-DEZ с регулировкой черный", //,
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности черный", ShortName: "Рециркулятор AIRO-DEZ черный",
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 19500.00, RetailDiscount: 1000,
 			ShortDescription: "",Description: "",
 			WeightKey: "grossWeight",
-			Attributes: postgres.Jsonb{
-				RawMessage: utils.MapToRawJson(map[string]interface{}{
-					"color":"черный",
-					"bodyMaterial":"металл",
-					"filterType":"угольно-фотокаталитический",
-					"performance":150, // m3/час
-					"rangeUVRadiation":"250-260Hm",
-					"powerLampRecirculator":10.8, // Вт/m2
-					"powerConsumption":60, // Вт
-					"lifeTimeDevice":100000, // часов
-					"lifeTimeLamp":9000, // часов
-					"baseTypeLamp":"", //Тип цоколя лампы
-					"degreeProtection":"IP20",
-					"supplyVoltage":"175-265В",
-					"temperatureMode":"+2...+50C",
-					"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
-					"noiseLevel":35, //дБ
-					"grossWeight": 5.5, // Брутто, кг
-				}),
-			},
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"черный",
+				"bodyMaterial":"металл",
+				"filterType":"угольно-фотокаталитический",
+				"performance":150, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				"powerLampRecirculator":10.8, // Вт/m2
+				"powerConsumption":60, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
+				"noiseLevel":35, //дБ
+				"grossWeight": 5.5, // Брутто, кг
+			})),
 		},
 		{
-			Model: ToStringPointer("AIRO-DEZ черный"),
+			Model: "AIRO-DEZ черный",
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ черный", ShortName: "Рециркулятор AIRO-DEZ черный",
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
-			Attributes: postgres.Jsonb{
-				RawMessage: utils.MapToRawJson(map[string]interface{}{
-					"color":"черный",
-					"bodyMaterial":"металл",
-					"filterType":"угольно-фотокаталитический",
-					"performance":150, // m3/час
-					"rangeUVRadiation":"250-260Hm",
-					"powerLampRecirculator":10.8, // Вт/m2
-					"powerConsumption":60, // Вт
-					"lifeTimeDevice":100000, // часов
-					"lifeTimeLamp":9000, // часов
-					"baseTypeLamp":"", //Тип цоколя лампы
-					"degreeProtection":"IP20",
-					"supplyVoltage":"175-265В",
-					"temperatureMode":"+2...+50C",
-					"noiseLevel":35, //дБ
-					"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
-					"grossWeight": 5.5, // Брутто, кг
-				}),
-			},
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"черный",
+				"bodyMaterial":"металл",
+				"filterType":"угольно-фотокаталитический",
+				"performance":150, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				"powerLampRecirculator":10.8, // Вт/m2
+				"powerConsumption":60, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":35, //дБ
+				"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5.5, // Брутто, кг
+			})),
 		},
 		{
-			Model: ToStringPointer("AIRO-DEZ с регулировкой белый"),
+			Model: "AIRO-DEZ с регулировкой белый", //ToStringPointer("AIRO-DEZ с регулировкой белый"),
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности белый",  ShortName: "Рециркулятор AIRO-DEZ белый",
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 19500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
-			Attributes: postgres.Jsonb{
-				RawMessage: utils.MapToRawJson(map[string]interface{}{
-					"color":"белый",
-					"bodyMaterial":"металл",
-					"filterType":"угольно-фотокаталитический",
-					"performance":150, // m3/час
-					"rangeUVRadiation":"250-260Hm",
-					"powerLampRecirculator":10.8, // Вт/m2
-					"powerConsumption":60, // Вт
-					"lifeTimeDevice":100000, // часов
-					"lifeTimeLamp":9000, // часов
-					"baseTypeLamp":"", //Тип цоколя лампы
-					"degreeProtection":"IP20",
-					"supplyVoltage":"175-265В",
-					"temperatureMode":"+2...+50C",
-					"noiseLevel":35, //дБ
-					"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
-					"grossWeight": 5.5, // Брутто, кг
-				}),
-			},
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"белый",
+				"bodyMaterial":"металл",
+				"filterType":"угольно-фотокаталитический",
+				"performance":150, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				"powerLampRecirculator":10.8, // Вт/m2
+				"powerConsumption":60, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":35, //дБ
+				"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5.5, // Брутто, кг
+			})),
 		},
 		{
-			Model: ToStringPointer("AIRO-DEZ белый"),
+			Model: "AIRO-DEZ белый",//ToStringPointer("AIRO-DEZ белый"),
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ",  ShortName: "Рециркулятор AIRO-DEZ белый",
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
-			Attributes: postgres.Jsonb{
-				RawMessage: utils.MapToRawJson(map[string]interface{}{
-					"color":"белый",
-					"bodyMaterial":"металл",
-					"filterType":"угольно-фотокаталитический",
-					"performance":150, // m3/час
-					"rangeUVRadiation":"250-260Hm",
-					"powerLampRecirculator":10.8, // Вт/m2
-					"powerConsumption":60, // Вт
-					"lifeTimeDevice":100000, // часов
-					"lifeTimeLamp":9000, // часов
-					"baseTypeLamp":"", //Тип цоколя лампы
-					"degreeProtection":"IP20",
-					"supplyVoltage":"175-265В",
-					"temperatureMode":"+2...+50C",
-					"noiseLevel":35, //дБ
-					"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
-					"grossWeight": 5.5, // Брутто, кг
-				}),
-			},
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"белый",
+				"bodyMaterial":"металл",
+				"filterType":"угольно-фотокаталитический",
+				"performance":150, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				"powerLampRecirculator":10.8, // Вт/m2
+				"powerConsumption":60, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":35, //дБ
+				"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5.5, // Брутто, кг
+			})),
 		},
 		{
-			Model: ToStringPointer("AIRO-DEZ COMPACT"),
+			Model: "AIRO-DEZ COMPACT", //ToStringPointer("AIRO-DEZ COMPACT"),
 			Name:"Мобильный аиродезинфектор AIRO-DEZ COMPACT",  ShortName: "Аиродезинфектор AIRO-DEZ COMPACT",
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 39000.00, RetailDiscount: 3000,
 			ShortDescription: "",
 			Description: "",
-			Attributes: postgres.Jsonb{
-				RawMessage: utils.MapToRawJson(map[string]interface{}{
-					"color":"черный",
-					"bodyMaterial":"металл",
-					"filterType":"угольно-фотокаталитический",
-					"performance":220, // m3/час
-					"rangeUVRadiation":"250-260Hm",
-					"powerLampRecirculator":19, // Вт/m2
-					"powerLampIrradiator":10.8, // Вт/m2
-					"powerConsumption":135, // Вт
-					"lifeTimeDevice":100000, // часов
-					"lifeTimeLamp":9000, // часов
-					"baseTypeLamp":"", //Тип цоколя лампы
-					"degreeProtection":"IP20",
-					"supplyVoltage":"175-265В",
-					"temperatureMode":"+2...+50C",
-					"noiseLevel":45, //дБ
-					"overallDimensions":"300х610х150мм", //Габаритные размеры(ВхШхГ)
-					"grossWeight": 6.8, // Брутто, кг
-				}),
-			},
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"черный",
+				"bodyMaterial":"металл",
+				"filterType":"угольно-фотокаталитический",
+				"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				"powerLampRecirculator":19, // Вт/m2
+				"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":135, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":45, //дБ
+				"overallDimensions":"300х610х150мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 6.8, // Брутто, кг
+			})),
 		},
 		
 		{
-			Model: ToStringPointer("AIRO-DEZPUF"),
+			Model: "AIRO-DEZPUF", //ToStringPointer("AIRO-DEZPUF"),
 			Name:"Бактерицидная камера пуф AIRO-DEZPUF",  ShortName: "Камера пуф AIRO-DEZPUF",
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 11000.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
-			Attributes: postgres.Jsonb{
-				RawMessage: utils.MapToRawJson(map[string]interface{}{
-					"color":"черный",
-					"bodyMaterial":"металл",
-					//"filterType":"угольно-фотокаталитический",
-					//"performance":220, // m3/час
-					"rangeUVRadiation":"250-260Hm",
-					//"powerLampRecirculator":19, // Вт/m2
-					//"powerLampIrradiator":10.8, // Вт/m2
-					"powerConsumption":10, // Вт
-					"lifeTimeDevice":100000, // часов
-					"lifeTimeLamp":9000, // часов
-					"baseTypeLamp":"G13", //Тип цоколя лампы
-					"degreeProtection":"IP20",
-					"supplyVoltage":"175-265В",
-					"temperatureMode":"+2...+50C",
-					"noiseLevel":25, //дБ
-					"overallDimensions":"480х500х320мм", //Габаритные размеры(ВхШхГ)
-					"grossWeight": 5, // Брутто, кг
-				}),
-			},
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"черный",
+				"bodyMaterial":"металл",
+				//"filterType":"угольно-фотокаталитический",
+				//"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				//"powerLampRecirculator":19, // Вт/m2
+				//"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":10, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"G13", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":25, //дБ
+				"overallDimensions":"480х500х320мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5, // Брутто, кг
+			})),
 		},
 		{
-			Model: ToStringPointer("AIRO-DEZPUF венге"),
+			Model: "AIRO-DEZPUF венге", //ToStringPointer("AIRO-DEZPUF венге"),
 			Name:"Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге",  ShortName: "Камера AIRO-DEZBOX",
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 12000.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
-			Attributes: postgres.Jsonb{
-				RawMessage: utils.MapToRawJson(map[string]interface{}{
-					"color":"венге",
-					"bodyMaterial":"металл",
-					//"filterType":"угольно-фотокаталитический",
-					//"performance":220, // m3/час
-					"rangeUVRadiation":"250-260Hm",
-					//"powerLampRecirculator":19, // Вт/m2
-					//"powerLampIrradiator":10.8, // Вт/m2
-					"powerConsumption":10, // Вт
-					"lifeTimeDevice":100000, // часов
-					"lifeTimeLamp":9000, // часов
-					"baseTypeLamp":"G13", //Тип цоколя лампы
-					"degreeProtection":"IP20",
-					"supplyVoltage":"175-265В",
-					"temperatureMode":"+2...+50C",
-					"noiseLevel":25, //дБ
-					"overallDimensions":"500х500х320мм", //Габаритные размеры(ВхШхГ)
-					"grossWeight": 5, // Брутто, кг
-				}),
-			},
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"венге",
+				"bodyMaterial":"металл",
+				//"filterType":"угольно-фотокаталитический",
+				//"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				//"powerLampRecirculator":19, // Вт/m2
+				//"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":10, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"G13", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":25, //дБ
+				"overallDimensions":"500х500х320мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5, // Брутто, кг
+			})),
 		},
 
 		{
-			Model: ToStringPointer("AIRO-DEZBOX"),
+			Model: "AIRO-DEZBOX", //ToStringPointer("AIRO-DEZBOX"),
 			Name:"Бактерицидная камера AIRO-DEZBOX",  ShortName: "Камера AIRO-DEZBOX",
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 7800.00, RetailDiscount: 800,
 			ShortDescription: "",
 			Description: "",
-			Attributes: postgres.Jsonb{
-				RawMessage: utils.MapToRawJson(map[string]interface{}{
-					"color":"черный",
-					"bodyMaterial":"металл",
-					//"filterType":"угольно-фотокаталитический",
-					//"performance":220, // m3/час
-					"rangeUVRadiation":"250-260Hm",
-					//"powerLampRecirculator":19, // Вт/m2
-					//"powerLampIrradiator":10.8, // Вт/m2
-					"powerConsumption":10, // Вт
-					"lifeTimeDevice":100000, // часов
-					"lifeTimeLamp":9000, // часов
-					"baseTypeLamp":"G13", //Тип цоколя лампы
-					"degreeProtection":"IP20",
-					"supplyVoltage":"175-265В",
-					"temperatureMode":"+2...+50C",
-					"noiseLevel":25, //дБ
-					"overallDimensions":"400х500х320мм", //Габаритные размеры(ВхШхГ)
-					"grossWeight": 5, // Брутто, кг
-				}),
-			},
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"черный",
+				"bodyMaterial":"металл",
+				//"filterType":"угольно-фотокаталитический",
+				//"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				//"powerLampRecirculator":19, // Вт/m2
+				//"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":10, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"G13", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":25, //дБ
+				"overallDimensions":"400х500х320мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5, // Брутто, кг
+			})),
 		},
 		{
-			Model: ToStringPointer("AIRO-DEZBOX белая"),
+			Model: "AIRO-DEZBOX белая", //ToStringPointer("AIRO-DEZBOX белая"),
 			Name:"Бактерицидная камера AIRO-DEZBOX белая",  ShortName: "Камера AIRO-DEZBOX белая",
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 7800.00, RetailDiscount: 800,
 			ShortDescription: "",
 			Description: "",
-			Attributes: postgres.Jsonb{
-				RawMessage: utils.MapToRawJson(map[string]interface{}{
-					"color":"белый",
-					"bodyMaterial":"металл",
-					//"filterType":"угольно-фотокаталитический",
-					//"performance":220, // m3/час
-					"rangeUVRadiation":"250-260Hm",
-					//"powerLampRecirculator":19, // Вт/m2
-					//"powerLampIrradiator":10.8, // Вт/m2
-					"powerConsumption":10, // Вт
-					"lifeTimeDevice":100000, // часов
-					"lifeTimeLamp":9000, // часов
-					"baseTypeLamp":"G13", //Тип цоколя лампы
-					"degreeProtection":"IP20",
-					"supplyVoltage":"175-265В",
-					"temperatureMode":"+2...+50C",
-					"noiseLevel":25, //дБ
-					"overallDimensions":"400х500х320мм", //Габаритные размеры(ВхШхГ)
-					"grossWeight": 5, // Брутто, кг
-				}),
-			},
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"белый",
+				"bodyMaterial":"металл",
+				//"filterType":"угольно-фотокаталитический",
+				//"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				//"powerLampRecirculator":19, // Вт/m2
+				//"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":10, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"G13", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":25, //дБ
+				"overallDimensions":"400х500х320мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5, // Брутто, кг
+			})),
 		},
 		{
-			Model: ToStringPointer("AIRO-DEZTUMB"),
+			Model: "AIRO-DEZTUMB", //ToStringPointer("AIRO-DEZTUMB"),
 			Name:"Тумба облучатель бактерицидный AIRO-DEZTUMB",  ShortName: "Бактерицидная тумба AIRO-DEZTUMB",
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
-			Attributes: postgres.Jsonb{
-				RawMessage: utils.MapToRawJson(map[string]interface{}{
-					"color":"черный",
-					//"bodyMaterial":"металл",
-					//"filterType":"угольно-фотокаталитический",
-					//"performance":220, // m3/час
-					"rangeUVRadiation":"250-260Hm",
-					//"powerLampRecirculator":19, // Вт/m2
-					//"powerLampIrradiator":10.8, // Вт/m2
-					"powerConsumption":10, // Вт мощность устр-ва
-					"lifeTimeDevice":100000, // часов
-					"lifeTimeLamp":9000, // часов
-					"baseTypeLamp":"G13", //Тип цоколя лампы
-					"degreeProtection":"IP20",
-					"supplyVoltage":"175-265В",
-					"temperatureMode":"+2...+50C",
-					"noiseLevel":5, //дБ
-					"overallDimensions":"560х450х400мм", //Габаритные размеры(ВхШхГ)
-					"grossWeight": 5, // Брутто, кг
-				}),
-			},
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"черный",
+				//"bodyMaterial":"металл",
+				//"filterType":"угольно-фотокаталитический",
+				//"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				//"powerLampRecirculator":19, // Вт/m2
+				//"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":10, // Вт мощность устр-ва
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"G13", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":5, //дБ
+				"overallDimensions":"560х450х400мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5, // Брутто, кг
+			})),
 		},
 		{
-			Model: ToStringPointer("AIROTUMB big"),
+			Model: "AIROTUMB big", //ToStringPointer("AIROTUMB big"),
 			Name:"Тумба облучатель бактерицидный AIRO-DEZTUMB big",  ShortName: "Облучатель AIROTUMB big",
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
-			Attributes: postgres.Jsonb{
-				RawMessage: utils.MapToRawJson(map[string]interface{}{
-					"color":"белый",
-					//"bodyMaterial":"металл",
-					//"filterType":"угольно-фотокаталитический",
-					//"performance":220, // m3/час
-					"rangeUVRadiation":"250-260Hm",
-					//"powerLampRecirculator":19, // Вт/m2
-					//"powerLampIrradiator":10.8, // Вт/m2
-					"powerConsumption":10, // Вт мощность устр-ва
-					"lifeTimeDevice":100000, // часов
-					"lifeTimeLamp":9000, // часов
-					"baseTypeLamp":"G13", //Тип цоколя лампы
-					"degreeProtection":"IP20",
-					"supplyVoltage":"175-265В",
-					"temperatureMode":"+2...+50C",
-					"noiseLevel":5, //дБ
-					"overallDimensions":"670х450х400мм", //Габаритные размеры(ВхШхГ)
-					"grossWeight": 5, // Брутто, кг
-				}),
-			},
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"белый",
+				//"bodyMaterial":"металл",
+				//"filterType":"угольно-фотокаталитический",
+				//"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				//"powerLampRecirculator":19, // Вт/m2
+				//"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":10, // Вт мощность устр-ва
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"G13", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":5, //дБ
+				"overallDimensions":"670х450х400мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5, // Брутто, кг
+			})),
 		},
 		
 		{
-			Model: ToStringPointer("AIRO-DEZTUMB касцина"),
+			Model: "AIRO-DEZTUMB касцина", //ToStringPointer("AIRO-DEZTUMB касцина"),
 			Name:"Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина",  ShortName: "Бактерицидная тумба AIRO-DEZTUMB",
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
-			Attributes: postgres.Jsonb{
-				RawMessage: utils.MapToRawJson(map[string]interface{}{
-					"color":"светлая сосна",
-					"bodyMaterial":"металл",
-					//"filterType":"угольно-фотокаталитический",
-					//"performance":220, // m3/час
-					"rangeUVRadiation":"250-260Hm",
-					//"powerLampRecirculator":19, // Вт/m2
-					//"powerLampIrradiator":10.8, // Вт/m2
-					"powerConsumption":10, // Вт мощность устр-ва
-					"lifeTimeDevice":100000, // часов
-					"lifeTimeLamp":9000, // часов
-					"baseTypeLamp":"G13", //Тип цоколя лампы
-					"degreeProtection":"IP20",
-					"supplyVoltage":"175-265В",
-					"temperatureMode":"+2...+50C",
-					"noiseLevel":25, //дБ
-					"overallDimensions":"460х500х320мм", //Габаритные размеры(ВхШхГ)
-					"grossWeight": 5, // Брутто, кг
-				}),
-			},
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"светлая сосна",
+				"bodyMaterial":"металл",
+				//"filterType":"угольно-фотокаталитический",
+				//"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				//"powerLampRecirculator":19, // Вт/m2
+				//"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":10, // Вт мощность устр-ва
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"G13", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":25, //дБ
+				"overallDimensions":"460х500х320мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5, // Брутто, кг
+			})),
 		},
 	}
 	
 	
 	// 7. Добавляем продукты в категории с созданием карточки товара
 	for i,_ := range products {
-		var group *models.ProductGroup
+		var groupId uint
 		if i < 4 {
-			group = groupAiro1
+			groupId = catGr1.GetId()
 		} else {
-			group = groupAiro2
+			groupId = catGr2.GetId()
 		}
-		_, err = webSiteAiro.CreateProductWithCardAndGroup(products[i], cards[i], &group.Id)
+		// создаем товар, карточку товара и добавляем их в группу
+		_, err = webSiteAiro.CreateProductWithProductCard(products[i], cards[i], groupId)
 		if err != nil {
 			log.Fatal("Не удалось создать Product для airoClimat: ", err)
 		}
@@ -1461,13 +1511,13 @@ func UploadTestDataPart_III() {
 	emailNotifications := []models.EmailNotification {
 		{
 			Status: models.WorkStatusPending, DelayTime: 0, Name:"Оповещение менеджера", Subject: "Поступил новый заказ", EmailTemplateId: &numOne,
-			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{2})},
+			RecipientUsersList: datatypes.JSON(utils.UINTArrToRawJson([]uint{2})),
 			EmailBoxId: &num5,
 
 		},
 		{
 			Status: models.WorkStatusPending, DelayTime: 0, Name:"Оповещение клиента", Subject: "Ваш заказ получен", EmailTemplateId: &numOne,
-			RecipientUsersList: postgres.Jsonb{RawMessage: utils.UINTArrToRawJson([]uint{7})},
+			RecipientUsersList: datatypes.JSON( utils.UINTArrToRawJson([]uint{7})),
 			EmailBoxId: &num6,
 		},
 		{
@@ -1529,7 +1579,7 @@ func LoadImagesAiroClimate(count int)  {
 				Name: strings.ToLower(file.Name()),
 				Data: body,
 				MIME: mimeType,
-				Size: uint(file.Size()),
+				Size: file.Size(),
 				Priority: 0,
 			}
 			// file, err := account.StorageCreateFile(&fs)
@@ -1688,7 +1738,7 @@ func LoadProductCategoryDescriptionAiroClimate()  {
 		// fmt.Println(routeName)
 		// return
 
-		group := models.ProductGroup{}
+		group := models.WebPage{}
 
 		if err := models.GetDB().First(&group, "route_name = ?", routeName).Error; err != nil {
 			log.Fatalf("cant find group by route name: %v", err)
@@ -1700,54 +1750,6 @@ func LoadProductCategoryDescriptionAiroClimate()  {
 			log.Fatalf("unable to update product group descr: %v", err)
 		}
 	}
-}
-
-func RefreshTablesPart_IV() {
-	pool := models.GetPool()
-
-	err := pool.Exec("drop table if exists orders_products, payment_methods_web_sites, payment_methods_payments").Error
-	if err != nil {
-		log.Fatalf("Cant create tables -1: %v", err)
-		return
-	}
-	pool.DropTableIfExists(
-
-		models.CartItem{},
-		models.OrderComment{},
-		models.Payment2Delivery{},
-		models.Payment{},
-		// models.PaymentAmount{},
-		models.PaymentYandex{},
-		models.PaymentCash{},
-		// models.DeliveryOrder{},
-		// models.Order{},
-
-		// models.OrderStatus{},
-		// models.DeliveryStatus{},
-		// models.OrderChannel{},
-		)
-
-	// А теперь создаем
-
-	// models.User{}.PgSqlCreate()
-	models.PaymentAmount{}.PgSqlCreate()
-	models.Payment2Delivery{}.PgSqlCreate()
-
-	// models.PaymentSubject{}.PgSqlCreate()
-	// models.VatCode{}.PgSqlCreate()
-	models.OrderComment{}.PgSqlCreate()
-	models.OrderChannel{}.PgSqlCreate()
-	models.OrderStatus{}.PgSqlCreate()
-	models.Order{}.PgSqlCreate()
-	models.CartItem{}.PgSqlCreate()
-	models.DeliveryStatus{}.PgSqlCreate()
-	models.DeliveryOrder{}.PgSqlCreate()
-	models.PaymentCash{}.PgSqlCreate()
-	models.PaymentYandex{}.PgSqlCreate()
-	models.Payment{}.PgSqlCreate()
-
-	pool.AutoMigrate(&models.DeliveryPickup{},&models.DeliveryCourier{},&models.DeliveryRussianPost{})
-
 }
 
 func UploadTestDataPart_IV()  {
@@ -1780,7 +1782,7 @@ func UploadTestDataPart_IV()  {
 			Name:   "Онлайн-оплата на сайте",
 			Label:   "Онлайн-оплата банковской картой",
 			ApiKey: "test_f56EEL_m2Ky7CJnnRjSpb4JLMhiGoGD3X6ScMHGPruM",
-			ShopId: "730509",
+			ShopId: 730509,
 			ReturnUrl: "https://airoclimate.ru",
 			Enabled: true,
 			WebSiteId: 5,
@@ -1891,7 +1893,7 @@ func UploadBroUserData() {
 }
 
 func Migrate_I() {
-	pool := models.GetPool()
+	// pool := models.GetPool()
 	
 	// pool.Raw("")
 	// pool.Exec("alter table email_campaigns alter column email_template_id drop not null;\nalter table email_campaigns alter column email_box_id drop not null;\nalter table email_campaigns alter column users_segment_id drop not null;\n\nALTER TABLE email_campaigns\n    ADD CONSTRAINT email_campaigns_email_template_id_fkey FOREIGN KEY (email_template_id) REFERENCES email_templates(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT email_campaigns_email_box_id_fkey FOREIGN KEY (email_box_id) REFERENCES email_boxes(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT email_campaigns_users_segment_id_fkey FOREIGN KEY (users_segment_id) REFERENCES users_segments(id) ON DELETE SET NULL ON UPDATE CASCADE;")
@@ -1933,42 +1935,7 @@ func Migrate_I() {
 		_, _ = account.CreateEntity(&emailCampaigns[i])
 	}*/
 
-	pool.AutoMigrate(&models.MTAWorkflow{})
-	pool.AutoMigrate(&models.MTABounced{})
-	pool.AutoMigrate(&models.MTAHistory{})
-	pool.AutoMigrate(&models.EmailCampaign{})
-	pool.AutoMigrate(&models.EmailNotification{})
-	pool.AutoMigrate(&models.EmailQueue{})
-	// pool.AutoMigrate(&models.AccountUser{})
 
-	return 
-	account,err := models.GetAccount(2)
-	if err != nil { log.Fatal(err)}
-
-	roleClientMain, err := account.GetRoleByTag(models.RoleClient)
-	if err != nil {
-		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
-	}
-
-	var clients []models.User
-
-
-	for i:=1; i < 500 ;i++ {
-		clients = append(clients, models.User{
-			Name: fmt.Sprintf("Name #%d", i),
-			Email: fmt.Sprintf("email%d@mail.ru", i),
-			Phone: fmt.Sprintf("+7925195221%d", i),
-			Password: "asdfg109#QW",
-		})
-	}
-	for i,_ := range clients {
-		_, err := account.CreateUser(clients[i], *roleClientMain)
-		if err != nil {
-			log.Printf("Не удалось добавить клиента id: %v", i)
-			return
-		}
-	}
-	
-	
+	return
 
 }

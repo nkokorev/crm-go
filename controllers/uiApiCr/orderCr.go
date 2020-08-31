@@ -34,7 +34,7 @@ type CreateOrderForm struct {
 	ManagerHashId	string	`json:"managerHashId"`
 
 	// ID магазина, от имени которого создается заявка
-	WebSiteId 		uint	`json:"webSiteId"`
+	WebSiteId 		uint	`json:"web_site_id"`
 
 	// true = частное лицо, false - юрлицо
 	Individual		bool 	`json:"individual"`
@@ -42,11 +42,11 @@ type CreateOrderForm struct {
 	// подписка на новости
 	SubscribeNews		bool 	`json:"subscribeNews"`
 
-	CustomerComment	string	`json:"customerComment"`
+	CustomerComment	string	`json:"customer_comment"`
 
 	// передается по Code, т.к. ID может поменяться.
 	// todo: !!!	сделать настройки для каждого канала по принятым заявкам	!!!
-	OrderChannelCode	string 	`json:"orderChannel"`
+	OrderChannelCode	string 	`json:"order_channel"`
 
 	// Выбирается канал доставки, а также все необходимые данные
 	// todo: для каждого канала сделать доступным метод доставки (по умолчанию: все)
@@ -189,7 +189,7 @@ func getCustomerFromInput(account models.Account, userHashId, email, phone, name
 
 
 		// ! Оба пользователя найдены = В случае, если у обоих пользователей указаны телефон и емейл, но при этом емейл разные
-		if errEmail == nil && errPhone == nil && userByEmail.Email != "" && userByPhone.Email != "" && (userByEmail.Email != userByPhone.Email) {
+		if errEmail == nil && errPhone == nil && userByEmail.Email != nil && userByPhone.Email != nil && (userByEmail.Email != userByPhone.Email) {
 			return nil, u.Error{Message:"Ошибка идентификации пользователя",
 				Errors: map[string]interface{}{
 				"email":"Пользователь с таким email'ом имеет другой телефон",
@@ -198,7 +198,7 @@ func getCustomerFromInput(account models.Account, userHashId, email, phone, name
 		}
 
 		// ! Оба пользователя найдены = В случае, если у обоих пользователей указаны телефон и емейл, но при этом телефоны разные
-		if errEmail == nil && errPhone == nil && userByEmail.Phone != "" && userByPhone.Phone != "" && (userByEmail.Phone != userByPhone.Phone) {
+		if errEmail == nil && errPhone == nil && userByEmail.Phone != nil && userByPhone.Phone != nil && (userByEmail.Phone != userByPhone.Phone) {
 			return nil, u.Error{Message:"Ошибка идентификации пользователя",
 				Errors: map[string]interface{}{
 					"email":"Пользователь с таким email'ом имеет другой телефон",
@@ -208,8 +208,8 @@ func getCustomerFromInput(account models.Account, userHashId, email, phone, name
 
 		// Найден только один пользователь = и у него указан телефон и в заявке у него другой телефон
 		if errEmail == nil && errPhone != nil &&
-			userByEmail.Phone != "" && phone != "" &&
-			(userByEmail.Phone != phone) {
+			userByEmail.Phone != nil && phone != "" &&
+			(*userByEmail.Phone != phone) {
 			return nil, u.Error{Message:"Ошибка идентификации пользователя",
 				Errors: map[string]interface{}{
 					"phone":"Пользователь с указанным email имеет другой номер телефона",
@@ -217,8 +217,8 @@ func getCustomerFromInput(account models.Account, userHashId, email, phone, name
 		}
 		// Найден только один пользователь = и у него указан телефон и в заявке у него другой телефон
 		if errPhone == nil && errEmail != nil &&
-			userByPhone.Email != "" && email != "" &&
-			(userByPhone.Email != email) {
+			userByPhone.Email != nil && email != "" &&
+			(*userByPhone.Email != email) {
 			return nil, u.Error{Message:"Ошибка идентификации пользователя",
 				Errors: map[string]interface{}{
 					"email":"Пользователь с указанным телефоном имеет другой email",
@@ -233,12 +233,12 @@ func getCustomerFromInput(account models.Account, userHashId, email, phone, name
 		}
 		if user.Id < 1 {
 			var _user models.User
-			_user.Email = email
-			_user.Phone = phone
+			_user.Email = &email
+			_user.Phone = &phone
 
-			_user.Name = name
-			_user.Surname = surname
-			_user.Patronymic = patronymic
+			_user.Name 		= &name
+			_user.Surname 	= &surname
+			_user.Patronymic = &patronymic
 
 			// 1.3 Роль - клиент
 			role, err := account.GetRoleByTag(models.RoleClient)
@@ -409,8 +409,8 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 	// 9. Создаем заказ
 	var _order models.Order
 
-	_order.CustomerComment = input.CustomerComment
-	_order.ManagerId = manager.Id
+	_order.CustomerComment = &input.CustomerComment
+	_order.ManagerId = &manager.Id
 	_order.Individual = input.Individual
 	_order.WebSiteId = webSite.Id
 	_order.CustomerId = customer.Id
@@ -519,8 +519,8 @@ func createOrderFromCallbackPhone(w http.ResponseWriter, input CreateOrderForm, 
 	// 9. Создаем заказ
 	var _order models.Order
 
-	_order.CustomerComment = input.CustomerComment
-	_order.ManagerId = manager.Id
+	_order.CustomerComment = &input.CustomerComment
+	_order.ManagerId = &manager.Id
 	_order.Individual = input.Individual
 	_order.WebSiteId = webSite.Id
 	_order.CustomerId = customer.Id
@@ -611,8 +611,8 @@ func createOrderFromCallbackForm(w http.ResponseWriter, input CreateOrderForm, a
 	// 9. Создаем заказ
 	var _order models.Order
 
-	_order.CustomerComment = input.CustomerComment
-	_order.ManagerId = manager.Id
+	_order.CustomerComment = &input.CustomerComment
+	_order.ManagerId = &manager.Id
 	_order.Individual = input.Individual
 	_order.WebSiteId = webSite.Id
 	_order.CustomerId = customer.Id

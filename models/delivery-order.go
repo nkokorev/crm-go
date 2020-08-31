@@ -3,48 +3,47 @@ package models
 import (
 	"database/sql"
 	"fmt"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 	"time"
 )
-
 type DeliveryOrder struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Данные заказа
-	OrderId 	uint	`json:"orderId" gorm:"type:int;not null"`
+	OrderId 	*uint	`json:"order_id" gorm:"type:int;"`
 	// Order	*Order	`json:"-"`
 
 	// Данные заказчика
-	CustomerId 	uint	`json:"customerId" gorm:"type:int;not null"`
+	CustomerId 	uint	`json:"customer_id" gorm:"type:int;not null"`
 	Customer	User	`json:"customer"`
 
 	// Магазин (сайт) с которого пришел заказ. НЕ может быть null.
-	WebSiteId 	uint	`json:"webSiteId" gorm:"type:int;not null;"`
-	WebSite		WebSite	`json:"webSite"`
+	WebSiteId 	uint	`json:"web_site_id" gorm:"type:int;not null;"`
+	WebSite		WebSite	`json:"web_site"`
 
 	// Тип доставки
 	Code		string 	`json:"code" gorm:"type:varchar(32);"`
-	MethodId 	uint	`json:"methodId" gorm:"type:int;not null;"`
+	MethodId 	uint	`json:"method_id" gorm:"type:int;not null;"`
 
 	Address		string 	`json:"address" gorm:"type:varchar(255);"`
-	PostalCode	string 	`json:"postalCode" gorm:"type:varchar(32);"`
+	PostalCode	string 	`json:"postal_code" gorm:"type:varchar(32);"`
 	Delivery	Delivery	`json:"delivery" gorm:"-"` // << preload
 
 	// Фиксируем стоимость
-	AmountId  	uint			`json:"amountId" gorm:"type:int;not null;"`
+	AmountId  	uint			`json:"amount_id" gorm:"type:int;not null;"`
 	Amount  	PaymentAmount	`json:"amount"`
 
 	// Статус заказа
-	StatusId  	uint			`json:"statusId" gorm:"type:int;"`
+	StatusId  	uint			`json:"status_id" gorm:"type:int;"`
 	Status		DeliveryStatus	`json:"status" gorm:"preload"`
 
-	CreatedAt 	time.Time `json:"createdAt"`
-	UpdatedAt 	time.Time `json:"updatedAt"`
+	CreatedAt 	time.Time `json:"created_at"`
+	UpdatedAt 	time.Time `json:"updated_at"`
 }
 
 // ############# Entity interface #############
@@ -58,12 +57,17 @@ func (DeliveryOrder) SystemEntity() bool { return false }
 // ############# Entity interface #############
 
 func (DeliveryOrder) PgSqlCreate() {
-	db.AutoMigrate(&DeliveryOrder{})
-	db.Model(&DeliveryOrder{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	// db.Model(&DeliveryOrder{}).AddForeignKey("order_id", "orders(id)", "CASCADE", "CASCADE")
-	db.Model(&DeliveryOrder{}).AddForeignKey("status_id", "delivery_statuses(id)", "RESTRICT", "CASCADE")
+	if err := db.Migrator().CreateTable(&DeliveryOrder{}); err != nil {log.Fatal(err)}
+	// db.Model(&DeliveryOrder{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&DeliveryOrder{}).AddForeignKey("status_id", "delivery_statuses(id)", "RESTRICT", "CASCADE")
+	err := db.Exec("ALTER TABLE delivery_orders " +
+		"ADD CONSTRAINT delivery_orders_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT delivery_orders_status_id_fkey FOREIGN KEY (status_id) REFERENCES delivery_statuses(id) ON DELETE RESTRICT ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (deliveryOrder *DeliveryOrder) BeforeCreate(scope *gorm.Scope) error {
+func (deliveryOrder *DeliveryOrder) BeforeCreate(tx *gorm.DB) error {
 	deliveryOrder.Id = 0
 
 	var lastIdx sql.NullInt64
@@ -75,7 +79,7 @@ func (deliveryOrder *DeliveryOrder) BeforeCreate(scope *gorm.Scope) error {
 
 	return nil
 }
-func (deliveryOrder *DeliveryOrder) AfterFind() (err error) {
+func (deliveryOrder *DeliveryOrder) AfterFind(tx *gorm.DB) (err error) {
 
 	delivery, err := Account{Id: deliveryOrder.AccountId}.GetDeliveryByCode(deliveryOrder.Code, deliveryOrder.MethodId)
 	if err == nil {
@@ -84,7 +88,7 @@ func (deliveryOrder *DeliveryOrder) AfterFind() (err error) {
 	}
 	return nil
 }
-func (deliveryOrder *DeliveryOrder) AfterCreate(scope *gorm.Scope) (error) {
+func (deliveryOrder *DeliveryOrder) AfterCreate(tx *gorm.DB) (error) {
 	event.AsyncFire(Event{}.DeliveryOrderCreated(deliveryOrder.AccountId, deliveryOrder.PublicId))
 	return nil
 }
@@ -155,13 +159,13 @@ func (deliveryOrder *DeliveryOrder) loadByPublicId() error {
 	return nil
 }
 
-func (DeliveryOrder) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (DeliveryOrder) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return DeliveryOrder{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 	
 	deliveryOrders := make([]DeliveryOrder,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -212,10 +216,16 @@ func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy
 
 func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}) error {
 
-	delete(input, "order")
 	delete(input, "customer")
-	delete(input, "Customer")
-
+	delete(input, "web_site")
+	delete(input, "delivery")
+	delete(input, "amount")
+	delete(input, "status")
+	
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","order_id","customer_id","web_site_id","method_id","amount_id","status_id"}); err != nil {
+		return err
+	}
 
 	// Отметка на будущее для события
 	_newStatusId, ok := input["statusId"].(float64)
@@ -224,7 +234,7 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}) error {
 	// if err := db.Set("gorm:association_autoupdate", false).Model(deliveryOrder).Where("id = ?", deliveryOrder.Id).
 	// if err := db.Model(&DeliveryOrder{}).Where("id = ?", deliveryOrder.Id).
 	if err := deliveryOrder.GetPreloadDb(true,false, false).Where("id = ?", deliveryOrder.Id).
-		Omit("id", "account_id","created_at").Update(input).Error; err != nil {
+		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
 		return err
 	}
 
@@ -244,7 +254,7 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}) error {
 		case "completed":
 			// Обновляем платеж
 			var order Order
-			err := Account{Id: deliveryOrder.AccountId}.LoadEntity(&order, deliveryOrder.OrderId)
+			err := Account{Id: deliveryOrder.AccountId}.LoadEntity(&order, *deliveryOrder.OrderId)
 			if err != nil {
 				return utils.Error{Message: "Не удалось обновить статус платежа - не найден заказ"}
 			}

@@ -2,14 +2,15 @@ package models
 
 import (
 	"fmt"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
+	"log"
 )
 
 type UnitMeasurement struct {
-	Id     uint   `json:"id" gorm:"primary_key"`
+	Id     uint   `json:"id" gorm:"primaryKey"`
 
 	Name 		string `json:"name" gorm:"type:varchar(128);"` // штука, коробка, комплект, киллограмм, грамм,
-	ShortName 	string `json:"shortName" gorm:"type:varchar(128);"` // шт., кор., компл., кг, гр,
+	ShortName 	string `json:"short_name" gorm:"type:varchar(128);"` // шт., кор., компл., кг, гр,
 	Weight 		bool // весовой или нет
 
 	Tag 		string `json:"tag" gorm:"type:varchar(32);"` // для поиска
@@ -18,7 +19,9 @@ type UnitMeasurement struct {
 }
 
 func (UnitMeasurement) PgSqlCreate() {
-	db.CreateTable(&UnitMeasurement{})
+	if err := db.Migrator().CreateTable(&UnitMeasurement{}); err != nil {
+		log.Fatal(err)
+	}
 
 	// 2.
 	units := []UnitMeasurement{
@@ -42,7 +45,7 @@ func (UnitMeasurement) PgSqlCreate() {
 	}
 }
 
-func (um *UnitMeasurement) BeforeCreate(scope *gorm.Scope) error {
+func (um *UnitMeasurement) BeforeCreate(tx *gorm.DB) error {
 	um.Id = 0
 	return nil
 }

@@ -3,21 +3,21 @@ package models
 import (
 	"errors"
 	"github.com/fatih/structs"
-	"github.com/jinzhu/gorm"
 	u "github.com/nkokorev/crm-go/utils"
 	"github.com/segmentio/ksuid"
+	"gorm.io/gorm"
 	"strings"
 	"time"
 )
 
 type EmailAccessToken struct {
-	Token 	string `json:"token"` // json:"token"
-	ActionType 	string `json:"actionType"` // json:"verification, recover (username, password, email), join to account"
-	DestinationEmail string `json:"destinationEmail"` // куда отправлять email и для какого емейла был предназначен токен. Не может быть <null>, только целевые приглашения.
-	OwnerId 	uint `json:"ownerId"` // userId - создатель токена (может быть self)
-	NotificationCount uint `json:"notificationCount"` // число успешных уведомлений
-	NotificationAt time.Time `json:"notificationAt"` // время ПОСЛЕДНЕГО уведомления
-	CreatedAt time.Time `json:"createdAt"`
+	Token 			string `json:"token"` // json:"token"
+	ActionType 		string `json:"action_type"` // json:"verification, recover (username, password, email), join to account"
+	DestinationEmail string `json:"destination_email"` // куда отправлять email и для какого емейла был предназначен токен. Не может быть <null>, только целевые приглашения.
+	OwnerId 		uint `json:"owner_id"` // userId - создатель токена (может быть self)
+	NotificationCount uint `json:"notification_count"` // число успешных уведомлений
+	NotificationAt 	time.Time `json:"notification_at"` // время ПОСЛЕДНЕГО уведомления
+	CreatedAt 		time.Time `json:"created_at"`
 }
 
 var EmailTokenType = struct {
@@ -184,7 +184,8 @@ func (eat *EmailAccessToken) UserEmailVerificationConfirm (user *User) error {
 func (EmailAccessToken) UserDeletePasswordReset(user *User) {
 
 	// Удаляем токен, если находим
-	if !db.Delete(EmailAccessToken{},"(owner_id = ? OR destination_email = ?) AND action_type = ?", user.Id, user.Email, EmailTokenType.USER_EMAIL_RESET_PASSWORD).RecordNotFound() {
+	// todo: лютая хуйня вроде как __^^__
+	if err := db.Delete(EmailAccessToken{},"(owner_id = ? OR destination_email = ?) AND action_type = ?", user.Id, user.Email, EmailTokenType.USER_EMAIL_RESET_PASSWORD).Error; err != nil {
 		// log.Fatal()...
 	}
 }
@@ -195,12 +196,12 @@ func (EmailAccessToken) UserDeletePasswordReset(user *User) {
 func (eat *EmailAccessToken) CreateInviteVerificationToken(user *User) error {
 
 	// Надо понять, создавать новый или использовать существующий
-	if !db.First(eat,"owner_id = ? AND destination_email = ? AND action_type = ?", user.Id, user.Email, EmailTokenType.USER_EMAIL_INVITE_VERIFICATION).RecordNotFound() {
+	if err := db.First(eat,"owner_id = ? AND destination_email = ? AND action_type = ?", user.Id, user.Email, EmailTokenType.USER_EMAIL_INVITE_VERIFICATION).Error; err!=nil {
 		return nil
 	}
 
 	eat.OwnerId = user.Id
-	eat.DestinationEmail = user.Email
+	eat.DestinationEmail = *user.Email
 	eat.ActionType = EmailTokenType.USER_EMAIL_INVITE_VERIFICATION
 	eat.NotificationCount = 0
 
@@ -212,12 +213,12 @@ func (eat *EmailAccessToken) CreateInviteVerificationToken(user *User) error {
 func (eat *EmailAccessToken) CreateResetPasswordToken(user *User) error {
 
 	// Надо понять, создавать новый или использовать существующий
-	if !db.First(eat,"owner_id = ? AND destination_email = ? AND action_type = ?", user.Id, user.Email, EmailTokenType.USER_EMAIL_RESET_PASSWORD).RecordNotFound() {
+	if err := db.First(eat,"owner_id = ? AND destination_email = ? AND action_type = ?", user.Id, user.Email, EmailTokenType.USER_EMAIL_RESET_PASSWORD).Error;err != nil {
 		return nil
 	}
 
 	eat.OwnerId = user.Id
-	eat.DestinationEmail = user.Email
+	eat.DestinationEmail = *user.Email
 	eat.ActionType = EmailTokenType.USER_EMAIL_RESET_PASSWORD
 	eat.NotificationCount = 0
 

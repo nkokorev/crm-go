@@ -2,50 +2,64 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
-	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
+	"log"
 )
 
 // Карточка "товара" в магазине в котором могут быть разные торговые предложения
 type ProductCard struct {
-	Id     				uint `json:"id" gorm:"primary_key"`
-	AccountId 			uint `json:"-" gorm:"type:int;index;not null;"` // потребуется, если productGroupId == null
-	WebSiteId 			uint `json:"webSiteId" gorm:"type:int;index;default:NULL;"` // магазин, к которому относится
-	ProductGroupId 		*uint `json:"productGroupId" gorm:"type:int;index;default:NULL;"` // группа товаров, категория товаров
+	// Id     				uint 	`json:"id" gorm:"primaryKey"`
+	Id        			uint 	`json:"id" gorm:"primarykey"`
+	AccountId 			uint 	`json:"-" gorm:"type:int;index;not null;"` // потребуется, если productGroupId == null
+	WebSiteId 			uint 	`json:"web_site_id" gorm:"type:int;index;"` // магазин, к которому относится
+	WebPageId 			uint 	`json:"web_page_id" gorm:"type:int;index;"` // группа товаров, категория товаров
 
 	Enabled 			bool 	`json:"enabled" gorm:"type:bool;default:true"` // активна ли карточка товара
-	URL 				string `json:"url" gorm:"type:varchar(255);"` // идентификатор страницы (products/syao-chzhun )
-	Breadcrumb 			string `json:"breadcrumb" gorm:"type:varchar(255);default:null;"`
-	Label	 			string `json:"label" gorm:"type:varchar(255);default:'';"` // что выводить в список товаров
+	URL 				string 	`json:"url" gorm:"type:varchar(255);"` // идентификатор страницы (products/syao-chzhun )
+	Breadcrumb 			string 	`json:"breadcrumb" gorm:"type:varchar(255);default:null;"`
+	Label	 			string 	`json:"label" gorm:"type:varchar(255);default:'';"` // что выводить в список товаров
 
-	MetaTitle 			string `json:"metaTitle" gorm:"type:varchar(255);default:null;"`
-	MetaKeywords 		string `json:"metaKeywords" gorm:"type:varchar(255);default:null;"`
-	MetaDescription 	string `json:"metaDescription" gorm:"type:varchar(255);default:null;"`
+	MetaTitle 			string 	`json:"meta_title" gorm:"type:varchar(255);default:null;"`
+	MetaKeywords 		string 	`json:"meta_keywords" gorm:"type:varchar(255);default:null;"`
+	MetaDescription 	string 	`json:"meta_description" gorm:"type:varchar(255);default:null;"`
 
 	// Full description нет т.к. в карточке описание берется от офера
-	ShortDescription 	string `json:"shortDescription" gorm:"type:varchar(255);default:null;"` // для превью карточки товара
-	Description 		string `json:"description" gorm:"type:text;default:null;"` // фулл описание товара
+	ShortDescription 	string 	`json:"short_description" gorm:"type:varchar(255);default:null;"` // для превью карточки товара
+	Description 		string 	`json:"description" gorm:"type:text;default:null;"` // фулл описание товара
 
 	// Хелперы карточки: переключение по цветам, размерам и т.д.
-	// SwitchProducts	 	*pq.StringArray `json:"switchProducts" sql:"type:varchar(255)[];default:null"` // {color, size} Параметры переключения среди предложений
-	//SwitchProducts	 	pq.StringArray `json:"switchProducts" sql:"type:varchar(255)[];default:'{}'"` // {color, size} Параметры переключения среди предложений
-	//SwitchProducts	 	[]string `json:"switchProducts" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // {color, size} Параметры переключения среди предложений
-	SwitchProducts	 	postgres.Jsonb `json:"switchProducts" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // {color, size} Параметры переключения среди предложений
+	// SwitchProducts	 	*pq.StringArray `json:"switch_products" sql:"type:varchar(255)[];default:null"` // {color, size} Параметры переключения среди предложений
+	//SwitchProducts	 	pq.StringArray `json:"switch_products" sql:"type:varchar(255)[];default:'{}'"` // {color, size} Параметры переключения среди предложений
+	//SwitchProducts	 	[]string `json:"switch_products" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // {color, size} Параметры переключения среди предложений
+	SwitchProducts	 	datatypes.JSON `json:"switch_products"` // {color, size} Параметры переключения среди предложений
 
-	// ProductGroups 		[]ProductGroup `json:"productGroups" gorm:"many2many:product_group_product_cards"` // для разделов new и т.д.
-	ProductGroup 		ProductGroup `json:"-"` // для разделов new и т.д.
-	WebSite		 		WebSite `json:"-"` // к какому магазину относится
-	Products 			[]Product `json:"products" gorm:"many2many:product_card_products"` // можно заводить два схожих продукта, разных по цвету
+	// ProductGroup 		ProductGroup 	`json:"-" gorm:"-"`
+	// WebPage 			WebPage 	`json:"-" gorm:"-"`
+	WebPages 			[]WebPage 	`json:"web_pages" gorm:"many2many:web_page_product_card;"`
+	WebSite		 		WebSite 	`json:"-" gorm:"-"`
+	// Products 			[]*Product 		`json:"products" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
+	Products 			[]Product 	`json:"products" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
+	// Products 			[]Product 		`json:"products" gorm:"many2many:product_card_products;"`
 }
 
 func (ProductCard) PgSqlCreate() {
-	db.CreateTable(&ProductCard{})
-	db.Model(&ProductCard{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	if err := db.Migrator().AutoMigrate(&ProductCard{}); err != nil { log.Fatal(err) }
+	// db.Model(&ProductCard{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE product_cards ADD CONSTRAINT product_cards_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
+
+	err = db.SetupJoinTable(&ProductCard{}, "Products", &ProductCardProduct{})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func (productCard *ProductCard) BeforeCreate(scope *gorm.Scope) error {
+func (productCard *ProductCard) BeforeCreate(tx *gorm.DB) error {
 	productCard.Id = 0
 	return nil
 }
@@ -58,8 +72,12 @@ func (productCard ProductCard) getId() uint {
 // ######### CRUD Functions ############
 func (productCard ProductCard) create() (*ProductCard, error) {
 	var productCardNew = productCard
-	if err := db.Create(&productCardNew).First(&productCardNew).Error; err != nil {
+	if err := db.Create(&productCardNew).Error; err != nil {
 		return nil, err
+	}
+	err := db.Where("id = ?", productCardNew.Id).Find(&productCardNew).Error
+	if err != nil {
+		 return nil, err
 	}
 
 	event.AsyncFire(Event{}.ProductCardCreated(productCardNew.AccountId, productCardNew.Id))
@@ -134,7 +152,7 @@ func (productCard *ProductCard) delete () error {
 // ######### END CRUD Functions ############
 
 // ######### SHOP PRODUCT Functions ############
-func (webSite WebSite) CreateProductCard(input ProductCard, group *ProductGroup) (*ProductCard, error) {
+/*func (webSite WebSite) CreateProductCard(input ProductCard, group *ProductGroup) (*ProductCard, error) {
 
 	if webSite.Id < 1 {
 		return nil, utils.Error{Message: "Не верно указан id магазина"}
@@ -149,13 +167,13 @@ func (webSite WebSite) CreateProductCard(input ProductCard, group *ProductGroup)
 		return input.create()
 	}
 
-}
+}*/
 
 func (webSite WebSite) GetProductCard(cardId uint) (*ProductCard, error) {
 	return ProductCard{}.get(cardId)
 }
 
-func (webSite WebSite) GetProductCardList(offset, limit int, search string, products bool) ([]ProductCard, uint, error) {
+func (webSite WebSite) GetProductCardList(offset, limit int, search string, products bool) ([]ProductCard, int64, error) {
 	cards := make([]ProductCard,0)
 
 	// if need to search
@@ -192,7 +210,7 @@ func (webSite WebSite) GetProductCardList(offset, limit int, search string, prod
 	}
 
 	// len(cards) != всему списку!
-	var total uint
+	var total int64
 	err := db.Model(&ProductCard{}).Where("account_id = ? AND web_site_id = ?", webSite.AccountId, webSite.Id).Count(&total).Error
 	if err != nil {
 		return nil, 0, utils.Error{Message: "Ошибка определения объема"}
@@ -275,8 +293,17 @@ func (account Account) DeleteProductCard(cardId uint) error {
 ////// ########
 
 func (productCard ProductCard) AppendProduct(product *Product) error {
-	if err := db.Model(&productCard).Association("Products").Append(product).Error; err != nil {
-		return err
+
+	if product.Id > 0 {
+		if err := db.Model(&ProductCardProduct{}).Create(&ProductCardProduct{ProductId: product.Id, ProductCardId: productCard.Id}).Error; err != nil {
+			return err
+		}
+	} else {
+		// if err := db.Model(&productCard).Association("Products").Append(product); err != nil {
+		// if err := db.Debug().Model(product).Association("ProductCards").Replace(&productCard); err != nil {
+		if err := db.Debug().Set("gorm:saveAssociations", false).Model(&productCard).Association("Products").Append(product); err != nil {
+			return err
+		}
 	}
 
 	account, err := GetAccount(productCard.AccountId)
@@ -285,4 +312,25 @@ func (productCard ProductCard) AppendProduct(product *Product) error {
 	}
 
 	return nil
+}
+
+type ProductCardProduct struct {
+	ProductId  uint
+	ProductCardId uint
+}
+func (ProductCardProduct) BeforeCreate(db *gorm.DB) error {
+	// ...
+	return nil
+}
+
+func (productCard ProductCard) ExistProduct(product *Product) bool {
+	if product.Id < 1 {
+		return false
+	}
+	var count int64
+	db.Model(&ProductCardProduct{}).Where("product_id = ? AND product_card_id = ?", product.Id, productCard.Id).Count(&count)
+	if count > 0 {
+	 return true
+	}
+	return false
 }

@@ -38,7 +38,7 @@ func DeliveryStatusCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST DeliveryStatus Created")
-	resp["deliveryStatus"] = deliveryStatus
+	resp["delivery_status"] = deliveryStatus
 	u.Respond(w, resp)
 }
 
@@ -63,7 +63,7 @@ func DeliveryStatusGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET DeliveryStatus")
-	resp["deliveryStatus"] = deliveryStatus
+	resp["delivery_status"] = deliveryStatus
 	u.Respond(w, resp)
 }
 
@@ -74,7 +74,7 @@ func DeliveryStatusGetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var total uint = 0
+	var total int64 = 0
 	deliveryStatuses := make([]models.Entity,0)
 	
 	deliveryStatuses, total, err = account.GetListEntity(&models.DeliveryStatus{},"id")
@@ -85,7 +85,7 @@ func DeliveryStatusGetList(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET DeliveryStatus List")
 	resp["total"] = total
-	resp["deliveryStatuses"] = deliveryStatuses
+	resp["delivery_statuses"] = deliveryStatuses
 	u.Respond(w, resp)
 }
 
@@ -128,7 +128,7 @@ func DeliveryStatusUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH DeliveryStatus Update")
-	resp["deliveryStatus"] = deliveryStatus
+	resp["delivery_status"] = deliveryStatus
 	u.Respond(w, resp)
 }
 

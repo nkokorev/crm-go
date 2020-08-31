@@ -2,24 +2,24 @@ package models
 
 import (
 	"database/sql"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 )
 
 type UsersSegment struct {
-	Id     			uint   	`json:"id" gorm:"primary_key"`
-	PublicId		uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"`
+	Id     			uint   	`json:"id" gorm:"primaryKey"`
+	PublicId		uint   	`json:"public_id" gorm:"type:int;index;not null;default:1"`
 	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Имя кампании сегмента: 'активные участники', 'только клиенты', 'майские подписчики'
 	Name 			string 		`json:"name" gorm:"type:varchar(128);"`
 
 	// true = AND ; false = ANY
-	StrictMatching 		bool 	`json:"strictMatching" gorm:"type:bool;default:true;"`
+	StrictMatching 		bool 	`json:"strict_matching" gorm:"type:bool;default:true;"`
 
 	// персональные настройки сегмента
-	UserSegmentRules []UserSegmentConditions `json:"userSegmentRules" gorm:"many2many:user_segments_user_segment_conditions"`
+	UserSegmentRules []UserSegmentCondition `json:"user_segment_rules" gorm:"many2many:user_segments_user_segment_conditions"`
 }
 
 // ############# Entity interface #############
@@ -33,10 +33,14 @@ func (UsersSegment) SystemEntity() bool { return false }
 // ############# Entity interface #############
 
 func (UsersSegment) PgSqlCreate() {
-	db.CreateTable(&UsersSegment{})
-	db.Model(&UsersSegment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	if err := db.Migrator().AutoMigrate(&UsersSegment{}); err != nil {log.Fatal(err)}
+	// db.Model(&UsersSegment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE users_segments ADD CONSTRAINT users_segments_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (usersSegment *UsersSegment) BeforeCreate(scope *gorm.Scope) error {
+func (usersSegment *UsersSegment) BeforeCreate(tx *gorm.DB) error {
 	usersSegment.Id = 0
 
 	// PublicId
@@ -48,7 +52,7 @@ func (usersSegment *UsersSegment) BeforeCreate(scope *gorm.Scope) error {
 
 	return nil
 }
-func (usersSegment *UsersSegment) AfterFind() (err error) {
+func (usersSegment *UsersSegment) AfterFind(tx *gorm.DB) (err error) {
 	return nil
 }
 
@@ -99,13 +103,13 @@ func (usersSegment *UsersSegment) loadByPublicId() error {
 
 	return nil
 }
-func (UsersSegment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (UsersSegment) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return UsersSegment{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-func (UsersSegment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (UsersSegment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	usersSegments := make([]UsersSegment,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -199,7 +203,7 @@ func (usersSegment UsersSegment) Execute(data map[string]interface{}) error {
 }
 
 // Самая важная функция - возвращает пользователей согласно сегменту
-func (usersSegment UsersSegment) ChunkUsers(offset uint, limit uint) ([]User, uint, error) {
+func (usersSegment UsersSegment) ChunkUsers(offset int64, limit uint) ([]User, int64, error) {
 	// Тут идет сборка всех условий и т.д., но пока парсим просто всех пользователей
 
 	users := make([]User,0)
@@ -208,7 +212,7 @@ func (usersSegment UsersSegment) ChunkUsers(offset uint, limit uint) ([]User, ui
 	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
 		Select("account_users.account_id, account_users.role_id, users.*").
 		Where("account_users.account_id = ? AND users.subscribed = true AND char_length(users.email) > 6", usersSegment.AccountId).
-		Offset(offset).Limit(limit).
+		Offset(int(offset)).Limit(int(limit)).
 		Find(&users).Error
 	if err != nil {
 		log.Printf("ChunkUsers:  %v", err)
@@ -216,7 +220,7 @@ func (usersSegment UsersSegment) ChunkUsers(offset uint, limit uint) ([]User, ui
 	}
 
 	// Определяем total
-	var total = uint(0)
+	var total = int64(0)
 	err = db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
 		Select("account_users.account_id, account_users.role_id, users.*").
 		Where("account_users.account_id = ? AND users.subscribed = true AND char_length(users.email) > 6", usersSegment.AccountId).

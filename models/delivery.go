@@ -46,11 +46,11 @@ type DeliveryData struct {
 	Code 	string 	`json:"code"`
 
 	Address		string 	`json:"address"` 		// адрес доставки
-	PostalCode	string 	`json:"postalCode"`
+	PostalCode	string 	`json:"postal_code"`
 }
 
 type CartData struct {
-	ProductId 	uint	`json:"productId"`	// id product
+	ProductId 	uint	`json:"product_id"`	// id product
 	Quantity	uint	`json:"quantity"`	// число позиций
 }
 

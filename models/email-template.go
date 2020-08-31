@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fatih/structs"
-	"github.com/jinzhu/gorm"
-	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
 	"github.com/toorop/go-dkim"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
 	"html/template"
 	"log"
 	"math/rand"
@@ -25,37 +25,42 @@ import (
 // Template of email body message
 type EmailTemplate struct {
 
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"`
-	HashId 		string 	`json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"`
+	HashId 		string 	`json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name 		string	`json:"name" gorm:"type:varchar(255);not null"` // inside name of mail
-	Description	string 	`json:"description" gorm:"type:varchar(255);default:''"` // краткое назначение письма
-	PreviewText string 	`json:"previewText" gorm:"type:varchar(255);default:''"` // превью текст может использоваться, да
+	Description	string 	`json:"description" gorm:"type:varchar(255);"` // краткое назначение письма
+	PreviewText string 	`json:"preview_text" gorm:"type:varchar(255);"` // превью текст может использоваться, да
 
-	HTMLData string `json:"htmlData" gorm:"type:text;"` // сам шаблон письма
+	HTMLData 	string `json:"html_data" gorm:"type:text;"` // сам шаблон письма
 
-	Public bool `json:"public" gorm:"type:bool;"` // показывать ли на домене public
+	Public 		bool `json:"public" gorm:"type:bool;"` // показывать ли на домене public
 
 	// User *User `json:"-" sql:"-"` // Пользователь, который получит сообщение
 	// Json pgtype.JSON `json:"json" gorm:"type:json;default:'{\"Example\":\"Тестовые данные в формате json\"}'"`
-	JsonData postgres.Jsonb `json:"jsonData" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	// JsonData postgres.Jsonb `json:"json_data" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	JsonData 	datatypes.JSON `json:"json_data"`
 
-	// GORM vars
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
+	
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 	// Шаблоны не удаляемы теперь для MTAHistory
-	DeletedAt *time.Time `json:"deletedAt" sql:"index"`
+	DeletedAt *time.Time `json:"deleted_at"`
 }
 
 func (EmailTemplate) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
-	db.CreateTable(&EmailTemplate{})
-	db.Model(&EmailTemplate{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	if err := db.Migrator().CreateTable(&EmailTemplate{}); err != nil {log.Fatal(err)}
+	// db.Model(&EmailTemplate{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE email_templates ADD CONSTRAINT email_templates_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (emailTemplate *EmailTemplate) BeforeCreate(scope *gorm.Scope) error {
+func (emailTemplate *EmailTemplate) BeforeCreate(tx *gorm.DB) error {
 	emailTemplate.Id = 0
 	emailTemplate.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 
@@ -137,13 +142,13 @@ func (EmailTemplate) getByHashId(hashId string) (*EmailTemplate, error) {
 	}
 	return &emailTemplate, nil
 }
-func (EmailTemplate) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (EmailTemplate) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return (EmailTemplate{}).getPaginationList(accountId, 0, 25, sortBy, "", nil)
 }
-func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	emailTemplates := make([]EmailTemplate,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -193,10 +198,11 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 
 func (emailTemplate *EmailTemplate) update(input map[string]interface{}) error {
 
-	input = utils.FixJSONB_String(input, []string{"jsonData"})
+	input = utils.FixJSONB_String(input, []string{"json_data"})
 
-	if err := emailTemplate.GetPreloadDb(true,false,false).Where(" id = ?", emailTemplate.Id).
-		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
+	if err := emailTemplate.GetPreloadDb(false,false,false).Where(" id = ?", emailTemplate.Id).
+		Omit("id", "public_id","account_id","created_at").Updates(input).Error; err != nil {
+			fmt.Println(err)
 		return err
 	}
 
@@ -272,7 +278,12 @@ func (emailTemplate EmailTemplate) GetHTML(viewData *ViewData) (html string, err
 
 	body := new(bytes.Buffer)
 
-	tmpl, err := template.New(emailTemplate.Name).Parse(emailTemplate.HTMLData)
+	// tmpl, err := template.New(emailTemplate.Name).Parse(emailTemplate.HTMLData)
+	tmpl, err  := template.New(emailTemplate.Name).Funcs(template.FuncMap{
+		"Deref": func(i *int) int { return *i },
+		"Cmp":   func(i *string) string { return *i },
+	}).Parse(emailTemplate.HTMLData)
+
 	if err != nil {
 		return "", err
 	}
@@ -281,7 +292,8 @@ func (emailTemplate EmailTemplate) GetHTML(viewData *ViewData) (html string, err
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("Ошибка email-шаблона: %s\r", err))
 	}
-	
+
+	fmt.Println("Данные шаблона успешно получены")
 	return body.String(), nil
 }
 
@@ -485,11 +497,16 @@ func (emailTemplate EmailTemplate) Validate(viewData *ViewData) error {
 	
 	body := new(bytes.Buffer)
 
-	tmpl, err := template.New(emailTemplate.Name).Parse(emailTemplate.HTMLData)
-	if err != nil { return err }
+	tmpl, err  := template.New(emailTemplate.Name).Funcs(template.FuncMap{
+		"Deref": func(i *int) int { return *i },
+		"Cmp":   func(i *string) string { return *i },
+	}).Parse(emailTemplate.HTMLData)
+
+	// tmpl, err := template.New(emailTemplate.Name).Parse(emailTemplate.HTMLData)
+	if err != nil { return utils.Error{Message: err.Error()} }
 
 	err = tmpl.Execute(body, viewData)
-	if err != nil { return err }
+	if err != nil { return utils.Error{Message: err.Error()} }
 
 	return nil
 }

@@ -38,7 +38,7 @@ func OrderChannelCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST OrderChannel Created")
-	resp["orderChannel"] = orderChannel
+	resp["order_channel"] = orderChannel
 	u.Respond(w, resp)
 }
 
@@ -63,7 +63,7 @@ func OrderChannelGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET OrderChannel")
-	resp["orderChannel"] = orderChannel
+	resp["order_channel"] = orderChannel
 	u.Respond(w, resp)
 }
 
@@ -86,7 +86,7 @@ func OrderChannelGetListPagination(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -97,7 +97,7 @@ func OrderChannelGetListPagination(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 
-	var total uint = 0
+	var total int64 = 0
 	orderChannels := make([]models.Entity,0)
 	
 	orderChannels, total, err = account.GetPaginationListEntity(&models.OrderChannel{}, offset, limit, sortBy, search, nil)
@@ -108,7 +108,7 @@ func OrderChannelGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET OrderChannel Pagination List")
 	resp["total"] = total
-	resp["orderChannels"] = orderChannels
+	resp["order_channels"] = orderChannels
 	u.Respond(w, resp)
 }
 
@@ -151,7 +151,7 @@ func OrderChannelUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH OrderChannel Update")
-	resp["orderChannel"] = orderChannel
+	resp["order_channel"] = orderChannel
 	u.Respond(w, resp)
 }
 

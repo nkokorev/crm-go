@@ -40,7 +40,7 @@ func EventItemCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST Observer Item Created")
-	resp["eventItem"] = eventItem
+	resp["event_item"] = eventItem
 	u.Respond(w, resp)
 }
 
@@ -65,7 +65,7 @@ func EventItemGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET Event List")
-	resp["eventItem"] = eventItem
+	resp["event_item"] = eventItem
 	u.Respond(w, resp)
 }
 
@@ -87,7 +87,7 @@ func EventItemGetList(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -100,7 +100,7 @@ func EventItemGetList(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
-	var total uint = 0
+	var total int64 = 0
 	observerItems := make([]models.Entity,0)
 	if all == "true" && allOk {
 		observerItems, total, err = account.GetListEntity(&models.EventItem{}, sortBy)
@@ -120,7 +120,7 @@ func EventItemGetList(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET System Event Pagination List")
 	resp["total"] = total
-	resp["eventItems"] = observerItems
+	resp["event_items"] = observerItems
 	u.Respond(w, resp)
 }
 
@@ -142,7 +142,7 @@ func EventItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -154,7 +154,7 @@ func EventItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
-	var total uint = 0
+	var total int64 = 0
 	observerItems := make([]models.Entity,0)
 
 	if all == "true" && allOk {
@@ -175,7 +175,7 @@ func EventItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET System Event Pagination List")
 	resp["total"] = total
-	resp["eventItems"] = observerItems
+	resp["event_items"] = observerItems
 	u.Respond(w, resp)
 }
 
@@ -219,7 +219,7 @@ func EventItemUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH Event Item Update")
-	resp["eventItem"] = eventItem
+	resp["event_item"] = eventItem
 	u.Respond(w, resp)
 }
 

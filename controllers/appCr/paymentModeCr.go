@@ -38,7 +38,7 @@ func PaymentModeCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST PaymentMode Created")
-	resp["paymentMode"] = paymentMode
+	resp["payment_mode"] = paymentMode
 	u.Respond(w, resp)
 }
 
@@ -63,7 +63,7 @@ func PaymentModeGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET PaymentMode")
-	resp["paymentMode"] = paymentMode
+	resp["payment_mode"] = paymentMode
 	u.Respond(w, resp)
 }
 
@@ -74,7 +74,7 @@ func PaymentModeGetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var total uint = 0
+	var total int64 = 0
 	paymentModes := make([]models.Entity,0)
 	
 	paymentModes, total, err = account.GetListEntity(&models.PaymentMode{},"id")
@@ -85,7 +85,7 @@ func PaymentModeGetList(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET PaymentMode List")
 	resp["total"] = total
-	resp["paymentModes"] = paymentModes
+	resp["payment_modes"] = paymentModes
 	u.Respond(w, resp)
 }
 
@@ -128,7 +128,7 @@ func PaymentModeUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH PaymentMode Update")
-	resp["paymentMode"] = paymentMode
+	resp["payment_mode"] = paymentMode
 	u.Respond(w, resp)
 }
 

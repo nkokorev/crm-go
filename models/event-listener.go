@@ -2,61 +2,67 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 	"time"
 )
 
 // Связывает Event с собственными функциями Handler
 type EventListener struct {
-	Id     		uint   	`json:"id" gorm:"primary_key"`
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name        string   `json:"name" gorm:"type:varchar(255);"` // для чего ?
 	
-	EventId		uint `json:"eventId" gorm:"type:int;"` // аналог EventName
-	HandlerId	uint `json:"handlerId" gorm:"type:int;"` // аналог EventName
+	EventId		uint 	`json:"event_id" gorm:"type:int;"` // аналог EventName
+	HandlerId	uint 	`json:"handler_id" gorm:"type:int;"` // аналог EventName
 
-	EntityId	uint 	`json:"entityId" gorm:"type:int;"` // Id целевого entity
-	// EntityType	string 	`json:"entityType" gorm:"type:varchar(50);default:''"` // таблица / Объект
+	EntityId	uint 	`json:"entity_id" gorm:"type:int;"` // Id целевого entity
+	// EntityType	string 	`json:"entity_type" gorm:"type:varchar(50);default:''"` // таблица / Объект
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false"`
 
 	Priority 	int		`json:"priority" gorm:"type:int;default:0"` // Приоритет выполнения, по умолчанию 0 - Normal
 
-	Event 		EventItem 	`json:"event"  gorm:"preload:true"`
-	Handler 	HandlerItem		`json:"handler"  gorm:"preload:true"`       // gorm:"preload:true"
+	Event 		EventItem 		`json:"event"`
+	Handler 	HandlerItem		`json:"handler"`       // gorm:"preload:true"
 
 	// TargetName string `json:"-" gorm:"-"`// Имя функции, которую вызывают локально
 
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func (EventListener) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
-	db.CreateTable(&EventListener{})
-	db.Model(&EventListener{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&EventListener{}).AddForeignKey("event_id", "event_items(id)", "CASCADE", "CASCADE")
-	db.Model(&EventListener{}).AddForeignKey("handler_id", "handler_items(id)", "CASCADE", "CASCADE")
-
+	db.Migrator().CreateTable(&EventListener{})
+	// db.Model(&EventListener{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&EventListener{}).AddForeignKey("event_id", "event_items(id)", "CASCADE", "CASCADE")
+	// db.Model(&EventListener{}).AddForeignKey("handler_id", "handler_items(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE event_listeners " +
+		"ADD CONSTRAINT event_listeners_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT event_listeners_event_id_fkey FOREIGN KEY (event_id) REFERENCES event_items(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT event_listeners_handler_id_fkey FOREIGN KEY (handler_id) REFERENCES handler_items(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
 
-func (eventListener *EventListener) BeforeCreate(scope *gorm.Scope) error {
+func (eventListener *EventListener) BeforeCreate(tx *gorm.DB) error {
 	eventListener.Id = 0
 	return nil
 }
 
 // ############# Entity interface #############
-func (eventListener EventListener) GetId() uint { return eventListener.Id }
-func (eventListener *EventListener) setId(id uint) { eventListener.Id = id }
-func (eventListener *EventListener) setPublicId(id uint) { eventListener.Id = id }
-func (eventListener EventListener) GetAccountId() uint { return eventListener.AccountId }
+func (eventListener EventListener) GetId() uint           { return eventListener.Id }
+func (eventListener *EventListener) setId(id uint)        { eventListener.Id = id }
+func (eventListener *EventListener) setPublicId(id uint)  { eventListener.Id = id }
+func (eventListener EventListener) GetAccountId() uint    { return eventListener.AccountId }
 func (eventListener *EventListener) setAccountId(id uint) { eventListener.AccountId = id }
-func (eventListener EventListener) SystemEntity() bool { return false }
+func (eventListener EventListener) SystemEntity() bool    { return false }
 // ############# END Of Entity interface #############
 
 func (eventListener EventListener) create() (Entity, error)  {
@@ -74,7 +80,7 @@ func (EventListener) get(id uint) (Entity, error) {
 
 	var eventListener EventListener
 
-	err := db.Preload("Event").Preload("Handler").First(&eventListener, id).Error
+	err := (&EventListener{}).GetPreloadDb(false,false,true).First(&eventListener, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +88,7 @@ func (EventListener) get(id uint) (Entity, error) {
 }
 func (eventListener *EventListener) load() error {
 
-	err := db.Preload("Event").Preload("Handler").First(eventListener, eventListener.Id).Error
+	err := eventListener.GetPreloadDb(false,true,true).First(eventListener, eventListener.Id).Error
 	if err != nil {
 		return err
 	}
@@ -115,39 +121,18 @@ func (EventListener) getEnabledByName(accountId uint, eventName string) ([]Event
 
 	return eventListeners, nil
 }
-func (EventListener) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
-
-	eventListeners := make([]EventListener,0)
-	var total uint
-
-	err := db.Model(&EventListener{}).Preload("Event").Preload("Handler").Limit(100).Order(sortBy).Where( "account_id = ?", accountId).
-		Find(&eventListeners).Error
-	if err != nil && err != gorm.ErrRecordNotFound{
-		return nil, 0, err
-	}
-
-	// Определяем total
-	err = db.Model(&EventListener{}).Where("account_id = ?", accountId).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-	}
-
-	// Преобразуем полученные данные
-	entities := make([]Entity,len(eventListeners))
-	for i := range eventListeners {
-		entities[i] = &eventListeners[i]
-	}
-
-	return entities, total, nil
+func (EventListener) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+	return EventListener{}.getPaginationList(accountId,0,200,sortBy,"", nil)
 }
-func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	type EventListenerSearch struct {
 		EventListener
 		EventItem
 	}
-	eventListeners := make([]EventListenerSearch,0)
-	var total uint
+	// eventListeners := make([]EventListenerSearch,0)
+	eventListeners := make([]EventListener,0)
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -175,14 +160,15 @@ func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	} else {
 
-		err := db.Table("event_listeners").Model(&EventListener{}).Preload("Event").Preload("Handler").Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&EventListener{}).GetPreloadDb(false,false,true).
+			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&eventListeners).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Table("event_listeners").Model(&EventListener{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&EventListener{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -191,7 +177,8 @@ func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy
 	// Преобразуем полученные данные
 	entities := make([]Entity,len(eventListeners))
 	for i := range eventListeners {
-		entities[i] = &eventListeners[i].EventListener
+		// entities[i] = &eventListeners[i].EventListener
+		entities[i] = &eventListeners[i]
 	}
 	
 	return entities, total, nil
@@ -248,11 +235,29 @@ func (eventListener EventListener) LoadListener() {
 	// fmt.Println(": ", eventListener.Event)
 	if eventListener.Event.Code == "" || eventListener.Handler.Code == "" {
 		log.Println("LoadListener is empty name")
-		// log.Println("LoadListener is empty name", eventListener.Event, eventListener.Handler)
 		return
 	}
 	em := event.DefaultEM
 	em.AddListener(eventListener.Event.Code, &eventListener, eventListener.Priority)
+}
+
+func (eventListener *EventListener) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+	_db := db
+
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(&eventListener)
+	} else {
+		_db = _db.Model(&EventListener{})
+	}
+
+	if preload {
+		return _db.Preload("Event").Preload("Handler")
+	} else {
+		return _db
+	}
 }
 
 // для интерфейса event.Listener - функция обработчик для каждого события

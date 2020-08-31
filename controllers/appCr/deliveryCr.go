@@ -107,7 +107,7 @@ func DeliveryGetList(w http.ResponseWriter, r *http.Request) {
 	}
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc")
 	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")

@@ -33,7 +33,7 @@ func EventListenerCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST Event Listener Created")
-	resp["eventListener"] = eventListener
+	resp["event_listener"] = eventListener
 	u.Respond(w, resp)
 }
 
@@ -58,7 +58,7 @@ func EventListenerGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET Event Listener")
-	resp["eventListener"] = eventListener
+	resp["event_listener"] = eventListener
 	u.Respond(w, resp)
 }
 
@@ -80,7 +80,7 @@ func EventListenerGetListPagination(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -92,7 +92,7 @@ func EventListenerGetListPagination(w http.ResponseWriter, r *http.Request) {
 	}
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
-	var total uint = 0
+	var total int64 = 0
 	eventListeners := make([]models.Entity,0)
 
 
@@ -112,7 +112,7 @@ func EventListenerGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET Event Listener Pagination List")
 	resp["total"] = total
-	resp["eventListeners"] = eventListeners
+	resp["event_listeners"] = eventListeners
 	u.Respond(w, resp)
 }
 
@@ -150,7 +150,7 @@ func EventListenerUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH Event Listener Update")
-	resp["eventListener"] = eventListener
+	resp["event_listeners"] = eventListener
 	u.Respond(w, resp)
 }
 

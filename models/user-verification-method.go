@@ -1,16 +1,16 @@
 package models
 
 import (
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 )
 
 //UserVerificationMethod - верификация пользователя
 type UserVerificationMethod struct {
-	Id uint	`json:"id" gorm:"primary_key"`
-	Name string `json:"name" gorm:"type:varchar(255)"` // Регистрация по email, ...
-	Tag string `json:"tag" gorm:"type:varchar(50);unique;not null;"`// email, phone, email-phone - одна из заранее определенных констант!
+	Id 		uint	`json:"id" gorm:"primaryKey"`
+	Name 	string 	`json:"name" gorm:"type:varchar(255)"` // Регистрация по email, ...
+	Tag 	string 	`json:"tag" gorm:"type:varchar(50);unique;not null;"`// email, phone, email-phone - одна из заранее определенных констант!
 	Description string `json:"description" gorm:"type:varchar(255);default:null;"`// краткое описание
 }
 
@@ -21,7 +21,8 @@ const (
 )
 
 func (UserVerificationMethod) PgSqlCreate() {
-	db.CreateTable(&UserVerificationMethod{})
+	if db.Migrator().HasTable(&UserVerificationMethod{}) { return }
+	if err := db.Migrator().CreateTable(&UserVerificationMethod{}); err != nil {log.Fatal(err)}
 
 	var verificationMethods = []UserVerificationMethod{
 		{Name:"Email-верификация", Tag: VerificationMethodEmail, Description:"Пользователю будет необходимо перейти по ссылке в email."},

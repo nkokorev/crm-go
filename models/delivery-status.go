@@ -2,14 +2,14 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 	"time"
 )
 
 type DeliveryStatus struct {
-	Id     			uint   	`json:"id" gorm:"primary_key"`
+	Id     			uint   	`json:"id" gorm:"primaryKey"`
 	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// new, canceled, ...
@@ -17,15 +17,15 @@ type DeliveryStatus struct {
 
 	// new, agreement, equipment, delivery, completed, canceled
 	Group		string 	`json:"group" gorm:"type:varchar(32);"` // <<< является так же ключом для понимания общего состояния процесса (completed / canceled)
-	GroupName	string 	`json:"groupName" gorm:"type:varchar(128);"`
+	GroupName	string 	`json:"group_name" gorm:"type:varchar(128);"`
 
 	// 'Новый заказ', 'Передан в комплектацию', 'Отменен'
-	Name	string `json:"name" gorm:"type:varchar(128);"`
+	Name		string `json:"name" gorm:"type:varchar(128);"`
 
 	Description string 	`json:"description" gorm:"type:varchar(255);"` // Описание назначения канала
 
-	CreatedAt 		time.Time `json:"createdAt"`
-	UpdatedAt 		time.Time `json:"updatedAt"`
+	CreatedAt 		time.Time `json:"created_at"`
+	UpdatedAt 		time.Time `json:"updated_at"`
 }
 
 // ############# Entity interface #############
@@ -39,8 +39,13 @@ func (deliveryStatus DeliveryStatus) SystemEntity() bool { return deliveryStatus
 // ############# Entity interface #############
 
 func (DeliveryStatus) PgSqlCreate() {
-	db.AutoMigrate(&DeliveryStatus{})
-	db.Model(&DeliveryStatus{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	db.Migrator().CreateTable(&DeliveryStatus{})
+	// db.Model(&DeliveryStatus{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+
+	err := db.Exec("ALTER TABLE delivery_statuses ADD CONSTRAINT delivery_statuses_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 
 
 	mainAccount, err := GetMainAccount()
@@ -48,7 +53,7 @@ func (DeliveryStatus) PgSqlCreate() {
 		log.Println("Не удалось найти главный аккаунт для DeliveryStatus")
 	}
 
-	db.Delete(&DeliveryStatus{})
+	db.Delete(&DeliveryStatus{},"id > 0")
 	deliveryStatuses := []DeliveryStatus{
 		// new, agreement, delivery, completed, canceled
 		{Name: "Новая доставка", 			Code: "new", 				Group:"new", 			GroupName:"Необработанный заказ",	Description: "Необработанный заказ, первоначальный статус заказа на доставку."},
@@ -71,7 +76,7 @@ func (DeliveryStatus) PgSqlCreate() {
 		}
 	}
 }
-func (deliveryStatus *DeliveryStatus) BeforeCreate(scope *gorm.Scope) error {
+func (deliveryStatus *DeliveryStatus) BeforeCreate(tx *gorm.DB) error {
 	deliveryStatus.Id = 0
 	return nil
 }
@@ -113,13 +118,13 @@ func (deliveryStatus *DeliveryStatus) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
-func (DeliveryStatus) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (DeliveryStatus) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return DeliveryStatus{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-func (DeliveryStatus) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (DeliveryStatus) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	deliveryStatuses := make([]DeliveryStatus,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -164,8 +169,13 @@ func (DeliveryStatus) getPaginationList(accountId uint, offset, limit int, sortB
 
 	return entities, total, nil
 }
-
 func (deliveryStatus *DeliveryStatus) update(input map[string]interface{}) error {
+
+	// delete(input,"amount")
+	utils.FixInputHiddenVars(&input)
+	/*if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
+		return err
+	}*/
 
 	// work!!!
 	if err := db.Set("gorm:association_autoupdate", false).Model(deliveryStatus).Omit("id", "account_id","created_at").
@@ -180,7 +190,6 @@ func (deliveryStatus *DeliveryStatus) update(input map[string]interface{}) error
 
 	return nil
 }
-
 func (deliveryStatus *DeliveryStatus) delete () error {
 	return db.Model(DeliveryStatus{}).Where("id = ?", deliveryStatus.Id).Delete(deliveryStatus).Error
 }

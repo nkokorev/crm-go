@@ -2,14 +2,14 @@ package models
 
 import (
 	"errors"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/gorm"
 	"log"
 )
 
 type OrderChannel struct {
-	Id     uint   `json:"id" gorm:"primary_key"`
-	AccountId uint `json:"accountId" gorm:"index;not null"` // аккаунт-владелец ключа
+	Id     		uint    `json:"id" gorm:"primaryKey"`
+	AccountId 	uint 	`json:"account_id" gorm:"index;not null"` // аккаунт-владелец ключа
 
 	Code		string	`json:"code" gorm:"type:varchar(32);unique;not null;"`
 	Name		string 	`json:"name" gorm:"type:varchar(255);not null;"` // "Заказ из корзины", "Заказ по телефону", "Пропущенный звонок", "Письмо.."
@@ -27,10 +27,14 @@ func (orderChannel OrderChannel) SystemEntity() bool { return orderChannel.Accou
 // ############# Entity interface #############
 
 func (OrderChannel) PgSqlCreate() {
-	db.AutoMigrate(&OrderChannel{})
-	db.Model(&OrderChannel{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	if err := db.Migrator().CreateTable(&OrderChannel{}); err != nil {log.Fatal(err)}
+	// db.Model(&OrderChannel{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE order_channels ADD CONSTRAINT order_channels_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 	
-	db.Delete(&OrderChannel{})
+	db.Delete(&OrderChannel{},"id > 0")
 	orderChannels := []OrderChannel {
 		{Code:"offline", Name:   "Оффлайн",		Description: "-"},
 		{Code:"phone", 			Name:   "По телефону",	Description: "-"},
@@ -53,7 +57,7 @@ func (OrderChannel) PgSqlCreate() {
 	}
 	
 }
-func (orderChannel *OrderChannel) BeforeCreate(scope *gorm.Scope) error {
+func (orderChannel *OrderChannel) BeforeCreate(tx *gorm.DB) error {
 	orderChannel.Id = 0
 	return nil
 }
@@ -102,14 +106,14 @@ func (OrderChannel) getByCode(accountId uint, code string) (*OrderChannel, error
 	return &orderChannel, err
 }
 
-func (OrderChannel) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (OrderChannel) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return OrderChannel{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
 }
 
-func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	orderChannels := make([]OrderChannel,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {

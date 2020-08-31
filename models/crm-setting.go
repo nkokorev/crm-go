@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"time"
 )
 
@@ -10,13 +9,13 @@ type CrmSetting struct {
 	Id uint `json:"-"`
 
 	// Глобальные настройки
-	ApiEnabled bool `json:"apiEnabled" gorm:"default:true;not null"` // влючен ли API интерфейс для аккаунтов
-	AppUiApiEnabled bool `json:"appUiApiEnabled" gorm:"default:true;not null"` // Включен ли APP UI-API интерфейс (через https://app.ratuscrm.com/ui-api/)
-	UiApiEnabled bool `json:"uiApiEnabled" gorm:"default:true;not null"` // Включен ли публичный UI-API интерфейс (через https://ui.api.ratuscrm.com)
+	ApiEnabled 		bool `json:"api_enabled" gorm:"default:true;not null"` // влючен ли API интерфейс для аккаунтов
+	AppUiApiEnabled bool `json:"app_ui_api_enabled" gorm:"default:true;not null"` // Включен ли APP UI-API интерфейс (через https://app.ratuscrm.com/ui-api/)
+	UiApiEnabled 	bool `json:"uiApiEnabled" gorm:"default:true;not null"` // Включен ли публичный UI-API интерфейс (через https://ui.api.ratuscrm.com)
 
-	ApiDisabledMessage string `json:"apiDisableMessage" gorm:"type:varchar(255);"`
-	UiApiDisabledMessage string `json:"uiApiDisableMessage" gorm:"type:varchar(255);"`
-	AppUiApiDisabledMessage string `json:"appUiApiDisableMessage" gorm:"type:varchar(255);"`
+	ApiDisabledMessage 		string `json:"api_disabled_message" gorm:"type:varchar(255);"`
+	UiApiDisabledMessage 	string `json:"ui_api_disabled_message" gorm:"type:varchar(255);"`
+	AppUiApiDisabledMessage string `json:"app_ui_api_disabled_message" gorm:"type:varchar(255);"`
 
 	// SMTPPrivateAPIKey string `json:"-" gorm:"type:varchar(255);default:'cd00e0c60b26be77e32a943bd5768a19-65b08458-9049e45c'"` // MailGunKey private api key
 
@@ -25,14 +24,11 @@ type CrmSetting struct {
 	//DeletedAt 	*time.Time `json:"-" db:"deleted_at"`
 }
 
-func (CrmSetting) PgSqlCreate() error {
+func (CrmSetting) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
-	// db.AutoMigrate(&CrmSetting{})
-	db.CreateTable(&CrmSetting{})
-	if !db.Model(&CrmSetting{}).First(&CrmSetting{}, "id = 1").RecordNotFound() {
-		return errors.New("Настройки CRM уже загружены!")
-	}
+	if db.Migrator().HasTable(&CrmSetting{}) { return }
+	db.Migrator().CreateTable(&CrmSetting{})
 
 	settings := &CrmSetting{
 		ApiEnabled: true,
@@ -43,9 +39,7 @@ func (CrmSetting) PgSqlCreate() error {
 		AppUiApiDisabledMessage: "Из-за работ на сервере интерфейс временно отключен.",
 		// SMTPPrivateAPIKey: "cd00e0c60b26be77e32a943bd5768a19-65b08458-9049e45c",
 	}
-
-	return db.Create(&settings).Error
-
+	db.Create(&settings)
 }
 
 // Берет первую строку т.е. должна быть единственная запись

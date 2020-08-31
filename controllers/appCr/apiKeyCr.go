@@ -34,7 +34,7 @@ func ApiKeyCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST Api Key Created")
-	resp["apiKey"] = *apiKey
+	resp["api_key"] = *apiKey
 	u.Respond(w, resp)
 }
 
@@ -53,7 +53,7 @@ func ApiKeyGetList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET list Api keys of account")
-	resp["apiKeys"] = apiKeys
+	resp["api_keys"] = apiKeys
 	u.Respond(w, resp)
 }
 
@@ -78,7 +78,7 @@ func ApiKeyGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET ApiKey")
-	resp["apiKey"] = apiKey
+	resp["api_key"] = apiKey
 	u.Respond(w, resp)
 }
 
@@ -112,7 +112,7 @@ func ApiKeyUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH Api Key Update")
-	resp["apiKey"] = apiKey
+	resp["api_key"] = apiKey
 	u.Respond(w, resp)
 }
 

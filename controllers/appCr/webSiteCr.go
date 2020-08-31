@@ -2,6 +2,7 @@ package appCr
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -33,7 +34,7 @@ func WebSiteCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST WebSite Created")
-	resp["webSite"] = webSite
+	resp["web_site"] = webSite
 	u.Respond(w, resp)
 }
 
@@ -53,7 +54,7 @@ func WebSiteGet(w http.ResponseWriter, r *http.Request) {
 	var webSite models.WebSite
 
 	// 2. Узнаем, какой id учитывается нужен
-	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
 		err = account.LoadEntityByPublicId(&webSite, webSiteId)
@@ -64,15 +65,14 @@ func WebSiteGet(w http.ResponseWriter, r *http.Request) {
 	} else {
 		err = account.LoadEntity(&webSite, webSiteId)
 		if err != nil {
+			fmt.Println(err)
 			u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
 			return
 		}
 	}
 
-
-
 	resp := u.Message(true, "GET WebSite ")
-	resp["webSite"] = webSite
+	resp["web_site"] = webSite
 	u.Respond(w, resp)
 }
 
@@ -86,7 +86,7 @@ func WebSiteListGet(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -99,7 +99,7 @@ func WebSiteListGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET WebSite List")
-	resp["webSites"] = webSites
+	resp["web_sites"] = webSites
 	resp["total"] = total
 	u.Respond(w, resp)
 }
@@ -126,7 +126,7 @@ func WebSiteListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -139,27 +139,26 @@ func WebSiteListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
 
-	var total uint = 0
+	var total int64 = 0
 	webSites := make([]models.Entity,0)
 
 	if all == "true" && allOk {
 		webSites, total, err = account.GetListEntity(&models.WebSite{}, sortBy)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить список сайтов"))
 			return
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
 		webSites, total, err = account.GetPaginationListEntity(&models.WebSite{}, offset, limit, sortBy, search, nil)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить список сайтов"))
 			return
 		}
 	}
-
-
+	
 	resp := u.Message(true, "GET Web Sites PaginationList")
-	resp["webSites"] = webSites
+	resp["web_sites"] = webSites
 	resp["total"] = total
 	u.Respond(w, resp)
 }
@@ -192,6 +191,12 @@ func WebSiteUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// fix variables
+	/*if err := u.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}*/
+
 	// webSite, err := account.UpdateWebSite(webSiteId, &input.WebSite)
 	err = account.UpdateEntity(&webSite, input)
 	if err != nil {
@@ -200,7 +205,7 @@ func WebSiteUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH WebSite Update")
-	resp["webSite"] = webSite
+	resp["web_site"] = webSite
 	u.Respond(w, resp)
 }
 

@@ -3,24 +3,25 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"github.com/jinzhu/gorm"
-	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
+	"log"
 	"time"
 )
 
 type Payment struct {
 	
-	Id     		uint   	`json:"id" gorm:"primary_key"`
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;default:1"` // Публичный ID заказа внутри магазина
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Идентификатор платежа в Яндекс.Кассе или у другого посредника.
-	ExternalId	string	`json:"externalId" gorm:"type:varchar(128);index;default:null"`
+	ExternalId	string	`json:"external_id" gorm:"type:varchar(128);index;"`
 
 	// статус платежа:  [pending, waiting_for_capture, succeeded и canceled]
-	Status	string	`json:"status" gorm:"type:varchar(32);default:'pending'"`
+	Status	string		`json:"status" gorm:"type:varchar(32);default:'pending'"`
 	Paid 	bool 		`json:"paid" gorm:"type:bool;default:false;"` // признак оплаты платежа, для быстрой выборки
 
 	Test 	bool 		`json:"test" gorm:"type:bool;default:false;"` // признак тестовой платежа
@@ -28,58 +29,58 @@ type Payment struct {
 	// объем платежа по факту
 	// AmountValue 	float64	`json:"amountValue" gorm:"type:numeric;default:0"`
 	// AmountCurrency 	string 	`json:"amountCurrency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
-	AmountId  uint	`json:"amountId" gorm:"type:int;not null;"`
-	Amount  PaymentAmount	`json:"amount"`
+	AmountId  	uint			`json:"amount_id" gorm:"type:int;not null;"`
+	Amount  	PaymentAmount	`json:"amount" gorm:"-"`
 
 	// Каков "приход" за вычетом комиссии посредника.
 	// IncomeValue 	float64 `json:"incomeValue" gorm:"type:numeric;default:0"`
 	// IncomeCurrency 	string 	`json:"incomeCurrency" gorm:"type:varchar(3);default:'RUB'"` // сумма валюты в  ISO-4217 https://www.iso.org/iso-4217-currency-codes.html
-	IncomeAmountId  uint	`json:"incomeAmountId" gorm:"type:int;"`
-	IncomeAmount  	PaymentAmount	`json:"income_amount"`
+	IncomeAmountId  uint	`json:"income_amount_id" gorm:"type:int;"`
+	IncomeAmount  	PaymentAmount	`json:"income_amount" gorm:"-"`
 
 	// Сумма, которая вернулась пользователю. Присутствует, если у этого платежа есть успешные возвраты.
-	Refundable 				bool 	`json:"refundable" gorm:"type:bool;default:false;"` // Возможность провести возврат по API
-	RefundedAmountId  uint	`json:"refundedAmountId" gorm:"type:int;not null;"`
-	RefundedAmount  PaymentAmount	`json:"refunded_amount"`
+	Refundable 			bool 	`json:"refundable" gorm:"type:bool;default:false;"` // Возможность провести возврат по API
+	RefundedAmountId  	uint	`json:"refunded_amount_id" gorm:"type:int;not null;"`
+	RefundedAmount  	PaymentAmount	`json:"refunded_amount" gorm:"-"`
 
 	// описание транзакции, которую в Я.Кассе пользователь увидит при оплате
 	Description 	string 	`json:"description" gorm:"type:varchar(255);default:''"`
 
 	// Получатель платежа на стороне Сервиса. В Яндекс кассе это магазин и канал внутри я.кассы.
 	// Нужен, если вы разделяете потоки платежей в рамках одного аккаунта или создаете платеж в адрес другого аккаунта.
-	Recipient	Recipient `json:"recipient"`
+	Recipient	Recipient `json:"recipient" gorm:"-"`
 
-	Receipt	Receipt `json:"receipt"`
+	Receipt		Receipt `json:"receipt" gorm:"-"`
 
 	// Способ оплаты платежа = {type:"bank_card", id:"", saved:true, card:""}. Может быть и другой платеж, в зависимости от OwnerType
-	PaymentMethodData	PaymentMethodData	`json:"payment_method_data"`
+	PaymentMethodData	PaymentMethodData	`json:"payment_method_data" gorm:"-"`
 
 	// Сохранение платежных данных (с их помощью можно проводить повторные безакцептные списания ).
-	SavePaymentMethod 	bool 	`json:"savePaymentMethod" gorm:"type:bool;default:false"`
+	SavePaymentMethod 	bool 	`json:"save_payment_method" gorm:"type:bool;default:false"`
 
 	// Автоматический прием  поступившего платежа. Со стороны Я.Кассы
 	Capture	bool	`json:"capture" gorm:"type:bool;default:true"`
 
 	// Способ подтверждения платежа. Присутствует, когда платеж ожидает подтверждения от пользователя
-	Confirmation	Confirmation	`json:"confirmation" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	Confirmation	Confirmation	`json:"confirmation" gorm:"-"`
 
 	// Статус доставки данных для чека в онлайн-кассу (pending, succeeded или canceled).
-	ReceiptRegistration string	`json:"receiptRegistration" gorm:"type:varchar(32);"`
+	ReceiptRegistration string	`json:"receipt_registration" gorm:"type:varchar(32);"`
 
 	// Любые дополнительные данные. Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от Яндекс.Кассы.
 	// Ограничения: максимум 16 ключей, имя ключа не больше 32 символов, значение ключа не больше 512 символов.
-	Metadata	postgres.Jsonb	`json:"metadata" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	Metadata	datatypes.JSON	`json:"metadata" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 
 	// Комментарий к статусу canceled: {party:"[yandex_checkout, payment_network, merchant]", reason:"..."}
-	// CancellationDetails	postgres.Jsonb	`json:"cancellationDetails" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
-	CancellationDetails CancellationDetails `json:"cancellationDetails"`
+	// CancellationDetails	postgres.Jsonb	`json:"cancellation_details" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	CancellationDetails CancellationDetails `json:"cancellation_details" gorm:"-"`
 
 	// Данные об авторизации платежа. {rrn:"", auth_code:""}
-	// AuthorizationDetails	postgres.Jsonb	`json:"authorizationDetails" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
-	AuthorizationDetails	AuthorizationDetails	`json:"authorizationDetails"`
+	// AuthorizationDetails	postgres.Jsonb	`json:"authorization_details" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	AuthorizationDetails	AuthorizationDetails	`json:"authorization_details" gorm:"-"`
 
 	// Данные о распределении денег {account_id:"", amount:"", status:"[waiting_for_capture, succeeded, canceled]"}
-	Transfers	Transfers	`json:"_transfers"`
+	Transfers	Transfers	`json:"_transfers" gorm:"-"`
 
 	// URL на который переадресуется пользователь
 	ConfirmationUrl	string	`json:"confirmation_url" gorm:"type:varchar(255);"`
@@ -87,37 +88,45 @@ type Payment struct {
 	// #### Внутренние данные #####
 
 	// Объекты для определения типа платежа внутри CRM: yandex, chase ..
-	OwnerId	uint	`json:"ownerId" gorm:"type:int;not null;"` // Id в
-	OwnerType	string `json:"ownerType" gorm:"type:varchar(255);not null;"`
+	OwnerId			uint	`json:"owner_id" gorm:"type:int;not null;"` // Id в
+	OwnerType		string 	`json:"owner_type" gorm:"type:varchar(255);not null;"`
 
 	// ID заказа в RatusCRM
-	OrderId	uint	`json:"orderId" gorm:"type:int"` // Id заказа в системе
+	OrderId			uint	`json:"order_id" gorm:"type:int"` // Id заказа в системе
 	// Order Order		`json:"order"`
 
-	ExternalCapturedAt 	time.Time  `json:"externalCapturedAt"` // Время подтверждения платежа, UTC
-	ExternalExpiresAt 	time.Time  `json:"externalExpiresAt"`  // Время, до которого вы можете бесплатно отменить или подтвердить платеж.
-	ExternalCreatedAt 	time.Time  `json:"externalCreatedAt"`  // Время создания заказа, UTC
+	ExternalCapturedAt 	time.Time  `json:"external_captured_at"` // Время подтверждения платежа, UTC
+	ExternalExpiresAt 	time.Time  `json:"external_expires_at"`  // Время, до которого вы можете бесплатно отменить или подтвердить платеж.
+	ExternalCreatedAt 	time.Time  `json:"external_created_at"`  // Время создания заказа, UTC
 
 	// PaymentOptions 	[]PaymentOption `json:"paymentOptions" gorm:"many2many:payment_options_payments;preload"`
-	PaymentMethodId 	uint	`json:"paymentMethodId" gorm:"type:int;not null;"`
-	PaymentMethodType 	string	`json:"paymentMethodType" gorm:"type:varchar(32);not null;default:'payment_yandexes'"`
-	PaymentMethod 		PaymentMethod `json:"paymentMethod" gorm:"-"`
+	PaymentMethodId 	uint	`json:"payment_method_id" gorm:"type:int;not null;"`
+	PaymentMethodType 	string	`json:"payment_method_type" gorm:"type:varchar(32);not null;default:'payment_yandexes'"`
+	PaymentMethod 		PaymentMethod `json:"payment_method" gorm:"-"`
 
 	// Внутреннее время
 	PaidAt time.Time  `json:"paidAt"`
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 	DeletedAt *time.Time `json:"-" sql:"index"`
 }
 
 func (Payment) PgSqlCreate() {
-	db.CreateTable(&Payment{})
-	db.Model(&Payment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Model(&Payment{}).AddForeignKey("amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
-	db.Model(&Payment{}).AddForeignKey("income_amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
-	db.Model(&Payment{}).AddForeignKey("refunded_amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
+	if err := db.Migrator().CreateTable(&Payment{}); err != nil {log.Fatal(err)}
+	// db.Model(&Payment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&Payment{}).AddForeignKey("amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
+	// db.Model(&Payment{}).AddForeignKey("income_amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
+	// db.Model(&Payment{}).AddForeignKey("refunded_amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
+	err := db.Exec("ALTER TABLE payments " +
+		"ADD CONSTRAINT payments_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT payments_amount_id_fkey FOREIGN KEY (amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
+		"ADD CONSTRAINT payments_income_amount_id_fkey FOREIGN KEY (income_amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
+		"ADD CONSTRAINT payments_refunded_amount_id_fkey FOREIGN KEY (refunded_amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
-func (payment *Payment) BeforeCreate(scope *gorm.Scope) error {
+func (payment *Payment) BeforeCreate(tx *gorm.DB) error {
 	payment.Id = 0
 
 	// PublicId
@@ -130,7 +139,7 @@ func (payment *Payment) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
-func (payment *Payment) AfterCreate(scope *gorm.Scope) (error) {
+func (payment *Payment) AfterCreate(tx *gorm.DB) (error) {
 	event.AsyncFire(Event{}.PaymentCreated(payment.AccountId, payment.Id))
 	return nil
 }
@@ -152,7 +161,7 @@ func (payment *Payment) AfterDelete(tx *gorm.DB) (err error) {
 	event.AsyncFire(Event{}.PaymentDeleted(payment.AccountId, payment.Id))
 	return nil
 }
-func (payment *Payment) AfterFind() (err error) {
+func (payment *Payment) AfterFind(tx *gorm.DB) (err error) {
 
 
 	if payment.PaymentMethodType != "" && payment.PaymentMethodId > 0 {
@@ -289,13 +298,13 @@ func (payment *Payment) loadByPublicId() error {
 	return nil
 }
 
-func (Payment) getList(accountId uint, sortBy string) ([]Entity, uint, error) {
+func (Payment) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
 	return Payment{}.getPaginationList(accountId, 0, 25, sortBy, "", nil)
 }
-func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, uint, error) {
+func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
 	payments := make([]Payment,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {

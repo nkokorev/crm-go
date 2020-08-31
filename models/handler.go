@@ -10,9 +10,9 @@ import (
 
 // Список всех событий, которы могут быть вызваны // !!! Не добавлять другие функции под этим интерфейсом !!!
 
-func (handle *EventListener) Handle(e event.Event) error {
+func (eventListener *EventListener) Handle(e event.Event) error {
 
-	TargetName := handle.Handler.Code
+	TargetName := eventListener.Handler.Code
 
 	if TargetName == "" {
 		// log.Printf("EventListener Handle Name is nill: %v\n", TargetName)
@@ -20,7 +20,7 @@ func (handle *EventListener) Handle(e event.Event) error {
 	}
 
 	// 1. Получаем метод обработки по имени Target
-	v := reflect.ValueOf(handle)
+	v := reflect.ValueOf(eventListener)
 	if v.IsNil() {
 		// log.Println("Observer ValueOf handle is nill 1")
 		return utils.Error{Message: fmt.Sprintf("Observer Handle is nill: %v", TargetName)}
@@ -51,7 +51,7 @@ func (handle *EventListener) Handle(e event.Event) error {
 	// 3. Вызываем Target-метод с объектом Event
 	accountStr := e.Get("accountId")
 	accountId, ok :=  accountStr.(uint)
-	if !ok || handle.AccountId != accountId {
+	if !ok || eventListener.AccountId != accountId {
 		return nil
 	}
 
@@ -67,7 +67,7 @@ func (handle *EventListener) Handle(e event.Event) error {
 // #############   Event Handlers   #############
 
 
-func (handler EventListener) EmailNotificationRun(e event.Event) error {
+func (eventListener EventListener) EmailNotificationRun(e event.Event) error {
 
 	fmt.Printf("#### Запуск уведомления письмом, обытие: %v данные: %v\n",e.Name(), e.Data())
 	// fmt.Println("Observer entity id: ", handler.EntityId) // контекст серии писем, какой именно и т.д.
@@ -75,50 +75,50 @@ func (handler EventListener) EmailNotificationRun(e event.Event) error {
 	accountStr := e.Get("accountId")
 	accountId, ok :=  accountStr.(uint)
 	if !ok {
-		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить Email Notification id = %v, не найден accountId.", handler.EntityId)}
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить Email Notification id = %v, не найден accountId.", eventListener.EntityId)}
 	}
 
 	account, err := GetAccount(accountId)
 	if err != nil {
-		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить Email Notification id = %v, не найден account by id: %v.", handler.EntityId, accountId)}
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить Email Notification id = %v, не найден account by id: %v.", eventListener.EntityId, accountId)}
 	}
 
 	var en EmailNotification
-	if err := account.LoadEntity(&en, handler.EntityId); err != nil {
-		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить Email Notification id = %v, уведомление не найдено!", handler.EntityId)}
+	if err := account.LoadEntity(&en, eventListener.EntityId); err != nil {
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить Email Notification id = %v, уведомление не найдено!", eventListener.EntityId)}
 	}
 
 	if !en.IsActive() {
-		return utils.Error{Message: fmt.Sprintf("Уведомление id = %v не может быть отправлено т.к. находится в статусе - 'Отключено'", handler.EntityId)}
+		return utils.Error{Message: fmt.Sprintf("Уведомление id = %v не может быть отправлено т.к. находится в статусе - 'Отключено'", eventListener.EntityId)}
 	}
 
 	// Загружаем данные в теле
-	handler.uploadEntitiesData(&e)
+	eventListener.uploadEntitiesData(&e)
 
 	return en.Execute(e.Data())
 }
 
-func (handler EventListener) EmailQueueRun(e event.Event) error {
+func (eventListener EventListener) EmailQueueRun(e event.Event) error {
 	fmt.Printf("Запуск серии писем, обытие: %v данные: %v\n",e.Name(), e.Data())
 
 	accountStr := e.Get("accountId")
 	accountId, ok :=  accountStr.(uint)
 	if !ok {
-		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить EmailQueue id = %v, не найден accountId.", handler.EntityId)}
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить EmailQueue id = %v, не найден accountId.", eventListener.EntityId)}
 	}
 
 	account, err := GetAccount(accountId)
 	if err != nil {
-		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить EmailQueue id = %v, не найден account by id: %v.", handler.EntityId, accountId)}
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить EmailQueue id = %v, не найден account by id: %v.", eventListener.EntityId, accountId)}
 	}
 
 	var emailQueue EmailQueue
-	if err := account.LoadEntity(&emailQueue, handler.EntityId); err != nil {
-		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить EmailQueue id = %v, не загружается объект: %v.", handler.EntityId, err)}
+	if err := account.LoadEntity(&emailQueue, eventListener.EntityId); err != nil {
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить EmailQueue id = %v, не загружается объект: %v.", eventListener.EntityId, err)}
 	}
 
 	// Загружаем данные в теле
-	handler.uploadEntitiesData(&e)
+	eventListener.uploadEntitiesData(&e)
 
 	// Получаем userId
 	if userId, ok := e.Get("userId").(uint); ok {
@@ -137,28 +137,28 @@ func (handler EventListener) EmailQueueRun(e event.Event) error {
 	return nil
 }
 
-func (handler EventListener) WebHookCall(e event.Event) error {
+func (eventListener EventListener) WebHookCall(e event.Event) error {
 
 	// fmt.Printf("Вызов вебхука, событие: %v Данные: %v, entityId %v\n", e.Name(), e.Data(), handler.EntityId)
 
 	accountStr := e.Get("accountId")
 	accountId, ok :=  accountStr.(uint)
 	if !ok {
-		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить WebHook id = %v, не найден accountId.", handler.EntityId)}
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить WebHook id = %v, не найден accountId.", eventListener.EntityId)}
 	}
 
 	account, err := GetAccount(accountId)
 	if err != nil {
-		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить WebHook id = %v, не найден account by id: %v.", handler.EntityId, accountId)}
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить WebHook id = %v, не найден account by id: %v.", eventListener.EntityId, accountId)}
 	}
 
 	var webHook WebHook
-	if err := account.LoadEntity(&webHook, handler.EntityId); err != nil {
-		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить WebHook id = %v, не загружается webHook.", handler.EntityId)}
+	if err := account.LoadEntity(&webHook, eventListener.EntityId); err != nil {
+		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить WebHook id = %v, не загружается webHook.", eventListener.EntityId)}
 	}
 
 	// Загружаем данные в теле
-	handler.uploadEntitiesData(&e)
+	eventListener.uploadEntitiesData(&e)
 
 	// return en.Execute(e.Data())
 	
@@ -169,12 +169,12 @@ func (handler EventListener) WebHookCall(e event.Event) error {
 
 
 // Загружает данные по переданным id
-func (handle EventListener) uploadEntitiesData(event *event.Event) {
+func (eventListener EventListener) uploadEntitiesData(event *event.Event) {
 	// data :=(*e).Data()
 	e := *event
 
 	// 1. Get Account
-	accountId, ok :=  e.Get("accountId").(uint);
+	accountId, ok :=  e.Get("accountId").(uint)
 	if !ok { return }
 
 	account, err := GetAccount(accountId)
@@ -223,8 +223,8 @@ func (handle EventListener) uploadEntitiesData(event *event.Event) {
 				}
 			}
 
-			if order.ManagerId > 0 {
-				manager, err := account.GetUser(order.ManagerId)
+			if *order.ManagerId > 0 {
+				manager, err := account.GetUser(*order.ManagerId)
 				if err == nil {
 					e.Add("managerId", order.ManagerId)
 					e.Add("Manager", manager)

@@ -4,88 +4,91 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fatih/structs"
-	"github.com/jinzhu/gorm"
 	"github.com/nkokorev/crm-go/event"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
+	"log"
 	"os"
 	"strings"
 	"time"
 )
 
 type User struct {
-	Id        	uint `json:"id" gorm:"primary_key"`
-	HashId 		string `json:"hashId" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
-	IssuerAccountId uint `json:"issuerAccountId" gorm:"index;not null"`
+	Id        		uint 		`json:"id" gorm:"primaryKey"`
+	HashId 			string 		`json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	IssuerAccountId uint 		`json:"issuer_account_id" gorm:"index;not null;"`
 	
-	Username 	string `json:"username" gorm:"type:varchar(255);index;default:null;"` // уникальный, т.к. через него вход в главный аккаунт
-	Email 		string `json:"email" gorm:"type:varchar(255);index;default:null;"`
-	PhoneRegion string `json:"phoneRegion" gorm:"type:varchar(3);not null;default:'RU';"` // нужно проработать формат данных
-	Phone		string `json:"phone" gorm:"type:varchar(32);index;default:null;"` // нужно проработать формат данных
-	Password 	string `json:"-" gorm:"type:varchar(255);default:null;"` // json:"-"
+	Username 	*string 		`json:"username" gorm:"type:varchar(255);index;"` // уникальный, т.к. через него вход в главный аккаунт
+	Email 		*string 		`json:"email" gorm:"type:varchar(255);index;"`
+	PhoneRegion *string 		`json:"phone_region" gorm:"type:varchar(3);not null;default:'RU';"` // нужно проработать формат данных
+	Phone		*string 		`json:"phone" gorm:"type:varchar(32);"` // нужно проработать формат данных
+	Password 	*string 		`json:"-" gorm:"type:varchar(255);"` // json:"-"
 
-	Name 		string `json:"name" gorm:"type:varchar(64)"`
-	Surname 	string `json:"surname" gorm:"type:varchar(64)"`
-	Patronymic 	string `json:"patronymic" gorm:"type:varchar(64)"`
+	Name 		*string 		`json:"name" gorm:"type:varchar(64)"`
+	Surname 	*string 		`json:"surname" gorm:"type:varchar(64)"`
+	Patronymic 	*string 		`json:"patronymic" gorm:"type:varchar(64)"`
 
-	//Role 		string `json:"role" gorm:"type:varchar(255);default:'client'"`
-	Roles 		[]Role `json:"roles" gorm:"many2many:account_users;preload"`
-	AccountUser *AccountUser	`json:"accountUser" gorm:"preload"`
+	Roles 		[]Role 			`json:"roles" gorm:"many2many:account_users;"`
+	AccountUser *AccountUser	`json:"account_user" gorm:"preload"`
 	// Account 	Account `json:"account" gorm:"preload" sql:"-"`
 
-	EnabledAuthFromApp	bool	`json:"enabledAuthFromApp" gorm:"type:bool;default:false;"` // Разрешен ли вход, через app.ratuscrm.com
+	EnabledAuthFromApp	bool	`json:"enabled_auth_from_app" gorm:"type:bool;default:false;"` // Разрешен ли вход, через app.ratuscrm.com
 
-	Subscribed	bool	`json:"subscribed" gorm:"type:bool;default:true;"` // Есть ли подписка на общее рассылки.
-	SubscribedAt 	*time.Time `json:"subscribedAt" gorm:"default:null"`
-	UnsubscribedAt 	*time.Time `json:"unsubscribedAt" gorm:"default:null"` // << last
+	Subscribed			bool		`json:"subscribed" gorm:"type:bool;default:true;"` // Есть ли подписка на общее рассылки.
+	SubscribedAt 		*time.Time 	`json:"subscribed_at" gorm:"default:null"`
+	UnsubscribedAt 		*time.Time 	`json:"unsubscribed_at" gorm:"default:null"` // << last
 	// manual, gui, api,
-	SubscriptionReason	*string `json:"subscriptionReason" gorm:"type:varchar(32);default:null"`
+	SubscriptionReason	*string 	`json:"subscription_reason" gorm:"type:varchar(32);default:null"`
 
 	// UnsubscribedReason	string `json:"unsubscribedReason" gorm:"default:null"` << see mta-bounced...
 
-	DefaultAccountId uint `json:"defaultAccountId" gorm:"type:varchar(12);default:null;"` // указывает какой аккаунт по дефолту загружать
-	InvitedUserId uint `json:"-" gorm:"default:NULL"` // указывает какой аккаунт по дефолту загружать
+	DefaultAccountId 	*uint 	`json:"default_account_id"` // указывает какой аккаунт по дефолту загружать
+	InvitedUserId 		*uint 	`json:"invited_user_id"` // указывает какой аккаунт по дефолту загружать
 
 	// Верификация, сброс пароля и т.д.
-	EmailVerifiedAt *time.Time `json:"emailVerifiedAt" gorm:"default:null"` // дата подтверждения email-а (автоматически проставляется, если методом верфикации пользователя был подтвержден email)
-	PhoneVerifiedAt *time.Time `json:"phoneVerifiedAt" gorm:"default:null"` // дата подтверждения телефона (автоматически проставляется, если методом верфикации пользователя был подтвержден телефон)
-	PasswordResetAt *time.Time `json:"passwordResetAt" gorm:"default:null"`
+	EmailVerifiedAt *time.Time `json:"email_verified_at" gorm:"default:null"` // дата подтверждения email-а (автоматически проставляется, если методом верфикации пользователя был подтвержден email)
+	PhoneVerifiedAt *time.Time `json:"phone_verified_at" gorm:"default:null"` // дата подтверждения телефона (автоматически проставляется, если методом верфикации пользователя был подтвержден телефон)
+	PasswordResetAt *time.Time `json:"password_reset_at" gorm:"default:null"`
 
 
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	DeletedAt *time.Time `json:"-" sql:"index"`
-
-	//Profile UserProfile `json:"profile" gorm:"preload"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" sql:"index"`
 
 	Accounts []Account `json:"-" gorm:"many2many:account_users;preload"`
 }
 
 type UserAndRole struct {
 	User
-	RoleId uint `json:"roleId"`
+	RoleId uint `json:"role_id"`
 }
 
 func (User) PgSqlCreate() {
-	db.AutoMigrate(&User{})
+	if db.Migrator().HasTable(&User{}) { return }
 
-	db.Exec("ALTER TABLE users\n    \n--     ADD CONSTRAINT users_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ADD CONSTRAINT users_default_account_hash_id_fkey FOREIGN KEY (default_account_hash_id) REFERENCES accounts(hash_id) ON DELETE SET NULL ON UPDATE CASCADE,\n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    \nADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\ncreate unique index uix_users_issuer_account_id_username_email_mobile_phone ON users (issuer_account_id,username,email,phone);\n-- create unique index uix_users_username_account_id_sku ON users (issuer_account_id,username) where username is not null;\ncreate unique index uix_users_username_account_id_sku ON users (issuer_account_id,username) where (length(username) > 0);\n\n-- alter table  users ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n")
-	db.Model(&User{}).AddForeignKey("issuer_account_id", "accounts(id)", "SET DEFAULT", "CASCADE")
-	db.Model(&User{}).AddForeignKey("invited_user_id", "users(id)", "SET NULL", "CASCADE")
+	if err := db.Migrator().CreateTable(&User{}); err != nil { log.Fatal(err) }
+
+	// db.Model(&User{}).AddForeignKey("issuer_account_id", "accounts(id)", "SET DEFAULT", "CASCADE")
+	// db.Model(&User{}).AddForeignKey("invited_user_id", "users(id)", "SET NULL", "CASCADE")
+	err := db.Exec("ALTER TABLE users    \n    ADD CONSTRAINT users_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n\ncreate unique index uix_users_issuer_account_id_username_email_mobile_phone ON users (issuer_account_id,username,email,phone);\n-- create unique index uix_users_username_account_id_sku ON users (issuer_account_id,username) where username is not null;\ncreate unique index uix_users_username_account_id_sku ON users (issuer_account_id,username) where (length(username) > 0);\n\n-- alter table users alter column default_account_id set default null;\n-- alter table users alter column invited_user_id set default null;\n\n-- alter table  users ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n")
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 }
 
-func (user *User) BeforeCreate(scope *gorm.Scope) (err error) {
+func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
 	user.Id = 0
 	user.HashId = strings.ToLower(u.RandStringBytesMaskImprSrcUnsafe(12, true))
 	// user.CreatedAt = time.Now().UTC()
 	return nil
 }
 
-func (user *User) AfterCreate(scope *gorm.Scope) (error) {
+func (user *User) AfterCreate(tx *gorm.DB) (error) {
 	event.AsyncFire(Event{}.UserCreated(user.IssuerAccountId, user.Id))
 	return nil
 }
-func (user *User) BeforeUpdate(scope *gorm.Scope) (err error) {
+func (user *User) BeforeUpdate(tx *gorm.DB) (err error) {
 
 	// fmt.Println(user.Subscribed)
 	// fmt.Println(scope.Value.(*User).Subscribed)
@@ -105,7 +108,7 @@ func (user *User) AfterUpdate(tx *gorm.DB) (err error) {
 	event.AsyncFire(Event{}.UserUpdated(user.IssuerAccountId, user.Id))
 	return nil
 }
-func (user *User) AfterFind() (err error) {
+func (user *User) AfterFind(tx *gorm.DB) (err error) {
 	return nil
 }
 
@@ -119,11 +122,11 @@ func (user User) create () (*User, error) {
 	}
 
 	// Теперь создаем crypto-пароль
-	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	password, err := bcrypt.GenerateFromPassword([]byte(*user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
-	user.Password = string(password)
+	user.Password = u.STRp(string(password))
 	// fix
 	var timeNow = time.Now()
 	user.EmailVerifiedAt = &timeNow
@@ -170,6 +173,11 @@ func (User) getByHashId(hashId string) (*User, error) {
 func (user *User) update (input map[string]interface{}) error {
 
 	delete(input,"roles")
+	delete(input,"account_user")
+	delete(input,"account")
+	if err := u.ConvertMapVarsToUINT(&input, []string{"issuer_account_id","default_account_id","invited_user_id"}); err != nil {
+		return err
+	}
 
 	err := db.Set("gorm:association_autoupdate", false).
 		Model(user).Omit("id", "hash_id", "issuer_account_id", "created_at", "updated_at").Updates(input).Error
@@ -223,6 +231,7 @@ func (account Account) UpdateUser(userId uint, input map[string]interface{}) (*U
 	if ok && (_newStatusSubscribed != _user.Subscribed) {
 		// fmt.Println("Статус обновлен!")
 		// Статус обновлен
+		user.Unsubscribing()
 		event.AsyncFire(Event{}.UserUpdateSubscribeStatus(account.Id, _user.Id))
 
 		// флаги подписки / отписки
@@ -250,7 +259,7 @@ func (account Account) GetUserById (userId uint) (*User, error) {
 
 	// Проверим, что пользователь имеет доступ к аккаунта
 	aUser := AccountUser{}
-	if db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.Id, user.Id).RecordNotFound() {
+	if err := db.Model(AccountUser{}).First(&aUser, "account_id = ? AND user_id = ?", account.Id, user.Id).Error;err !=nil {
 		return nil, errors.New("Пользователь не найден")
 	}
 
@@ -281,15 +290,27 @@ func (User) GetByUsername (username string) (*User, error) {
 }
 
 func (user User) Exist() bool {
-	return !db.Unscoped().First(&User{}, user.Id).RecordNotFound()
+	if err := db.Unscoped().First(&User{}, user.Id).Error;err != nil {
+		return false
+	} else {
+		return true
+	}
 }
 
 func (User) ExistEmail(email string) bool {
-	return !db.Unscoped().First(&User{},"email = ?", email).RecordNotFound()
+	if err := db.Unscoped().First(&User{},"email = ?", email).Error;err != nil {
+		return false
+	} else {
+		return true
+	}
 }
 
 func (User) ExistUsername(username string) bool {
-	return !db.Unscoped().First(&User{},"username = ?", username).RecordNotFound()
+	if err := db.Unscoped().First(&User{},"username = ?", username).Error;err != nil {
+		return false
+	} else {
+		return true
+	}
 }
 
 func (user User) DepersonalizedDataMap() *map[string]interface{} {
@@ -316,21 +337,21 @@ func (user User) DepersonalizedDataMap() *map[string]interface{} {
 
 // Проверка НЕ нулевых входящих полей для СОЗДАНИЯ пользователя
 func (user User) ValidateCreate() error {
-
+	
 	var e u.Error
 	var username, email, phone bool
 
 	// 1. Проверка email отдельной функцией
-	if len(user.Email) > 0 {
+	if user.Email != nil {
 		email = true
 
-		if err := u.EmailValidation(user.Email); err != nil {
+		if err := u.EmailValidation(*user.Email); err != nil {
 			return u.Error{Message:"Проверьте правильность заполнения формы", Errors: map[string]interface{}{"email":err.Error()}}
 		}
 	}
 
 	// 2. Проверка username пользователя
-	if len(user.Username) > 0 {
+	if user.Username != nil {
 		username = true
 		if err := u.VerifyUsername(user.Username); err != nil {
 			return u.Error{Message:"Проверьте правильность заполнения формы", Errors: map[string]interface{}{"username" : err.Error()}}
@@ -338,9 +359,9 @@ func (user User) ValidateCreate() error {
 	}
 
 	// 3. Проверка телефона
-	if len(user.Phone) > 0 {
+	if user.Phone != nil  {
 		phone = true
-		if err := u.VerifyPhone(user.Phone, user.PhoneRegion); err != nil {
+		if err := u.VerifyPhone(*user.Phone, *user.PhoneRegion); err != nil {
 			return u.Error{Message:"Не верный формат телефона",Errors: map[string]interface{}{"phone" : err.Error()}}
 		}
 	}
@@ -351,21 +372,21 @@ func (user User) ValidateCreate() error {
 	}
 
 	// 4. Проверка password
-	if len(user.Password) > 0 {
-		if err := u.VerifyPassword(user.Password); err != nil {
+	if len(*user.Password) > 0 {
+		if err := u.VerifyPassword(*user.Password); err != nil {
 			return u.Error{Message:"Проверьте правильность заполнения формы", Errors: map[string]interface{}{"password" : err.Error()}}
 		}
 	}
 
 
 	// 5. Проверка дополнительных полей на длину
-	if len([]rune(user.Name)) > 64 {
+	if user.Name != nil && len([]rune(*user.Name)) > 64 {
 		e.AddErrors("name", "Имя слишком длинное" )
 	}
-	if len([]rune(user.Surname)) > 64 {
+	if user.Surname != nil && len([]rune(*user.Surname)) > 64 {
 		e.AddErrors("surname", "Фамилия слишком длинная")
 	}
-	if len([]rune(user.Patronymic)) > 64 {
+	if user.Patronymic != nil && len([]rune(*user.Patronymic)) > 64 {
 		e.AddErrors("patronymic", "Отчетство слишком длинное" )
 	}
 
@@ -402,7 +423,7 @@ func (user *User) SendEmailRecoveryUsername() error {
 
 // Проверяет пароль пользователя
 func (user User) ComparePassword(password string) bool {
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(password)); err != nil {
 		return false
 	}
 
@@ -432,19 +453,20 @@ func (user *User) LoadAccounts() error {
 	return db.Preload("Accounts").First(&user).Error
 }
 
-type AcoountUserAuth = struct {
+type AccountUserAuth = struct {
 	AccountUser
 	Account Account	`json:"account"`
-	Role Role	`json:"role"`
+	Role 	Role	`json:"role"`
 }
 
 // Возвращает массив доступных аккаунтов с ролью в аккаунте
-func (user User) AccountList() ([]AcoountUserAuth, error) {
+func (user User) AccountList() ([]AccountUser, error) {
 
 
-	aUsers := make([]AcoountUserAuth,0)
+	// aUsers := make([]AcoountUserAuth,0)
+	var aUsers []AccountUser
 
-	err := db.Model(&AccountUser{}).Preload("Role").Preload("Account").Find(&aUsers, "user_id = ?", user.Id).Error;
+	err := db.Model(&AccountUser{}).Preload("Role").Preload("Account").Find(&aUsers, "user_id = ?", user.Id).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, errors.New("Не удалось загрузить данные пользователя")
 	}
@@ -454,7 +476,7 @@ func (user User) AccountList() ([]AcoountUserAuth, error) {
 
 // проверяет доступ и возвращает данные аккаунта
 func (user *User) GetAccount(account *Account) error {
-	return db.Model(user).Where("user_id = ?", user.Id).Association("Accounts").Find(account).Error
+	return db.Model(user).Where("user_id = ?", user.Id).Association("Accounts").Find(account)
 }
 
 // Только пользователь RatusCRM может создавать новые аккаунты

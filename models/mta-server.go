@@ -107,7 +107,9 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 		m.Unlock() // release lock
 	}()
 
-	var mock= true
+	// по настоящему или нет отправляем
+	var mock=  false
+
 
 	// m.Lock()
 	// defer m.Unlock()
@@ -199,7 +201,7 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 		HashId:  historyHashId,
 		AccountId: pkg.accountId,
 		UserId: &pkg.userId,
-		Email: user.Email,
+		Email: *user.Email,
 		OwnerId: pkg.emailSender.GetId(),
 		OwnerType: pkg.emailSender.GetType(),
 		EmailTemplateId: &pkg.emailTemplate.Id,

@@ -33,7 +33,7 @@ func WebHookCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST WebHook Create")
-	resp["webHook"] = entity
+	resp["web_hook"] = entity
 	u.Respond(w, resp)
 }
 
@@ -52,7 +52,7 @@ func WebHookGet(w http.ResponseWriter, r *http.Request) {
 
 	var webHook models.WebHook
 	// 2. Узнаем, какой id учитывается нужен
-	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
 		err = account.LoadEntityByPublicId(&webHook, webHookId)
@@ -71,7 +71,7 @@ func WebHookGet(w http.ResponseWriter, r *http.Request) {
 
 
 	resp := u.Message(true, "GET Web Hook")
-	resp["webHook"] = webHook
+	resp["web_hook"] = webHook
 	u.Respond(w, resp)
 }
 
@@ -122,7 +122,7 @@ func WebHookListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -135,7 +135,7 @@ func WebHookListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
 
-	var total uint = 0
+	var total int64 = 0
 	webHooks := make([]models.Entity,0)
 
 	if all == "true" && allOk {
@@ -155,7 +155,7 @@ func WebHookListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 
 	resp := u.Message(true, "GET WebHooks PaginationList")
-	resp["webHooks"] = webHooks
+	resp["web_hooks"] = webHooks
 	resp["total"] = total
 	u.Respond(w, resp)
 }
@@ -196,7 +196,7 @@ func WebHookUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH WebHook Update")
-	resp["webHook"] = webHook
+	resp["web_hook"] = webHook
 	u.Respond(w, resp)
 }
 

@@ -36,7 +36,7 @@ func EmailTemplateCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST Email Templates Created")
-	resp["emailTemplate"] = emailTemplate
+	resp["email_template"] = emailTemplate
 	u.Respond(w, resp)
 }
 
@@ -58,7 +58,7 @@ func EmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 	var emailTemplate models.EmailTemplate
 
 	// 2. Узнаем, какой id учитывается нужен
-	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "publicId")
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
 		err = account.LoadEntityByPublicId(&emailTemplate, emailTemplateId)
@@ -75,7 +75,7 @@ func EmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET Email template")
-	resp["emailTemplate"] = emailTemplate
+	resp["email_template"] = emailTemplate
 	u.Respond(w, resp)
 }
 
@@ -95,7 +95,7 @@ func EmailTemplateGetListPagination(w http.ResponseWriter, r *http.Request) {
 	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
 	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
 	if !ok {
-		sortBy = ""
+		sortBy = "id"
 	}
 	if sortDesc {
 		sortBy += " desc"
@@ -107,7 +107,7 @@ func EmailTemplateGetListPagination(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
 
-	var total uint = 0
+	var total int64 = 0
 	emailTemplates := make([]models.Entity,0)
 
 	if all == "true" && allOk {
@@ -127,7 +127,7 @@ func EmailTemplateGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET Email Template Pagination List")
 	resp["total"] = total
-	resp["emailTemplates"] = emailTemplates
+	resp["email_templates"] = emailTemplates
 	u.Respond(w, resp)
 }
 
@@ -165,7 +165,7 @@ func EmailTemplateUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "Email Template Updated")
-	resp["emailTemplate"] = emailTemplate
+	resp["email_template"] = emailTemplate
 	u.Respond(w, resp)
 }
 
@@ -226,8 +226,8 @@ func EmailTemplateDelete(w http.ResponseWriter, r *http.Request) {
 
 	// 2. Get JSON-request
 	input := &struct {
-		UserId uint `json:"userId"`
-		EmailBoxId uint `json:"emailBoxId"` // emailBoxId
+		UserId uint `json:"user_id"`
+		EmailBoxId uint `json:"email_box_id"` // emailBoxId
 		Subject string 	`json:"subject"`
 	}{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -335,12 +335,12 @@ func errorHTMLPage(errorText string) []byte {
 
 func tempUser() models.User {
 	return models.User{
-		Username: "serName",
-		Name: "Николай",
-		Surname: "Иваньков",
-		Email: "info@example.com",
-		PhoneRegion: "RU",
-		Phone: "+79251002030",
-		Password: "kjdfhkdfsr439rrfh39f34",
+		Username: u.STRp("serName"),
+		Name: u.STRp("Николай"),
+		Surname: u.STRp("Иваньков"),
+		Email: u.STRp("info@example.com"),
+		PhoneRegion: u.STRp("RU"),
+		Phone: u.STRp("+79251002030"),
+		Password: u.STRp("kjdfhkdfsr439rrfh39f34"),
 	}
 }

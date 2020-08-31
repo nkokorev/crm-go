@@ -5,10 +5,10 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"github.com/jinzhu/gorm"
-	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
 	"log"
 )
 
@@ -21,71 +21,79 @@ import (
 */
 
 type Product struct {
-	Id     uint   `json:"id" gorm:"primary_key"`
-	PublicId	uint   	`json:"publicId" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
-	AccountId uint `json:"-" gorm:"type:int;index;not null;"`
+	// Id    		uint   `json:"id" gorm:"primaryKey"`
+	Id        	uint 	`json:"id" gorm:"primarykey"`
+	// gorm.Model
+	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
+	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // можно ли продавать товар и выводить в карточки
-	Name 		string `json:"name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
-	ShortName 	string `json:"shortName" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
-
+	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
+	ShortName 	string 	`json:"short_name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
 	
-	Article *string `json:"article" gorm:"type:varchar(128);index;default:NULL"` // артикул товара из иных соображений (часто публичный)
-	SKU 	*string `json:"sku" gorm:"type:varchar(128);index;default:NULL;"` // уникальный складской идентификатор. 1 SKU = 1 товар (одна модель)
-	Model 	*string `json:"model" gorm:"type:varchar(255);default:NULL"` // может повторяться для вывода в web-интерфейсе как "одного" товара
+	Article 	string 	`json:"article" gorm:"type:varchar(128);index;"` // артикул товара из иных соображений (часто публичный)
+	SKU 		string 	`json:"sku" gorm:"type:varchar(128);index;"` // уникальный складской идентификатор. 1 SKU = 1 товар (одна модель)
+	Model 		string 	`json:"model" gorm:"type:varchar(255);"` // может повторяться для вывода в web-интерфейсе как "одного" товара
 
 	// Base properties
-	RetailPrice 			float64 `json:"retailPrice" gorm:"type:numeric;default:0"` // розничная цена
-	WholesalePrice 			float64 `json:"wholesalePrice" gorm:"type:numeric;default:0"` // оптовая цена
-	PurchasePrice 			float64 `json:"purchasePrice" gorm:"type:numeric;default:0"` // закупочная цена
-	RetailDiscount 			float64 `json:"retailDiscount" gorm:"type:numeric;default:0"` // розничная фактическая скидка
+	RetailPrice		float64 `json:"retail_price" gorm:"type:numeric;"` // розничная цена
+	WholesalePrice 	float64 `json:"wholesale_price" gorm:"type:numeric;"` // оптовая цена
+	PurchasePrice 	float64 `json:"purchase_price" gorm:"type:numeric;"` // закупочная цена
+	RetailDiscount 	float64 `json:"retail_discount" gorm:"type:numeric;"` // розничная фактическая скидка
 
 	// Признак предмета расчета
-	PaymentSubjectId	uint	`json:"paymentSubjectId" gorm:"type:int;not null;"`// товар или услуга ? [вид номенклатуры]
-	PaymentSubject 		PaymentSubject `json:"paymentSubject"`
+	PaymentSubjectId	uint	`json:"payment_subject_id" gorm:"type:int;not null;"`// товар или услуга ? [вид номенклатуры]
+	PaymentSubject 		PaymentSubject `json:"payment_subject"`
 
-	VatCodeId	uint	`json:"vatCodeId" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
-	VatCode		VatCode	`json:"vatCode"`
+	VatCodeId	uint	`json:"vat_code_id" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
+	VatCode		VatCode	`json:"vat_code"`
 
-	UnitMeasurementId 		uint	`json:"unitMeasurementId" gorm:"type:int;default:1;"` // тип измерения
+	UnitMeasurementId 		uint	`json:"unit_measurement_id" gorm:"type:int;default:1;"` // тип измерения
 	UnitMeasurement 		UnitMeasurement // Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 	
-	ShortDescription string 	`json:"shortDescription" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
-	Description 	string 		`json:"description" gorm:"type:text;"` // pgsql: text
+	ShortDescription 	string 	`json:"short_description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
+	Description 		string 	`json:"description" gorm:"type:text;"` // pgsql: text
 
 	// Обновлять только через AppendImage
-	Images 			[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`  // association_autoupdate:false;
-	//Image 			Storage 	`json:"images" gorm:"polymorphic:Storage;" sql:"-"`  // gorm:"polymorphic:Owner;"
-	// Attributes []EavAttribute `json:"attributes" gorm:"many2many:product_eav_attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
-	//Attributes []EavAttribute `json:"attributes"` // характеристики товара... (производитель, бренд, цвет, размер и т.д. и т.п.)
-	Attributes 	postgres.Jsonb `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	// Images 			[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`  // association_autoupdate:false;
+	Images 			[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`
+	
+	Attributes 	datatypes.JSON `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 
 	// todo: можно изменить и сделать свойства товара
 	// ключ для расчета веса продукта
-	WeightKey 		string `json:"weightKey" gorm:"type:varchar(32);default:'grossWeight'"`
+	WeightKey 	string `json:"weight_key" gorm:"type:varchar(32);default:'grossWeight'"`
 
 	// Нужно ли считать вес для расчета доставки у данного продукта
 	// ConsiderWeight	bool	`json:"considerWeight" gorm:"type:bool;default:false"`
 
-	// Attributes 		PropertyMap `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 	// Reviews []Review // Product reviews (отзывы на товар - с рейтингом(?))
 	// Questions []question // вопросы по товару
 	// Video []Video // видеообзоры по товару на ютубе
 
 	Account Account `json:"-"`
 	// ProductGroups []ProductGroup `json:"-" gorm:"many2many:product_group_products"`
-	ProductCards []ProductCard `json:"productCards" gorm:"many2many:product_card_products"`
+	ProductCards []ProductCard `json:"product_cards" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
 }
 
 func (Product) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
-	db.CreateTable(&Product{})
-	db.Model(&Product{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	db.Exec("create unique index uix_products_account_id_sku ON products (account_id,sku) WHERE sku IS NOT NULL;\ncreate unique index uix_products_account_id_model ON products (account_id,model) WHERE model IS NOT NULL;\ncreate unique index uix_products_account_id_article ON products (account_id,article) WHERE article IS NOT NULL;\n")
+	if err := db.Migrator().AutoMigrate(&Product{}); err != nil {log.Fatal(err)}
+	// db.Model(&Product{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	err := db.Exec("ALTER TABLE products ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
+	db.Exec("create unique index uix_products_account_id_sku ON products (account_id,sku) where (length(sku) > 0);\ncreate unique index uix_products_account_id_model ON products (account_id,model) WHERE (length(model) > 0);\ncreate unique index uix_products_account_id_article ON products (account_id,article) WHERE (length(article) > 0);\n-- create unique index uix_products_account_id_sku ON products (account_id,sku) WHERE sku IS NOT NULL;\n")
+
+	err = db.SetupJoinTable(&Product{}, "ProductCards", &ProductCardProduct{})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func (product *Product) BeforeCreate(scope *gorm.Scope) error {
+func (product *Product) BeforeCreate(tx *gorm.DB) error {
 	product.Id = 0
 
 	// 1. Рассчитываем PublicId (#id заказа) внутри аккаунта
@@ -109,6 +117,10 @@ func (product Product) GetId() uint {
 func (product Product) create() (*Product, error)  {
 	var newProduct = product
 	if err := db.Create(&newProduct).Preload("VatCode").Preload("PaymentSubject").First(&newProduct).Error; err != nil { return nil, err }
+
+	if err := db.Where("id = ?", newProduct.Id).First(&newProduct).Error;err != nil {
+		return nil, err
+	}
 
 	event.AsyncFire(Event{}.ProductCreated(newProduct.AccountId, newProduct.Id))
 	return &newProduct, nil
@@ -152,7 +164,7 @@ func (product *Product) update(input map[string]interface{}) error {
 	input = utils.FixJSONB_MapString(input, []string{"attributes"})
 	
 	if err := db.Set("gorm:association_autoupdate", false).
-		Model(&Product{}).Where("id = ?", product.Id).Omit("id", "account_id").Update(input).Error; err != nil {
+		Model(&Product{}).Where("id = ?", product.Id).Omit("id", "account_id").Updates(input).Error; err != nil {
 		return err
 	}
 
@@ -214,10 +226,10 @@ func (account Account) GetProductByPublicId(publicId uint) (*Product, error) {
 
 	return &product, nil
 }
-func (account Account) GetProductListPagination(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Product, uint, error) {
+func (account Account) GetProductListPagination(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Product, int64, error) {
 
 	products := make([]Product,0)
-	var total uint
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
@@ -291,7 +303,7 @@ func (account Account) UpdateProduct(productId uint, input map[string]interface{
 	if err != nil {
 		log.Fatal("Eroror json: ", err)
 	}
-	product.Attributes = postgres.Jsonb{RawMessage: jsonInput}
+	product.Attributes = jsonInput
 
 	err = product.update(input)
 	if err != nil {
@@ -322,10 +334,26 @@ func (account Account) DeleteProduct(productId uint) error {
 
 // ########## SELF FUNCTIONAL ############
 func (product Product) ExistSKU() bool {
-	return !db.Unscoped().First(&Product{},"account_id = ? AND sku = ?", product.AccountId, product.SKU).RecordNotFound()
+	if len(product.SKU) < 1 {
+		return false
+	}
+	var count int64
+	db.Model(&Product{}).Where("account_id = ? AND sku = ?", product.AccountId, product.SKU).Count(&count)
+	if count > 0 {
+		return true
+	}
+	return false
 }
 func (product Product) ExistModel() bool {
-	return !db.Unscoped().First(&Product{},"account_id = ? AND model = ?", product.AccountId, product.Model).RecordNotFound()
+	if len(product.Model) < 1 {
+		return false
+	}
+	var count int64
+	_ = db.Model(&Product{}).Where("account_id = ? AND model = ?", product.AccountId, product.Model).Count(&count)
+	if count > 0 {
+		return true
+	}
+	return false
 }
 func (product Product) AddAttr() error {
 	return nil
