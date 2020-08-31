@@ -10,27 +10,27 @@ import (
 )
 
 type Article struct {
-	Id     		uint   `json:"id" gorm:"primaryKey"`
+	Id     		uint   	`json:"id" gorm:"primaryKey"`
 	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
-	HashId 		string `json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	HashId 		string 	`json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
 
 	Public	 	bool 	`json:"public" gorm:"type:bool;default:false"` // Опубликована ли статья
 	Shared	 	bool 	`json:"shared" gorm:"type:bool;default:false"` // Расшарена ли статья
 
-	URL 		string `json:"url" gorm:"type:varchar(255);"` // идентификатор страницы url
-	Breadcrumb 	string `json:"breadcrumb" gorm:"type:varchar(255);default:null;"`
+	URL 		*string `json:"url" gorm:"type:varchar(255);"` // идентификатор страницы url
+	Breadcrumb 	*string `json:"breadcrumb" gorm:"type:varchar(255);"`
 	
-	Name 		string `json:"name" gorm:"type:varchar(255);"` // Полное имя Имя статьи
-	ShortName 	string `json:"short_name" gorm:"type:varchar(255);default:NULL"` // Короткое имя статьи
+	Name 		*string `json:"name" gorm:"type:varchar(255);"` // Полное имя Имя статьи
+	ShortName 	*string `json:"short_name" gorm:"type:varchar(255);"` // Короткое имя статьи
 
 
-	Body 		string `json:"body" gorm:"type:text;"` // pgsql: text
-	Description string `json:"description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
+	Body 		*string `json:"body" gorm:"type:text;"` // pgsql: text
+	Description *string `json:"description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 
-	MetaTitle 			string `json:"meta_title" gorm:"type:varchar(255);default:null;"`
-	MetaKeywords 		string `json:"meta_keywords" gorm:"type:varchar(255);default:null;"`
-	MetaDescription 	string `json:"meta_description" gorm:"type:varchar(255);default:null;"`
+	MetaTitle 			*string `json:"meta_title" gorm:"type:varchar(255);"`
+	MetaKeywords 		*string `json:"meta_keywords" gorm:"type:varchar(255);"`
+	MetaDescription 	*string `json:"meta_description" gorm:"type:varchar(255);"`
 
 	// Обновлять только через AppendImage
 	Image 				*Storage	`json:"image" gorm:"polymorphic:Owner;"` //association_autoupdate:false;

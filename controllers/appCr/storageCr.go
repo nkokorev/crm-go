@@ -418,8 +418,12 @@ func ArticleRawPreviewCDNGet(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
+	if article.Body == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка: отсутствует тело статьи"}))
+		return
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(article.Body))
+	w.Write([]byte(*article.Body))
 }
 
 func ArticleCompilePreviewCDNGet(w http.ResponseWriter, r *http.Request) {
@@ -435,6 +439,10 @@ func ArticleCompilePreviewCDNGet(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(u.Error{Message:"Файл не найден"}))
 		return
 	}
+	if article.Body == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка: отсутствует тело статьи"}))
+		return
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(article.Body))
+	w.Write([]byte(*article.Body))
 }

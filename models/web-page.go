@@ -15,21 +15,21 @@ type WebPage struct {
 	WebSiteId 	uint 	`json:"web_site_id" gorm:"type:int;index;not null;"`
 	ParentId 	uint	`json:"parent_id"`
 
-	Code 	string `json:"code" gorm:"type:varchar(255);default:null;"` // tea, coffe, china
-	URL 	string `json:"url" gorm:"type:varchar(255);default:null;"`
+	Code 		*string `json:"code" gorm:"type:varchar(255);"` // tea, coffe, china
+	URL 		*string `json:"url" gorm:"type:varchar(255);"`
 
-	Name 		string `json:"name" gorm:"type:varchar(255);default:null;"` // Чай, кофе, ..
-	IconName 	string `json:"icon_name" gorm:"type:varchar(50);default:null;"` // icon name
-	RouteName 	string `json:"route_name" gorm:"type:varchar(50);default:null;"` // Чай, кофе, ..
+	Name 		*string `json:"name" gorm:"type:varchar(255);"` // Чай, кофе, ..
+	IconName 	*string `json:"icon_name" gorm:"type:varchar(50);"` // icon name
+	RouteName 	*string `json:"route_name" gorm:"type:varchar(50);"` // Чай, кофе, ..
 
 	Order 		int		`json:"order" gorm:"type:int;default:10;"` // Порядок отображения (часто нужно файлам)
-	Breadcrumb 	string 	`json:"breadcrumb" gorm:"type:varchar(255);default:null;"`
-	ShortDescription string `json:"short_description" gorm:"type:varchar(255);default:null;"`
-	Description string `json:"description" gorm:"type:text;default:null;"`
+	Breadcrumb 			*string 	`json:"breadcrumb" gorm:"type:varchar(255);"`
+	ShortDescription 	*string `json:"short_description" gorm:"type:varchar(255);"`
+	Description 		*string `json:"description" gorm:"type:text;"`
 
-	MetaTitle 		string `json:"meta_title" gorm:"type:varchar(255);default:null;"`
-	MetaKeywords 	string `json:"meta_keywords" gorm:"type:varchar(255);default:null;"`
-	MetaDescription string `json:"meta_description" gorm:"type:varchar(255);default:null;"`
+	MetaTitle 		*string `json:"meta_title" gorm:"type:varchar(255);"`
+	MetaKeywords 	*string `json:"meta_keywords" gorm:"type:varchar(255);"`
+	MetaDescription *string `json:"meta_description" gorm:"type:varchar(255);"`
 
 	CreatedAt 		time.Time `json:"created_at"`
 	UpdatedAt 		time.Time `json:"updated_at"`
@@ -133,7 +133,7 @@ func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		search = "%"+search+"%"
 
 		err := (&WebPage{}).GetPreloadDb(true,false,true).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&emailCampaigns, "name ILIKE ? OR subject ILIKE ? OR preview_text ILIKE ?", search,search,search).Error
+			Find(&emailCampaigns, "name ILIKE ? OR code ILIKE ? OR route_name ILIKE ?", search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -141,7 +141,7 @@ func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 		// Определяем total
 		err = db.Model(&WebPage{}).
-			Where("account_id = ? AND name ILIKE ? OR subject ILIKE ? OR preview_text ILIKE ?", accountId, search,search,search).
+			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR route_name ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}

@@ -32,12 +32,15 @@ type EmailNotification struct {
 
 	Subject			string 	`json:"subject" gorm:"type:varchar(128);not null;"` // Тема сообщения, компилируются
 	PreviewText		string 	`json:"preview_text" gorm:"type:varchar(255);default:''"` // Тема сообщения, компилируются
-	
-	EmailTemplateId *uint 	`json:"email_template_id" gorm:"type:int;default:null;"` // всегда должен быть шаблон, иначе смысла в нем нет
-	EmailTemplate 	EmailTemplate 	`json:"email_template" gorm:"preload:true"`
 
-	EmailBoxId		*uint 	`json:"email_box_id" gorm:"type:int;default:null;"` // С какого ящика идет отправка
-	EmailBox		EmailBox `json:"email_box" gorm:"preload:false"`
+	EmailTemplateId *uint 	`json:"email_template_id" gorm:"type:int;"`
+	EmailTemplate 	EmailTemplate 	`json:"email_template"`
+
+	// EmailTemplateId *uint 	`json:"email_template_id" gorm:"type:int;"` // всегда должен быть шаблон, иначе смысла в нем нет
+	// EmailTemplate 	EmailTemplate 	`json:"email_template" gorm:"preload:true"`
+
+	EmailBoxId		*uint 	`json:"email_box_id" gorm:"type:int;"` // С какого ящика идет отправка
+	EmailBox		EmailBox `json:"email_box"`
 	// =============   Настройки получателей    ===================
 
 	// Список пользователей позволяет сделать "рассылку" уведомления по email-адреса пользователей, до 10 человек.
@@ -82,7 +85,7 @@ func (emailNotification EmailNotification) IsActive() bool {
 // ############# Entity interface #############
 
 func (EmailNotification) PgSqlCreate() {
-	db.Migrator().CreateTable(&EmailNotification{})
+	if err := db.Migrator().CreateTable(&EmailNotification{}); err != nil {log.Fatal(err)}
 	// db.Model(&EmailNotification{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	// db.Model(&EmailNotification{}).AddForeignKey("email_template_id", "email_templates(id)", "RESTRICT", "CASCADE")
 	err := db.Exec("ALTER TABLE email_notifications " +

@@ -18,22 +18,19 @@ type ProductCard struct {
 	WebPageId 			uint 	`json:"web_page_id" gorm:"type:int;index;"` // группа товаров, категория товаров
 
 	Enabled 			bool 	`json:"enabled" gorm:"type:bool;default:true"` // активна ли карточка товара
-	URL 				string 	`json:"url" gorm:"type:varchar(255);"` // идентификатор страницы (products/syao-chzhun )
-	Breadcrumb 			string 	`json:"breadcrumb" gorm:"type:varchar(255);default:null;"`
-	Label	 			string 	`json:"label" gorm:"type:varchar(255);default:'';"` // что выводить в список товаров
+	URL 				*string 	`json:"url" gorm:"type:varchar(255);"` // идентификатор страницы (products/syao-chzhun )
+	Breadcrumb 			*string 	`json:"breadcrumb" gorm:"type:varchar(255);"`
+	Label	 			*string 	`json:"label" gorm:"type:varchar(255);"` // что выводить в список товаров
 
-	MetaTitle 			string 	`json:"meta_title" gorm:"type:varchar(255);default:null;"`
-	MetaKeywords 		string 	`json:"meta_keywords" gorm:"type:varchar(255);default:null;"`
-	MetaDescription 	string 	`json:"meta_description" gorm:"type:varchar(255);default:null;"`
+	MetaTitle 			*string 	`json:"meta_title" gorm:"type:varchar(255);"`
+	MetaKeywords 		*string 	`json:"meta_keywords" gorm:"type:varchar(255);"`
+	MetaDescription 	*string 	`json:"meta_description" gorm:"type:varchar(255);"`
 
 	// Full description нет т.к. в карточке описание берется от офера
-	ShortDescription 	string 	`json:"short_description" gorm:"type:varchar(255);default:null;"` // для превью карточки товара
-	Description 		string 	`json:"description" gorm:"type:text;default:null;"` // фулл описание товара
+	ShortDescription 	*string 	`json:"short_description" gorm:"type:varchar(255);"` // для превью карточки товара
+	Description 		*string 	`json:"description" gorm:"type:text;"` // фулл описание товара
 
 	// Хелперы карточки: переключение по цветам, размерам и т.д.
-	// SwitchProducts	 	*pq.StringArray `json:"switch_products" sql:"type:varchar(255)[];default:null"` // {color, size} Параметры переключения среди предложений
-	//SwitchProducts	 	pq.StringArray `json:"switch_products" sql:"type:varchar(255)[];default:'{}'"` // {color, size} Параметры переключения среди предложений
-	//SwitchProducts	 	[]string `json:"switch_products" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // {color, size} Параметры переключения среди предложений
 	SwitchProducts	 	datatypes.JSON `json:"switch_products"` // {color, size} Параметры переключения среди предложений
 
 	// ProductGroup 		ProductGroup 	`json:"-" gorm:"-"`

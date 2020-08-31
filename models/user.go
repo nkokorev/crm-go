@@ -36,10 +36,10 @@ type User struct {
 	EnabledAuthFromApp	bool	`json:"enabled_auth_from_app" gorm:"type:bool;default:false;"` // Разрешен ли вход, через app.ratuscrm.com
 
 	Subscribed			bool		`json:"subscribed" gorm:"type:bool;default:true;"` // Есть ли подписка на общее рассылки.
-	SubscribedAt 		*time.Time 	`json:"subscribed_at" gorm:"default:null"`
-	UnsubscribedAt 		*time.Time 	`json:"unsubscribed_at" gorm:"default:null"` // << last
+	SubscribedAt 		*time.Time 	`json:"subscribed_at"`
+	UnsubscribedAt 		*time.Time 	`json:"unsubscribed_at"` // << last
 	// manual, gui, api,
-	SubscriptionReason	*string 	`json:"subscription_reason" gorm:"type:varchar(32);default:null"`
+	SubscriptionReason	*string 	`json:"subscription_reason" gorm:"type:varchar(32);"`
 
 	// UnsubscribedReason	string `json:"unsubscribedReason" gorm:"default:null"` << see mta-bounced...
 
@@ -47,9 +47,9 @@ type User struct {
 	InvitedUserId 		*uint 	`json:"invited_user_id"` // указывает какой аккаунт по дефолту загружать
 
 	// Верификация, сброс пароля и т.д.
-	EmailVerifiedAt *time.Time `json:"email_verified_at" gorm:"default:null"` // дата подтверждения email-а (автоматически проставляется, если методом верфикации пользователя был подтвержден email)
-	PhoneVerifiedAt *time.Time `json:"phone_verified_at" gorm:"default:null"` // дата подтверждения телефона (автоматически проставляется, если методом верфикации пользователя был подтвержден телефон)
-	PasswordResetAt *time.Time `json:"password_reset_at" gorm:"default:null"`
+	EmailVerifiedAt *time.Time `json:"email_verified_at"` // дата подтверждения email-а (автоматически проставляется, если методом верфикации пользователя был подтвержден email)
+	PhoneVerifiedAt *time.Time `json:"phone_verified_at"` // дата подтверждения телефона (автоматически проставляется, если методом верфикации пользователя был подтвержден телефон)
+	PasswordResetAt *time.Time `json:"password_reset_at"`
 
 
 	CreatedAt time.Time `json:"created_at"`

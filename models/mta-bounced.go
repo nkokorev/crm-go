@@ -20,11 +20,11 @@ type MTABounced struct {
 	OwnerType	EmailSenderType	`json:"owner_type" gorm:"varchar(32);default:'email_queues';not null;"`
 
 	// Получатель
-	UserId		*uint 	`json:"user_id" gorm:"type:int;default:null;"`
+	UserId		*uint 	`json:"user_id" gorm:"type:int;"`
 	User		User	`json:"user"`
 
 	// Почтовый ящик, с которым произошли проблемы
-	EmailBoxId	*uint 		`json:"email_box_id" gorm:"type:int;default:null;"`
+	EmailBoxId	*uint 		`json:"email_box_id" gorm:"type:int;"`
 	EmailBox 	EmailBox 	`json:"email_box"`
 
 	// true = soft, false = hard

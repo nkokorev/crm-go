@@ -27,7 +27,7 @@ type TaskScheduler struct {
 	Status	WorkStatus `json:"status" gorm:"type:varchar(18);default:'planned'"`
 
 	// Причина провала / отмены (необязательный параметр)
-	Reason 	string `json:"reason" gorm:"type:varchar(128);default:null"`
+	Reason 	*string `json:"reason" gorm:"type:varchar(128);"`
 
 	CreatedAt 		time.Time `json:"created_at"`
 	UpdatedAt 		time.Time `json:"updated_at"`

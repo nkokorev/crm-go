@@ -40,20 +40,20 @@ type Role struct {
 	Type            roleType   `json:"type" gorm:"type:varchar(3);not null;"`	// gui / api
 	Name            string     `json:"name" gorm:"type:varchar(255);not null;"` // "Владелец аккаунта", "Администратор", "Менеджер" ...
 
-	Description string `json:"description" gorm:"type:varchar(255);default:null;"` // Краткое описание роли
+	Description 	*string `json:"description" gorm:"type:varchar(255);"` // Краткое описание роли
 }
 
 var systemRoles = []Role{
-	{ AccountId: 1, Name: "Владелец аккаунта",Tag: RoleOwner, 	Type: roleTypeGui,	Description: "Доступ ко всем данным и функционалу аккаунта."},
-	{ AccountId: 1, Name: "Администратор", 	Tag: RoleAdmin, 	Type: roleTypeGui,	Description: "Доступ ко всем данным и функционалу аккаунта. Не может удалить аккаунт или менять владельца аккаунта."},
-	{ AccountId: 1, Name: "Менеджер", 		Tag: RoleManager, 	Type: roleTypeGui,	Description: "Не может добавлять пользователей, менять биллинговую информацию и систему ролей."},
-	{ AccountId: 1, Name: "Маркетолог", 		Tag: RoleMarketer, 	Type: roleTypeGui,	Description: "Читает все клиентские данные, может изменять все что касается маркетинга, но не заказы или склады."},
-	{ AccountId: 1, Name: "Автор", 			Tag: RoleAuthor, 	Type: roleTypeGui,	Description: "Может создавать контент: писать статьи, письма, описания к товарам и т.д."},
-	{ AccountId: 1, Name: "Наблюдатель", 		Tag: RoleViewer, 	Type: roleTypeGui,	Description: "The Viewer can view reports in the account"},
-	{ AccountId: 1, Name: "Клиент", 			Tag: RoleClient, 	Type: roleTypeGui,	Description: "Стандартная роль для всех клиентов"},
-	{ AccountId: 1, Name: "Full Access", 		Tag: RoleFullAccess, Type: roleTypeApi,	Description: "Доступ ко всем функциям API"},
-	{ AccountId: 1, Name: "Site Access", 		Tag: RoleSiteAccess, Type: roleTypeApi,	Description: "Доступ к аккаунту через API, необходимый для интеграции с сайтом"},
-	{ AccountId: 1, Name: "Read Access", 		Tag: RoleReadAccess, Type: roleTypeApi,	Description: "Доступ к чтению основной информации об аккаунте."},
+	{ AccountId: 1, Name: "Владелец аккаунта",Tag: RoleOwner, 	Type: roleTypeGui,	Description: utils.STRp("Доступ ко всем данным и функционалу аккаунта.")},
+	{ AccountId: 1, Name: "Администратор", 	Tag: RoleAdmin, 	Type: roleTypeGui,	Description: utils.STRp("Доступ ко всем данным и функционалу аккаунта. Не может удалить аккаунт или менять владельца аккаунта.")},
+	{ AccountId: 1, Name: "Менеджер", 		Tag: RoleManager, 	Type: roleTypeGui,	Description: utils.STRp("Не может добавлять пользователей, менять биллинговую информацию и систему ролей.")},
+	{ AccountId: 1, Name: "Маркетолог", 		Tag: RoleMarketer, 	Type: roleTypeGui,	Description: utils.STRp("Читает все клиентские данные, может изменять все что касается маркетинга, но не заказы или склады.")},
+	{ AccountId: 1, Name: "Автор", 			Tag: RoleAuthor, 	Type: roleTypeGui,	Description: utils.STRp("Может создавать контент: писать статьи, письма, описания к товарам и т.д.")},
+	{ AccountId: 1, Name: "Наблюдатель", 		Tag: RoleViewer, 	Type: roleTypeGui,	Description: utils.STRp("The Viewer can view reports in the account")},
+	{ AccountId: 1, Name: "Клиент", 			Tag: RoleClient, 	Type: roleTypeGui,	Description: utils.STRp("Стандартная роль для всех клиентов")},
+	{ AccountId: 1, Name: "Full Access", 		Tag: RoleFullAccess, Type: roleTypeApi,	Description: utils.STRp("Доступ ко всем функциям API")},
+	{ AccountId: 1, Name: "Site Access", 		Tag: RoleSiteAccess, Type: roleTypeApi,	Description: utils.STRp("Доступ к аккаунту через API, необходимый для интеграции с сайтом")},
+	{ AccountId: 1, Name: "Read Access", 		Tag: RoleReadAccess, Type: roleTypeApi,	Description: utils.STRp("Доступ к чтению основной информации об аккаунте.")},
 }
 
 func (Role) PgSqlCreate() {
@@ -114,7 +114,7 @@ func (role Role) create() (Entity, error)  {
 	if len([]rune(role.Name)) > 255 {
 		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleName":"Слишком длинное имя, макс. 255 символов"}}
 	}
-	if len([]rune(role.Description)) > 255 {
+	if role.Description != nil && len([]rune(*role.Description)) > 255 {
 		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleDescription":"Слишком длинное описание, макс. 255 символов"}}
 	}
 

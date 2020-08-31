@@ -444,7 +444,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 		UiApiUserRegistrationInvitationOnly: false,
 		UiApiUserRegistrationRequiredFields: datatypes.JSON(utils.StringArrToRawJson([]string{"email","phone","name"})),
 		UiApiUserEmailDeepValidation:        true, // хз
-		UserVerificationMethodId:            dvc.Id,
+		UserVerificationMethodId:            &dvc.Id,
 		UiApiEnabledLoginNotVerifiedUser:    true, // really?
 		VisibleToClients:                    false,
 	})
@@ -850,7 +850,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	}
 
 	mPage, err := airoClimat.CreateEntity(&models.WebPage{
-		AccountId: airoClimat.Id, WebSiteId: webSiteAiro.Id,Code: "root", Name: "", URL: "/", IconName: "far fa-home", RouteName: "info.index",
+		AccountId: airoClimat.Id, WebSiteId: webSiteAiro.Id,Code: utils.STRp("root"), Name: nil, URL: utils.STRp("/"),
+		IconName:  utils.STRp("far fa-home"), RouteName:  utils.STRp("info.index"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать mPage для airoClimat webSite: ", err)
@@ -859,7 +860,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	webPageRoot := mPage.(*models.WebPage)
 
 	catE, err := webPageRoot.CreateChild(models.WebPage {
-		AccountId: airoClimat.Id, Code: "catalog", Name: "Весь каталог", URL: "catalog", IconName: "far fa-th-large", RouteName: "catalog",
+		AccountId: airoClimat.Id, Code:  utils.STRp("catalog"), Name:  utils.STRp("Весь каталог"), URL:  utils.STRp("catalog"),
+		IconName:  utils.STRp("far fa-th-large"), RouteName:  utils.STRp("catalog"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
@@ -869,14 +871,16 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	webCatalogRoot := catE.(*models.WebPage)
 
 	catGr1, err := webCatalogRoot.CreateChild(models.WebPage{
-		AccountId: airoClimat.Id, Code: "catalog",Name: "Бактерицидные рециркуляторы", URL: "bactericidal-recirculators", IconName: "far fa-fan-table", RouteName: "catalog.recirculators",
+		AccountId: airoClimat.Id, Code:  utils.STRp("catalog"),Name:  utils.STRp("Бактерицидные рециркуляторы"), URL:  utils.STRp("bactericidal-recirculators"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.recirculators"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 		return
 	}
 	catGr2, err := webCatalogRoot.CreateChild(models.WebPage{
-		AccountId: airoClimat.Id, Code: "catalog",Name: "Бактерицидные камеры", URL: "bactericidal-chambers", IconName: "far fa-box-full", RouteName: "catalog.chambers",
+		AccountId: airoClimat.Id, Code:  utils.STRp("catalog"),Name:  utils.STRp("Бактерицидные камеры"), URL:  utils.STRp("bactericidal-chambers"),
+		IconName:  utils.STRp("far fa-box-full"), RouteName:  utils.STRp("catalog.chambers"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
@@ -887,14 +891,16 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 
 	_, err = webPageRoot.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code: "info", Name: "Статьи", URL: "articles", IconName: "far fa-books", RouteName: "info.articles", Order: 1,
+			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Name:  utils.STRp("Статьи"), URL:  utils.STRp("articles"),
+			IconName:  utils.STRp("far fa-books"), RouteName:  utils.STRp("info.articles"), Order: 1,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
 	deliveryGrE, err := webPageRoot.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code: "delivery", Name: "Доставка товара", URL: "delivery", IconName: "far fa-shipping-fast", RouteName: "delivery", Order: 1,
+			AccountId: airoClimat.Id, Code:  utils.STRp("delivery"), Name:  utils.STRp("Доставка товара"), URL:  utils.STRp("delivery"),
+			IconName:  utils.STRp("far fa-shipping-fast"), RouteName:  utils.STRp("delivery"), Order: 1,
 		})
 	if err != nil {
 		log.Fatal(err)
@@ -902,32 +908,37 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	deliveryGroupRoute := deliveryGrE.(*models.WebPage)
 	_, err = deliveryGroupRoute.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code: "delivery", Name: "Способы оплаты", URL: "payment", IconName: "far fa-hand-holding-usd", RouteName: "delivery.payment", Order: 2,
+			AccountId: airoClimat.Id, Code:  utils.STRp("delivery"), Name:  utils.STRp("Способы оплаты"), URL:  utils.STRp("payment"),
+			IconName:  utils.STRp("far fa-hand-holding-usd"), RouteName:  utils.STRp("delivery.payment"), Order: 2,
 		})
 	_, err = deliveryGroupRoute.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code: "delivery", Name: "Возврат товара", URL: "moneyback", IconName: "far fa-exchange-alt", RouteName: "delivery.moneyback", Order: 3,
+			AccountId: airoClimat.Id, Code:  utils.STRp("delivery"), Name:  utils.STRp("Возврат товара"), URL:  utils.STRp("moneyback"),
+			IconName:  utils.STRp("far fa-exchange-alt"), RouteName:  utils.STRp("delivery.moneyback"), Order: 3,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
 	_, err = webPageRoot.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code: "info", Name: "О компании", URL: "about", IconName: "far fa-home-heart", RouteName: "info.about",      Order: 5,
+			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Name:  utils.STRp("О компании"), URL:  utils.STRp("about"),
+			IconName:  utils.STRp("far fa-home-heart"), RouteName:  utils.STRp("info.about"),      Order: 5,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
 	_, err = webPageRoot.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code: "info", Name: "Политика конфиденциальности", URL: "privacy-policy", IconName: "far fa-home-heart", RouteName: "info.privacy-policy",      Order: 6,
+			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Name:  utils.STRp("Политика конфиденциальности"), URL:  utils.STRp("privacy-policy"),
+			IconName:  utils.STRp("far fa-home-heart"), RouteName:  utils.STRp("info.privacy-policy"),      Order: 6,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
 	_, err = webPageRoot.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code: "info", Name: "Контакты", URL: "contacts", IconName: "far fa-address-book", RouteName: "info.contacts",  Order: 10,
+			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Name:  utils.STRp("Контакты"), URL:  utils.STRp("contacts"),
+			IconName:  utils.STRp("far fa-address-book"), RouteName:  utils.STRp("info.contacts"),  Order: 10,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
@@ -936,7 +947,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	////////
 	_, err = webPageRoot.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code: "cart", Name: "Корзина", URL: "cart", IconName: "far fa-cart-arrow-down", RouteName: "cart", Order: 1,
+			AccountId: airoClimat.Id, Code:  utils.STRp("cart"), Name:  utils.STRp("Корзина"), URL:  utils.STRp("cart"),
+				IconName:  utils.STRp("far fa-cart-arrow-down"), RouteName:  utils.STRp("cart"), Order: 1,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
@@ -944,39 +956,21 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 
 	// 6. Создаем карточки товара
 	cards := []models.ProductCard{
-		{Id: 0, URL: "airo-dez-adjustable-black", 	Label:"Рециркулятор AIRO-DEZ черный с регулировкой", Breadcrumb: "Рециркулятор AIRO-DEZ черный с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ черный с регулировкой",
-			SwitchProducts: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
-				"color":"черный",
-				"bodyMaterial":"металл",
-				"filterType":"угольно-фотокаталитический",
-				"performance":150, // m3/час
-				"rangeUVRadiation":"250-260Hm",
-				"powerLampRecirculator":10.8, // Вт/m2
-				"powerConsumption":60, // Вт
-				"lifeTimeDevice":100000, // часов
-				"lifeTimeLamp":9000, // часов
-				"baseTypeLamp":"", //Тип цоколя лампы
-				"degreeProtection":"IP20",
-				"supplyVoltage":"175-265В",
-				"temperatureMode":"+2...+50C",
-				"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
-				"noiseLevel":35, //дБ
-				"grossWeight": 5.5, // Брутто, кг
-			}))},
-		{Id: 0, URL: "airo-dez-black", 				Label:"Рециркулятор AIRO-DEZ черный", Breadcrumb: "Рециркулятор AIRO-DEZ черный", MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ черный"},
-		{Id: 0, URL: "airo-dez-adjustable-white", 	Label:"Рециркулятор AIRO-DEZ белый с регулировкой", Breadcrumb: "Рециркулятор AIRO-DEZ белый с регулировкой", MetaTitle: "Рециркулятор AIRO-DEZ белый с регулировкой"},
-		{Id: 0, URL: "airo-dez-white", 				Label:"Рециркулятор AIRO-DEZ белый", Breadcrumb: "Рециркулятор AIRO-DEZ белый",MetaTitle: "Рециркулятор воздуха бактерицидный AIRO-DEZ белый"},
-		{Id: 0, URL: "airo-dez-compact", 			Label: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", Breadcrumb: "Мобильный аиродезинфектор AIRO-DEZ COMPACT",MetaTitle: "Мобильный аиродезинфектор AIRO-DEZ COMPACT", },
+		{Id: 0, URL: utils.STRp("airo-dez-adjustable-black"),	Label: utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой"),Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой"), 	MetaTitle:  utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой")},
+		{Id: 0, URL: utils.STRp("airo-dez-black"), 				Label:utils.STRp("Рециркулятор AIRO-DEZ черный"), 				Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ черный"), 					MetaTitle: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ черный")},
+		{Id: 0, URL: utils.STRp("airo-dez-adjustable-white"), 	Label:utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой"), 	Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой"),	MetaTitle: utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой")},
+		{Id: 0, URL: utils.STRp("airo-dez-white"), 				Label:utils.STRp("Рециркулятор AIRO-DEZ белый"), 				Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ белый"),					MetaTitle: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ белый")},
+		{Id: 0, URL: utils.STRp("airo-dez-compact"), 			Label:utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"), 	Breadcrumb: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"),	MetaTitle: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT")},
 
-		{Id: 0, URL: "airo-dezpuf",			Label: "Бактерицидная камера пуф AIRO-DEZPUF", Breadcrumb: "Бактерицидная камера пуф AIRO-DEZPUF",MetaTitle: "Бактерицидная камера пуф AIRO-DEZPUF"},
-		{Id: 0, URL: "airo-dezpuf-wenge", 	Label: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге", Breadcrumb: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге",MetaTitle: "Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"},
+		{Id: 0, URL: utils.STRp("airo-dezpuf"),			Label: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF"), 				Breadcrumb: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF"),			MetaTitle: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF")},
+		{Id: 0, URL: utils.STRp("airo-dezpuf-wenge"), 	Label: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"), Breadcrumb: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"),MetaTitle: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге")},
 		
-		{Id: 0, URL: "airo-dezbox", 		Label: "Бактерицидная камера AIRO-DEZBOX", Breadcrumb: "Бактерицидная камера AIRO-DEZBOX",MetaTitle: "Бактерицидная камера AIRO-DEZBOX", },
-		{Id: 0, URL: "airo-dezbox-white", 	Label: "Бактерицидная камера AIRO-DEZBOX белая",Breadcrumb: "Бактерицидная камера AIRO-DEZBOX белая", MetaTitle: "Бактерицидная камера AIRO-DEZBOX белая", },
-		{Id: 0, URL: "airo-deztumb", 		Label: "Тумба облучатель бактерицидный AIRO-DEZTUMB", Breadcrumb: "Тумба облучатель бактерицидный AIRO-DEZTUMB",MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB", },
-		{Id: 0, URL: "airo-deztumb-big", 	Label: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", Breadcrumb: "Тумба облучатель бактерицидный AIRO-DEZTUMB big",MetaTitle: "Тумба облучатель бактерицидный AIRO-DEZTUMB big", },
+		{Id: 0, URL: utils.STRp("airo-dezbox"), 			Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX"), 					Breadcrumb: utils.STRp("Бактерицидная камера AIRO-DEZBOX"),				MetaTitle: utils.STRp("Бактерицидная камера AIRO-DEZBOX")},
+		{Id: 0, URL: utils.STRp("airo-dezbox-white"), 	Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая"),				Breadcrumb: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая"), 		MetaTitle: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая")},
+		{Id: 0, URL: utils.STRp("airo-deztumb"), 		Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB"), 		Breadcrumb: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB"),	MetaTitle: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB")},
+		{Id: 0, URL: utils.STRp("airo-deztumb-big"), 	Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"), 	Breadcrumb: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"),MetaTitle: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big")},
 
-		{Id: 0, URL: "airo-deztumb-pine", 	Label: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина",Breadcrumb: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", MetaTitle: "Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина", },
+		{Id: 0, URL: utils.STRp("airo-deztumb-pine"), Label: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"),	Breadcrumb: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"), MetaTitle: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина")},
 
 	}
 
@@ -1643,10 +1637,10 @@ func LoadArticlesAiroClimate()  {
 		}
 
 		articleNew := models.Article{
-			Name: strings.ToLower(file.Name()),
+			Name: utils.STRp(strings.ToLower(file.Name())),
 			Public: true,
 			Shared: true,
-			Body: string(body),
+			Body: utils.STRp(string(body)),
 		}
 		articleEntity, err := account.CreateEntity(&articleNew)
 		if err != nil {

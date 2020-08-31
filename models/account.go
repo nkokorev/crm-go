@@ -37,8 +37,8 @@ type Account struct {
 	// UI-API Интерфейс (https://ui.api.ratuscrm.com / https://ratuscrm.com/ui-api)
 	UiApiEnabled    bool   `json:"ui_api_enabled" gorm:"default:false;not null"`        // Принимать ли запросы через публичный UI-API интерфейсу (через https://ui.api.ratuscrm.com)
 	UiApiAesEnabled bool   `json:"ui_api_aes_enabled" gorm:"default:true;not null"`     // Включение AES-128/CFB шифрования для публичного UI-API
-	UiApiAesKey     string `json:"-" gorm:"type:varchar(16);default:null;"` 			// 128-битный ключ шифрования
-	UiApiJwtKey     string `json:"-" gorm:"type:varchar(32);default:null;"` 			// 128-битный ключ шифрования
+	UiApiAesKey     *string `json:"-" gorm:"type:varchar(16);"` 			// 128-битный ключ шифрования
+	UiApiJwtKey     *string `json:"-" gorm:"type:varchar(32);"` 			// 128-битный ключ шифрования
 
 	// Регистрация новых пользователей через UI/API
 	// UiApiAuthMethods                    datatypes.JSON `json:"-" sql:"type:varchar(32)[];default:'{email}'"`  // Доступные способы авторизации (проверяется в контроллере)
@@ -48,7 +48,7 @@ type Account struct {
 	UiApiUserRegistrationRequiredFields datatypes.JSON `json:"-" ` // список обязательных НЕ нулевых полей при регистрации новых пользователей через UI/API
 	UiApiUserEmailDeepValidation        bool           `json:"-" gorm:"default:false;not null"`               // глубокая проверка почты пользователя на предмет существования
 
-	UserVerificationMethodId         uint `json:"-" gorm:"type:int;default:null"` // метод
+	UserVerificationMethodId         *uint `json:"-" gorm:"type:int;"` // метод
 	UiApiEnabledLoginNotVerifiedUser bool `json:"-" gorm:"default:false;"`        // разрешать ли пользователю входить в аккаунт без завершенной верфикации?
 
 	// Storage
@@ -98,12 +98,12 @@ func (account *Account) BeforeCreate(tx *gorm.DB) (err error) {
 	account.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	account.CreatedAt = time.Now().UTC()
 
-	account.UiApiAesKey, err = utils.CreateAes128Key()
-	if err != nil {
-		return err
-	}
-	
-	account.UiApiJwtKey = utils.CreateHS256Key()
+	_aesKey, err := utils.CreateAes128Key()
+	if err != nil { return err}
+	account.UiApiAesKey = &_aesKey
+
+	_aesKey2 := utils.CreateHS256Key()
+	account.UiApiJwtKey = &_aesKey2
 
 	//account.UiApiJwtKey =  utils.CreateHS256Key()
 	//scope.SetColumn("ui_api_jwt_key", "fjdsfdfsjkfskjfds")
@@ -153,7 +153,7 @@ func CreateMainAccount() (*Account, error) {
 		// UiApiUserRegistrationRequiredFields: datatypes.JSON(utils.StringArrToRawJson([]string{"username","email","phone"})),
 		UiApiUserRegistrationRequiredFields: datatypes.JSON(utils.StringArrToRawJson([]string{"username","email","phone"})),
 
-		UserVerificationMethodId:         dvc.Id,
+		UserVerificationMethodId:         &dvc.Id,
 		UiApiEnabledLoginNotVerifiedUser: false,
 
 		VisibleToClients:         false, // клиенты не должны видеть что есть
@@ -838,7 +838,8 @@ func (account Account) IsVerifiedUser(userId uint) (bool, error) {
 		return false, utils.Error{Message: "Пользователь не найден"}
 	}
 
-	methods, err := GetUserVerificationTypeById(account.UserVerificationMethodId)
+	if account.UserVerificationMethodId == nil {return false, utils.Error{Message: "UserVerificationMethodId is nil!"}}
+	methods, err := GetUserVerificationTypeById(*account.UserVerificationMethodId)
 	if err != nil {
 		return false, err
 	}
@@ -1073,16 +1074,19 @@ func (account Account) GetAuthTokenWithClaims(claims JWT) (cryptToken string, er
 	if claims.AccountId < 1 || claims.UserId < 1 {
 		return "", errors.New("Не удалось обновить ключ безопасности")
 	}
+	if account.UiApiJwtKey == nil || account.UiApiAesKey == nil {
+		return "", errors.New("Ui Api JwtKey или Ui Api AesKey равен нулю")
+	}
 
 	//Create JWT token
 	token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), claims)
-	tokenString, err := token.SignedString([]byte(account.UiApiJwtKey))
+	tokenString, err := token.SignedString([]byte(*account.UiApiJwtKey))
 	if err != nil {
 		return
 	}
 
 	// Encode jwt-token
-	cryptToken, err = JWT{}.encrypt([]byte(account.UiApiAesKey), tokenString)
+	cryptToken, err = JWT{}.encrypt([]byte(*account.UiApiAesKey), tokenString)
 	if err != nil {
 		return
 	}
@@ -1094,6 +1098,9 @@ func (account Account) GetAuthTokenWithClaims(claims JWT) (cryptToken string, er
 func (account Account) GetAuthToken(user User, workAccount Account) (cryptToken string, err error) {
 	if account.Id < 1 || user.Id < 1 {
 		return "", errors.New("Не удалось обновить ключ безопасности")
+	}
+	if account.UiApiJwtKey == nil || account.UiApiAesKey == nil {
+		return "", errors.New("Отсутствует UiApiJwtKey или UiApiAesKey")
 	}
 
 	expiresAt := time.Now().UTC().Add(time.Minute * 120).Unix()
@@ -1108,14 +1115,17 @@ func (account Account) GetAuthToken(user User, workAccount Account) (cryptToken 
 		},
 	}
 
+	if account.UiApiJwtKey == nil {return "", errors.New("Отсутствует UiApiJwtKey")}
 	token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), claims)
-	tokenString, err := token.SignedString([]byte(account.UiApiJwtKey))
+	tokenString, err := token.SignedString([]byte(*account.UiApiJwtKey))
 	if err != nil {
 		return "", errors.New("Ошибка создания ключа безопастности")
 	}
 
 	// Encode jwt-token
-	cryptToken, err = JWT{}.encrypt([]byte(account.UiApiAesKey), tokenString)
+
+	if account.UiApiAesKey == nil {return "", errors.New("Отсутствует UiApiAesKey")}
+	cryptToken, err = JWT{}.encrypt([]byte(*account.UiApiAesKey), tokenString)
 	if err != nil {
 		return "", errors.New("Ошибка создания ключа безопастности")
 	}
@@ -1181,13 +1191,16 @@ func (account Account) ParseToken(decryptedToken string, claims *JWT) (err error
 	if account.Id < 1 {
 		return errors.New("Ошибка обновления ключа безопастности")
 	}
+	if account.UiApiJwtKey == nil {
+		return errors.New("Отсутствует UiApi JwtKey")
+	}
 	// получаем библиотечный токен
 	token, err := jwt.ParseWithClaims(decryptedToken, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			log.Printf("JWT: Unexpected signing method: %v", token.Header["alg"])
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(account.UiApiJwtKey), nil
+		return []byte(*account.UiApiJwtKey), nil
 	})
 	if err != nil {
 		return err
@@ -1201,8 +1214,10 @@ func (account Account) ParseToken(decryptedToken string, claims *JWT) (err error
 }
 
 func (account Account) DecryptToken(token string) (tk string, err error) {
-
-	tk, err = JWT{}.decrypt([]byte(account.UiApiAesKey), token)
+	if account.UiApiAesKey == nil {
+		return "", errors.New("Отсутствует UiApiAesKey")
+	}
+	tk, err = JWT{}.decrypt([]byte(*account.UiApiAesKey), token)
 	return
 }
 

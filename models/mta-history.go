@@ -25,20 +25,20 @@ type MTAHistory struct {
 	OwnerType	EmailSenderType	`json:"owner_type" gorm:"varchar(32);default:'email_queues';not null;"`
 	
 	// Id пользователя, которому было отправлено письмо серия.
-	UserId 	*uint `json:"user_id" gorm:"type:int;default:null;"` // при отправке на почту пользователю
+	UserId 	*uint `json:"user_id" gorm:"type:int;"` // при отправке на почту пользователю
 	User	User `json:"user"`
 
 	// Кому фактически был отправлен email
 	Email 	string `json:"email" gorm:"varchar(255);not null;"`
 	
 	// Queues: номер шага в очереди, который был совершен. Для статистики серий писем.
-	QueueStepId	*uint	`json:"queue_step_id" gorm:"type:smallint;default:null;"`
+	QueueStepId	*uint	`json:"queue_step_id" gorm:"type:smallint;"`
 
 	// Queues: последний ли шаг или промежуточный шаг в цепочке. По нему выборка завершивших серию писем за указанный период времени.
 	QueueCompleted 	bool 	`json:"queue_completed" gorm:"type:bool;default:false;"`
 
 	// Какой конкретно шаблон был отправлен. Может пригодиться для истории, кто что кому отправлял.
-	EmailTemplateId		*uint	`json:"email_template_id" gorm:"type:int;index;default:null;"` // << index для выборки по конкретному письму
+	EmailTemplateId		*uint	`json:"email_template_id" gorm:"type:int;index;"` // << index для выборки по конкретному письму
 
 	// Была ли успешна ли отправка. По этому показателю делаем выборку для кампаний и статистики уведомлений, серий писем.
 	// deprecated - вся история - валидных отправок. Ошибки сохраняются в mta-bounced

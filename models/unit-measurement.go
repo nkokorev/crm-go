@@ -15,7 +15,7 @@ type UnitMeasurement struct {
 
 	Tag 		string `json:"tag" gorm:"type:varchar(32);"` // для поиска
 
-	Description string `json:"description" gorm:"type:varchar(255);default:null;"` // pgsql: text
+	Description *string `json:"description" gorm:"type:varchar(255);"` // pgsql: text
 }
 
 func (UnitMeasurement) PgSqlCreate() {

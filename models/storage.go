@@ -22,18 +22,13 @@ type Storage struct {
 	// OwnerID   	uint	`json:"-" `   // ?? gorm:"association_foreignkey:Id"
 	OwnerType	string	`json:"owner_type" gorm:"type:varchar(80);column:owner_type"`
 
-	//Product		Product	`json:"-" gorm:"polymorphic:Owner;"`
-
-	//ProductId 	uint	`json:"product_id" gorm:"type:int;default:null;"` // id of products
-	//EmailId 	uint	`json:"emailId" gorm:"type:int;default:null;"` // id of email template
-
 	Priority 	int		`json:"priority" gorm:"type:int;"` // Порядок отображения (часто нужно файлам)
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // выводить ли где-то это изображение или нет
 
 	Name 				string `json:"name" gorm:"type:varchar(255);"` // имя файла (оно же при отдаче)
-	Alt 				string `json:"alt" gorm:"type:varchar(255);"` // alt для изображений
-	ShortDescription 	string `json:"short_description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
-	Description 		string `json:"description" gorm:"type:text;"` // pgsql: text // большое описание изображения (не, ну мало ли фанаты фото)
+	Alt 				*string `json:"alt" gorm:"type:varchar(255);"` // alt для изображений
+	ShortDescription 	*string `json:"short_description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
+	Description 		*string `json:"description" gorm:"type:text;"` // pgsql: text // большое описание изображения (не, ну мало ли фанаты фото)
 
 	// MetaData
 	MIME 		string 	`json:"mime" gorm:"type:varchar(90);"` // мета тип файла
