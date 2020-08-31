@@ -3,6 +3,7 @@ package models
 import (
 	"bytes"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
@@ -41,7 +42,7 @@ type EmailNotification struct {
 
 	// Список пользователей позволяет сделать "рассылку" уведомления по email-адреса пользователей, до 10 человек.
 	// SendingToUsers		bool			`json:"sendingToUsers" gorm:"type:bool;default:false"` // Отправлять пользователем RatusCRM (на их почтовые адреса, при их наличии)
-	RecipientUsersList	datatypes.JSON	`json:"recipient_users_list" gorm:"type:JSONB;DEFAULT '{}'::JSONB"` // список id пользователей, которые получат уведомление
+	RecipientUsersList	datatypes.JSON	`json:"recipient_users_list"` // список id пользователей, которые получат уведомление
 
 	// Динамический список пользователей
 	ParseRecipientUser	bool	`json:"parse_recipient_user" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя(ей) по userId / users: ['email@mail.ru']
@@ -51,7 +52,7 @@ type EmailNotification struct {
 	// ==========================================
 
 	// Скрытый список пользователей для Data и фронтенда
-	RecipientUsers []User	`json:"recipient_users" gorm:"-"`
+	RecipientUsers []User	`json:"_recipient_users" gorm:"-"`
 
 	CreatedAt 		time.Time `json:"created_at"`
 	UpdatedAt 		time.Time `json:"updated_at"`
@@ -106,21 +107,23 @@ func (emailNotification *EmailNotification) BeforeCreate(tx *gorm.DB) error {
 func (emailNotification *EmailNotification) AfterFind(tx *gorm.DB) (err error) {
 
 	// Собираем пользователей
-	/*b, err := emailNotification.RecipientUsersList.MarshalJSON()
-	if err != nil {
-		return err
+	var _users = make([]User,0)
+	if emailNotification.RecipientUsersList != nil {
+		var arr []uint
+		err = json.Unmarshal(emailNotification.RecipientUsersList, &arr)
+		if err != nil { return err }
+
+		if len(arr) > 0 {
+			err = db.Find(&emailNotification.RecipientUsers, "id IN (?)", arr).Error
+			if err != nil  {return err}
+		} else {
+			emailNotification.RecipientUsers = _users
+		}
+
+	}  else {
+		emailNotification.RecipientUsers = _users
 	}
 
-	var arr []uint
-	err = json.Unmarshal(b, &arr)
-	if err != nil { return err }*/
-
-	b, err := emailNotification.RecipientUsersList.MarshalJSON()
-	if err != nil { return err }
-
-	// err = db.Find(&emailNotification.RecipientUsers, "id IN (?)", arr).Error
-	err = db.Find(&emailNotification.RecipientUsers, "id IN (?)", b).Error
-	if err != nil  {return err}
 
 	// fix nono to ms
 	// emailNotification.DelayTime = time.Millisecond*emailNotification.DelayTime
@@ -239,28 +242,30 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 
 	return entities, total, nil
 }
-
 func (emailNotification *EmailNotification) update(input map[string]interface{}) error {
 
 	// Приводим в опрядок
-	input = utils.FixJSONB_Uint(input, []string{"recipientUsersList"})
+	input = utils.FixJSONB_Uint(input, []string{"recipient_users_list"})
 
-	delete(input, "emailTemplate")
-	delete(input, "emailBox")
-
-	if err := (&EmailNotification{}).GetPreloadDb(true,false,false).Where(" id = ?", emailNotification.Id).
-		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
+	delete(input, "email_template")
+	delete(input, "email_box")
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","email_template_id", "email_box_id","delay_time"}); err != nil {
 		return err
 	}
 
-	err := (&EmailNotification{}).GetPreloadDb(true,false,true).First(emailNotification, emailNotification.Id).Error
+	if err := (&EmailNotification{}).GetPreloadDb(true,false,false).Where(" id = ?", emailNotification.Id).
+		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
+		return err
+	}
+
+	err := emailNotification.GetPreloadDb(true,true,true).First(emailNotification, emailNotification.Id).Error
 	if err != nil {
 		return err
 	}
 
 	return nil
 }
-
 func (emailNotification *EmailNotification) delete () error {
 	return db.Model(EmailNotification{}).Where("id = ?", emailNotification.Id).Delete(emailNotification).Error
 }

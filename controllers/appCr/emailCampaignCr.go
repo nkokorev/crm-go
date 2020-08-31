@@ -247,7 +247,6 @@ func EmailCampaignChangeStatus(w http.ResponseWriter, r *http.Request) {
 	case models.WorkStatusPlanned:
 		err := emailCampaign.SetPlannedStatus()
 		if err != nil {
-			fmt.Println(err)
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}

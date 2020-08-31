@@ -257,7 +257,7 @@ func (emailCampaign *EmailCampaign) update(input map[string]interface{}) error {
 		return err
 	}
 
-	err := emailCampaign.GetPreloadDb(true,false,false).First(emailCampaign, emailCampaign.Id).Error
+	err := emailCampaign.GetPreloadDb(true,true,true).First(emailCampaign, emailCampaign.Id).Error
 	if err != nil {
 		return err
 	}
@@ -664,7 +664,7 @@ func (emailCampaign EmailCampaign) Validate() error {
 	}
 
 	// Проверяем ключи и загружаем еще раз все данные для отправки сообщения
-	if *emailCampaign.EmailTemplateId < 1 {
+	if emailCampaign.EmailTemplateId == nil {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного шаблона email-сообщения"}
 	}
 	err = account.LoadEntity(&emailCampaign.EmailTemplate, *emailCampaign.EmailTemplateId)
@@ -673,7 +673,7 @@ func (emailCampaign EmailCampaign) Validate() error {
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки шаблона email-сообщения"}
 	}
 
-	if *emailCampaign.EmailBoxId < 1 {
+	if emailCampaign.EmailBoxId == nil  {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного адреса отправителя"}
 	}
 	err = account.LoadEntity(&emailCampaign.EmailBox, *emailCampaign.EmailBoxId)
