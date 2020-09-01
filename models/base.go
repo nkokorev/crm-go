@@ -75,6 +75,7 @@ func ConnectDb() *gorm.DB {
 		PreferSimpleProtocol: false, // disables implicit prepared statement usage
 	}), &gorm.Config{
 		Logger: dbLogger,
+		SkipDefaultTransaction: false, // ожидать завершения записи
 		// DisableForeignKeyConstraintWhenMigrating: true,
 		/*NamingStrategy: schema.NamingStrategy{
 			TablePrefix: "t_",   // префикс имен таблиц, таблица для `User` будет `t_users`

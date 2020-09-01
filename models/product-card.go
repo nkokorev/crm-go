@@ -11,7 +11,6 @@ import (
 
 // Карточка "товара" в магазине в котором могут быть разные торговые предложения
 type ProductCard struct {
-	// Id     				uint 	`json:"id" gorm:"primaryKey"`
 	Id        			uint 	`json:"id" gorm:"primaryKey"`
 	PublicId			uint   	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 			uint 	`json:"-" gorm:"type:int;index;not null;"` // потребуется, если productGroupId == null
@@ -32,11 +31,11 @@ type ProductCard struct {
 	ShortDescription 	*string 	`json:"short_description" gorm:"type:varchar(255);"` // для превью карточки товара
 	Description 		*string 	`json:"description" gorm:"type:text;"` // фулл описание товара
 
-	// Хелперы карточки: переключение по цветам, размерам и т.д.
+	// Хелперы карточки: какой параметр выводить в качестве переключателя(ей) (цвета, шт, кг и т.д.)
 	SwitchProducts	 	datatypes.JSON `json:"switch_products"` // {color, size} Параметры переключения среди предложений
 
 	// Preview Images - небольшие пережатые изображения товара(ов)
-	Image 				[]Storage	`json:"images" gorm:"polymorphic:Owner;"`
+	Images 				[]Storage	`json:"images" gorm:"polymorphic:Owner;"`
 
 	WebPages 			[]ProductCard 	`json:"web_pages" gorm:"many2many:web_page_product_card;"`
 	// WebSite		 		WebSite 	`json:"-" gorm:"-"`
@@ -193,9 +192,9 @@ func (ProductCard) getPaginationList(accountId uint, offset, limit int, sortBy, 
 }
 func (productCard *ProductCard) update(input map[string]interface{}) error {
 
-	delete(input,"image")
+	delete(input,"images")
 	utils.FixInputHiddenVars(&input)
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","order","web_site_id"}); err != nil {
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","web_site_id","web_page_id"}); err != nil {
 		return err
 	}
 	input = utils.FixInputDataTimeVars(input,[]string{"expired_at"})
@@ -232,7 +231,7 @@ func (productCard *ProductCard) GetPreloadDb(autoUpdateOff bool, getModel bool, 
 	if preload {
 		// return _db.Preload("EmailTemplate").Preload("EmailBox").Preload("UsersSegment")
 		// return _db
-		return _db.Preload("Image", func(db *gorm.DB) *gorm.DB {
+		return _db.Preload("Images", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		})
 	} else {
@@ -240,3 +239,33 @@ func (productCard *ProductCard) GetPreloadDb(autoUpdateOff bool, getModel bool, 
 	}
 }
 
+
+////////////////
+
+func (productCard ProductCard) AppendProduct(input *Product, optOrder... int) error {
+
+	order := 10
+	if len(optOrder) > 0 {
+		order = optOrder[0]
+	}
+	var product *Product
+	if input.Id < 1 {
+		proPtr, err := input.create()
+		if err != nil {
+			return err
+		}
+		product = proPtr
+	} else {
+		product = input
+	}
+	if err := db.Model(&ProductCardProduct{}).Create(&ProductCardProduct{ProductId: product.Id, ProductCardId: productCard.Id, Order: order}).Error; err != nil {
+		return err
+	}
+
+	account, err := GetAccount(productCard.AccountId)
+	if err == nil && account != nil {
+		event.AsyncFire(Event{}.ProductCardUpdated(account.Id, productCard.Id))
+	}
+	
+	return nil
+}

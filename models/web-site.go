@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nkokorev/crm-go/event"
@@ -274,7 +275,7 @@ func (webSite WebSite) CreatePage(input WebPage) (*WebPage, error) {
 
 	return page, nil
 }
-func (webSite WebSite) CreateProductCard(input ProductCard) (*ProductCard, error) {
+/*func (webSite WebSite) CreateProductCard(input ProductCard) (*ProductCard, error) {
 	input.AccountId = webSite.AccountId
 	input.WebSiteId = webSite.Id
 
@@ -283,7 +284,7 @@ func (webSite WebSite) CreateProductCard(input ProductCard) (*ProductCard, error
 	}
 
 	return card, nil
-}
+}*/
 // ######### END OF ACCOUNT Functions ############
 
 // ######### SHOP PRODUCT Functions ############
@@ -304,7 +305,7 @@ func (webSite WebSite) CreateProduct(input Product, card ProductCard) (*Product,
 	}
 
 	// Добавляем продукт в карточку товара
-	if err = card.AppendProduct(product); err != nil {
+	if err := card.AppendProduct(product); err != nil {
 		return nil, err
 	}
 	
@@ -346,9 +347,14 @@ func (webSite WebSite) CreateProductWithProductCard(input Product, newCard Produ
 	newCard.WebSiteId = webSite.Id
 	newCard.WebPageId = webPageId
 	
-	card, err := newCard.create()
+	cardE, err := newCard.create()
 	if err != nil {
 		return nil, err
+	}
+
+	card, ok := cardE.(*ProductCard)
+	if !ok {
+		return nil, errors.New("Ошибка преобразования")
 	}
 
 	// Добавляем товар в новую карточку
@@ -356,7 +362,7 @@ func (webSite WebSite) CreateProductWithProductCard(input Product, newCard Produ
 		return nil, err
 	}
 
-	return nil, nil
+	return product, nil
 }
 
 /////////////////////////

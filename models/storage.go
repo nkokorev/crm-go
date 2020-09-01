@@ -73,6 +73,8 @@ func (fs *Storage) AfterCreate(tx *gorm.DB) (error) {
 		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
 	case "web_pages":
 		event.AsyncFire(Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
+	case "product_cards":
+		event.AsyncFire(Event{}.ProductCardUpdated(fs.AccountId, uint(fs.OwnerID)))
 	default:
 		event.AsyncFire(Event{}.StorageCreated(fs.AccountId, fs.Id))
 	}
@@ -87,6 +89,8 @@ func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
 		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
 	case "web_pages":
 		event.AsyncFire(Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
+	case "product_cards":
+		event.AsyncFire(Event{}.ProductCardUpdated(fs.AccountId, uint(fs.OwnerID)))
 	default:
 		event.AsyncFire(Event{}.StorageUpdated(fs.AccountId, fs.Id))
 	}
@@ -101,6 +105,8 @@ func (fs *Storage) AfterDelete(tx *gorm.DB) (err error) {
 		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
 	case "web_pages":
 		event.AsyncFire(Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
+	case "product_cards":
+		event.AsyncFire(Event{}.ProductCardUpdated(fs.AccountId, uint(fs.OwnerID)))
 	default:
 		event.AsyncFire(Event{}.StorageDeleted(fs.AccountId, fs.Id))
 	}
@@ -458,7 +464,24 @@ func (product Product) AppendAssociationImage(fs Entity) error {
 
 	return nil
 }
+func (productCard ProductCard) AppendAssociationImage(fs Entity) error {
+	file, ok := fs.(*Storage)
+	if !ok {
+		return utils.Error{Message: "Не возможно добавить изображение"}
+	}
 
+	if file.Id > 0 {
+		if err := fs.update(map[string]interface{}{"owner_id":productCard.Id,"owner_type":"product_cards"}); err != nil {
+			return err
+		}
+	} else {
+		if err := db.Model(&productCard).Association("Images").Append(file); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 func (article Article) AppendAssociationImage(fs Entity) error {
 	file, ok := fs.(*Storage)
 	if !ok {
@@ -477,7 +500,6 @@ func (article Article) AppendAssociationImage(fs Entity) error {
 
 	return nil
 }
-
 func (webPage WebPage) AppendAssociationImage(fs Entity) error {
 	file, ok := fs.(*Storage)
 	if !ok {
@@ -496,3 +518,4 @@ func (webPage WebPage) AppendAssociationImage(fs Entity) error {
 
 	return nil
 }
+

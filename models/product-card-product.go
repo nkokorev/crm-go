@@ -2,9 +2,11 @@ package models
 
 import "gorm.io/gorm"
 
+// HELPER FOR M<>M IN PgSQL
 type ProductCardProduct struct {
-	ProductId  uint
-	ProductCardId uint
+	ProductId  		uint
+	ProductCardId 	uint
+	Order			int `json:"order" gorm:"type:int;default:10;"`
 }
 func (ProductCardProduct) BeforeCreate(db *gorm.DB) error {
 	// ...
