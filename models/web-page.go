@@ -141,7 +141,7 @@ func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		search = "%"+search+"%"
 
 		err := (&WebPage{}).GetPreloadDb(true,false,true).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&emailCampaigns, "name ILIKE ? OR code ILIKE ? OR route_name ILIKE ?", search,search,search).Error
+			Find(&emailCampaigns, "label ILIKE ? OR code ILIKE ? OR route_name ILIKE ? OR icon_name ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -149,7 +149,7 @@ func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 		// Определяем total
 		err = db.Model(&WebPage{}).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR route_name ILIKE ?", accountId, search,search,search).
+			Where("label ILIKE ? OR code ILIKE ? OR route_name ILIKE ? OR icon_name ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -182,13 +182,13 @@ func (webPage *WebPage) update(input map[string]interface{}) error {
 
 	delete(input,"image")
 	utils.FixInputHiddenVars(&input)
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","order","web_site_id"}); err != nil {
 		return err
 	}
-	input = utils.FixInputDataTimeVars(input,[]string{"scheduleRun"})
-	
+	input = utils.FixInputDataTimeVars(input,[]string{"expired_at"})
+
 	if err := webPage.GetPreloadDb(true,false,false).Where(" id = ?", webPage.Id).
-		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
+		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
 		return err
 	}
 

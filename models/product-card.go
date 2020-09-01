@@ -1,7 +1,7 @@
 package models
 
 import (
-	"errors"
+	"database/sql"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/datatypes"
@@ -12,15 +12,17 @@ import (
 // Карточка "товара" в магазине в котором могут быть разные торговые предложения
 type ProductCard struct {
 	// Id     				uint 	`json:"id" gorm:"primaryKey"`
-	Id        			uint 	`json:"id" gorm:"primarykey"`
+	Id        			uint 	`json:"id" gorm:"primaryKey"`
+	PublicId			uint   	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 			uint 	`json:"-" gorm:"type:int;index;not null;"` // потребуется, если productGroupId == null
 	WebSiteId 			uint 	`json:"web_site_id" gorm:"type:int;index;"` // магазин, к которому относится
 	WebPageId 			uint 	`json:"web_page_id" gorm:"type:int;index;"` // группа товаров, категория товаров
 
 	Enabled 			bool 	`json:"enabled" gorm:"type:bool;default:true"` // активна ли карточка товара
-	URL 				*string 	`json:"url" gorm:"type:varchar(255);"` // идентификатор страницы (products/syao-chzhun )
-	Breadcrumb 			*string 	`json:"breadcrumb" gorm:"type:varchar(255);"`
+
 	Label	 			*string 	`json:"label" gorm:"type:varchar(255);"` // что выводить в список товаров
+	Path 				*string 	`json:"path" gorm:"type:varchar(255);"` // идентификатор страницы (products/syao-chzhun )
+	Breadcrumb 			*string 	`json:"breadcrumb" gorm:"type:varchar(255);"`
 
 	MetaTitle 			*string 	`json:"meta_title" gorm:"type:varchar(255);"`
 	MetaKeywords 		*string 	`json:"meta_keywords" gorm:"type:varchar(255);"`
@@ -33,18 +35,16 @@ type ProductCard struct {
 	// Хелперы карточки: переключение по цветам, размерам и т.д.
 	SwitchProducts	 	datatypes.JSON `json:"switch_products"` // {color, size} Параметры переключения среди предложений
 
-	// ProductGroup 		ProductGroup 	`json:"-" gorm:"-"`
-	// WebPage 			WebPage 	`json:"-" gorm:"-"`
-	WebPages 			[]WebPage 	`json:"web_pages" gorm:"many2many:web_page_product_card;"`
-	WebSite		 		WebSite 	`json:"-" gorm:"-"`
-	// Products 			[]*Product 		`json:"products" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
+	// Preview Images - небольшие пережатые изображения товара(ов)
+	Image 				[]Storage	`json:"images" gorm:"polymorphic:Owner;"`
+
+	WebPages 			[]ProductCard 	`json:"web_pages" gorm:"many2many:web_page_product_card;"`
+	// WebSite		 		WebSite 	`json:"-" gorm:"-"`
 	Products 			[]Product 	`json:"products" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
-	// Products 			[]Product 		`json:"products" gorm:"many2many:product_card_products;"`
 }
 
 func (ProductCard) PgSqlCreate() {
 	if err := db.Migrator().AutoMigrate(&ProductCard{}); err != nil { log.Fatal(err) }
-	// db.Model(&ProductCard{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	err := db.Exec("ALTER TABLE product_cards ADD CONSTRAINT product_cards_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {
 		log.Fatal("Error: ", err)
@@ -56,278 +56,187 @@ func (ProductCard) PgSqlCreate() {
 	}
 }
 
+// ############# Entity interface #############
+func (productCard ProductCard) GetId() uint { return productCard.Id }
+func (productCard *ProductCard) setId(id uint) { productCard.Id = id }
+func (productCard *ProductCard) setPublicId(publicId uint) { productCard.PublicId = publicId }
+func (productCard ProductCard) GetAccountId() uint { return productCard.AccountId }
+func (productCard *ProductCard) setAccountId(id uint) { productCard.AccountId = id }
+func (ProductCard) SystemEntity() bool { return false }
+// ############# End Entity interface #############
+
 func (productCard *ProductCard) BeforeCreate(tx *gorm.DB) error {
 	productCard.Id = 0
+
+	// PublicId
+	var lastIdx sql.NullInt64
+	err := db.Model(&ProductCard{}).Where("account_id = ?",  productCard.AccountId).
+		Select("max(public_id)").Row().Scan(&lastIdx)
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	productCard.PublicId = 1 + uint(lastIdx.Int64)
+
 	return nil
 }
+func (productCard *ProductCard) AfterFind(tx *gorm.DB) (err error) {
 
-
-func (productCard ProductCard) getId() uint {
-	return productCard.Id
+	return nil
 }
-
+func (productCard *ProductCard) AfterCreate(tx *gorm.DB) error {
+	event.AsyncFire(Event{}.ProductCardCreated(productCard.AccountId, productCard.Id))
+	return nil
+}
+func (productCard *ProductCard) AfterUpdate(tx *gorm.DB) error {
+	event.AsyncFire(Event{}.ProductCardUpdated(productCard.AccountId, productCard.Id))
+	return nil
+}
+func (productCard *ProductCard) AfterDelete(tx *gorm.DB) error {
+	event.AsyncFire(Event{}.DeliveryOrderDeleted(productCard.AccountId, productCard.Id))
+	return nil
+}
 // ######### CRUD Functions ############
-func (productCard ProductCard) create() (*ProductCard, error) {
-	var productCardNew = productCard
-	if err := db.Create(&productCardNew).Error; err != nil {
+func (productCard ProductCard) create() (Entity, error)  {
+
+	en := productCard
+
+	if err := db.Create(&en).Error; err != nil {
 		return nil, err
 	}
-	err := db.Where("id = ?", productCardNew.Id).Find(&productCardNew).Error
+
+	err := en.GetPreloadDb(false,false, true).First(&en, en.Id).Error
 	if err != nil {
-		 return nil, err
-	}
-
-	event.AsyncFire(Event{}.ProductCardCreated(productCardNew.AccountId, productCardNew.Id))
-
-	return &productCardNew, nil
-}
-
-func (ProductCard) get(id uint) (*ProductCard, error) {
-
-	card := ProductCard{}
-
-	if err := db.Preload("Products").First(&card, id).Error; err != nil {
 		return nil, err
 	}
 
-	return &card, nil
+	var newItem Entity = &en
+
+	return newItem, nil
 }
+func (ProductCard) get(id uint) (Entity, error) {
 
-func (ProductCard) getByAccount(id, accountId uint) (*ProductCard, error) {
+	var productCard ProductCard
 
-	card := ProductCard{}
-
-	if err := db.Preload("Products").First(&card, "id = ? AND account_id = ?", id, accountId).Error; err != nil {
+	err := productCard.GetPreloadDb(false,false,true).First(&productCard, id).Error
+	if err != nil {
 		return nil, err
 	}
-
-	return &card, nil
+	return &productCard, nil
 }
+func (productCard *ProductCard) load() error {
 
-func (ProductCard) getListByShop(webSiteId uint) ([]ProductCard, error) {
-
-	cards := make([]ProductCard,0)
-
-	err := db.Preload("Products").Find(&cards, "webSiteId = ?", webSiteId).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, err
+	err := productCard.GetPreloadDb(false,false,true).First(productCard, productCard.Id).Error
+	if err != nil {
+		return err
 	}
-
-	return cards, nil
-	
+	return nil
 }
+func (productCard *ProductCard) loadByPublicId() error {
 
-func (ProductCard) getListByAccount(accountId uint) ([]ProductCard, error) {
-
-	cards := make([]ProductCard,0)
-
-	err := db.Preload("Products").Find(&cards, "account_id = ?", accountId).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, err
+	if productCard.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить ProductCard - не указан  Id"}
 	}
-
-	return cards, nil
-}
-
-func (productCard *ProductCard) update(input map[string]interface{}) error {
-	if err := db.Model(productCard).Omit("id", "account_id").Updates(input).Find(productCard).Error; err != nil {
+	if err := productCard.GetPreloadDb(false,false, true).First(productCard, "account_id = ? AND public_id = ?", productCard.AccountId, productCard.PublicId).Error; err != nil {
 		return err
 	}
 
-	event.AsyncFire(Event{}.ProductCardUpdated(productCard.AccountId, productCard.Id))
-
 	return nil
 }
-
-func (productCard *ProductCard) delete () error {
-	if err := db.Model(ProductCard{}).Where("id = ?", productCard.Id).Delete(productCard).Error; err != nil { return err }
-
-	event.AsyncFire(Event{}.ProductCardDeleted(productCard.AccountId, productCard.Id))
-
-	return nil
+func (ProductCard) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+	return ProductCard{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
 }
-// ######### END CRUD Functions ############
+func (ProductCard) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
-// ######### SHOP PRODUCT Functions ############
-/*func (webSite WebSite) CreateProductCard(input ProductCard, group *ProductGroup) (*ProductCard, error) {
-
-	if webSite.Id < 1 {
-		return nil, utils.Error{Message: "Не верно указан id магазина"}
-	}
-	
-	input.WebSiteId = webSite.Id
-	input.AccountId = webSite.AccountId
-
-	if group != nil {
-		return group.CreateProductCard(&input);
-	} else {
-		return input.create()
-	}
-
-}*/
-
-func (webSite WebSite) GetProductCard(cardId uint) (*ProductCard, error) {
-	return ProductCard{}.get(cardId)
-}
-
-func (webSite WebSite) GetProductCardList(offset, limit int, search string, products bool) ([]ProductCard, int64, error) {
-	cards := make([]ProductCard,0)
+	emailCampaigns := make([]ProductCard,0)
+	var total int64
 
 	// if need to search
 	if len(search) > 0 {
 
-		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&ProductCard{}).Preload("Products").Limit(limit).Offset(offset).Where("account_id = ?", webSite.AccountId).Order("id").
-			Find(&cards, "url ILIKE ? OR breadcrumb ILIKE ? OR meta_title ILIKE ? OR meta_keywords ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ?" , search,search,search,search,search,search).Error
+		err := (&ProductCard{}).GetPreloadDb(true,false,true).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&emailCampaigns, "label ILIKE ? OR path ILIKE ? OR breadcrumb ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search).Error
+
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
+		// Определяем total
+		err = db.Model(&ProductCard{}).
+			Where("label ILIKE ? OR path ILIKE ? OR breadcrumb ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search).
+			Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+
 	} else {
-		if offset < 0 || limit < 0 {
-			return nil, 0, errors.New("Offset or limit is wrong")
+
+		err := (&ProductCard{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&emailCampaigns).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
 		}
 
-		if products {
-			err := db.Model(&ProductCard{}).Preload("Products").Limit(limit).Offset(offset).Order("id").Find(&cards, "account_id = ? AND web_site_id = ?", webSite.AccountId, webSite.Id).Error
-			if err != nil && err != gorm.ErrRecordNotFound{
-				return nil, 0, err
-			}
-		} else {
-			err := db.Model(&ProductCard{}).Preload("Products").Limit(limit).Offset(offset).Find(&cards, "account_id = ? AND web_site_id = ?", webSite.AccountId, webSite.Id).Error
-			if err != nil && err != gorm.ErrRecordNotFound{
-				return nil, 0, err
-			}
+		// Определяем total
+		err = db.Model(&ProductCard{}).Where("account_id = ?", accountId).Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
-
-
-
 	}
 
-	// len(cards) != всему списку!
-	var total int64
-	err := db.Model(&ProductCard{}).Where("account_id = ? AND web_site_id = ?", webSite.AccountId, webSite.Id).Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема"}
+	// Преобразуем полученные данные
+	entities := make([]Entity,len(emailCampaigns))
+	for i := range emailCampaigns {
+		entities[i] = &emailCampaigns[i]
 	}
 
-	return cards, total, nil
+	return entities, total, nil
 }
+func (productCard *ProductCard) update(input map[string]interface{}) error {
 
-func (webSite WebSite) DeleteProductCard(cardId uint) error {
+	delete(input,"image")
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","order","web_site_id"}); err != nil {
+		return err
+	}
+	input = utils.FixInputDataTimeVars(input,[]string{"expired_at"})
 
-	// включает в себя проверку принадлежности к аккаунту
-	card, err := webSite.GetProductCard(cardId)
-	if err != nil {
+	if err := productCard.GetPreloadDb(true,false,false).Where(" id = ?", productCard.Id).
+		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
 		return err
 	}
 
-	return card.delete()
-}
-
-// #####################
-
-func (account Account) CreateProductCard(input ProductCard) (*ProductCard, error) {
-
-	if account.Id < 1 {
-		return nil, utils.Error{Message: "Не верно указан id аккаунта"}
-	}
-
-	input.AccountId = account.Id
-
-	productCard, err := input.create()
+	err := productCard.GetPreloadDb(true,false,false).First(productCard, productCard.Id).Error
 	if err != nil {
-		return nil, err
-	}
-
-	return productCard, nil
-}
-
-func (account Account) GetProductCard(cardId uint) (*ProductCard, error) {
-	return ProductCard{}.getByAccount(cardId, account.Id)
-}
-
-func (account Account) GetProductCards() ([]ProductCard, error) {
-	return ProductCard{}.getListByAccount(account.Id)
-}
-
-func (account Account) UpdateProductCard(cardId uint, input map[string]interface{}) (*ProductCard, error) {
-	productCard, err := account.GetProductCard(cardId)
-	if err != nil {
-		return nil, err
-	}
-
-	if productCard.AccountId != account.Id {
-		return nil, utils.Error{Message: "Карточка товара принадлежит другому аккаунту"}
-	}
-
-	err = productCard.update(input)
-	if err != nil {
-		return nil, err
-	}
-
-	return productCard, nil
-}
-
-func (account Account) DeleteProductCard(cardId uint) error {
-
-	// включает в себя проверку принадлежности к аккаунту
-	productCard, err := account.GetProductCard(cardId)
-	if err != nil {
-		return err
-	}
-
-	if err = productCard.delete(); err != nil {
 		return err
 	}
 
 	return nil
 }
-// ######### END IF SHOP PRODUCT Functions ############
+func (productCard *ProductCard) delete () error {
+	return productCard.GetPreloadDb(true,true,false).Where("id = ?", productCard.Id).Delete(productCard).Error
+}
+// ######### END CRUD Functions ############
 
-////// ########
+func (productCard *ProductCard) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+	_db := db
 
-func (productCard ProductCard) AppendProduct(product *Product) error {
-
-	if product.Id > 0 {
-		if err := db.Model(&ProductCardProduct{}).Create(&ProductCardProduct{ProductId: product.Id, ProductCardId: productCard.Id}).Error; err != nil {
-			return err
-		}
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(productCard)
 	} else {
-		// if err := db.Model(&productCard).Association("Products").Append(product); err != nil {
-		// if err := db.Debug().Model(product).Association("ProductCards").Replace(&productCard); err != nil {
-		if err := db.Debug().Set("gorm:saveAssociations", false).Model(&productCard).Association("Products").Append(product); err != nil {
-			return err
-		}
+		_db = _db.Model(&ProductCard{})
 	}
 
-	account, err := GetAccount(productCard.AccountId)
-	if err == nil && account != nil {
-		event.AsyncFire(Event{}.ProductCardUpdated(account.Id, productCard.Id))
+	if preload {
+		// return _db.Preload("EmailTemplate").Preload("EmailBox").Preload("UsersSegment")
+		// return _db
+		return _db.Preload("Image", func(db *gorm.DB) *gorm.DB {
+			return db.Select(Storage{}.SelectArrayWithoutDataURL())
+		})
+	} else {
+		return _db
 	}
-
-	return nil
-}
-
-type ProductCardProduct struct {
-	ProductId  uint
-	ProductCardId uint
-}
-func (ProductCardProduct) BeforeCreate(db *gorm.DB) error {
-	// ...
-	return nil
 }
 
-func (productCard ProductCard) ExistProduct(product *Product) bool {
-	if product.Id < 1 {
-		return false
-	}
-	var count int64
-	db.Model(&ProductCardProduct{}).Where("product_id = ? AND product_card_id = ?", product.Id, productCard.Id).Count(&count)
-	if count > 0 {
-	 return true
-	}
-	return false
-}

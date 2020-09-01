@@ -88,13 +88,13 @@ func (deliveryOrder *DeliveryOrder) AfterFind(tx *gorm.DB) (err error) {
 	}
 	return nil
 }
-func (deliveryOrder *DeliveryOrder) AfterCreate(tx *gorm.DB) (error) {
-	event.AsyncFire(Event{}.DeliveryOrderCreated(deliveryOrder.AccountId, deliveryOrder.PublicId))
+func (deliveryOrder *DeliveryOrder) AfterCreate(tx *gorm.DB) error {
+	event.AsyncFire(Event{}.DeliveryOrderCreated(deliveryOrder.AccountId, deliveryOrder.Id))
 	return nil
 }
 func (deliveryOrder *DeliveryOrder) AfterUpdate(tx *gorm.DB) (err error) {
 
-	event.AsyncFire(Event{}.DeliveryOrderUpdated(deliveryOrder.AccountId, deliveryOrder.PublicId))
+	event.AsyncFire(Event{}.DeliveryOrderUpdated(deliveryOrder.AccountId, deliveryOrder.Id))
 
 /*	orderStatusEntity, err := DeliveryStatus{}.get(deliveryOrder.StatusId)
 	if err == nil && orderStatusEntity.GetAccountId() == deliveryOrder.AccountId {
