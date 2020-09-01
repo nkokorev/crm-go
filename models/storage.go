@@ -71,6 +71,8 @@ func (fs *Storage) AfterCreate(tx *gorm.DB) (error) {
 		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, uint(fs.OwnerID)))
 	case "articles":
 		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
+	case "web_pages":
+		event.AsyncFire(Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
 	default:
 		event.AsyncFire(Event{}.StorageCreated(fs.AccountId, fs.Id))
 	}
@@ -83,6 +85,8 @@ func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
 		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, uint(fs.OwnerID)))
 	case "articles":
 		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
+	case "web_pages":
+		event.AsyncFire(Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
 	default:
 		event.AsyncFire(Event{}.StorageUpdated(fs.AccountId, fs.Id))
 	}
@@ -95,6 +99,8 @@ func (fs *Storage) AfterDelete(tx *gorm.DB) (err error) {
 		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, uint(fs.OwnerID)))
 	case "articles":
 		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
+	case "web_pages":
+		event.AsyncFire(Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
 	default:
 		event.AsyncFire(Event{}.StorageDeleted(fs.AccountId, fs.Id))
 	}
@@ -149,9 +155,10 @@ func (fs *Storage) LoadURL() {
 		fs.URL = crmHost + "/products/images/" + fs.HashId
 	case "EmailTemplate":
 		fs.URL = crmHost + "/emails/images/" + fs.HashId
-		//...
 	case "Article":
 		fs.URL = crmHost + "/articles/images/" + fs.HashId
+	case "WebPage":
+		fs.URL = crmHost + "/web-pages/" + fs.HashId
 	default:
 		fs.URL = crmHost + "/public/" + fs.HashId
 	}
@@ -189,8 +196,6 @@ func (fs Storage) create() (Entity, error)  {
 		return nil, err
 	}
 	file.LoadURL()
-
-	// account.CallEventByStorageCreated(file)
 
 	var entity Entity = &file
 
@@ -296,7 +301,7 @@ func (Storage) getByEvent(eventName string) (*Storage, error) {
 
 func (fs *Storage) update(input map[string]interface{}) error {
 	err := db.Set("gorm:association_autoupdate", false).
-		Model(fs).Omit("id", "hashId", "account_id","created_at").Updates(input).Error;
+		Model(fs).Omit("id", "hashId", "account_id","created_at").Updates(input).Error
 	if err != nil {
 		return err
 	}
@@ -421,39 +426,6 @@ func (account Account) GetStoragePaginationListByOwner(offset, limit int, sortBy
 
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 
-func (account Account) CallEventByStorageCreated(fs Storage) {
-	switch fs.OwnerType {
-	case "products":
-		event.AsyncFire(Event{}.ProductUpdated(account.Id, uint(fs.OwnerID)))
-	case "articles":
-		event.AsyncFire(Event{}.ArticleUpdated(account.Id, uint(fs.OwnerID)))
-	default:
-		event.AsyncFire(Event{}.StorageCreated(account.Id, uint(fs.OwnerID)))
-	}
-}
-func (account Account) CallEventByStorageUpdated(fs Storage) {
-	switch fs.OwnerType {
-	case "products":
-		event.AsyncFire(Event{}.ProductUpdated(account.Id, uint(fs.OwnerID)))
-	case "articles":
-		event.AsyncFire(Event{}.ArticleUpdated(account.Id, uint(fs.OwnerID)))
-	default:
-		event.AsyncFire(Event{}.StorageUpdated(account.Id, fs.Id))
-	}
-}
-func (account Account) CallEventByStorageDeletes(fs Storage) {
-	switch fs.OwnerType {
-	case "products":
-		event.AsyncFire(Event{}.ProductUpdated(account.Id, uint(fs.OwnerID)))
-		// go account.CallWebHookIfExist(EventArticleUpdated, Product{Id: fs.OwnerID})
-	case "articles":
-		event.AsyncFire(Event{}.ArticleUpdated(account.Id, uint(fs.OwnerID)))
-		// go account.CallWebHookIfExist(EventArticleUpdated, Article{Id: fs.OwnerID})
-	default:
-		event.AsyncFire(Event{}.StorageDeleted(account.Id, uint(fs.OwnerID)))
-	}
-}
-
 func (Storage) SelectArrayWithoutDataURL() []string {
 	fields := structs.Names(&Storage{}) //.(map[string]string)
 	fields = utils.RemoveKey(fields, "URL")
@@ -499,6 +471,25 @@ func (article Article) AppendAssociationImage(fs Entity) error {
 		}
 	} else {
 		if err := db.Model(&article).Association("Image").Append(file); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (webPage WebPage) AppendAssociationImage(fs Entity) error {
+	file, ok := fs.(*Storage)
+	if !ok {
+		return utils.Error{Message: "Не возможно добавить изображение"}
+	}
+
+	if file.Id > 0 {
+		if err := fs.update(map[string]interface{}{"owner_id":webPage.Id,"owner_type":"web_pages"}); err != nil {
+			return err
+		}
+	} else {
+		if err := db.Model(&webPage).Association("Image").Append(file); err != nil {
 			return err
 		}
 	}

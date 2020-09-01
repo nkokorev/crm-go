@@ -14,23 +14,30 @@ type WebPage struct {
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 	WebSiteId 	uint 	`json:"web_site_id" gorm:"type:int;index;not null;"`
 	ParentId 	uint	`json:"parent_id"`
+	// Children 	*WebPage `json:"_children" gorm:"-"`
 
-	Code 		*string `json:"code" gorm:"type:varchar(255);"` // tea, coffe, china
-	URL 		*string `json:"url" gorm:"type:varchar(255);"`
+	// code for scope routes (группы, категории....)
+	Code 		*string `json:"code" gorm:"type:varchar(255);"`
 
-	Name 		*string `json:"name" gorm:"type:varchar(255);"` // Чай, кофе, ..
+	// Routing
+	Path 		*string `json:"path" gorm:"type:varchar(255);"`	// Имя пути - catalog, cat, /, ..
+	Label 		*string `json:"label" gorm:"type:varchar(255);"` 		// menu label - Чай, кофе, ..
+	RouteName 	*string `json:"route_name" gorm:"type:varchar(50);"` 	// route name: delivery, info.index, cart
 	IconName 	*string `json:"icon_name" gorm:"type:varchar(50);"` // icon name
-	RouteName 	*string `json:"route_name" gorm:"type:varchar(50);"` // Чай, кофе, ..
 
-	Order 		int		`json:"order" gorm:"type:int;default:10;"` // Порядок отображения (часто нужно файлам)
-	Breadcrumb 			*string 	`json:"breadcrumb" gorm:"type:varchar(255);"`
+	Order 				int		`json:"order" gorm:"type:int;default:10;"` // Порядок отображения в текущей иерархии
+	Breadcrumb 			*string `json:"breadcrumb" gorm:"type:varchar(255);"`
 	ShortDescription 	*string `json:"short_description" gorm:"type:varchar(255);"`
 	Description 		*string `json:"description" gorm:"type:text;"`
 
-	MetaTitle 		*string `json:"meta_title" gorm:"type:varchar(255);"`
-	MetaKeywords 	*string `json:"meta_keywords" gorm:"type:varchar(255);"`
-	MetaDescription *string `json:"meta_description" gorm:"type:varchar(255);"`
+	MetaTitle 		*string 	`json:"meta_title" gorm:"type:varchar(255);"`
+	MetaKeywords 	*string 	`json:"meta_keywords" gorm:"type:varchar(255);"`
+	MetaDescription *string 	`json:"meta_description" gorm:"type:varchar(255);"`
+	Image 			*Storage	`json:"image" gorm:"polymorphic:Owner;"`
 
+	// Если страница временная (ну мало ли!)
+	ExpiredAt 		*time.Time  `json:"expired_at"`
+	
 	CreatedAt 		time.Time `json:"created_at"`
 	UpdatedAt 		time.Time `json:"updated_at"`
 }
@@ -70,6 +77,7 @@ func (webPage *WebPage) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 func (webPage *WebPage) AfterFind(tx *gorm.DB) (err error) {
+
 	return nil
 }
 // ######### CRUD Functions ############
@@ -172,7 +180,11 @@ func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 }
 func (webPage *WebPage) update(input map[string]interface{}) error {
 
+	delete(input,"image")
 	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
+		return err
+	}
 	input = utils.FixInputDataTimeVars(input,[]string{"scheduleRun"})
 	
 	if err := webPage.GetPreloadDb(true,false,false).Where(" id = ?", webPage.Id).
@@ -205,9 +217,11 @@ func (webPage *WebPage) GetPreloadDb(autoUpdateOff bool, getModel bool, preload 
 	}
 
 	if preload {
-		return _db
 		// return _db.Preload("EmailTemplate").Preload("EmailBox").Preload("UsersSegment")
 		// return _db
+		return _db.Preload("Image", func(db *gorm.DB) *gorm.DB {
+			return db.Select(Storage{}.SelectArrayWithoutDataURL())
+		})
 	} else {
 		return _db
 	}

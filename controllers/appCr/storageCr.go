@@ -70,12 +70,12 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 	}*/
 
 	// нужна отдельная привязка к файлам
-	ownerId, ok := utilsCr.GetQueryUINTVarFromGET(r, "ownerId")
+	ownerId, ok := utilsCr.GetQueryUINTVarFromGET(r, "owner_id")
 	if !ok || ownerId < 1 {
 		ownerId = 0
 	}
 
-	ownerType, ok := utilsCr.GetQuerySTRVarFromGET(r, "ownerType")
+	ownerType, ok := utilsCr.GetQuerySTRVarFromGET(r, "owner_type")
 	if !ok {
 		ownerType = ""
 	}
@@ -246,11 +246,11 @@ func StorageGetListPagination(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// personal type
-	ownerId, ok := utilsCr.GetQueryUINTVarFromGET(r, "ownerId")
+	ownerId, ok := utilsCr.GetQueryUINTVarFromGET(r, "owner_id")
 	if !ok || ownerId < 1 {
 		ownerId = 0
 	}
-	ownerType, ok := utilsCr.GetQuerySTRVarFromGET(r, "ownerType")
+	ownerType, ok := utilsCr.GetQuerySTRVarFromGET(r, "owner_type")
 	if !ok {
 		ownerType = ""
 	}

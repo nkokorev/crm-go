@@ -30,10 +30,10 @@ const (
 	EventProductCardDeleted 	WebHookType = "ProductCardDeleted"
 	EventProductCardsUpdate 	WebHookType = "ProductCardsUpdate"
 
-	EventProductGroupCreated 	WebHookType = "ProductGroupCreated"
-	EventProductGroupUpdated 	WebHookType = "ProductGroupUpdated"
-	EventProductGroupDeleted 	WebHookType = "ProductGroupDeleted"
-	EventProductGroupsUpdate 	WebHookType = "ProductGroupsUpdate"
+	EventWebPageCreated 	WebHookType = "WebPageCreated"
+	EventWebPageUpdated 	WebHookType = "WebPageUpdated"
+	EventWebPageDeleted 	WebHookType = "WebPageDeleted"
+	EventWebPagesUpdate 	WebHookType = "WebPagesUpdate"
 
 	EventArticleCreated 	WebHookType = "ArticleCreated"
 	EventArticleUpdated 	WebHookType = "ArticleUpdated"

@@ -850,7 +850,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	}
 
 	mPage, err := airoClimat.CreateEntity(&models.WebPage{
-		AccountId: airoClimat.Id, WebSiteId: webSiteAiro.Id,Code: utils.STRp("root"), Name: nil, URL: utils.STRp("/"),
+		AccountId: airoClimat.Id, WebSiteId: webSiteAiro.Id, Label: utils.STRp("Главная"), Code: utils.STRp("root"),Path: utils.STRp("/"),
+		MetaTitle: utils.STRp("Главная :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
 		IconName:  utils.STRp("far fa-home"), RouteName:  utils.STRp("info.index"),
 	})
 	if err != nil {
@@ -860,7 +861,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	webPageRoot := mPage.(*models.WebPage)
 
 	catE, err := webPageRoot.CreateChild(models.WebPage {
-		AccountId: airoClimat.Id, Code:  utils.STRp("catalog"), Name:  utils.STRp("Весь каталог"), URL:  utils.STRp("catalog"),
+		AccountId: airoClimat.Id, Code:  utils.STRp("catalog"), Label:  utils.STRp("Весь каталог"), Path:  utils.STRp("catalog"),
+		MetaTitle: utils.STRp("Каталог :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
 		IconName:  utils.STRp("far fa-th-large"), RouteName:  utils.STRp("catalog"),
 	})
 	if err != nil {
@@ -871,7 +873,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	webCatalogRoot := catE.(*models.WebPage)
 
 	catGr1, err := webCatalogRoot.CreateChild(models.WebPage{
-		AccountId: airoClimat.Id, Code:  utils.STRp("catalog"),Name:  utils.STRp("Бактерицидные рециркуляторы"), URL:  utils.STRp("bactericidal-recirculators"),
+		AccountId: airoClimat.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Бактерицидные рециркуляторы"), Path:  utils.STRp("bactericidal-recirculators"),
+		MetaTitle: utils.STRp("Бактерицидные рециркуляторы :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
 		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.recirculators"),
 	})
 	if err != nil {
@@ -879,7 +882,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		return
 	}
 	catGr2, err := webCatalogRoot.CreateChild(models.WebPage{
-		AccountId: airoClimat.Id, Code:  utils.STRp("catalog"),Name:  utils.STRp("Бактерицидные камеры"), URL:  utils.STRp("bactericidal-chambers"),
+		AccountId: airoClimat.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Бактерицидные камеры"), Path:  utils.STRp("bactericidal-chambers"),
+		MetaTitle: utils.STRp("Бактерицидные камеры :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
 		IconName:  utils.STRp("far fa-box-full"), RouteName:  utils.STRp("catalog.chambers"),
 	})
 	if err != nil {
@@ -891,7 +895,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 
 	_, err = webPageRoot.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Name:  utils.STRp("Статьи"), URL:  utils.STRp("articles"),
+			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Label:  utils.STRp("Статьи"), Path:  utils.STRp("articles"),
+			MetaTitle: utils.STRp("Статьи :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
 			IconName:  utils.STRp("far fa-books"), RouteName:  utils.STRp("info.articles"), Order: 1,
 		})
 	if err != nil {
@@ -899,7 +904,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	}
 	deliveryGrE, err := webPageRoot.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code:  utils.STRp("delivery"), Name:  utils.STRp("Доставка товара"), URL:  utils.STRp("delivery"),
+			AccountId: airoClimat.Id, Code:  utils.STRp("delivery"), Label:  utils.STRp("Доставка товара"), Path:  utils.STRp("delivery"),
+			MetaTitle: utils.STRp("Доставка товара :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
 			IconName:  utils.STRp("far fa-shipping-fast"), RouteName:  utils.STRp("delivery"), Order: 1,
 		})
 	if err != nil {
@@ -908,12 +914,14 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	deliveryGroupRoute := deliveryGrE.(*models.WebPage)
 	_, err = deliveryGroupRoute.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code:  utils.STRp("delivery"), Name:  utils.STRp("Способы оплаты"), URL:  utils.STRp("payment"),
+			AccountId: airoClimat.Id, Code:  utils.STRp("delivery"), Label:  utils.STRp("Способы оплаты"), Path:  utils.STRp("payment"),
+			MetaTitle: utils.STRp("Способы оплаты :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
 			IconName:  utils.STRp("far fa-hand-holding-usd"), RouteName:  utils.STRp("delivery.payment"), Order: 2,
 		})
 	_, err = deliveryGroupRoute.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code:  utils.STRp("delivery"), Name:  utils.STRp("Возврат товара"), URL:  utils.STRp("moneyback"),
+			AccountId: airoClimat.Id, Code:  utils.STRp("delivery"), Label:  utils.STRp("Возврат товара"), Path:  utils.STRp("moneyback"),
+			MetaTitle: utils.STRp("Возврат товара :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
 			IconName:  utils.STRp("far fa-exchange-alt"), RouteName:  utils.STRp("delivery.moneyback"), Order: 3,
 		})
 	if err != nil {
@@ -921,7 +929,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	}
 	_, err = webPageRoot.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Name:  utils.STRp("О компании"), URL:  utils.STRp("about"),
+			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Label:  utils.STRp("О компании"), Path:  utils.STRp("about"),
+			MetaTitle: utils.STRp("О компании :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
 			IconName:  utils.STRp("far fa-home-heart"), RouteName:  utils.STRp("info.about"),      Order: 5,
 		})
 	if err != nil {
@@ -929,7 +938,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	}
 	_, err = webPageRoot.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Name:  utils.STRp("Политика конфиденциальности"), URL:  utils.STRp("privacy-policy"),
+			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Label:  utils.STRp("Политика конфиденциальности"), Path:  utils.STRp("privacy-policy"),
+			MetaTitle: utils.STRp("Политика конфиденциальности :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
 			IconName:  utils.STRp("far fa-home-heart"), RouteName:  utils.STRp("info.privacy-policy"),      Order: 6,
 		})
 	if err != nil {
@@ -937,7 +947,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	}
 	_, err = webPageRoot.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Name:  utils.STRp("Контакты"), URL:  utils.STRp("contacts"),
+			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Label:  utils.STRp("Контакты"), Path:  utils.STRp("contacts"),
+			MetaTitle: utils.STRp("Контакты :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
 			IconName:  utils.STRp("far fa-address-book"), RouteName:  utils.STRp("info.contacts"),  Order: 10,
 		})
 	if err != nil {
@@ -947,7 +958,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	////////
 	_, err = webPageRoot.CreateChild(
 		models.WebPage{
-			AccountId: airoClimat.Id, Code:  utils.STRp("cart"), Name:  utils.STRp("Корзина"), URL:  utils.STRp("cart"),
+			AccountId: airoClimat.Id, Code:  utils.STRp("cart"), Label:  utils.STRp("Корзина"), Path:  utils.STRp("cart"),
+			MetaTitle: utils.STRp("Корзина :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
 				IconName:  utils.STRp("far fa-cart-arrow-down"), RouteName:  utils.STRp("cart"), Order: 1,
 		})
 	if err != nil {
@@ -1456,10 +1468,10 @@ func UploadTestDataPart_III() {
 		{Name: "Upload all product cards", Code: models.EventProductCardsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards", HttpMethod: http.MethodGet},
 
 		// Groups
-		{Name: "Create product group", Code: models.EventProductGroupCreated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupId}}", HttpMethod: http.MethodPost},
-		{Name: "Update product group", Code: models.EventProductGroupUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupId}}", HttpMethod: http.MethodPatch},
-		{Name: "Delete product group", Code: models.EventProductGroupDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups/{{.productGroupId}}", HttpMethod: http.MethodDelete},
-		{Name: "Upload all product groups", Code: models.EventProductGroupsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/product-groups", HttpMethod: http.MethodGet},
+		{Name: "Create product group", Code: models.EventWebPageCreated, URL: domainAiroSite + "/ratuscrm/webhooks/web-pages/{{.webPageId}}", HttpMethod: http.MethodPost},
+		{Name: "Update product group", Code: models.EventWebPageUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/web-pages/{{.webPageId}}", HttpMethod: http.MethodPatch},
+		{Name: "Delete product group", Code: models.EventWebPageDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/web-pages/{{.webPageId}}", HttpMethod: http.MethodDelete},
+		{Name: "Upload all product groups", Code: models.EventWebPagesUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/web-pages", HttpMethod: http.MethodGet},
 
 		// Articles
 		{Name: "Create article", Code: models.EventArticleCreated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleId}}", HttpMethod: http.MethodPost},

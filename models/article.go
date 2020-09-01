@@ -32,7 +32,7 @@ type Article struct {
 	MetaKeywords 		*string `json:"meta_keywords" gorm:"type:varchar(255);"`
 	MetaDescription 	*string `json:"meta_description" gorm:"type:varchar(255);"`
 
-	// Обновлять только через AppendImage
+	// Обновлять только через AppendImage, превью изображение
 	Image 				*Storage	`json:"image" gorm:"polymorphic:Owner;"` //association_autoupdate:false;
 
 	//Attributes 		postgres.Jsonb `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`

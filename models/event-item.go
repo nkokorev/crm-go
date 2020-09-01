@@ -54,9 +54,9 @@ func (EventItem) PgSqlCreate() {
 		{Name: "Карточка товара обновлена", Code: "ProductCardUpdated", Enabled: true, Description: "Данные карточки товара успешно обновлены."},
 		{Name: "Карточка товара удалена", 	Code: "ProductCardDeleted", Enabled: true, Description: "Карточка товара удалена из системы"},
 
-		{Name: "Раздел сайта создан", 	Code: "ProductGroupCreated", Enabled: true, Description: "Создан новый раздел, категория или страница на сайте."},
-		{Name: "Раздел сайта обновлен", Code: "ProductGroupUpdated", Enabled: true, Description: "Данные раздела или категории сайта успешно обновлены."},
-		{Name: "Раздел сайта удален", 	Code: "ProductGroupDeleted", Enabled: true, Description: "Раздел сайта или категория удалена из системы"},
+		{Name: "Страница сайта создана", 	Code: "WebPageCreated", Enabled: true, Description: "Создан новый раздел, категория или страница на сайте."},
+		{Name: "Страница сайта обновлена", 	Code: "WebPageUpdated", Enabled: true, Description: "Данные раздела или категории сайта успешно обновлены."},
+		{Name: "Страница сайта удалена", 	Code: "WebPageDeleted", Enabled: true, Description: "Раздел сайта или категория удалена из системы"},
 
 		{Name: "Сайт создан", 	Code: "WebSiteCreated", Enabled: true, Description: "Создан новый сайт или магазин."},
 		{Name: "Сайт обновлен", Code: "WebSiteUpdated", Enabled: true, Description: "Персональные данные сайта или магазина были успешно обновлены."},
