@@ -106,13 +106,13 @@ func EmailBoxListPaginationGet(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 	// 2. Узнаем, какой список нужен
-	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
+	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
 
 	var total int64 = 0
 	emailBoxes := make([]models.Entity,0)
 
-	if all == "true" && allOk {
+	if all {
 		emailBoxes, total, err = account.GetListEntity(&models.EmailBox{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список почтовых ящиков"))

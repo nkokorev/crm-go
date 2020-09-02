@@ -422,7 +422,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 func (mtaWorkflow *MTAWorkflow) UpdateByNextStep(expectedStep EmailQueueEmailTemplate) error {
 	// Изменяется expected step, expected_time_start, number_attems, last_tried
 	return mtaWorkflow.update(map[string]interface{}{
-		"queue_expected_step_id": expectedStep.Order,
+		"queue_expected_step_id": expectedStep.Step,
 		"expected_time_start": time.Now().UTC().Add(expectedStep.DelayTime),
 		"number_of_attempts": 0,
 		"last_tried_at": nil,

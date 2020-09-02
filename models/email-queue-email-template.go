@@ -20,14 +20,14 @@ type EmailQueueEmailTemplate struct {
 	
 	// В работе данное письмо в указанной серии
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false;"`
-	Order 		uint 	`json:"order" gorm:"type:int;not null;"` // порядок
+	Step 		uint 	`json:"step" gorm:"type:int;not null;"` // порядок
 
 	EmailTemplateId	uint	`json:"email_template_id" gorm:"type:int;"`
 	EmailTemplate	EmailTemplate `json:"email_template"`
 
 	// С какого почтового ящика отправляем
 	EmailBoxId		*uint 	`json:"email_box_id" gorm:"type:int;"` // С какого ящика идет отправка
-	EmailBox		EmailBox `json:"email_box" gorm:"preload:false"`
+	EmailBox		EmailBox `json:"email_box"`
 
 	// Через сколько запускать письмо в серии. hours / days / week
 	DelayTime		time.Duration `json:"delay_time" gorm:"default:0"`// << учитывается только время [0-24]
@@ -214,6 +214,18 @@ func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit i
 }
 
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) update(input map[string]interface{}) error {
+
+	delete(input,"email_template")
+	delete(input,"email_box")
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"email_box_id","email_queue_id","email_template_id"}); err != nil {
+		return err
+	}
+
+	// ??
+	input = utils.FixInputDataTimeVars(input,[]string{"delay_time"})
+
+
 	err := emailQueueEmailTemplate.GetPreloadDb(false,false,false).
 		Where("id = ?", emailQueueEmailTemplate.Id).Omit("id", "account_id").Updates(input).Error
 	if err != nil { return err}

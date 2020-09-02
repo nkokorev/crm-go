@@ -270,13 +270,13 @@ func (emailQueue *EmailQueue) update(input map[string]interface{}) error {
 
 type MassUpdateEmailQueueTemplate struct {
 	Id uint `json:"id"`
-	Order uint `json:"order"`
+	Step uint `json:"step"`
 }
 
 func (emailQueue *EmailQueue) UpdateOrderEmailTemplates(input []MassUpdateEmailQueueTemplate) error {
-	for _,v := range (input) {
+	for _,v := range input {
 
-		if err := (&EmailQueueEmailTemplate{Id: v.Id }).update(map[string]interface{}{"order":v.Order}); err != nil {
+		if err := (&EmailQueueEmailTemplate{Id: v.Id }).update(map[string]interface{}{"step":v.Step}); err != nil {
 			return err
 		}
 	}
@@ -384,7 +384,7 @@ func (emailQueue EmailQueue) AppendUser(userId uint) error {
 		AccountId: emailQueue.AccountId,
 		OwnerId: emailQueue.Id,
 		OwnerType: EmailSenderQueue,
-		QueueExpectedStepId: step.Order,
+		QueueExpectedStepId: step.Step,
 		ExpectedTimeStart: time.Now().UTC().Add(step.DelayTime),
 		UserId: userId, 
 		NumberOfAttempts: 0, // << пока так

@@ -108,6 +108,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/storage", appCr.StorageGetListPagination).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/storage/{fileId}", appCr.StorageGetFile).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/storage/{fileId}", appCr.StorageUpdateFile).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/storage", appCr.StorageMassUpdates).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/storage/{fileId}", appCr.StorageDeleteFile).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### Web Site ####

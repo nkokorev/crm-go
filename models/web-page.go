@@ -12,7 +12,7 @@ type WebPage struct {
 	Id     		uint	`json:"id" gorm:"primaryKey"`
 	PublicId	uint	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
-	WebSiteId 	uint 	`json:"web_site_id" gorm:"type:int;index;not null;"`
+	WebSiteId 	*uint 	`json:"web_site_id" gorm:"type:int;index;not null;"`
 	ParentId 	uint	`json:"parent_id"`
 	// Children 	*WebPage `json:"_children" gorm:"-"`
 
@@ -33,6 +33,8 @@ type WebPage struct {
 	MetaTitle 		*string 	`json:"meta_title" gorm:"type:varchar(255);"`
 	MetaKeywords 	*string 	`json:"meta_keywords" gorm:"type:varchar(255);"`
 	MetaDescription *string 	`json:"meta_description" gorm:"type:varchar(255);"`
+
+	// У страницы может быть картинка превью.. - например, для раздела услуг
 	Image 			*Storage	`json:"image" gorm:"polymorphic:Owner;"`
 
 	// Если страница временная (ну мало ли!)

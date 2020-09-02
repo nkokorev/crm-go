@@ -26,6 +26,6 @@ require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 	gorm.io/datatypes v0.0.0-20200806042100-bc394008dd0d
-	gorm.io/driver/postgres v0.2.9
-	gorm.io/gorm v0.2.38
+	gorm.io/driver/postgres v1.0.0
+	gorm.io/gorm v1.20.0
 )

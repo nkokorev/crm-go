@@ -102,13 +102,12 @@ func UsersSegmentPaginationGet(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 	// 2. Узнаем, какой список нужен
-	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
-
+	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
 	var total int64 = 0
 	usersSegments := make([]models.Entity,0)
 
-	if all == "true" && allOk {
+	if all {
 		usersSegments, total, err = account.GetListEntity(&models.UsersSegment{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список пользовательских сегментов"))

@@ -14,8 +14,8 @@ type ProductCard struct {
 	Id        			uint 	`json:"id" gorm:"primaryKey"`
 	PublicId			uint   	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 			uint 	`json:"-" gorm:"type:int;index;not null;"` // потребуется, если productGroupId == null
-	WebSiteId 			uint 	`json:"web_site_id" gorm:"type:int;index;"` // магазин, к которому относится
-	WebPageId 			uint 	`json:"web_page_id" gorm:"type:int;index;"` // группа товаров, категория товаров
+	WebSiteId 			*uint 	`json:"web_site_id" gorm:"type:int;"` // магазин, к которому относится
+	WebPageId 			*uint 	`json:"web_page_id" gorm:"type:int;index;"` // группа товаров, категория товаров
 
 	Enabled 			bool 	`json:"enabled" gorm:"type:bool;default:true"` // активна ли карточка товара
 
@@ -32,13 +32,16 @@ type ProductCard struct {
 	ShortDescription 	*string 	`json:"short_description" gorm:"type:varchar(255);"` // для превью карточки товара
 	Description 		*string 	`json:"description" gorm:"type:text;"` // фулл описание товара
 
+	// число товаров *hidden*
+	ProductCount 		int64 	`json:"_product_count" gorm:"-"` // фулл описание товара
+
 	// Хелперы карточки: какой параметр выводить в качестве переключателя(ей) (цвета, шт, кг и т.д.)
 	SwitchProducts	 	datatypes.JSON `json:"switch_products"` // {color, size} Параметры переключения среди предложений
 
 	// Preview Images - небольшие пережатые изображения товара(ов)
 	Images 				[]Storage	`json:"images" gorm:"polymorphic:Owner;"`
 
-	WebPages 			[]ProductCard 	`json:"web_pages" gorm:"many2many:web_page_product_card;"`
+	WebPages 			[]WebPage 	`json:"web_pages" gorm:"many2many:web_page_product_card;"`
 	// WebSite		 		WebSite 	`json:"-" gorm:"-"`
 	Products 			[]Product 		`json:"products" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
 }
@@ -78,7 +81,7 @@ func (productCard *ProductCard) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 func (productCard *ProductCard) AfterFind(tx *gorm.DB) (err error) {
-
+	productCard.ProductCount =  db.Model(productCard).Association("Products").Count()
 	return nil
 }
 func (productCard *ProductCard) AfterCreate(tx *gorm.DB) error {
@@ -145,7 +148,7 @@ func (ProductCard) getList(accountId uint, sortBy string) ([]Entity, int64, erro
 }
 func (ProductCard) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
 
-	emailCampaigns := make([]ProductCard,0)
+	productCards := make([]ProductCard,0)
 	var total int64
 
 	// if need to search
@@ -154,7 +157,7 @@ func (ProductCard) getPaginationList(accountId uint, offset, limit int, sortBy, 
 		search = "%"+search+"%"
 
 		err := (&ProductCard{}).GetPreloadDb(true,false,true).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&emailCampaigns, "label ILIKE ? OR path ILIKE ? OR breadcrumb ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search).Error
+			Find(&productCards, "label ILIKE ? OR path ILIKE ? OR breadcrumb ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -171,22 +174,22 @@ func (ProductCard) getPaginationList(accountId uint, offset, limit int, sortBy, 
 	} else {
 
 		err := (&ProductCard{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&emailCampaigns).Error
+			Find(&productCards).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&ProductCard{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&ProductCard{}).GetPreloadDb(true,false,false).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(emailCampaigns))
-	for i := range emailCampaigns {
-		entities[i] = &emailCampaigns[i]
+	entities := make([]Entity,len(productCards))
+	for i := range productCards {
+		entities[i] = &productCards[i]
 	}
 
 	return entities, total, nil
@@ -194,6 +197,8 @@ func (ProductCard) getPaginationList(accountId uint, offset, limit int, sortBy, 
 func (productCard *ProductCard) update(input map[string]interface{}) error {
 
 	delete(input,"images")
+	delete(input,"products")
+	delete(input,"web_pages")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","web_site_id","web_page_id"}); err != nil {
 		return err
@@ -234,7 +239,7 @@ func (productCard *ProductCard) GetPreloadDb(autoUpdateOff bool, getModel bool, 
 		// return _db
 		return _db.Preload("Images", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
-		})
+		}).Preload("Products")
 	} else {
 		return _db
 	}

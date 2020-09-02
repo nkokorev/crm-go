@@ -90,13 +90,13 @@ func EventListenerGetListPagination(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		search = ""
 	}
-	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
+	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
 	var total int64 = 0
 	eventListeners := make([]models.Entity,0)
 
 
-	if all == "true" && allOk {
+	if all {
 		eventListeners, total, err = account.GetListEntity(&models.EventListener{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))

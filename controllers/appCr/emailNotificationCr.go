@@ -99,13 +99,13 @@ func EmailNotificationGetListPagination(w http.ResponseWriter, r *http.Request) 
 		search = ""
 	}
 	// 2. Узнаем, какой список нужен
-	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
+	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
 
 	var total int64 = 0
 	emailNotifications := make([]models.Entity,0)
 
-	if all == "true" && allOk {
+	if all {
 		emailNotifications, total, err = account.GetListEntity(&models.EmailNotification{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить данные"))

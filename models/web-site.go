@@ -259,7 +259,7 @@ func (webSite *WebSite) delete () error {
 }*/
 func (webSite WebSite) CreatePage(input WebPage) (*WebPage, error) {
 	input.AccountId = webSite.AccountId
-	input.WebSiteId = webSite.Id
+	input.WebSiteId = &webSite.Id
 	
 	pEntity, err := input.create(); if err != nil {
 		return nil, err
@@ -344,8 +344,8 @@ func (webSite WebSite) CreateProductWithProductCard(input Product, newCard Produ
 
 	// Создаем карточку товара
 	newCard.AccountId = webSite.AccountId
-	newCard.WebSiteId = webSite.Id
-	newCard.WebPageId = webPageId
+	newCard.WebSiteId = &webSite.Id
+	newCard.WebPageId = &webPageId
 	
 	cardE, err := newCard.create()
 	if err != nil {

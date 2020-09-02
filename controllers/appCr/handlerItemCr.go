@@ -98,11 +98,11 @@ func HandlerItemGetList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Узнаем, какой список нужен
-	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
+	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
 	var total int64 = 0
 	handlerItems := make([]models.Entity,0)
-	if all == "true" && allOk {
+	if all {
 		handlerItems, total, err = account.GetListEntity(&models.HandlerItem{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
@@ -152,12 +152,12 @@ func HandlerItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 	// 2. Узнаем, какой список нужен
-	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
+	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
 	var total int64 = 0
 	handlerItems := make([]models.Entity,0)
 
-	if all == "true" && allOk {
+	if all {
 		handlerItems, total, err = account.GetListEntity(&models.HandlerItem{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))

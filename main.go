@@ -25,7 +25,7 @@ func main() {
 
 	// base.Test()
 
-	if true {
+	if false {
 		base.RefreshTablesPart_I()
 		base.UploadTestDataPart_I()
 		base.LoadImagesAiroClimate(13)
@@ -36,6 +36,8 @@ func main() {
 		base.UploadTestDataPart_III()
 		base.UploadTestDataPart_IV()
 		base.UploadBroUserData()
+
+		base.UploadTestDataPart_V()
 	}
 
 

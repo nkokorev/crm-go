@@ -34,7 +34,7 @@ func EmailQueueEmailTemplateCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "POST EmailQueueEmailTemplate Created")
-	resp["emailQueueEmailTemplate"] = emailQueueEmailTemplate
+	resp["email_queue_email_template"] = emailQueueEmailTemplate
 	u.Respond(w, resp)
 }
 
@@ -179,7 +179,7 @@ func EmailQueueEmailTemplateMassUpdates(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var input struct{
-		EmailQueueEmailTemplates []models.MassUpdateEmailQueueTemplate `json:"emailQueueEmailTemplates"`
+		EmailQueueEmailTemplates []models.MassUpdateEmailQueueTemplate `json:"email_queue_email_templates"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
@@ -197,7 +197,7 @@ func EmailQueueEmailTemplateMassUpdates(w http.ResponseWriter, r *http.Request) 
 	var total int64 = 0
 	emailQueueEmailTemplates := make([]models.Entity,0)
 
-	emailQueueEmailTemplates, total, err = account.GetPaginationListEntity(&models.EmailQueueEmailTemplate{}, 0, 100, "order", "", filter)
+	emailQueueEmailTemplates, total, err = account.GetPaginationListEntity(&models.EmailQueueEmailTemplate{}, 0, 100, "step", "", filter)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

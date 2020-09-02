@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/fatih/structs"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
@@ -35,7 +36,9 @@ type Storage struct {
 	Size 		int64 	`json:"size" gorm:"type:int;"` // Kb
 
 	Data 		[]byte `json:"data" gorm:"type:bytea;"` // тело файла
-	URL 		string 	`json:"url" sql:"-"` // see AfterFind
+
+	// ** Hidden **
+	URL 		string 	`json:"_url" gorm:"-"` // see AfterFind
 
 	// Время жизни файла, по умолчанию - null (без ограничений)
 	ExpiredAt 	*time.Time  `json:"expired_at"`
@@ -211,7 +214,7 @@ func (Storage) get(id uint) (Entity, error) {
 
 	var fs Storage
 
-	err := db.First(&fs, id).Error
+	err := fs.GetPreloadDb(false,false,true, false).First(&fs, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +224,7 @@ func (Storage) getByHashId(hashId string) (*Storage, error)  {
 
 	fs := Storage{}
 
-	err := db.First(&fs, "hash_id = ?", hashId).Error
+	err := fs.GetPreloadDb(false,false,true, false).First(&fs, "hash_id = ?", hashId).Error
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +235,7 @@ func (fs *Storage) load() error {
 		return utils.Error{Message: "Невозможно загрузить Storage - не указан  Id"}
 	}
 
-	err := db.First(fs,fs.Id).Error
+	err := fs.GetPreloadDb(false,false,true, false).First(fs,fs.Id).Error
 	if err != nil {
 		return err
 	}
@@ -256,14 +259,14 @@ func (Storage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Storage{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&Storage{}).GetPreloadDb(false,false,true,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&files, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Storage{}).
+		err = (&Storage{}).GetPreloadDb(false,false,true,true).
 			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -272,14 +275,14 @@ func (Storage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 
-		err := db.Model(&Storage{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&Storage{}).GetPreloadDb(false,false,true, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&files).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Storage{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&Storage{}).GetPreloadDb(false,false,true, true).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -306,24 +309,62 @@ func (Storage) getByEvent(eventName string) (*Storage, error) {
 }
 
 func (fs *Storage) update(input map[string]interface{}) error {
-	err := db.Set("gorm:association_autoupdate", false).
-		Model(fs).Omit("id", "hashId", "account_id","created_at").Updates(input).Error
-	if err != nil {
+
+	delete(input,"size")
+	// delete(input,"owner_id")
+	// delete(input,"owner_type")
+	delete(input,"mime")
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"owner_id","priority"}); err != nil {
+		fmt.Println("Err 0: ", err)
 		return err
 	}
 
-	/*account, err := GetAccount(fs.AccountId); if err == nil {
-		account.CallEventByStorageUpdated(*fs)
-	}*/
+	err := db.Model(fs).Omit("id", "hashId", "account_id","created_at").Updates(input).Error
+	if err != nil {
+		fmt.Println("Err: ", err)
+		return err
+	}
 
 	return nil
 }
-
+func (Storage) UpdatePriority(input []Storage) error {
+	for _,v := range input {
+		// priority, ok = v.Priority.(int)
+		if err := (&Storage{Id: v.Id }).update(map[string]interface{}{"priority":v.Priority}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 func (fs *Storage) delete () error {
 	if err := db.Model(Storage{}).Where("id = ?", fs.Id).Delete(fs).Error; err != nil {
 		return err
 	}
 	return nil
+}
+func (fs *Storage) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool, skipData bool) *gorm.DB {
+	_db := db
+
+	if autoUpdateOff {
+		_db = _db.Set("gorm:association_autoupdate", false)
+	}
+	if getModel {
+		_db = _db.Model(fs)
+	} else {
+		_db = _db.Model(&Storage{})
+	}
+
+	if preload {
+		if skipData {
+			return _db.Select(Storage{}.SelectArrayWithoutDataURL())
+		} else {
+			return _db
+		}
+
+	} else {
+		return _db
+	}
 }
 // ######### END CRUD Functions ############
 

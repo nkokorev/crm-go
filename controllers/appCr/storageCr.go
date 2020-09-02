@@ -156,7 +156,7 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "File is save!")
 	resp["file"] = _fl
-	resp["diskSpaceUsed"] = diskSpaceUsed
+	resp["disk_space_used"] = diskSpaceUsed
 	u.Respond(w, resp)
 }
 
@@ -188,7 +188,7 @@ func StorageGetFile(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "Storage get file")
 	resp["file"] = file
-	resp["diskSpaceUsed"] = diskSpaceUsed
+	resp["disk_space_used"] = diskSpaceUsed
 	u.Respond(w, resp)
 }
 
@@ -275,7 +275,7 @@ func StorageGetListPagination(w http.ResponseWriter, r *http.Request) {
 	resp := u.Message(true, "Storage get file")
 	resp["files"] = files
 	resp["total"] = total
-	resp["diskSpaceUsed"] = diskSpaceUsed
+	resp["disk_space_used"] = diskSpaceUsed
 	u.Respond(w, resp)
 }
 
@@ -320,6 +320,48 @@ func StorageUpdateFile(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+func StorageMassUpdates(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	var input struct{
+		Files []models.Storage `json:"files"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	if err = (models.Storage{}).UpdatePriority(input.Files); err !=nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 2"))
+		return
+	}
+
+	filter := make(map[string]interface{},0)
+	if len(input.Files) > 0 {
+		filter["owner_id"] = input.Files[0].OwnerID
+		filter["owner_type"] = input.Files[0].OwnerType
+	}
+
+	files := make([]models.Entity,0)
+
+	var total int64
+	files, total, err = account.GetPaginationListEntity(&models.Storage{}, 0, 100, "priority", "", filter)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		return
+	}
+
+	resp := u.Message(true, "PATCH Storage MassUpdates")
+	resp["files"] = files
+	resp["total"] = total
+	u.Respond(w, resp)
+}
+
 func StorageDeleteFile(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
@@ -357,7 +399,7 @@ func StorageDeleteFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "Email templates created")
-	resp["diskSpaceUsed"] = diskSpaceUsed
+	resp["disk_space_used"] = diskSpaceUsed
 	u.Respond(w, resp)
 }
 
@@ -375,7 +417,7 @@ func StorageDiskSpaceUsed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "Storage get file")
-	resp["diskSpaceUsed"] = diskSpaceUsed
+	resp["disk_space_used"] = diskSpaceUsed
 	u.Respond(w, resp)
 }
 

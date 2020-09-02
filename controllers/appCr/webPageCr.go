@@ -108,13 +108,13 @@ func WebPageListPaginationGet(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 	// 2. Узнаем, какой список нужен
-	all, allOk := utilsCr.GetQuerySTRVarFromGET(r, "all")
+	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
 
 	var total int64 = 0
 	webSites := make([]models.Entity,0)
 
-	if all == "true" && allOk {
+	if all {
 		webSites, total, err = account.GetListEntity(&models.WebPage{}, sortBy)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список страниц"))
