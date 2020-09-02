@@ -271,8 +271,13 @@ func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy
 	return entities, total, nil
 }
 func (paymentYandex *PaymentYandex) update(input map[string]interface{}) error {
-	delete(input,"webSite")
-	err := paymentYandex.GetPreloadDb(true,false, false).Where("id = ?", paymentYandex.Id).
+	delete(input,"web_site")
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"web_site_id","shop_id"}); err != nil {
+		return err
+	}
+
+	err := paymentYandex.GetPreloadDb(false,false, false).Where("id = ?", paymentYandex.Id).
 		Omit("id", "hashId","account_id").Updates(input).Error
 	if err != nil { return err}
 	_ = paymentYandex.load()

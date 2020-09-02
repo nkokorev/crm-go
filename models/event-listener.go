@@ -50,7 +50,6 @@ func (EventListener) PgSqlCreate() {
 		log.Fatal("Error: ", err)
 	}
 }
-
 func (eventListener *EventListener) BeforeCreate(tx *gorm.DB) error {
 	eventListener.Id = 0
 	return nil
@@ -185,9 +184,17 @@ func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy
 }
 func (eventListener *EventListener) update(input map[string]interface{}) error {
 
+	delete(input,"event")
+	delete(input,"handler")
+
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"entity_id","event_id","handler_id","priority"}); err != nil {
+		return err
+	}
+
 	// фиксируем состояние ДО обновления
-	if err := db.Set("gorm:association_autoupdate", false).
-		Model(eventListener).Omit("id","account_id","created_at", "updated_at", "event", "handler").Updates(input).Error; err != nil {
+	if err := db.Model(&EventListener{}).Where(" id = ?", eventListener.Id).Omit("id","account_id","created_at", "updated_at", "event", "handler").
+		Updates(input).Error; err != nil {
 			return err
 	}
 

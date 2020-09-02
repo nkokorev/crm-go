@@ -54,7 +54,7 @@ type WebHook struct {
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // обрабатывать ли вебхук
 	
-	Description 		string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
+	Description string 	`json:"description" gorm:"type:varchar(255);default:''"` // Описание что к чему)
 	URL 		string 	`json:"url" gorm:"type:varchar(255);"` // вызов, который совершается
 	HttpMethod	string `json:"http_method" gorm:"type:varchar(15);default:'get';"` // Тип вызова (GET, POST, PUT, puth и т.д.)
 }
@@ -203,7 +203,10 @@ func (WebHook) getByEvent(eventName string) (*WebHook, error) {
 	return &wh, nil
 }
 func (webHook *WebHook) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).Model(webHook).Omit("id", "account_id").Updates(input).Error
+
+	utils.FixInputHiddenVars(&input)
+
+	return db.Model(&WebHook{}).Where("id = ?", webHook.Id).Omit("id", "account_id","public_id").Updates(input).Error
 }
 
 func (webHook *WebHook) delete () error {

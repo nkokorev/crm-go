@@ -27,7 +27,7 @@ type PaymentCash struct {
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"`
 	InstantDelivery bool 	`json:"instant_delivery" gorm:"type:bool;default:false"`
 
-	WebSite		WebSite `json:"web_site" gorm:"preload"`
+	WebSite		WebSite `json:"web_site"`
 	// !!! deprecated !!!
 	
 	// PaymentOption   PaymentOption `gorm:"polymorphic:Owner;"`
@@ -112,7 +112,7 @@ func (paymentCash PaymentCash) create() (Entity, error)  {
 		return nil, err
 	}
 
-	if err := wb.GetPreloadDb(false,true, false).First(&wb, wb.Id).Error; err != nil {
+	if err := wb.GetPreloadDb(false,false, false).First(&wb, wb.Id).Error; err != nil {
 		return nil, err
 	}
 
@@ -196,8 +196,19 @@ func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, 
 	return entities, total, nil
 }
 func (paymentCash *PaymentCash) update(input map[string]interface{}) error {
-	return paymentCash.GetPreloadDb(true,true, false).
-		Where("id", paymentCash.Id).Omit("id", "account_id").Updates(input).Error
+
+	delete(input,"web_site")
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"web_site_id","shop_id"}); err != nil {
+		return err
+	}
+
+	err := paymentCash.GetPreloadDb(false,false, false).Where("id = ?", paymentCash.Id).
+		Omit("id", "hashId","account_id").Updates(input).Error
+	if err != nil { return err}
+	_ = paymentCash.load()
+
+	return nil
 }
 func (paymentCash *PaymentCash) delete () error {
 	return paymentCash.GetPreloadDb(true,true, false).Where("id = ?", paymentCash.Id).Delete(paymentCash).Error

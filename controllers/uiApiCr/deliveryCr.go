@@ -104,6 +104,6 @@ func DeliveryCodeList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET Deliveries List Options By WebSite")
-	resp["deliveryCodeList"] = webSite.DeliveryCodeList()
+	resp["delivery_code_list"] = webSite.DeliveryCodeList()
 	u.Respond(w, resp)
 }

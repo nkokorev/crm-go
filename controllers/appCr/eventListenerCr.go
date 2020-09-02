@@ -150,7 +150,7 @@ func EventListenerUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "PATCH Event Listener Update")
-	resp["event_listeners"] = eventListener
+	resp["event_listener"] = eventListener
 	u.Respond(w, resp)
 }
 
