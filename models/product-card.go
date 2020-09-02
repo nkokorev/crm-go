@@ -19,8 +19,9 @@ type ProductCard struct {
 
 	Enabled 			bool 	`json:"enabled" gorm:"type:bool;default:true"` // активна ли карточка товара
 
-	Label	 			*string 	`json:"label" gorm:"type:varchar(255);"` // что выводить в список товаров
-	Path 				*string 	`json:"path" gorm:"type:varchar(255);"` // идентификатор страницы (products/syao-chzhun )
+	Label	 			*string 	`json:"label" gorm:"type:varchar(255);"` 	// что выводить в список товаров
+	Path 				*string 	`json:"path" gorm:"type:varchar(255);"` 	// идентификатор страницы (syao-chzhun )
+	RouteName 			*string 	`json:"route_name" gorm:"type:varchar(50);default:'catalog.product'"`    // {catalog.product} - может быть удобно в каких-то фреймворках
 	Breadcrumb 			*string 	`json:"breadcrumb" gorm:"type:varchar(255);"`
 
 	MetaTitle 			*string 	`json:"meta_title" gorm:"type:varchar(255);"`
@@ -39,7 +40,7 @@ type ProductCard struct {
 
 	WebPages 			[]ProductCard 	`json:"web_pages" gorm:"many2many:web_page_product_card;"`
 	// WebSite		 		WebSite 	`json:"-" gorm:"-"`
-	Products 			[]Product 	`json:"products" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
+	Products 			[]Product 		`json:"products" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
 }
 
 func (ProductCard) PgSqlCreate() {

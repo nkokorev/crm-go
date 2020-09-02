@@ -20,12 +20,12 @@ type WebPage struct {
 	Code 		*string `json:"code" gorm:"type:varchar(255);"`
 
 	// Routing
-	Path 		*string `json:"path" gorm:"type:varchar(255);"`	// Имя пути - catalog, cat, /, ..
+	Path 		*string `json:"path" gorm:"type:varchar(255);"`			// Имя пути - catalog, cat, /, ..
 	Label 		*string `json:"label" gorm:"type:varchar(255);"` 		// menu label - Чай, кофе, ..
 	RouteName 	*string `json:"route_name" gorm:"type:varchar(50);"` 	// route name: delivery, info.index, cart
-	IconName 	*string `json:"icon_name" gorm:"type:varchar(50);"` // icon name
+	IconName 	*string `json:"icon_name" gorm:"type:varchar(50);"` 	// icon name
 
-	Order 				int		`json:"order" gorm:"type:int;default:10;"` // Порядок отображения в текущей иерархии
+	Order 				int		`json:"order" gorm:"type:int;default:10;"` // Порядок отображения в текущей иерархии категории
 	Breadcrumb 			*string `json:"breadcrumb" gorm:"type:varchar(255);"`
 	ShortDescription 	*string `json:"short_description" gorm:"type:varchar(255);"`
 	Description 		*string `json:"description" gorm:"type:text;"`
