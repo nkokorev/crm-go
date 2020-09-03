@@ -16,14 +16,17 @@ func init() {
 }
 
 // Объем выборки задач за один цикл mtaWorker
-const workflowsOneTick = 10
+const 	workflowsOneTick = 20
+var 	_beforeCompletedCheck = uint(0) // при достижении 0 вызывается проверка кампаний, для завершения статуса
 
 func mtaWorker() {
 
 	// Разминка перед стартом
-	// time.Sleep(time.Second*3)
-
+	time.Sleep(time.Second*3)
 	fmt.Printf("Start mtaWorker: %v\n", time.Now().UTC())
+
+	var slInNextTick = time.Millisecond * 500
+
 
 	for {
 		if db == nil {
@@ -50,31 +53,85 @@ func mtaWorker() {
 				time.Now().UTC(), WorkStatusActive,WorkStatusActive,WorkStatusActive).
 			Limit(workflowsOneTick).Find(&workflows).Error
 		if err != nil {
+			log.Printf("Error: db.Model(&MTAWorkflow{}): %v\n",err)
 			time.Sleep(time.Second*10)
 			continue
 		}
 
-		// Готовим пакеты на отправку в одном потоке. 
+		// корректируем скорость выборки задач
+		if len(workflows) > 10 {
+			slInNextTick = time.Millisecond * 200
+		} else {
+			slInNextTick = time.Millisecond * 1000
+		}
+
+		// Готовим пакеты на отправку в одном потоке.
 		for i := range workflows {
 			if err = workflows[i].Execute(); err != nil {
 
-				// невозможно почему-то отправить письмо
+				// 1. Удаляем задачу т.к. невозможно почему-то отправить письмо
 				if err = workflows[i].delete(); err != nil {
 					log.Printf("Неудачное удаление workflows[%v]: %v", i, err)
 				}
+
 			} else {
 
-				// удаляем задачу в этом же цикле, если это не серия писем.
+				// 1. удаляем задачу по отправке т.к. считаем, что она выполнена.
 				if workflows[i].OwnerType != EmailSenderQueue {
+
 					if err = workflows[i].delete(); err != nil {
 						log.Printf("Неудачное удаление workflows[%v]: %v", i, err)
 					}
+
 				}
+
+				// 2. Добавляем в пул задач на проверку статуса "Выполнено" (возможны другие статусы Failed из-за проблем с отправкой)
+				// todo: create system Task if not exist for check remains workflows
+				if workflows[i].OwnerType != EmailSenderCampaign {
+					// go MTAWorkflow{}.checkActiveEmailCampaign()
+				}
+
 			}
 		}
 
-		// Чуть отдыхаем перед новым проходом
-		time.Sleep(time.Millisecond * 1000)
+		// Проверяем не пора ли завершить какую кампанию
+		MTAWorkflow{}.checkActiveEmailCampaign()
+
+		time.Sleep(slInNextTick)
 		continue
+	}
+}
+
+// Устанавливает WorkStatusCompleted завершенным кампаниям
+func (MTAWorkflow) checkActiveEmailCampaign() {
+
+	// Check counter before... <>
+	if _beforeCompletedCheck > 0 {
+		_beforeCompletedCheck--
+		return
+	}
+	
+	_beforeCompletedCheck = 10
+
+	campaigns := make([]EmailCampaign,0)
+
+	err := db.Model(&EmailCampaign{}).
+		Joins("LEFT JOIN mta_workflows ON mta_workflows.owner_id = email_campaigns.id AND mta_workflows.owner_type = 'email_campaigns'").
+		// Select("COUNT(*) AS recipients FROM mta_workflows WHERE owner_type = 'email_campaigns' ").
+		Select("mta_workflows.id, email_campaigns.*").
+		Where("email_campaigns.status = ? AND mta_workflows.id IS NULL", WorkStatusActive).
+		Find(&campaigns).Error
+	if err != nil {
+		log.Printf("error: %v\n", err.Error())
+		return
+	}
+	
+	// log.Printf("Campaigns: %v\n", len(campaigns))
+
+	// Переводим статус найденных кампаний в 'Completed'
+	if len (campaigns) > 0 {
+		for i := range campaigns {
+			_ = campaigns[i].SetCompletedStatus()
+		}
 	}
 }

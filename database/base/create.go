@@ -628,7 +628,7 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 	if true {
 		var clients []models.User
 
-		for i:=1; i < 1000 ;i++ {
+		for i:=1; i < 200 ;i++ {
 			clients = append(clients, models.User{
 				Name: utils.STRp(fmt.Sprintf("Name #%d", i)),
 				Email: utils.STRp(fmt.Sprintf("email%d@mail.ru", i)),

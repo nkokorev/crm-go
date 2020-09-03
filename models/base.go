@@ -63,13 +63,13 @@ func ConnectDb() *gorm.DB {
 	// https://github.com/go-gorm/postgres
 	dbLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
-		logger.Config{
+		logger.Config {
 			SlowThreshold: time.Millisecond*200,   // Slow SQL threshold
-			LogLevel:      logger.Silent, // Уровни логирования GORM: Silent, Error, Warn, Info
+			LogLevel:      logger.Error, // Уровни логирования GORM: Silent, Error, Warn, Info
 			Colorful:      true,         // Disable color
 		},
 	)
-	db, err := gorm.Open(postgres.New(postgres.Config{
+	db, err := gorm.Open(postgres.New( postgres.Config {
 		DSN: os.Getenv("DATABASE_URL"),
 		// PreferSimpleProtocol: true, // disables implicit prepared statement usage
 		PreferSimpleProtocol: false, // disables implicit prepared statement usage
@@ -82,7 +82,6 @@ func ConnectDb() *gorm.DB {
 			SingularTable: true, // использовать именование в единственном числе, таблица для `User` будет `user` при включении этой опции, или `t_user` при TablePrefix = "t_"
 		},*/
 	})
-
 
 	if err != nil {
 		log.Fatal("Error connect to DB")

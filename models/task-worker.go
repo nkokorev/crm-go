@@ -68,7 +68,7 @@ func taskWorker() {
 			continue
 		}
 		
-		time.Sleep(time.Second * 30) // 2-5s
+		time.Sleep(time.Second * 20)
 		continue
 	}
 }

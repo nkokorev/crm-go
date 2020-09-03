@@ -384,7 +384,7 @@ func (emailQueue EmailQueue) AppendUser(userId uint) error {
 		AccountId: emailQueue.AccountId,
 		OwnerId: emailQueue.Id,
 		OwnerType: EmailSenderQueue,
-		QueueExpectedStepId: step.Step,
+		QueueExpectedStepId: &step.Step,
 		ExpectedTimeStart: time.Now().UTC().Add(step.DelayTime),
 		UserId: userId, 
 		NumberOfAttempts: 0, // << пока так

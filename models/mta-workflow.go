@@ -21,14 +21,14 @@ type MTAWorkflow struct {
 	OwnerType	EmailSenderType	`json:"owner_type" gorm:"varchar(32);not null;"` // << тип события: кампания, серия, уведомление
 	OwnerId		uint			`json:"owner_id" gorm:"type:smallint;not null;"` // ID типа события: какая серия, компания или уведомление
 
-	// К какой серии писем относится задача (gorm - т.к. это AfterFind загружается)
-	EmailQueue			EmailQueue 			`json:"_email_queue" gorm:"-"`
-	EmailNotification	EmailNotification 	`json:"_email_notification" gorm:"-"`
-	EmailCampaign		EmailCampaign 		`json:"_email_campaign" gorm:"-"`
+	// К какой серии писем относится задача (gorm - т.к. это AfterFind загружается) ??
+	// EmailQueue			EmailQueue 			`json:"_email_queue" gorm:"-"`
+	// EmailNotification	EmailNotification 	`json:"_email_notification" gorm:"-"`
+	// EmailCampaign		EmailCampaign 		`json:"_email_campaign" gorm:"-"`
 
 	// Номер необходимого шага в серии EmailQueue. Шаг определяется ситуационно в момент Expected Time. Если шага нет - серия завершается за пользователя.
 	// После выполнения - № шага увеличивается на 1
-	QueueExpectedStepId	uint	`json:"queue_expected_step_id" gorm:"type:int;not null;"`
+	QueueExpectedStepId	*uint	`json:"queue_expected_step_id" gorm:"type:int;"`
 
 	// Запланированное время отправки
 	ExpectedTimeStart 	time.Time `json:"expected_time_start"`
@@ -231,23 +231,28 @@ func (mtaWorkflow *MTAWorkflow) GetPreloadDb(autoUpdateOff bool, getModel bool, 
 	}
 }
 
-// Создание пакета для добавления в буфер на отправку
+// Создание пакета для добавления в буфер на отправку.
+// При ошибке: реагирует соответствующим образом: либо останавливает EmailSender, либо завершает со статусом Failed и удаляет все задачи по отправке
 func (mtaWorkflow *MTAWorkflow) Execute() error {
 
 	// Локальные данные аккаунта, пользователя
 	data := make(map[string]interface{})
 
 	account, err := GetAccount(mtaWorkflow.AccountId)
-	if err != nil { return err }
+	if err != nil {
+		mtaWorkflow.stopEmailSender(fmt.Sprintf("Account not found: %v",err.Error()))
+		return err
+	}
 
 	user, err := account.GetUser(mtaWorkflow.UserId)
-	if err != nil { return err }
+	if err != nil {
+		mtaWorkflow.removeWorkflowUser(mtaWorkflow.UserId)
+		return err
+	}
 
 	// Проверяем статус подписки
 	if !user.Subscribed {
-		if err = mtaWorkflow.delete(); err != nil {
-			log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
-		}
+		mtaWorkflow.removeWorkflowUser(mtaWorkflow.UserId)
 		return utils.Error{Message: "Невозможно отправить письмо пользователю, т.к. он отписан от всех подписок"}
 	}
 
@@ -257,20 +262,30 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		case EmailSenderQueue:
 			_e := EmailQueue{}
 			err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
-			if err != nil {return err}
+			if err != nil {
+				mtaWorkflow.stopEmailSender(fmt.Sprintf("Email Queue not found: %v",err.Error()))
+				return err
+			}
 			sender = &_e
 		case EmailSenderCampaign:
 			_e := EmailCampaign{}
 			err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
-			if err != nil {return err}
+			if err != nil {
+				mtaWorkflow.stopEmailSender(fmt.Sprintf("Email Campaign not found: %v",err.Error()))
+				return err
+			}
 			sender = &_e
 		case EmailSenderNotification:
 			_e := EmailNotification{}
 			err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
-			if err != nil {return err}
+			if err != nil {
+				mtaWorkflow.stopEmailSender(fmt.Sprintf("Email Notification not found: %v",err.Error()))
+				return err
+			}
 			sender = &_e
 	default:
-		return utils.Error{Message: "Ошибка опознания типа сообщения"}
+		mtaWorkflow.stopEmailSender("Ошибка: неопознанный тип отправления сообщения")
+		return utils.Error{Message: "Ошибка: неопознанный тип отправления сообщения"}
 	}
 
 	// тут у нас есть Конверт для отправки
@@ -284,22 +299,31 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		// Проверяем состоянии кампании/очереди/уведомления
 		if !sender.IsActive() {
 			// Тут могут копиться люди в очереди, поэтому возвращаем ошибку
+			mtaWorkflow.pausedEmailSender("Статус отправителя - is not active!")
 			return utils.Error{ Message: fmt.Sprintf("Невозможно отправить письмо, т.к. объект [id = %v] не запущен\n", sender.GetId())}
 		}
 
 		emailQueue, ok := sender.(*EmailQueue)
-		if !ok { return errors.New("Ошибка преобразования в Email Queue")}
-		
-		step, err := emailQueue.GetNearbyActiveStep(mtaWorkflow.QueueExpectedStepId)
+		if !ok {
+			mtaWorkflow.stopEmailSender("Ошибка преобразования статуса отправителя в email queue")
+			return errors.New("Ошибка преобразования в Email Queue")
+		}
+
+		if mtaWorkflow.QueueExpectedStepId == nil {
+			mtaWorkflow.stopEmailSender("Данные не полные: QueueExpectedStepId == nil")
+			return utils.Error{Message: "Данные не полные: QueueExpectedStepId == nil"}
+		}
+		step, err := emailQueue.GetNearbyActiveStep(*mtaWorkflow.QueueExpectedStepId)
 		if err != nil {
 			// Если нет доступных шагов - удаляем задачу
-			if err = mtaWorkflow.delete(); err != nil {
-				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
+			if err2 := mtaWorkflow.delete(); err2 != nil {
+				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err2)
 			}
 			return err
 		}
 
 		if step.EmailBoxId == nil {
+			mtaWorkflow.stopEmailSender("Данные не полные: не хватает email_box_id")
 			return utils.Error{Message: "Данные не полные: не хватает emailBoxID"}
 		}
 
@@ -314,13 +338,21 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		PreviewText = step.PreviewText
 
 		// Находим шаблон письма
-		_et, err := emailQueue.GetEmailTemplateByStep(mtaWorkflow.QueueExpectedStepId)
-		if err != nil {	return err }
+		if mtaWorkflow.QueueExpectedStepId == nil {
+			mtaWorkflow.stopEmailSender("Данные не полные: QueueExpectedStepId == nil")
+			return utils.Error{Message: "Данные не полные: QueueExpectedStepId == nil"}
+		}
+		_et, err := emailQueue.GetEmailTemplateByStep(*mtaWorkflow.QueueExpectedStepId)
+		if err != nil {
+			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email template not found: %v",err.Error()))
+			return err
+		}
 		emailTemplate = *_et
 
 		// EmailBox
 		err = account.LoadEntity(&emailBox, *step.EmailBoxId)
 		if err != nil {
+			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email box not found: %v",err.Error()))
 			return err
 		}
 	}
@@ -328,19 +360,28 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	if sender.GetType() == EmailSenderNotification {
 
 		if !sender.IsActive() {
-			// Возвращаем с ошибкой, т.к. могут копиться люди в очереди
+			mtaWorkflow.pausedEmailSender("Статус отправителя - is not active!")
 			return utils.Error{ Message: fmt.Sprintf("Невозможно отправить письмо, т.к. объект [id = %v] не запущен\n", sender.GetId()),
 			}
 		}
 
 		emailNotification, ok := sender.(*EmailNotification)
-		if !ok { return errors.New("Ошибка преобразования в email Notification")}
+		if !ok {
+			mtaWorkflow.stopEmailSender("Ошибка преобразования статуса отправителя в email notification")
+			return errors.New("Ошибка преобразования в email Notification")
+		}
 
 		err := account.LoadEntity(&emailTemplate, *emailNotification.EmailTemplateId)
-		if err != nil {	return err }
+		if err != nil {
+			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email template not found: %v",err.Error()))
+			return err
+		}
 
 		err = account.LoadEntity(&emailBox, *emailNotification.EmailBoxId)
-		if err != nil {	return err }
+		if err != nil {
+			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email box not found: %v",err.Error()))
+			return err
+		}
 		
 		Subject = emailNotification.Subject
 		PreviewText = emailNotification.PreviewText
@@ -349,17 +390,27 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	if sender.GetType() == EmailSenderCampaign {
 
 		if !sender.IsActive() {
+			mtaWorkflow.pausedEmailSender("Статус отправителя - is not active!")
 			return utils.Error{ Message: fmt.Sprintf("Невозможно отправить письмо, т.к. кампания [id = %v] не запущена\n", sender.GetId())}
 		}
 
 		emailCampaign, ok := sender.(*EmailCampaign)
-		if !ok { return errors.New("Ошибка преобразования в email campaign")}
+		if !ok {
+			mtaWorkflow.stopEmailSender("Ошибка преобразования статуса отправителя в email campaign")
+			return errors.New("Ошибка преобразования в email campaign")
+		}
 
 		err := account.LoadEntity(&emailTemplate, *emailCampaign.EmailTemplateId)
-		if err != nil {	return err }
+		if err != nil {
+			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email template not found: %v",err.Error()))
+			return err
+		}
 
 		err = account.LoadEntity(&emailBox, *emailCampaign.EmailBoxId)
-		if err != nil {	return err}
+		if err != nil {
+			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email box not found: %v",err.Error()))
+			return err
+		}
 
 		Subject = emailCampaign.Subject
 		PreviewText = emailCampaign.PreviewText
@@ -382,7 +433,8 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	// Компилируем тему письма
 	_subject, err := parseSubjectByData(Subject, data)
 	if err != nil {
-		return utils.Error{Message: "Ошибка отправления Уведомления - не удается прочитать тему сообщения"}
+		mtaWorkflow.stopEmailSender(fmt.Sprintf("Ошибка темы сообщения: %v",err.Error()))
+		return utils.Error{ Message: "Ошибка отправления Уведомления - не удается прочитать тему сообщения"}
 	}
 	if _subject == "" {
 		_subject = fmt.Sprintf("Письмо #%v", mtaWorkflow.Id)
@@ -391,12 +443,14 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	// Готовим еще раз полностью данные
 	vData, err := emailTemplate.PrepareViewData(_subject, PreviewText, data, pixelURL, &unsubscribeUrl)
 	if err != nil {
-		return utils.Error{Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
+		mtaWorkflow.stopEmailSender(fmt.Sprintf("Ошибка подготовки данных для сообщения: %v",err.Error()))
+		return utils.Error{ Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
 	}
 
 	var webSite WebSite
 	if err = account.LoadEntity(&webSite, emailBox.WebSiteId); err != nil {
-		return utils.Error{Message: "Ошибка отправления Уведомления - не удается загрузить данные по WebSite"}
+		mtaWorkflow.stopEmailSender(fmt.Sprintf("Ошибка загрузки данных WebSite: %v",err.Error()))
+		return utils.Error{ Message: "Ошибка отправления Уведомления - не удается загрузить данные по WebSite"}
 	}
 
 	var pkg = EmailPkg {
@@ -418,7 +472,6 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 
 	return nil
 }
-
 func (mtaWorkflow *MTAWorkflow) UpdateByNextStep(expectedStep EmailQueueEmailTemplate) error {
 	// Изменяется expected step, expected_time_start, number_attems, last_tried
 	return mtaWorkflow.update(map[string]interface{}{
@@ -428,5 +481,79 @@ func (mtaWorkflow *MTAWorkflow) UpdateByNextStep(expectedStep EmailQueueEmailTem
 		"last_tried_at": nil,
 		// "status": WorkStatusPlanned,
 	})
+
+}
+
+// Останавливает отправителя и удаляет все задачи по отправке из-за ошибки
+func (mtaWorkflow *MTAWorkflow) stopEmailSender(reason string) {
+
+	account,err := GetAccount(mtaWorkflow.AccountId)
+	if err != nil {
+		log.Printf("stopEmailSender: Ошибка загрузки аккаунта: %v\n",err)
+		return
+	}
+
+	var sender EmailSender
+	switch mtaWorkflow.OwnerType {
+	case EmailSenderQueue:
+		_e := EmailQueue{}
+		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
+		if err != nil {return}
+		sender = &_e
+	case EmailSenderCampaign:
+		_e := EmailCampaign{}
+		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
+		if err != nil {return}
+		sender = &_e
+	case EmailSenderNotification:
+		_e := EmailNotification{}
+		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
+		if err != nil {return}
+		sender = &_e
+	default:
+		return
+	}
+
+	_ = sender.changeWorkStatus(WorkStatusFailed, reason)
+
+}
+// Приостанавливает отправителя, не удаляя задачи по отправке
+func (mtaWorkflow *MTAWorkflow) pausedEmailSender(reason string) {
+
+	account,err := GetAccount(mtaWorkflow.AccountId)
+	if err != nil {
+		log.Printf("stopEmailSender: Ошибка загрузки аккаунта: %v\n",err)
+		return
+	}
+
+	var sender EmailSender
+	switch mtaWorkflow.OwnerType {
+	case EmailSenderQueue:
+		_e := EmailQueue{}
+		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
+		if err != nil {return}
+		sender = &_e
+	case EmailSenderCampaign:
+		_e := EmailCampaign{}
+		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
+		if err != nil {return}
+		sender = &_e
+	case EmailSenderNotification:
+		_e := EmailNotification{}
+		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
+		if err != nil {return}
+		sender = &_e
+	default:
+		return
+	}
+
+	_ = sender.changeWorkStatus(WorkStatusPaused, reason)
+}
+
+// Удаляем все задачи для пользователя из workflows для этого аккаунта
+func (mtaWorkflow *MTAWorkflow) removeWorkflowUser(userId uint) {
+
+	// Удаляем все задачи из WorkFlow для этого типа отправителя
+	db.Where("owner_id = ? AND owner_type = ? AND user_id = ?", mtaWorkflow.OwnerId, mtaWorkflow.OwnerType,userId).Delete(MTAWorkflow{})
 
 }

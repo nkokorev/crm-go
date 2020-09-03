@@ -342,7 +342,7 @@ func (emailCampaign *EmailCampaign) Execute() error {
 	// 2. Переводим Кампанию в состояние "Выполняется"
 	if err := emailCampaign.SetActiveStatus(); err != nil {return err}
 
-	// 3. Начинаем собирать пользователей из базы согласно сегменту
+	// 3. Собираем всех пользователь сегмента из базы
 	users := emailCampaign.getUsersBySegment()
 
 	// Шаблон-заготовка для каждого пользователя под задачу в mta-workflow
@@ -350,7 +350,7 @@ func (emailCampaign *EmailCampaign) Execute() error {
 		AccountId: emailCampaign.AccountId,
 		OwnerId: emailCampaign.Id,
 		OwnerType: EmailSenderCampaign,
-		ExpectedTimeStart: emailCampaign.ScheduleRun, // указываем время запуска кампании
+		ExpectedTimeStart: emailCampaign.ScheduleRun, // время запуска - время запуска кампании
 		// UserId: users[i].Id, // << ставим во время цикла
 		NumberOfAttempts: 0,
 	}
@@ -563,7 +563,7 @@ func (emailCampaign *EmailCampaign) SetCompletedStatus() error {
 	}
 
 	// Удаляем все задачи из WorkFlow
-	err := db.Where("owner_id = ? AND owner_type = ?", emailCampaign.Id, emailCampaign.GetType()).Delete(MTAWorkflow{}).Error
+	err := db.Where("owner_id = ? AND owner_type = ?", emailCampaign.Id, emailCampaign.GetType()).Delete(&MTAWorkflow{}).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		log.Printf("Ошибка удаления очереди из MTAWorkflow: %v\b", err)
 		return utils.Error{Message: "Ошибка завершения кампании - невозможно удалить остаток задач"}

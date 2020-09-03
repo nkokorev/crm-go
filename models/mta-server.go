@@ -21,7 +21,7 @@ import (
 var smtpCh chan EmailPkg
 
 var gorutines = 30 // число поток по отправке
-const deepMTACh = 50 // Объем буфера из пакетов и макс. число горутин по их отправке
+const deepMTACh = 50 // Объем буфера из пакетов
 const dialTimeout = time.Second * 10 // максимальное время для установки соединения с smtp сервером получателя
 
 func init() {
@@ -58,49 +58,23 @@ func mtaServer(c <-chan EmailPkg) {
 	for pkg := range c {
 
 		if gorutines < 1 {
-			fmt.Println("gorutines: ", gorutines)
 			wg.Wait()
 		}
 		wg.Add(1)
 		gorutines--
 
 		go mtaSender(pkg, &wg, &m)
+
+		// fmt.Println("Ожидаем новый пакет")
+		// небольшая задержка по отправке << нужна ли?
 		// time.Sleep(100*time.Millisecond)
 	}
-	/*for {
-		select {
-		case pkg := <- c:
-
-			// Если все потоки разобраны (из пула = {workerCount}) - ожидаем завершения всех текущих отправок (макс 5с), чтобы не плодить овер коннектов
-			if gorutines < 1 {
-				fmt.Println("gorutines: ", gorutines)
-				wg.Wait()
-			}
-
-			// обновляем счетчик WaitGroup
-			wg.Add(1)
-			gorutines--
-
-			// Без go - ожидает отправки каждого сообщения
-			go mtaSender(pkg, &wg, &m)
-
-			// fix ХЗ чего
-			// time.Sleep(time.Millisecond*10)
-
-			// спим 1 секунду, если нет задач на отправку
-		case <- time.After(1 * time.Second):
-			 // fmt.Println("Подождали 1 sec: ", time.Now().String())
-		default:
-			time.Sleep(500*time.Millisecond)
-		}
-	}*/
 }
 
 // Функция по отправке почтового пакета, обычно, запускается воркером в отдельной горутине
 // func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
-
-	// псевдо отправка
+	
 	defer func() {
 		m.Lock()
 		gorutines++
