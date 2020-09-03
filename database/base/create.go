@@ -625,15 +625,15 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 	}
 
 	// 3.2. добавляем кучу других клиентов
-	/*if true {
+	if true {
 		var clients []models.User
 
-		for i:=1; i < 500 ;i++ {
+		for i:=1; i < 1000 ;i++ {
 			clients = append(clients, models.User{
-				Name: fmt.Sprintf("Name #%d", i),
-				Email: fmt.Sprintf("email%d@mail.ru", i),
-				Phone: fmt.Sprintf("+7925195221%d", i),
-				Password: "asdfg109#QW",
+				Name: utils.STRp(fmt.Sprintf("Name #%d", i)),
+				Email: utils.STRp(fmt.Sprintf("email%d@mail.ru", i)),
+				Phone: utils.STRp(fmt.Sprintf("+7925195221%d", i)),
+				Password: utils.STRp("asdfg109#QW"),
 			})
 		}
 		for i,_ := range clients {
@@ -643,7 +643,7 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 				return
 			}
 		}
-	}*/
+	}
 
 
 	// 4. Создаем домен для 357gr
@@ -2023,7 +2023,6 @@ func UploadTestDataPart_V() {
 	romanUfa, err := mAcc.CreateUser(
 		models.User{
 			Username:	utils.STRp("roman_s"),
-			// Email:"vp@357gr.ru",
 			Email:		utils.STRp("roman_s@stan-prof.ru"),
 			PhoneRegion: utils.STRp("RU"),
 			Phone: 		utils.STRp("+79872519935"),
@@ -2063,7 +2062,7 @@ func UploadTestDataPart_V() {
 		VisibleToClients:                    false,
 	})
 	if err != nil || stanProf == nil {
-		log.Fatal("Не удалось создать аккаунт 357 грамм")
+		log.Fatal("Не удалось создать аккаунт StanProf")
 		return
 	}
 

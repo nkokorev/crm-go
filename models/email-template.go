@@ -202,7 +202,6 @@ func (emailTemplate *EmailTemplate) update(input map[string]interface{}) error {
 
 	if err := emailTemplate.GetPreloadDb(false,false,false).Where(" id = ?", emailTemplate.Id).
 		Omit("id", "public_id","account_id","created_at").Updates(input).Error; err != nil {
-			fmt.Println(err)
 		return err
 	}
 
@@ -293,7 +292,6 @@ func (emailTemplate EmailTemplate) GetHTML(viewData *ViewData) (html string, err
 		return "", errors.New(fmt.Sprintf("Ошибка email-шаблона: %s\r", err))
 	}
 
-	fmt.Println("Данные шаблона успешно получены")
 	return body.String(), nil
 }
 
@@ -303,6 +301,7 @@ func (emailTemplate EmailTemplate) SendMail(from EmailBox, toEmail string, subje
 	// fmt.Println("Типа отослали")
 	// return nil
 	// return errors.New("sdds")
+	return errors.New("Функция устарела")
 
 	if from.WebSite.Id < 1 {
 		log.Println("EmailTemplate: Не удалось определить WebSite")

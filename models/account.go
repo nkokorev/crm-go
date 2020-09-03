@@ -261,7 +261,7 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 	if input.Phone != nil {
 		phone = true
 
-		if *input.PhoneRegion == "" {
+		if input.PhoneRegion == nil {
 			input.PhoneRegion = utils.STRp("RU")
 		}
 

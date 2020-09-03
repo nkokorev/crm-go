@@ -26,7 +26,7 @@ const dialTimeout = time.Second * 10 // максимальное время дл
 
 func init() {
 	smtpCh = make(chan EmailPkg, deepMTACh)
-	// go mtaServer(smtpCh) // start MTA server
+	go mtaServer(smtpCh) // start MTA server
 }
 
 // Содержание письма компилируется из ViewData
@@ -108,7 +108,7 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 	}()
 
 	// по настоящему или нет отправляем
-	var mock=  true
+	var mock =  true
 
 
 	// m.Lock()
@@ -176,6 +176,7 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 
 		// time.Sleep(time.Second * 5)
 	} else {
+		log.Fatal("ssssssSsss")
 		// 4. Делаем коннект к почтовому серверу получателя
 		client, bounceLevel, err := getClientByEmail(pkg.To.Address)
 		if err != nil {

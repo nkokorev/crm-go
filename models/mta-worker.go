@@ -39,10 +39,8 @@ func mtaWorker() {
 		}
 		
 		workflows := make([]MTAWorkflow,0)
-		// var workflows []MTAWorkflow
 
 		// Собираем по {workflowsOneTick} задач на отправку
-		// err := db.Model(&MTAWorkflow{}).
 		err := db.Model(&MTAWorkflow{}).
 			Joins("LEFT JOIN email_queues ON email_queues.id = mta_workflows.owner_id").
 			Joins("LEFT JOIN email_notifications ON email_notifications.id = mta_workflows.owner_id").
@@ -52,20 +50,20 @@ func mtaWorker() {
 				time.Now().UTC(), WorkStatusActive,WorkStatusActive,WorkStatusActive).
 			Limit(workflowsOneTick).Find(&workflows).Error
 		if err != nil {
-			// log.Printf("MTAWorkflow:  %v", err)
 			time.Sleep(time.Second*10)
 			continue
 		}
 
 		// Готовим пакеты на отправку в одном потоке. 
 		for i := range workflows {
-			fmt.Println("workflows - отправляем! ")
 			if err = workflows[i].Execute(); err != nil {
+
 				// невозможно почему-то отправить письмо
 				if err = workflows[i].delete(); err != nil {
 					log.Printf("Неудачное удаление workflows[%v]: %v", i, err)
 				}
 			} else {
+
 				// удаляем задачу в этом же цикле, если это не серия писем.
 				if workflows[i].OwnerType != EmailSenderQueue {
 					if err = workflows[i].delete(); err != nil {
@@ -76,7 +74,7 @@ func mtaWorker() {
 		}
 
 		// Чуть отдыхаем перед новым проходом
-		time.Sleep(time.Millisecond * 800)
+		time.Sleep(time.Millisecond * 1000)
 		continue
 	}
 }
