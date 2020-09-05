@@ -299,7 +299,7 @@ func (payment *Payment) loadByPublicId() error {
 }
 
 func (Payment) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return Payment{}.getPaginationList(accountId, 0, 25, sortBy, "", nil)
+	return Payment{}.getPaginationList(accountId, 0, 25, sortBy, "", nil,preload)
 }
 func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 

@@ -111,14 +111,14 @@ func EmailTemplateGetListPagination(w http.ResponseWriter, r *http.Request) {
 	emailTemplates := make([]models.Entity,0)
 
 	if all {
-		emailTemplates, total, err = account.GetListEntity(&models.EmailTemplate{}, sortBy)
+		emailTemplates, total, err = account.GetListEntity(&models.EmailTemplate{}, sortBy,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список email-шаблонов"))
 			return
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		emailTemplates, total, err = account.GetPaginationListEntity(&models.EmailTemplate{}, offset, limit, sortBy, search, nil)
+		emailTemplates, total, err = account.GetPaginationListEntity(&models.EmailTemplate{}, offset, limit, sortBy, search, nil,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список email-шаблонов"))
 			return

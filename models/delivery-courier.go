@@ -122,7 +122,7 @@ func (deliveryCourier *DeliveryCourier) loadByPublicId() error {
 }
 func (DeliveryCourier) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 
-	return DeliveryCourier{}.getPaginationList(accountId, 0, 100, sortBy, "", nil)
+	return DeliveryCourier{}.getPaginationList(accountId, 0, 100, sortBy, "", nil,preload)
 }
 func (DeliveryCourier) getListByShop(accountId, websiteId uint) ([]DeliveryCourier, error) {
 

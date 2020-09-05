@@ -350,7 +350,7 @@ func StorageMassUpdates(w http.ResponseWriter, r *http.Request) {
 	files := make([]models.Entity,0)
 
 	var total int64
-	files, total, err = account.GetPaginationListEntity(&models.Storage{}, 0, 100, "priority", "", filter)
+	files, total, err = account.GetPaginationListEntity(&models.Storage{}, 0, 100, "priority", "", filter,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

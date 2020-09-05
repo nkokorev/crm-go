@@ -106,7 +106,7 @@ func (*HandlerItem) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (HandlerItem) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return HandlerItem{}.getPaginationList(accountId,0,100,sortBy,"", nil)
+	return HandlerItem{}.getPaginationList(accountId,0,100,sortBy,"", nil,preload)
 }
 func (HandlerItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 

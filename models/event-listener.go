@@ -121,7 +121,7 @@ func (EventListener) getEnabledByName(accountId uint, eventName string) ([]Event
 	return eventListeners, nil
 }
 func (EventListener) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return EventListener{}.getPaginationList(accountId,0,200,sortBy,"", nil)
+	return EventListener{}.getPaginationList(accountId,0,200,sortBy,"", nil, preload)
 }
 func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 

@@ -143,7 +143,7 @@ func (EmailTemplate) getByHashId(hashId string) (*EmailTemplate, error) {
 	return &emailTemplate, nil
 }
 func (EmailTemplate) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return (EmailTemplate{}).getPaginationList(accountId, 0, 25, sortBy, "", nil)
+	return (EmailTemplate{}).getPaginationList(accountId, 0, 25, sortBy, "", nil,preload)
 }
 func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 

@@ -97,13 +97,13 @@ func EventListenerGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 
 	if all {
-		eventListeners, total, err = account.GetListEntity(&models.EventListener{}, sortBy)
+		eventListeners, total, err = account.GetListEntity(&models.EventListener{}, sortBy,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	} else {
-		eventListeners, total, err = account.GetPaginationListEntity(&models.EventListener{}, offset, limit, sortBy, search, nil)
+		eventListeners, total, err = account.GetPaginationListEntity(&models.EventListener{}, offset, limit, sortBy, search, nil,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return

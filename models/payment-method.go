@@ -25,7 +25,7 @@ func (account Account) GetPaymentMethods() ([]PaymentMethod, error) {
 
 	// Находим все необходимые методы
 	var paymentCashes []PaymentCash
-	paymentCashesEntity, _, err := PaymentCash{}.getList(account.Id, "id")
+	paymentCashesEntity, _, err := PaymentCash{}.getList(account.Id, "id",nil)
 	if err != nil {
 	   return nil, err
 	}
@@ -36,7 +36,7 @@ func (account Account) GetPaymentMethods() ([]PaymentMethod, error) {
 	}
 
 	var paymentYandexes []PaymentYandex
-	paymentYandexEntity, _, err := PaymentYandex{}.getList(account.Id, "id")
+	paymentYandexEntity, _, err := PaymentYandex{}.getList(account.Id, "id",nil)
 	if err != nil {
 		return nil, err
 	}

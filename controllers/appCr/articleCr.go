@@ -109,14 +109,14 @@ func ArticleListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	articles := make([]models.Entity, 0)
 
 	if all {
-		articles, total, err = account.GetListEntity(&models.Article{}, sortBy)
+		articles, total, err = account.GetListEntity(&models.Article{}, sortBy,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить данные"))
 			return
 		}
 	} else {
 		// emailNotifications, total, err = account.GetEmailNotificationsPaginationList(offset, limit, search)
-		articles, total, err = account.GetPaginationListEntity(&models.Article{}, offset, limit, sortBy, search, nil)
+		articles, total, err = account.GetPaginationListEntity(&models.Article{}, offset, limit, sortBy, search, nil,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить данные"))
 			return

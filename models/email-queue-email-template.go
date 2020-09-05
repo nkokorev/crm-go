@@ -160,7 +160,7 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) loadByPublicId() error {
 }
 
 func (EmailQueueEmailTemplate) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return EmailQueueEmailTemplate{}.getPaginationList(accountId, 0, 50, sortBy, "",nil)
+	return EmailQueueEmailTemplate{}.getPaginationList(accountId, 0, 50, sortBy, "",nil,preload)
 }
 
 func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {

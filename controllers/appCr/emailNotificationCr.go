@@ -106,14 +106,14 @@ func EmailNotificationGetListPagination(w http.ResponseWriter, r *http.Request) 
 	emailNotifications := make([]models.Entity,0)
 
 	if all {
-		emailNotifications, total, err = account.GetListEntity(&models.EmailNotification{}, sortBy)
+		emailNotifications, total, err = account.GetListEntity(&models.EmailNotification{}, sortBy,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить данные"))
 			return
 		}
 	} else {
 		// emailNotifications, total, err = account.GetEmailNotificationsPaginationList(offset, limit, search)
-		emailNotifications, total, err = account.GetPaginationListEntity(&models.EmailNotification{}, offset, limit, sortBy, search, nil)
+		emailNotifications, total, err = account.GetPaginationListEntity(&models.EmailNotification{}, offset, limit, sortBy, search, nil,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить данные"))
 			return

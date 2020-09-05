@@ -77,7 +77,7 @@ func OrderStatusGetList(w http.ResponseWriter, r *http.Request) {
 	var total int64 = 0
 	orderStatuses := make([]models.Entity,0)
 	
-	orderStatuses, total, err = account.GetListEntity(&models.OrderStatus{},"id")
+	orderStatuses, total, err = account.GetListEntity(&models.OrderStatus{},"id",nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

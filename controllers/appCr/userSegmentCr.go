@@ -108,14 +108,14 @@ func UsersSegmentPaginationGet(w http.ResponseWriter, r *http.Request) {
 	usersSegments := make([]models.Entity,0)
 
 	if all {
-		usersSegments, total, err = account.GetListEntity(&models.UsersSegment{}, sortBy)
+		usersSegments, total, err = account.GetListEntity(&models.UsersSegment{}, sortBy,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список пользовательских сегментов"))
 			return
 		}
 	} else {
 		// usersSegments, total, err = account.GetUsersSegmentsPaginationList(offset, limit, search)
-		usersSegments, total, err = account.GetPaginationListEntity(&models.UsersSegment{}, offset, limit, sortBy, search, nil)
+		usersSegments, total, err = account.GetPaginationListEntity(&models.UsersSegment{}, offset, limit, sortBy, search, nil,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return

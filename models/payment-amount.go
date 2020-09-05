@@ -87,7 +87,7 @@ func (*PaymentAmount) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (PaymentAmount) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return PaymentAmount{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
+	return PaymentAmount{}.getPaginationList(accountId, 0,100,sortBy,"",nil,preload)
 }
 
 func (PaymentAmount) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {

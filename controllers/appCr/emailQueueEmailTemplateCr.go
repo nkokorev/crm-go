@@ -107,7 +107,7 @@ func EmailQueueEmailTemplateGetListPagination(w http.ResponseWriter, r *http.Req
 	var total int64 = 0
 	emailQueueEmailTemplates := make([]models.Entity,0)
 
-	emailQueueEmailTemplates, total, err = account.GetPaginationListEntity(&models.EmailQueueEmailTemplate{}, offset, limit, sortBy, search, filter)
+	emailQueueEmailTemplates, total, err = account.GetPaginationListEntity(&models.EmailQueueEmailTemplate{}, offset, limit, sortBy, search, filter,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -197,7 +197,7 @@ func EmailQueueEmailTemplateMassUpdates(w http.ResponseWriter, r *http.Request) 
 	var total int64 = 0
 	emailQueueEmailTemplates := make([]models.Entity,0)
 
-	emailQueueEmailTemplates, total, err = account.GetPaginationListEntity(&models.EmailQueueEmailTemplate{}, 0, 100, "step", "", filter)
+	emailQueueEmailTemplates, total, err = account.GetPaginationListEntity(&models.EmailQueueEmailTemplate{}, 0, 100, "step", "", filter,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

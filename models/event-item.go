@@ -152,7 +152,7 @@ func (*EventItem) loadByPublicId() error {
 }
 
 func (EventItem) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return EventItem{}.getPaginationList(accountId,0,300, sortBy, "",nil)
+	return EventItem{}.getPaginationList(accountId,0,300, sortBy, "",nil,preload)
 }
 
 func (EventItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {

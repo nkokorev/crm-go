@@ -151,7 +151,7 @@ func (*Role) loadByPublicId() error {
 }
 
 func (Role) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return Role{}.getPaginationList(accountId,0,100,sortBy,"", nil)
+	return Role{}.getPaginationList(accountId,0,100,sortBy,"", nil,preload)
 }
 func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 

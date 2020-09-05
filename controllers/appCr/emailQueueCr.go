@@ -114,13 +114,13 @@ func EmailQueueGetListPagination(w http.ResponseWriter, r *http.Request) {
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
 	if all {
-		emailQueues, total, err = account.GetListEntity(&models.EmailQueue{}, sortBy)
+		emailQueues, total, err = account.GetListEntity(&models.EmailQueue{}, sortBy,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	} else {
-		emailQueues, total, err = account.GetPaginationListEntity(&models.EmailQueue{}, offset, limit, sortBy, search, nil)
+		emailQueues, total, err = account.GetPaginationListEntity(&models.EmailQueue{}, offset, limit, sortBy, search, nil,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return

@@ -164,7 +164,7 @@ func (mtaHistory *MTAHistory) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (MTAHistory) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return MTAHistory{}.getPaginationList(accountId, 0, 25, sortBy, "",nil)
+	return MTAHistory{}.getPaginationList(accountId, 0, 25, sortBy, "",nil,preload)
 }
 func (MTAHistory) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 

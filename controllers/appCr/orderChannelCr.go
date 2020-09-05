@@ -100,7 +100,7 @@ func OrderChannelGetListPagination(w http.ResponseWriter, r *http.Request) {
 	var total int64 = 0
 	orderChannels := make([]models.Entity,0)
 	
-	orderChannels, total, err = account.GetPaginationListEntity(&models.OrderChannel{}, offset, limit, sortBy, search, nil)
+	orderChannels, total, err = account.GetPaginationListEntity(&models.OrderChannel{}, offset, limit, sortBy, search, nil,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

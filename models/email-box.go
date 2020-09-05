@@ -94,7 +94,7 @@ func (emailBox *EmailBox) loadByPublicId() error {
 }
 
 func (EmailBox) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return EmailBox{}.getPaginationList(accountId,0,10,sortBy, "", nil)
+	return EmailBox{}.getPaginationList(accountId,0,10,sortBy, "", nil,preload)
 }
 
 func (EmailBox) getListByWebSite(accountId uint, webSiteId uint, sortBy string) ([]EmailBox, error) {

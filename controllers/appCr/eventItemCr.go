@@ -103,13 +103,13 @@ func EventItemGetList(w http.ResponseWriter, r *http.Request) {
 	var total int64 = 0
 	observerItems := make([]models.Entity,0)
 	if all {
-		observerItems, total, err = account.GetListEntity(&models.EventItem{}, sortBy)
+		observerItems, total, err = account.GetListEntity(&models.EventItem{}, sortBy,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	} else {
-		observerItems, total, err = account.GetPaginationListEntity(&models.EventItem{}, offset, limit, sortBy, search, nil)
+		observerItems, total, err = account.GetPaginationListEntity(&models.EventItem{}, offset, limit, sortBy, search, nil,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -158,13 +158,13 @@ func EventItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 	observerItems := make([]models.Entity,0)
 
 	if all {
-		observerItems, total, err = account.GetListEntity(&models.EventItem{}, sortBy)
+		observerItems, total, err = account.GetListEntity(&models.EventItem{}, sortBy,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	} else {
-		observerItems, total, err = account.GetPaginationListEntity(&models.EventItem{}, offset, limit, sortBy, search, nil)
+		observerItems, total, err = account.GetPaginationListEntity(&models.EventItem{}, offset, limit, sortBy, search, nil,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return

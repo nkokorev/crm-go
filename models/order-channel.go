@@ -107,7 +107,7 @@ func (OrderChannel) getByCode(accountId uint, code string) (*OrderChannel, error
 }
 
 func (OrderChannel) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return OrderChannel{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
+	return OrderChannel{}.getPaginationList(accountId, 0,100,sortBy,"",nil,preload)
 }
 
 func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {

@@ -142,7 +142,7 @@ func (article *Article) loadByPublicId() error {
 }
 
 func (Article) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return Article{}.getPaginationList(accountId, 0, 25, sortBy, "",nil)
+	return Article{}.getPaginationList(accountId, 0, 25, sortBy, "",nil, preload)
 }
 func (Article) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 

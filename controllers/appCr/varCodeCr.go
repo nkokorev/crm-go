@@ -100,7 +100,7 @@ func VatCodeGetListPagination(w http.ResponseWriter, r *http.Request) {
 	var total int64 = 0
 	vatCodes := make([]models.Entity,0)
 	
-	vatCodes, total, err = account.GetPaginationListEntity(&models.VatCode{}, offset, limit, sortBy, search, nil)
+	vatCodes, total, err = account.GetPaginationListEntity(&models.VatCode{}, offset, limit, sortBy, search, nil,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

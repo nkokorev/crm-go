@@ -113,14 +113,14 @@ func EmailBoxListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	emailBoxes := make([]models.Entity,0)
 
 	if all {
-		emailBoxes, total, err = account.GetListEntity(&models.EmailBox{}, sortBy)
+		emailBoxes, total, err = account.GetListEntity(&models.EmailBox{}, sortBy,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список почтовых ящиков"))
 			return
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		emailBoxes, total, err = account.GetPaginationListEntity(&models.EmailBox{}, offset, limit, sortBy, search, nil)
+		emailBoxes, total, err = account.GetPaginationListEntity(&models.EmailBox{}, offset, limit, sortBy, search, nil,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список почтовых ящиков"))
 			return

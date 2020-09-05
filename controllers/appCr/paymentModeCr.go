@@ -77,7 +77,7 @@ func PaymentModeGetList(w http.ResponseWriter, r *http.Request) {
 	var total int64 = 0
 	paymentModes := make([]models.Entity,0)
 	
-	paymentModes, total, err = account.GetListEntity(&models.PaymentMode{},"id")
+	paymentModes, total, err = account.GetListEntity(&models.PaymentMode{},"id",nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

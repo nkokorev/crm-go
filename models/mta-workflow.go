@@ -148,7 +148,7 @@ func (mtaWorkflow *MTAWorkflow) loadByPublicId() error {
 }
 
 func (MTAWorkflow) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return MTAWorkflow{}.getPaginationList(accountId, 0, 25, sortBy, "",nil)
+	return MTAWorkflow{}.getPaginationList(accountId, 0, 25, sortBy, "",nil,preload)
 }
 
 func (MTAWorkflow) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {

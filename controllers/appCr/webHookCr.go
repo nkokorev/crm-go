@@ -138,14 +138,14 @@ func WebHookListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	webHooks := make([]models.Entity,0)
 
 	if all {
-		webHooks, total, err = account.GetListEntity(&models.WebHook{}, sortBy)
+		webHooks, total, err = account.GetListEntity(&models.WebHook{}, sortBy,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
 			return
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		webHooks, total, err = account.GetPaginationListEntity(&models.WebHook{}, offset, limit, sortBy, search, nil)
+		webHooks, total, err = account.GetPaginationListEntity(&models.WebHook{}, offset, limit, sortBy, search, nil,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
 			return
