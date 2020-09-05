@@ -15,7 +15,7 @@ type ProductCard struct {
 	PublicId			uint   	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 			uint 	`json:"-" gorm:"type:int;index;not null;"` // потребуется, если productGroupId == null
 	WebSiteId 			*uint 	`json:"web_site_id" gorm:"type:int;"` // магазин, к которому относится
-	WebPageId 			*uint 	`json:"web_page_id" gorm:"type:int;index;"` // группа товаров, категория товаров
+	// WebPageId 			*uint 	`json:"web_page_id" gorm:"type:int;index;"` // группа товаров, категория товаров
 
 	Enabled 			bool 	`json:"enabled" gorm:"type:bool;default:true"` // активна ли карточка товара
 
@@ -54,6 +54,10 @@ func (ProductCard) PgSqlCreate() {
 	}
 
 	err = db.SetupJoinTable(&ProductCard{}, "Products", &ProductCardProduct{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.SetupJoinTable(&ProductCard{}, "WebPages", &WebPageProductCard{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -143,10 +147,10 @@ func (productCard *ProductCard) loadByPublicId() error {
 
 	return nil
 }
-func (ProductCard) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
-	return ProductCard{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
+func (ProductCard) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
+	return ProductCard{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
 }
-func (ProductCard) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (ProductCard) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	productCards := make([]ProductCard,0)
 	var total int64
@@ -248,11 +252,11 @@ func (productCard *ProductCard) GetPreloadDb(autoUpdateOff bool, getModel bool, 
 
 ////////////////
 
-func (productCard ProductCard) AppendProduct(input *Product, optOrder... int) error {
+func (productCard ProductCard) AppendProduct(input *Product, optPriority... int) error {
 
-	order := 10
-	if len(optOrder) > 0 {
-		order = optOrder[0]
+	priority := 10
+	if len(optPriority) > 0 {
+		priority = optPriority[0]
 	}
 	var product *Product
 	if input.Id < 1 {
@@ -264,7 +268,7 @@ func (productCard ProductCard) AppendProduct(input *Product, optOrder... int) er
 	} else {
 		product = input
 	}
-	if err := db.Model(&ProductCardProduct{}).Create(&ProductCardProduct{ProductId: product.Id, ProductCardId: productCard.Id, Order: order}).Error; err != nil {
+	if err := db.Model(&ProductCardProduct{}).Create(&ProductCardProduct{ProductId: product.Id, ProductCardId: productCard.Id, Priority: priority}).Error; err != nil {
 		return err
 	}
 

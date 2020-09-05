@@ -65,7 +65,7 @@ func ConnectDb() *gorm.DB {
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 		logger.Config {
 			SlowThreshold: time.Millisecond*200,   // Slow SQL threshold
-			LogLevel:      logger.Error, // Уровни логирования GORM: Silent, Error, Warn, Info
+			LogLevel:      logger.Silent, // Уровни логирования GORM: Silent, Error, Warn, Info
 			Colorful:      true,         // Disable color
 		},
 	)
@@ -103,4 +103,26 @@ func ConnectDb() *gorm.DB {
 	SetDB(db)
 	fmt.Println("DataBase init full!")
 	return db
+}
+
+func SettingsDb() error {
+	err := db.SetupJoinTable(&ProductCard{}, "Products", &ProductCardProduct{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.SetupJoinTable(&Product{}, "ProductCards", &ProductCardProduct{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = db.SetupJoinTable(&WebPage{}, "ProductCards", &WebPageProductCard{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.SetupJoinTable(&ProductCard{}, "WebPages", &WebPageProductCard{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return nil
 }

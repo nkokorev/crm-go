@@ -191,10 +191,10 @@ func (emailNotification *EmailNotification) loadByPublicId() error {
 	return nil
 }
 
-func (EmailNotification) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+func (EmailNotification) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return EmailNotification{}.getPaginationList(accountId, 0, 25, sortBy, "",nil)
 }
-func (EmailNotification) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (EmailNotification) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	emailNotifications := make([]EmailNotification,0)
 	var total int64

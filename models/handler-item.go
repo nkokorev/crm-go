@@ -105,10 +105,10 @@ func (obItem *HandlerItem) load() error {
 func (*HandlerItem) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-func (HandlerItem) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+func (HandlerItem) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return HandlerItem{}.getPaginationList(accountId,0,100,sortBy,"", nil)
 }
-func (HandlerItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (HandlerItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	obItems := make([]HandlerItem,0)
 	var total int64

@@ -159,11 +159,11 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
-func (EmailQueueEmailTemplate) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+func (EmailQueueEmailTemplate) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return EmailQueueEmailTemplate{}.getPaginationList(accountId, 0, 50, sortBy, "",nil)
 }
 
-func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	emailQueueEmailTemplates := make([]EmailQueueEmailTemplate,0)
 	var total int64

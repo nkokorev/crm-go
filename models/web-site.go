@@ -8,6 +8,7 @@ import (
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 )
 
@@ -51,6 +52,7 @@ func (WebSite) PgSqlCreate() {
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
+
 }
 
 // ############# Entity interface #############
@@ -62,21 +64,23 @@ func (webSite *WebSite) setAccountId(id uint) { webSite.AccountId = id }
 func (webSite WebSite) SystemEntity() bool { return false }
 // ############# END Of Entity interface #############
 
-func (webSite *WebSite) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (webSite *WebSite) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
 	_db := db
-
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
+	
 	if getModel {
 		_db = _db.Model(&webSite)
 	} else {
 		_db = _db.Model(&WebSite{})
 	}
 
-	if preload {
-		return _db.Preload("EmailBoxes")
+	if autoPreload {
+		return db.Preload(clause.Associations)
+
+		// return _db.Preload("EmailBoxes")
 	} else {
+		for _,v := range preloads {
+			db.Preload(v)
+		}
 		return _db
 	}
 
@@ -133,7 +137,7 @@ func (webSite WebSite) create() (Entity, error)  {
 		return nil, err
 	}
 
-	if err := wb.GetPreloadDb(true,false, false).First(&wb,wb.Id).Error; err != nil {
+	if err := wb.GetPreloadDb(false,true,nil).First(&wb,wb.Id).Error; err != nil {
 		return nil, err
 	}
 
@@ -144,7 +148,7 @@ func (WebSite) get(id uint) (Entity, error) {
 
 	var webSite WebSite
 
-	err := (&WebSite{}).GetPreloadDb(false,false, true).First(&webSite, id).Error
+	err := (&WebSite{}).GetPreloadDb(false,false,nil).First(&webSite, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +156,7 @@ func (WebSite) get(id uint) (Entity, error) {
 }
 func (webSite *WebSite) load() error {
 
-	err := webSite.GetPreloadDb(false, true, true).First(webSite,webSite.Id).Error
+	err := webSite.GetPreloadDb(false, false, nil).First(webSite,webSite.Id).Error
 	if err != nil {
 		return err
 	}
@@ -165,17 +169,17 @@ func (webSite *WebSite) loadByPublicId() error {
 		return utils.Error{Message: "Невозможно загрузить Payment - не указан  Id"}
 	}
 
-	if err := webSite.GetPreloadDb(false,false, true).
+	if err := webSite.GetPreloadDb(false,false,nil).
 		First(webSite, "account_id = ? AND public_id = ?", webSite.AccountId, webSite.PublicId).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
-func (WebSite) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
-	return WebSite{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
+func (WebSite) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
+	return WebSite{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
 }
-func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	webSites := make([]WebSite,0)
 	var total int64
@@ -186,7 +190,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&WebSite{}).GetPreloadDb(false, false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&WebSite{}).GetPreloadDb(false, false, nil).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webSites, "name ILIKE ? OR address ILIKE ? OR email ILIKE ? OR phone ILIKE ?", search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -202,7 +206,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 
-		err := (&WebSite{}).GetPreloadDb(false, false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&WebSite{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webSites).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -233,7 +237,7 @@ func (webSite *WebSite) update(input map[string]interface{}) error {
 		return err
 	}
 
-	if err := webSite.GetPreloadDb(true, true, false).
+	if err := webSite.GetPreloadDb(false,false,nil).
 		Where("id = ?", webSite.Id).Omit("id", "account_id","public_id").Updates(input).Error;err != nil {
 		fmt.Println(err)
 		return err
@@ -241,7 +245,7 @@ func (webSite *WebSite) update(input map[string]interface{}) error {
 	return nil
 }
 func (webSite *WebSite) delete () error {
-	return webSite.GetPreloadDb(false, true, false).Where("id = ?", webSite.Id).Delete(webSite).Error
+	return webSite.GetPreloadDb(true,false, nil).Where("id = ?", webSite.Id).Delete(webSite).Error
 }
 // ######### END CRUD Functions ############
 
@@ -325,7 +329,7 @@ func (webSite WebSite) GetProduct(productId uint) (*Product, error) {
 
 	return product, nil
 }
-func (webSite WebSite) CreateProductWithProductCard(input Product, newCard ProductCard, webPageId uint) (*Product, error) {
+func (webSite WebSite) CreateProductWithProductCard(input Product, newCard ProductCard, webPage WebPage) (*Product, error) {
 
 	input.AccountId = webSite.AccountId
 
@@ -345,7 +349,7 @@ func (webSite WebSite) CreateProductWithProductCard(input Product, newCard Produ
 	// Создаем карточку товара
 	newCard.AccountId = webSite.AccountId
 	newCard.WebSiteId = &webSite.Id
-	newCard.WebPageId = &webPageId
+	// newCard.WebPageId = &webPageId
 	
 	cardE, err := newCard.create()
 	if err != nil {
@@ -359,6 +363,10 @@ func (webSite WebSite) CreateProductWithProductCard(input Product, newCard Produ
 
 	// Добавляем товар в новую карточку
 	if err = card.AppendProduct(product); err != nil {
+		return nil, err
+	}
+
+	if err = webPage.AppendProductCard(card);err != nil {
 		return nil, err
 	}
 

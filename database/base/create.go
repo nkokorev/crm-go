@@ -625,7 +625,7 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 	}
 
 	// 3.2. добавляем кучу других клиентов
-	if true {
+	if false {
 		var clients []models.User
 
 		for i:=1; i < 200 ;i++ {
@@ -1050,7 +1050,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		models.WebPage{
 			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Label:  utils.STRp("Статьи"), Path:  utils.STRp("articles"),
 			MetaTitle: utils.STRp("Статьи :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
-			IconName:  utils.STRp("far fa-books"), RouteName:  utils.STRp("info.articles"), Order: 1,
+			IconName:  utils.STRp("far fa-books"), RouteName:  utils.STRp("info.articles"), Priority: 1,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
@@ -1059,7 +1059,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		models.WebPage{
 			AccountId: airoClimat.Id, Code:  utils.STRp("delivery"), Label:  utils.STRp("Доставка товара"), Path:  utils.STRp("delivery"),
 			MetaTitle: utils.STRp("Доставка товара :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
-			IconName:  utils.STRp("far fa-shipping-fast"), RouteName:  utils.STRp("delivery"), Order: 1,
+			IconName:  utils.STRp("far fa-shipping-fast"), RouteName:  utils.STRp("delivery"), Priority: 1,
 		})
 	if err != nil {
 		log.Fatal(err)
@@ -1069,13 +1069,13 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		models.WebPage{
 			AccountId: airoClimat.Id, Code:  utils.STRp("delivery"), Label:  utils.STRp("Способы оплаты"), Path:  utils.STRp("payment"),
 			MetaTitle: utils.STRp("Способы оплаты :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
-			IconName:  utils.STRp("far fa-hand-holding-usd"), RouteName:  utils.STRp("delivery.payment"), Order: 2,
+			IconName:  utils.STRp("far fa-hand-holding-usd"), RouteName:  utils.STRp("delivery.payment"), Priority: 2,
 		})
 	_, err = deliveryGroupRoute.CreateChild(
 		models.WebPage{
 			AccountId: airoClimat.Id, Code:  utils.STRp("delivery"), Label:  utils.STRp("Возврат товара"), Path:  utils.STRp("moneyback"),
 			MetaTitle: utils.STRp("Возврат товара :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
-			IconName:  utils.STRp("far fa-exchange-alt"), RouteName:  utils.STRp("delivery.moneyback"), Order: 3,
+			IconName:  utils.STRp("far fa-exchange-alt"), RouteName:  utils.STRp("delivery.moneyback"), Priority: 3,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
@@ -1084,7 +1084,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		models.WebPage{
 			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Label:  utils.STRp("О компании"), Path:  utils.STRp("about"),
 			MetaTitle: utils.STRp("О компании :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
-			IconName:  utils.STRp("far fa-home-heart"), RouteName:  utils.STRp("info.about"),      Order: 5,
+			IconName:  utils.STRp("far fa-home-heart"), RouteName:  utils.STRp("info.about"),      Priority: 5,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
@@ -1093,7 +1093,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		models.WebPage{
 			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Label:  utils.STRp("Политика конфиденциальности"), Path:  utils.STRp("privacy-policy"),
 			MetaTitle: utils.STRp("Политика конфиденциальности :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
-			IconName:  utils.STRp("far fa-home-heart"), RouteName:  utils.STRp("info.privacy-policy"),      Order: 6,
+			IconName:  utils.STRp("far fa-home-heart"), RouteName:  utils.STRp("info.privacy-policy"),      Priority: 6,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
@@ -1102,7 +1102,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		models.WebPage{
 			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Label:  utils.STRp("Контакты"), Path:  utils.STRp("contacts"),
 			MetaTitle: utils.STRp("Контакты :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
-			IconName:  utils.STRp("far fa-address-book"), RouteName:  utils.STRp("info.contacts"),  Order: 10,
+			IconName:  utils.STRp("far fa-address-book"), RouteName:  utils.STRp("info.contacts"),  Priority: 10,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
@@ -1113,7 +1113,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		models.WebPage{
 			AccountId: airoClimat.Id, Code:  utils.STRp("cart"), Label:  utils.STRp("Корзина"), Path:  utils.STRp("cart"),
 			MetaTitle: utils.STRp("Корзина :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
-				IconName:  utils.STRp("far fa-cart-arrow-down"), RouteName:  utils.STRp("cart"), Order: 1,
+				IconName:  utils.STRp("far fa-cart-arrow-down"), RouteName:  utils.STRp("cart"), Priority: 1,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
@@ -1136,7 +1136,6 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{Id: 0, Path: utils.STRp("airo-deztumb-big"), 			Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"), 	Breadcrumb: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"),MetaTitle: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big")},
 
 		{Id: 0, Path: utils.STRp("airo-deztumb-pine"), 			Label: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"),	Breadcrumb: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"), MetaTitle: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина")},
-
 	}
 
 	//metadata := json.RawMessage(`{"color": "white", "bodyMaterial": "металл", "filterType": "угольно-фотокаталитический"}`)
@@ -1471,14 +1470,17 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	
 	// 7. Добавляем продукты в категории с созданием карточки товара
 	for i,_ := range products {
-		var groupId uint
+		// var groupId uint
+		var webPage models.WebPage
 		if i < 4 {
-			groupId = catGr1.GetId()
+			// groupId = catGr1.GetId()
+			webPage = *catGr1.(*models.WebPage)
 		} else {
-			groupId = catGr2.GetId()
+			// groupId = catGr2.GetId()
+			webPage = *catGr2.(*models.WebPage)
 		}
 		// создаем товар, карточку товара и добавляем их в группу
-		_, err = webSiteAiro.CreateProductWithProductCard(products[i], cards[i], groupId)
+		_, err = webSiteAiro.CreateProductWithProductCard(products[i], cards[i], webPage)
 		if err != nil {
 			log.Fatal("Не удалось создать Product для airoClimat: ", err)
 		}
@@ -1603,8 +1605,6 @@ func UploadTestDataPart_III() {
 
 	webHooks := []models.WebHook {
 
-		{Name: "Upload all webSite data", Code: models.EventUpdateAllShopData, URL: domainAiroSite + "/ratuscrm/webhooks/upload/all", HttpMethod: http.MethodGet},
-
 		// WebSite
 		{Name: "Update Web Site", Code: models.EventShopUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/web-sites/{{.webSiteId}}", HttpMethod: http.MethodPatch},
 
@@ -1621,10 +1621,10 @@ func UploadTestDataPart_III() {
 		{Name: "Upload all product cards", Code: models.EventProductCardsUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/product-cards", HttpMethod: http.MethodGet},
 
 		// Groups
-		{Name: "Create product group", Code: models.EventWebPageCreated, URL: domainAiroSite + "/ratuscrm/webhooks/web-pages/{{.webPageId}}", HttpMethod: http.MethodPost},
-		{Name: "Update product group", Code: models.EventWebPageUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/web-pages/{{.webPageId}}", HttpMethod: http.MethodPatch},
-		{Name: "Delete product group", Code: models.EventWebPageDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/web-pages/{{.webPageId}}", HttpMethod: http.MethodDelete},
-		{Name: "Upload all product groups", Code: models.EventWebPagesUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/web-pages", HttpMethod: http.MethodGet},
+		{Name: "Create web page", Code: models.EventWebPageCreated, URL: domainAiroSite + "/ratuscrm/webhooks/web-pages/{{.webPageId}}", HttpMethod: http.MethodPost},
+		{Name: "Update web page", Code: models.EventWebPageUpdated, URL: domainAiroSite + "/ratuscrm/webhooks/web-pages/{{.webPageId}}", HttpMethod: http.MethodPatch},
+		{Name: "Delete web page", Code: models.EventWebPageDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/web-pages/{{.webPageId}}", HttpMethod: http.MethodDelete},
+		{Name: "Upload all web pages", Code: models.EventWebPagesUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/web-pages", HttpMethod: http.MethodGet},
 
 		// Articles
 		{Name: "Create article", Code: models.EventArticleCreated, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleId}}", HttpMethod: http.MethodPost},
@@ -1632,6 +1632,7 @@ func UploadTestDataPart_III() {
 		{Name: "Delete article", Code: models.EventArticleDeleted, URL: domainAiroSite + "/ratuscrm/webhooks/articles/{{.articleId}}", HttpMethod: http.MethodDelete},
 		{Name: "Upload all articles", Code: models.EventArticlesUpdate, URL: domainAiroSite + "/ratuscrm/webhooks/articles", HttpMethod: http.MethodGet},
 
+		{Name: "Upload all webSite data", Code: models.EventUpdateAllShopData, URL: domainAiroSite + "/ratuscrm/webhooks/upload/all", HttpMethod: http.MethodGet},
 	}
 	for i,_ := range webHooks {
 		// _, err = airoAccount.CreateWebHook(webHooks[i])
@@ -1642,7 +1643,7 @@ func UploadTestDataPart_III() {
 
 	}
 
-	// Добавляем шаблоны писем для синдиката и главного аккаунта
+	// Добавляем шаблоны писем для airoclimate
 	data, err := ioutil.ReadFile("/var/www/ratuscrm/files/airoclimate/emails/example.html")
 	if err != nil {
 		fmt.Println("File reading error", err)
@@ -1714,7 +1715,7 @@ func LoadImagesAiroClimate(count int)  {
 		}
 
 		// идем по файлам
-		for _, file := range files {
+		for fileId, file := range files {
 
 			//fmt.Println("Open: ", url + file.Name())
 			f, err := os.Open(url + file.Name())
@@ -1750,6 +1751,15 @@ func LoadImagesAiroClimate(count int)  {
 			err = (models.Product{Id: uint(index)}).AppendAssociationImage(file)
 			if err != nil {
 				log.Fatalf("Error: %v", err)
+			}
+
+			// fmt.Printf("index: %v, fileId: %v\n", index, fileId)
+			// Добавляем изображение для карточки товара
+			if fileId == 0 {
+				err = (models.ProductCard{Id: uint(index)}).AppendAssociationImage(file)
+				if err != nil {
+					log.Fatalf("Error ProductCard AppendAssociationImage:  %v", err)
+				}
 			}
 		}
 	}

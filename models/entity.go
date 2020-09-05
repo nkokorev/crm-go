@@ -19,8 +19,8 @@ type Entity interface {
 	get (id uint) (Entity, error)
 	load () error
 	loadByPublicId () error
-	getList(accountId uint, order string) ([]Entity, int64, error)
-	getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error)
+	getList(accountId uint, order string, preloads []string) ([]Entity, int64, error)
+	getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error)
 	update(input map[string]interface{}) error
 	delete() error
 
@@ -101,12 +101,12 @@ func (account Account) LoadEntityByPublicId(entity Entity, publicId uint) error 
 	return nil
 }
 
-func (account Account) GetListEntity(model Entity, order string) ([]Entity, int64, error) {
-	return model.getList(account.Id, order)
+func (account Account) GetListEntity(model Entity, order string, preload []string) ([]Entity, int64, error) {
+	return model.getList(account.Id, order,preload)
 }
 
-func (account Account) GetPaginationListEntity(model Entity, offset, limit int, order string, search string, filter map[string]interface{}) ([]Entity, int64, error) {
-	return model.getPaginationList(account.Id, offset, limit, order, search, filter)
+func (account Account) GetPaginationListEntity(model Entity, offset, limit int, order string, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
+	return model.getPaginationList(account.Id, offset, limit, order, search, filter,preloads)
 }
 
 func (account Account) UpdateEntity(entity Entity, input map[string]interface{}) error {

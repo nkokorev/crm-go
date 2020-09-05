@@ -197,10 +197,10 @@ func (emailQueue *EmailQueue) loadByPublicId() error {
 	return nil
 }
 
-func (EmailQueue) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+func (EmailQueue) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return EmailQueue{}.getPaginationList(accountId, 0, 25, sortBy, "", nil)
 }
-func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	emailQueues := make([]EmailQueue,0)
 	var total int64

@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"log"
@@ -25,7 +26,9 @@ type WebPage struct {
 	RouteName 	*string `json:"route_name" gorm:"type:varchar(50);"` 	// route name: delivery, info.index, cart
 	IconName 	*string `json:"icon_name" gorm:"type:varchar(50);"` 	// icon name
 
-	Order 				int		`json:"order" gorm:"type:int;default:10;"` // Порядок отображения в текущей иерархии категории
+	// Порядок отображения в текущей иерархии категории
+	Priority 			int		`json:"priority" gorm:"type:int;default:10;"`
+
 	Breadcrumb 			*string `json:"breadcrumb" gorm:"type:varchar(255);"`
 	ShortDescription 	*string `json:"short_description" gorm:"type:varchar(255);"`
 	Description 		*string `json:"description" gorm:"type:text;"`
@@ -36,6 +39,7 @@ type WebPage struct {
 
 	// У страницы может быть картинка превью.. - например, для раздела услуг
 	Image 			*Storage	`json:"image" gorm:"polymorphic:Owner;"`
+	ProductCards 	[]ProductCard 	`json:"product_cards" gorm:"many2many:web_page_product_card;"`
 
 	// Если страница временная (ну мало ли!)
 	ExpiredAt 		*time.Time  `json:"expired_at"`
@@ -53,7 +57,9 @@ func (webPage *WebPage) setAccountId(id uint) { webPage.AccountId = id }
 func (WebPage) SystemEntity() bool { return false }
 // ############# End Entity interface #############
 func (WebPage) PgSqlCreate() {
-	db.Migrator().CreateTable(&WebPage{})
+	if err := db.Migrator().CreateTable(&WebPage{}); err != nil {
+		log.Fatal(err)
+	}
 	// db.Model(&WebPage{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	// db.Model(&WebPage{}).AddForeignKey("email_template_id", "email_templates(id)", "SET NULL", "CASCADE")
 	// db.Model(&WebPage{}).AddForeignKey("email_box_id", "email_boxes(id)", "SET NULL", "CASCADE")
@@ -64,6 +70,11 @@ func (WebPage) PgSqlCreate() {
 		"ADD CONSTRAINT web_pages_web_site_id_fkey FOREIGN KEY (web_site_id) REFERENCES web_sites(id) ON DELETE SET NULL ON UPDATE CASCADE;").Error
 	if err != nil {
 		log.Fatal("Error: ", err)
+	}
+
+	err = db.SetupJoinTable(&WebPage{}, "ProductCards", &WebPageProductCard{})
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 func (webPage *WebPage) BeforeCreate(tx *gorm.DB) error {
@@ -129,10 +140,10 @@ func (webPage *WebPage) loadByPublicId() error {
 
 	return nil
 }
-func (WebPage) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
-	return WebPage{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
+func (WebPage) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
+	return WebPage{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
 }
-func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	emailCampaigns := make([]WebPage,0)
 	var total int64
@@ -184,7 +195,7 @@ func (webPage *WebPage) update(input map[string]interface{}) error {
 
 	delete(input,"image")
 	utils.FixInputHiddenVars(&input)
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","order","web_site_id"}); err != nil {
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","priority","web_site_id"}); err != nil {
 		return err
 	}
 	input = utils.FixInputDataTimeVars(input,[]string{"expired_at"})
@@ -237,4 +248,37 @@ func (webPage WebPage) CreateChild(wp WebPage) (Entity, error){
 	if err != nil {return nil, err}
 
 	return _webPage, nil
+}
+
+func (webPage WebPage) AppendProductCard(input *ProductCard, optPriority... int) error {
+
+	priority := 10
+	if len(optPriority) > 0 {
+		priority = optPriority[0]
+	}
+	var productCard *ProductCard
+	if input.Id < 1 {
+		proPtr, err := input.create()
+		if err != nil {
+			return err
+		}
+		_productCard, ok := proPtr.(*ProductCard)
+		if !ok {
+			return utils.Error{Message: "Ошибка преобразования продуктовой карточки"}
+		}
+		productCard = _productCard
+	} else {
+		productCard = input
+	}
+	if err := db.Model(&WebPageProductCard{}).Create(
+		&WebPageProductCard{WebPageId: webPage.Id, ProductCardId: productCard.Id, Priority: priority}).Error; err != nil {
+		return err
+	}
+
+	account, err := GetAccount(productCard.AccountId)
+	if err == nil && account != nil {
+		event.AsyncFire(Event{}.ProductCardUpdated(account.Id, productCard.Id))
+	}
+
+	return nil
 }

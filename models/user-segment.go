@@ -103,10 +103,10 @@ func (usersSegment *UsersSegment) loadByPublicId() error {
 
 	return nil
 }
-func (UsersSegment) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
-	return UsersSegment{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
+func (UsersSegment) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
+	return UsersSegment{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
 }
-func (UsersSegment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (UsersSegment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	usersSegments := make([]UsersSegment,0)
 	var total int64

@@ -131,10 +131,10 @@ func (cartItem *CartItem) loadByPublicId() error {
 	return errors.New("Нет возможности найти объект по public Id")
 }
 
-func (CartItem) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+func (CartItem) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return CartItem{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
 }
-func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	orderChannels := make([]CartItem,0)
 	var total int64

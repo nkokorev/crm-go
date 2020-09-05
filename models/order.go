@@ -211,10 +211,10 @@ func (order *Order) loadByPublicId() error {
 
 	return nil
 }
-func (Order) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+func (Order) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return Order{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
 }
-func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 	
 	orders := make([]Order,0)
 	var total int64

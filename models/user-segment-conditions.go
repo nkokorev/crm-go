@@ -107,10 +107,10 @@ func (userSegmentCondition *UserSegmentCondition) loadByPublicId() error {
 	return nil
 }
 
-func (UserSegmentCondition) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
-	return UserSegmentCondition{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
+func (UserSegmentCondition) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
+	return UserSegmentCondition{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
 }
-func (UserSegmentCondition) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (UserSegmentCondition) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	userSegmentCondition := make([]UserSegmentCondition,0)
 	var total int64

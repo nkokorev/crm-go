@@ -86,12 +86,12 @@ func (*Comment) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
-func (Comment) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+func (Comment) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 
 	return Comment{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
 }
 
-func (Comment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (Comment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	comments := make([]Comment,0)
 	var total int64

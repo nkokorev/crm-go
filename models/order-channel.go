@@ -106,11 +106,11 @@ func (OrderChannel) getByCode(accountId uint, code string) (*OrderChannel, error
 	return &orderChannel, err
 }
 
-func (OrderChannel) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+func (OrderChannel) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return OrderChannel{}.getPaginationList(accountId, 0,100,sortBy,"",nil)
 }
 
-func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	orderChannels := make([]OrderChannel,0)
 	var total int64

@@ -147,11 +147,11 @@ func (mtaWorkflow *MTAWorkflow) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
-func (MTAWorkflow) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+func (MTAWorkflow) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return MTAWorkflow{}.getPaginationList(accountId, 0, 25, sortBy, "",nil)
 }
 
-func (MTAWorkflow) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (MTAWorkflow) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	webHooks := make([]MTAWorkflow,0)
 	var total int64
@@ -412,8 +412,18 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			return err
 		}
 
-		Subject = emailCampaign.Subject
-		PreviewText = emailCampaign.PreviewText
+		if  emailCampaign.Subject == nil {
+			mtaWorkflow.pausedEmailSender("Необходимо установить тему сообщения")
+		} else {
+			Subject = *emailCampaign.Subject
+		}
+
+		if  emailCampaign.PreviewText == nil {
+			PreviewText = ""
+		} else {
+			PreviewText = *emailCampaign.PreviewText
+		}
+
 	}
 
 	// **************************** //

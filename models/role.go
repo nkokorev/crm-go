@@ -150,10 +150,10 @@ func (*Role) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
-func (Role) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+func (Role) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return Role{}.getPaginationList(accountId,0,100,sortBy,"", nil)
 }
-func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	roles := make([]Role,0)
 	var total int64

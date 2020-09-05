@@ -18,17 +18,17 @@ type EmailCampaign struct {
 
 	// Результат выполнения: planned / pending / active / completed / failed / cancelled .
 	Status 			WorkStatus 	`json:"status" gorm:"type:varchar(18);default:'pending'"`
-	FailedStatus	string 		`json:"failed_status" gorm:"type:varchar(255);"`
+	FailedStatus	*string 		`json:"failed_status" gorm:"type:varchar(255);"`
 
 	// Планируемое время старта
 	ScheduleRun		time.Time 	`json:"schedule_run"`
 
 	// Имя кампании - Ежемесячный дайджест !
-	Name 			string 	`json:"name" gorm:"type:varchar(128);default:''"`
+	Name 			string 	`json:"name" gorm:"type:varchar(128);default:'New campaign'"`
 
 	// Тема сообщения и preview-текст, компилируются
-	Subject			string 	`json:"subject" gorm:"type:varchar(128);default:''"`
-	PreviewText		string 	`json:"preview_text" gorm:"type:varchar(255);default:''"`
+	Subject			*string 	`json:"subject" gorm:"type:varchar(128);"`
+	PreviewText		*string 	`json:"preview_text" gorm:"type:varchar(255);"`
 
 	// Шаблон email-сообщения
 	EmailTemplateId *uint 	`json:"email_template_id" gorm:"type:int;"`
@@ -43,7 +43,8 @@ type EmailCampaign struct {
 	UsersSegmentId	*uint 		`json:"users_segment_id" gorm:"type:int;"`
 	UsersSegment 	UsersSegment `json:"users_segment"`
 
-	Queue 			int64 	`json:"_queue" gorm:"-"` // сколько подписчиков еще в процессе отправки кампании
+	// Hidden vars
+	Queue 			int64 	`json:"_queue" gorm:"-"` 	// сколько подписчиков еще в процессе отправки кампании
 	Recipients 		uint 	`json:"_recipients" gorm:"-"` // << всего успешно отправлено писем
 	OpenRate 		float64 `json:"_open_rate" gorm:"-"`
 	UnsubscribeRate float64 `json:"_unsubscribe_rate" gorm:"-"`
@@ -184,10 +185,10 @@ func (emailCampaign *EmailCampaign) loadByPublicId() error {
 	return nil
 }
 
-func (EmailCampaign) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
-	return EmailCampaign{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
+func (EmailCampaign) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
+	return EmailCampaign{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
 }
-func (EmailCampaign) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (EmailCampaign) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	emailCampaigns := make([]EmailCampaign,0)
 	var total int64
@@ -303,11 +304,12 @@ func (emailCampaign *EmailCampaign) Execute() error {
 	// Get Account
 	account, err := GetAccount(emailCampaign.AccountId)
 	if err != nil {
+		emailCampaign.SetFailedStatus(fmt.Sprintf("Ошибка определения аккаунта: %v\n", err.Error()))
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается найти аккаунт"}
 	}
 
 	// Проверяем тело сообщения (не должно быть пустое)
-	if emailCampaign.Subject == "" {
+	if emailCampaign.Subject == nil {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет темы сообщения"}
 	}
 
@@ -360,6 +362,7 @@ func (emailCampaign *EmailCampaign) Execute() error {
 		mtaWorkflow.UserId = users[i].Id
 		if _, err = mtaWorkflow.create(); err != nil {
 			log.Printf("Ошибка добавления пользователя [%v] в очередь при выполнении кампании: %v", users[i].Id, err)
+
 		}
 	}
 
@@ -659,8 +662,11 @@ func (emailCampaign EmailCampaign) Validate() error {
 	
 
 	// Проверяем тело сообщения (не должно быть пустое)
-	if emailCampaign.Subject == "" {
+	if emailCampaign.Subject == nil {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет темы сообщения"}
+	}
+	if emailCampaign.PreviewText == nil {
+		*emailCampaign.PreviewText = ""
 	}
 
 	// Проверяем ключи и загружаем еще раз все данные для отправки сообщения
@@ -712,9 +718,11 @@ func (emailCampaign EmailCampaign) Validate() error {
 		PhoneRegion: utils.STRp("RU"), Phone: utils.STRp("+79251000000")} // << хз
 	data["unsubscribeUrl"] = "/unsubscribe_url"
 
+
+
 	viewData := ViewData {
-		Subject: emailCampaign.Subject,
-		PreviewText: emailCampaign.PreviewText,
+		Subject: *emailCampaign.Subject,
+		PreviewText: *emailCampaign.PreviewText,
 		Data: data,
 		Json: data,
 		UnsubscribeURL: "",

@@ -6,7 +6,8 @@ import "gorm.io/gorm"
 type ProductCardProduct struct {
 	ProductId  		uint
 	ProductCardId 	uint
-	Order			int `json:"order" gorm:"type:int;default:10;"`
+	// Order			int `json:"order" gorm:"type:int;default:10;"`
+	Priority 	int		`json:"priority" gorm:"type:int;default:10;"` // Порядок отображения (часто нужно файлам)
 }
 func (ProductCardProduct) BeforeCreate(db *gorm.DB) error {
 	// ...

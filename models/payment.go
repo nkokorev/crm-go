@@ -298,10 +298,10 @@ func (payment *Payment) loadByPublicId() error {
 	return nil
 }
 
-func (Payment) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+func (Payment) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return Payment{}.getPaginationList(accountId, 0, 25, sortBy, "", nil)
 }
-func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (Payment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	payments := make([]Payment,0)
 	var total int64

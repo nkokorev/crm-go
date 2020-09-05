@@ -144,10 +144,10 @@ func (paymentCash *PaymentCash) load() error {
 func (*PaymentCash) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-func (PaymentCash) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
-	return  PaymentCash{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
+func (PaymentCash) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
+	return  PaymentCash{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
 }
-func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	paymentCashs := make([]PaymentCash,0)
 	var total int64

@@ -135,10 +135,13 @@ func WebSiteListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		search = ""
 	}
+	
 	// 2. Узнаем, какой список нужен
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
+	with := utilsCr.GetQueryStringArrayFromGET(r, "with")
+	fmt.Println("With: ", with)
 
-
+                                       
 	var total int64 = 0
 	webSites := make([]models.Entity,0)
 

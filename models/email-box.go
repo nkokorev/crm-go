@@ -93,7 +93,7 @@ func (emailBox *EmailBox) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
-func (EmailBox) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+func (EmailBox) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return EmailBox{}.getPaginationList(accountId,0,10,sortBy, "", nil)
 }
 
@@ -110,7 +110,7 @@ func (EmailBox) getListByWebSite(accountId uint, webSiteId uint, sortBy string) 
 	return emailBoxes, nil
 }
 
-func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	webHooks := make([]EmailBox,0)
 	var total int64

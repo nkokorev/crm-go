@@ -141,10 +141,10 @@ func (article *Article) loadByPublicId() error {
 	return nil
 }
 
-func (Article) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+func (Article) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return Article{}.getPaginationList(accountId, 0, 25, sortBy, "",nil)
 }
-func (Article) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (Article) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	articles := make([]Article,0)
 	var total int64

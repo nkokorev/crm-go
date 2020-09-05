@@ -162,10 +162,10 @@ func (mtaBounced *MTABounced) loadByPublicId() error {
 
 	return nil
 }
-func (MTABounced) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
-	return MTABounced{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
+func (MTABounced) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
+	return MTABounced{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
 }
-func (MTABounced) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (MTABounced) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	mtaBounces := make([]MTABounced,0)
 	var total int64

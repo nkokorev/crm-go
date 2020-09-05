@@ -202,8 +202,8 @@ func (paymentYandex *PaymentYandex) load() error {
 func (*PaymentYandex) loadByPublicId() error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-func (PaymentYandex) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
-	return  PaymentYandex{}.getPaginationList(accountId, 0, 100, sortBy, "",nil)
+func (PaymentYandex) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
+	return  PaymentYandex{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
 }
 func (PaymentYandex) GetListByWebSiteAndDelivery(delivery Delivery) ([]PaymentYandex, error) {
 
@@ -221,7 +221,7 @@ func (PaymentYandex) GetListByWebSiteAndDelivery(delivery Delivery) ([]PaymentYa
 
 	return methods,nil
 }
-func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	paymentYandexs := make([]PaymentYandex,0)
 	var total int64

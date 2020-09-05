@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 func GetIssuerAccount(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
@@ -229,8 +230,34 @@ func GetQueryBoolVarFromGET(r *http.Request, key string) bool {
 
 	return res
 }
+func GetQueryStringArrayFromGET(r *http.Request, key string) []string {
 
+	arr := make([]string,0)
+	strVar := r.URL.Query().Get(key)
+
+	if strVar == "" {
+		return arr
+	}
+
+	return strings.Split(strVar, ",")
+}
 func GetQueryFilterFromGET(r *http.Request) (map[string]interface{}, bool) {
+
+	filter := make(map[string]interface{}, 0)
+	strVar := r.URL.Query().Get("filter")
+
+	if strVar == "" {
+		return nil, false
+	}
+
+	tags := strings.Split(strVar, ",")
+
+	fmt.Println("tags: ", tags)
+	fmt.Println("filter: ", filter)
+
+	return filter, true
+}
+func GetQueryFilterFromGET2(r *http.Request) (map[string]interface{}, bool) {
 
 	filter := make(map[string]interface{}, 0)
 	strVar := r.URL.Query().Get("filter")

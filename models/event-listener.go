@@ -120,10 +120,10 @@ func (EventListener) getEnabledByName(accountId uint, eventName string) ([]Event
 
 	return eventListeners, nil
 }
-func (EventListener) getList(accountId uint, sortBy string) ([]Entity, int64, error) {
+func (EventListener) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return EventListener{}.getPaginationList(accountId,0,200,sortBy,"", nil)
 }
-func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Entity, int64, error) {
+func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	type EventListenerSearch struct {
 		EventListener
