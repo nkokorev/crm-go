@@ -138,10 +138,9 @@ func WebSiteListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	
 	// 2. Узнаем, какой список нужен
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
-	with := utilsCr.GetQueryStringArrayFromGET(r, "with")
-	fmt.Println("With: ", with)
+	
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
-                                       
 	var total int64 = 0
 	webSites := make([]models.Entity,0)
 
@@ -153,7 +152,7 @@ func WebSiteListPaginationGet(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		webSites, total, err = account.GetPaginationListEntity(&models.WebSite{}, offset, limit, sortBy, search, nil,nil)
+		webSites, total, err = account.GetPaginationListEntity(&models.WebSite{}, offset, limit, sortBy, search, nil,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список сайтов"))
 			return

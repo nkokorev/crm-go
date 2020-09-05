@@ -110,15 +110,6 @@ func WebPageListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
-
-	// Vars
-	webSiteId, err := utilsCr.GetUINTVarFromRequest(r, "webSiteId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id магазина"))
-		return
-	}
-	fmt.Println("webSite id: ",webSiteId)
-
 	var total int64 = 0
 	webSites := make([]models.Entity,0)
 

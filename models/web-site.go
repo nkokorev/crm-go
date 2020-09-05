@@ -65,6 +65,7 @@ func (webSite WebSite) SystemEntity() bool { return false }
 // ############# END Of Entity interface #############
 
 func (webSite *WebSite) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 	
 	if getModel {
@@ -78,8 +79,11 @@ func (webSite *WebSite) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 
 		// return _db.Preload("EmailBoxes")
 	} else {
-		for _,v := range preloads {
-			db.Preload(v)
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"EmailBoxes","WebPages"})
+		
+		for _,v := range allowed {
+			_db.Preload(v)
 		}
 		return _db
 	}
