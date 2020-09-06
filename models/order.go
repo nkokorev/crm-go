@@ -175,7 +175,7 @@ func (order Order) create() (Entity, error)  {
 
 	return entity, nil
 }
-func (Order) get(id uint) (Entity, error) {
+func (Order) get(id uint, preloads []string) (Entity, error) {
 
 	var order Order
 
@@ -186,7 +186,7 @@ func (Order) get(id uint) (Entity, error) {
 	}
 	return &order, nil
 }
-func (order *Order) load() error {
+func (order *Order) load(preloads []string) error {
 
 
 	if order.Id < 1 {
@@ -199,7 +199,7 @@ func (order *Order) load() error {
 
 	return nil
 }
-func (order *Order) loadByPublicId() error {
+func (order *Order) loadByPublicId(preloads []string) error {
 
 	if order.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить Order - не указан  Id"}
@@ -265,7 +265,7 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 
 	return entities, total, nil
 }
-func (order *Order) update(input map[string]interface{}) error {
+func (order *Order) update(input map[string]interface{}, preloads []string) error {
 
 	delete(input,"webSite")
 	delete(input,"orderChannel")
@@ -280,7 +280,7 @@ func (order *Order) update(input map[string]interface{}) error {
 		Omit("id", "account_id").Updates(input).Error
 	if err != nil { return err }
 
-	_ = order.load()
+	_ = order.load(preloads []string)
 	return nil
 }
 func (order *Order) delete () error {

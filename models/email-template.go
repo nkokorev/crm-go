@@ -11,6 +11,7 @@ import (
 	"github.com/toorop/go-dkim"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"html/template"
 	"log"
 	"math/rand"
@@ -94,7 +95,7 @@ func (emailTemplate EmailTemplate) create() (Entity, error) {
 		return nil, err
 	}
 
-	err := et.GetPreloadDb(false,false, true).First(&et, et.Id).Error
+	err := et.GetPreloadDb(false,false, nil).First(&et, et.Id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -104,29 +105,29 @@ func (emailTemplate EmailTemplate) create() (Entity, error) {
 	return newItem, nil
 }
 
-func (EmailTemplate) get(id uint) (Entity, error) {
+func (EmailTemplate) get(id uint, preloads []string) (Entity, error) {
 
 	var emailTemplate EmailTemplate
 
-	err := emailTemplate.GetPreloadDb(true,false,true).First(&emailTemplate, id).Error
+	err := emailTemplate.GetPreloadDb(false,false,preloads).First(&emailTemplate, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &emailTemplate, nil
 }
-func (emailTemplate *EmailTemplate) load() error {
+func (emailTemplate *EmailTemplate) load(preloads []string) error {
 
-	err := emailTemplate.GetPreloadDb(true,false,true).First(emailTemplate, emailTemplate.Id).Error
+	err := emailTemplate.GetPreloadDb(false,false,preloads).First(emailTemplate, emailTemplate.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (emailTemplate *EmailTemplate) loadByPublicId() error {
+func (emailTemplate *EmailTemplate) loadByPublicId(preloads []string) error {
 	if emailTemplate.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить EmailNotification - не указан  Id"}
 	}
-	if err := emailTemplate.GetPreloadDb(false,false, true).
+	if err := emailTemplate.GetPreloadDb(false,false, preloads).
 		First(emailTemplate, "account_id = ? AND public_id = ?", emailTemplate.AccountId, emailTemplate.PublicId).Error; err != nil {
 		return err
 	}
@@ -156,7 +157,7 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&EmailTemplate{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&EmailTemplate{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Select(EmailTemplate{}.SelectArrayWithoutData()).
 			Find(&emailTemplates, "hash_id ILIKE ? OR name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -164,7 +165,7 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 		}
 
 		// Определяем total
-		err = db.Model(&EmailTemplate{}).
+		err = (&EmailTemplate{}).GetPreloadDb(false,false,nil).
 			Where("account_id = ? AND hash_id ILIKE ? OR name ILIKE ? OR description ILIKE ? OR preview_text ILIKE ?", accountId, search,search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -173,7 +174,7 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	} else {
 
-		err :=(&EmailTemplate{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err :=(&EmailTemplate{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Select(EmailTemplate{}.SelectArrayWithoutData()).
 			Find(&emailTemplates).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -181,7 +182,7 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 		}
 
 		// Определяем total
-		err = db.Model(&EmailTemplate{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&EmailTemplate{}).GetPreloadDb(false,false,nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -196,16 +197,16 @@ func (EmailTemplate) getPaginationList(accountId uint, offset, limit int, sortBy
 	return entities, total, nil
 }
 
-func (emailTemplate *EmailTemplate) update(input map[string]interface{}) error {
+func (emailTemplate *EmailTemplate) update(input map[string]interface{}, preloads []string) error {
 
 	input = utils.FixJSONB_String(input, []string{"json_data"})
 
-	if err := emailTemplate.GetPreloadDb(false,false,false).Where(" id = ?", emailTemplate.Id).
+	if err := emailTemplate.GetPreloadDb(false,false,nil).Where(" id = ?", emailTemplate.Id).
 		Omit("id", "public_id","account_id","created_at").Updates(input).Error; err != nil {
 		return err
 	}
 
-	err := emailTemplate.GetPreloadDb(true,false,false).First(emailTemplate, emailTemplate.Id).Error
+	err := emailTemplate.GetPreloadDb(false,false,preloads).First(emailTemplate, emailTemplate.Id).Error
 	if err != nil {
 		return err
 	}
@@ -213,7 +214,7 @@ func (emailTemplate *EmailTemplate) update(input map[string]interface{}) error {
 	return nil
 }
 func (emailTemplate *EmailTemplate) delete () error {
-	return db.Model(EmailTemplate{}).Where("id = ?", emailTemplate.Id).Delete(emailTemplate).Error
+	return emailTemplate.GetPreloadDb(true,false,nil).Where("id = ?", emailTemplate.Id).Delete(emailTemplate).Error
 }
 // ########### ACCOUNT FUNCTIONAL ###########
 
@@ -472,24 +473,28 @@ func (EmailTemplate) SelectArrayWithoutData() []string {
 	return utils.ToLowerSnakeCaseArr(fields)
 }
 
-func (emailTemplate *EmailTemplate) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (emailTemplate *EmailTemplate) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
-		_db = _db.Model(emailTemplate)
+		_db = _db.Model(&emailTemplate)
 	} else {
 		_db = _db.Model(&EmailTemplate{})
 	}
 
-	if preload {
-		// Preload...
-		return _db
+	if autoPreload {
+		return db.Preload(clause.Associations)
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
 		return _db
 	}
+
 }
 
 func (emailTemplate EmailTemplate) Validate(viewData *ViewData) error {

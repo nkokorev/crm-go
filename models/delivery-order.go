@@ -6,6 +6,7 @@ import (
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"time"
 )
@@ -119,41 +120,47 @@ func (deliveryOrder *DeliveryOrder) AfterDelete(tx *gorm.DB) (err error) {
 // ######### CRUD Functions ############
 func (deliveryOrder DeliveryOrder) create() (Entity, error)  {
 
-	_deliveryOrder := deliveryOrder
-
-	if err := db.Create(&_deliveryOrder).Error; err != nil {
+	_item := deliveryOrder
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	var newItem Entity = &_deliveryOrder
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
+		return nil, err
+	}
 
-	return newItem, nil
+	var entity Entity = &_item
+
+	return entity, nil
 }
 
-func (DeliveryOrder) get(id uint) (Entity, error) {
+func (DeliveryOrder) get(id uint, preloads []string) (Entity, error) {
 
-	var deliveryOrder DeliveryOrder
+	var item DeliveryOrder
 
-	err := db.Preload("WebSite").Preload("Amount").Preload("Order").Preload("Customer").First(&deliveryOrder, id).Error
+	err := item.GetPreloadDb(false, false, preloads).First(&item, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &deliveryOrder, nil
+	return &item, nil
 }
-func (deliveryOrder *DeliveryOrder) load() error {
+func (deliveryOrder *DeliveryOrder) load(preloads []string) error {
+	if deliveryOrder.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить DeliveryOrder - не указан  Id"}
+	}
 
-	err := deliveryOrder.GetPreloadDb(false,false, true).First(deliveryOrder, deliveryOrder.Id).Error
+	err := deliveryOrder.GetPreloadDb(false, false, preloads).First(deliveryOrder, deliveryOrder.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (deliveryOrder *DeliveryOrder) loadByPublicId() error {
+func (deliveryOrder *DeliveryOrder) loadByPublicId(preloads []string) error {
 
 	if deliveryOrder.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить DeliveryOrder - не указан  Id"}
 	}
-	if err := deliveryOrder.GetPreloadDb(false,false, true).First(deliveryOrder, "account_id = ? AND public_id = ?", deliveryOrder.AccountId, deliveryOrder.PublicId).Error; err != nil {
+	if err := deliveryOrder.GetPreloadDb(false,false, preloads).First(deliveryOrder, "account_id = ? AND public_id = ?", deliveryOrder.AccountId, deliveryOrder.PublicId).Error; err != nil {
 		return err
 	}
 	return nil
@@ -174,7 +181,7 @@ func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy
 		// jsearch := search
 		search = "%"+search+"%"
 
-		err := (&DeliveryOrder{}).GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&DeliveryOrder{}).GetPreloadDb(false,false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryOrders, "address ILIKE ? OR postal_code ILIKE ?", search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -182,7 +189,7 @@ func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy
 		}
 
 		// Определяем total
-		err = db.Model(&DeliveryOrder{}).
+		err = (&DeliveryOrder{}).GetPreloadDb(false,false, nil).
 			Where("account_id = ? AND address ILIKE ? OR postal_code ILIKE ? ", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
@@ -191,14 +198,14 @@ func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	} else {
 
-		err := (&DeliveryOrder{}).GetPreloadDb(false,false, true ).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&DeliveryOrder{}).GetPreloadDb(false,false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryOrders).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&DeliveryOrder{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&DeliveryOrder{}).GetPreloadDb(false,false, nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -214,7 +221,7 @@ func (DeliveryOrder) getPaginationList(accountId uint, offset, limit int, sortBy
 	return entities, total, nil
 }
 
-func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}) error {
+func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preloads []string) error {
 
 	delete(input, "customer")
 	delete(input, "web_site")
@@ -233,12 +240,12 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}) error {
 
 	// if err := db.Set("gorm:association_autoupdate", false).Model(deliveryOrder).Where("id = ?", deliveryOrder.Id).
 	// if err := db.Model(&DeliveryOrder{}).Where("id = ?", deliveryOrder.Id).
-	if err := deliveryOrder.GetPreloadDb(true,false, false).Where("id = ?", deliveryOrder.Id).
+	if err := deliveryOrder.GetPreloadDb(false,false, nil).Where("id = ?", deliveryOrder.Id).
 		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
 		return err
 	}
 
-	err := deliveryOrder.GetPreloadDb(true,false, true).First(deliveryOrder, deliveryOrder.Id).Error
+	err := deliveryOrder.GetPreloadDb(false,false, preloads).First(deliveryOrder, deliveryOrder.Id).Error
 	if err != nil {
 		return err
 	}
@@ -254,7 +261,7 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}) error {
 		case "completed":
 			// Обновляем платеж
 			var order Order
-			err := Account{Id: deliveryOrder.AccountId}.LoadEntity(&order, *deliveryOrder.OrderId)
+			err := Account{Id: deliveryOrder.AccountId}.LoadEntity(&order, *deliveryOrder.OrderId, nil)
 			if err != nil {
 				return utils.Error{Message: "Не удалось обновить статус платежа - не найден заказ"}
 			}
@@ -268,7 +275,7 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}) error {
 			if paymentMethod.GetCode() == "payment_yandex" && !paymentMethod.IsInstantDelivery() {
 				// 1. Надо узнать External-ID чека
 				var payment Payment
-				err := Account{Id: deliveryOrder.AccountId}.LoadEntity(&payment, order.Payment.Id)
+				err := Account{Id: deliveryOrder.AccountId}.LoadEntity(&payment, order.Payment.Id, nil)
 				if err != nil {
 					return utils.Error{Message: "Не удалось обновить статус платежа - не найден платеж"}
 				}
@@ -282,7 +289,7 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}) error {
 
 				status, err := OrderStatus{}.GetCompletedStatus()
 				if err == nil {
-					if err := order.update(map[string]interface{}{"statusId":status.Id}); err != nil {
+					if err := order.update(map[string]interface{}{"statusId":status.Id},nil); err != nil {
 						log.Println(err)
 					}
 				}
@@ -316,28 +323,31 @@ func (deliveryOrder *DeliveryOrder) delete () error {
 	}
 
 	
-	return deliveryOrder.GetPreloadDb(true,false,false).Where("id = ?", deliveryOrder.Id).Delete(deliveryOrder).Error
+	return deliveryOrder.GetPreloadDb(true,false,nil).Where("id = ?", deliveryOrder.Id).Delete(deliveryOrder).Error
 }
 // ######### END CRUD Functions ############
 
-func (deliveryOrder *DeliveryOrder) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (deliveryOrder *DeliveryOrder) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
 		_db = _db.Model(&deliveryOrder)
 	} else {
 		_db = _db.Model(&DeliveryOrder{})
 	}
 
-	if preload {
-		return _db.Preload("WebSite").Preload("Amount").Preload("Customer").Preload("Status")
+	if autoPreload {
+		return db.Preload(clause.Associations)
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Amount","WebSite","Customer","Status"})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
 		return _db
 	}
-	
 
 }
 

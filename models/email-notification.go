@@ -145,46 +145,47 @@ func (emailNotification *EmailNotification) AfterFind(tx *gorm.DB) (err error) {
 // ######### CRUD Functions ############
 func (emailNotification EmailNotification) create() (Entity, error)  {
 
-	en := emailNotification
-
-	if err := db.Create(&en).Error; err != nil {
+	_item := emailNotification
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	err := en.GetPreloadDb(false,false, true).First(&en, en.Id).Error
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
+		return nil, err
+	}
+
+	var entity Entity = &_item
+
+	return entity, nil
+}
+
+func (EmailNotification) get(id uint, preloads []string) (Entity, error) {
+
+	var item EmailNotification
+
+	err := item.GetPreloadDb(false, false, preloads).First(&item, id).Error
 	if err != nil {
 		return nil, err
 	}
-
-	var newItem Entity = &en
-
-	return newItem, nil
+	return &item, nil
 }
-
-func (EmailNotification) get(id uint) (Entity, error) {
-
-	var emailNotification EmailNotification
-
-	err := emailNotification.GetPreloadDb(true,false,true).First(&emailNotification, id).Error
-	if err != nil {
-		return nil, err
+func (emailNotification *EmailNotification) load(preloads []string) error {
+	if emailNotification.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить EmailNotification - не указан  Id"}
 	}
-	return &emailNotification, nil
-}
-func (emailNotification *EmailNotification) load() error {
 
-	err := emailNotification.GetPreloadDb(true,false,true).First(emailNotification, emailNotification.Id).Error
+	err := emailNotification.GetPreloadDb(false, false, preloads).First(emailNotification, emailNotification.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (emailNotification *EmailNotification) loadByPublicId() error {
+func (emailNotification *EmailNotification) loadByPublicId(preloads []string) error {
 	
 	if emailNotification.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить EmailNotification - не указан  Id"}
 	}
-	if err := emailNotification.GetPreloadDb(false,false, true).First(emailNotification, "account_id = ? AND public_id = ?", emailNotification.AccountId, emailNotification.PublicId).Error; err != nil {
+	if err := emailNotification.GetPreloadDb(false,false, preloads).First(emailNotification, "account_id = ? AND public_id = ?", emailNotification.AccountId, emailNotification.PublicId).Error; err != nil {
 		return err
 	}
 
@@ -206,7 +207,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		// jsearch := search
 		search = "%"+search+"%"
 
-		err := (&EmailNotification{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&EmailNotification{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailNotifications, "name ILIKE ? OR description ILIKE ?", search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -214,7 +215,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		}
 
 		// Определяем total
-		err = (&EmailNotification{}).GetPreloadDb(true,false,false).
+		err = (&EmailNotification{}).GetPreloadDb(false,false,nil).
 			Where("account_id = ? AND name ILIKE ? OR description ILIKE ? ", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
@@ -223,7 +224,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 
 	} else {
 
-		err := (&EmailNotification{}).GetPreloadDb(true,false,true).
+		err := (&EmailNotification{}).GetPreloadDb(false,false,preloads).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailNotifications).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -231,7 +232,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 		}
 
 		// Определяем total
-		err = (&EmailNotification{}).GetPreloadDb(true,false,false).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&EmailNotification{}).GetPreloadDb(false,false,nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -245,7 +246,7 @@ func (EmailNotification) getPaginationList(accountId uint, offset, limit int, so
 
 	return entities, total, nil
 }
-func (emailNotification *EmailNotification) update(input map[string]interface{}) error {
+func (emailNotification *EmailNotification) update(input map[string]interface{}, preloads []string) error {
 
 	// Приводим в опрядок
 	input = utils.FixJSONB_Uint(input, []string{"recipient_users_list"})
@@ -257,12 +258,12 @@ func (emailNotification *EmailNotification) update(input map[string]interface{})
 		return err
 	}
 
-	if err := (&EmailNotification{}).GetPreloadDb(true,false,false).Where(" id = ?", emailNotification.Id).
+	if err := (&EmailNotification{}).GetPreloadDb(false,false,nil).Where(" id = ?", emailNotification.Id).
 		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
 		return err
 	}
 
-	err := emailNotification.GetPreloadDb(true,true,true).First(emailNotification, emailNotification.Id).Error
+	err := emailNotification.GetPreloadDb(false,false,preloads).First(emailNotification, emailNotification.Id).Error
 	if err != nil {
 		return err
 	}
@@ -270,29 +271,40 @@ func (emailNotification *EmailNotification) update(input map[string]interface{})
 	return nil
 }
 func (emailNotification *EmailNotification) delete () error {
-	return db.Model(EmailNotification{}).Where("id = ?", emailNotification.Id).Delete(emailNotification).Error
+	return emailNotification.GetPreloadDb(true,false,nil).Where("id = ?", emailNotification.Id).Delete(emailNotification).Error
 }
 // ######### END CRUD Functions ############
 
-func (emailNotification *EmailNotification) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (emailNotification *EmailNotification) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
-		_db = _db.Model(emailNotification)
+		_db = _db.Model(&emailNotification)
 	} else {
 		_db = _db.Model(&EmailNotification{})
 	}
 
-	if preload {
+	if autoPreload {
 		return _db.Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
 			return db.Select(EmailTemplate{}.SelectArrayWithoutData())
 		}).Preload("EmailBox")
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"EmailBox","EmailTemplate"})
+
+		for _,v := range allowed {
+			if v == "EmailTemplate" {
+				_db.Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
+					return db.Select(EmailTemplate{}.SelectArrayWithoutData())
+				})
+			} else {
+				_db.Preload(v)
+			}
+		}
 		return _db
 	}
+
 }
 
 // Вызов уведомления
@@ -316,7 +328,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 
 	// Находим шаблон письма
 	var emailTemplate EmailTemplate
-	if err = account.LoadEntity(&emailTemplate, *emailNotification.EmailTemplateId); err != nil {
+	if err = account.LoadEntity(&emailTemplate, *emailNotification.EmailTemplateId,nil); err != nil {
 		log.Printf("Ошибка отправления Уведомления - не удается загрузить шаблон письма: %v\n", err)
 		return err
 	}
@@ -327,7 +339,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 	}
 
 	// Загружаем данные почтового ящика
-	err = emailNotification.EmailBox.load()
+	err = emailNotification.EmailBox.load(nil)
 	if err != nil {
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается загрузить данные WEbSite"}
 	}
@@ -397,7 +409,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		}
 
 		var webSite WebSite
-		if err = account.LoadEntity(&webSite, emailNotification.EmailBox.WebSiteId); err != nil {
+		if err = account.LoadEntity(&webSite, emailNotification.EmailBox.WebSiteId,nil); err != nil {
 			log.Printf("Ошибка отправления Уведомления - не удается загрузить данные по WebSite: %v\n", err)
 			continue
 		}
@@ -471,5 +483,5 @@ func (emailNotification *EmailNotification) changeWorkStatus(status WorkStatus, 
 	return emailNotification.update(map[string]interface{}{
 		"status":	status,
 		"failed_status": _reason,
-	})
+	},nil)
 }

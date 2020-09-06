@@ -92,7 +92,7 @@ func (article Article) create() (Entity, error)  {
 		return nil, err
 	}
 
-	err := en.GetPreloadDb(false,false, true).First(&en, en.Id).Error
+	err := en.GetPreloadDb(false,true, nil).First(&en, en.Id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -102,11 +102,11 @@ func (article Article) create() (Entity, error)  {
 	return newItem, nil
 }
 
-func (Article) get(id uint) (Entity, error) {
+func (Article) get(id uint, preloads []string) (Entity, error) {
 
 	var article Article
 
-	err := (&Article{}).GetPreloadDb(false,false,true).First(&article, id).Error
+	err := (&Article{}).GetPreloadDb(false,false, preloads).First(&article, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -115,26 +115,26 @@ func (Article) get(id uint) (Entity, error) {
 func (Article) getByHashId(hashId string) (*Article, error) {
 	article := Article{}
 
-	err := db.First(&article, "hash_id = ?", hashId).Error
+	err := (&Article{}).GetPreloadDb(false,true, nil).First(&article, "hash_id = ?", hashId).Error
 	if err != nil {
 		return nil, err
 	}
 	return &article, nil
 }
-func (article *Article) load() error {
+func (article *Article) load(preloads []string) error {
 
-	err := article.GetPreloadDb(false,true,true).First(article, article.Id).Error
+	err := article.GetPreloadDb(false,false, preloads).First(article, article.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (article *Article) loadByPublicId() error {
+func (article *Article) loadByPublicId(preloads []string) error {
 
 	if article.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить Article - не указан  Id"}
 	}
-	if err := article.GetPreloadDb(false,false, true).First(article, "account_id = ? AND public_id = ?", article.AccountId, article.PublicId).Error; err != nil {
+	if err := article.GetPreloadDb(false,false, preloads).First(article, "account_id = ? AND public_id = ?", article.AccountId, article.PublicId).Error; err != nil {
 		return err
 	}
 
@@ -156,7 +156,7 @@ func (Article) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		// jsearch := search
 		search = "%"+search+"%"
 
-		err := (&Article{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).
+		err := (&Article{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).
 			Where( "account_id = ?", accountId).
 			Find(&articles, "name ILIKE ? OR short_name ILIKE ? OR body ILIKE ? OR description ILIKE ?",search, search,search,search).Error
 
@@ -165,7 +165,7 @@ func (Article) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		}
 
 		// Определяем total
-		err = (&Article{}).GetPreloadDb(true,false,false).
+		err = (&Article{}).GetPreloadDb(false,false,nil).
 			Where("account_id = ? AND name ILIKE ? OR description ILIKE ? ", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
@@ -174,14 +174,14 @@ func (Article) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 
-		err := (&Article{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).
+		err := (&Article{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).
 			Where( "account_id = ?", accountId).Find(&articles).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = (&Article{}).GetPreloadDb(true,false,false).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&Article{}).GetPreloadDb(false,false,nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -196,7 +196,7 @@ func (Article) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 	return entities, total, nil
 }
 
-func (article *Article) update(input map[string]interface{}) error {
+func (article *Article) update(input map[string]interface{}, preloads []string) error {
 
 	delete(input,"image")
 	utils.FixInputHiddenVars(&input)
@@ -204,12 +204,12 @@ func (article *Article) update(input map[string]interface{}) error {
 		return err
 	}
 
-	if err := article.GetPreloadDb(true,false,false).Where(" id = ?", article.Id).
+	if err := article.GetPreloadDb(false,false,nil).Where(" id = ?", article.Id).
 		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
 		return err
 	}
 
-	err := article.GetPreloadDb(false,true,true).First(article, article.Id).Error
+	err := article.GetPreloadDb(false,false,preloads).First(article, article.Id).Error
 	if err != nil {
 		return err
 	}
@@ -218,29 +218,42 @@ func (article *Article) update(input map[string]interface{}) error {
 }
 
 func (article *Article) delete () error {
-	return article.GetPreloadDb(true,true,false).Where("id = ?", article.Id).Delete(article).Error
+	return article.GetPreloadDb(true,false,nil).Where("id = ?", article.Id).Delete(article).Error
 }
 // ######### END CRUD Functions ############
 
-func (article *Article) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (article *Article) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
 		_db = _db.Model(&article)
 	} else {
 		_db = _db.Model(&Article{})
 	}
 
-	if preload {
-		return _db.Preload("Image", func(db *gorm.DB) *gorm.DB {
+	if autoPreload {
+		return db.Preload("ProductCards").Preload("Image", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		})
+
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Image"})
+
+		for _,v := range allowed {
+			if v == "Image" {
+				_db.Preload("Image", func(db *gorm.DB) *gorm.DB {
+					return db.Select(Storage{}.SelectArrayWithoutDataURL())
+				})
+			} else {
+				_db.Preload(v)
+			}
+
+		}
 		return _db
 	}
+
 }
 
 // ########## SELF FUNCTIONAL ############

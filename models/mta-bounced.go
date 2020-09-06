@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"net/mail"
 	"time"
@@ -117,45 +118,45 @@ func (mtaBounced *MTABounced) AfterFind(tx *gorm.DB) (err error) {
 // ######### CRUD Functions ############
 func (mtaBounced MTABounced) create() (Entity, error)  {
 
-	en := mtaBounced
-
-	if err := db.Create(&en).Error; err != nil {
+	_item := mtaBounced
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	err := en.GetPreloadDb(false,false, true).First(&en, en.Id).Error
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
+		return nil, err
+	}
+
+	var entity Entity = &_item
+
+	return entity, nil
+}
+func (MTABounced) get(id uint, preloads []string) (Entity, error) {
+	var item MTABounced
+
+	err := item.GetPreloadDb(false, false, preloads).First(&item, id).Error
 	if err != nil {
 		return nil, err
 	}
-
-	var newItem Entity = &en
-
-	return newItem, nil
+	return &item, nil
 }
-func (MTABounced) get(id uint) (Entity, error) {
-
-	var mtaBounced MTABounced
-
-	err := mtaBounced.GetPreloadDb(false,false,true).First(&mtaBounced, id).Error
-	if err != nil {
-		return nil, err
+func (mtaBounced *MTABounced) load(preloads []string) error {
+	if mtaBounced.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить CartItem - не указан  Id"}
 	}
-	return &mtaBounced, nil
-}
-func (mtaBounced *MTABounced) load() error {
 
-	err := mtaBounced.GetPreloadDb(false,false,true).First(mtaBounced, mtaBounced.Id).Error
+	err := mtaBounced.GetPreloadDb(false, false, preloads).First(mtaBounced, mtaBounced.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (mtaBounced *MTABounced) loadByPublicId() error {
+func (mtaBounced *MTABounced) loadByPublicId(preloads []string) error {
 
 	if mtaBounced.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить MTABounced - не указан  Id"}
 	}
-	if err := mtaBounced.GetPreloadDb(false,false, true).
+	if err := mtaBounced.GetPreloadDb(false,false, preloads).
 		First(mtaBounced, "account_id = ? AND public_id = ?", mtaBounced.AccountId, mtaBounced.PublicId).Error; err != nil {
 		return err
 	}
@@ -175,7 +176,7 @@ func (MTABounced) getPaginationList(accountId uint, offset, limit int, sortBy, s
 
 		search = "%"+search+"%"
 
-		err := (&MTABounced{}).GetPreloadDb(true,false,true).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&MTABounced{}).GetPreloadDb(false,false,preloads).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&mtaBounces, "name ILIKE ? OR subject ILIKE ? OR preview_text ILIKE ?", search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -183,7 +184,7 @@ func (MTABounced) getPaginationList(accountId uint, offset, limit int, sortBy, s
 		}
 
 		// Определяем total
-		err = db.Model(&MTABounced{}).
+		err = (&MTABounced{}).GetPreloadDb(false,false,nil).
 			Where("account_id = ? AND name ILIKE ? OR subject ILIKE ? OR preview_text ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -192,14 +193,14 @@ func (MTABounced) getPaginationList(accountId uint, offset, limit int, sortBy, s
 
 	} else {
 
-		err := (&MTABounced{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&MTABounced{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&mtaBounces).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&MTABounced{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&MTABounced{}).GetPreloadDb(false,false,nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -214,17 +215,20 @@ func (MTABounced) getPaginationList(accountId uint, offset, limit int, sortBy, s
 	return entities, total, nil
 }
 
-func (mtaBounced *MTABounced) update(input map[string]interface{}) error {
+func (mtaBounced *MTABounced) update(input map[string]interface{}, preloads []string) error {
 
+	delete(input,"user")
+	delete(input,"email_box")
 	utils.FixInputHiddenVars(&input)
-	input = utils.FixInputDataTimeVars(input,[]string{"scheduleRun"})
-
-	if err := mtaBounced.GetPreloadDb(true,false,false).Where(" id = ?", mtaBounced.Id).
-		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
+	input = utils.FixInputDataTimeVars(input,[]string{"schedule_run"})
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
 		return err
 	}
 
-	err := mtaBounced.GetPreloadDb(true,false,false).First(mtaBounced, mtaBounced.Id).Error
+	if err := mtaBounced.GetPreloadDb(false, false, nil).Where("id = ?", mtaBounced.Id).Omit("id", "account_id","public_id").Updates(input).
+		Error; err != nil {return err}
+
+	err := mtaBounced.GetPreloadDb(false,false, preloads).First(mtaBounced, mtaBounced.Id).Error
 	if err != nil {
 		return err
 	}
@@ -233,36 +237,33 @@ func (mtaBounced *MTABounced) update(input map[string]interface{}) error {
 }
 
 func (mtaBounced *MTABounced) delete () error {
-	return mtaBounced.GetPreloadDb(true,true,false).Where("id = ?", mtaBounced.Id).Delete(mtaBounced).Error
+	return mtaBounced.GetPreloadDb(true,false,nil).Where("id = ?", mtaBounced.Id).Delete(mtaBounced).Error
 }
 // ######### END CRUD Functions ############
 
-func (mtaBounced *MTABounced) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (mtaBounced *MTABounced) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
-		_db = _db.Model(mtaBounced)
+		_db = _db.Model(&mtaBounced)
 	} else {
 		_db = _db.Model(&MTABounced{})
 	}
 
-	if preload {
-		return _db.Preload("User").Preload("EmailBox")
-		// return _db
+	if autoPreload {
+		return db.Preload(clause.Associations)
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"User","EmailBox"})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
 		return _db
 	}
+
 }
-
-// ######### SPECIAL Functions ############
-
-
-
-
-// ######### END OF SPECIAL Functions ############
 
 
 // обработчик ошибки при отправке письма. Логика по отписке пользователя + управление mta-workflow
@@ -370,7 +371,7 @@ func (pkg EmailPkg) handleQueue() bool {
 			// есть следующих шаг, queueCompleted = false
 
 			var mtaWorkflow MTAWorkflow
-			err := account.LoadEntity(&mtaWorkflow, pkg.workflowId)
+			err := account.LoadEntity(&mtaWorkflow, pkg.workflowId,nil)
 			if err != nil {
 				log.Printf("Невозможно получить задачу [id = %v] по отпрваке: %v\n", pkg.workflowId, err)
 				// ошибка загрузки, завершаем серию

@@ -254,7 +254,7 @@ func (payment Payment) create() (Entity, error)  {
 	return entity, nil
 }
 
-func (Payment) get(id uint) (Entity, error) {
+func (Payment) get(id uint, preloads []string) (Entity, error) {
 
 	var payment Payment
 
@@ -273,7 +273,7 @@ func (Payment) getByExternalId(externalId string) (*Payment, error) {
 	}
 	return &payment, nil
 }
-func (payment *Payment) load() error {
+func (payment *Payment) load(preloads []string) error {
 	if payment.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить Payment - не указан  Id"}
 	}
@@ -284,7 +284,7 @@ func (payment *Payment) load() error {
 	}
 	return nil
 }
-func (payment *Payment) loadByPublicId() error {
+func (payment *Payment) loadByPublicId(preloads []string) error {
 
 	if payment.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить Payment - не указан  Id"}
@@ -360,7 +360,7 @@ func (Payment) getByEvent(eventName string) (*Payment, error) {
 	return &wh, nil
 }
 
-func (payment *Payment) update(input map[string]interface{}) error {
+func (payment *Payment) update(input map[string]interface{}, preloads []string) error {
 	return db.Model(payment).Omit("id", "account_id").Updates(input).Error
 	// return db.Model(Payment{}).Where("id = ?", payment.Id).Omit("id", "account_id").Updates(input).Error
 }

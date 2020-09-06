@@ -106,7 +106,7 @@ func (webHook WebHook) create() (Entity, error)  {
 	return entity, nil
 }
 
-func (WebHook) get(id uint) (Entity, error) {
+func (WebHook) get(id uint, preloads []string) (Entity, error) {
 
 	var webHook WebHook
 
@@ -116,7 +116,7 @@ func (WebHook) get(id uint) (Entity, error) {
 	}
 	return &webHook, nil
 }
-func (webHook *WebHook) load() error {
+func (webHook *WebHook) load(preloads []string) error {
 	if webHook.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить WebHook - не указан  Id"}
 	}
@@ -127,7 +127,7 @@ func (webHook *WebHook) load() error {
 	}
 	return nil
 }
-func (webHook *WebHook) loadByPublicId() error {
+func (webHook *WebHook) loadByPublicId(preloads []string) error {
 
 
 	if webHook.PublicId < 1 {
@@ -202,7 +202,7 @@ func (WebHook) getByEvent(eventName string) (*WebHook, error) {
 
 	return &wh, nil
 }
-func (webHook *WebHook) update(input map[string]interface{}) error {
+func (webHook *WebHook) update(input map[string]interface{}, preloads []string) error {
 
 	utils.FixInputHiddenVars(&input)
 

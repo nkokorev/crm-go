@@ -127,7 +127,7 @@ func (role Role) create() (Entity, error)  {
 	return newItem, nil
 }
 
-func (Role) get(id uint) (Entity, error) {
+func (Role) get(id uint, preloads []string) (Entity, error) {
 
 	var role Role
 
@@ -138,7 +138,7 @@ func (Role) get(id uint) (Entity, error) {
 	return &role, nil
 }
 
-func (role *Role) load() error {
+func (role *Role) load(preloads []string) error {
 
 	err := db.First(role,role.Id).Error
 	if err != nil {
@@ -146,7 +146,7 @@ func (role *Role) load() error {
 	}
 	return nil
 }
-func (*Role) loadByPublicId() error {
+func (*Role) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
@@ -205,7 +205,7 @@ func (Role) getPaginationList(accountId uint, offset, limit int, sortBy, search 
 	return entities, total, nil
 }
 
-func (role *Role) update(input map[string]interface{}) error {
+func (role *Role) update(input map[string]interface{}, preloads []string) error {
 	return db.Set("gorm:association_autoupdate", false).Model(role).Omit("id", "account_id").Updates(input).Error
 }
 

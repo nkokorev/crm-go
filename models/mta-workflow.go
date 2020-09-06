@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"net/mail"
 	"strings"
@@ -86,6 +87,30 @@ func (mtaWorkflow *MTAWorkflow) AfterFind(tx *gorm.DB) (err error) {
 	return nil
 }
 
+func (mtaWorkflow *MTAWorkflow) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(&mtaWorkflow)
+	} else {
+		_db = _db.Model(&MTAWorkflow{})
+	}
+
+	if autoPreload {
+		return db.Preload(clause.Associations)
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"User"})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
+		return _db
+	}
+
+}
+
 // ############# Entity interface #############
 func (mtaWorkflow MTAWorkflow) GetId() uint { return mtaWorkflow.Id }
 func (mtaWorkflow *MTAWorkflow) setId(id uint) { mtaWorkflow.Id = id }
@@ -97,60 +122,47 @@ func (MTAWorkflow) SystemEntity() bool { return false }
 
 // ######### CRUD Functions ############
 func (mtaWorkflow MTAWorkflow) create() (Entity, error)  {
-	
-	wb := mtaWorkflow
-	if err := db.Create(&wb).Error; err != nil {
+
+	_item := mtaWorkflow
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	err := wb.GetPreloadDb(false,false, true).First(&wb, wb.Id).Error
-	if err != nil {
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
 		return nil, err
 	}
 
-	var entity Entity = &wb
+	var entity Entity = &_item
 
 	return entity, nil
 }
+func (MTAWorkflow) get(id uint, preloads []string) (Entity, error) {
 
-func (MTAWorkflow) get(id uint) (Entity, error) {
+	var item CartItem
 
-	var mtaWorkflow MTAWorkflow
-
-	err := mtaWorkflow.GetPreloadDb(false,false, true).First(&mtaWorkflow, id).Error
+	err := item.GetPreloadDb(false, false, preloads).First(&item, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &mtaWorkflow, nil
+	return &item, nil
 }
-func (MTAWorkflow) getByExternalId(externalId string) (*MTAWorkflow, error) {
-	mtaWorkflow := MTAWorkflow{}
-
-	err := mtaWorkflow.GetPreloadDb(false,false,true).First(&mtaWorkflow, "external_id = ?", externalId).Error
-	if err != nil {
-		return nil, err
-	}
-	return &mtaWorkflow, nil
-}
-func (mtaWorkflow *MTAWorkflow) load() error {
+func (mtaWorkflow *MTAWorkflow) load(preloads []string) error {
 	if mtaWorkflow.Id < 1 {
-		return utils.Error{Message: "Невозможно загрузить MTAWorkflow - не указан  Id"}
+		return utils.Error{Message: "Невозможно загрузить CartItem - не указан  Id"}
 	}
 
-	err := mtaWorkflow.GetPreloadDb(false,false, true).First(mtaWorkflow,mtaWorkflow.Id).Error
+	err := mtaWorkflow.GetPreloadDb(false, false, preloads).First(mtaWorkflow, mtaWorkflow.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (mtaWorkflow *MTAWorkflow) loadByPublicId() error {
+func (mtaWorkflow *MTAWorkflow) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-
 func (MTAWorkflow) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return MTAWorkflow{}.getPaginationList(accountId, 0, 25, sortBy, "",nil,preload)
 }
-
 func (MTAWorkflow) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	webHooks := make([]MTAWorkflow,0)
@@ -162,14 +174,14 @@ func (MTAWorkflow) getPaginationList(accountId uint, offset, limit int, sortBy, 
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&MTAWorkflow{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&MTAWorkflow{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = (&MTAWorkflow{}).GetPreloadDb(true,false,true).
+		err = (&MTAWorkflow{}).GetPreloadDb(false,false,nil).
 			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -178,14 +190,14 @@ func (MTAWorkflow) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	} else {
 
-		err := db.Model(&MTAWorkflow{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&MTAWorkflow{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webHooks).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&MTAWorkflow{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&MTAWorkflow{}).GetPreloadDb(false,false,nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -200,36 +212,29 @@ func (MTAWorkflow) getPaginationList(accountId uint, offset, limit int, sortBy, 
 	return entities, total, nil
 }
 
-func (mtaWorkflow *MTAWorkflow) update(input map[string]interface{}) error {
+func (mtaWorkflow *MTAWorkflow) update(input map[string]interface{}, preloads []string) error {
+	delete(input,"user")
 	utils.FixInputHiddenVars(&input)
-	return mtaWorkflow.GetPreloadDb(false,false,false).Where("id = ?", mtaWorkflow.Id).Omit("id", "account_id").Updates(input).Error
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"user_id","queue_expected_step_id"}); err != nil {
+		return err
+	}
+
+	if err := mtaWorkflow.GetPreloadDb(false, false, nil).Where("id = ?", mtaWorkflow.Id).Omit("id", "account_id").Updates(input).
+		Error; err != nil {return err}
+
+	err := mtaWorkflow.GetPreloadDb(false,false, preloads).First(mtaWorkflow, mtaWorkflow.Id).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (mtaWorkflow *MTAWorkflow) delete () error {
 
-	return mtaWorkflow.GetPreloadDb(true,false,false).Where("id = ?", mtaWorkflow.Id).Delete(mtaWorkflow).Error
+	return mtaWorkflow.GetPreloadDb(true,false,nil).Where("id = ?", mtaWorkflow.Id).Delete(mtaWorkflow).Error
 }
 // ######### END CRUD Functions ############
-
-func (mtaWorkflow *MTAWorkflow) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
-	_db := db
-
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
-	if getModel {
-		_db = _db.Model(&mtaWorkflow)
-	} else {
-		_db = _db.Model(&MTAWorkflow{})
-	}
-
-	if preload {
-		// return _db.Preload("PaymentAmount")
-		return _db
-	} else {
-		return _db
-	}
-}
 
 // Создание пакета для добавления в буфер на отправку.
 // При ошибке: реагирует соответствующим образом: либо останавливает EmailSender, либо завершает со статусом Failed и удаляет все задачи по отправке
@@ -261,7 +266,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	switch mtaWorkflow.OwnerType {
 		case EmailSenderQueue:
 			_e := EmailQueue{}
-			err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
+			err := account.LoadEntity(&_e, mtaWorkflow.OwnerId,nil)
 			if err != nil {
 				mtaWorkflow.stopEmailSender(fmt.Sprintf("Email Queue not found: %v",err.Error()))
 				return err
@@ -269,7 +274,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			sender = &_e
 		case EmailSenderCampaign:
 			_e := EmailCampaign{}
-			err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
+			err := account.LoadEntity(&_e, mtaWorkflow.OwnerId,nil)
 			if err != nil {
 				mtaWorkflow.stopEmailSender(fmt.Sprintf("Email Campaign not found: %v",err.Error()))
 				return err
@@ -277,7 +282,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			sender = &_e
 		case EmailSenderNotification:
 			_e := EmailNotification{}
-			err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
+			err := account.LoadEntity(&_e, mtaWorkflow.OwnerId,nil)
 			if err != nil {
 				mtaWorkflow.stopEmailSender(fmt.Sprintf("Email Notification not found: %v",err.Error()))
 				return err
@@ -350,7 +355,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		emailTemplate = *_et
 
 		// EmailBox
-		err = account.LoadEntity(&emailBox, *step.EmailBoxId)
+		err = account.LoadEntity(&emailBox, *step.EmailBoxId,nil)
 		if err != nil {
 			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email box not found: %v",err.Error()))
 			return err
@@ -371,13 +376,13 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			return errors.New("Ошибка преобразования в email Notification")
 		}
 
-		err := account.LoadEntity(&emailTemplate, *emailNotification.EmailTemplateId)
+		err := account.LoadEntity(&emailTemplate, *emailNotification.EmailTemplateId,nil)
 		if err != nil {
 			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email template not found: %v",err.Error()))
 			return err
 		}
 
-		err = account.LoadEntity(&emailBox, *emailNotification.EmailBoxId)
+		err = account.LoadEntity(&emailBox, *emailNotification.EmailBoxId,nil)
 		if err != nil {
 			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email box not found: %v",err.Error()))
 			return err
@@ -400,13 +405,13 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			return errors.New("Ошибка преобразования в email campaign")
 		}
 
-		err := account.LoadEntity(&emailTemplate, *emailCampaign.EmailTemplateId)
+		err := account.LoadEntity(&emailTemplate, *emailCampaign.EmailTemplateId,nil)
 		if err != nil {
 			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email template not found: %v",err.Error()))
 			return err
 		}
 
-		err = account.LoadEntity(&emailBox, *emailCampaign.EmailBoxId)
+		err = account.LoadEntity(&emailBox, *emailCampaign.EmailBoxId,nil)
 		if err != nil {
 			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email box not found: %v",err.Error()))
 			return err
@@ -458,7 +463,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	}
 
 	var webSite WebSite
-	if err = account.LoadEntity(&webSite, emailBox.WebSiteId); err != nil {
+	if err = account.LoadEntity(&webSite, emailBox.WebSiteId,nil); err != nil {
 		mtaWorkflow.stopEmailSender(fmt.Sprintf("Ошибка загрузки данных WebSite: %v",err.Error()))
 		return utils.Error{ Message: "Ошибка отправления Уведомления - не удается загрузить данные по WebSite"}
 	}
@@ -490,7 +495,7 @@ func (mtaWorkflow *MTAWorkflow) UpdateByNextStep(expectedStep EmailQueueEmailTem
 		"number_of_attempts": 0,
 		"last_tried_at": nil,
 		// "status": WorkStatusPlanned,
-	})
+	},nil)
 
 }
 
@@ -507,17 +512,17 @@ func (mtaWorkflow *MTAWorkflow) stopEmailSender(reason string) {
 	switch mtaWorkflow.OwnerType {
 	case EmailSenderQueue:
 		_e := EmailQueue{}
-		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
+		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId,nil)
 		if err != nil {return}
 		sender = &_e
 	case EmailSenderCampaign:
 		_e := EmailCampaign{}
-		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
+		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId,nil)
 		if err != nil {return}
 		sender = &_e
 	case EmailSenderNotification:
 		_e := EmailNotification{}
-		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
+		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId,nil)
 		if err != nil {return}
 		sender = &_e
 	default:
@@ -540,17 +545,17 @@ func (mtaWorkflow *MTAWorkflow) pausedEmailSender(reason string) {
 	switch mtaWorkflow.OwnerType {
 	case EmailSenderQueue:
 		_e := EmailQueue{}
-		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
+		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId,nil)
 		if err != nil {return}
 		sender = &_e
 	case EmailSenderCampaign:
 		_e := EmailCampaign{}
-		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
+		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId,nil)
 		if err != nil {return}
 		sender = &_e
 	case EmailSenderNotification:
 		_e := EmailNotification{}
-		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId)
+		err := account.LoadEntity(&_e, mtaWorkflow.OwnerId,nil)
 		if err != nil {return}
 		sender = &_e
 	default:

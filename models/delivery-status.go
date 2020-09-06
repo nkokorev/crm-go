@@ -96,7 +96,7 @@ func (deliveryStatus DeliveryStatus) create() (Entity, error)  {
 	return newItem, nil
 }
 
-func (DeliveryStatus) get(id uint) (Entity, error) {
+func (DeliveryStatus) get(id uint, preloads []string) (Entity, error) {
 
 	var deliveryStatus DeliveryStatus
 
@@ -106,7 +106,7 @@ func (DeliveryStatus) get(id uint) (Entity, error) {
 	}
 	return &deliveryStatus, nil
 }
-func (deliveryStatus *DeliveryStatus) load() error {
+func (deliveryStatus *DeliveryStatus) load(preloads []string) error {
 
 	err := db.First(deliveryStatus, deliveryStatus.Id).Error
 	if err != nil {
@@ -114,7 +114,7 @@ func (deliveryStatus *DeliveryStatus) load() error {
 	}
 	return nil
 }
-func (deliveryStatus *DeliveryStatus) loadByPublicId() error {
+func (deliveryStatus *DeliveryStatus) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
@@ -169,7 +169,7 @@ func (DeliveryStatus) getPaginationList(accountId uint, offset, limit int, sortB
 
 	return entities, total, nil
 }
-func (deliveryStatus *DeliveryStatus) update(input map[string]interface{}) error {
+func (deliveryStatus *DeliveryStatus) update(input map[string]interface{}, preloads []string) error {
 
 	// delete(input,"amount")
 	utils.FixInputHiddenVars(&input)

@@ -151,7 +151,7 @@ func (User) get(id uint) (*User, error) {
 	}
 	return &user, nil
 }
-func (user *User) load() error {
+func (user *User) load(preloads []string) error {
 
 	err := db.Model(user).Preload("Roles").First(user,user.Id).Error
 	if err != nil {

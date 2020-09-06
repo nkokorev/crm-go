@@ -76,8 +76,6 @@ func (webSite *WebSite) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 
 	if autoPreload {
 		return db.Preload(clause.Associations)
-
-		// return _db.Preload("EmailBoxes")
 	} else {
 
 		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"EmailBoxes","WebPages"})
@@ -148,7 +146,7 @@ func (webSite WebSite) create() (Entity, error)  {
 	var newItem Entity = &wb
 	return newItem, nil
 }
-func (WebSite) get(id uint) (Entity, error) {
+func (WebSite) get(id uint, preloads []string) (Entity, error) {
 
 	var webSite WebSite
 
@@ -158,7 +156,7 @@ func (WebSite) get(id uint) (Entity, error) {
 	}
 	return &webSite, nil
 }
-func (webSite *WebSite) load() error {
+func (webSite *WebSite) load(preloads []string) error {
 
 	err := webSite.GetPreloadDb(false, false, nil).First(webSite,webSite.Id).Error
 	if err != nil {
@@ -166,7 +164,7 @@ func (webSite *WebSite) load() error {
 	}
 	return nil
 }
-func (webSite *WebSite) loadByPublicId() error {
+func (webSite *WebSite) loadByPublicId(preloads []string) error {
 
 
 	if webSite.PublicId < 1 {
@@ -231,7 +229,7 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	return entities, total, nil
 }
-func (webSite *WebSite) update(input map[string]interface{}) error {
+func (webSite *WebSite) update(input map[string]interface{}, preloads []string) error {
 	delete(input,"email_boxes")
 	delete(input,"web_pages")
 	delete(input,"deliveries")

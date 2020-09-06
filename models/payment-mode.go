@@ -71,7 +71,7 @@ func (paymentMode PaymentMode) create() (Entity, error)  {
 
 	return entity, nil
 }
-func (PaymentMode) get(id uint) (Entity, error) {
+func (PaymentMode) get(id uint, preloads []string) (Entity, error) {
 
 	var paymentMode PaymentMode
 
@@ -81,7 +81,7 @@ func (PaymentMode) get(id uint) (Entity, error) {
 	}
 	return &paymentMode, nil
 }
-func (paymentMode *PaymentMode) load() error {
+func (paymentMode *PaymentMode) load(preloads []string) error {
 	if paymentMode.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить PaymentMode - не указан  Id"}
 	}
@@ -92,7 +92,7 @@ func (paymentMode *PaymentMode) load() error {
 	}
 	return nil
 }
-func (*PaymentMode) loadByPublicId() error {
+func (*PaymentMode) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (PaymentMode) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
@@ -143,7 +143,7 @@ func (PaymentMode) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	return entities, total, nil
 }
-func (paymentMode *PaymentMode) update(input map[string]interface{}) error {
+func (paymentMode *PaymentMode) update(input map[string]interface{}, preloads []string) error {
 	return db.Set("gorm:association_autoupdate", false).
 		Model(paymentMode).Omit("id", "account_id").Updates(input).Error
 }

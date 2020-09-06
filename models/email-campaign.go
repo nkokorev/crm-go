@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"strings"
 	"time"
@@ -139,46 +140,47 @@ func (emailCampaign *EmailCampaign) AfterFind(tx *gorm.DB) (err error) {
 // ######### CRUD Functions ############
 func (emailCampaign EmailCampaign) create() (Entity, error)  {
 
-	en := emailCampaign
-
-	if err := db.Create(&en).Error; err != nil {
+	_item := emailCampaign
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	err := en.GetPreloadDb(false,false, true).First(&en, en.Id).Error
-	if err != nil {
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
 		return nil, err
 	}
 
-	var newItem Entity = &en
+	var entity Entity = &_item
 
-	return newItem, nil
+	return entity, nil
 }
 
-func (EmailCampaign) get(id uint) (Entity, error) {
+func (EmailCampaign) get(id uint, preloads []string) (Entity, error) {
 
 	var emailCampaign EmailCampaign
 
-	err := emailCampaign.GetPreloadDb(false,false,true).First(&emailCampaign, id).Error
+	err := emailCampaign.GetPreloadDb(false,false,preloads).First(&emailCampaign, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &emailCampaign, nil
 }
-func (emailCampaign *EmailCampaign) load() error {
+func (emailCampaign *EmailCampaign) load(preloads []string) error {
+	if emailCampaign.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить EmailCampaign - не указан  Id"}
+	}
 
-	err := emailCampaign.GetPreloadDb(false,false,true).First(emailCampaign, emailCampaign.Id).Error
+	err := emailCampaign.GetPreloadDb(false, false, preloads).First(emailCampaign, emailCampaign.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (emailCampaign *EmailCampaign) loadByPublicId() error {
+func (emailCampaign *EmailCampaign) loadByPublicId(preloads []string) error {
 	
 	if emailCampaign.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить EmailCampaign - не указан  Id"}
 	}
-	if err := emailCampaign.GetPreloadDb(false,false, true).First(emailCampaign, "account_id = ? AND public_id = ?", emailCampaign.AccountId, emailCampaign.PublicId).Error; err != nil {
+	if err := emailCampaign.GetPreloadDb(false,false, preloads).First(emailCampaign, "account_id = ? AND public_id = ?", emailCampaign.AccountId, emailCampaign.PublicId).Error; err != nil {
 		return err
 	}
 
@@ -198,7 +200,7 @@ func (EmailCampaign) getPaginationList(accountId uint, offset, limit int, sortBy
 
 		search = "%"+search+"%"
 
-		err := (&EmailCampaign{}).GetPreloadDb(true,false,true).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&EmailCampaign{}).GetPreloadDb(false,false,preloads).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailCampaigns, "name ILIKE ? OR subject ILIKE ? OR preview_text ILIKE ?", search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -206,7 +208,7 @@ func (EmailCampaign) getPaginationList(accountId uint, offset, limit int, sortBy
 		}
 
 		// Определяем total
-		err = db.Model(&EmailCampaign{}).
+		err = (&EmailCampaign{}).GetPreloadDb(false,false,nil).
 			Where("account_id = ? AND name ILIKE ? OR subject ILIKE ? OR preview_text ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -215,14 +217,14 @@ func (EmailCampaign) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	} else {
 		
-		err := (&EmailCampaign{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&EmailCampaign{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailCampaigns).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&EmailCampaign{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&EmailCampaign{}).GetPreloadDb(false,false,nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -237,7 +239,7 @@ func (EmailCampaign) getPaginationList(accountId uint, offset, limit int, sortBy
 	return entities, total, nil
 }
 
-func (emailCampaign *EmailCampaign) update(input map[string]interface{}) error {
+func (emailCampaign *EmailCampaign) update(input map[string]interface{}, preloads []string) error {
 
 	utils.FixInputHiddenVars(&input)
 	input = utils.FixInputDataTimeVars(input,[]string{"scheduleRun"})
@@ -252,13 +254,11 @@ func (emailCampaign *EmailCampaign) update(input map[string]interface{}) error {
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","email_template_id","email_box_id","users_segment_id"}); err != nil {
 		return err
 	}
-	
-	if err := emailCampaign.GetPreloadDb(true,false,false).Where(" id = ?", emailCampaign.Id).
-		Omit("id", "account_id","public_id","created_at").Updates(input).Error; err != nil {
-		return err
-	}
 
-	err := emailCampaign.GetPreloadDb(true,true,true).First(emailCampaign, emailCampaign.Id).Error
+	if err := emailCampaign.GetPreloadDb(false, false, nil).Where("id = ?", emailCampaign.Id).Omit("id", "account_id").Updates(input).
+		Error; err != nil {return err}
+
+	err := emailCampaign.GetPreloadDb(false,false, preloads).First(emailCampaign, emailCampaign.Id).Error
 	if err != nil {
 		return err
 	}
@@ -267,28 +267,32 @@ func (emailCampaign *EmailCampaign) update(input map[string]interface{}) error {
 }
 
 func (emailCampaign *EmailCampaign) delete () error {
-	return emailCampaign.GetPreloadDb(true,true,false).Where("id = ?", emailCampaign.Id).Delete(emailCampaign).Error
+	return emailCampaign.GetPreloadDb(true,false,nil).Where("id = ?", emailCampaign.Id).Delete(emailCampaign).Error
 }
 // ######### END CRUD Functions ############
 
-func (emailCampaign *EmailCampaign) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (emailCampaign *EmailCampaign) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
-		_db = _db.Model(emailCampaign)
+		_db = _db.Model(&emailCampaign)
 	} else {
 		_db = _db.Model(&EmailCampaign{})
 	}
 
-	if preload {
-		return _db.Preload("EmailTemplate").Preload("EmailBox").Preload("UsersSegment")
-		// return _db
+	if autoPreload {
+		return db.Preload(clause.Associations)
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"EmailTemplate","EmailBox","UsersSegment"})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
 		return _db
 	}
+
 }
 
 // Подготавливает рассылку к первичному запуску: извлекает сегмент пользователей и добавляет пользователей в mta-workflow
@@ -317,7 +321,7 @@ func (emailCampaign *EmailCampaign) Execute() error {
 	if *emailCampaign.EmailTemplateId < 1 {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного шаблона email-сообщения"}
 	}
-	err = account.LoadEntity(&emailCampaign.EmailTemplate, *emailCampaign.EmailTemplateId)
+	err = account.LoadEntity(&emailCampaign.EmailTemplate, *emailCampaign.EmailTemplateId,nil)
 	if err != nil {
 		log.Printf("Ошибка загрузки шаблона email-сообщения для кампании [%v]: %v\n", emailCampaign.Id, err)
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки шаблона email-сообщения"}
@@ -326,7 +330,7 @@ func (emailCampaign *EmailCampaign) Execute() error {
 	if *emailCampaign.EmailBoxId < 1 {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного адреса отправителя"}
 	}
-	err = account.LoadEntity(&emailCampaign.EmailBox, *emailCampaign.EmailBoxId)
+	err = account.LoadEntity(&emailCampaign.EmailBox, *emailCampaign.EmailBoxId,nil)
 	if err != nil {
 		log.Printf("Ошибка загрузки адреса отправителя для кампании [%v]: %v\n", emailCampaign.Id, err)
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки адреса отправителя"}
@@ -335,7 +339,7 @@ func (emailCampaign *EmailCampaign) Execute() error {
 	if *emailCampaign.UsersSegmentId < 1 {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного сегмента пользователей"}
 	}
-	err = account.LoadEntity(&emailCampaign.UsersSegment, *emailCampaign.UsersSegmentId)
+	err = account.LoadEntity(&emailCampaign.UsersSegment, *emailCampaign.UsersSegmentId,nil)
 	if err != nil {
 		log.Printf("Ошибка загрузка сегмента пользователей для кампании [%v]: %v\n", emailCampaign.Id, err)
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки сегмента пользователей"}
@@ -406,7 +410,7 @@ func (emailCampaign *EmailCampaign) updateWorkStatus(status WorkStatus, reason..
 	return emailCampaign.update(map[string]interface{}{
 		"status":	status,
 		"failed_status": _reason,
-	})
+	},nil)
 }
 
 func (emailCampaign *EmailCampaign) SetPendingStatus() error {
@@ -673,7 +677,7 @@ func (emailCampaign EmailCampaign) Validate() error {
 	if emailCampaign.EmailTemplateId == nil {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного шаблона email-сообщения"}
 	}
-	err = account.LoadEntity(&emailCampaign.EmailTemplate, *emailCampaign.EmailTemplateId)
+	err = account.LoadEntity(&emailCampaign.EmailTemplate, *emailCampaign.EmailTemplateId,nil)
 	if err != nil {
 		log.Printf("Ошибка загрузки шаблона email-сообщения для кампании [%v]: %v\n", emailCampaign.Id, err)
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки шаблона email-сообщения"}
@@ -682,7 +686,7 @@ func (emailCampaign EmailCampaign) Validate() error {
 	if emailCampaign.EmailBoxId == nil  {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного адреса отправителя"}
 	}
-	err = account.LoadEntity(&emailCampaign.EmailBox, *emailCampaign.EmailBoxId)
+	err = account.LoadEntity(&emailCampaign.EmailBox, *emailCampaign.EmailBoxId,nil)
 	if err != nil {
 		log.Printf("Ошибка загрузки адреса отправителя для кампании [%v]: %v\n", emailCampaign.Id, err)
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки адреса отправителя"}
@@ -690,7 +694,7 @@ func (emailCampaign EmailCampaign) Validate() error {
 
 	// Проверяем DKIM подпись
 	var webSite WebSite
-	err = account.LoadEntity(&webSite, emailCampaign.EmailBox.WebSiteId)
+	err = account.LoadEntity(&webSite, emailCampaign.EmailBox.WebSiteId,nil)
 	if err != nil {
 		log.Printf("Ошибка загрузки web site отправителя для кампании [%v]: %v\n", emailCampaign.Id, err)
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки адреса отправителя"}
@@ -701,7 +705,7 @@ func (emailCampaign EmailCampaign) Validate() error {
 	if *emailCampaign.UsersSegmentId < 1 {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного сегмента пользователей"}
 	}
-	err = account.LoadEntity(&emailCampaign.UsersSegment, *emailCampaign.UsersSegmentId)
+	err = account.LoadEntity(&emailCampaign.UsersSegment, *emailCampaign.UsersSegmentId,nil)
 	if err != nil {
 		log.Printf("Ошибка загрузка сегмента пользователей для кампании [%v]: %v\n", emailCampaign.Id, err)
 		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки сегмента пользователей"}

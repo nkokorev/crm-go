@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"time"
 )
@@ -28,8 +29,8 @@ type EmailQueue struct {
 	ActiveEmailTemplates int64 `json:"_active_email_templates" gorm:"-"`
 
 	// Сколько прошло через нее. На это число навешивается статистика открытий / отписок / кликов
-	Recipients 	uint `json:"_recipients" gorm:"-"` // <<< всего успешно отправлено писем
-	Completed 	uint `json:"_completed" gorm:"-"` /// << число завершивших серию
+	Recipients 		uint 	`json:"_recipients" gorm:"-"` // <<< всего успешно отправлено писем
+	Completed 		uint 	`json:"_completed" gorm:"-"` /// << число завершивших серию
 	OpenRate 		float64 `json:"_open_rate" gorm:"-"`
 	UnsubscribeRate float64 `json:"_unsubscribe_rate" gorm:"-"`
 
@@ -145,7 +146,7 @@ func (emailQueue EmailQueue) create() (Entity, error)  {
 		return nil, err
 	}
 
-	err := wb.GetPreloadDb(false,false, true).First(&wb, wb.Id).Error
+	err := wb.GetPreloadDb(false,false, nil).First(&wb, wb.Id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -155,42 +156,33 @@ func (emailQueue EmailQueue) create() (Entity, error)  {
 	return entity, nil
 }
 
-func (EmailQueue) get(id uint) (Entity, error) {
+func (EmailQueue) get(id uint, preloads []string) (Entity, error) {
 
 	var emailQueue EmailQueue
 
-	err := emailQueue.GetPreloadDb(false,false, true).First(&emailQueue, id).Error
+	err := emailQueue.GetPreloadDb(false,false, preloads).First(&emailQueue, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &emailQueue, nil
 }
-func (EmailQueue) getByExternalId(externalId string) (*EmailQueue, error) {
-	emailQueue := EmailQueue{}
-
-	err := emailQueue.GetPreloadDb(false,false,true).First(&emailQueue, "external_id = ?", externalId).Error
-	if err != nil {
-		return nil, err
-	}
-	return &emailQueue, nil
-}
-func (emailQueue *EmailQueue) load() error {
+func (emailQueue *EmailQueue) load(preloads []string) error {
 	if emailQueue.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить EmailQueue - не указан  Id"}
 	}
 
-	err := emailQueue.GetPreloadDb(false,false, true).First(emailQueue,emailQueue.Id).Error
+	err := emailQueue.GetPreloadDb(false,false, preloads).First(emailQueue,emailQueue.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (emailQueue *EmailQueue) loadByPublicId() error {
+func (emailQueue *EmailQueue) loadByPublicId(preloads []string) error {
 	
 	if emailQueue.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить EmailQueue - не указан  Id"}
 	}
-	if err := emailQueue.GetPreloadDb(false,false, true).First(emailQueue, "account_id = ? AND public_id = ?", emailQueue.AccountId, emailQueue.PublicId).Error; err != nil {
+	if err := emailQueue.GetPreloadDb(false,false, preloads).First(emailQueue, "account_id = ? AND public_id = ?", emailQueue.AccountId, emailQueue.PublicId).Error; err != nil {
 		return err
 	}
 
@@ -211,7 +203,7 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&EmailQueue{}).GetPreloadDb(true,false,true).
+		err := (&EmailQueue{}).GetPreloadDb(false,false,preloads).
 			/*Preload("MTAWorkflow", func(db *gorm.DB) *gorm.DB {
 				return db.Select([]string{"id"})
 			}).*/
@@ -222,7 +214,7 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 		}
 
 		// Определяем total
-		err = (&EmailQueue{}).GetPreloadDb(true,false,true).
+		err = (&EmailQueue{}).GetPreloadDb(false,false,nil).
 			Where("account_id = ? AND name ILIKE ?", accountId, search).
 			Count(&total).Error
 		if err != nil {
@@ -231,7 +223,7 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 
 	} else {
 
-		err := (&EmailQueue{}).GetPreloadDb(false,false,true).
+		err := (&EmailQueue{}).GetPreloadDb(false,false,preloads).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailQueues).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -239,7 +231,7 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 		}
 
 		// Определяем total
-		err = (&EmailQueue{}).GetPreloadDb(false,false,true).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&EmailQueue{}).GetPreloadDb(false,false,nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -253,15 +245,15 @@ func (EmailQueue) getPaginationList(accountId uint, offset, limit int, sortBy, s
 
 	return entities, total, nil
 }
-func (emailQueue *EmailQueue) update(input map[string]interface{}) error {
+func (emailQueue *EmailQueue) update(input map[string]interface{}, preloads []string) error {
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
 		return err
 	}
-	err := emailQueue.GetPreloadDb(true,false,false).Where("id = ?", emailQueue.Id).
+	err := emailQueue.GetPreloadDb(true,false,nil).Where("id = ?", emailQueue.Id).
 		Omit("id", "account_id", "created_at","public_id").Updates(input).Error
 	if err != nil {	return err	}
-	if err = emailQueue.GetPreloadDb(false,true,true).First(emailQueue).Error; err != nil {
+	if err = emailQueue.GetPreloadDb(false,false,preloads).First(emailQueue).Error; err != nil {
 		return err
 	}
 
@@ -276,7 +268,7 @@ type MassUpdateEmailQueueTemplate struct {
 func (emailQueue *EmailQueue) UpdateOrderEmailTemplates(input []MassUpdateEmailQueueTemplate) error {
 	for _,v := range input {
 
-		if err := (&EmailQueueEmailTemplate{Id: v.Id }).update(map[string]interface{}{"step":v.Step}); err != nil {
+		if err := (&EmailQueueEmailTemplate{Id: v.Id }).update(map[string]interface{}{"step":v.Step},nil); err != nil {
 			return err
 		}
 	}
@@ -286,28 +278,32 @@ func (emailQueue *EmailQueue) UpdateOrderEmailTemplates(input []MassUpdateEmailQ
 
 func (emailQueue *EmailQueue) delete () error {
 
-	return emailQueue.GetPreloadDb(true,false,false).Where("id = ?", emailQueue.Id).Delete(emailQueue).Error
+	return emailQueue.GetPreloadDb(true,false,nil).Where("id = ?", emailQueue.Id).Delete(emailQueue).Error
 }
 // ######### END CRUD Functions ############
 
-func (emailQueue *EmailQueue) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (emailQueue *EmailQueue) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
 		_db = _db.Model(&emailQueue)
 	} else {
 		_db = _db.Model(&EmailQueue{})
 	}
 
-	if preload {
-		// return _db.Preload("EmailTemplates")
-		return _db
+	if autoPreload {
+		return db.Preload(clause.Associations)
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
 		return _db
 	}
+
 }
 
 //////// ###### WORKER function ########## //////////
@@ -402,7 +398,7 @@ func (emailQueue EmailQueue) GetEmailTemplateByStep(order uint) (*EmailTemplate,
 	if err != nil {return nil, err}
 
 	var emailTemplate EmailTemplate
-	if err = (Account{Id: emailQueue.AccountId}).LoadEntity(&emailTemplate, step.EmailTemplateId); err != nil {
+	if err = (Account{Id: emailQueue.AccountId}).LoadEntity(&emailTemplate, step.EmailTemplateId,nil); err != nil {
 		return nil, err
 	}
 
@@ -417,5 +413,5 @@ func (emailQueue *EmailQueue) changeWorkStatus(status WorkStatus, reason... stri
 	return emailQueue.update(map[string]interface{}{
 		"status":	status,
 		"failed_status": _reason,
-	})
+	},nil)
 }

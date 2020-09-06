@@ -84,7 +84,7 @@ func (UnitMeasurement) getList() ([]UnitMeasurement, error) {
 	return units, nil
 }
 
-func (ut *UnitMeasurement) update(input map[string]interface{}) error {
+func (ut *UnitMeasurement) update(input map[string]interface{}, preloads []string) error {
 	return db.Model(ut).Omit("id").Updates(input).Error
 
 }

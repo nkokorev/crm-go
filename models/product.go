@@ -152,7 +152,7 @@ func (Product) getList(accountId uint) ([]Product, error) {
 
 	return products, nil
 }
-func (product *Product) update(input map[string]interface{}) error {
+func (product *Product) update(input map[string]interface{}, preloads []string) error {
 	// Приводим в опрядок
 	// input = utils.FixJSONB_String(input, []string{"attributes"})
 

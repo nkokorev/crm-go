@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"net"
 	"strings"
@@ -39,14 +40,6 @@ type MTAHistory struct {
 
 	// Какой конкретно шаблон был отправлен. Может пригодиться для истории, кто что кому отправлял.
 	EmailTemplateId		*uint	`json:"email_template_id" gorm:"type:int;index;"` // << index для выборки по конкретному письму
-
-	// Была ли успешна ли отправка. По этому показателю делаем выборку для кампаний и статистики уведомлений, серий писем.
-	// deprecated - вся история - валидных отправок. Ошибки сохраняются в mta-bounced
-	// Succeed 	bool 	`json:"succeed" gorm:"type:bool;default:false;"`
-
-	// С какой попытки было отправлено письмо. По этой колонке можно понять качество базы/рассылок.
-	// deprecated - все отправки фактические, если что-то не удалось - идет запись в mta-bounced
-	// NumberOfAttempts uint `json:"numberOfAttempts" gorm:"type:smallint;"`
 
 	// ####### Статистика #######
 
@@ -111,6 +104,30 @@ func (mtaHistory *MTAHistory) AfterFind(tx *gorm.DB) (err error) {
 	return nil
 }
 
+func (mtaHistory *MTAHistory) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(&mtaHistory)
+	} else {
+		_db = _db.Model(&MTAHistory{})
+	}
+
+	if autoPreload {
+		return db.Preload(clause.Associations)
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"User"})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
+		return _db
+	}
+
+}
+
 // ############# Entity interface #############
 func (mtaHistory MTAHistory) GetId() uint { return mtaHistory.Id }
 func (mtaHistory *MTAHistory) setId(id uint) { mtaHistory.Id = id }
@@ -123,44 +140,40 @@ func (MTAHistory) SystemEntity() bool { return false }
 // ######### CRUD Functions ############
 func (mtaHistory MTAHistory) create() (Entity, error)  {
 	
-	wb := mtaHistory
-	if err := db.Create(&wb).Error; err != nil {
+	_item := mtaHistory
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	err := wb.GetPreloadDb(false,false, true).First(&wb, wb.Id).Error
-	if err != nil {
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
 		return nil, err
 	}
 
-	var entity Entity = &wb
+	var entity Entity = &_item
 
 	return entity, nil
 }
+func (MTAHistory) get(id uint, preloads []string) (Entity, error) {
+	var item MTAHistory
 
-func (MTAHistory) get(id uint) (Entity, error) {
-
-	var mtaHistory MTAHistory
-
-	err := mtaHistory.GetPreloadDb(false,false, true).First(&mtaHistory, id).Error
+	err := item.GetPreloadDb(false, false, preloads).First(&item, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &mtaHistory, nil
+	return &item, nil
 }
-
-func (mtaHistory *MTAHistory) load() error {
+func (mtaHistory *MTAHistory) load(preloads []string) error {
 	if mtaHistory.Id < 1 {
-		return utils.Error{Message: "Невозможно загрузить MTAHistory - не указан  Id"}
+		return utils.Error{Message: "Невозможно загрузить CartItem - не указан  Id"}
 	}
 
-	err := mtaHistory.GetPreloadDb(false,false, true).First(mtaHistory,mtaHistory.Id).Error
+	err := mtaHistory.GetPreloadDb(false, false, preloads).First(mtaHistory, mtaHistory.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (mtaHistory *MTAHistory) loadByPublicId() error {
+func (mtaHistory *MTAHistory) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (MTAHistory) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
@@ -177,14 +190,14 @@ func (MTAHistory) getPaginationList(accountId uint, offset, limit int, sortBy, s
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&MTAHistory{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&MTAHistory{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailQueueHistories, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = (&MTAHistory{}).GetPreloadDb(true,false,true).
+		err = (&MTAHistory{}).GetPreloadDb(false,false,nil).
 			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -193,14 +206,14 @@ func (MTAHistory) getPaginationList(accountId uint, offset, limit int, sortBy, s
 
 	} else {
 
-		err := db.Model(&MTAHistory{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&MTAHistory{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailQueueHistories).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&MTAHistory{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&MTAHistory{}).GetPreloadDb(false,false,nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -233,12 +246,27 @@ func (MTAHistory) getPaginationListByOwner(owner EmailSender, offset, limit int,
 
 	return emailQueueHistories, total, nil
 }
-func (mtaHistory *MTAHistory) update(input map[string]interface{}) error {
-	return mtaHistory.GetPreloadDb(false,false,false).Where("id = ?", mtaHistory.Id).Omit("id", "account_id").Updates(input).Error
+func (mtaHistory *MTAHistory) update(input map[string]interface{}, preloads []string) error {
+
+	delete(input,"user")
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"owner_id","user_id","queue_step_id","email_template_id","opens"}); err != nil {
+		return err
+	}
+
+	if err := mtaHistory.GetPreloadDb(false, false, nil).Where("id = ?", mtaHistory.Id).Omit("id", "account_id").Updates(input).
+		Error; err != nil {return err}
+
+	err := mtaHistory.GetPreloadDb(false,false, preloads).First(mtaHistory, mtaHistory.Id).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 func (mtaHistory *MTAHistory) delete () error {
 
-	return mtaHistory.GetPreloadDb(true,false,false).Where("id = ?", mtaHistory.Id).Delete(mtaHistory).Error
+	return mtaHistory.GetPreloadDb(true,false,nil).Where("id = ?", mtaHistory.Id).Delete(mtaHistory).Error
 }
 // ######### END CRUD Functions ############
 
@@ -252,31 +280,12 @@ func (account Account) GetMTAHistoryByHashId(hashId string) (*MTAHistory, error)
 	}
 	return &et, nil
 }
-func (mtaHistory *MTAHistory) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
-	_db := db
-
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
-	if getModel {
-		_db = _db.Model(&mtaHistory)
-	} else {
-		_db = _db.Model(&MTAHistory{})
-	}
-
-	if preload {
-		// return _db.Preload("PaymentAmount")
-		return _db
-	} else {
-		return _db
-	}
-}
 func (mtaHistory *MTAHistory) UpdateSetUnsubscribeUser(ipV4 string) error {
 	return mtaHistory.update(map[string]interface{}{
 		"unsubscribed"		: 	true,
 		"unsubscribedAt"	: 	time.Now().UTC(),
 		// "net_ip"	:	ipV4,
-	})
+	},nil)
 }
 func (mtaHistory *MTAHistory) UpdateOpenUser(ipV4 string) error {
 	
@@ -288,5 +297,5 @@ func (mtaHistory *MTAHistory) UpdateOpenUser(ipV4 string) error {
 		input["openedAt"] = time.Now().UTC()
 	}
 
-	return mtaHistory.update(input)
+	return mtaHistory.update(input,nil)
 }

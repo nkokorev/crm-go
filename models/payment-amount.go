@@ -62,7 +62,7 @@ func (paymentAmount PaymentAmount) create() (Entity, error)  {
 	return entity, nil
 }
 
-func (PaymentAmount) get(id uint) (Entity, error) {
+func (PaymentAmount) get(id uint, preloads []string) (Entity, error) {
 
 	var paymentAmount PaymentAmount
 
@@ -72,7 +72,7 @@ func (PaymentAmount) get(id uint) (Entity, error) {
 	}
 	return &paymentAmount, nil
 }
-func (paymentAmount *PaymentAmount) load() error {
+func (paymentAmount *PaymentAmount) load(preloads []string) error {
 	if paymentAmount.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить PaymentAmount - не указан  Id"}
 	}
@@ -83,7 +83,7 @@ func (paymentAmount *PaymentAmount) load() error {
 	}
 	return nil
 }
-func (*PaymentAmount) loadByPublicId() error {
+func (*PaymentAmount) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (PaymentAmount) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
@@ -136,7 +136,7 @@ func (PaymentAmount) getPaginationList(accountId uint, offset, limit int, sortBy
 	return entities, total, nil
 }
 
-func (paymentAmount *PaymentAmount) update(input map[string]interface{}) error {
+func (paymentAmount *PaymentAmount) update(input map[string]interface{}, preloads []string) error {
 	return db.Set("gorm:association_autoupdate", false).
 		Model(paymentAmount).Omit("id", "account_id").Updates(input).Error
 }

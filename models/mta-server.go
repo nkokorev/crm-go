@@ -150,7 +150,7 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 
 		// time.Sleep(time.Second * 5)
 	} else {
-		log.Fatal("ssssssSsss")
+		
 		// 4. Делаем коннект к почтовому серверу получателя
 		client, bounceLevel, err := getClientByEmail(pkg.To.Address)
 		if err != nil {

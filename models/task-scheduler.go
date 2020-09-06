@@ -102,25 +102,25 @@ func (taskScheduler TaskScheduler) create() (Entity, error)  {
 
 	return newItem, nil
 }
-func (TaskScheduler) get(id uint) (Entity, error) {
+func (TaskScheduler) get(id uint, preloads []string) (Entity, error) {
 
 	var taskScheduler TaskScheduler
 
-	err := taskScheduler.GetPreloadDb(false,false,true).First(&taskScheduler, id).Error
+	err := taskScheduler.GetPreloadDb(false,false,preloads).First(&taskScheduler, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &taskScheduler, nil
 }
-func (taskScheduler *TaskScheduler) load() error {
+func (taskScheduler *TaskScheduler) load(preloads []string) error {
 
-	err := taskScheduler.GetPreloadDb(false,false,true).First(taskScheduler, taskScheduler.Id).Error
+	err := taskScheduler.GetPreloadDb(false,false,preloads).First(taskScheduler, taskScheduler.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (taskScheduler *TaskScheduler) loadByPublicId() error {
+func (taskScheduler *TaskScheduler) loadByPublicId(preloads []string) error {
 	
 	if taskScheduler.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить TaskScheduler - не указан  Id"}
@@ -184,7 +184,7 @@ func (TaskScheduler) getPaginationList(accountId uint, offset, limit int, sortBy
 	return entities, total, nil
 }
 
-func (taskScheduler *TaskScheduler) update(input map[string]interface{}) error {
+func (taskScheduler *TaskScheduler) update(input map[string]interface{}, preloads []string) error {
 
 	utils.FixInputHiddenVars(&input)
 	input = utils.FixInputDataTimeVars(input,[]string{"scheduleRun"})

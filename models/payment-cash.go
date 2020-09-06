@@ -120,7 +120,7 @@ func (paymentCash PaymentCash) create() (Entity, error)  {
 
 	return entity, nil
 }
-func (PaymentCash) get(id uint) (Entity, error) {
+func (PaymentCash) get(id uint, preloads []string) (Entity, error) {
 
 	var paymentCash PaymentCash
 
@@ -130,7 +130,7 @@ func (PaymentCash) get(id uint) (Entity, error) {
 	}
 	return &paymentCash, nil
 }
-func (paymentCash *PaymentCash) load() error {
+func (paymentCash *PaymentCash) load(preloads []string) error {
 	if paymentCash.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить PaymentCash - не указан  Id"}
 	}
@@ -141,7 +141,7 @@ func (paymentCash *PaymentCash) load() error {
 	}
 	return nil
 }
-func (*PaymentCash) loadByPublicId() error {
+func (*PaymentCash) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (PaymentCash) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
@@ -195,7 +195,7 @@ func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	return entities, total, nil
 }
-func (paymentCash *PaymentCash) update(input map[string]interface{}) error {
+func (paymentCash *PaymentCash) update(input map[string]interface{}, preloads []string) error {
 
 	delete(input,"web_site")
 	utils.FixInputHiddenVars(&input)
@@ -206,7 +206,7 @@ func (paymentCash *PaymentCash) update(input map[string]interface{}) error {
 	err := paymentCash.GetPreloadDb(false,false, false).Where("id = ?", paymentCash.Id).
 		Omit("id", "hashId","account_id").Updates(input).Error
 	if err != nil { return err}
-	_ = paymentCash.load()
+	_ = paymentCash.load(preloads []string)
 
 	return nil
 }

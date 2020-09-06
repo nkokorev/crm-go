@@ -210,7 +210,7 @@ func (fs Storage) create() (Entity, error)  {
 
 	return entity, nil
 }
-func (Storage) get(id uint) (Entity, error) {
+func (Storage) get(id uint, preloads []string) (Entity, error) {
 
 	var fs Storage
 
@@ -230,7 +230,7 @@ func (Storage) getByHashId(hashId string) (*Storage, error)  {
 	}
 	return &fs, nil
 }
-func (fs *Storage) load() error {
+func (fs *Storage) load(preloads []string) error {
 	if fs.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить Storage - не указан  Id"}
 	}
@@ -241,7 +241,7 @@ func (fs *Storage) load() error {
 	}
 	return nil
 }
-func (*Storage) loadByPublicId() error {
+func (*Storage) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (Storage) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
@@ -308,7 +308,7 @@ func (Storage) getByEvent(eventName string) (*Storage, error) {
 	return &wh, nil
 }
 
-func (fs *Storage) update(input map[string]interface{}) error {
+func (fs *Storage) update(input map[string]interface{}, preloads []string) error {
 
 	delete(input,"size")
 	// delete(input,"owner_id")

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"time"
 )
@@ -27,9 +28,8 @@ type HandlerItem struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-
 func (HandlerItem) PgSqlCreate() {
-	db.Migrator().CreateTable(&HandlerItem{})
+	if err := db.Migrator().CreateTable(&HandlerItem{}); err != nil {log.Fatal(err)}
 	// db.Model(&HandlerItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	err := db.Exec("ALTER TABLE handler_items ADD CONSTRAINT handler_items_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {
@@ -56,17 +56,17 @@ func (HandlerItem) PgSqlCreate() {
 
 }
 
-func (obItem *HandlerItem) BeforeCreate(tx *gorm.DB) error {
-	obItem.Id = 0
+func (handlerItem *HandlerItem) BeforeCreate(tx *gorm.DB) error {
+	handlerItem.Id = 0
 	return nil
 }
 
 // ############# Entity interface #############
-func (obItem HandlerItem) GetId() uint { return obItem.Id }
-func (obItem *HandlerItem) setId(id uint) { obItem.Id = id }
-func (obItem *HandlerItem) setPublicId(id uint) { }
-func (obItem HandlerItem) GetAccountId() uint { return obItem.AccountId }
-func (obItem *HandlerItem) setAccountId(id uint) { obItem.AccountId = id }
+func (handlerItem HandlerItem) GetId() uint           { return handlerItem.Id }
+func (handlerItem *HandlerItem) setId(id uint)        { handlerItem.Id = id }
+func (handlerItem *HandlerItem) setPublicId(id uint)  { }
+func (handlerItem HandlerItem) GetAccountId() uint    { return handlerItem.AccountId }
+func (handlerItem *HandlerItem) setAccountId(id uint) { handlerItem.AccountId = id }
 
 // Всегда системный
 func (handlerItem HandlerItem) SystemEntity() bool { return handlerItem.AccountId == 1 }
@@ -75,34 +75,43 @@ func (handlerItem HandlerItem) SystemEntity() bool { return handlerItem.AccountI
 
 func (handlerItem HandlerItem) create() (Entity, error)  {
 
-	hi := handlerItem
-
-	if err := db.Create(&hi).Error; err != nil {
+	_item := handlerItem
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
-	var entity Entity = &hi
+
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
+		return nil, err
+	}
+
+	var entity Entity = &_item
+
+	go EventListener{}.ReloadEventHandlers()
 
 	return entity, nil
 }
-func (HandlerItem) get(id uint) (Entity, error) {
+func (HandlerItem) get(id uint, preloads []string) (Entity, error) {
 
-	var obItem HandlerItem
+	var item HandlerItem
 
-	err := db.First(&obItem, id).Error
+	err := item.GetPreloadDb(false, false, preloads).First(&item, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &obItem, nil
+	return &item, nil
 }
-func (obItem *HandlerItem) load() error {
+func (handlerItem *HandlerItem) load(preloads []string) error {
+	if handlerItem.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить CartItem - не указан  Id"}
+	}
 
-	err := db.First(obItem,obItem.Id).Error
+	err := handlerItem.GetPreloadDb(false, false, preloads).First(handlerItem, handlerItem.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (*HandlerItem) loadByPublicId() error {
+func (*HandlerItem) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (HandlerItem) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
@@ -117,7 +126,7 @@ func (HandlerItem) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 		search = "%"+search+"%"
 
-		err := db.Model(&HandlerItem{}).
+		err := (&HandlerItem{}).GetPreloadDb(false, false, preloads).
 			Order(sortBy).Offset(offset).Limit(limit).
 			Where("account_id IN (?)", []uint{1, accountId}).
 			Find(&obItems, "name ILIKE ? OR description ILIKE ?",search,search).Error
@@ -126,7 +135,7 @@ func (HandlerItem) getPaginationList(accountId uint, offset, limit int, sortBy, 
 		}
 
 		// Определяем total
-		err = db.Model(&HandlerItem{}).
+		err = (&HandlerItem{}).GetPreloadDb(false, false, nil).
 			Where("account_id IN (?) AND name ILIKE ? OR description ILIKE ?", []uint{1, accountId}, search,search).
 			Count(&total).Error
 		if err != nil {
@@ -135,7 +144,7 @@ func (HandlerItem) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 
 	} else {
-		err := db.Model(&HandlerItem{}).
+		err := (&HandlerItem{}).GetPreloadDb(false, false, preloads).
 			Order(sortBy).Offset(offset).Limit(limit).
 			Where("account_id IN (?)", []uint{1, accountId}).
 			Find(&obItems).Error
@@ -144,7 +153,7 @@ func (HandlerItem) getPaginationList(accountId uint, offset, limit int, sortBy, 
 		}
 
 		// Определяем total
-		err = db.Model(&HandlerItem{}).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
+		err = (&HandlerItem{}).GetPreloadDb(false, false, nil).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -159,14 +168,54 @@ func (HandlerItem) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	return entities, total, nil
 }
-func (obItem *HandlerItem) update(input map[string]interface{}) error {
-	if err := db.Set("gorm:association_autoupdate", false).Model(obItem).Omit("id", "account_id").
-		Updates(input).Error; err != nil {return err}
+func (handlerItem *HandlerItem) update(input map[string]interface{}, preloads []string) error {
+
+	// delete(input,"amount")
+	utils.FixInputHiddenVars(&input)
+	/*if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
+		return err
+	}*/
+
+	if err := handlerItem.GetPreloadDb(false, false, nil).Where("id = ?", handlerItem.Id).Omit("id", "account_id").Updates(input).
+		Error; err != nil {return err}
+
+	err := handlerItem.GetPreloadDb(false,false, preloads).First(handlerItem, handlerItem.Id).Error
+	if err != nil {
+		return err
+	}
 
 	go EventListener{}.ReloadEventHandlers()
 
 	return nil
 }
-func (obItem *HandlerItem) delete () error {
-	return db.Model(HandlerItem{}).Where("id = ?", obItem.Id).Delete(obItem).Error
+func (handlerItem *HandlerItem) delete () error {
+	if err := handlerItem.GetPreloadDb(true,false,nil).Where("id = ?", handlerItem.Id).Delete(handlerItem).Error; err !=nil { return err}
+
+	go EventListener{}.ReloadEventHandlers()
+
+	return nil
+}
+
+func (handlerItem *HandlerItem) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(&handlerItem)
+	} else {
+		_db = _db.Model(&HandlerItem{})
+	}
+
+	if autoPreload {
+		return db.Preload(clause.Associations)
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
+		return _db
+	}
+
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"time"
 )
@@ -38,7 +39,7 @@ type EventListener struct {
 func (EventListener) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
-	db.Migrator().CreateTable(&EventListener{})
+	if err := db.Migrator().CreateTable(&EventListener{});err != nil {log.Fatal(err)}
 	// db.Model(&EventListener{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	// db.Model(&EventListener{}).AddForeignKey("event_id", "event_items(id)", "CASCADE", "CASCADE")
 	// db.Model(&EventListener{}).AddForeignKey("handler_id", "handler_items(id)", "CASCADE", "CASCADE")
@@ -65,35 +66,42 @@ func (eventListener EventListener) SystemEntity() bool    { return false }
 // ############# END Of Entity interface #############
 
 func (eventListener EventListener) create() (Entity, error)  {
-	var newItem Entity = &eventListener
-
-	if err := db.Create(newItem).Preload("Event").Preload("Handler").First(newItem).Error; err != nil {
+	_item := eventListener
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	go eventListener.LoadListener()
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
+		return nil, err
+	}
 
-	return newItem, nil
+	var entity Entity = &_item
+
+	return entity, nil
 }
-func (EventListener) get(id uint) (Entity, error) {
+func (EventListener) get(id uint, preloads []string) (Entity, error) {
 
-	var eventListener EventListener
+	var item EventListener
 
-	err := (&EventListener{}).GetPreloadDb(false,false,true).First(&eventListener, id).Error
+	err := item.GetPreloadDb(false, false, preloads).First(&item, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &eventListener, nil
+	return &item, nil
 }
-func (eventListener *EventListener) load() error {
+func (eventListener *EventListener) load(preloads []string) error {
 
-	err := eventListener.GetPreloadDb(false,true,true).First(eventListener, eventListener.Id).Error
+	if eventListener.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить EventListener - не указан  Id"}
+	}
+
+	err := eventListener.GetPreloadDb(false, false, preloads).First(eventListener, eventListener.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (*EventListener) loadByPublicId() error {
+func (*EventListener) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
@@ -139,7 +147,8 @@ func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Table("event_listeners").Model(&EventListener{}).
+		// err := db.Table("event_listeners").Model(&EventListener{}).
+		err := (&EventListener{}).GetPreloadDb(false, false, preloads).Table("event_listeners").
 			Joins("LEFT JOIN event_items ON event_items.id = event_listeners.event_id").Select("event_items.name as e_name, event_listeners.*").
 			Limit(limit).Offset(offset).Order(sortBy).Where( "event_listeners.account_id = ?", accountId).Preload("Event").Preload("Handler").
 			Find(&eventListeners, "event_listeners.name ILIKE ? OR event_items.name ILIKE ?", search,search).Error
@@ -159,7 +168,7 @@ func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	} else {
 
-		err := (&EventListener{}).GetPreloadDb(false,false,true).
+		err := (&EventListener{}).GetPreloadDb(false, false, preloads).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&eventListeners).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -167,7 +176,7 @@ func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy
 		}
 
 		// Определяем total
-		err = db.Model(&EventListener{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&EventListener{}).GetPreloadDb(false, false, nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -182,7 +191,7 @@ func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy
 	
 	return entities, total, nil
 }
-func (eventListener *EventListener) update(input map[string]interface{}) error {
+func (eventListener *EventListener) update(input map[string]interface{}, preloads []string) error {
 
 	delete(input,"event")
 	delete(input,"handler")
@@ -248,23 +257,28 @@ func (eventListener EventListener) LoadListener() {
 	em.AddListener(eventListener.Event.Code, &eventListener, eventListener.Priority)
 }
 
-func (eventListener *EventListener) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (eventListener *EventListener) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
 		_db = _db.Model(&eventListener)
 	} else {
 		_db = _db.Model(&EventListener{})
 	}
 
-	if preload {
-		return _db.Preload("Event").Preload("Handler")
+	if autoPreload {
+		return db.Preload(clause.Associations)
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Event","Handler"})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
 		return _db
 	}
+
 }
 
 // для интерфейса event.Listener - функция обработчик для каждого события

@@ -72,7 +72,7 @@ func (vatCode VatCode) create() (Entity, error)  {
 	return entity, nil
 }
 
-func (VatCode) get(id uint) (Entity, error) {
+func (VatCode) get(id uint, preloads []string) (Entity, error) {
 
 	var vatCode VatCode
 
@@ -82,7 +82,7 @@ func (VatCode) get(id uint) (Entity, error) {
 	}
 	return &vatCode, nil
 }
-func (vatCode *VatCode) load() error {
+func (vatCode *VatCode) load(preloads []string) error {
 	if vatCode.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить VatCode - не указан  Id"}
 	}
@@ -93,7 +93,7 @@ func (vatCode *VatCode) load() error {
 	}
 	return nil
 }
-func (*VatCode) loadByPublicId() error {
+func (*VatCode) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (VatCode) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
@@ -146,7 +146,7 @@ func (VatCode) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 	return entities, total, nil
 }
 
-func (vatCode *VatCode) update(input map[string]interface{}) error {
+func (vatCode *VatCode) update(input map[string]interface{}, preloads []string) error {
 	return db.Set("gorm:association_autoupdate", false).
 		Model(vatCode).Omit("id", "account_id").Updates(input).Error
 }

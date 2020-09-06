@@ -169,7 +169,7 @@ func (paymentYandex PaymentYandex) create() (Entity, error)  {
 
 	return entity, nil
 }
-func (PaymentYandex) get(id uint) (Entity, error) {
+func (PaymentYandex) get(id uint, preloads []string) (Entity, error) {
 
 	var paymentYandex PaymentYandex
 
@@ -188,7 +188,7 @@ func (PaymentYandex) getByHashId(hashId string) (*PaymentYandex, error) {
 	}
 	return &paymentYandex, nil
 }
-func (paymentYandex *PaymentYandex) load() error {
+func (paymentYandex *PaymentYandex) load(preloads []string) error {
 	if paymentYandex.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить PaymentYandex - не указан  Id"}
 	}
@@ -199,7 +199,7 @@ func (paymentYandex *PaymentYandex) load() error {
 	}
 	return nil
 }
-func (*PaymentYandex) loadByPublicId() error {
+func (*PaymentYandex) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (PaymentYandex) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
@@ -270,7 +270,7 @@ func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	return entities, total, nil
 }
-func (paymentYandex *PaymentYandex) update(input map[string]interface{}) error {
+func (paymentYandex *PaymentYandex) update(input map[string]interface{}, preloads []string) error {
 	delete(input,"web_site")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"web_site_id","shop_id"}); err != nil {
@@ -280,7 +280,7 @@ func (paymentYandex *PaymentYandex) update(input map[string]interface{}) error {
 	err := paymentYandex.GetPreloadDb(false,false, false).Where("id = ?", paymentYandex.Id).
 		Omit("id", "hashId","account_id").Updates(input).Error
 	if err != nil { return err}
-	_ = paymentYandex.load()
+	_ = paymentYandex.load(preloads []string)
 	return nil
 }
 func (paymentYandex *PaymentYandex) delete () error {

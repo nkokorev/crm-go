@@ -115,7 +115,7 @@ func (emailQueueEmailTemplate EmailQueueEmailTemplate) create() (Entity, error) 
 		return nil, err
 	}
 
-	err := wb.GetPreloadDb(false,false, true).First(&wb, wb.Id).Error
+	err := wb.GetPreloadDb(false,false, nil).First(&wb, wb.Id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -125,11 +125,11 @@ func (emailQueueEmailTemplate EmailQueueEmailTemplate) create() (Entity, error) 
 	return entity, nil
 }
 
-func (EmailQueueEmailTemplate) get(id uint) (Entity, error) {
+func (EmailQueueEmailTemplate) get(id uint, preloads []string) (Entity, error) {
 
 	var emailQueueEmailTemplate EmailQueueEmailTemplate
 
-	err := emailQueueEmailTemplate.GetPreloadDb(false,false, true).First(&emailQueueEmailTemplate, id).Error
+	err := emailQueueEmailTemplate.GetPreloadDb(false,false, preloads).First(&emailQueueEmailTemplate, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -138,24 +138,24 @@ func (EmailQueueEmailTemplate) get(id uint) (Entity, error) {
 func (EmailQueueEmailTemplate) getByExternalId(externalId string) (*EmailQueueEmailTemplate, error) {
 	emailQueueEmailTemplate := EmailQueueEmailTemplate{}
 
-	err := emailQueueEmailTemplate.GetPreloadDb(false,false,true).First(&emailQueueEmailTemplate, "external_id = ?", externalId).Error
+	err := emailQueueEmailTemplate.GetPreloadDb(false,true,nil).First(&emailQueueEmailTemplate, "external_id = ?", externalId).Error
 	if err != nil {
 		return nil, err
 	}
 	return &emailQueueEmailTemplate, nil
 }
-func (emailQueueEmailTemplate *EmailQueueEmailTemplate) load() error {
+func (emailQueueEmailTemplate *EmailQueueEmailTemplate) load(preloads []string) error {
 	if emailQueueEmailTemplate.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить EmailQueueEmailTemplate - не указан  Id"}
 	}
 
-	err := emailQueueEmailTemplate.GetPreloadDb(false,false, true).First(emailQueueEmailTemplate,emailQueueEmailTemplate.Id).Error
+	err := emailQueueEmailTemplate.GetPreloadDb(false,false, preloads).First(emailQueueEmailTemplate,emailQueueEmailTemplate.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (emailQueueEmailTemplate *EmailQueueEmailTemplate) loadByPublicId() error {
+func (emailQueueEmailTemplate *EmailQueueEmailTemplate) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
@@ -174,14 +174,14 @@ func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit i
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&EmailQueueEmailTemplate{}).GetPreloadDb(false,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&EmailQueueEmailTemplate{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailQueueEmailTemplates, "gate_start ILIKE ? OR gate_end ILIKE ?", search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = (&EmailQueueEmailTemplate{}).GetPreloadDb(true,false,true).
+		err = (&EmailQueueEmailTemplate{}).GetPreloadDb(false,false,nil).
 			Where("account_id = ? AND gate_start ILIKE ? OR gate_end ILIKE ?", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
@@ -190,7 +190,7 @@ func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit i
 
 	} else {
 
-		err := (&EmailQueueEmailTemplate{}).GetPreloadDb(false,false,true).
+		err := (&EmailQueueEmailTemplate{}).GetPreloadDb(false,false,preloads).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).Where(filter).
 			Find(&emailQueueEmailTemplates).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -213,7 +213,7 @@ func (EmailQueueEmailTemplate) getPaginationList(accountId uint, offset, limit i
 	return entities, total, nil
 }
 
-func (emailQueueEmailTemplate *EmailQueueEmailTemplate) update(input map[string]interface{}) error {
+func (emailQueueEmailTemplate *EmailQueueEmailTemplate) update(input map[string]interface{}, preloads []string) error {
 
 	delete(input,"email_template")
 	delete(input,"email_box")
@@ -226,40 +226,54 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) update(input map[string]
 	input = utils.FixInputDataTimeVars(input,[]string{"delay_time"})
 
 
-	err := emailQueueEmailTemplate.GetPreloadDb(false,false,false).
-		Where("id = ?", emailQueueEmailTemplate.Id).Omit("id", "account_id").Updates(input).Error
-	if err != nil { return err}
+	if err := emailQueueEmailTemplate.GetPreloadDb(false, false, nil).Where("id = ?", emailQueueEmailTemplate.Id).Omit("id", "account_id").Updates(input).
+		Error; err != nil {return err}
 
-	_ = emailQueueEmailTemplate.load()
+	err := emailQueueEmailTemplate.GetPreloadDb(false,false, preloads).First(emailQueueEmailTemplate, emailQueueEmailTemplate.Id).Error
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) delete () error {
 
-	return emailQueueEmailTemplate.GetPreloadDb(true,false,false).Where("id = ?", emailQueueEmailTemplate.Id).Delete(emailQueueEmailTemplate).Error
+	return emailQueueEmailTemplate.GetPreloadDb(true,false,nil).Where("id = ?", emailQueueEmailTemplate.Id).Delete(emailQueueEmailTemplate).Error
 }
 // ######### END CRUD Functions ############
 
-func (emailQueueEmailTemplate *EmailQueueEmailTemplate) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (emailQueueEmailTemplate *EmailQueueEmailTemplate) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
 		_db = _db.Model(&emailQueueEmailTemplate)
 	} else {
 		_db = _db.Model(&EmailQueueEmailTemplate{})
 	}
 
-	if preload {
+	if autoPreload {
 		return _db.Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
 			return db.Select(EmailTemplate{}.SelectArrayWithoutData())
-		})
-		// return _db
+		}).Preload("EmailQueue").Preload("EmailBox")
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"EmailTemplate","EmailQueue","EmailBox"})
+
+		for _,v := range allowed {
+			if v == "EmailTemplate" {
+				_db.Preload("EmailTemplate", func(db *gorm.DB) *gorm.DB {
+					return db.Select(EmailTemplate{}.SelectArrayWithoutData())
+				})
+			} else {
+				_db.Preload(v)
+			}
+
+		}
 		return _db
 	}
+
 }
 
 

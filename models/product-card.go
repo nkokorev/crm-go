@@ -118,25 +118,25 @@ func (productCard ProductCard) create() (Entity, error)  {
 
 	return newItem, nil
 }
-func (ProductCard) get(id uint) (Entity, error) {
+func (ProductCard) get(id uint, preloads []string) (Entity, error) {
 
 	var productCard ProductCard
 
-	err := productCard.GetPreloadDb(false,false,true).First(&productCard, id).Error
+	err := productCard.GetPreloadDb(false,false,preloads).First(&productCard, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &productCard, nil
 }
-func (productCard *ProductCard) load() error {
+func (productCard *ProductCard) load(preloads []string) error {
 
-	err := productCard.GetPreloadDb(false,false,true).First(productCard, productCard.Id).Error
+	err := productCard.GetPreloadDb(false,false,preloads).First(productCard, productCard.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (productCard *ProductCard) loadByPublicId() error {
+func (productCard *ProductCard) loadByPublicId(preloads []string) error {
 
 	if productCard.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить ProductCard - не указан  Id"}
@@ -198,7 +198,7 @@ func (ProductCard) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	return entities, total, nil
 }
-func (productCard *ProductCard) update(input map[string]interface{}) error {
+func (productCard *ProductCard) update(input map[string]interface{}, preloads []string) error {
 
 	delete(input,"images")
 	delete(input,"products")

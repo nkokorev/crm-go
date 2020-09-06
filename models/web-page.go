@@ -102,7 +102,7 @@ func (webPage WebPage) create() (Entity, error)  {
 		return nil, err
 	}
 
-	err := en.GetPreloadDb(false,false, true).First(&en, en.Id).Error
+	err := en.GetPreloadDb(false, false, nil).First(&en, en.Id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -111,30 +111,30 @@ func (webPage WebPage) create() (Entity, error)  {
 
 	return newItem, nil
 }
-func (WebPage) get(id uint) (Entity, error) {
+func (WebPage) get(id uint, preloads []string) (Entity, error) {
 
 	var webPage WebPage
 
-	err := webPage.GetPreloadDb(false,false,true).First(&webPage, id).Error
+	err := webPage.GetPreloadDb(false,false,preloads).First(&webPage, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &webPage, nil
 }
-func (webPage *WebPage) load() error {
+func (webPage *WebPage) load(preloads []string) error {
 
-	err := webPage.GetPreloadDb(false,false,true).First(webPage, webPage.Id).Error
+	err := webPage.GetPreloadDb(false,false,preloads).First(webPage, webPage.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (webPage *WebPage) loadByPublicId() error {
+func (webPage *WebPage) loadByPublicId(preloads []string) error {
 	
 	if webPage.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить WebPage - не указан  Id"}
 	}
-	if err := webPage.GetPreloadDb(false,false, true).First(webPage, "account_id = ? AND public_id = ?", webPage.AccountId, webPage.PublicId).Error; err != nil {
+	if err := webPage.GetPreloadDb(false,false, preloads).First(webPage, "account_id = ? AND public_id = ?", webPage.AccountId, webPage.PublicId).Error; err != nil {
 		return err
 	}
 
@@ -153,7 +153,7 @@ func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 		search = "%"+search+"%"
 
-		err := (&WebPage{}).GetPreloadDb(true,false,true).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&WebPage{}).GetPreloadDb(false,false,preloads).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailCampaigns, "label ILIKE ? OR code ILIKE ? OR route_name ILIKE ? OR icon_name ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -170,7 +170,7 @@ func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 		
-		err := (&WebPage{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&WebPage{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailCampaigns).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -191,7 +191,7 @@ func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	return entities, total, nil
 }
-func (webPage *WebPage) update(input map[string]interface{}) error {
+func (webPage *WebPage) update(input map[string]interface{}, preloads []string) error {
 
 	delete(input,"image")
 	utils.FixInputHiddenVars(&input)
@@ -200,12 +200,12 @@ func (webPage *WebPage) update(input map[string]interface{}) error {
 	}
 	input = utils.FixInputDataTimeVars(input,[]string{"expired_at"})
 
-	if err := webPage.GetPreloadDb(true,false,false).Where(" id = ?", webPage.Id).
+	if err := webPage.GetPreloadDb(false,false,nil).Where(" id = ?", webPage.Id).
 		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
 		return err
 	}
 
-	err := webPage.GetPreloadDb(true,false,false).First(webPage, webPage.Id).Error
+	err := webPage.GetPreloadDb(false,false,preloads).First(webPage, webPage.Id).Error
 	if err != nil {
 		return err
 	}
@@ -213,31 +213,43 @@ func (webPage *WebPage) update(input map[string]interface{}) error {
 	return nil
 }
 func (webPage *WebPage) delete () error {
-	return webPage.GetPreloadDb(true,true,false).Where("id = ?", webPage.Id).Delete(webPage).Error
+	return webPage.GetPreloadDb(true,false,nil).Where("id = ?", webPage.Id).Delete(webPage).Error
 }
 // ######### END CRUD Functions ############
 
-func (webPage *WebPage) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (webPage *WebPage) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
-		_db = _db.Model(webPage)
+		_db = _db.Model(&webPage)
 	} else {
 		_db = _db.Model(&WebPage{})
 	}
 
-	if preload {
-		// return _db.Preload("EmailTemplate").Preload("EmailBox").Preload("UsersSegment")
-		// return _db
-		return _db.Preload("Image", func(db *gorm.DB) *gorm.DB {
+	if autoPreload {
+		// return db.Preload(clause.Associations)
+		return db.Preload("ProductCards").Preload("Image", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		})
+
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Image","ProductCards"})
+
+		for _,v := range allowed {
+			if v == "Image" {
+				_db.Preload("Image", func(db *gorm.DB) *gorm.DB {
+					return db.Select(Storage{}.SelectArrayWithoutDataURL())
+				})
+			} else {
+				_db.Preload(v)
+			}
+
+		}
 		return _db
 	}
+
 }
 
 func (webPage WebPage) CreateChild(wp WebPage) (Entity, error){

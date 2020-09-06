@@ -74,7 +74,7 @@ func (orderChannel OrderChannel) create() (Entity, error)  {
 	return entity, nil
 }
 
-func (OrderChannel) get(id uint) (Entity, error) {
+func (OrderChannel) get(id uint, preloads []string) (Entity, error) {
 
 	var orderChannel OrderChannel
 
@@ -84,7 +84,7 @@ func (OrderChannel) get(id uint) (Entity, error) {
 	}
 	return &orderChannel, nil
 }
-func (orderChannel *OrderChannel) load() error {
+func (orderChannel *OrderChannel) load(preloads []string) error {
 	if orderChannel.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить OrderChannel - не указан  Id"}
 	}
@@ -95,7 +95,7 @@ func (orderChannel *OrderChannel) load() error {
 	}
 	return nil
 }
-func (*OrderChannel) loadByPublicId() error {
+func (*OrderChannel) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
@@ -159,7 +159,7 @@ func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy,
 	return entities, total, nil
 }
 
-func (orderChannel *OrderChannel) update(input map[string]interface{}) error {
+func (orderChannel *OrderChannel) update(input map[string]interface{}, preloads []string) error {
 	return db.Set("gorm:association_autoupdate", false).
 		Model(orderChannel).Where("id", orderChannel.Id).Omit("id", "account_id").Updates(input).Error
 }

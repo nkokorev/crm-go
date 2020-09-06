@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"time"
 )
@@ -48,41 +49,69 @@ func (comment *Comment) BeforeCreate(tx *gorm.DB) error {
 	comment.Id = 0
 	return nil
 }
+func (comment *Comment) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(&comment)
+	} else {
+		_db = _db.Model(&Comment{})
+	}
+
+	if autoPreload {
+		return db.Preload(clause.Associations)
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"User"})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
+		return _db
+	}
+
+}
 
 // ######### CRUD Functions ############
 func (comment Comment) create() (Entity, error)  {
-	_orderChannel := comment
-	if err := db.Create(&_orderChannel).Error; err != nil {
+	_comment := comment
+	if err := db.Create(&_comment).Error; err != nil {
 		return nil, err
 	}
 
-	var entity Entity = &_orderChannel
+	if err := _comment.GetPreloadDb(false,true, nil).First(&_comment,_comment.Id).Error; err != nil {
+		return nil, err
+	}
+
+	var entity Entity = &_comment
 
 	return entity, nil
 }
 
-func (Comment) get(id uint) (Entity, error) {
+func (Comment) get(id uint, preloads []string) (Entity, error) {
 
 	var comment Comment
 
-	err := db.First(&comment, id).Error
+	err := (&Comment{}).GetPreloadDb(false,false,preloads).First(&comment, id).Error
 	if err != nil {
 		return nil, err
 	}
+	
 	return &comment, nil
 }
-func (comment *Comment) load() error {
+func (comment *Comment) load(preloads []string) error {
 	if comment.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить Comment - не указан  Id"}
 	}
 
-	err := db.First(comment, comment.Id).Error
+	err := (&Comment{}).GetPreloadDb(false,false,preloads).First(comment, comment.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (*Comment) loadByPublicId() error {
+func (*Comment) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
@@ -102,14 +131,14 @@ func (Comment) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Comment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&Comment{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&comments, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Comment{}).
+		err =(&Comment{}).GetPreloadDb(false,false,nil).
 			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -118,14 +147,15 @@ func (Comment) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 
-		err := db.Model(&Comment{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&Comment{}).GetPreloadDb(false,false,preloads).
+			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&comments).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Comment{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&Comment{}).GetPreloadDb(false,false,nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -140,13 +170,27 @@ func (Comment) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 	return entities, total, nil
 }
 
-func (comment *Comment) update(input map[string]interface{}) error {
-	return db.Set("gorm:association_autoupdate", false).
-		Model(comment).Omit("id", "account_id").Updates(input).Error
+func (comment *Comment) update(input map[string]interface{}, preloads []string) error {
+
+	delete(input,"user")
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"user_id"}); err != nil {
+		return err
+	}
+
+	if err := comment.GetPreloadDb(false, false, nil).Where("id = ?", comment.Id).Omit("id", "account_id").Updates(input).
+		Error; err != nil {return err}
+
+	err := comment.GetPreloadDb(false,false, preloads).First(comment, comment.Id).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (comment *Comment) delete () error {
-	return db.Model(Comment{}).Where("id = ?", comment.Id).Delete(comment).Error
+	return comment.GetPreloadDb(true,false,nil).Where("id = ?", comment.Id).Delete(comment).Error
 }
 // ######### END CRUD Functions ############
 

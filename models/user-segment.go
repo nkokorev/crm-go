@@ -74,25 +74,25 @@ func (usersSegment UsersSegment) create() (Entity, error)  {
 
 	return newItem, nil
 }
-func (UsersSegment) get(id uint) (Entity, error) {
+func (UsersSegment) get(id uint, preloads []string) (Entity, error) {
 
 	var usersSegment UsersSegment
 
-	err := usersSegment.GetPreloadDb(false,false,true).First(&usersSegment, id).Error
+	err := usersSegment.GetPreloadDb(false,false,preloads).First(&usersSegment, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &usersSegment, nil
 }
-func (usersSegment *UsersSegment) load() error {
+func (usersSegment *UsersSegment) load(preloads []string) error {
 
-	err := usersSegment.GetPreloadDb(false,false,true).First(usersSegment, usersSegment.Id).Error
+	err := usersSegment.GetPreloadDb(false,false,preloads).First(usersSegment, usersSegment.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (usersSegment *UsersSegment) loadByPublicId() error {
+func (usersSegment *UsersSegment) loadByPublicId(preloads []string) error {
 
 	if usersSegment.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить UsersSegment - не указан  Id"}
@@ -156,7 +156,7 @@ func (UsersSegment) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 	return entities, total, nil
 }
-func (usersSegment *UsersSegment) update(input map[string]interface{}) error {
+func (usersSegment *UsersSegment) update(input map[string]interface{}, preloads []string) error {
 
 	if err := usersSegment.GetPreloadDb(true,false,false).Where(" id = ?", usersSegment.Id).
 		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {

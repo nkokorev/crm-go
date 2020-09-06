@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"time"
 )
@@ -90,45 +91,52 @@ func (deliveryCourier *DeliveryCourier) AfterFind(tx *gorm.DB) (err error) {
 
 func (deliveryCourier DeliveryCourier) create() (Entity, error)  {
 
-	dc := deliveryCourier
-	if err := db.Create(&dc).Error; err != nil {
+	_deliveryCourier := deliveryCourier
+	if err := db.Create(&_deliveryCourier).Error; err != nil {
 		return nil, err
 	}
-	var entity Entity = &dc
 
+	if err := _deliveryCourier.GetPreloadDb(false,true, nil).First(&_deliveryCourier,_deliveryCourier.Id).Error; err != nil {
+		return nil, err
+	}
+
+	var entity Entity = &_deliveryCourier
 
 	return entity, nil
 }
-func (DeliveryCourier) get(id uint) (Entity, error) {
+func (DeliveryCourier) get(id uint, preloads []string) (Entity, error) {
 
 	var deliveryCourier DeliveryCourier
 
-	err := db.Preload("PaymentSubject").Preload("VatCode").First(&deliveryCourier, id).Error
+	err := deliveryCourier.GetPreloadDb(false, false, preloads).First(&deliveryCourier, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &deliveryCourier, nil
 }
-func (deliveryCourier *DeliveryCourier) load() error {
+func (deliveryCourier *DeliveryCourier) load(preloads []string) error {
 
-	err := db.Preload("PaymentSubject").Preload("VatCode").First(deliveryCourier, deliveryCourier.Id).Error
+	if deliveryCourier.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить DeliveryCourier - не указан  Id"}
+	}
+
+	err := deliveryCourier.GetPreloadDb(false, false, preloads).First(deliveryCourier, deliveryCourier.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (deliveryCourier *DeliveryCourier) loadByPublicId() error {
+func (deliveryCourier *DeliveryCourier) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 func (DeliveryCourier) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-
-	return DeliveryCourier{}.getPaginationList(accountId, 0, 100, sortBy, "", nil,preload)
+	return DeliveryCourier{}.getPaginationList(accountId, 0, 25, sortBy, "", nil,preload)
 }
 func (DeliveryCourier) getListByShop(accountId, websiteId uint) ([]DeliveryCourier, error) {
 
 	deliveryCouriers := make([]DeliveryCourier,0)
 
-	err := DeliveryCourier{}.GetPreloadDb(false,false, true).
+	err := (&CartItem{}).GetPreloadDb(false, true, nil).
 		Limit(100).Where( "account_id = ? AND web_site_id = ?", accountId, websiteId).
 		Find(&deliveryCouriers).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
@@ -149,14 +157,14 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 		// string pattern
 		search = "%"+search+"%"
 
-		err := DeliveryCourier{}.GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&CartItem{}).GetPreloadDb(false, true, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryCouriers, "name ILIKE ? OR code ILIKE ? OR price ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&DeliveryCourier{}).
+		err = (&CartItem{}).GetPreloadDb(false, true, nil).
 			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR price ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -165,14 +173,14 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 
 	} else {
 
-		err := DeliveryCourier{}.GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&CartItem{}).GetPreloadDb(false, true, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryCouriers).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&DeliveryCourier{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&CartItem{}).GetPreloadDb(false, true, nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -186,7 +194,7 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 
 	return entities, total, nil
 }
-func (deliveryCourier *DeliveryCourier) update(input map[string]interface{}) error {
+func (deliveryCourier *DeliveryCourier) update(input map[string]interface{}, preloads []string) error {
 	delete(input,"payment_subject")
 	delete(input,"vat_code")
 	delete(input,"payment_methods")
@@ -195,11 +203,18 @@ func (deliveryCourier *DeliveryCourier) update(input map[string]interface{}) err
 		return err
 	}
 
-	return deliveryCourier.GetPreloadDb(true,false,false).Where("id = ?", deliveryCourier.Id).
-		Omit("id", "account_id").Updates(input).Error
+	if err := deliveryCourier.GetPreloadDb(false, false, nil).Where("id = ?", deliveryCourier.Id).Omit("id", "account_id").Updates(input).
+		Error; err != nil {return err}
+
+	err := deliveryCourier.GetPreloadDb(false,false, preloads).First(deliveryCourier, deliveryCourier.Id).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 func (deliveryCourier *DeliveryCourier) delete () error {
-	return db.Model(DeliveryCourier{}).Where("id = ?", deliveryCourier.Id).Delete(deliveryCourier).Error
+	return deliveryCourier.GetPreloadDb(true,false,nil).Where("id = ?", deliveryCourier.Id).Delete(deliveryCourier).Error
 }
 
 // ########## End of CRUD Entity interface ###########
@@ -257,21 +272,25 @@ func (deliveryCourier DeliveryCourier) CreateDeliveryOrder(deliveryData Delivery
 
 }
 
-func (deliveryCourier DeliveryCourier) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (deliveryCourier *DeliveryCourier) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
 		_db = _db.Model(&deliveryCourier)
 	} else {
 		_db = _db.Model(&DeliveryCourier{})
 	}
 
-	if preload {
-		return _db.Preload("PaymentSubject").Preload("VatCode")
+	if autoPreload {
+		return db.Preload(clause.Associations)
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"PaymentSubject","VatCode"})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
 		return _db
 	}
 }

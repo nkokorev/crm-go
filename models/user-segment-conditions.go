@@ -77,25 +77,25 @@ func (userSegmentCondition UserSegmentCondition) create() (Entity, error)  {
 	return newItem, nil
 }
 
-func (UserSegmentCondition) get(id uint) (Entity, error) {
+func (UserSegmentCondition) get(id uint, preloads []string) (Entity, error) {
 
 	var userSegmentCondition UserSegmentCondition
 
-	err := userSegmentCondition.GetPreloadDb(false,false,true).First(&userSegmentCondition, id).Error
+	err := userSegmentCondition.GetPreloadDb(false,false,preloads).First(&userSegmentCondition, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &userSegmentCondition, nil
 }
-func (userSegmentCondition *UserSegmentCondition) load() error {
+func (userSegmentCondition *UserSegmentCondition) load(preloads []string) error {
 
-	err := userSegmentCondition.GetPreloadDb(false,false,true).First(userSegmentCondition, userSegmentCondition.Id).Error
+	err := userSegmentCondition.GetPreloadDb(false,false,preloads).First(userSegmentCondition, userSegmentCondition.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (userSegmentCondition *UserSegmentCondition) loadByPublicId() error {
+func (userSegmentCondition *UserSegmentCondition) loadByPublicId(preloads []string) error {
 
 	if userSegmentCondition.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить UserSegmentCondition - не указан  Id"}
@@ -161,7 +161,7 @@ func (UserSegmentCondition) getPaginationList(accountId uint, offset, limit int,
 	return entities, total, nil
 }
 
-func (userSegmentCondition *UserSegmentCondition) update(input map[string]interface{}) error {
+func (userSegmentCondition *UserSegmentCondition) update(input map[string]interface{}, preloads []string) error {
 
 	if err := userSegmentCondition.GetPreloadDb(true,false,false).Where(" id = ?", userSegmentCondition.Id).
 		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {

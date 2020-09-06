@@ -97,7 +97,7 @@ func (orderStatus OrderStatus) create() (Entity, error)  {
 	return newItem, nil
 }
 
-func (OrderStatus) get(id uint) (Entity, error) {
+func (OrderStatus) get(id uint, preloads []string) (Entity, error) {
 
 	var orderStatus OrderStatus
 
@@ -107,7 +107,7 @@ func (OrderStatus) get(id uint) (Entity, error) {
 	}
 	return &orderStatus, nil
 }
-func (orderStatus *OrderStatus) load() error {
+func (orderStatus *OrderStatus) load(preloads []string) error {
 
 	err := db.First(orderStatus, orderStatus.Id).Error
 	if err != nil {
@@ -115,7 +115,7 @@ func (orderStatus *OrderStatus) load() error {
 	}
 	return nil
 }
-func (*OrderStatus) loadByPublicId() error {
+func (*OrderStatus) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
 
@@ -171,7 +171,7 @@ func (OrderStatus) getPaginationList(accountId uint, offset, limit int, sortBy, 
 	return entities, total, nil
 }
 
-func (orderStatus *OrderStatus) update(input map[string]interface{}) error {
+func (orderStatus *OrderStatus) update(input map[string]interface{}, preloads []string) error {
 
 	// work!!!
 	if err := db.Set("gorm:association_autoupdate", false).Model(orderStatus).Omit("id", "account_id","created_at").

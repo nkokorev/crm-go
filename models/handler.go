@@ -84,7 +84,7 @@ func (eventListener EventListener) EmailNotificationRun(e event.Event) error {
 	}
 
 	var en EmailNotification
-	if err := account.LoadEntity(&en, eventListener.EntityId); err != nil {
+	if err := account.LoadEntity(&en, eventListener.EntityId,nil); err != nil {
 		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить Email Notification id = %v, уведомление не найдено!", eventListener.EntityId)}
 	}
 
@@ -113,7 +113,7 @@ func (eventListener EventListener) EmailQueueRun(e event.Event) error {
 	}
 
 	var emailQueue EmailQueue
-	if err := account.LoadEntity(&emailQueue, eventListener.EntityId); err != nil {
+	if err := account.LoadEntity(&emailQueue, eventListener.EntityId,nil); err != nil {
 		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить EmailQueue id = %v, не загружается объект: %v.", eventListener.EntityId, err)}
 	}
 
@@ -153,7 +153,7 @@ func (eventListener EventListener) WebHookCall(e event.Event) error {
 	}
 
 	var webHook WebHook
-	if err := account.LoadEntity(&webHook, eventListener.EntityId); err != nil {
+	if err := account.LoadEntity(&webHook, eventListener.EntityId,nil); err != nil {
 		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить WebHook id = %v, не загружается webHook.", eventListener.EntityId)}
 	}
 
@@ -201,7 +201,7 @@ func (eventListener EventListener) uploadEntitiesData(event *event.Event) {
 
 	if productCardId, ok := e.Get("productCardId").(uint); ok {
 		var productCard ProductCard
-		err := account.LoadEntity(&productCard, productCardId)
+		err := account.LoadEntity(&productCard, productCardId,nil)
 		if err == nil {
 			e.Add("productCardId", productCardId)
 			e.Add("ProductCard", productCard)
@@ -210,7 +210,7 @@ func (eventListener EventListener) uploadEntitiesData(event *event.Event) {
 
 	if orderId, ok := e.Get("orderId").(uint); ok {
 		var order Order
-		err := account.LoadEntity(&order, orderId)
+		err := account.LoadEntity(&order, orderId,nil)
 		if err == nil {
 			e.Add("orderId", orderId)
 			e.Add("Order", order)
@@ -236,7 +236,7 @@ func (eventListener EventListener) uploadEntitiesData(event *event.Event) {
 
 	if deliveryOrderId, ok := e.Get("deliveryOrderId").(uint); ok {
 		var deliveryOrder DeliveryOrder
-		err := account.LoadEntity(&deliveryOrder, deliveryOrderId)
+		err := account.LoadEntity(&deliveryOrder, deliveryOrderId,nil)
 		if err == nil {
 			e.Add("deliveryOrderId", deliveryOrderId)
 			e.Add("DeliveryOrder", deliveryOrder)
@@ -245,7 +245,7 @@ func (eventListener EventListener) uploadEntitiesData(event *event.Event) {
 
 	if paymentId, ok := e.Get("paymentId").(uint); ok {
 		var payment DeliveryOrder
-		err := account.LoadEntity(&payment, paymentId)
+		err := account.LoadEntity(&payment, paymentId,nil)
 		if err == nil {
 			e.Add("paymentId", paymentId)
 			e.Add("Payment", payment)
