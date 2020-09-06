@@ -5,7 +5,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -22,7 +21,7 @@ import (
 
 type Product struct {
 	// Id    		uint   `json:"id" gorm:"primaryKey"`
-	Id        	uint 	`json:"id" gorm:"primarykey"`
+	Id        	uint 	`json:"id" gorm:"primaryKey"`
 	// gorm.Model
 	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
@@ -49,7 +48,7 @@ type Product struct {
 	VatCode		VatCode	`json:"vat_code"`
 
 	UnitMeasurementId 		uint	`json:"unit_measurement_id" gorm:"type:int;default:1;"` // тип измерения
-	UnitMeasurement 		UnitMeasurement // Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
+	UnitMeasurement 		UnitMeasurement `json:"unit_measurement"`// Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 	
 	ShortDescription 	string 	`json:"short_description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 	Description 		string 	`json:"description" gorm:"type:text;"` // pgsql: text
@@ -106,231 +105,169 @@ func (product *Product) BeforeCreate(tx *gorm.DB) error {
 
 	return nil
 }
+func (product *Product) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(&product)
+	} else {
+		_db = _db.Model(&Product{})
+	}
+
+	if autoPreload {
+		return db.Preload("PaymentSubject","VatCode","UnitMeasurement","Account").Preload("Images", func(db *gorm.DB) *gorm.DB {
+			return db.Select(Storage{}.SelectArrayWithoutDataURL())
+		})
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"PaymentSubject","VatCode","UnitMeasurement","Images","Account"})
+
+		for _,v := range allowed {
+			if v == "Images" {
+				_db.Preload("Images", func(db *gorm.DB) *gorm.DB {
+					return db.Select(Storage{}.SelectArrayWithoutDataURL())
+				})
+			} else {
+				_db.Preload(v)
+			}
+
+		}
+		return _db
+	}
+
+}
 
 // ######### INTERFACE EVENT Functions ############
-func (product Product) GetId() uint {
-	return product.Id
-}
-// ######### END OF INTERFAe Functions ############
+// ############# Entity interface #############
+func (product Product) GetId() uint { return product.Id }
+func (product *Product) setId(id uint) { product.Id = id }
+func (product *Product) setPublicId(publicId uint) {product.PublicId = publicId }
+func (product Product) GetAccountId() uint { return product.AccountId }
+func (product *Product) setAccountId(id uint) { product.AccountId = id }
+func (product Product) SystemEntity() bool { return false }
+// ############# End of Entity interface #############
 
 // ######### CRUD Functions ############
-func (product Product) create() (*Product, error)  {
-	var newProduct = product
-	if err := db.Create(&newProduct).Preload("VatCode").Preload("PaymentSubject").First(&newProduct).Error; err != nil { return nil, err }
+func (product Product) create() (Entity, error)  {
 
-	if err := db.Where("id = ?", newProduct.Id).First(&newProduct).Error;err != nil {
+	_item := product
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	event.AsyncFire(Event{}.ProductCreated(newProduct.AccountId, newProduct.Id))
-	return &newProduct, nil
-}
-func (Product) get(id uint) (*Product, error) {
-
-	product := Product{}
-
-	//if err := db.Model(&product).Preload("ProductCards").First(&product, id).Error; err != nil {
-	//	return nil, err
-	//}
-	if err := db.Model(&product).Preload("VatCode").Preload("PaymentSubject").Preload("Images", func(db *gorm.DB) *gorm.DB {
-		return db.Select(Storage{}.SelectArrayWithoutDataURL())
-	}).
-		First(&product, id).Error; err != nil {
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
 		return nil, err
 	}
 
-	return &product, nil
+	var entity Entity = &_item
+
+	return entity, nil
 }
-func (Product) getList(accountId uint) ([]Product, error) {
+func (Product) get(id uint, preloads []string) (Entity, error) {
+	var item Product
 
-	products := make([]Product,0)
-
-	err := db.Model(&Product{}).Preload("PaymentSubject").Preload("ProductCards").Find(&products, "account_id = ?", accountId).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
+	err := item.GetPreloadDb(false, false, preloads).First(&item, id).Error
+	if err != nil {
 		return nil, err
 	}
-
-	return products, nil
+	return &item, nil
 }
-func (product *Product) update(input map[string]interface{}, preloads []string) error {
-	// Приводим в опрядок
-	// input = utils.FixJSONB_String(input, []string{"attributes"})
+func (product *Product) load(preloads []string) error {
+	if product.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить Product - не указан  Id"}
+	}
 
-	delete(input, "PaymentSubject")
-	delete(input, "UnitMeasurement")
-	delete(input, "Images")
-	delete(input, "ProductCards")
-
-	input = utils.FixJSONB_MapString(input, []string{"attributes"})
-	
-	if err := db.Set("gorm:association_autoupdate", false).
-		Model(&Product{}).Where("id = ?", product.Id).Omit("id", "account_id").Updates(input).Error; err != nil {
+	err := product.GetPreloadDb(false, false, preloads).First(product, product.Id).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (product *Product) loadByPublicId(preloads []string) error {
+	if product.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить Product - не указан  Id"}
+	}
+	if err := product.GetPreloadDb(false,false, preloads).First(product, "account_id = ? AND public_id = ?", product.AccountId, product.PublicId).Error; err != nil {
 		return err
 	}
 
-	event.AsyncFire(Event{}.ProductUpdated(product.AccountId, product.Id))
-
 	return nil
 }
-func (product *Product) delete () error {
-	if err := db.Model(Product{}).Where("id = ?", product.Id).Delete(product).Error; err != nil {
-		return err
-	}
-	
-	event.AsyncFire(Event{}.ProductDeleted(product.AccountId, product.Id))
-
-	return nil
+func (Product) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
+	return Product{}.getPaginationList(accountId, 0,25,sortBy,"",nil,preload)
 }
-// ######### END CRUD Functions ############
-
-// ######### ACCOUNT Functions ############
-func (account Account) CreateProduct(input Product) (*Product, error) {
-	input.AccountId = account.Id
-	
-	if input.ExistSKU() {
-		return nil, utils.Error{Message: "Повторение данных SKU", Errors: map[string]interface{}{"sku":"Товар с таким SKU уже есть"}}
-	}
-	if input.ExistModel() {
-		return nil, utils.Error{Message: "Повторение данных", Errors: map[string]interface{}{"model":"Товар с такой моделью уже есть"}}
-	}
-
-	product, err := input.create()
-	if err != nil {
-		return nil, err
-	}
-
-	return product, nil
-}
-func (account Account) GetProduct(productId uint) (*Product, error) {
-	product, err := Product{}.get(productId)
-	if err != nil {
-		return nil, err
-	}
-
-	if account.Id != product.AccountId {
-		return nil, utils.Error{Message: "Товар принадлежит другому аккаунту"}
-	}
-
-	return product, nil
-}
-func (account Account) GetProductByPublicId(publicId uint) (*Product, error) {
-	var product Product
-	err := db.Model(&product).First(&product, "public_id = ?", publicId).Error
-	if err != nil {
-		return nil, err
-	}
-
-	if account.Id != product.AccountId {
-		return nil, utils.Error{Message: "Товар принадлежит другому аккаунту"}
-	}
-
-	return &product, nil
-}
-func (account Account) GetProductListPagination(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}) ([]Product, int64, error) {
+func (Product) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	products := make([]Product,0)
 	var total int64
 
-	// if need to search
 	if len(search) > 0 {
 
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&Product{}).
-			Preload("VatCode").
-			Preload("PaymentSubject").
-			Preload("ProductCards").
-			Preload("Images", func(db *gorm.DB) *gorm.DB {
-				return db.Select(Storage{}.SelectArrayWithoutDataURL())
-			}).
-			Limit(limit).Offset(offset).Order(sortBy).
-			Where("account_id = ?", account.Id).
+		err := (&Product{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&products, "name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?", search,search,search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Product{}).
-			Where("account_id = ? AND name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?", account.Id, search,search,search,search,search,search).
+		err = (&Product{}).GetPreloadDb(false, false, nil).
+			Where("account_id = ? AND name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?", accountId, search,search,search,search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
 
 	} else {
-		if offset < 0 || limit < 0 {
-			return nil, 0, errors.New("Offset or limit is wrong")
-		}
 
-		err := db.Model(&Product{}).
-			Preload("VatCode").
-			Preload("PaymentSubject").
-			Preload("ProductCards").
-			Preload("Images", func(db *gorm.DB) *gorm.DB {
-				return db.Select(Storage{}.SelectArrayWithoutDataURL())
-			}).
-			Limit(limit).Offset(offset).Order(sortBy).
-			Find(&products, "account_id = ?", account.Id).Error
-
+		err := (&Product{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Find(&products).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&Product{}).Where("account_id = ?", account.Id).Count(&total).Error
+		err = (&Product{}).GetPreloadDb(false, false, nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
 	}
 
-	return products, total, nil
+	entities := make([]Entity,len(products))
+	for i := range products {
+		entities[i] = &products[i]
+	}
+
+	return entities, total, nil
 }
-func (account Account) UpdateProduct(productId uint, input map[string]interface{}) (*Product, error) {
-
-	product, err := account.GetProduct(productId)
-	if err != nil {
-		return nil, err
+func (product *Product) update(input map[string]interface{}, preloads []string) error {
+	delete(input,"payment_subject")
+	delete(input,"unit_measurement")
+	delete(input,"images")
+	delete(input,"account")
+	delete(input,"product_cards")
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","payment_subject_id","vat_code_id","unit_measurement_id"}); err != nil {
+		return err
 	}
 
-	if account.Id != product.AccountId {
-		return nil, utils.Error{Message: "Товар принадлежит другому аккаунту"}
-	}
+	if err := product.GetPreloadDb(false, false, nil).Where("id = ?", product.Id).Omit("id", "account_id").Updates(input).
+		Error; err != nil {return err}
 
-	// parse attrs
-	jsonInput, err := json.Marshal(input["attributes"])
-	if err != nil {
-		log.Fatal("Eroror json: ", err)
-	}
-	product.Attributes = jsonInput
-
-	err = product.update(input)
-	if err != nil {
-		return nil, err
-	}
-
-	// todo: костыль вместо евента
-	// go account.CallWebHookIfExist(EventProductUpdated, product)
-
-	return product, err
-
-}
-func (account Account) DeleteProduct(productId uint) error {
-
-	// включает в себя проверку принадлежности к аккаунту
-	product, err := account.GetProduct(productId)
+	err := product.GetPreloadDb(false,false, preloads).First(product, product.Id).Error
 	if err != nil {
 		return err
 	}
 
-	err = product.delete()
-	if err !=nil { return err }
-
 	return nil
 }
-// ######### END OF ACCOUNT Functions ############
-
+func (product *Product) delete () error {
+	return product.GetPreloadDb(true,false,nil).Where("id = ?", product.Id).Delete(product).Error
+}
+// ######### END CRUD Functions ############
 
 // ########## SELF FUNCTIONAL ############
 func (product Product) ExistSKU() bool {

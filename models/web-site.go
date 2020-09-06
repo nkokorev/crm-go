@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
@@ -67,7 +66,7 @@ func (webSite WebSite) SystemEntity() bool { return false }
 func (webSite *WebSite) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
 
 	_db := db
-	
+
 	if getModel {
 		_db = _db.Model(&webSite)
 	} else {
@@ -79,7 +78,7 @@ func (webSite *WebSite) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 	} else {
 
 		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"EmailBoxes","WebPages"})
-		
+
 		for _,v := range allowed {
 			_db.Preload(v)
 		}
@@ -87,6 +86,8 @@ func (webSite *WebSite) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 	}
 
 }
+
+
 func (webSite *WebSite) BeforeCreate(tx *gorm.DB) error {
 	webSite.Id = 0
 
@@ -239,11 +240,14 @@ func (webSite *WebSite) update(input map[string]interface{}, preloads []string) 
 		return err
 	}
 
-	if err := webSite.GetPreloadDb(false,false,nil).
-		Where("id = ?", webSite.Id).Omit("id", "account_id","public_id").Updates(input).Error;err != nil {
-		fmt.Println(err)
+	if err := webSite.GetPreloadDb(false, false, nil).Where("id = ?", webSite.Id).Omit("id", "account_id","public_id").Updates(input).
+		Error; err != nil {return err}
+
+	err := webSite.GetPreloadDb(false,false, preloads).First(webSite, webSite.Id).Error
+	if err != nil {
 		return err
 	}
+
 	return nil
 }
 func (webSite *WebSite) delete () error {
@@ -253,16 +257,6 @@ func (webSite *WebSite) delete () error {
 
 // ######### ACCOUNT Functions ############
 
-/*func (account Account) ExistProductGroups(groupId uint) bool {
-	if groupId < 1 {
-		return false
-	}
-
-	if err := db.Model(&ProductGroup{}).Where("account_id = ? AND id = ?", account.Id, groupId).First(&ProductGroup{}).Error;err != nil {
-		return false
-	}
-	return true
-}*/
 func (webSite WebSite) CreatePage(input WebPage) (*WebPage, error) {
 	input.AccountId = webSite.AccountId
 	input.WebSiteId = &webSite.Id
@@ -281,16 +275,6 @@ func (webSite WebSite) CreatePage(input WebPage) (*WebPage, error) {
 
 	return page, nil
 }
-/*func (webSite WebSite) CreateProductCard(input ProductCard) (*ProductCard, error) {
-	input.AccountId = webSite.AccountId
-	input.WebSiteId = webSite.Id
-
-	card, err := input.create(); if err != nil {
-		return nil, err
-	}
-
-	return card, nil
-}*/
 // ######### END OF ACCOUNT Functions ############
 
 // ######### SHOP PRODUCT Functions ############
@@ -305,9 +289,14 @@ func (webSite WebSite) CreateProduct(input Product, card ProductCard) (*Product,
 	}
 
 	// Создаем продукт
-	product, err := input.create()
+	_p, err := input.create()
 	if err != nil {
 		return nil, err
+	}
+
+	product, ok := _p.(*Product)
+	if !ok {
+		return nil, utils.Error{Message: "Ошибка преобразования Product"}
 	}
 
 	// Добавляем продукт в карточку товара
@@ -320,9 +309,14 @@ func (webSite WebSite) CreateProduct(input Product, card ProductCard) (*Product,
 func (webSite WebSite) GetProduct(productId uint) (*Product, error) {
 
 	// Создаем продукт
-	product, err := Product{}.get(productId)
+	_p, err := Product{}.get(productId, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	product, ok := _p.(*Product)
+	if !ok {
+		return nil, utils.Error{Message: "Ошибка преобразования Product"}
 	}
 
 	if product.AccountId != webSite.AccountId {
@@ -343,9 +337,14 @@ func (webSite WebSite) CreateProductWithProductCard(input Product, newCard Produ
 	}
 
 	// Создаем продукт
-	product, err := input.create()
+	_p, err := input.create()
 	if err != nil {
 		return nil, err
+	}
+
+	product, ok := _p.(*Product)
+	if !ok {
+		return nil, utils.Error{Message: "Ошибка преобразования Product"}
 	}
 
 	// Создаем карточку товара
@@ -378,7 +377,7 @@ func (webSite WebSite) CreateProductWithProductCard(input Product, newCard Produ
 /////////////////////////
 
 func (webSite WebSite) AppendDeliveryMethod(entity Entity) error {
-	return entity.update(map[string]interface{}{"web_site_id":webSite.Id})
+	return entity.update(map[string]interface{}{"web_site_id":webSite.Id}, nil)
 }
 
 // todo: пофиксить выпуск публичного ключа через UI / API
@@ -522,7 +521,7 @@ func (webSite WebSite) GetDelivery(code string, methodId uint) (Delivery, error)
 
 	return delivery, nil
 }
-// 
+
 func (webSite WebSite) UpdateDelivery(input map[string]interface{}) (Delivery, error) {
 
 	// Парсим тип рассылки и ее Id
@@ -541,7 +540,7 @@ func (webSite WebSite) UpdateDelivery(input map[string]interface{}) (Delivery, e
 		return nil, utils.Error{Message: "Метод доставки принадлежит другому аккаунту!"}
 	}
 
-	err = delivery.update(input)
+	err = delivery.update(input,nil)
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"time"
 )
@@ -61,7 +62,7 @@ func (TaskScheduler) SystemEntity() bool { return false }
 // ############# End Entity interface #############
 
 func (TaskScheduler) PgSqlCreate() {
-	db.Migrator().CreateTable(&TaskScheduler{})
+	if err := db.Migrator().CreateTable(&TaskScheduler{}); err != nil {log.Fatal(err)}
 	// db.Model(&TaskScheduler{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	err := db.Exec("ALTER TABLE task_schedulers ADD CONSTRAINT task_schedulers_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {
@@ -93,7 +94,7 @@ func (taskScheduler TaskScheduler) create() (Entity, error)  {
 		return nil, err
 	}
 
-	err := en.GetPreloadDb(false,false, true).First(&en, en.Id).Error
+	err := en.GetPreloadDb(false,true, nil).First(&en, en.Id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +126,7 @@ func (taskScheduler *TaskScheduler) loadByPublicId(preloads []string) error {
 	if taskScheduler.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить TaskScheduler - не указан  Id"}
 	}
-	if err := taskScheduler.GetPreloadDb(false,false, true).First(taskScheduler, "account_id = ? AND public_id = ?", taskScheduler.AccountId, taskScheduler.PublicId).Error; err != nil {
+	if err := taskScheduler.GetPreloadDb(false,false, preloads).First(taskScheduler, "account_id = ? AND public_id = ?", taskScheduler.AccountId, taskScheduler.PublicId).Error; err != nil {
 		return err
 	}
 
@@ -145,7 +146,7 @@ func (TaskScheduler) getPaginationList(accountId uint, offset, limit int, sortBy
 
 		search = "%"+search+"%"
 
-		err := (&TaskScheduler{}).GetPreloadDb(true,false,true).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&TaskScheduler{}).GetPreloadDb(false,false,preloads).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailCampaigns, "name ILIKE ? OR subject ILIKE ? OR preview_text ILIKE ?", search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -162,7 +163,7 @@ func (TaskScheduler) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	} else {
 
-		err := (&TaskScheduler{}).GetPreloadDb(true,false,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&TaskScheduler{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailCampaigns).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -189,12 +190,12 @@ func (taskScheduler *TaskScheduler) update(input map[string]interface{}, preload
 	utils.FixInputHiddenVars(&input)
 	input = utils.FixInputDataTimeVars(input,[]string{"scheduleRun"})
 	
-	if err := taskScheduler.GetPreloadDb(true,false,false).Where(" id = ?", taskScheduler.Id).
+	if err := taskScheduler.GetPreloadDb(false,false,nil).Where(" id = ?", taskScheduler.Id).
 		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
 		return err
 	}
 
-	err := taskScheduler.GetPreloadDb(true,false,false).First(taskScheduler, taskScheduler.Id).Error
+	err := taskScheduler.GetPreloadDb(false,false,preloads).First(taskScheduler, taskScheduler.Id).Error
 	if err != nil {
 		return err
 	}
@@ -203,28 +204,32 @@ func (taskScheduler *TaskScheduler) update(input map[string]interface{}, preload
 }
 
 func (taskScheduler *TaskScheduler) delete () error {
-	return taskScheduler.GetPreloadDb(true,true,false).Where("id = ?", taskScheduler.Id).Delete(taskScheduler).Error
+	return taskScheduler.GetPreloadDb(true,false,nil).Where("id = ?", taskScheduler.Id).Delete(taskScheduler).Error
 }
 // ######### END CRUD Functions ############
 
-func (taskScheduler *TaskScheduler) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (taskScheduler *TaskScheduler) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
-		_db = _db.Model(taskScheduler)
+		_db = _db.Model(&taskScheduler)
 	} else {
 		_db = _db.Model(&TaskScheduler{})
 	}
 
-	if preload {
-		// return _db.Preload("EmailTemplate")
-		return _db
+	if autoPreload {
+		return db.Preload(clause.Associations)
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{""})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
 		return _db
 	}
+
 }
 
 // Выполнения задачи согласно ее контенту
@@ -241,7 +246,7 @@ func (taskScheduler TaskScheduler) Execute() error {
 
 		// 1. Получаем объект кампании
 		var emailCampaign EmailCampaign
-		err := account.LoadEntity(&emailCampaign, taskScheduler.OwnerId)
+		err := account.LoadEntity(&emailCampaign, taskScheduler.OwnerId,nil)
 		if err != nil {
 			log.Printf("Ошибка получения EmailCampaign taskScheduler: %v\n", err)
 			return err
@@ -262,5 +267,5 @@ func (taskScheduler *TaskScheduler) SetStatus(status WorkStatus, ReasonVar... st
 	if len(ReasonVar) > 0 {
 		reason = ReasonVar[0]
 	}
-	return taskScheduler.update(map[string]interface{}{"status":status, "reason":reason})
+	return taskScheduler.update(map[string]interface{}{"status":status, "reason":reason},nil)
 }

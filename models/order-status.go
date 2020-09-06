@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"time"
 )
@@ -39,7 +40,7 @@ func (orderStatus OrderStatus) SystemEntity() bool { return orderStatus.AccountI
 // ############# Entity interface #############
 
 func (OrderStatus) PgSqlCreate() {
-	db.Migrator().CreateTable(&OrderStatus{})
+	if err := db.Migrator().CreateTable(&OrderStatus{}); err != nil {log.Fatal(err)}
 	// db.Model(&OrderStatus{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	err := db.Exec("ALTER TABLE order_statuses ADD CONSTRAINT order_statuses_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {
@@ -81,35 +82,63 @@ func (orderStatus *OrderStatus) BeforeCreate(tx *gorm.DB) error {
 	orderStatus.Id = 0
 	return nil
 }
+func (orderStatus *OrderStatus) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
 
+	_db := db
+
+	if getModel {
+		_db = _db.Model(&orderStatus)
+	} else {
+		_db = _db.Model(&OrderStatus{})
+	}
+
+	if autoPreload {
+		return db.Preload(clause.Associations)
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{""})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
+		return _db
+	}
+
+}
 
 // ######### CRUD Functions ############
 func (orderStatus OrderStatus) create() (Entity, error)  {
 
-	_orderStatus := orderStatus
-
-	if err := db.Create(&_orderStatus).Error; err != nil {
+	_item := orderStatus
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	var newItem Entity = &_orderStatus
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
+		return nil, err
+	}
 
-	return newItem, nil
+	var entity Entity = &_item
+
+	return entity, nil
 }
 
 func (OrderStatus) get(id uint, preloads []string) (Entity, error) {
 
-	var orderStatus OrderStatus
+	var item OrderStatus
 
-	err := db.First(&orderStatus, id).Error
+	err := item.GetPreloadDb(false, false, preloads).First(&item, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &orderStatus, nil
+	return &item, nil
 }
 func (orderStatus *OrderStatus) load(preloads []string) error {
+	if orderStatus.Id < 1 {
+		return utils.Error{Message: "Невозможно загрузить CartItem - не указан  Id"}
+	}
 
-	err := db.First(orderStatus, orderStatus.Id).Error
+	err := orderStatus.GetPreloadDb(false, false, preloads).First(orderStatus, orderStatus.Id).Error
 	if err != nil {
 		return err
 	}
@@ -118,7 +147,6 @@ func (orderStatus *OrderStatus) load(preloads []string) error {
 func (*OrderStatus) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-
 func (OrderStatus) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return OrderStatus{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
 }
@@ -132,7 +160,7 @@ func (OrderStatus) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 		search = "%"+search+"%"
 
-		err := db.Model(&OrderStatus{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id IN (?)", []uint{1, accountId}).
+		err := (&OrderStatus{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id IN (?)", []uint{1, accountId}).
 			Find(&orderStatuses, "name ILIKE ? OR description ILIKE ?", search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -140,7 +168,7 @@ func (OrderStatus) getPaginationList(accountId uint, offset, limit int, sortBy, 
 		}
 
 		// Определяем total
-		err = db.Model(&OrderStatus{}).
+		err = (&OrderStatus{}).GetPreloadDb(false, false, nil).
 			Where("account_id = ? AND name ILIKE ? OR description ILIKE ? ", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
@@ -149,14 +177,14 @@ func (OrderStatus) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	} else {
 
-		err := db.Model(&OrderStatus{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id IN (?)", []uint{1, accountId}).
+		err :=(&OrderStatus{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id IN (?)", []uint{1, accountId}).
 			Find(&orderStatuses).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&OrderStatus{}).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
+		err = (&OrderStatus{}).GetPreloadDb(false, false, nil).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -173,13 +201,16 @@ func (OrderStatus) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 func (orderStatus *OrderStatus) update(input map[string]interface{}, preloads []string) error {
 
-	// work!!!
-	if err := db.Set("gorm:association_autoupdate", false).Model(orderStatus).Omit("id", "account_id","created_at").
-		Updates(input).Error; err != nil {
+	// delete(input,"order")
+	utils.FixInputHiddenVars(&input)
+	/*if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
 		return err
-	}
+	}*/
 
-	err := db.First(orderStatus, orderStatus.Id).Error
+	if err := orderStatus.GetPreloadDb(false, false, nil).Where("id = ?", orderStatus.Id).Omit("id", "account_id").Updates(input).
+		Error; err != nil {return err}
+
+	err := orderStatus.GetPreloadDb(false,false, preloads).First(orderStatus, orderStatus.Id).Error
 	if err != nil {
 		return err
 	}
@@ -188,7 +219,7 @@ func (orderStatus *OrderStatus) update(input map[string]interface{}, preloads []
 }
 
 func (orderStatus *OrderStatus) delete () error {
-	return db.Model(OrderStatus{}).Where("id = ?", orderStatus.Id).Delete(orderStatus).Error
+	return orderStatus.GetPreloadDb(true,false,nil).Where("id = ?", orderStatus.Id).Delete(orderStatus).Error
 }
 // ######### END CRUD Functions ############
 

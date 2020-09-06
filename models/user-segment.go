@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 )
 
@@ -59,20 +60,18 @@ func (usersSegment *UsersSegment) AfterFind(tx *gorm.DB) (err error) {
 // ######### CRUD Functions ############
 func (usersSegment UsersSegment) create() (Entity, error)  {
 
-	en := usersSegment
-
-	if err := db.Create(&en).Error; err != nil {
+	_item := usersSegment
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	err := en.GetPreloadDb(false,false, true).First(&en, en.Id).Error
-	if err != nil {
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
 		return nil, err
 	}
 
-	var newItem Entity = &en
+	var entity Entity = &_item
 
-	return newItem, nil
+	return entity, nil
 }
 func (UsersSegment) get(id uint, preloads []string) (Entity, error) {
 
@@ -97,14 +96,14 @@ func (usersSegment *UsersSegment) loadByPublicId(preloads []string) error {
 	if usersSegment.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить UsersSegment - не указан  Id"}
 	}
-	if err := usersSegment.GetPreloadDb(false,false, true).First(usersSegment, "account_id = ? AND public_id = ?", usersSegment.AccountId, usersSegment.PublicId).Error; err != nil {
+	if err := usersSegment.GetPreloadDb(false,false, preloads).First(usersSegment, "account_id = ? AND public_id = ?", usersSegment.AccountId, usersSegment.PublicId).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 func (UsersSegment) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return UsersSegment{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
+	return UsersSegment{}.getPaginationList(accountId, 0, 25, sortBy, "",nil, preload)
 }
 func (UsersSegment) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
@@ -116,7 +115,7 @@ func (UsersSegment) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 		search = "%"+search+"%"
 
-		err := (&UsersSegment{}).GetPreloadDb(true,false,true).
+		err := (&UsersSegment{}).GetPreloadDb(false,false,preloads).
 			Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&usersSegments, "name ILIKE ? OR subject ILIKE ? OR preview_text ILIKE ?", search,search,search).Error
 
@@ -134,7 +133,7 @@ func (UsersSegment) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 	} else {
 		
-		err := (&UsersSegment{}).GetPreloadDb(true,false,true).
+		err := (&UsersSegment{}).GetPreloadDb(false,false,preloads).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&usersSegments).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -158,12 +157,18 @@ func (UsersSegment) getPaginationList(accountId uint, offset, limit int, sortBy,
 }
 func (usersSegment *UsersSegment) update(input map[string]interface{}, preloads []string) error {
 
-	if err := usersSegment.GetPreloadDb(true,false,false).Where(" id = ?", usersSegment.Id).
-		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
+	delete(input,"user_segment_rules")
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
 		return err
 	}
 
-	err := usersSegment.GetPreloadDb(true,false,false).First(usersSegment, usersSegment.Id).Error
+	if err := usersSegment.GetPreloadDb(true,false,nil).Where(" id = ?", usersSegment.Id).
+		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
+		return err
+	}
+
+	err := usersSegment.GetPreloadDb(true,false,preloads).First(usersSegment, usersSegment.Id).Error
 	if err != nil {
 		return err
 	}
@@ -171,28 +176,32 @@ func (usersSegment *UsersSegment) update(input map[string]interface{}, preloads 
 	return nil
 }
 func (usersSegment *UsersSegment) delete () error {
-	return usersSegment.GetPreloadDb(true,true,false).Where("id = ?", usersSegment.Id).Delete(usersSegment).Error
+	return usersSegment.GetPreloadDb(true,false,nil).Where("id = ?", usersSegment.Id).Delete(usersSegment).Error
 }
 // ######### END CRUD Functions ############
 
-func (usersSegment *UsersSegment) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (usersSegment *UsersSegment) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
-		_db = _db.Model(usersSegment)
+		_db = _db.Model(&usersSegment)
 	} else {
 		_db = _db.Model(&UsersSegment{})
 	}
 
-	if preload {
-		// return _db.Preload("")
-		return _db
+	if autoPreload {
+		return db.Preload(clause.Associations)
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Amount","PaymentMethod","Product"})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
 		return _db
 	}
+
 }
 
 // Получения списка пользователей в сегменте

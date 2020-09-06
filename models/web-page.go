@@ -5,6 +5,7 @@ import (
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"time"
 )
@@ -228,11 +229,7 @@ func (webPage *WebPage) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 	}
 
 	if autoPreload {
-		// return db.Preload(clause.Associations)
-		return db.Preload("ProductCards").Preload("Image", func(db *gorm.DB) *gorm.DB {
-			return db.Select(Storage{}.SelectArrayWithoutDataURL())
-		})
-
+		return db.Preload(clause.Associations)
 	} else {
 
 		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Image","ProductCards"})
@@ -245,13 +242,10 @@ func (webPage *WebPage) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 			} else {
 				_db.Preload(v)
 			}
-
 		}
 		return _db
 	}
-
 }
-
 func (webPage WebPage) CreateChild(wp WebPage) (Entity, error){
 	wp.ParentId = webPage.Id
 	wp.WebSiteId = webPage.WebSiteId
@@ -261,7 +255,6 @@ func (webPage WebPage) CreateChild(wp WebPage) (Entity, error){
 
 	return _webPage, nil
 }
-
 func (webPage WebPage) AppendProductCard(input *ProductCard, optPriority... int) error {
 
 	priority := 10

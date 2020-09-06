@@ -5,6 +5,7 @@ import (
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"time"
 )
@@ -51,7 +52,7 @@ type Order struct {
 
 	// Состав заказа
 	CartItems	[]CartItem	`json:"cart_items"`
-	Payment		Payment		`json:"payment" gorm:"preload"`
+	Payment		Payment		`json:"payment"`
 
 	// Данные о доставке
 	// DeliveryOrderId	*uint	`json:"deliveryOrderId" gorm:"type:int;"`
@@ -62,7 +63,7 @@ type Order struct {
 
 	// Статус заказа
 	StatusId  	uint		`json:"status_id" gorm:"type:int;default:1;"`
-	Status		OrderStatus	`json:"status" gorm:"preload"`
+	Status		OrderStatus	`json:"status"`
 
 	// IpV4	Ipv
 
@@ -111,7 +112,7 @@ func (order *Order) AfterCreate(tx *gorm.DB) (error) {
 func (order *Order) AfterUpdate(tx *gorm.DB) (err error) {
 	event.AsyncFire(Event{}.OrderUpdated(order.AccountId, order.Id))
 
-	orderStatusEntity, err := OrderStatus{}.get(order.StatusId)
+	orderStatusEntity, err := OrderStatus{}.get(order.StatusId,nil)
 	if err == nil && orderStatusEntity.GetAccountId() == order.AccountId {
 		if orderStatus, ok := orderStatusEntity.(*OrderStatus); ok {
 			if orderStatus.Code == "completed" {
@@ -140,7 +141,7 @@ func (order *Order) AfterFind(tx *gorm.DB) (err error) {
 
 	for i := range order.CartItems {
 		var paymentSubject PaymentSubject
-		err := Account{Id: order.AccountId}.LoadEntity(&paymentSubject, order.CartItems[i].PaymentSubjectId)
+		err := Account{Id: order.AccountId}.LoadEntity(&paymentSubject, order.CartItems[i].PaymentSubjectId,nil)
 		if err != nil { return err}
 		order.CartItems[i].PaymentSubjectYandex = paymentSubject.Code
 	}
@@ -160,18 +161,16 @@ func (Order) SystemEntity() bool { return false }
 // ######### CRUD Functions ############
 func (order Order) create() (Entity, error)  {
 
-	wb := order
-
-	// fmt.Println(wb.ManagerId)
-	// fmt.Println(wb.Manager)
-	if err := db.Create(&wb).Error; err != nil {
-		return nil, err
-	}
-	if err := wb.GetPreloadDb(false,false, true).First(&wb,wb.Id).Error; err != nil {
+	_item := order
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	var entity Entity = &wb
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
+		return nil, err
+	}
+
+	var entity Entity = &_item
 
 	return entity, nil
 }
@@ -179,7 +178,7 @@ func (Order) get(id uint, preloads []string) (Entity, error) {
 
 	var order Order
 
-	err := (&Order{}).GetPreloadDb(false,false, true).
+	err := (&Order{}).GetPreloadDb(false,false, preloads).
 		First(&order, id).Error
 	if err != nil {
 		return nil, err
@@ -193,7 +192,7 @@ func (order *Order) load(preloads []string) error {
 		return utils.Error{Message: "Невозможно загрузить Order - не указан  Id"}
 	}
 
-	if err := order.GetPreloadDb(false,true, true).First(order, order.Id).Error; err != nil {
+	if err := order.GetPreloadDb(false,false, preloads).First(order, order.Id).Error; err != nil {
 		return err
 	}
 
@@ -205,7 +204,7 @@ func (order *Order) loadByPublicId(preloads []string) error {
 		return utils.Error{Message: "Невозможно загрузить Order - не указан  Id"}
 	}
 
-	if err := order.GetPreloadDb(false,false, true).First(order, "account_id = ? AND public_id = ?", order.AccountId, order.PublicId).Error; err != nil {
+	if err := order.GetPreloadDb(false,false, preloads).First(order, "account_id = ? AND public_id = ?", order.AccountId, order.PublicId).Error; err != nil {
 		return err
 	}
 
@@ -225,7 +224,7 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&Order{}).GetPreloadDb(false,false, true).
+		err := (&Order{}).GetPreloadDb(false, false, preloads).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders, "customer_comment ILIKE ?", search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -233,7 +232,7 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 		}
 
 		// Определяем total
-		err = db.Model(&Order{}).
+		err = (&Order{}).GetPreloadDb(false, false, nil).
 			Where("account_id = ? AND customer_comment ILIKE ?", accountId, search).
 			Count(&total).Error
 		if err != nil {
@@ -242,7 +241,7 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 
 	} else {
 
-		err := (&Order{}).GetPreloadDb(false,false, true).
+		err := (&Order{}).GetPreloadDb(false, false, preloads).
 		// err := db.Model(&Order{}).Preload("Status").Preload("Payment").
 				Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&orders).Error
@@ -251,7 +250,7 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 		}
 
 		// Определяем total
-		err = db.Model(&Order{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&Order{}).GetPreloadDb(false, false, nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -267,36 +266,41 @@ func (Order) getPaginationList(accountId uint, offset, limit int, sortBy, search
 }
 func (order *Order) update(input map[string]interface{}, preloads []string) error {
 
-	delete(input,"webSite")
-	delete(input,"orderChannel")
-	delete(input,"comments")
+	delete(input,"status")
+	delete(input,"payment")
+	delete(input,"customer")
+	delete(input,"delivery_order")
+	delete(input,"amount")
+	delete(input,"cart_items")
 	delete(input,"manager")
-	delete(input,"products")
+	delete(input,"web_site")
+	delete(input,"order_channel")
 	delete(input,"company")
-	delete(input,"client")
-	delete(input,"cartItems")
+	delete(input,"comments")
 
-	err := order.GetPreloadDb(true,false, false).Where("id = ?", order.Id).
-		Omit("id", "account_id").Updates(input).Error
-	if err != nil { return err }
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","manager_id","web_site_id","customer_id","company_id","order_channel_id","payment_method_id",
+		"payment_method_id","amount_id","status_id"}); err != nil {
+		return err
+	}
+	if err := order.GetPreloadDb(false, false, nil).Where("id = ?", order.Id).Omit("id", "account_id","public_id").Updates(input).
+		Error; err != nil {return err}
 
-	_ = order.load(preloads []string)
+	err := order.GetPreloadDb(false,false, preloads).First(order, order.Id).Error
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 func (order *Order) delete () error {
 
-	var idx = make([]uint,0)
-	idx = append(idx,order.AmountId)
-
-	if err := (PaymentAmount{}).deletes(idx); err != nil {
+	// 1. Удаляем Amount
+	if err := (&PaymentAmount{Id: order.AccountId}).delete(); err != nil {
 		return err
 	}
 
-	if err := order.Amount.delete(); err != nil {
-		return err
-	}
-
-	return db.Where("id = ?", order.Id).Delete(order).Error
+	return order.GetPreloadDb(true,false,nil).Where("id = ?", order.Id).Delete(order).Error
 }
 // ######### END CRUD Functions ############
 
@@ -309,26 +313,28 @@ func (order *Order) AppendProducts (products []Product) error {
 	return nil
 }
 
-func (order *Order) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (order *Order) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
 		_db = _db.Model(&order)
 	} else {
 		_db = _db.Model(&Order{})
 	}
 
-	if preload {
-		return _db.Preload("Status").Preload("Payment").Preload("Customer").Preload("DeliveryOrder").Preload("DeliveryOrder.Amount").
-			Preload("Amount").Preload("CartItems").	Preload("CartItems.Product").Preload("CartItems.Amount").Preload("CartItems.PaymentMode").
-			Preload("Manager").Preload("WebSite").Preload("OrderChannel")
+	if autoPreload {
+		return db.Preload(clause.Associations)
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Status","Payment","Customer","DeliveryOrder","Amount",
+			"CartItems","CartItems.Product","CartItems.Amount","CartItems.PaymentMode","Manager","WebSite","OrderChannel","Company","Comments"})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
 		return _db
 	}
-
 
 }
 

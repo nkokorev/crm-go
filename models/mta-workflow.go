@@ -22,11 +22,6 @@ type MTAWorkflow struct {
 	OwnerType	EmailSenderType	`json:"owner_type" gorm:"varchar(32);not null;"` // << тип события: кампания, серия, уведомление
 	OwnerId		uint			`json:"owner_id" gorm:"type:smallint;not null;"` // ID типа события: какая серия, компания или уведомление
 
-	// К какой серии писем относится задача (gorm - т.к. это AfterFind загружается) ??
-	// EmailQueue			EmailQueue 			`json:"_email_queue" gorm:"-"`
-	// EmailNotification	EmailNotification 	`json:"_email_notification" gorm:"-"`
-	// EmailCampaign		EmailCampaign 		`json:"_email_campaign" gorm:"-"`
-
 	// Номер необходимого шага в серии EmailQueue. Шаг определяется ситуационно в момент Expected Time. Если шага нет - серия завершается за пользователя.
 	// После выполнения - № шага увеличивается на 1
 	QueueExpectedStepId	*uint	`json:"queue_expected_step_id" gorm:"type:int;"`
@@ -211,11 +206,10 @@ func (MTAWorkflow) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	return entities, total, nil
 }
-
 func (mtaWorkflow *MTAWorkflow) update(input map[string]interface{}, preloads []string) error {
 	delete(input,"user")
 	utils.FixInputHiddenVars(&input)
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"user_id","queue_expected_step_id"}); err != nil {
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"owner_id","user_id","queue_expected_step_id","number_of_attempts"}); err != nil {
 		return err
 	}
 
@@ -355,7 +349,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		emailTemplate = *_et
 
 		// EmailBox
-		err = account.LoadEntity(&emailBox, *step.EmailBoxId,nil)
+		err = account.LoadEntity(&emailBox, *step.EmailBoxId,[]string{"WebSite"})
 		if err != nil {
 			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email box not found: %v",err.Error()))
 			return err
@@ -382,7 +376,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			return err
 		}
 
-		err = account.LoadEntity(&emailBox, *emailNotification.EmailBoxId,nil)
+		err = account.LoadEntity(&emailBox, *emailNotification.EmailBoxId,[]string{"WebSite"})
 		if err != nil {
 			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email box not found: %v",err.Error()))
 			return err
@@ -411,7 +405,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			return err
 		}
 
-		err = account.LoadEntity(&emailBox, *emailCampaign.EmailBoxId,nil)
+		err = account.LoadEntity(&emailBox, *emailCampaign.EmailBoxId,[]string{"WebSite"})
 		if err != nil {
 			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email box not found: %v",err.Error()))
 			return err

@@ -231,7 +231,6 @@ func (account Account) GetRole (roleId uint) (*Role, error) {
 	}
 	return &role, nil
 }
-
 func (account Account) GetRoleByTag (tag AccessRole) (*Role, error) {
 	var role Role
 	err := db.Where("account_id IN (?) AND tag = ?", []uint{1, account.Id}, tag).First(&role).Error

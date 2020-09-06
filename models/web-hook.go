@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"net/http"
 	"strings"
@@ -70,7 +71,7 @@ func (WebHook) SystemEntity() bool { return false }
 // ############# Entity interface #############
 
 func (WebHook) PgSqlCreate() {
-	db.Migrator().CreateTable(&WebHook{})
+	if err := db.Migrator().CreateTable(&WebHook{}); err != nil {log.Fatal(err)}
 	// db.Model(&WebHook{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	err := db.Exec("ALTER TABLE web_hooks ADD CONSTRAINT web_hooks_conditions_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {
@@ -95,33 +96,36 @@ func (webHook *WebHook) BeforeCreate(tx *gorm.DB) error {
 
 // ######### CRUD Functions ############
 func (webHook WebHook) create() (Entity, error)  {
-	// if err := db.Create(&webHook).Find(&webHook, webHook.Id).Error; err != nil {
-	wb := webHook
-	if err := db.Create(&wb).Error; err != nil {
+
+	_item := webHook
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	var entity Entity = &wb
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
+		return nil, err
+	}
+
+	var entity Entity = &_item
 
 	return entity, nil
 }
-
 func (WebHook) get(id uint, preloads []string) (Entity, error) {
 
-	var webHook WebHook
+	var item CartItem
 
-	err := db.First(&webHook, id).Error
+	err := item.GetPreloadDb(false, false, preloads).First(&item, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &webHook, nil
+	return &item, nil
 }
 func (webHook *WebHook) load(preloads []string) error {
 	if webHook.Id < 1 {
-		return utils.Error{Message: "Невозможно загрузить WebHook - не указан  Id"}
+		return utils.Error{Message: "Невозможно загрузить CartItem - не указан  Id"}
 	}
 
-	err := db.First(webHook,webHook.Id).Error
+	err := webHook.GetPreloadDb(false, false, preloads).First(webHook, webHook.Id).Error
 	if err != nil {
 		return err
 	}
@@ -129,12 +133,11 @@ func (webHook *WebHook) load(preloads []string) error {
 }
 func (webHook *WebHook) loadByPublicId(preloads []string) error {
 
-
 	if webHook.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить Payment - не указан  Id"}
 	}
 
-	if err := webHook.GetPreloadDb(false,false, true).
+	if err := webHook.GetPreloadDb(false,false, preloads).
 		First(webHook, "account_id = ? AND public_id = ?", webHook.AccountId, webHook.PublicId).Error; err != nil {
 		return err
 	}
@@ -155,14 +158,14 @@ func (WebHook) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&WebHook{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&WebHook{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webHooks, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&WebHook{}).
+		err = (&WebHook{}).GetPreloadDb(false, false, nil).
 			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -171,7 +174,7 @@ func (WebHook) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 
-		err := db.Model(&WebHook{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&WebHook{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&webHooks).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -204,11 +207,22 @@ func (WebHook) getByEvent(eventName string) (*WebHook, error) {
 }
 func (webHook *WebHook) update(input map[string]interface{}, preloads []string) error {
 
+	// delete(input,"product")
 	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
+		return err
+	}
 
-	return db.Model(&WebHook{}).Where("id = ?", webHook.Id).Omit("id", "account_id","public_id").Updates(input).Error
+	if err := webHook.GetPreloadDb(false, false, nil).Where("id = ?", webHook.Id).Omit("id", "account_id").Updates(input).
+		Error; err != nil {return err}
+
+	err := webHook.GetPreloadDb(false,false, preloads).First(webHook, webHook.Id).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
-
 func (webHook *WebHook) delete () error {
 	return db.Model(WebHook{}).Where("id = ?", webHook.Id).Delete(webHook).Error
 }
@@ -274,22 +288,26 @@ func (webHook WebHook) Execute(data map[string]interface{}) error {
 	return nil
 }
 
-func (webHook WebHook) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
+func (webHook WebHook) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
 		_db = _db.Model(&webHook)
 	} else {
 		_db = _db.Model(&WebHook{})
 	}
 
-	if preload {
-		// return _db.Preload("")
-		return _db
+	if autoPreload {
+		return db.Preload(clause.Associations)
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{""})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
 		return _db
 	}
+
 }

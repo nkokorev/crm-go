@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"time"
 )
@@ -67,7 +68,7 @@ func (userSegmentCondition UserSegmentCondition) create() (Entity, error)  {
 		return nil, err
 	}
 
-	err := en.GetPreloadDb(false,false, true).First(&en, en.Id).Error
+	err := en.GetPreloadDb(false,true, nil).First(&en, en.Id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +101,7 @@ func (userSegmentCondition *UserSegmentCondition) loadByPublicId(preloads []stri
 	if userSegmentCondition.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить UserSegmentCondition - не указан  Id"}
 	}
-	if err := userSegmentCondition.GetPreloadDb(false,false, true).First(userSegmentCondition, "account_id = ? AND public_id = ?", userSegmentCondition.AccountId, userSegmentCondition.PublicId).Error; err != nil {
+	if err := userSegmentCondition.GetPreloadDb(false,false, preloads).First(userSegmentCondition, "account_id = ? AND public_id = ?", userSegmentCondition.AccountId, userSegmentCondition.PublicId).Error; err != nil {
 		return err
 	}
 
@@ -120,7 +121,7 @@ func (UserSegmentCondition) getPaginationList(accountId uint, offset, limit int,
 
 		search = "%"+search+"%"
 
-		err := (&UserSegmentCondition{}).GetPreloadDb(true,false,true).
+		err := (&UserSegmentCondition{}).GetPreloadDb(false,false,preloads).
 			Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&userSegmentCondition, "name ILIKE ? OR subject ILIKE ? OR preview_text ILIKE ?", search,search,search).Error
 
@@ -138,7 +139,7 @@ func (UserSegmentCondition) getPaginationList(accountId uint, offset, limit int,
 
 	} else {
 
-		err := (&UserSegmentCondition{}).GetPreloadDb(true,false,true).
+		err := (&UserSegmentCondition{}).GetPreloadDb(false,false,preloads).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&userSegmentCondition).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -163,12 +164,12 @@ func (UserSegmentCondition) getPaginationList(accountId uint, offset, limit int,
 
 func (userSegmentCondition *UserSegmentCondition) update(input map[string]interface{}, preloads []string) error {
 
-	if err := userSegmentCondition.GetPreloadDb(true,false,false).Where(" id = ?", userSegmentCondition.Id).
+	if err := userSegmentCondition.GetPreloadDb(true,false,nil).Where(" id = ?", userSegmentCondition.Id).
 		Omit("id", "account_id","created_at").Updates(input).Error; err != nil {
 		return err
 	}
 
-	err := userSegmentCondition.GetPreloadDb(true,false,false).First(userSegmentCondition, userSegmentCondition.Id).Error
+	err := userSegmentCondition.GetPreloadDb(true,false,preloads).First(userSegmentCondition, userSegmentCondition.Id).Error
 	if err != nil {
 		return err
 	}
@@ -177,28 +178,31 @@ func (userSegmentCondition *UserSegmentCondition) update(input map[string]interf
 }
 
 func (userSegmentCondition *UserSegmentCondition) delete () error {
-	return userSegmentCondition.GetPreloadDb(true,true,false).Where("id = ?", userSegmentCondition.Id).Delete(userSegmentCondition).Error
+	return userSegmentCondition.GetPreloadDb(true,false,nil).Where("id = ?", userSegmentCondition.Id).Delete(userSegmentCondition).Error
 }
 // ######### END CRUD Functions ############
+func (userSegmentCondition *UserSegmentCondition) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
 
-func (userSegmentCondition *UserSegmentCondition) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
 	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
 	if getModel {
-		_db = _db.Model(userSegmentCondition)
+		_db = _db.Model(&userSegmentCondition)
 	} else {
 		_db = _db.Model(&UserSegmentCondition{})
 	}
 
-	if preload {
-		// return _db.Preload("")
-		return _db
+	if autoPreload {
+		return db.Preload(clause.Associations)
 	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{""})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
 		return _db
 	}
+
 }
 
 // Получения списка пользователей в сегменте

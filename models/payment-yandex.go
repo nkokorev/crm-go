@@ -9,6 +9,7 @@ import (
 	"github.com/satori/go.uuid"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"net/http"
 	"strconv"
@@ -74,6 +75,29 @@ func (paymentYandex *PaymentYandex) BeforeCreate(tx *gorm.DB) error {
 	paymentYandex.Id = 0
 	paymentYandex.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	return nil
+}
+func (paymentYandex *PaymentYandex) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(&paymentYandex)
+	} else {
+		_db = _db.Model(&PaymentYandex{})
+	}
+
+	if autoPreload {
+		return db.Preload(clause.Associations)
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"WebSite"})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
+		return _db
+	}
+
 }
 
 // ############# Entity interface #############
@@ -156,33 +180,33 @@ func (paymentYandex PaymentYandex) IsInstantDelivery() bool { return paymentYand
 
 // ######### CRUD Functions ############
 func (paymentYandex PaymentYandex) create() (Entity, error)  {
-	py := paymentYandex
-	if err := db.Create(&py).Error; err != nil {
+	_item := paymentYandex
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	if err := py.GetPreloadDb(false,false, true).First(&py,py.Id).Error; err != nil {
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
 		return nil, err
 	}
 
-	var entity Entity = &py
+	var entity Entity = &_item
 
 	return entity, nil
 }
 func (PaymentYandex) get(id uint, preloads []string) (Entity, error) {
 
-	var paymentYandex PaymentYandex
+	var item PaymentYandex
 
-	err := paymentYandex.GetPreloadDb(false,false, true).First(&paymentYandex, id).Error
+	err := item.GetPreloadDb(false, false, preloads).First(&item, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &paymentYandex, nil
+	return &item, nil
 }
 func (PaymentYandex) getByHashId(hashId string) (*PaymentYandex, error) {
 	paymentYandex := PaymentYandex{}
 
-	err := paymentYandex.GetPreloadDb(false,false, true).First(&paymentYandex, "hash_id = ?", hashId).Error
+	err := paymentYandex.GetPreloadDb(false,true, nil).First(&paymentYandex, "hash_id = ?", hashId).Error
 	if err != nil {
 		return nil, err
 	}
@@ -190,10 +214,10 @@ func (PaymentYandex) getByHashId(hashId string) (*PaymentYandex, error) {
 }
 func (paymentYandex *PaymentYandex) load(preloads []string) error {
 	if paymentYandex.Id < 1 {
-		return utils.Error{Message: "Невозможно загрузить PaymentYandex - не указан  Id"}
+		return utils.Error{Message: "Невозможно загрузить CartItem - не указан  Id"}
 	}
 
-	err := paymentYandex.GetPreloadDb(false,true, true).First(paymentYandex,paymentYandex.Id).Error
+	err := paymentYandex.GetPreloadDb(false, false, preloads).First(paymentYandex, paymentYandex.Id).Error
 	if err != nil {
 		return err
 	}
@@ -232,14 +256,14 @@ func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&PaymentYandex{}).GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&PaymentYandex{}).GetPreloadDb(false,false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&paymentYandexs, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&PaymentYandex{}).
+		err = (&PaymentYandex{}).GetPreloadDb(false,false, nil).
 			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -248,7 +272,7 @@ func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	} else {
 
-		err := (&PaymentYandex{}).GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&PaymentYandex{}).GetPreloadDb(false,false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Preload("WebSite").
 			Find(&paymentYandexs).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -256,7 +280,7 @@ func (PaymentYandex) getPaginationList(accountId uint, offset, limit int, sortBy
 		}
 
 		// Определяем total
-		err = db.Model(&PaymentYandex{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&PaymentYandex{}).GetPreloadDb(false,false, nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -277,14 +301,18 @@ func (paymentYandex *PaymentYandex) update(input map[string]interface{}, preload
 		return err
 	}
 
-	err := paymentYandex.GetPreloadDb(false,false, false).Where("id = ?", paymentYandex.Id).
-		Omit("id", "hashId","account_id").Updates(input).Error
-	if err != nil { return err}
-	_ = paymentYandex.load(preloads []string)
+	if err := paymentYandex.GetPreloadDb(false, false, nil).Where("id = ?", paymentYandex.Id).Omit("id", "account_id","hash_id").Updates(input).
+		Error; err != nil {return err}
+
+	err := paymentYandex.GetPreloadDb(false,false, preloads).First(paymentYandex, paymentYandex.Id).Error
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 func (paymentYandex *PaymentYandex) delete () error {
-	return paymentYandex.GetPreloadDb(true,true, false).Where("id = ?", paymentYandex.Id).Delete(paymentYandex).Error
+	return paymentYandex.GetPreloadDb(true,false, nil).Where("id = ?", paymentYandex.Id).Delete(paymentYandex).Error
 }
 // ######### END CRUD Functions ############
 
@@ -360,7 +388,7 @@ func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 			"paid":responseRequest["paid"],
 			"status":responseRequest["status"],
 			"test":responseRequest["test"],
-		}); err != nil {
+		},nil); err != nil {
 			return utils.Error{Message: "Ошибка сохранения responseRequest от Яндекс кассы",Errors: map[string]interface{}{"paymentOption":err.Error()}}
 		}
 
@@ -382,7 +410,7 @@ func (paymentYandex PaymentYandex) ExternalCreate(payment *Payment) error {
 		}
 
 		payment.ConfirmationUrl = confirmation.ConfirmationUrl
-		if err := payment.update(map[string]interface{}{"ConfirmationUrl":confirmation.ConfirmationUrl}); err != nil {
+		if err := payment.update(map[string]interface{}{"ConfirmationUrl":confirmation.ConfirmationUrl},nil); err != nil {
 			return err
 		}
 
@@ -427,7 +455,7 @@ func (paymentYandex PaymentYandex) PrepaymentCheck(payment *Payment, order Order
 		Amount PaymentAmount `json:"amount"`
 	}
 
-	err = Account{Id: paymentYandex.AccountId}.LoadEntity(payment, payment.Id)
+	err = Account{Id: paymentYandex.AccountId}.LoadEntity(payment, payment.Id,[]string{"Amount","IncomeAmount","RefundedAmount"})
 	if err != nil {
 		return nil, utils.Error{Message: "Не удалось обновить статус платежа - не найден платеж"}
 	}
@@ -563,22 +591,4 @@ func (account Account) GetPaymentYandexByHashId(hashId string) (*PaymentYandex, 
 
 	return paymentYandex, nil
 }
-func (paymentYandex *PaymentYandex) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
 
-	_db := db
-
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
-	if getModel {
-		_db = _db.Model(&paymentYandex)
-	} else {
-		_db = _db.Model(&PaymentYandex{})
-	}
-
-	if preload {
-		return _db.Preload("WebSite")
-	} else {
-		return _db
-	}
-}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 )
 
@@ -61,35 +62,61 @@ func (orderChannel *OrderChannel) BeforeCreate(tx *gorm.DB) error {
 	orderChannel.Id = 0
 	return nil
 }
+func (orderChannel *OrderChannel) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(&orderChannel)
+	} else {
+		_db = _db.Model(&OrderChannel{})
+	}
+
+	if autoPreload {
+		return db.Preload(clause.Associations)
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{""})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
+		return _db
+	}
+
+}
 
 // ######### CRUD Functions ############
 func (orderChannel OrderChannel) create() (Entity, error)  {
-	_orderChannel := orderChannel
-	if err := db.Create(&_orderChannel).Error; err != nil {
+	_item := orderChannel
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	var entity Entity = &_orderChannel
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
+		return nil, err
+	}
+
+	var entity Entity = &_item
 
 	return entity, nil
 }
-
 func (OrderChannel) get(id uint, preloads []string) (Entity, error) {
 
-	var orderChannel OrderChannel
+	var item OrderChannel
 
-	err := db.First(&orderChannel, id).Error
+	err := item.GetPreloadDb(false, false, preloads).First(&item, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &orderChannel, nil
+	return &item, nil
 }
 func (orderChannel *OrderChannel) load(preloads []string) error {
 	if orderChannel.Id < 1 {
 		return utils.Error{Message: "Невозможно загрузить OrderChannel - не указан  Id"}
 	}
 
-	err := db.First(orderChannel, orderChannel.Id).Error
+	err := orderChannel.GetPreloadDb(false, false, preloads).First(orderChannel, orderChannel.Id).Error
 	if err != nil {
 		return err
 	}
@@ -98,7 +125,6 @@ func (orderChannel *OrderChannel) load(preloads []string) error {
 func (*OrderChannel) loadByPublicId(preloads []string) error {
 	return errors.New("Нет возможности загрузить объект по Public Id")
 }
-
 // Специальная функция *** NOT Entity ***
 func (OrderChannel) getByCode(accountId uint, code string) (*OrderChannel, error) {
 	var orderChannel OrderChannel
@@ -109,7 +135,6 @@ func (OrderChannel) getByCode(accountId uint, code string) (*OrderChannel, error
 func (OrderChannel) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return OrderChannel{}.getPaginationList(accountId, 0,100,sortBy,"",nil,preload)
 }
-
 func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
 	orderChannels := make([]OrderChannel,0)
@@ -121,14 +146,14 @@ func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy,
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&OrderChannel{}).Limit(limit).Offset(offset).Order(sortBy).Where("account_id IN (?)", []uint{1, accountId}).
+		err := (&CartItem{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where("account_id IN (?)", []uint{1, accountId}).
 			Find(&orderChannels, "name ILIKE ? OR description ILIKE ?", search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&OrderChannel{}).
+		err = (&CartItem{}).GetPreloadDb(false, false, nil).
 			Where("account_id IN (?) AND name ILIKE ? OR description ILIKE ?", []uint{1, accountId}, search,search).
 			Count(&total).Error
 		if err != nil {
@@ -137,14 +162,14 @@ func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 	} else {
 
-		err := db.Model(&OrderChannel{}).Limit(limit).Offset(offset).Order(sortBy).Where("account_id IN (?)", []uint{1, accountId}).
+		err := (&CartItem{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where("account_id IN (?)", []uint{1, accountId}).
 			Find(&orderChannels).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&OrderChannel{}).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
+		err = (&CartItem{}).GetPreloadDb(false, false, nil).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -160,12 +185,26 @@ func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy,
 }
 
 func (orderChannel *OrderChannel) update(input map[string]interface{}, preloads []string) error {
-	return db.Set("gorm:association_autoupdate", false).
-		Model(orderChannel).Where("id", orderChannel.Id).Omit("id", "account_id").Updates(input).Error
+
+	// delete(input,"amount")
+	utils.FixInputHiddenVars(&input)
+	/*if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
+		return err
+	}*/
+
+	if err := orderChannel.GetPreloadDb(false, false, nil).Where("id = ?", orderChannel.Id).Omit("id", "account_id").Updates(input).
+		Error; err != nil {return err}
+
+	err := orderChannel.GetPreloadDb(false,false, preloads).First(orderChannel, orderChannel.Id).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (orderChannel *OrderChannel) delete () error {
-	return db.Model(OrderChannel{}).Where("id = ?", orderChannel.Id).Delete(orderChannel).Error
+	return orderChannel.GetPreloadDb(true,false,nil).Where("id = ?", orderChannel.Id).Delete(orderChannel).Error
 }
 // ######### END CRUD Functions ############
 

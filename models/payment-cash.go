@@ -6,6 +6,7 @@ import (
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 	"strings"
 )
@@ -33,7 +34,7 @@ type PaymentCash struct {
 	// PaymentOption   PaymentOption `gorm:"polymorphic:Owner;"`
 }
 func (PaymentCash) PgSqlCreate() {
-	db.Migrator().CreateTable(&PaymentCash{})
+	if err := db.Migrator().CreateTable(&PaymentCash{}); err != nil {log.Fatal(err)}
 	// db.Model(&PaymentCash{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	// db.Model(&PaymentCash{}).AddForeignKey("web_site_id", "web_sites(id)", "CASCADE", "CASCADE")
 	err := db.Exec("ALTER TABLE payment_cashes " +
@@ -47,6 +48,29 @@ func (paymentCash *PaymentCash) BeforeCreate(tx *gorm.DB) error {
 	paymentCash.Id = 0
 	paymentCash.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
 	return nil
+}
+func (paymentCash *PaymentCash) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(&paymentCash)
+	} else {
+		_db = _db.Model(&PaymentCash{})
+	}
+
+	if autoPreload {
+		return db.Preload(clause.Associations)
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"WebSite"})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
+		return _db
+	}
+
 }
 
 // ############# Entity interface #############
@@ -107,35 +131,34 @@ func (paymentCash PaymentCash) IsInstantDelivery() bool { return paymentCash.Ins
 
 // ######### CRUD Functions ############
 func (paymentCash PaymentCash) create() (Entity, error)  {
-	wb := paymentCash
-	if err := db.Create(&wb).Error; err != nil {
+	_item := paymentCash
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	if err := wb.GetPreloadDb(false,false, false).First(&wb, wb.Id).Error; err != nil {
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
 		return nil, err
 	}
 
-	var entity Entity = &wb
+	var entity Entity = &_item
 
 	return entity, nil
 }
 func (PaymentCash) get(id uint, preloads []string) (Entity, error) {
+	var item PaymentCash
 
-	var paymentCash PaymentCash
-
-	err := paymentCash.GetPreloadDb(false,false, true).First(&paymentCash, id).Error
+	err := item.GetPreloadDb(false, false, preloads).First(&item, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &paymentCash, nil
+	return &item, nil
 }
 func (paymentCash *PaymentCash) load(preloads []string) error {
 	if paymentCash.Id < 1 {
-		return utils.Error{Message: "Невозможно загрузить PaymentCash - не указан  Id"}
+		return utils.Error{Message: "Невозможно загрузить CartItem - не указан  Id"}
 	}
 
-	err := paymentCash.GetPreloadDb(false,true, true).First(paymentCash,paymentCash.Id).Error
+	err := paymentCash.GetPreloadDb(false, false, preloads).First(paymentCash, paymentCash.Id).Error
 	if err != nil {
 		return err
 	}
@@ -147,7 +170,7 @@ func (*PaymentCash) loadByPublicId(preloads []string) error {
 func (PaymentCash) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return  PaymentCash{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
 }
-func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
+func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{}, preloads []string) ([]Entity, int64, error) {
 
 	paymentCashs := make([]PaymentCash,0)
 	var total int64
@@ -158,14 +181,14 @@ func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, 
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&PaymentCash{}).GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&PaymentCash{}).GetPreloadDb(false,false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&paymentCashs, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&PaymentCash{}).
+		err = (&PaymentCash{}).GetPreloadDb(false,false, nil).
 			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -174,14 +197,14 @@ func (PaymentCash) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 	} else {
 
-		err := (&PaymentCash{}).GetPreloadDb(false,false, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&PaymentCash{}).GetPreloadDb(false,false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&paymentCashs).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&PaymentCash{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&PaymentCash{}).GetPreloadDb(false,false, nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -199,41 +222,27 @@ func (paymentCash *PaymentCash) update(input map[string]interface{}, preloads []
 
 	delete(input,"web_site")
 	utils.FixInputHiddenVars(&input)
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"web_site_id","shop_id"}); err != nil {
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"web_site_id"}); err != nil {
 		return err
 	}
 
-	err := paymentCash.GetPreloadDb(false,false, false).Where("id = ?", paymentCash.Id).
-		Omit("id", "hashId","account_id").Updates(input).Error
-	if err != nil { return err}
-	_ = paymentCash.load(preloads []string)
+	if err := paymentCash.GetPreloadDb(false, false, nil).Where("id = ?", paymentCash.Id).Omit("id", "account_id","hash_id").Updates(input).
+		Error; err != nil {return err}
+
+	err := paymentCash.GetPreloadDb(false,false, preloads).First(paymentCash, paymentCash.Id).Error
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 func (paymentCash *PaymentCash) delete () error {
-	return paymentCash.GetPreloadDb(true,true, false).Where("id = ?", paymentCash.Id).Delete(paymentCash).Error
+	return paymentCash.GetPreloadDb(true,false, nil).Where("id = ?", paymentCash.Id).Delete(paymentCash).Error
 }
 // ######### END CRUD Functions ############
 
 // ########## Work function ############
-func (paymentCash PaymentCash) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool) *gorm.DB {
-	_db := db
 
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
-	if getModel {
-		_db = _db.Model(&paymentCash)
-	} else {
-		_db = _db.Model(&PaymentCash{})
-	}
-
-	if preload {
-		return _db.Preload("WebSite")
-	} else {
-		return _db
-	}
-}
 
 func (PaymentCash) GetListByWebSiteAndDelivery(delivery Delivery) ([]PaymentCash, error) {
 

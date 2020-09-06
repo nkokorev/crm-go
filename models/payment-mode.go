@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 )
 
@@ -59,34 +60,61 @@ func (paymentMode *PaymentMode) BeforeCreate(tx *gorm.DB) error {
 	paymentMode.Id = 0
 	return nil
 }
+func (paymentMode *PaymentMode) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(&paymentMode)
+	} else {
+		_db = _db.Model(&PaymentMode{})
+	}
+
+	if autoPreload {
+		return db.Preload(clause.Associations)
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{""})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
+		return _db
+	}
+
+}
 
 // ######### CRUD Functions ############
 func (paymentMode PaymentMode) create() (Entity, error)  {
-	_productSubject := paymentMode
-	if err := db.Create(&_productSubject).Error; err != nil {
+	_item := paymentMode
+	if err := db.Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
-	var entity Entity = &_productSubject
+	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
+		return nil, err
+	}
+
+	var entity Entity = &_item
 
 	return entity, nil
 }
 func (PaymentMode) get(id uint, preloads []string) (Entity, error) {
 
-	var paymentMode PaymentMode
+	var item PaymentMode
 
-	err := db.First(&paymentMode, id).Error
+	err := item.GetPreloadDb(false, false, preloads).First(&item, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &paymentMode, nil
+	return &item, nil
 }
 func (paymentMode *PaymentMode) load(preloads []string) error {
 	if paymentMode.Id < 1 {
-		return utils.Error{Message: "Невозможно загрузить PaymentMode - не указан  Id"}
+		return utils.Error{Message: "Невозможно загрузить CartItem - не указан  Id"}
 	}
 
-	err := db.First(paymentMode, paymentMode.Id).Error
+	err := paymentMode.GetPreloadDb(false, false, preloads).First(paymentMode, paymentMode.Id).Error
 	if err != nil {
 		return err
 	}
@@ -108,14 +136,14 @@ func (PaymentMode) getPaginationList(accountId uint, offset, limit int, sortBy, 
 		// string pattern
 		search = "%"+search+"%"
 
-		err := db.Model(&PaymentMode{}).Limit(limit).Offset(offset).Order(sortBy).Where("account_id IN (?)", []uint{1, accountId}).
+		err := (&PaymentMode{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where("account_id IN (?)", []uint{1, accountId}).
 			Find(&paymentModes, "name ILIKE ? OR code ILIKE ?", search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&PaymentMode{}).
+		err = (&PaymentMode{}).GetPreloadDb(false, false, nil).
 			Where("account_id IN (?) AND name ILIKE ? OR code ILIKE ?", []uint{1, accountId}, search,search).
 			Count(&total).Error
 		if err != nil {
@@ -123,14 +151,14 @@ func (PaymentMode) getPaginationList(accountId uint, offset, limit int, sortBy, 
 		}
 
 	} else {
-		err := db.Model(&PaymentMode{}).Limit(limit).Offset(offset).Order(sortBy).Where("account_id IN (?)", []uint{1, accountId}).
+		err := (&PaymentMode{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where("account_id IN (?)", []uint{1, accountId}).
 			Find(&paymentModes).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&PaymentMode{}).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
+		err = (&PaymentMode{}).GetPreloadDb(false, false, nil).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -144,11 +172,24 @@ func (PaymentMode) getPaginationList(accountId uint, offset, limit int, sortBy, 
 	return entities, total, nil
 }
 func (paymentMode *PaymentMode) update(input map[string]interface{}, preloads []string) error {
-	return db.Set("gorm:association_autoupdate", false).
-		Model(paymentMode).Omit("id", "account_id").Updates(input).Error
+	// delete(input,"order")
+	utils.FixInputHiddenVars(&input)
+	/*if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
+		return err
+	}*/
+
+	if err := paymentMode.GetPreloadDb(false, false, nil).Where("id = ?", paymentMode.Id).Omit("id", "account_id").Updates(input).
+		Error; err != nil {return err}
+
+	err := paymentMode.GetPreloadDb(false,false, preloads).First(paymentMode, paymentMode.Id).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 func (paymentMode *PaymentMode) delete () error {
-	return db.Model(PaymentMode{}).Where("id = ?", paymentMode.Id).Delete(paymentMode).Error
+	return paymentMode.GetPreloadDb(true,false,nil).Where("id = ?", paymentMode.Id).Delete(paymentMode).Error
 }
 // ######### END CRUD Functions ############
 

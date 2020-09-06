@@ -331,7 +331,7 @@ func (fs *Storage) update(input map[string]interface{}, preloads []string) error
 func (Storage) UpdatePriority(input []Storage) error {
 	for _,v := range input {
 		// priority, ok = v.Priority.(int)
-		if err := (&Storage{Id: v.Id }).update(map[string]interface{}{"priority":v.Priority}); err != nil {
+		if err := (&Storage{Id: v.Id }).update(map[string]interface{}{"priority":v.Priority},nil); err != nil {
 			return err
 		}
 	}
@@ -494,7 +494,7 @@ func (product Product) AppendAssociationImage(fs Entity) error {
 	}
 
 	if file.Id > 0 {
-		 if err := fs.update(map[string]interface{}{"owner_id":product.Id,"owner_type":"products"}); err != nil {
+		 if err := fs.update(map[string]interface{}{"owner_id":product.Id,"owner_type":"products"},nil); err != nil {
 		 	return err
 		 }
 	} else {
@@ -512,7 +512,7 @@ func (productCard ProductCard) AppendAssociationImage(fs Entity) error {
 	}
 
 	if file.Id > 0 {
-		if err := fs.update(map[string]interface{}{"owner_id":productCard.Id,"owner_type":"product_cards"}); err != nil {
+		if err := fs.update(map[string]interface{}{"owner_id":productCard.Id,"owner_type":"product_cards"},nil); err != nil {
 			return err
 		}
 	} else {
@@ -530,7 +530,7 @@ func (article Article) AppendAssociationImage(fs Entity) error {
 	}
 
 	if file.Id > 0 {
-		if err := fs.update(map[string]interface{}{"owner_id":article.Id,"owner_type":"articles"}); err != nil {
+		if err := fs.update(map[string]interface{}{"owner_id":article.Id,"owner_type":"articles"},nil); err != nil {
 			return err
 		}
 	} else {
@@ -548,7 +548,7 @@ func (webPage WebPage) AppendAssociationImage(fs Entity) error {
 	}
 
 	if file.Id > 0 {
-		if err := fs.update(map[string]interface{}{"owner_id":webPage.Id,"owner_type":"web_pages"}); err != nil {
+		if err := fs.update(map[string]interface{}{"owner_id":webPage.Id,"owner_type":"web_pages"},nil); err != nil {
 			return err
 		}
 	} else {
