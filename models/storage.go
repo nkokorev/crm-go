@@ -19,7 +19,7 @@ type Storage struct {
 	HashId 		string 	`json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	OwnerID   	uint	`json:"-" `   // ?? gorm:"association_foreignkey:Id"
+	OwnerID   	uint	`json:"owner_id" `   // ?? gorm:"association_foreignkey:Id"
 	// OwnerID   	uint	`json:"-" `   // ?? gorm:"association_foreignkey:Id"
 	OwnerType	string	`json:"owner_type" gorm:"type:varchar(80);column:owner_type"`
 
@@ -259,7 +259,8 @@ func (Storage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&Storage{}).GetPreloadDb(false,false,true,true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&Storage{}).GetPreloadDb(false,false,true,true).
+			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).Where(filter).
 			Find(&files, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -275,7 +276,8 @@ func (Storage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 
-		err := (&Storage{}).GetPreloadDb(false,false,true, true).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&Storage{}).GetPreloadDb(false,false,true, true).
+			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).Where(filter).
 			Find(&files).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err

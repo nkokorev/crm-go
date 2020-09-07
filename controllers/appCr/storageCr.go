@@ -3,6 +3,7 @@ package appCr
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -347,6 +348,15 @@ func StorageMassUpdates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Проверяем переданные файлы
+	fmt.Println("input.Files[0].OwnerType: ",	input.Files[0].OwnerType)
+	fmt.Println("input.Files[0].OwnerID: ",		input.Files[0].OwnerID)
+
+	if len(input.Files[0].OwnerType) < 1 || input.Files[0].OwnerID < 1 {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе: необходимо указать OwnerType & OwnerID"))
+		return
+	}
+
 	filter := make(map[string]interface{},0)
 	if len(input.Files) > 0 {
 		filter["owner_id"] = input.Files[0].OwnerID
@@ -356,7 +366,7 @@ func StorageMassUpdates(w http.ResponseWriter, r *http.Request) {
 	files := make([]models.Entity,0)
 
 	var total int64
-	files, total, err = account.GetPaginationListEntity(&models.Storage{}, 0, 100, "priority", "", filter,nil)
+	files, total, err = account.GetPaginationListEntity(&models.Storage{}, 0, 25, "priority", "", filter,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
