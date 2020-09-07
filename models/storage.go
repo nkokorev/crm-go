@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/fatih/structs"
@@ -344,34 +345,22 @@ func (Storage) UpdatePriority(input []Storage) error {
 	}
 	return nil
 }
+func (fs *Storage) SetNexPriority() error {
+
+	var lastIdx sql.NullInt64
+	err := db.Table("storage").Where("account_id = ? AND owner_id = ? AND owner_type = ?",  fs.AccountId, fs.OwnerID, fs.OwnerType).
+		Select("max(priority)").Row().Scan(&lastIdx)
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	fs.Priority = 1 + int(lastIdx.Int64)
+
+	return nil
+
+}
 func (fs *Storage) delete () error {
 	if err := db.Model(Storage{}).Where("id = ?", fs.Id).Delete(fs).Error; err != nil {
 		return err
 	}
 	return nil
-}
-func (fs *Storage) GetPreloadDbOld(autoUpdateOff bool, getModel bool, preload bool, skipData bool) *gorm.DB {
-	_db := db
-
-	if autoUpdateOff {
-		_db = _db.Set("gorm:association_autoupdate", false)
-	}
-	if getModel {
-		_db = _db.Model(fs)
-	} else {
-		_db = _db.Model(&Storage{})
-	}
-
-	if preload {
-		if skipData {
-			return _db.Select(Storage{}.SelectArrayWithoutDataURL())
-		} else {
-			return _db
-		}
-
-	} else {
-		return _db
-	}
 }
 func (fs *Storage) GetPreloadDb(getModel bool, autoPreload bool, preloads []string, skipData bool) *gorm.DB {
 

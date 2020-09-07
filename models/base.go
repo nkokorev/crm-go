@@ -65,7 +65,7 @@ func ConnectDb() *gorm.DB {
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 		logger.Config {
 			SlowThreshold: time.Millisecond*200,   // Slow SQL threshold
-			LogLevel:      logger.Warn, // Уровни логирования GORM: Silent, Error, Warn, Info
+			LogLevel:      logger.Silent, // Уровни логирования GORM: Silent, Error, Warn, Info
 			Colorful:      true,         // Disable color
 		},
 	)

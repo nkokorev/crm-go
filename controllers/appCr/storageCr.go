@@ -103,9 +103,19 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	/*priority, _, err := r.ParseForm("priority")
+	if err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка парсинга"}))
+		return
+	}*/
+
+	// Определяем приоритет
+
+
 	var fs models.Storage
 	if  ownerId > 0 {
 		fs = models.Storage{
+			AccountId: account.Id,
 			Name: strings.ToLower(header.Filename),
 			Data: buf.Bytes(),
 			MIME: header.Header.Get("Content-Type"),
@@ -115,6 +125,7 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		fs = models.Storage{
+			AccountId: account.Id,
 			Name: strings.ToLower(header.Filename),
 			Data: buf.Bytes(),
 			MIME: header.Header.Get("Content-Type"),
@@ -122,6 +133,11 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+
+	if err := fs.SetNexPriority(); err != nil {
+		u.Respond(w, u.MessageError(err, "Сервер не может установить приоритет изображения")) // что это?)
+		return
+	}
 
 	fileEntity, err := account.CreateEntity(&fs)
 	if err != nil {
