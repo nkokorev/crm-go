@@ -134,7 +134,7 @@ func StorageCreateFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 
-	if err := fs.SetNexPriority(); err != nil {
+	if err := fs.SetAutoPriority(); err != nil {
 		u.Respond(w, u.MessageError(err, "Сервер не может установить приоритет изображения")) // что это?)
 		return
 	}

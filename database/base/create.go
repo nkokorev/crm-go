@@ -1740,12 +1740,17 @@ func LoadImagesAiroClimate(count int)  {
 			}
 
 			fs := models.Storage{
+				AccountId: account.Id,
 				Name: strings.ToLower(file.Name()),
 				Data: body,
 				MIME: mimeType,
 				Size: file.Size(),
-				Priority: 0,
 			}
+
+			/*if err = fs.SetAutoPriority(); err != nil {
+				log.Fatal(err)
+			}*/
+
 			// file, err := account.StorageCreateFile(&fs)
 			file, err := account.CreateEntity(&fs)
 			if err != nil {

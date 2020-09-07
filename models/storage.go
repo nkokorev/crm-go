@@ -345,15 +345,32 @@ func (Storage) UpdatePriority(input []Storage) error {
 	}
 	return nil
 }
-func (fs *Storage) SetNexPriority() error {
+func (fs *Storage) SetAutoPriority() error {
 
 	var lastIdx sql.NullInt64
 	err := db.Table("storage").Where("account_id = ? AND owner_id = ? AND owner_type = ?",  fs.AccountId, fs.OwnerID, fs.OwnerType).
 		Select("max(priority)").Row().Scan(&lastIdx)
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
+
+	fmt.Println(fs.AccountId, fs.OwnerID, fs.OwnerType)
+	fmt.Println("lastIdx.Int64: ", lastIdx.Int64)
+
 	fs.Priority = 1 + int(lastIdx.Int64)
 
 	return nil
+
+}
+func (fs Storage) GetAutoPriority() int {
+
+	var lastIdx sql.NullInt64
+	err := db.Table("storage").Where("account_id = ? AND owner_id = ? AND owner_type = ?",  fs.AccountId, fs.OwnerID, fs.OwnerType).
+		Select("max(priority)").Row().Scan(&lastIdx)
+	if err != nil && err != gorm.ErrRecordNotFound { return 0 }
+
+	// fmt.Println(fs.AccountId, fs.OwnerID, fs.OwnerType)
+	// fmt.Println("lastIdx.Int64: ", lastIdx.Int64)
+
+	return 1 + int(lastIdx.Int64)
 
 }
 func (fs *Storage) delete () error {
@@ -516,15 +533,21 @@ func (product Product) AppendAssociationImage(fs Entity) error {
 		return utils.Error{Message: "Не возможно добавить изображение продукту"}
 	}
 
+	// Устанавливаем приоритет
+	var priority = Storage{AccountId: product.AccountId, OwnerID: product.Id, OwnerType: "products"}.GetAutoPriority()
+
 	if file.Id > 0 {
-		 if err := fs.update(map[string]interface{}{"owner_id":product.Id,"owner_type":"products"},nil); err != nil {
+		 if err := fs.update(map[string]interface{}{"owner_id":product.Id,"owner_type":"products","priority":priority},nil); err != nil {
 		 	return err
 		 }
 	} else {
+		file.Priority = priority
 		if err := db.Model(&product).Association("Images").Append(file); err != nil {
 			return err
 		}
 	}
+
+
 
 	return nil
 }
@@ -534,11 +557,15 @@ func (productCard ProductCard) AppendAssociationImage(fs Entity) error {
 		return utils.Error{Message: "Не возможно добавить изображение"}
 	}
 
+	// Устанавливаем приоритет
+	var priority = Storage{AccountId: productCard.AccountId, OwnerID: productCard.Id, OwnerType: "product_cards"}.GetAutoPriority()
+	
 	if file.Id > 0 {
-		if err := fs.update(map[string]interface{}{"owner_id":productCard.Id,"owner_type":"product_cards"},nil); err != nil {
+		if err := fs.update(map[string]interface{}{"owner_id":productCard.Id,"owner_type":"product_cards","priority":priority},nil); err != nil {
 			return err
 		}
 	} else {
+		file.Priority = priority
 		if err := db.Model(&productCard).Association("Images").Append(file); err != nil {
 			return err
 		}
