@@ -44,7 +44,7 @@ type Product struct {
 	PaymentSubjectId	uint	`json:"payment_subject_id" gorm:"type:int;not null;"`// товар или услуга ? [вид номенклатуры]
 	PaymentSubject 		PaymentSubject `json:"payment_subject"`
 
-	VatCodeId	uint	`json:"vat_code_id" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
+	VatCodeId	uint	`json:"vat_code_id" gorm:"type:int;default:1;"`// товар или услуга ? [вид номенклатуры]
 	VatCode		VatCode	`json:"vat_code"`
 
 	UnitMeasurementId 		uint	`json:"unit_measurement_id" gorm:"type:int;default:1;"` // тип измерения
@@ -116,12 +116,12 @@ func (product *Product) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 	}
 
 	if autoPreload {
-		return db.Preload("PaymentSubject","VatCode","UnitMeasurement","Account").Preload("Images", func(db *gorm.DB) *gorm.DB {
+		return db.Preload("PaymentSubject","VatCode","UnitMeasurement","Account","ProductCards").Preload("Images", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		})
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"PaymentSubject","VatCode","UnitMeasurement","Images","Account"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"PaymentSubject","VatCode","UnitMeasurement","Account","ProductCards","Images"})
 
 		for _,v := range allowed {
 			if v == "Images" {
@@ -156,7 +156,7 @@ func (product Product) create() (Entity, error)  {
 		return nil, err
 	}
 
-	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
+	if err := _item.GetPreloadDb(false,false, nil).First(&_item,_item.Id).Error; err != nil {
 		return nil, err
 	}
 
@@ -235,8 +235,8 @@ func (Product) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
 	}
-
-	entities := make([]Entity,len(products))
+	
+	entities := make([]Entity, len(products))
 	for i := range products {
 		entities[i] = &products[i]
 	}
@@ -249,6 +249,7 @@ func (product *Product) update(input map[string]interface{}, preloads []string) 
 	delete(input,"images")
 	delete(input,"account")
 	delete(input,"product_cards")
+	delete(input,"vat_code")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","payment_subject_id","vat_code_id","unit_measurement_id"}); err != nil {
 		return err

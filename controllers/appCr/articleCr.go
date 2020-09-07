@@ -2,6 +2,7 @@ package appCr
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -51,17 +52,19 @@ func ArticleGet(w http.ResponseWriter, r *http.Request) {
 
 	var article models.Article
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	// 2. Узнаем, какой id учитывается нужен
 	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
-		err = account.LoadEntityByPublicId(&article, articleId)
+		err = account.LoadEntityByPublicId(&article, articleId, preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	} else {
-		err = account.LoadEntity(&article, articleId)
+		err = account.LoadEntity(&article, articleId, preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
@@ -105,18 +108,20 @@ func ArticleListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var total int64 = 0
 	articles := make([]models.Entity, 0)
 
 	if all {
-		articles, total, err = account.GetListEntity(&models.Article{}, sortBy,nil)
+		articles, total, err = account.GetListEntity(&models.Article{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить данные"))
 			return
 		}
 	} else {
 		// emailNotifications, total, err = account.GetEmailNotificationsPaginationList(offset, limit, search)
-		articles, total, err = account.GetPaginationListEntity(&models.Article{}, offset, limit, sortBy, search, nil,nil)
+		articles, total, err = account.GetPaginationListEntity(&models.Article{}, offset, limit, sortBy, search, nil,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить данные"))
 			return
@@ -143,6 +148,8 @@ func ArticleUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var input map[string]interface{}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -151,13 +158,14 @@ func ArticleUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var article models.Article
-	if err = account.LoadEntity(&article, articleId); err != nil {
+	if err = account.LoadEntity(&article, articleId, nil); err != nil {
 		u.Respond(w, u.MessageError(err, "Статья не найдена"))
 		return
 	}
 
-	err = account.UpdateEntity(&article, input)
+	err = account.UpdateEntity(&article, input, preloads)
 	if err != nil {
+		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
@@ -183,7 +191,7 @@ func ArticleDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var article models.Article
-	if err = account.LoadEntity(&article, articleId); err != nil {
+	if err = account.LoadEntity(&article, articleId, nil); err != nil {
 		u.Respond(w, u.MessageError(err, "Статья не найдена"))
 		return
 	}

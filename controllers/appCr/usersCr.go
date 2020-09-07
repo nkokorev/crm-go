@@ -29,8 +29,11 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+
 	var role models.Role
-	if err = account.LoadEntity(&role, input.RoleId); err != nil {
+	if err = account.LoadEntity(&role, input.RoleId,preloads); err != nil {
 		u.Respond(w, u.MessageError(err, "Роль пользователя не найдена!"))
 		return
 	}
@@ -70,9 +73,10 @@ func UserUpload(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
-
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 	var role models.Role
-	if err = account.LoadEntity(&role, input.RoleId); err != nil {
+	
+	if err = account.LoadEntity(&role, input.RoleId,preloads); err != nil {
 		u.Respond(w, u.MessageError(err, "Роль пользователя не найдена!"))
 		return
 	}

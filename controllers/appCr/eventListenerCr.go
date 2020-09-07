@@ -49,9 +49,10 @@ func EventListenerGet(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке web site Id"))
 		return
 	}
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	var eventListener models.EventListener
-	err = account.LoadEntity(&eventListener, eventListenerId)
+	err = account.LoadEntity(&eventListener, eventListenerId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -95,15 +96,16 @@ func EventListenerGetListPagination(w http.ResponseWriter, r *http.Request) {
 	var total int64 = 0
 	eventListeners := make([]models.Entity,0)
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	if all {
-		eventListeners, total, err = account.GetListEntity(&models.EventListener{}, sortBy,nil)
+		eventListeners, total, err = account.GetListEntity(&models.EventListener{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	} else {
-		eventListeners, total, err = account.GetPaginationListEntity(&models.EventListener{}, offset, limit, sortBy, search, nil,nil)
+		eventListeners, total, err = account.GetPaginationListEntity(&models.EventListener{}, offset, limit, sortBy, search, nil,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -130,8 +132,10 @@ func EventListenerUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var eventListener models.EventListener
-	err = account.LoadEntity(&eventListener, eventListenerId)
+	err = account.LoadEntity(&eventListener, eventListenerId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -143,7 +147,7 @@ func EventListenerUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&eventListener, input)
+	err = account.UpdateEntity(&eventListener, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -169,7 +173,7 @@ func EventListenerDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var eventListener models.EventListener
-	err = account.LoadEntity(&eventListener, eventListenerId)
+	err = account.LoadEntity(&eventListener, eventListenerId, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -182,5 +186,3 @@ func EventListenerDelete(w http.ResponseWriter, r *http.Request) {
 	resp := u.Message(true, "DELETE Event Listener Successful")
 	u.Respond(w, resp)
 }
-
-///////////////////////////

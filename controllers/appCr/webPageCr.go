@@ -56,14 +56,16 @@ func WebPageGet(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой id учитывается нужен
 	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	if publicOk  {
-		err = account.LoadEntityByPublicId(&webPage, webPageId)
+		err = account.LoadEntityByPublicId(&webPage, webPageId,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	} else {
-		err = account.LoadEntity(&webPage, webPageId)
+		err = account.LoadEntity(&webPage, webPageId,preloads)
 		if err != nil {
 			fmt.Println(err)
 			u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
@@ -148,9 +150,10 @@ func WebPageUpdate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	var webPage models.WebPage
-	err = account.LoadEntity(&webPage, webPageId)
+	err = account.LoadEntity(&webPage, webPageId,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
@@ -170,7 +173,7 @@ func WebPageUpdate(w http.ResponseWriter, r *http.Request) {
 	}*/
 
 	// webPage, err := account.UpdateWebPage(webPageId, &input.WebPage)
-	err = account.UpdateEntity(&webPage, input)
+	err = account.UpdateEntity(&webPage, input,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -195,8 +198,9 @@ func WebPageDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
 	var webPage models.WebPage
-	err = account.LoadEntity(&webPage, webPageId)
+	err = account.LoadEntity(&webPage, webPageId,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
 		return

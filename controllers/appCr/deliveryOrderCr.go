@@ -48,12 +48,25 @@ func DeliveryOrderGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Public ID!!
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
+
 	var deliveryOrder models.DeliveryOrder
-	err = account.LoadEntityByPublicId(&deliveryOrder, deliveryOrderId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
-		return
+
+	if publicOk  {
+		// err = account.LoadEntityByPublicId(&emailNotification, emailNotificationId, preloads)
+		err = account.LoadEntityByPublicId(&deliveryOrder, deliveryOrderId,preloads)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			return
+		}
+	} else {
+		err = account.LoadEntity(&deliveryOrder, deliveryOrderId, preloads)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			return
+		}
 	}
 
 	resp := u.Message(true, "GET DeliveryOrder")
@@ -91,10 +104,12 @@ func DeliveryOrderGetListPagination(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var total int64 = 0
 	deliveryOrders := make([]models.Entity,0)
 	
-	deliveryOrders, total, err = account.GetPaginationListEntity(&models.DeliveryOrder{}, offset, limit, sortBy, search, nil,nil)
+	deliveryOrders, total, err = account.GetPaginationListEntity(&models.DeliveryOrder{}, offset, limit, sortBy, search, nil,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -120,8 +135,10 @@ func DeliveryOrderUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var deliveryOrder models.DeliveryOrder
-	err = account.LoadEntity(&deliveryOrder, deliveryOrderId)
+	err = account.LoadEntity(&deliveryOrder, deliveryOrderId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -133,7 +150,7 @@ func DeliveryOrderUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&deliveryOrder, input)
+	err = account.UpdateEntity(&deliveryOrder, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -158,8 +175,9 @@ func DeliveryOrderDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
 	var deliveryOrder models.DeliveryOrder
-	err = account.LoadEntity(&deliveryOrder, deliveryOrderId)
+	err = account.LoadEntity(&deliveryOrder, deliveryOrderId, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

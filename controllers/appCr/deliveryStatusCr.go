@@ -55,8 +55,10 @@ func DeliveryStatusGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var deliveryStatus models.DeliveryStatus
-	err = account.LoadEntity(&deliveryStatus, deliveryStatusId)
+	err = account.LoadEntity(&deliveryStatus, deliveryStatusId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -76,8 +78,10 @@ func DeliveryStatusGetList(w http.ResponseWriter, r *http.Request) {
 
 	var total int64 = 0
 	deliveryStatuses := make([]models.Entity,0)
-	
-	deliveryStatuses, total, err = account.GetListEntity(&models.DeliveryStatus{},"id",nil)
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	deliveryStatuses, total, err = account.GetListEntity(&models.DeliveryStatus{},"id",preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -108,8 +112,10 @@ func DeliveryStatusUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var deliveryStatus models.DeliveryStatus
-	err = account.LoadEntity(&deliveryStatus, deliveryStatusId)
+	err = account.LoadEntity(&deliveryStatus, deliveryStatusId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return
@@ -121,7 +127,7 @@ func DeliveryStatusUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&deliveryStatus, input)
+	err = account.UpdateEntity(&deliveryStatus, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -152,7 +158,7 @@ func DeliveryStatusDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var deliveryStatus models.DeliveryStatus
-	err = account.LoadEntity(&deliveryStatus, deliveryStatusId)
+	err = account.LoadEntity(&deliveryStatus, deliveryStatusId, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

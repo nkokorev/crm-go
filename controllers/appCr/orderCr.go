@@ -59,14 +59,16 @@ func OrderGet(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой объект нужен
 	publicIdOk:= utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	if publicIdOk {
-		err = account.LoadEntityByPublicId(&order, orderId)
+		err = account.LoadEntityByPublicId(&order, orderId, preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список заказов"))
 			return
 		}
 	} else {
-		err = account.LoadEntity(&order, orderId)
+		err = account.LoadEntity(&order, orderId, preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список заказов"))
 			return
@@ -108,10 +110,12 @@ func OrderGetListPagination(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var total int64 = 0
 	orders := make([]models.Entity,0)
 	
-	orders, total, err = account.GetPaginationListEntity(&models.Order{}, offset, limit, sortBy, search, nil,nil)
+	orders, total, err = account.GetPaginationListEntity(&models.Order{}, offset, limit, sortBy, search, nil,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -137,8 +141,10 @@ func OrderUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var order models.Order
-	err = account.LoadEntity(&order, orderId)
+	err = account.LoadEntity(&order, orderId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
@@ -150,7 +156,7 @@ func OrderUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&order, input)
+	err = account.UpdateEntity(&order, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -175,8 +181,9 @@ func OrderDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
 	var order models.Order
-	err = account.LoadEntity(&order, orderId)
+	err = account.LoadEntity(&order, orderId, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return

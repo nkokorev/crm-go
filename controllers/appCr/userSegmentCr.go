@@ -53,14 +53,16 @@ func UsersSegmentGet(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой id учитывается нужен
 	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	if publicOk  {
-		err = account.LoadEntityByPublicId(&usersSegment, usersSegmentId)
+		err = account.LoadEntityByPublicId(&usersSegment, usersSegmentId,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	} else {
-		err = account.LoadEntity(&usersSegment, usersSegmentId)
+		err = account.LoadEntity(&usersSegment, usersSegmentId,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 			return
@@ -107,15 +109,17 @@ func UsersSegmentPaginationGet(w http.ResponseWriter, r *http.Request) {
 	var total int64 = 0
 	usersSegments := make([]models.Entity,0)
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	if all {
-		usersSegments, total, err = account.GetListEntity(&models.UsersSegment{}, sortBy,nil)
+		usersSegments, total, err = account.GetListEntity(&models.UsersSegment{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список пользовательских сегментов"))
 			return
 		}
 	} else {
 		// usersSegments, total, err = account.GetUsersSegmentsPaginationList(offset, limit, search)
-		usersSegments, total, err = account.GetPaginationListEntity(&models.UsersSegment{}, offset, limit, sortBy, search, nil,nil)
+		usersSegments, total, err = account.GetPaginationListEntity(&models.UsersSegment{}, offset, limit, sortBy, search, nil,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -144,6 +148,8 @@ func UsersSegmentUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	// var input interface{}
 	var input map[string]interface{}
 
@@ -153,13 +159,13 @@ func UsersSegmentUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var usersSegment models.UsersSegment
-	if err = account.LoadEntity(&usersSegment, usersSegmentId); err != nil {
+	if err = account.LoadEntity(&usersSegment, usersSegmentId,preloads); err != nil {
 		u.Respond(w, u.MessageError(err, "WEbHook не найден"))
 		return
 	}
 
 	// usersSegment, err := account.UpdateUsersSegment(usersSegmentId, input)
-	if err = account.UpdateEntity(&usersSegment, input); err != nil {
+	if err = account.UpdateEntity(&usersSegment, input,preloads); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
@@ -185,7 +191,7 @@ func UsersSegmentDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var usersSegment models.UsersSegment
-	if err = account.LoadEntity(&usersSegment, usersSegmentId); err != nil {
+	if err = account.LoadEntity(&usersSegment, usersSegmentId,nil); err != nil {
 		u.Respond(w, u.MessageError(err, "WEbHook не найден"))
 		return
 	}

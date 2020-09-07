@@ -27,7 +27,7 @@ func DeliveryGetListByShop(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteId,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
 		return
@@ -52,7 +52,7 @@ func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteId,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -97,7 +97,7 @@ func DeliveryCodeList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteId,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return

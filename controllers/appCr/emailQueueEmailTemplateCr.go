@@ -52,9 +52,11 @@ func EmailQueueEmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var emailQueueEmailTemplate models.EmailQueueEmailTemplate
 
-	err = account.LoadEntity(&emailQueueEmailTemplate, emailQueueEmailTemplateId)
+	err = account.LoadEntity(&emailQueueEmailTemplate, emailQueueEmailTemplateId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список заказов"))
 		return
@@ -107,7 +109,9 @@ func EmailQueueEmailTemplateGetListPagination(w http.ResponseWriter, r *http.Req
 	var total int64 = 0
 	emailQueueEmailTemplates := make([]models.Entity,0)
 
-	emailQueueEmailTemplates, total, err = account.GetPaginationListEntity(&models.EmailQueueEmailTemplate{}, offset, limit, sortBy, search, filter,nil)
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	emailQueueEmailTemplates, total, err = account.GetPaginationListEntity(&models.EmailQueueEmailTemplate{}, offset, limit, sortBy, search, filter,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -133,8 +137,10 @@ func EmailQueueEmailTemplateUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var emailQueueEmailTemplate models.EmailQueueEmailTemplate
-	err = account.LoadEntity(&emailQueueEmailTemplate, emailQueueEmailTemplateId)
+	err = account.LoadEntity(&emailQueueEmailTemplate, emailQueueEmailTemplateId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -146,7 +152,7 @@ func EmailQueueEmailTemplateUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&emailQueueEmailTemplate, input)
+	err = account.UpdateEntity(&emailQueueEmailTemplate, input, preloads)
 	if err != nil {
 		// fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
@@ -172,8 +178,10 @@ func EmailQueueEmailTemplateMassUpdates(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	emailQueue := models.EmailQueue{}
-	if err =account.LoadEntity(&emailQueue, emailQueueId); err != nil {
+	if err =account.LoadEntity(&emailQueue, emailQueueId, preloads); err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Не найдена серия писем"}))
 		return
 	}
@@ -224,7 +232,7 @@ func EmailQueueEmailTemplateDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var emailQueueEmailTemplate models.EmailQueueEmailTemplate
-	err = account.LoadEntity(&emailQueueEmailTemplate, emailQueueEmailTemplateId)
+	err = account.LoadEntity(&emailQueueEmailTemplate, emailQueueEmailTemplateId, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

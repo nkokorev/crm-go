@@ -54,9 +54,10 @@ func PaymentModeGet(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке paymentModeId"))
 		return
 	}
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	var paymentMode models.PaymentMode
-	err = account.LoadEntity(&paymentMode, paymentModeId)
+	err = account.LoadEntity(&paymentMode, paymentModeId,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -76,8 +77,8 @@ func PaymentModeGetList(w http.ResponseWriter, r *http.Request) {
 
 	var total int64 = 0
 	paymentModes := make([]models.Entity,0)
-	
-	paymentModes, total, err = account.GetListEntity(&models.PaymentMode{},"id",nil)
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+	paymentModes, total, err = account.GetListEntity(&models.PaymentMode{},"id",preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -107,9 +108,9 @@ func PaymentModeUpdate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
-
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 	var paymentMode models.PaymentMode
-	err = account.LoadEntity(&paymentMode, paymentModeId)
+	err = account.LoadEntity(&paymentMode, paymentModeId,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return
@@ -121,7 +122,7 @@ func PaymentModeUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&paymentMode, input)
+	err = account.UpdateEntity(&paymentMode, input,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -152,7 +153,7 @@ func PaymentModeDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var paymentMode models.PaymentMode
-	err = account.LoadEntity(&paymentMode, paymentModeId)
+	err = account.LoadEntity(&paymentMode, paymentModeId,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return

@@ -55,8 +55,10 @@ func OrderStatusGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var orderStatus models.OrderStatus
-	err = account.LoadEntity(&orderStatus, orderStatusId)
+	err = account.LoadEntity(&orderStatus, orderStatusId,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -76,8 +78,10 @@ func OrderStatusGetList(w http.ResponseWriter, r *http.Request) {
 
 	var total int64 = 0
 	orderStatuses := make([]models.Entity,0)
-	
-	orderStatuses, total, err = account.GetListEntity(&models.OrderStatus{},"id",nil)
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	orderStatuses, total, err = account.GetListEntity(&models.OrderStatus{},"id",preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -108,8 +112,10 @@ func OrderStatusUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var orderStatus models.OrderStatus
-	err = account.LoadEntity(&orderStatus, orderStatusId)
+	err = account.LoadEntity(&orderStatus, orderStatusId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return
@@ -121,7 +127,7 @@ func OrderStatusUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&orderStatus, input)
+	err = account.UpdateEntity(&orderStatus, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -152,7 +158,7 @@ func OrderStatusDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var orderStatus models.OrderStatus
-	err = account.LoadEntity(&orderStatus, orderStatusId)
+	err = account.LoadEntity(&orderStatus, orderStatusId, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return

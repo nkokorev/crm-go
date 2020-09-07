@@ -52,19 +52,21 @@ func EmailCampaignGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var emailCampaign models.EmailCampaign
 
 	// 2. Узнаем, какой id учитывается нужен
 	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
-		err = account.LoadEntityByPublicId(&emailCampaign, emailCampaignId)
+		err = account.LoadEntityByPublicId(&emailCampaign, emailCampaignId, preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	} else {
-		err = account.LoadEntity(&emailCampaign, emailCampaignId)
+		err = account.LoadEntity(&emailCampaign, emailCampaignId, preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
@@ -106,6 +108,8 @@ func EmailCampaignGetListPagination(w http.ResponseWriter, r *http.Request) {
 		search = ""
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	// возвращаемые переменные
 	var total int64 = 0
 	emailCampaigns := make([]models.Entity,0)
@@ -114,13 +118,13 @@ func EmailCampaignGetListPagination(w http.ResponseWriter, r *http.Request) {
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
 	if all {
-		emailCampaigns, total, err = account.GetListEntity(&models.EmailCampaign{}, sortBy,nil)
+		emailCampaigns, total, err = account.GetListEntity(&models.EmailCampaign{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	} else {
-		emailCampaigns, total, err = account.GetPaginationListEntity(&models.EmailCampaign{}, offset, limit, sortBy, search, nil,nil)
+		emailCampaigns, total, err = account.GetPaginationListEntity(&models.EmailCampaign{}, offset, limit, sortBy, search, nil,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -149,8 +153,10 @@ func EmailCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var emailCampaign models.EmailCampaign
-	err = account.LoadEntity(&emailCampaign, emailCampaignId)
+	err = account.LoadEntity(&emailCampaign, emailCampaignId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -162,7 +168,7 @@ func EmailCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&emailCampaign, input)
+	err = account.UpdateEntity(&emailCampaign, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -220,8 +226,10 @@ func EmailCampaignChangeStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var emailCampaign models.EmailCampaign
-	err = account.LoadEntity(&emailCampaign, emailCampaignId)
+	err = account.LoadEntity(&emailCampaign, emailCampaignId, preloads)
 	if err != nil {
 		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Не удалось получить кампанию"))
@@ -301,8 +309,10 @@ func EmailCampaignCheckDouble(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var emailCampaign models.EmailCampaign
-	err = account.LoadEntity(&emailCampaign, emailCampaignId)
+	err = account.LoadEntity(&emailCampaign, emailCampaignId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -336,7 +346,7 @@ func EmailCampaignDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var emailCampaign models.EmailCampaign
-	err = account.LoadEntity(&emailCampaign, emailCampaignId)
+	err = account.LoadEntity(&emailCampaign, emailCampaignId, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

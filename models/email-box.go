@@ -60,7 +60,7 @@ func (emailBox EmailBox) create() (Entity, error)  {
 		return nil, err
 	}
 
-	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
+	if err := _item.GetPreloadDb(false,false, nil).First(&_item,_item.Id).Error; err != nil {
 		return nil, err
 	}
 
@@ -118,7 +118,7 @@ func (EmailBox) getListByWebSite(accountId uint, webSiteId uint, sortBy string) 
 
 func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
-	webHooks := make([]EmailBox,0)
+	emailBoxes := make([]EmailBox,0)
 	var total int64
 
 	// if need to search
@@ -129,7 +129,7 @@ func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 
 		err := (&CartItem{}).GetPreloadDb(false, false, preloads).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&webHooks, "name ILIKE ? OR box ILIKE ?", search,search).Error
+			Find(&emailBoxes, "name ILIKE ? OR box ILIKE ?", search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -145,7 +145,7 @@ func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 	} else {
 
 		err := (&CartItem{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&webHooks).Error
+			Find(&emailBoxes).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -158,9 +158,9 @@ func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(webHooks))
-	for i := range webHooks {
-		entities[i] = &webHooks[i]
+	entities := make([]Entity,len(emailBoxes))
+	for i := range emailBoxes {
+		entities[i] = &emailBoxes[i]
 	}
 
 	return entities, total, nil

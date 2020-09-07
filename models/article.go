@@ -18,7 +18,7 @@ type Article struct {
 	Public	 	bool 	`json:"public" gorm:"type:bool;default:false"` // Опубликована ли статья
 	Shared	 	bool 	`json:"shared" gorm:"type:bool;default:false"` // Расшарена ли статья
 
-	URL 		*string `json:"url" gorm:"type:varchar(255);"` // идентификатор страницы url
+	Path 		*string `json:"path" gorm:"type:varchar(255);"` // идентификатор страницы url
 	Breadcrumb 	*string `json:"breadcrumb" gorm:"type:varchar(255);"`
 	
 	Name 		*string `json:"name" gorm:"type:varchar(255);"` // Полное имя Имя статьи
@@ -92,7 +92,7 @@ func (article Article) create() (Entity, error)  {
 		return nil, err
 	}
 
-	err := en.GetPreloadDb(false,true, nil).First(&en, en.Id).Error
+	err := en.GetPreloadDb(false,false, nil).First(&en, en.Id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -199,6 +199,7 @@ func (Article) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 func (article *Article) update(input map[string]interface{}, preloads []string) error {
 
 	delete(input,"image")
+	// delete(input,"preloads")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
 		return err

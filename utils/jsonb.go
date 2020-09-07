@@ -146,7 +146,7 @@ func FixInputHiddenVars(input *map[string]interface{}) {
 			delete(*input, key)
 		}
 	}
-
+	delete(*input, "preloads")
 }
 
 // удаляет все переменные которые с '_name'

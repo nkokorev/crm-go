@@ -140,7 +140,7 @@ func (productCard ProductCard) create() (Entity, error)  {
 		return nil, err
 	}
 
-	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
+	if err := _item.GetPreloadDb(false,false, nil).First(&_item,_item.Id).Error; err != nil {
 		return nil, err
 	}
 
@@ -239,12 +239,12 @@ func (productCard *ProductCard) update(input map[string]interface{}, preloads []
 	}
 	input = utils.FixInputDataTimeVars(input,[]string{"expired_at"})
 
-	if err := productCard.GetPreloadDb(true,false,nil).Where(" id = ?", productCard.Id).
+	if err := productCard.GetPreloadDb(false,false,nil).Where(" id = ?", productCard.Id).
 		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
 		return err
 	}
 
-	err := productCard.GetPreloadDb(true,false,preloads).First(productCard, productCard.Id).Error
+	err := productCard.GetPreloadDb(false,false,preloads).First(productCard, productCard.Id).Error
 	if err != nil {
 		return err
 	}

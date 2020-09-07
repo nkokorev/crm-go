@@ -52,18 +52,18 @@ func ProductCardGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var productCard models.ProductCard
-
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 	// 2. Узнаем, какой id учитывается нужен
 	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
-		err = account.LoadEntityByPublicId(&productCard, productCardId)
+		err = account.LoadEntityByPublicId(&productCard, productCardId,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	} else {
-		err = account.LoadEntity(&productCard, productCardId)
+		err = account.LoadEntity(&productCard, productCardId,preloads)
 		if err != nil {
 			fmt.Println(err)
 			u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
@@ -71,7 +71,7 @@ func ProductCardGet(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	resp := u.Message(true, "GET ProductCard ")
+	resp := u.Message(true, "GET ProductCard")
 	resp["product_card"] = productCard
 	u.Respond(w, resp)
 }
@@ -107,6 +107,8 @@ func ProductCardListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		search = ""
 	}
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	// 2. Узнаем, какой список нужен
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
@@ -114,21 +116,21 @@ func ProductCardListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	webSites := make([]models.Entity,0)
 
 	if all {
-		webSites, total, err = account.GetListEntity(&models.ProductCard{}, sortBy,nil)
+		webSites, total, err = account.GetListEntity(&models.ProductCard{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список страниц"))
 			return
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		webSites, total, err = account.GetPaginationListEntity(&models.ProductCard{}, offset, limit, sortBy, search, nil,nil)
+		webSites, total, err = account.GetPaginationListEntity(&models.ProductCard{}, offset, limit, sortBy, search, nil,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список страниц"))
 			return
 		}
 	}
 	
-	resp := u.Message(true, "GET Web Sites PaginationList")
+	resp := u.Message(true, "GET product Cards PaginationList")
 	resp["product_cards"] = webSites
 	resp["total"] = total
 	u.Respond(w, resp)
@@ -147,9 +149,11 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
-
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 	var productCard models.ProductCard
-	err = account.LoadEntity(&productCard, productCardId)
+
+	err = account.LoadEntity(&productCard, productCardId,nil)
+
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
@@ -169,7 +173,7 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 	}*/
 
 	// productCard, err := account.UpdateProductCard(productCardId, &input.ProductCard)
-	err = account.UpdateEntity(&productCard, input)
+	err = account.UpdateEntity(&productCard, input,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -195,7 +199,7 @@ func ProductCardDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var productCard models.ProductCard
-	err = account.LoadEntity(&productCard, productCardId)
+	err = account.LoadEntity(&productCard, productCardId,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
 		return

@@ -1145,7 +1145,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: "AIRO-DEZ с регулировкой черный", //,
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности черный", ShortName: "Рециркулятор AIRO-DEZ черный",
-			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1.0,
 			RetailPrice: 19500.00, RetailDiscount: 1000,
 			ShortDescription: "",Description: "",
 			WeightKey: "grossWeight",
@@ -1171,7 +1171,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: "AIRO-DEZ черный",
 			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ черный", ShortName: "Рециркулятор AIRO-DEZ черный",
-			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1.0,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			ShortDescription: "",
 			Description: "",
@@ -1479,6 +1479,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			// groupId = catGr2.GetId()
 			webPage = *catGr2.(*models.WebPage)
 		}
+		
 		// создаем товар, карточку товара и добавляем их в группу
 		_, err = webSiteAiro.CreateProductWithProductCard(products[i], cards[i], webPage)
 		if err != nil {
@@ -1501,7 +1502,7 @@ func UploadTestDataPart_II() {
 
 	// 2. Получаем магазин
 	var webSite models.WebSite
-	err = accountAiro.LoadEntity(&webSite, 7)
+	err = accountAiro.LoadEntity(&webSite, 7,nil)
 	if err != nil {
 		log.Fatalf("Не удалось найти webSite: %v", err)
 	}
@@ -1817,16 +1818,14 @@ func LoadArticlesAiroClimate()  {
 			Shared: true,
 			Body: utils.STRp(string(body)),
 		}
-		articleEntity, err := account.CreateEntity(&articleNew)
+		_, err = account.CreateEntity(&articleNew)
 		if err != nil {
 			log.Fatalf("unable to create file: %v", err)
 		}
-		article, ok := articleEntity.(*models.Article)
+		/*_, ok := articleEntity.(*models.Article)
 		if !ok {
 			log.Fatal("article, ok := articleEntity.(*models.Article)")
-		}
-
-		fmt.Println("article:", article.Name)
+		}*/
 
 	}
 }
@@ -1865,7 +1864,11 @@ func LoadProductDescriptionAiroClimate()  {
 			log.Fatalf("unable to read id file name: %v", err)
 		}
 		
-		_, err = account.UpdateProduct(uint(fileId), map[string]interface{}{"Description":string(body)})
+		/*_, err = account.UpdateProduct(uint(fileId), map[string]interface{}{"Description":string(body)})
+		if err != nil {
+			log.Fatalf("unable to update product: %v", err)
+		}*/
+		err = account.UpdateEntity(&models.Product{Id: uint(fileId)},map[string]interface{}{"Description":string(body)},nil)
 		if err != nil {
 			log.Fatalf("unable to update product: %v", err)
 		}
@@ -1930,7 +1933,7 @@ func UploadTestDataPart_IV()  {
 	}
 
 	var webSite models.WebSite
-	if err := airoAccount.LoadEntity(&webSite, 7); err != nil { log.Fatal(err)}
+	if err := airoAccount.LoadEntity(&webSite, 7,nil); err != nil { log.Fatal(err)}
 
 	payment2Deliveries := []models.Payment2Delivery {
 		{AccountId: airoAccount.Id, WebSiteId: webSite.Id, PaymentId: 1, PaymentType: "payment_cashes", DeliveryId: 1, DeliveryType: "delivery_pickups"},
@@ -1962,7 +1965,7 @@ func UploadTestDataPart_IV()  {
 		log.Fatalf("Не удалось создать entityPayment: ", err)
 	}
 	var _paymentYandex models.PaymentYandex
-	if err = airoAccount.LoadEntity(&_paymentYandex,entityPayment.GetId()); err != nil {
+	if err = airoAccount.LoadEntity(&_paymentYandex,entityPayment.GetId(),nil); err != nil {
 		log.Fatalf("Не удалось найти entityPayment: ", err)
 	}
 
@@ -1978,7 +1981,7 @@ func UploadTestDataPart_IV()  {
 		log.Fatalf("Не удалось создать entityPayment: ", err)
 	}
 	var _paymentCash models.PaymentCash
-	if err = airoAccount.LoadEntity(&_paymentCash,entityPayment2.GetId()); err != nil {
+	if err = airoAccount.LoadEntity(&_paymentCash,entityPayment2.GetId(),nil); err != nil {
 		log.Fatalf("Не удалось найти paymentCash: ", err)
 	}
 

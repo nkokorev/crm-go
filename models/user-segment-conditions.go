@@ -68,7 +68,7 @@ func (userSegmentCondition UserSegmentCondition) create() (Entity, error)  {
 		return nil, err
 	}
 
-	err := en.GetPreloadDb(false,true, nil).First(&en, en.Id).Error
+	err := en.GetPreloadDb(false,false, nil).First(&en, en.Id).Error
 	if err != nil {
 		return nil, err
 	}

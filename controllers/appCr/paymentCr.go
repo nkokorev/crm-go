@@ -8,7 +8,6 @@ import (
 	"net/http"
 )
 
-
 func PaymentGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
@@ -26,21 +25,21 @@ func PaymentGet(w http.ResponseWriter, r *http.Request) {
 	
 	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	if publicOk  {
-		err = account.LoadEntityByPublicId(&payment, paymentId)
+		err = account.LoadEntityByPublicId(&payment, paymentId,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	} else {
-		err = account.LoadEntity(&payment, paymentId)
+		err = account.LoadEntity(&payment, paymentId, preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить платеж"))
 			return
 		}
 	}
-
-
 
 
 	resp := u.Message(true, "GET Payment")
@@ -80,8 +79,10 @@ func PaymentGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	var total int64 = 0
 	payments := make([]models.Entity,0)
-	
-	payments, total, err = account.GetPaginationListEntity(&models.Payment{}, offset, limit, sortBy, search, nil,nil)
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	payments, total, err = account.GetPaginationListEntity(&models.Payment{}, offset, limit, sortBy, search, nil,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -107,8 +108,10 @@ func PaymentUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var payment models.Payment
-	err = account.LoadEntity(&payment, paymentId)
+	err = account.LoadEntity(&payment, paymentId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
@@ -120,7 +123,7 @@ func PaymentUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&payment, input)
+	err = account.UpdateEntity(&payment, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return

@@ -47,19 +47,21 @@ func EmailNotificationGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var emailNotification models.EmailNotification
 
 	// 2. Узнаем, какой id учитывается нужен
 	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
-		err = account.LoadEntityByPublicId(&emailNotification, emailNotificationId)
+		err = account.LoadEntityByPublicId(&emailNotification, emailNotificationId, preloads)
 		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить объект 1"))
+			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	} else {
-		err = account.LoadEntity(&emailNotification, emailNotificationId)
+		err = account.LoadEntity(&emailNotification, emailNotificationId, preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось найти объект 2"))
 			return
@@ -101,19 +103,20 @@ func EmailNotificationGetListPagination(w http.ResponseWriter, r *http.Request) 
 	// 2. Узнаем, какой список нужен
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	var total int64 = 0
 	emailNotifications := make([]models.Entity,0)
 
 	if all {
-		emailNotifications, total, err = account.GetListEntity(&models.EmailNotification{}, sortBy,nil)
+		emailNotifications, total, err = account.GetListEntity(&models.EmailNotification{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить данные"))
 			return
 		}
 	} else {
 		// emailNotifications, total, err = account.GetEmailNotificationsPaginationList(offset, limit, search)
-		emailNotifications, total, err = account.GetPaginationListEntity(&models.EmailNotification{}, offset, limit, sortBy, search, nil,nil)
+		emailNotifications, total, err = account.GetPaginationListEntity(&models.EmailNotification{}, offset, limit, sortBy, search, nil,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить данные"))
 			return
@@ -146,13 +149,15 @@ func EmailNotificationUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var emailNotification models.EmailNotification
-	if err = account.LoadEntity(&emailNotification, emailNotificationId); err != nil {
+	if err = account.LoadEntity(&emailNotification, emailNotificationId, preloads); err != nil {
 		u.Respond(w, u.MessageError(err, "Уведомление не найдено"))
 		return
 	}
 
-	if err = account.UpdateEntity(&emailNotification, input); err != nil {
+	if err = account.UpdateEntity(&emailNotification, input, preloads); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
@@ -176,7 +181,7 @@ func EmailNotificationDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var emailNotification models.EmailNotification
-	if err = account.LoadEntity(&emailNotification, emailNotificationId); err != nil {
+	if err = account.LoadEntity(&emailNotification, emailNotificationId, nil); err != nil {
 		u.Respond(w, u.MessageError(err, "Уведомление не найдено"))
 		return
 	}

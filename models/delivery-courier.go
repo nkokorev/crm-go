@@ -96,7 +96,7 @@ func (deliveryCourier DeliveryCourier) create() (Entity, error)  {
 		return nil, err
 	}
 
-	if err := _deliveryCourier.GetPreloadDb(false,true, nil).First(&_deliveryCourier,_deliveryCourier.Id).Error; err != nil {
+	if err := _deliveryCourier.GetPreloadDb(false,false, nil).First(&_deliveryCourier,_deliveryCourier.Id).Error; err != nil {
 		return nil, err
 	}
 

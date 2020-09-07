@@ -173,8 +173,10 @@ func StorageGetFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var file models.Storage
-	err = account.LoadEntity(&file, fileId)
+	err = account.LoadEntity(&file, fileId,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Получения списка"}))
 		return
@@ -205,8 +207,10 @@ func StorageGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var file models.Storage
-	err = account.LoadEntity(&file,fileId)
+	err = account.LoadEntity(&file,fileId,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Получения списка"}))
 		return
@@ -294,8 +298,10 @@ func StorageUpdateFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var file models.Storage
-	err = account.LoadEntity(&file,fileId)
+	err = account.LoadEntity(&file,fileId,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Получения списка"}))
 		return
@@ -308,7 +314,7 @@ func StorageUpdateFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&file,input)
+	err = account.UpdateEntity(&file,input,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка обновления файла"}))
 		return
@@ -377,10 +383,10 @@ func StorageDeleteFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	var file models.Storage
-	err = account.LoadEntity(&file,fileId)
+	err = account.LoadEntity(&file,fileId,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Не удалось найти файл"}))
 		return

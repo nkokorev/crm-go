@@ -50,19 +50,21 @@ func EmailBoxGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var emailBox models.EmailBox
 
 	// 2. Узнаем, какой id учитывается нужен
 	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
-		err = account.LoadEntityByPublicId(&emailBox, emailBoxId)
+		err = account.LoadEntityByPublicId(&emailBox, emailBoxId, preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	} else {
-		err = account.LoadEntity(&emailBox, emailBoxId)
+		err = account.LoadEntity(&emailBox, emailBoxId, preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
 			return
@@ -112,15 +114,17 @@ func EmailBoxListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	var total int64 = 0
 	emailBoxes := make([]models.Entity,0)
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	if all {
-		emailBoxes, total, err = account.GetListEntity(&models.EmailBox{}, sortBy,nil)
+		emailBoxes, total, err = account.GetListEntity(&models.EmailBox{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список почтовых ящиков"))
 			return
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		emailBoxes, total, err = account.GetPaginationListEntity(&models.EmailBox{}, offset, limit, sortBy, search, nil,nil)
+		emailBoxes, total, err = account.GetPaginationListEntity(&models.EmailBox{}, offset, limit, sortBy, search, nil,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список почтовых ящиков"))
 			return
@@ -148,8 +152,10 @@ func EmailBoxUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var emailBox models.EmailBox
-	err = account.LoadEntity(&emailBox, emailBoxId)
+	err = account.LoadEntity(&emailBox, emailBoxId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
@@ -163,7 +169,7 @@ func EmailBoxUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// emailBox, err := account.UpdateWebSite(emailBoxId, &input.EmailBox)
-	err = account.UpdateEntity(&emailBox, input)
+	err = account.UpdateEntity(&emailBox, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -189,7 +195,7 @@ func EmailBoxDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var emailBox models.EmailBox
-	err = account.LoadEntity(&emailBox, emailBoxId)
+	err = account.LoadEntity(&emailBox, emailBoxId, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
 		return

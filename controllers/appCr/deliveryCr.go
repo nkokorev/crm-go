@@ -23,7 +23,7 @@ func DeliveryCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteId, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -60,8 +60,10 @@ func DeliveryGetListByShop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -90,8 +92,10 @@ func DeliveryGetList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -136,8 +140,10 @@ func DeliveryUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return
@@ -176,7 +182,7 @@ func DeliveryDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteId, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 		return

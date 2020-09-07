@@ -55,8 +55,10 @@ func OrderChannelGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var orderChannel models.OrderChannel
-	err = account.LoadEntity(&orderChannel, orderChannelId)
+	err = account.LoadEntity(&orderChannel, orderChannelId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -99,8 +101,10 @@ func OrderChannelGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	var total int64 = 0
 	orderChannels := make([]models.Entity,0)
-	
-	orderChannels, total, err = account.GetPaginationListEntity(&models.OrderChannel{}, offset, limit, sortBy, search, nil,nil)
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	orderChannels, total, err = account.GetPaginationListEntity(&models.OrderChannel{}, offset, limit, sortBy, search, nil,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -131,8 +135,10 @@ func OrderChannelUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var orderChannel models.OrderChannel
-	err = account.LoadEntity(&orderChannel, orderChannelId)
+	err = account.LoadEntity(&orderChannel, orderChannelId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -144,7 +150,7 @@ func OrderChannelUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&orderChannel, input)
+	err = account.UpdateEntity(&orderChannel, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -175,7 +181,7 @@ func OrderChannelDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var orderChannel models.OrderChannel
-	err = account.LoadEntity(&orderChannel, orderChannelId)
+	err = account.LoadEntity(&orderChannel, orderChannelId, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

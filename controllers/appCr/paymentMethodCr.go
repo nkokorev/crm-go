@@ -2,7 +2,6 @@ package appCr
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -119,7 +118,7 @@ func PaymentMethodUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Метод: ", paymentMethod.GetType())
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	var input map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -127,7 +126,7 @@ func PaymentMethodUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(paymentMethod, input)
+	err = account.UpdateEntity(paymentMethod, input,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return

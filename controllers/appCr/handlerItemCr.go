@@ -57,8 +57,10 @@ func HandlerItemGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var handlerItem models.HandlerItem
-	err = account.LoadEntity(&handlerItem, handlerItemId)
+	err = account.LoadEntity(&handlerItem, handlerItemId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить handlerItem item"))
 		return
@@ -100,10 +102,12 @@ func HandlerItemGetList(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var total int64 = 0
 	handlerItems := make([]models.Entity,0)
 	if all {
-		handlerItems, total, err = account.GetListEntity(&models.HandlerItem{}, sortBy,nil)
+		handlerItems, total, err = account.GetListEntity(&models.HandlerItem{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -157,8 +161,10 @@ func HandlerItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 	var total int64 = 0
 	handlerItems := make([]models.Entity,0)
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	if all {
-		handlerItems, total, err = account.GetListEntity(&models.HandlerItem{}, sortBy,nil)
+		handlerItems, total, err = account.GetListEntity(&models.HandlerItem{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -192,6 +198,8 @@ func HandlerItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	handlerItemId, err := utilsCr.GetUINTVarFromRequest(r, "handlerItemId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке handlerItem Item Id"))
@@ -199,7 +207,7 @@ func HandlerItemUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var handlerItem models.HandlerItem
-	err = account.LoadEntity(&handlerItem, handlerItemId)
+	err = account.LoadEntity(&handlerItem, handlerItemId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -212,7 +220,7 @@ func HandlerItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&handlerItem, input)
+	err = account.UpdateEntity(&handlerItem, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -243,7 +251,7 @@ func HandlerItemDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var handlerItem models.HandlerItem
-	err = account.LoadEntity(&handlerItem, handlerItemId)
+	err = account.LoadEntity(&handlerItem, handlerItemId, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return

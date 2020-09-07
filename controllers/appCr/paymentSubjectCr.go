@@ -55,8 +55,10 @@ func PaymentSubjectGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var paymentSubject models.PaymentSubject
-	err = account.LoadEntity(&paymentSubject, paymentSubjectId)
+	err = account.LoadEntity(&paymentSubject, paymentSubjectId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
@@ -99,8 +101,27 @@ func PaymentSubjectGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	var total int64 = 0
 	paymentSubjects := make([]models.Entity,0)
-	
-	paymentSubjects, total, err = account.GetPaginationListEntity(&models.PaymentSubject{}, offset, limit, sortBy, search, nil,nil)
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
+
+	if all {
+		paymentSubjects, total, err = account.GetListEntity(&models.PaymentSubject{}, sortBy,preloads)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			return
+		}
+	} else {
+		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
+		paymentSubjects, total, err = account.GetPaginationListEntity(&models.PaymentSubject{}, offset, limit, sortBy, search, nil,preloads)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+			return
+		}
+	}
+
+	paymentSubjects, total, err = account.GetPaginationListEntity(&models.PaymentSubject{}, offset, limit, sortBy, search, nil,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -125,6 +146,8 @@ func PaymentSubjectUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	paymentSubjectId, err := utilsCr.GetUINTVarFromRequest(r, "paymentSubjectId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
@@ -132,7 +155,7 @@ func PaymentSubjectUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var paymentSubject models.PaymentSubject
-	err = account.LoadEntity(&paymentSubject, paymentSubjectId)
+	err = account.LoadEntity(&paymentSubject, paymentSubjectId,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return
@@ -144,7 +167,7 @@ func PaymentSubjectUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&paymentSubject, input)
+	err = account.UpdateEntity(&paymentSubject, input,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -175,7 +198,7 @@ func PaymentSubjectDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var paymentSubject models.PaymentSubject
-	err = account.LoadEntity(&paymentSubject, paymentSubjectId)
+	err = account.LoadEntity(&paymentSubject, paymentSubjectId,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return

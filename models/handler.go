@@ -192,10 +192,11 @@ func (eventListener EventListener) uploadEntitiesData(event *event.Event) {
 	}
 
 	if productId, ok := e.Get("productId").(uint); ok {
-	   product, err := account.GetProduct(productId)
+		var product Product
+		err := account.LoadEntity(&product, productId,nil)
 	   if err == nil {
 		   e.Add("productId", productId)
-		   e.Add("Product", *product)
+		   e.Add("Product", product)
 	   }
 	}
 

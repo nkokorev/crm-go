@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
@@ -53,16 +54,6 @@ func (WebSite) PgSqlCreate() {
 	}
 
 }
-
-// ############# Entity interface #############
-func (webSite WebSite) GetId() uint { return webSite.Id }
-func (webSite *WebSite) setId(id uint) { webSite.Id = id }
-func (webSite *WebSite) setPublicId(id uint) { webSite.PublicId = id }
-func (webSite WebSite) GetAccountId() uint { return webSite.AccountId }
-func (webSite *WebSite) setAccountId(id uint) { webSite.AccountId = id }
-func (webSite WebSite) SystemEntity() bool { return false }
-// ############# END Of Entity interface #############
-
 func (webSite *WebSite) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
 
 	_db := db
@@ -87,6 +78,14 @@ func (webSite *WebSite) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 
 }
 
+// ############# Entity interface #############
+func (webSite WebSite) GetId() uint { return webSite.Id }
+func (webSite *WebSite) setId(id uint) { webSite.Id = id }
+func (webSite *WebSite) setPublicId(id uint) { webSite.PublicId = id }
+func (webSite WebSite) GetAccountId() uint { return webSite.AccountId }
+func (webSite *WebSite) setAccountId(id uint) { webSite.AccountId = id }
+func (webSite WebSite) SystemEntity() bool { return false }
+// ############# END Of Entity interface #############
 
 func (webSite *WebSite) BeforeCreate(tx *gorm.DB) error {
 	webSite.Id = 0
@@ -140,7 +139,7 @@ func (webSite WebSite) create() (Entity, error)  {
 		return nil, err
 	}
 
-	if err := wb.GetPreloadDb(false,true,nil).First(&wb,wb.Id).Error; err != nil {
+	if err := wb.GetPreloadDb(false,false,nil).First(&wb,wb.Id).Error; err != nil {
 		return nil, err
 	}
 
@@ -326,7 +325,7 @@ func (webSite WebSite) GetProduct(productId uint) (*Product, error) {
 	return product, nil
 }
 func (webSite WebSite) CreateProductWithProductCard(input Product, newCard ProductCard, webPage WebPage) (*Product, error) {
-
+	
 	input.AccountId = webSite.AccountId
 
 	if input.ExistSKU() {
@@ -346,6 +345,8 @@ func (webSite WebSite) CreateProductWithProductCard(input Product, newCard Produ
 	if !ok {
 		return nil, utils.Error{Message: "Ошибка преобразования Product"}
 	}
+
+	fmt.Println(product)
 
 	// Создаем карточку товара
 	newCard.AccountId = webSite.AccountId

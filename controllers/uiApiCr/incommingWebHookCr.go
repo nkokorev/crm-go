@@ -72,7 +72,7 @@ func PaymentYandexWebHook(w http.ResponseWriter, r *http.Request) {
 			"paid":input.Object.Paid,
 		}
 	}
-	err = account.UpdateEntity(payment, m);
+	err = account.UpdateEntity(payment, m, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось обновить платежку"))
 		return

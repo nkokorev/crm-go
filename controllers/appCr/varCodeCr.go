@@ -55,8 +55,10 @@ func VatCodeGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var vatCode models.VatCode
-	err = account.LoadEntity(&vatCode, vatCodeId)
+	err = account.LoadEntity(&vatCode, vatCodeId,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
@@ -99,8 +101,10 @@ func VatCodeGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	var total int64 = 0
 	vatCodes := make([]models.Entity,0)
-	
-	vatCodes, total, err = account.GetPaginationListEntity(&models.VatCode{}, offset, limit, sortBy, search, nil,nil)
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	vatCodes, total, err = account.GetPaginationListEntity(&models.VatCode{}, offset, limit, sortBy, search, nil,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -131,8 +135,10 @@ func VatCodeUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var vatCode models.VatCode
-	err = account.LoadEntity(&vatCode, vatCodeId)
+	err = account.LoadEntity(&vatCode, vatCodeId,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return
@@ -144,7 +150,7 @@ func VatCodeUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&vatCode, input)
+	err = account.UpdateEntity(&vatCode, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -173,9 +179,8 @@ func VatCodeDelete(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
-
 	var vatCode models.VatCode
-	err = account.LoadEntity(&vatCode, vatCodeId)
+	err = account.LoadEntity(&vatCode, vatCodeId,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return

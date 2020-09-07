@@ -56,14 +56,16 @@ func WebSiteGet(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой id учитывается нужен
 	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	if publicOk  {
-		err = account.LoadEntityByPublicId(&webSite, webSiteId)
+		err = account.LoadEntityByPublicId(&webSite, webSiteId,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	} else {
-		err = account.LoadEntity(&webSite, webSiteId)
+		err = account.LoadEntity(&webSite, webSiteId,preloads)
 		if err != nil {
 			fmt.Println(err)
 			u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
@@ -73,34 +75,6 @@ func WebSiteGet(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET WebSite ")
 	resp["web_site"] = webSite
-	u.Respond(w, resp)
-}
-
-func WebSiteListGet(w http.ResponseWriter, r *http.Request) {
-	// 1. Получаем рабочий аккаунт (автома. сверка с {hashId}.)
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		return
-	}
-
-	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
-	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
-	if !ok {
-		sortBy = "id"
-	}
-	if sortDesc {
-		sortBy += " desc"
-	}
-
-	webSites, total, err := account.GetListEntity(&models.WebSite{}, sortBy,nil)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список сайтов"))
-		return
-	}
-
-	resp := u.Message(true, "GET WebSite List")
-	resp["web_sites"] = webSites
-	resp["total"] = total
 	u.Respond(w, resp)
 }
 
@@ -145,7 +119,7 @@ func WebSiteListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	webSites := make([]models.Entity,0)
 
 	if all {
-		webSites, total, err = account.GetListEntity(&models.WebSite{}, sortBy,nil)
+		webSites, total, err = account.GetListEntity(&models.WebSite{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список сайтов"))
 			return
@@ -179,8 +153,10 @@ func WebSiteUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteId,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
@@ -200,7 +176,7 @@ func WebSiteUpdate(w http.ResponseWriter, r *http.Request) {
 	}*/
 
 	// webSite, err := account.UpdateWebSite(webSiteId, &input.WebSite)
-	err = account.UpdateEntity(&webSite, input)
+	err = account.UpdateEntity(&webSite, input,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -226,7 +202,7 @@ func WebSiteDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var webSite models.WebSite
-	err = account.LoadEntity(&webSite, webSiteId)
+	err = account.LoadEntity(&webSite, webSiteId,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
 		return

@@ -166,7 +166,7 @@ func (order Order) create() (Entity, error)  {
 		return nil, err
 	}
 
-	if err := _item.GetPreloadDb(false,true, nil).First(&_item,_item.Id).Error; err != nil {
+	if err := _item.GetPreloadDb(false,false, nil).First(&_item,_item.Id).Error; err != nil {
 		return nil, err
 	}
 

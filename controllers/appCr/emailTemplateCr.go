@@ -55,19 +55,21 @@ func EmailTemplateGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var emailTemplate models.EmailTemplate
 
 	// 2. Узнаем, какой id учитывается нужен
 	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
-		err = account.LoadEntityByPublicId(&emailTemplate, emailTemplateId)
+		err = account.LoadEntityByPublicId(&emailTemplate, emailTemplateId, preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	} else {
-		if err = account.LoadEntity(&emailTemplate,emailTemplateId); err != nil {
+		if err = account.LoadEntity(&emailTemplate,emailTemplateId, preloads); err != nil {
 			u.Respond(w, u.MessageError(err, "Шаблон не найден"))
 			return
 		}
@@ -107,11 +109,13 @@ func EmailTemplateGetListPagination(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var total int64 = 0
 	emailTemplates := make([]models.Entity,0)
 
 	if all {
-		emailTemplates, total, err = account.GetListEntity(&models.EmailTemplate{}, sortBy,nil)
+		emailTemplates, total, err = account.GetListEntity(&models.EmailTemplate{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список email-шаблонов"))
 			return
@@ -145,8 +149,10 @@ func EmailTemplateUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var emailTemplate models.EmailTemplate
-	if err := account.LoadEntity(&emailTemplate, emailTemplateId); err != nil {
+	if err := account.LoadEntity(&emailTemplate, emailTemplateId, preloads); err != nil {
 		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
 		return
 	}
@@ -158,7 +164,7 @@ func EmailTemplateUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// err = account.EmailTemplateUpdate(tpl, input)
-	err = account.UpdateEntity(&emailTemplate, input)
+	err = account.UpdateEntity(&emailTemplate, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении шаблона"))
 		return
@@ -184,7 +190,7 @@ func EmailTemplateDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var emailTemplate models.EmailTemplate
-	if err := account.LoadEntity(&emailTemplate, emailTemplateId); err != nil {
+	if err := account.LoadEntity(&emailTemplate, emailTemplateId, nil); err != nil {
 		u.Respond(w, u.MessageError(err, "Шаблон не найден"))
 		return
 	}

@@ -57,8 +57,10 @@ func EventItemGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var eventItem models.EventItem
-	err = account.LoadEntity(&eventItem, eventItemId)
+	err = account.LoadEntity(&eventItem, eventItemId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить observer item"))
 		return
@@ -100,23 +102,23 @@ func EventItemGetList(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var total int64 = 0
 	observerItems := make([]models.Entity,0)
 	if all {
-		observerItems, total, err = account.GetListEntity(&models.EventItem{}, sortBy,nil)
+		observerItems, total, err = account.GetListEntity(&models.EventItem{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	} else {
-		observerItems, total, err = account.GetPaginationListEntity(&models.EventItem{}, offset, limit, sortBy, search, nil,nil)
+		observerItems, total, err = account.GetPaginationListEntity(&models.EventItem{}, offset, limit, sortBy, search, nil,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	}
-
-
 
 	resp := u.Message(true, "GET System Event Pagination List")
 	resp["total"] = total
@@ -154,11 +156,13 @@ func EventItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var total int64 = 0
 	observerItems := make([]models.Entity,0)
 
 	if all {
-		observerItems, total, err = account.GetListEntity(&models.EventItem{}, sortBy,nil)
+		observerItems, total, err = account.GetListEntity(&models.EventItem{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -198,8 +202,10 @@ func EventItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var eventItem models.EventItem
-	err = account.LoadEntity(&eventItem, eventItemId)
+	err = account.LoadEntity(&eventItem, eventItemId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
@@ -212,7 +218,7 @@ func EventItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&eventItem, input)
+	err = account.UpdateEntity(&eventItem, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
@@ -243,7 +249,7 @@ func EventItemDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var eventItem models.EventItem
-	err = account.LoadEntity(&eventItem, eventItemId)
+	err = account.LoadEntity(&eventItem, eventItemId, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return

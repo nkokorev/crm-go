@@ -80,7 +80,7 @@ func (comment Comment) create() (Entity, error)  {
 		return nil, err
 	}
 
-	if err := _comment.GetPreloadDb(false,true, nil).First(&_comment,_comment.Id).Error; err != nil {
+	if err := _comment.GetPreloadDb(false,false, nil).First(&_comment,_comment.Id).Error; err != nil {
 		return nil, err
 	}
 

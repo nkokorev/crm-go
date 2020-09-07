@@ -54,14 +54,16 @@ func WebHookGet(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой id учитывается нужен
 	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	if publicOk  {
-		err = account.LoadEntityByPublicId(&webHook, webHookId)
+		err = account.LoadEntityByPublicId(&webHook, webHookId,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	} else {
-		err = account.LoadEntity(&webHook, webHookId)
+		err = account.LoadEntity(&webHook, webHookId,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось найти магазин"))
 			return
@@ -91,8 +93,10 @@ func WebHookExecute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	var webHook models.WebHook
-	err = account.LoadEntity(&webHook, webHookId)
+	err = account.LoadEntity(&webHook, webHookId,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось найти вебхук"))
 		return
@@ -137,15 +141,17 @@ func WebHookListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	var total int64 = 0
 	webHooks := make([]models.Entity,0)
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	if all {
-		webHooks, total, err = account.GetListEntity(&models.WebHook{}, sortBy,nil)
+		webHooks, total, err = account.GetListEntity(&models.WebHook{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
 			return
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		webHooks, total, err = account.GetPaginationListEntity(&models.WebHook{}, offset, limit, sortBy, search, nil,nil)
+		webHooks, total, err = account.GetPaginationListEntity(&models.WebHook{}, offset, limit, sortBy, search, nil,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список ВебХуков"))
 			return
@@ -173,6 +179,7 @@ func WebHookUpdate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id группы"))
 		return
 	}
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	// var input interface{}
 	var input map[string]interface{}
@@ -183,13 +190,13 @@ func WebHookUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var webHook models.WebHook
-	if err = account.LoadEntity(&webHook, webHookId); err != nil {
+	if err = account.LoadEntity(&webHook, webHookId,preloads); err != nil {
 		u.Respond(w, u.MessageError(err, "WEbHook не найден"))
 		return
 	}
 
 	// webHook, err := account.UpdateWebHook(webHookId, input)
-	if err = account.UpdateEntity(&webHook, input); err != nil {
+	if err = account.UpdateEntity(&webHook, input,preloads); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
@@ -215,7 +222,7 @@ func WebHookDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var webHook models.WebHook
-	if err = account.LoadEntity(&webHook, webHookId); err != nil {
+	if err = account.LoadEntity(&webHook, webHookId,nil); err != nil {
 		u.Respond(w, u.MessageError(err, "WEbHook не найден"))
 		return
 	}
