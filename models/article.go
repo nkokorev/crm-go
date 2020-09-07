@@ -234,7 +234,7 @@ func (article *Article) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 	}
 
 	if autoPreload {
-		return db.Preload("ProductCards").Preload("Image", func(db *gorm.DB) *gorm.DB {
+		return db.Preload("Image", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		})
 
