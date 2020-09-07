@@ -208,7 +208,7 @@ func ProductDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = account.DeleteEntity(&product); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении продукта"))
 		return
 	}
 

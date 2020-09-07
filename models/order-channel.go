@@ -146,14 +146,14 @@ func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy,
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&CartItem{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where("account_id IN (?)", []uint{1, accountId}).
+		err := (&OrderChannel{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where("account_id IN (?)", []uint{1, accountId}).
 			Find(&orderChannels, "name ILIKE ? OR description ILIKE ?", search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = (&CartItem{}).GetPreloadDb(false, false, nil).
+		err = (&OrderChannel{}).GetPreloadDb(false, false, nil).
 			Where("account_id IN (?) AND name ILIKE ? OR description ILIKE ?", []uint{1, accountId}, search,search).
 			Count(&total).Error
 		if err != nil {
@@ -162,14 +162,15 @@ func (OrderChannel) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 	} else {
 
-		err := (&CartItem{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where("account_id IN (?)", []uint{1, accountId}).
+		err := (&OrderChannel{}).GetPreloadDb(false, false, preloads).
+			Limit(limit).Offset(offset).Order(sortBy).Where("account_id IN (?)", []uint{1, accountId}).
 			Find(&orderChannels).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = (&CartItem{}).GetPreloadDb(false, false, nil).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
+		err = (&OrderChannel{}).GetPreloadDb(false, false, nil).Where("account_id IN (?)", []uint{1, accountId}).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}

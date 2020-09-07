@@ -266,7 +266,7 @@ func (product *Product) update(input map[string]interface{}, preloads []string) 
 	return nil
 }
 func (product *Product) delete () error {
-	return product.GetPreloadDb(true,false,nil).Where("id = ?", product.Id).Delete(product).Error
+	return product.GetPreloadDb(false,false,nil).Where("id = ?", product.Id).Delete(product).Error
 }
 // ######### END CRUD Functions ############
 
