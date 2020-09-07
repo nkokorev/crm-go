@@ -377,7 +377,7 @@ func (deliveryRussianPost *DeliveryRussianPost) GetPreloadDb(getModel bool, auto
 	}
 
 	if autoPreload {
-		return db.Preload(clause.Associations)
+		return _db.Preload(clause.Associations)
 	} else {
 
 		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"PaymentSubject","VatCode"})

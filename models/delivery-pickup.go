@@ -290,7 +290,7 @@ func (deliveryPickup *DeliveryPickup) GetPreloadDb(getModel bool, autoPreload bo
 	}
 
 	if autoPreload {
-		return db.Preload(clause.Associations)
+		return _db.Preload(clause.Associations)
 	} else {
 
 		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Amount","PaymentSubject"})

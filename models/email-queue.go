@@ -293,7 +293,7 @@ func (emailQueue *EmailQueue) GetPreloadDb(getModel bool, autoPreload bool, prel
 	}
 
 	if autoPreload {
-		return db.Preload(clause.Associations)
+		return _db.Preload(clause.Associations)
 	} else {
 
 		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{})

@@ -65,7 +65,7 @@ func (webSite *WebSite) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 	}
 
 	if autoPreload {
-		return db.Preload(clause.Associations)
+		return _db.Preload(clause.Associations)
 	} else {
 
 		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"EmailBoxes","WebPages"})

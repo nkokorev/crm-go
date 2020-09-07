@@ -150,7 +150,7 @@ func (payment *Payment) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 	}
 
 	if autoPreload {
-		return db.Preload(clause.Associations)
+		return _db.Preload(clause.Associations)
 	} else {
 
 		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Amount","IncomeAmount","RefundedAmount","PaymentMethod"})

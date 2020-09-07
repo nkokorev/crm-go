@@ -214,7 +214,7 @@ func (Storage) get(id uint, preloads []string) (Entity, error) {
 
 	var fs Storage
 
-	err := fs.GetPreloadDb(false,false,true, false).First(&fs, id).Error
+	err := fs.GetPreloadDb(false,false,preloads, false).First(&fs, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (Storage) getByHashId(hashId string) (*Storage, error)  {
 
 	fs := Storage{}
 
-	err := fs.GetPreloadDb(false,false,true, false).First(&fs, "hash_id = ?", hashId).Error
+	err := fs.GetPreloadDb(false,false,nil, false).First(&fs, "hash_id = ?", hashId).Error
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +235,7 @@ func (fs *Storage) load(preloads []string) error {
 		return utils.Error{Message: "Невозможно загрузить Storage - не указан  Id"}
 	}
 
-	err := fs.GetPreloadDb(false,false,true, false).First(fs,fs.Id).Error
+	err := fs.GetPreloadDb(false,false,preloads, false).First(fs,fs.Id).Error
 	if err != nil {
 		return err
 	}
@@ -259,7 +259,7 @@ func (Storage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&Storage{}).GetPreloadDb(false,false,true,true).
+		err := (&Storage{}).GetPreloadDb(false,false,preloads,true).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).Where(filter).
 			Find(&files, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -267,7 +267,7 @@ func (Storage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		}
 
 		// Определяем total
-		err = (&Storage{}).GetPreloadDb(false,false,true,true).
+		err = (&Storage{}).GetPreloadDb(false,false,nil,true).
 			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -276,7 +276,7 @@ func (Storage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 
-		err := (&Storage{}).GetPreloadDb(false,false,true, true).
+		err := (&Storage{}).GetPreloadDb(false,false,preloads, true).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).Where(filter).
 			Find(&files).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -284,7 +284,7 @@ func (Storage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		}
 
 		// Определяем total
-		err = (&Storage{}).GetPreloadDb(false,false,true, true).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&Storage{}).GetPreloadDb(false,false,nil, true).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -328,6 +328,11 @@ func (fs *Storage) update(input map[string]interface{}, preloads []string) error
 		return err
 	}
 
+	err = fs.GetPreloadDb(false,false, preloads, true).First(fs, fs.Id).Error
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 func (Storage) UpdatePriority(input []Storage) error {
@@ -345,7 +350,7 @@ func (fs *Storage) delete () error {
 	}
 	return nil
 }
-func (fs *Storage) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool, skipData bool) *gorm.DB {
+func (fs *Storage) GetPreloadDbOld(autoUpdateOff bool, getModel bool, preload bool, skipData bool) *gorm.DB {
 	_db := db
 
 	if autoUpdateOff {
@@ -367,6 +372,33 @@ func (fs *Storage) GetPreloadDb(autoUpdateOff bool, getModel bool, preload bool,
 	} else {
 		return _db
 	}
+}
+func (fs *Storage) GetPreloadDb(getModel bool, autoPreload bool, preloads []string, skipData bool) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(&fs)
+	} else {
+		_db = _db.Model(&Storage{})
+	}
+
+	if skipData {
+		_db.Select(Storage{}.SelectArrayWithoutDataURL())
+	}
+	
+	if autoPreload {
+		return _db
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{""})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
+		return _db
+	}
+
 }
 // ######### END CRUD Functions ############
 
