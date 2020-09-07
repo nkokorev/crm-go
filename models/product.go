@@ -78,7 +78,7 @@ type Product struct {
 func (Product) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
-	if err := db.Migrator().AutoMigrate(&Product{}); err != nil {log.Fatal(err)}
+	if err := db.Migrator().CreateTable(&Product{}); err != nil {log.Fatal(err)}
 	// db.Model(&Product{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	err := db.Exec("ALTER TABLE products ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {

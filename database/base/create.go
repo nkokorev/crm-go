@@ -197,8 +197,11 @@ func RefreshTablesPart_I() {
 	models.WebPage{}.PgSqlCreate()
 
 
+
 	models.Product{}.PgSqlCreate()
 	models.ProductCard{}.PgSqlCreate()
+	models.ProductCardProduct{}.PgSqlCreate()
+	models.WebPageProductCard{}.PgSqlCreate()
 
 	models.EmailBox{}.PgSqlCreate()
 	models.EmailTemplate{}.PgSqlCreate()
@@ -1765,7 +1768,7 @@ func LoadImagesAiroClimate(count int)  {
 		}
 	}
 
-	fmt.Println("Данные загружены!")
+	
 }
 
 func GetFileContentType(out *os.File) (string, error) {
@@ -1868,7 +1871,7 @@ func LoadProductDescriptionAiroClimate()  {
 		if err != nil {
 			log.Fatalf("unable to update product: %v", err)
 		}*/
-		err = account.UpdateEntity(&models.Product{Id: uint(fileId)},map[string]interface{}{"Description":string(body)},nil)
+		err = account.UpdateEntity(&models.Product{Id: uint(fileId), AccountId: account.Id},map[string]interface{}{"Description":string(body)},nil)
 		if err != nil {
 			log.Fatalf("unable to update product: %v", err)
 		}
@@ -1998,6 +2001,8 @@ func UploadTestDataPart_IV()  {
 		}
 
 	}
+
+	fmt.Println("Данные загружены IV !")
 
 }
 

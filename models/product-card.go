@@ -46,7 +46,7 @@ type ProductCard struct {
 }
 
 func (ProductCard) PgSqlCreate() {
-	if err := db.Migrator().AutoMigrate(&ProductCard{}); err != nil { log.Fatal(err) }
+	if err := db.Migrator().CreateTable(&ProductCard{}); err != nil { log.Fatal(err) }
 	err := db.Exec("ALTER TABLE product_cards ADD CONSTRAINT product_cards_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {
 		log.Fatal("Error: ", err)
