@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/fatih/structs"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
@@ -319,13 +318,11 @@ func (fs *Storage) update(input map[string]interface{}, preloads []string) error
 	delete(input,"mime")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"owner_id","priority"}); err != nil {
-		fmt.Println("Err 0: ", err)
 		return err
 	}
 
 	err := db.Model(fs).Omit("id", "hashId", "account_id","created_at").Updates(input).Error
 	if err != nil {
-		fmt.Println("Err: ", err)
 		return err
 	}
 
@@ -352,8 +349,8 @@ func (fs *Storage) SetAutoPriority() error {
 		Select("max(priority)").Row().Scan(&lastIdx)
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
 
-	fmt.Println(fs.AccountId, fs.OwnerID, fs.OwnerType)
-	fmt.Println("lastIdx.Int64: ", lastIdx.Int64)
+	// fmt.Println(fs.AccountId, fs.OwnerID, fs.OwnerType)
+	// fmt.Println("lastIdx.Int64: ", lastIdx.Int64)
 
 	fs.Priority = 1 + int(lastIdx.Int64)
 
