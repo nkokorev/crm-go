@@ -136,7 +136,7 @@ func (DeliveryCourier) getListByShop(accountId, websiteId uint) ([]DeliveryCouri
 
 	deliveryCouriers := make([]DeliveryCourier,0)
 
-	err := (&CartItem{}).GetPreloadDb(false, true, nil).
+	err := (&DeliveryCourier{}).GetPreloadDb(false, true, nil).
 		Limit(100).Where( "account_id = ? AND web_site_id = ?", accountId, websiteId).
 		Find(&deliveryCouriers).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
@@ -157,14 +157,14 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&CartItem{}).GetPreloadDb(false, true, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&DeliveryCourier{}).GetPreloadDb(false, true, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryCouriers, "name ILIKE ? OR code ILIKE ? OR price ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = (&CartItem{}).GetPreloadDb(false, true, nil).
+		err = (&DeliveryCourier{}).GetPreloadDb(false, true, nil).
 			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR price ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -173,14 +173,14 @@ func (DeliveryCourier) getPaginationList(accountId uint, offset, limit int, sort
 
 	} else {
 
-		err := (&CartItem{}).GetPreloadDb(false, true, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&DeliveryCourier{}).GetPreloadDb(false, true, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&deliveryCouriers).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = (&CartItem{}).GetPreloadDb(false, true, nil).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&DeliveryCourier{}).GetPreloadDb(false, true, nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}

@@ -127,7 +127,7 @@ func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 		// string pattern
 		search = "%"+search+"%"
 
-		err := (&CartItem{}).GetPreloadDb(false, false, preloads).
+		err := (&EmailBox{}).GetPreloadDb(false, false, preloads).
 			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailBoxes, "name ILIKE ? OR box ILIKE ?", search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -135,7 +135,7 @@ func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 		}
 
 		// Определяем total
-		err = (&CartItem{}).GetPreloadDb(false, false, nil).
+		err = (&EmailBox{}).GetPreloadDb(false, false, nil).
 			Where("account_id = ? AND name ILIKE ? OR box ILIKE ?", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
@@ -144,14 +144,14 @@ func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 
 	} else {
 
-		err := (&CartItem{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&EmailBox{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Find(&emailBoxes).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = (&CartItem{}).GetPreloadDb(false, false, nil).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&EmailBox{}).GetPreloadDb(false, false, nil).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
