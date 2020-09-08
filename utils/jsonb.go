@@ -2,9 +2,9 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"gorm.io/datatypes"
-	"time"
 )
 
 // For function Update()
@@ -152,13 +152,18 @@ func FixInputHiddenVars(input *map[string]interface{}) {
 // удаляет все переменные которые с '_name'
 func FixInputDataTimeVars(input map[string]interface{}, keys []string) map[string]interface{} {
 	for _,key := range keys {
-		sR, ok := input[key].(string)
+		fmt.Printf("Type time: %T\n", input[key])
+		sR, ok := input[key].(float64)
 		delete(input, key)
 		if ok {
-			_time, err := time.Parse(time.RFC3339, sR)
+			var _time int = int(sR)
+			input[key] = _time
+
+			// _time, err := time.Parse(time.RFC3339, strconv.Itoa(int(sR)))
+			/*_time, err := time.Parse(time.RFC3339, strconv.Itoa(int(sR)))
 			if err == nil {
 				input[key] = _time
-			}
+			}*/
 		}
 	}
 	return input

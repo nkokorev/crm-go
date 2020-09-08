@@ -222,9 +222,7 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) update(input map[string]
 		return err
 	}
 
-	// ??
 	input = utils.FixInputDataTimeVars(input,[]string{"delay_time"})
-
 
 	if err := emailQueueEmailTemplate.GetPreloadDb(false, false, nil).Where("id = ?", emailQueueEmailTemplate.Id).Omit("id", "account_id").Updates(input).
 		Error; err != nil {return err}
