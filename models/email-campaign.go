@@ -644,7 +644,7 @@ func (emailCampaign EmailCampaign) Validate() error {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет темы сообщения"}
 	}
 	if emailCampaign.PreviewText == nil {
-		*emailCampaign.PreviewText = ""
+		emailCampaign.PreviewText = utils.STRp("")
 	}
 
 	if emailCampaign.ScheduleRun == nil {

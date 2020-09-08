@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -686,20 +687,40 @@ func (emailQueue *EmailQueue) Validate() error {
 	if err := emailQueue.load([]string{"EmailQueueEmailTemplates","EmailQueueEmailTemplates.EmailTemplates","EmailQueueEmailTemplates.EmailBox"}); err != nil {
 		return err
 	}
+	fmt.Println("emailQueue.AccountId: ",emailQueue.AccountId)
+
+	// steps := make([]EmailQueueEmailTemplate,0)
+	// var steps []EmailQueueEmailTemplate
+	steps := make([]EmailQueueEmailTemplate,0)
+	/*filter := map[string]interface{}{
+		"account_id":emailQueue.AccountId,
+	}*/
+	//
+	// err = db.Table("email_queue_email_templates").
+	err = db.Model(&EmailQueueEmailTemplate{}).
+		Preload("EmailTemplate").Preload("EmailBox").
+		Where( "account_id = ? AND email_queue_id = ? AND enabled = 'true'", emailQueue.AccountId, emailQueue.Id).
+		Find(&steps).Error
+	if err != nil && err != gorm.ErrRecordNotFound{
+		return err
+	}
+	if err == gorm.ErrRecordNotFound || len(steps) < 1 {
+		return utils.Error{Message: "Для запуска необходимо минимум 1 активное письмо"}
+	}
 
 	// Проверяем каждый активный шаблон
-	for i := range emailQueue.EmailQueueEmailTemplates {
-		tpl :=  emailQueue.EmailQueueEmailTemplates[i]
+	for i := range steps {
+		tpl :=  steps[i]
 
 		// Проверяем только активные
 		if !tpl.IsActive() {
 			continue
 		}
-
 		if err := tpl.Validate(); err != nil {
 			 return err
 		 }
 	}
+
 
 	return nil
 }

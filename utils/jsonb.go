@@ -2,7 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"gorm.io/datatypes"
 )
@@ -152,7 +151,6 @@ func FixInputHiddenVars(input *map[string]interface{}) {
 // удаляет все переменные которые с '_name'
 func FixInputDataTimeVars(input map[string]interface{}, keys []string) map[string]interface{} {
 	for _,key := range keys {
-		fmt.Printf("Type time: %T\n", input[key])
 		sR, ok := input[key].(float64)
 		delete(input, key)
 		if ok {

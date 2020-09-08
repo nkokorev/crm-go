@@ -291,7 +291,7 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) Validate() error {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет темы сообщения"}
 	}
 	if emailQueueEmailTemplate.PreviewText == nil {
-		*emailQueueEmailTemplate.PreviewText = ""
+		emailQueueEmailTemplate.PreviewText = utils.STRp("")
 	}
 
 	// Проверяем ключи и загружаем еще раз все данные для отправки сообщения

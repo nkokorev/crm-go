@@ -754,7 +754,7 @@ func (emailNotification *EmailNotification) Validate() error {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет темы сообщения"}
 	}
 	if emailNotification.PreviewText == nil {
-		*emailNotification.PreviewText = ""
+		emailNotification.PreviewText = utils.STRp("")
 	}
 
 	// Проверяем ключи и загружаем еще раз все данные для отправки сообщения
