@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"log"
@@ -176,7 +175,7 @@ func (Article) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 
-		fmt.Println("Articles filter: ",filter)
+		// fmt.Println("Articles filter: ",filter)
 
 		err := (&Article{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).
 			Where( "account_id = ?", accountId).Where(filter).Find(&articles).Error
