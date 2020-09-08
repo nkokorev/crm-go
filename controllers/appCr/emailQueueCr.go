@@ -207,3 +207,47 @@ func EmailQueueDelete(w http.ResponseWriter, r *http.Request) {
 	resp := u.Message(true, "DELETE EmailQueue Successful")
 	u.Respond(w, resp)
 }
+
+func EmailQueueChangeStatus(w http.ResponseWriter, r *http.Request) {
+
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	emailQueueId, err := utilsCr.GetUINTVarFromRequest(r, "emailQueueId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	var emailQueue models.EmailQueue
+	err = account.LoadEntity(&emailQueue, emailQueueId, preloads)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить серию писем"))
+		return
+	}
+
+	var input struct{
+		Status string `json:"status"`
+		Reason string `json:"reason"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	err = emailQueue.ChangeWorkStatus(input.Status, input.Reason)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		return
+	}
+
+	resp := u.Message(true, "GET Email Campaign Execute")
+	resp["email_queue"] = emailQueue
+	u.Respond(w, resp)
+}

@@ -22,13 +22,13 @@ type EmailCampaign struct {
 	FailedStatus	*string 		`json:"failed_status" gorm:"type:varchar(255);"`
 
 	// Планируемое время старта
-	ScheduleRun		time.Time 	`json:"schedule_run"`
+	ScheduleRun		*time.Time 	`json:"schedule_run"`
 
 	// Имя кампании - Ежемесячный дайджест !
 	Name 			string 	`json:"name" gorm:"type:varchar(128);default:'New campaign'"`
 
 	// Тема сообщения и preview-текст, компилируются
-	Subject			*string 	`json:"subject" gorm:"type:varchar(128);"`
+	Subject			*string 	`json:"subject" gorm:"type:varchar(255);"`
 	PreviewText		*string 	`json:"preview_text" gorm:"type:varchar(255);"`
 
 	// Шаблон email-сообщения
@@ -94,6 +94,10 @@ func (EmailCampaign) PgSqlCreate() {
 func (emailCampaign *EmailCampaign) BeforeCreate(tx *gorm.DB) error {
 	emailCampaign.Id = 0
 	emailCampaign.HashId = strings.ToLower(utils.RandStringBytesMaskImprSrcUnsafe(12, true))
+
+	if emailCampaign.ScheduleRun == nil {
+		emailCampaign.ScheduleRun = utils.TimeP(time.Now().UTC())
+	}
 
 	// PublicId
 	var lastIdx sql.NullInt64
@@ -306,43 +310,14 @@ func (emailCampaign *EmailCampaign) Execute() error {
 	}
 
 	// Get Account
-	account, err := GetAccount(emailCampaign.AccountId)
+	_, err := GetAccount(emailCampaign.AccountId)
 	if err != nil {
 		emailCampaign.SetFailedStatus(fmt.Sprintf("Ошибка определения аккаунта: %v\n", err.Error()))
 		return utils.Error{Message: "Ошибка отправления Уведомления - не удается найти аккаунт"}
 	}
 
-	// Проверяем тело сообщения (не должно быть пустое)
-	if emailCampaign.Subject == nil {
-		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет темы сообщения"}
-	}
-
-	// Проверяем ключи и загружаем еще раз все данные для отправки сообщения
-	if *emailCampaign.EmailTemplateId < 1 {
-		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного шаблона email-сообщения"}
-	}
-	err = account.LoadEntity(&emailCampaign.EmailTemplate, *emailCampaign.EmailTemplateId,nil)
-	if err != nil {
-		log.Printf("Ошибка загрузки шаблона email-сообщения для кампании [%v]: %v\n", emailCampaign.Id, err)
-		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки шаблона email-сообщения"}
-	}
-
-	if *emailCampaign.EmailBoxId < 1 {
-		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного адреса отправителя"}
-	}
-	err = account.LoadEntity(&emailCampaign.EmailBox, *emailCampaign.EmailBoxId,nil)
-	if err != nil {
-		log.Printf("Ошибка загрузки адреса отправителя для кампании [%v]: %v\n", emailCampaign.Id, err)
-		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки адреса отправителя"}
-	}
-
-	if *emailCampaign.UsersSegmentId < 1 {
-		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного сегмента пользователей"}
-	}
-	err = account.LoadEntity(&emailCampaign.UsersSegment, *emailCampaign.UsersSegmentId,nil)
-	if err != nil {
-		log.Printf("Ошибка загрузка сегмента пользователей для кампании [%v]: %v\n", emailCampaign.Id, err)
-		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки сегмента пользователей"}
+	if err := emailCampaign.Validate();err != nil {
+		return err
 	}
 
 	// 2. Переводим Кампанию в состояние "Выполняется"
@@ -356,7 +331,7 @@ func (emailCampaign *EmailCampaign) Execute() error {
 		AccountId: emailCampaign.AccountId,
 		OwnerId: emailCampaign.Id,
 		OwnerType: EmailSenderCampaign,
-		ExpectedTimeStart: emailCampaign.ScheduleRun, // время запуска - время запуска кампании
+		ExpectedTimeStart: *emailCampaign.ScheduleRun, // время запуска - время запуска кампании
 		// UserId: users[i].Id, // << ставим во время цикла
 		NumberOfAttempts: 0,
 	}
@@ -374,7 +349,7 @@ func (emailCampaign *EmailCampaign) Execute() error {
 }
 
 // Прямая функция для обновления, без проверок
-func (emailCampaign *EmailCampaign) changeWorkStatus(status WorkStatus, reason... string) error {
+func (emailCampaign *EmailCampaign) ChangeWorkStatus(status WorkStatus, reason... string) error {
 
 	switch status {
 	case WorkStatusPending:
@@ -400,7 +375,6 @@ func (emailCampaign *EmailCampaign) changeWorkStatus(status WorkStatus, reason..
 	}
 
 }
-
 func (emailCampaign *EmailCampaign) updateWorkStatus(status WorkStatus, reason... string) error {
 	_reason := ""
 	if len(reason) > 0 {
@@ -673,6 +647,10 @@ func (emailCampaign EmailCampaign) Validate() error {
 		*emailCampaign.PreviewText = ""
 	}
 
+	if emailCampaign.ScheduleRun == nil {
+		emailCampaign.ScheduleRun = utils.TimeP(time.Now().UTC())
+	}
+
 	// Проверяем ключи и загружаем еще раз все данные для отправки сообщения
 	if emailCampaign.EmailTemplateId == nil {
 		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного шаблона email-сообщения"}
@@ -717,13 +695,11 @@ func (emailCampaign EmailCampaign) Validate() error {
 
 	data["accountId"] = account.Id
 	data["Account"] = account.GetDepersonalizedData() // << хз
-	data["userId"] = 0
+	data["userId"] = 0  // example id, need test user
 	data["User"] = User{Id: 1,Name: utils.STRp("TIvan"), Username: utils.STRp("TUsername"), Surname: utils.STRp("TSurname"), Patronymic: utils.STRp("TPatronymic"),
 		PhoneRegion: utils.STRp("RU"), Phone: utils.STRp("+79251000000")} // << хз
 	data["unsubscribeUrl"] = "/unsubscribe_url"
-
-
-
+	
 	viewData := ViewData {
 		Subject: *emailCampaign.Subject,
 		PreviewText: *emailCampaign.PreviewText,

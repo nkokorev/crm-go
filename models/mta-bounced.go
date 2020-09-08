@@ -412,7 +412,7 @@ func (pkg EmailPkg) stopEmailSender(reason string) {
 		_ = (&MTAWorkflow{Id: pkg.workflowId}).delete()
 	}
 
-	_ = pkg.emailSender.changeWorkStatus(WorkStatusFailed, reason)
+	_ = pkg.emailSender.ChangeWorkStatus(WorkStatusFailed, reason)
 
 }
 

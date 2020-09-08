@@ -331,10 +331,19 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			return utils.Error{Message: "Этап отправки не активен"}
 		}
 
+		if step.Subject == nil {
+			mtaWorkflow.stopEmailSender("Отсутствует Subject")
+			return utils.Error{Message: "Отсутствует Subject"}
+		}
+
 		queueStepId = step.Id
 		
-		Subject = step.Subject
-		PreviewText = step.PreviewText
+		Subject = *step.Subject
+		_previewText := ""
+		if step.PreviewText != nil  {
+			_previewText = *step.PreviewText
+		}
+		PreviewText = _previewText
 
 		// Находим шаблон письма
 		if mtaWorkflow.QueueExpectedStepId == nil {
@@ -370,6 +379,11 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			return errors.New("Ошибка преобразования в email Notification")
 		}
 
+		if emailNotification.Subject == nil {
+			mtaWorkflow.pausedEmailSender("Отсутствует тема сообщения")
+			return errors.New("Отсутствует тема сообщения в Notification")
+		}
+
 		err := account.LoadEntity(&emailTemplate, *emailNotification.EmailTemplateId,nil)
 		if err != nil {
 			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email template not found: %v",err.Error()))
@@ -381,9 +395,14 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			mtaWorkflow.stopEmailSender(fmt.Sprintf("Email box not found: %v",err.Error()))
 			return err
 		}
-		
-		Subject = emailNotification.Subject
-		PreviewText = emailNotification.PreviewText
+
+		previewText := ""
+		if emailNotification.PreviewText != nil {
+			PreviewText = *emailNotification.PreviewText
+		} else {
+			PreviewText = previewText
+		}
+		Subject = *emailNotification.Subject
 	}
 
 	if sender.GetType() == EmailSenderCampaign {
@@ -523,7 +542,7 @@ func (mtaWorkflow *MTAWorkflow) stopEmailSender(reason string) {
 		return
 	}
 
-	_ = sender.changeWorkStatus(WorkStatusFailed, reason)
+	_ = sender.ChangeWorkStatus(WorkStatusFailed, reason)
 
 }
 // Приостанавливает отправителя, не удаляя задачи по отправке
@@ -556,7 +575,7 @@ func (mtaWorkflow *MTAWorkflow) pausedEmailSender(reason string) {
 		return
 	}
 
-	_ = sender.changeWorkStatus(WorkStatusPaused, reason)
+	_ = sender.ChangeWorkStatus(WorkStatusPaused, reason)
 }
 
 // Удаляем все задачи для пользователя из workflows для этого аккаунта

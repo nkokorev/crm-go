@@ -149,6 +149,10 @@ func EmailNotificationUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Статус меняется только через отдельную функцию
+	delete(input,"status")
+	delete(input,"reason")
+	
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	var emailNotification models.EmailNotification
@@ -192,5 +196,49 @@ func EmailNotificationDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "DELETE EmailNotification Successful")
+	u.Respond(w, resp)
+}
+
+func EmailNotificationChangeStatus(w http.ResponseWriter, r *http.Request) {
+
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	emailNotificationId, err := utilsCr.GetUINTVarFromRequest(r, "emailNotificationId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	var emailNotification models.EmailNotification
+	err = account.LoadEntity(&emailNotification, emailNotificationId, preloads)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить уведомление"))
+		return
+	}
+
+	var input struct{
+		Status string `json:"status"`
+		Reason string `json:"reason"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	err = emailNotification.ChangeWorkStatus(input.Status, input.Reason)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		return
+	}
+
+	resp := u.Message(true, "GET Email Campaign Execute")
+	resp["email_notification"] = emailNotification
 	u.Respond(w, resp)
 }

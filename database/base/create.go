@@ -1674,18 +1674,18 @@ func UploadTestDataPart_III() {
 	num7 := uint(7)
 	emailNotifications := []models.EmailNotification {
 		{
-			Status: models.WorkStatusPending, DelayTime: 0, Name:"Оповещение менеджера", Subject: "Поступил новый заказ", EmailTemplateId: &numOne,
+			Status: models.WorkStatusPending, DelayTime: 0, Name:"Оповещение менеджера", Subject: utils.STRp("Поступил новый заказ"), EmailTemplateId: &numOne,
 			RecipientUsersList: datatypes.JSON(utils.UINTArrToRawJson([]uint{2})),
 			EmailBoxId: &num5,
 
 		},
 		{
-			Status: models.WorkStatusPending, DelayTime: 0, Name:"Оповещение клиента", Subject: "Ваш заказ получен", EmailTemplateId: &numOne,
+			Status: models.WorkStatusPending, DelayTime: 0, Name:"Оповещение клиента", Subject: utils.STRp("Ваш заказ получен"), EmailTemplateId: &numOne,
 			RecipientUsersList: datatypes.JSON( utils.UINTArrToRawJson([]uint{7})),
 			EmailBoxId: &num6,
 		},
 		{
-			Status: models.WorkStatusPending, DelayTime: 0, Name:"Оповещение об отправке заказа",Subject: "Ваш заказ отправлен по почте",  EmailTemplateId: &numOne,
+			Status: models.WorkStatusPending, DelayTime: 0, Name:"Оповещение об отправке заказа",Subject: utils.STRp("Ваш заказ отправлен по почте"),  EmailTemplateId: &numOne,
 			EmailBoxId: &num7,
 		},
 
@@ -2271,10 +2271,10 @@ func UploadBroUserData() {
 		EmailQueueId: emailQueueE.GetId(),
 		Enabled: true,
 		Step: 1,
-		EmailTemplateId: 5,
+		EmailTemplateId: utils.UINTp(5),
 		EmailBoxId: &Iuint4,
 		DelayTime: 0,
-		Subject: "Тема письма 1",
+		Subject: utils.STRp("Тема письма 1"),
 		CreatedAt: time.Now().UTC(),
 	})
 	_, _ = account.CreateEntity(&models.EmailQueueEmailTemplate{
@@ -2282,10 +2282,10 @@ func UploadBroUserData() {
 		EmailQueueId: emailQueueE.GetId(),
 		Enabled: false,
 		Step: 2,
-		EmailTemplateId: 6,
+		EmailTemplateId: utils.UINTp(6),
 		EmailBoxId: &Iuint4,
 		DelayTime: 0,
-		Subject: "Тема письма 2",
+		Subject: utils.STRp("Тема письма 2"),
 		CreatedAt: time.Now().UTC(),
 	})
 	_, _ = account.CreateEntity(&models.EmailQueueEmailTemplate{
@@ -2293,10 +2293,10 @@ func UploadBroUserData() {
 		EmailQueueId: emailQueueE.GetId(),
 		Enabled: false,
 		Step: 3,
-		EmailTemplateId: 7,
+		EmailTemplateId: utils.UINTp(7),
 		EmailBoxId: &Iuint4,
 		DelayTime: 0,
-		Subject: "Тема письма 3",
+		Subject: utils.STRp("Тема письма 3"),
 		CreatedAt: time.Now().UTC(),
 	})
 }

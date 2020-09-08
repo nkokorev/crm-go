@@ -2,6 +2,7 @@ package utils
 
 import (
 	"reflect"
+	"time"
 )
 
 func UINTp(x uint) *uint {
@@ -9,6 +10,9 @@ func UINTp(x uint) *uint {
 }
 func STRp(s string) *string {
 	return &s
+}
+func TimeP(t time.Time) *time.Time {
+	return &t
 }
 func ConvertMapVarsToUINT(input *map[string]interface{}, keys []string) error {
 

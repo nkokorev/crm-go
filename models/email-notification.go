@@ -23,15 +23,15 @@ type EmailNotification struct {
 	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Status 			WorkStatus `json:"status" gorm:"type:varchar(18);default:'pending'"`
-	FailedStatus	string 		`json:"failed_status" gorm:"type:varchar(255);"`
+	FailedStatus	*string 		`json:"failed_status" gorm:"type:varchar(255);"`
 
 	// Delay			uint 	`json:"delay" gorm:"type:int;default:0"` // Задержка перед отправлением в минутах: [0-180]
 	DelayTime		time.Duration `json:"delay_time" gorm:"type:int8;default:0"`// << учитывается только время [0-24]
 	
 	Name 			string 	`json:"name" gorm:"type:varchar(128);default:''"` // "Оповещение менеджера", "Оповещение клиента"
 
-	Subject			string 	`json:"subject" gorm:"type:varchar(128);not null;"` // Тема сообщения, компилируются
-	PreviewText		string 	`json:"preview_text" gorm:"type:varchar(255);default:''"` // Тема сообщения, компилируются
+	Subject			*string 	`json:"subject" gorm:"type:varchar(255);"` // Тема сообщения, компилируются
+	PreviewText		*string 	`json:"preview_text" gorm:"type:varchar(255);"` // Тема сообщения, компилируются
 
 	EmailTemplateId *uint 	`json:"email_template_id" gorm:"type:int;"`
 	EmailTemplate 	EmailTemplate 	`json:"email_template"`
@@ -48,7 +48,7 @@ type EmailNotification struct {
 	RecipientUsersList	datatypes.JSON	`json:"recipient_users_list"` // список id пользователей, которые получат уведомление
 
 	// Динамический список пользователей
-	ParseRecipientUser	bool	`json:"parse_recipient_user" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя(ей) по userId / users: ['email@mail.ru']
+	ParseRecipientUser		bool	`json:"parse_recipient_user" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя(ей) по userId / users: ['email@mail.ru']
 	ParseRecipientCustomer	bool	`json:"parse_recipient_customer" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя по customerId / users: ['email@mail.ru']
 	ParseRecipientManager	bool	`json:"parse_recipient_manager" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя по customerId / users: ['email@mail.ru']
 
@@ -315,9 +315,9 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		return utils.Error{Message: fmt.Sprintf("Уведомление не может быть отправлено т.к. находится в статусе - %v\n",emailNotification.Status)}
 	}
 
-	// Проверяем тело сообщения (не должно быть пустое)
-	if emailNotification.Subject == "" {
-		return utils.Error{Message: "Уведомление не может быть отправлено т.к. нет темы сообщения"}
+	// Проверяем возможность отправки. Может излишне, но при небольшой нагрузке - ок, об ошибках узнаем До отправки
+	if err := emailNotification.Validate(); err != nil {
+		return err
 	}
 
 	// Get Account
@@ -393,7 +393,10 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		pixelURL := account.GetPixelUrl(historyHashId)
 
 		// Компилируем тему письма
-		_subject, err := parseSubjectByData(emailNotification.Subject, data)
+		if emailNotification.Subject == nil || emailNotification.PreviewText == nil {
+			break
+		}
+		_subject, err := parseSubjectByData(*emailNotification.Subject, data)
 		if err != nil {
 			log.Printf("Ошибка отправления Уведомления - не удается прочитать тему сообщения. emailNotificationId: %v\n", emailNotification.Id)
 			continue
@@ -402,7 +405,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			_subject = fmt.Sprintf("Уведомление по почте #%v", emailNotification.Id)
 		}
 
-		vData, err := emailTemplate.PrepareViewData(_subject, emailNotification.PreviewText, data, pixelURL, &unsubscribeUrl)
+		vData, err := emailTemplate.PrepareViewData(_subject, *emailNotification.PreviewText, data, pixelURL, &unsubscribeUrl)
 		if err != nil {
 			log.Printf("Ошибка отправления Уведомления - не удается подготовить данные для сообщения. emailNotificationId: %v\n", emailNotification.Id)
 			continue
@@ -475,13 +478,349 @@ func parseSubjectByData(tpl string, data map[string]interface{}) (string, error)
 	return body.String(), nil
 }
 
-func (emailNotification *EmailNotification) changeWorkStatus(status WorkStatus, reason... string) error {
-	_reason := "" // обнуление
+// Прямая функция для обновления, без проверок
+func (emailNotification *EmailNotification) ChangeWorkStatus(status WorkStatus, reason... string) error {
+
+	switch status {
+	case WorkStatusPending:
+		return emailNotification.SetPendingStatus()
+	case WorkStatusPlanned:
+		return emailNotification.SetPlannedStatus()
+	case WorkStatusActive:
+		return emailNotification.SetActiveStatus()
+	case WorkStatusPaused:
+		return emailNotification.SetPausedStatus()
+	case WorkStatusFailed:
+		_reason := ""
+		if len(reason) > 0 {
+			_reason = reason[0]
+		}
+		return emailNotification.SetFailedStatus(_reason)
+	case WorkStatusCompleted:
+		return emailNotification.SetCompletedStatus()
+	case WorkStatusCancelled:
+		return emailNotification.SetCancelledStatus()
+	default:
+		return utils.Error{Message: "Статус не опознан"}
+	}
+
+}
+
+func (emailNotification *EmailNotification) updateWorkStatus(status WorkStatus, reason... string) error {
+	_reason := ""
 	if len(reason) > 0 {
 		_reason = reason[0]
 	}
+
 	return emailNotification.update(map[string]interface{}{
 		"status":	status,
 		"failed_status": _reason,
 	},nil)
+}
+
+// Функция не должна вызываться, т.к. статуса planned у EmailNotification не используется
+func (emailNotification *EmailNotification) SetPendingStatus() error {
+
+	// Возможен вызов из состояния planned: вернуть на доработку => pending
+	if emailNotification.Status != WorkStatusPlanned {
+		reason := "Невозможно установить статус,"
+		switch emailNotification.Status {
+		case WorkStatusPending:
+			reason += "т.к. уведомление уже в разработке"
+		case WorkStatusActive:
+			reason += "т.к. уведомление в процессе работы"
+		case WorkStatusPaused:
+			reason += "т.к. уведомление на паузе, но в процессе работы"
+		case WorkStatusFailed:
+			reason += "т.к. уведомление завершено с ошибкой"
+		case WorkStatusCompleted:
+			reason += "т.к. уведомление уже завершено"
+		case WorkStatusCancelled:
+			reason += "т.к. уведомление отменено"
+		}
+		return utils.Error{Message: reason}
+	}
+
+	// fix: удаляем задачу в TaskScheduler
+	if err := emailNotification.RemoveRunTask(); err != nil {
+		return err
+	}
+
+	return emailNotification.updateWorkStatus(WorkStatusPending)
+}
+
+// Функция не должна вызываться, т.к. статус planned у EmailNotification не используется
+func (emailNotification *EmailNotification) SetPlannedStatus() error {
+
+	return utils.Error{Message: "Отложенный запуск уведомлений не предусмотрен"}
+
+	// Возможен вызов из состояния pending: запланировать кампанию => planned
+	if emailNotification.Status != WorkStatusPending  {
+		reason := "Невозможно запланировать кампанию,"
+		switch emailNotification.Status {
+		case WorkStatusPlanned:
+			reason += "т.к. кампания уже в плане"
+		case WorkStatusActive:
+			reason += "т.к. кампания уже в процессе рассылки"
+		case WorkStatusPaused:
+			reason += "т.к. кампания на паузе, но уже в процессе рассылки"
+		case WorkStatusCompleted:
+			reason += "т.к. кампания уже завершена"
+		case WorkStatusFailed:
+			reason += "т.к. кампания завершена с ошибкой"
+		case WorkStatusCancelled:
+			reason += "т.к. кампания отменена"
+		}
+		return utils.Error{Message: reason}
+	}
+
+	// Get Account
+	account, err := GetAccount(emailNotification.AccountId)
+	if err != nil {
+		return utils.Error{Message: "Не удается найти аккаунт"}
+	}
+
+	// Проверяем кампанию и шаблон, чтобы не ставить в план не рабочую кампанию.
+	if err := emailNotification.Validate(); err != nil { return err  }
+
+	// На всякий случай удаляем задачу по запуску этой кампании, чтобы не было дубля
+	if err := emailNotification.RemoveRunTask(); err != nil {
+		return err
+	}
+
+	// Создаем новый объект task для добавлении кампании в TaskScheduler
+	task := TaskScheduler {
+		AccountId: emailNotification.AccountId,
+		OwnerType: TaskEmailCampaignRun,
+		OwnerId: emailNotification.Id,
+		// ExpectedTimeToStart: emailNotification.ScheduleRun.Add(-time.Minute*5),// запускаем задачу (но не уведомление) за 5 минут (= с запасом)
+		IsSystem: true, // системная задача ли ?
+		Status: WorkStatusPlanned,
+	}
+
+	// Создаем задачу по отправке рекламной кампании
+	_, err = account.CreateEntity(&task)
+	if err != nil {
+		return utils.Error{Message: "Ошибка создания задания по запуску кампании"}
+	}
+
+	// Переводим в состояние "Запланирована", т.к. все проверки пройдены и можно ставить ее в планировщик
+	return emailNotification.updateWorkStatus(WorkStatusPlanned)
+}
+func (emailNotification *EmailNotification) SetActiveStatus() error {
+
+	// Возможен вызов из состояния planned или paused: запустить кампанию => active
+	if emailNotification.Status != WorkStatusCompleted && emailNotification.Status != WorkStatusPending && emailNotification.Status != WorkStatusPlanned && emailNotification.Status != WorkStatusPaused {
+		reason := "Невозможно запустить уведомление,"
+		switch emailNotification.Status {
+		case WorkStatusPending:
+			reason += "т.к. уведомление еще в стадии разработки"
+		case WorkStatusActive:
+			reason += "т.к. уведомление уже в процессе работы"
+		case WorkStatusCompleted:
+			reason += "т.к. уведомление уже завершено"
+		case WorkStatusFailed:
+			reason += "т.к. уведомление завершено с ошибкой"
+		case WorkStatusCancelled:
+			reason += "т.к. уведомление отменено"
+		}
+		return utils.Error{Message: reason}
+	}
+
+	// Снова проверяем кампанию и шаблон
+	if err := emailNotification.Validate(); err != nil { return err  }
+
+	// Переводим в состояние "Активна", т.к. все проверки пройдены и можно продолжить ее выполнение
+	return emailNotification.updateWorkStatus(WorkStatusActive)
+}
+func (emailNotification *EmailNotification) SetPausedStatus() error {
+
+	// Возможен вызов из состояния active: приостановить кампанию => paused
+	if emailNotification.Status != WorkStatusActive {
+		reason := "Невозможно приостановить уведомление,"
+		switch emailNotification.Status {
+		case WorkStatusPending:
+			reason += "т.к. уведомление еще в стадии разработки"
+		case WorkStatusPlanned:
+			reason += "т.к. уведомление уже в стадии планирования"
+		case WorkStatusPaused:
+			reason += "т.к. уведомление уже приостановлено"
+		case WorkStatusCompleted:
+			reason += "т.к. уведомление уже завершено"
+		case WorkStatusFailed:
+			reason += "т.к. уведомление завершено с ошибкой"
+		case WorkStatusCancelled:
+			reason += "т.к. уведомление отменено"
+		}
+		return utils.Error{Message: reason}
+	}
+
+	// Переводим в состояние "Приостановлена", т.к. все проверки пройдены и можно приостановить кампанию
+	return emailNotification.updateWorkStatus(WorkStatusPaused)
+}
+func (emailNotification *EmailNotification) SetCompletedStatus() error {
+
+	// Возможен вызов из состояния active, paused: завершить кампанию => completed
+	// Сбрасываются все задачи из очереди
+	if emailNotification.Status != WorkStatusActive && emailNotification.Status != WorkStatusPaused {
+		reason := "Невозможно завершить уведомление,"
+		switch emailNotification.Status {
+		case WorkStatusPending:
+			reason += "т.к. уведомление еще в стадии разработки"
+		case WorkStatusPlanned:
+			reason += "т.к. уведомление еще в стадии планирования"
+		case WorkStatusCompleted:
+			reason += "т.к. уведомление уже завершено"
+		case WorkStatusFailed:
+			reason += "т.к. уведомление завершено с ошибкой"
+		case WorkStatusCancelled:
+			reason += "т.к. уведомление отменено"
+		}
+		return utils.Error{Message: reason}
+	}
+
+	// Удаляем все задачи из WorkFlow
+	err := db.Where("owner_id = ? AND owner_type = ?", emailNotification.Id, emailNotification.GetType()).Delete(&MTAWorkflow{}).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		log.Printf("Ошибка удаления очереди из MTAWorkflow: %v\b", err)
+		return utils.Error{Message: "Ошибка завершения кампании - невозможно удалить остаток задач"}
+	}
+
+	// Переводим в состояние "Завершено", т.к. все проверки пройдены и можно приостановить уведомление
+	return emailNotification.updateWorkStatus(WorkStatusCompleted)
+}
+func (emailNotification *EmailNotification) SetFailedStatus(reason string) error {
+	
+	// Удаляем все задачи из WorkFlow
+	err := db.Where("owner_id = ? AND owner_type = ?", emailNotification.Id, emailNotification.GetType()).Delete(MTAWorkflow{}).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		log.Printf("Ошибка удаления очереди из MTAWorkflow: %v\b", err)
+		return utils.Error{Message: "Ошибка завершения кампании - невозможно удалить остаток задач"}
+	}
+
+	// На всякий случай удаляем задачу по запуску этого уведомления, чтобы не было дубля (прошлые не удаляются)
+	if err := emailNotification.RemoveRunTask(); err != nil {
+		return err
+	}
+
+	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
+	return emailNotification.updateWorkStatus(WorkStatusFailed, reason)
+}
+func (emailNotification *EmailNotification) SetCancelledStatus() error {
+
+	// Возможен вызов из состояния active, paused, planned: завершить кампанию => cancelled
+	if emailNotification.Status != WorkStatusActive && emailNotification.Status != WorkStatusPaused && emailNotification.Status != WorkStatusPlanned {
+		reason := "Невозможно отменить уведомление,"
+		switch emailNotification.Status {
+		case WorkStatusPending:
+			reason += "т.к. уведомление еще в стадии разработки"
+		case WorkStatusCompleted:
+			reason += "т.к. уведомление уже завершено"
+		case WorkStatusFailed:
+			reason += "т.к. уведомление завершено с ошибкой"
+		case WorkStatusCancelled:
+			reason += "т.к. уведомление уже отменено"
+		}
+		return utils.Error{Message: reason}
+	}
+
+	// Удаляем все задачи из WorkFlow
+	err := db.Where("owner_id = ? AND owner_type = ?", emailNotification.Id, emailNotification.GetType()).Delete(MTAWorkflow{}).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		log.Printf("Ошибка удаления очереди из MTAWorkflow: %v\b", err)
+		return utils.Error{Message: "Ошибка завершения кампании - невозможно удалить остаток задач"}
+	}
+
+	// На всякий случай удаляем задачу по запуску этой кампании, чтобы не было дубля
+	if err := emailNotification.RemoveRunTask(); err != nil {
+		return err
+	}
+
+	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
+	return emailNotification.updateWorkStatus(WorkStatusCancelled)
+}
+
+// Проверяет возможность отправки email-уведомления
+func (emailNotification *EmailNotification) Validate() error {
+
+	account, err := GetAccount(emailNotification.AccountId)
+	if err != nil {
+		return utils.Error{Message: "Ошибка отправления Уведомления - не удается найти аккаунт"}
+	}
+
+
+	// Проверяем тело сообщения (не должно быть пустое)
+	if emailNotification.Subject == nil {
+		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет темы сообщения"}
+	}
+	if emailNotification.PreviewText == nil {
+		*emailNotification.PreviewText = ""
+	}
+
+	// Проверяем ключи и загружаем еще раз все данные для отправки сообщения
+	if emailNotification.EmailTemplateId == nil {
+		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного шаблона email-сообщения"}
+	}
+	err = account.LoadEntity(&emailNotification.EmailTemplate, *emailNotification.EmailTemplateId,nil)
+	if err != nil {
+		log.Printf("Ошибка загрузки шаблона email-сообщения для кампании [%v]: %v\n", emailNotification.Id, err)
+		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки шаблона email-сообщения"}
+	}
+
+	if emailNotification.EmailBoxId == nil  {
+		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного адреса отправителя"}
+	}
+	err = account.LoadEntity(&emailNotification.EmailBox, *emailNotification.EmailBoxId,nil)
+	if err != nil {
+		log.Printf("Ошибка загрузки адреса отправителя для кампании [%v]: %v\n", emailNotification.Id, err)
+		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки адреса отправителя"}
+	}
+
+	// Проверяем DKIM подпись
+	var webSite WebSite
+	err = account.LoadEntity(&webSite, emailNotification.EmailBox.WebSiteId,nil)
+	if err != nil {
+		log.Printf("Ошибка загрузки web site отправителя для кампании [%v]: %v\n", emailNotification.Id, err)
+		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки адреса отправителя"}
+	}
+
+	if err := webSite.ValidateDKIM(); err != nil { return err }
+
+	// Тестовые данные
+	// Локальные данные аккаунта, пользователя
+	data := make(map[string]interface{})
+
+	data["accountId"] = account.Id
+	data["Account"] = account.GetDepersonalizedData() // << хз
+	data["userId"] = 0
+	data["User"] = User{Id: 1,Name: utils.STRp("TIvan"), Username: utils.STRp("TUsername"), Surname: utils.STRp("TSurname"), Patronymic: utils.STRp("TPatronymic"),
+		PhoneRegion: utils.STRp("RU"), Phone: utils.STRp("+79251000000")} // << хз
+	data["unsubscribeUrl"] = "/unsubscribe_url"
+
+
+
+	viewData := ViewData {
+		Subject: *emailNotification.Subject,
+		PreviewText: *emailNotification.PreviewText,
+		Data: data,
+		Json: data,
+		UnsubscribeURL: "",
+		PixelURL: "",
+		PixelHTML: "<div></div>",
+	}
+
+	return emailNotification.EmailTemplate.Validate(&viewData)
+}
+// Удаляет связанную задачу по запуск
+func (emailNotification *EmailNotification) RemoveRunTask() error {
+
+	// Удаляем все задачи, которые можно "выполнить" в будущем
+	err := db.Where("owner_id = ? AND owner_type = ? AND (status != ? OR status != ? OR status != ?)",
+		emailNotification.Id, TaskEmailNotificationRun, WorkStatusCompleted, WorkStatusCancelled, WorkStatusFailed).Delete(TaskScheduler{}).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		log.Printf("Ошибка удаления очереди из TaskScheduler: %v\b", err)
+		return utils.Error{Message: "Ошибка удаления задачи по запуску кампании"}
+	}
+
+	return nil
 }

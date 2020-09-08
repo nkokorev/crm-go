@@ -2,7 +2,6 @@ package appCr
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -126,7 +125,6 @@ func EmailBoxListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	} else {
 		emailBoxes, total, err = account.GetPaginationListEntity(&models.EmailBox{}, offset, limit, sortBy, search, nil,preloads)
 		if err != nil {
-			fmt.Println(err)
 			u.Respond(w, u.MessageError(err, "Не удалось получить список почтовых ящиков"))
 			return
 		}

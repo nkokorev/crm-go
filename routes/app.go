@@ -75,7 +75,8 @@ var AppRoutes = func(r *mux.Router) {
 
 	// -- ROLES --
 	// Запрос ниже может иметь много параметров (диапазон выборки, число пользователей)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/roles", appCr.RoleGetList).Methods(http.MethodGet, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/roles", appCr.RoleGetList).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/roles", appCr.UserRoleListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
 
 	rAuthUser.HandleFunc("/accounts/{accountHashId}/auth", appCr.AccountAuthUser).Methods(http.MethodPost, http.MethodOptions)
 
@@ -173,7 +174,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles", appCr.ArticleListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles/{articleId:[0-9]+}", appCr.ArticleGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles/{articleId:[0-9]+}", appCr.ArticleUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles/{articleId:[0-9]+}", appCr.ArticleDelete).Methods(http.MethodDelete, http.MethodOptions)// ### Article ###
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/articles/{articleId:[0-9]+}", appCr.ArticleDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### EventHandlers ###
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/event-listeners", appCr.EventListenerCreate).Methods(http.MethodPost, http.MethodOptions)
@@ -205,6 +206,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-notifications/{emailNotificationId}", appCr.EmailNotificationGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-notifications/{emailNotificationId}", appCr.EmailNotificationUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-notifications/{emailNotificationId}", appCr.EmailNotificationDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-notifications/{emailNotificationId:[0-9]+}/change-status", appCr.EmailNotificationChangeStatus).Methods(http.MethodPatch, http.MethodOptions)
 
 	// ### Email Queue ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-queues", appCr.EmailQueueCreate).Methods(http.MethodPost, http.MethodOptions)
@@ -212,6 +214,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-queues/{emailQueueId:[0-9]+}", appCr.EmailQueueGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-queues/{emailQueueId:[0-9]+}", appCr.EmailQueueUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-queues/{emailQueueId:[0-9]+}", appCr.EmailQueueDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-queues/{emailQueueId:[0-9]+}/change-status", appCr.EmailQueueChangeStatus).Methods(http.MethodPatch, http.MethodOptions)
 
 	// ### Email Campaign ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-campaigns", appCr.EmailCampaignCreate).Methods(http.MethodPost, http.MethodOptions)

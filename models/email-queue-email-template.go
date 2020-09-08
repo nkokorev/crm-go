@@ -22,7 +22,7 @@ type EmailQueueEmailTemplate struct {
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false;"`
 	Step 		uint 	`json:"step" gorm:"type:int;not null;"` // порядок
 
-	EmailTemplateId	uint	`json:"email_template_id" gorm:"type:int;"`
+	EmailTemplateId	*uint	`json:"email_template_id" gorm:"type:int;"`
 	EmailTemplate	EmailTemplate `json:"email_template"`
 
 	// С какого почтового ящика отправляем
@@ -33,8 +33,8 @@ type EmailQueueEmailTemplate struct {
 	DelayTime		time.Duration `json:"delay_time" gorm:"default:0"`// << учитывается только время [0-24]
 
 	// С каким текстом отправляется это сообщение.
-	Subject			string 	`json:"subject" gorm:"type:varchar(128);not null;"` // Тема сообщения, компилируются
-	PreviewText		string 	`json:"preview_text" gorm:"type:varchar(255);"` // Тема сообщения, компилируются
+	Subject			*string 	`json:"subject" gorm:"type:varchar(255);"` // Тема сообщения, компилируются
+	PreviewText		*string 	`json:"preview_text" gorm:"type:varchar(255);"` // Тема сообщения, компилируются
 
 
 	// График: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday | weekends, workday
@@ -276,4 +276,77 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) GetPreloadDb(getModel bo
 
 }
 
+func (emailQueueEmailTemplate *EmailQueueEmailTemplate) IsActive() bool {
+	return emailQueueEmailTemplate.Enabled
+}
 
+func (emailQueueEmailTemplate *EmailQueueEmailTemplate) Validate() error {
+
+	account, err := GetAccount(emailQueueEmailTemplate.AccountId)
+	if err != nil {
+		return utils.Error{Message: "Ошибка отправления Уведомления - не удается найти аккаунт"}
+	}
+
+
+	// Проверяем тело сообщения (не должно быть пустое)
+	if emailQueueEmailTemplate.Subject == nil {
+		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет темы сообщения"}
+	}
+	if emailQueueEmailTemplate.PreviewText == nil {
+		*emailQueueEmailTemplate.PreviewText = ""
+	}
+
+	// Проверяем ключи и загружаем еще раз все данные для отправки сообщения
+	if emailQueueEmailTemplate.EmailTemplateId == nil {
+		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного шаблона email-сообщения"}
+	}
+	err = account.LoadEntity(&emailQueueEmailTemplate.EmailTemplate, *emailQueueEmailTemplate.EmailTemplateId,nil)
+	if err != nil {
+		log.Printf("Ошибка загрузки шаблона email-сообщения для кампании [%v]: %v\n", emailQueueEmailTemplate.Id, err)
+		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки шаблона email-сообщения"}
+	}
+
+	if emailQueueEmailTemplate.EmailBoxId == nil  {
+		return utils.Error{Message: "Кампания не может быть запущена, т.к. нет установленного адреса отправителя"}
+	}
+	err = account.LoadEntity(&emailQueueEmailTemplate.EmailBox, *emailQueueEmailTemplate.EmailBoxId,nil)
+	if err != nil {
+		log.Printf("Ошибка загрузки адреса отправителя для кампании [%v]: %v\n", emailQueueEmailTemplate.Id, err)
+		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки адреса отправителя"}
+	}
+
+	// Проверяем DKIM подпись
+	var webSite WebSite
+	err = account.LoadEntity(&webSite, emailQueueEmailTemplate.EmailBox.WebSiteId,nil)
+	if err != nil {
+		log.Printf("Ошибка загрузки web site отправителя для кампании [%v]: %v\n", emailQueueEmailTemplate.Id, err)
+		return utils.Error{Message: "Кампания не может быть запущена - ошибка загрузки адреса отправителя"}
+	}
+
+	if err := webSite.ValidateDKIM(); err != nil { return err }
+
+	// Тестовые данные
+	// Локальные данные аккаунта, пользователя
+	data := make(map[string]interface{})
+
+	data["accountId"] = account.Id
+	data["Account"] = account.GetDepersonalizedData() // << хз
+	data["userId"] = 0
+	data["User"] = User{Id: 1,Name: utils.STRp("TIvan"), Username: utils.STRp("TUsername"), Surname: utils.STRp("TSurname"), Patronymic: utils.STRp("TPatronymic"),
+		PhoneRegion: utils.STRp("RU"), Phone: utils.STRp("+79251000000")} // << хз
+	data["unsubscribeUrl"] = "/unsubscribe_url"
+
+
+
+	viewData := ViewData {
+		Subject: *emailQueueEmailTemplate.Subject,
+		PreviewText: *emailQueueEmailTemplate.PreviewText,
+		Data: data,
+		Json: data,
+		UnsubscribeURL: "",
+		PixelURL: "",
+		PixelHTML: "<div></div>",
+	}
+
+	return emailQueueEmailTemplate.EmailTemplate.Validate(&viewData)
+}

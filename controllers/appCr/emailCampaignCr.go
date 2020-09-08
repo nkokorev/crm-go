@@ -168,6 +168,10 @@ func EmailCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Статус меняется только через отдельную функцию
+	delete(input,"status")
+	delete(input,"reason")
+
 	err = account.UpdateEntity(&emailCampaign, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
