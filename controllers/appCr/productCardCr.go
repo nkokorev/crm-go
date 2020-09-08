@@ -112,10 +112,17 @@ func ProductCardListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
+	// Узнаем нужен ли фильтр
+	filter := map[string]interface{}{}
+	webSiteId, _filterWebSite := utilsCr.GetQueryUINTVarFromGET(r, "webSiteId")
+	if _filterWebSite {
+		filter["web_site_id"] = webSiteId
+	}
+
 	var total int64 = 0
 	webSites := make([]models.Entity,0)
 
-	if all {
+	if all && len(filter) < 1{
 		webSites, total, err = account.GetListEntity(&models.ProductCard{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список страниц"))
@@ -123,7 +130,7 @@ func ProductCardListPaginationGet(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		webSites, total, err = account.GetPaginationListEntity(&models.ProductCard{}, offset, limit, sortBy, search, nil,preloads)
+		webSites, total, err = account.GetPaginationListEntity(&models.ProductCard{}, offset, limit, sortBy, search, filter,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список страниц"))
 			return

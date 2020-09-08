@@ -14,7 +14,7 @@ type WebPage struct {
 	Id     		uint	`json:"id" gorm:"primaryKey"`
 	PublicId	uint	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
-	WebSiteId 	*uint 	`json:"web_site_id" gorm:"type:int;index;not null;"`
+	WebSiteId 	*uint 	`json:"web_site_id" gorm:"type:int;index;"`
 	ParentId 	uint	`json:"parent_id"`
 	// Children 	*WebPage `json:"_children" gorm:"-"`
 
@@ -155,7 +155,7 @@ func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		search = "%"+search+"%"
 
 		err := (&WebPage{}).GetPreloadDb(false,false,preloads).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&emailCampaigns, "label ILIKE ? OR code ILIKE ? OR route_name ILIKE ? OR icon_name ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search,search).Error
+			Where(filter).Find(&emailCampaigns, "label ILIKE ? OR code ILIKE ? OR route_name ILIKE ? OR icon_name ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -172,7 +172,7 @@ func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 	} else {
 		
 		err := (&WebPage{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&emailCampaigns).Error
+			Where(filter).Find(&emailCampaigns).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}

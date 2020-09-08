@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"log"
@@ -14,6 +15,7 @@ type Article struct {
 	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 	HashId 		string 	`json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	WebSiteId 	*uint 	`json:"web_site_id" gorm:"type:int;index;"`
 
 	Public	 	bool 	`json:"public" gorm:"type:bool;default:false"` // Опубликована ли статья
 	Shared	 	bool 	`json:"shared" gorm:"type:bool;default:false"` // Расшарена ли статья
@@ -51,7 +53,7 @@ func (Article) PgSqlCreate() {
 		log.Fatal(err)
 	}
 	// db.Model(&Article{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	err := db.Exec("ALTER TABLE articles ADD CONSTRAINT articles_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	err := db.Exec("ALTER TABLE articles \n    ADD CONSTRAINT articles_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;\n--     ADD CONSTRAINT articles_web_page_id_fkey FOREIGN KEY (web_page_id) REFERENCES web_pages(id) ON DELETE SET NULL ON UPDATE CASCADE;\n    ").Error
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
@@ -157,7 +159,7 @@ func (Article) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		search = "%"+search+"%"
 
 		err := (&Article{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).
-			Where( "account_id = ?", accountId).
+			Where( "account_id = ?", accountId).Where(filter).
 			Find(&articles, "name ILIKE ? OR short_name ILIKE ? OR body ILIKE ? OR description ILIKE ?",search, search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -174,8 +176,10 @@ func (Article) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 
+		fmt.Println("Articles filter: ",filter)
+
 		err := (&Article{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).
-			Where( "account_id = ?", accountId).Find(&articles).Error
+			Where( "account_id = ?", accountId).Where(filter).Find(&articles).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}

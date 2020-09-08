@@ -108,12 +108,19 @@ func ArticleListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
+	// Узнаем нужен ли фильтр
+	filter := map[string]interface{}{}
+	webSiteId, _filterWebSite := utilsCr.GetQueryUINTVarFromGET(r, "webSiteId")
+	if _filterWebSite {
+		filter["web_site_id"] = webSiteId
+	}
+
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	var total int64 = 0
 	articles := make([]models.Entity, 0)
 
-	if all {
+	if all && len(filter) < 1 {
 		articles, total, err = account.GetListEntity(&models.Article{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить данные"))
@@ -121,7 +128,7 @@ func ArticleListPaginationGet(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// emailNotifications, total, err = account.GetEmailNotificationsPaginationList(offset, limit, search)
-		articles, total, err = account.GetPaginationListEntity(&models.Article{}, offset, limit, sortBy, search, nil,preloads)
+		articles, total, err = account.GetPaginationListEntity(&models.Article{}, offset, limit, sortBy, search, filter, preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить данные"))
 			return

@@ -114,17 +114,24 @@ func WebPageListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	var total int64 = 0
-	webSites := make([]models.Entity,0)
+	webPages := make([]models.Entity,0)
 
-	if all {
-		webSites, total, err = account.GetListEntity(&models.WebPage{}, sortBy,preloads)
+	// Узнаем нужен ли фильтр
+	filter := map[string]interface{}{}
+	webSiteId, _filterWebSite := utilsCr.GetQueryUINTVarFromGET(r, "webSiteId")
+	if _filterWebSite {
+		filter["web_site_id"] = webSiteId
+	}
+
+	if all && len(filter) < 1 {
+		webPages, total, err = account.GetListEntity(&models.WebPage{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список страниц"))
 			return
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		webSites, total, err = account.GetPaginationListEntity(&models.WebPage{}, offset, limit, sortBy, search, nil,preloads)
+		webPages, total, err = account.GetPaginationListEntity(&models.WebPage{}, offset, limit, sortBy, search, filter,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список страниц"))
 			return
@@ -132,7 +139,7 @@ func WebPageListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	resp := u.Message(true, "GET Web Pages Pagination List")
-	resp["web_pages"] = webSites
+	resp["web_pages"] = webPages
 	resp["total"] = total
 	u.Respond(w, resp)
 }

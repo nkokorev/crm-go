@@ -128,7 +128,7 @@ func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 		search = "%"+search+"%"
 
 		err := (&EmailBox{}).GetPreloadDb(false, false, preloads).
-			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).Where(filter).
 			Find(&emailBoxes, "name ILIKE ? OR box ILIKE ?", search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -145,7 +145,7 @@ func (EmailBox) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 	} else {
 
 		err := (&EmailBox{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&emailBoxes).Error
+			Where(filter).Find(&emailBoxes).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}

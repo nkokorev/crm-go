@@ -190,7 +190,8 @@ func (ProductCard) getPaginationList(accountId uint, offset, limit int, sortBy, 
 
 		search = "%"+search+"%"
 
-		err := (&ProductCard{}).GetPreloadDb(false,false, preloads).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&ProductCard{}).GetPreloadDb(false,false, preloads).
+			Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).Where(filter).
 			Find(&productCards, "label ILIKE ? OR path ILIKE ? OR breadcrumb ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -208,7 +209,7 @@ func (ProductCard) getPaginationList(accountId uint, offset, limit int, sortBy, 
 	} else {
 
 		err := (&ProductCard{}).GetPreloadDb(false,false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&productCards).Error
+			Where(filter).Find(&productCards).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}

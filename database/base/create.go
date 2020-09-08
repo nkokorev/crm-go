@@ -1821,6 +1821,7 @@ func LoadArticlesAiroClimate()  {
 		}
 
 		articleNew := models.Article{
+			WebSiteId: utils.UINTp(7),
 			Name: utils.STRp(strings.ToLower(file.Name())),
 			Public: true,
 			Shared: true,

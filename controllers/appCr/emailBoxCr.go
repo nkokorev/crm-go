@@ -110,20 +110,26 @@ func EmailBoxListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
+	// Узнаем нужен ли фильтр
+	filter := map[string]interface{}{}
+	webSiteId, _filterWebSite := utilsCr.GetQueryUINTVarFromGET(r, "webSiteId")
+	if _filterWebSite {
+		filter["web_site_id"] = webSiteId
+	}
 
 	var total int64 = 0
 	emailBoxes := make([]models.Entity,0)
 
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
-	if all {
+	if all && len(filter) < 1 {
 		emailBoxes, total, err = account.GetListEntity(&models.EmailBox{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список почтовых ящиков"))
 			return
 		}
 	} else {
-		emailBoxes, total, err = account.GetPaginationListEntity(&models.EmailBox{}, offset, limit, sortBy, search, nil,preloads)
+		emailBoxes, total, err = account.GetPaginationListEntity(&models.EmailBox{}, offset, limit, sortBy, search, filter,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список почтовых ящиков"))
 			return
