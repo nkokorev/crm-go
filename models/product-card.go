@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/datatypes"
@@ -291,4 +292,54 @@ func (productCard ProductCard) AppendProduct(input *Product, optPriority... int)
 	}
 	
 	return nil
+}
+func (productCard *ProductCard) RemoveProduct(product *Product) error {
+
+	if product.Id < 1 {
+		return utils.Error{Message: "Необходимо указать верный id товара"}
+	}
+
+	if err := db.Model(productCard).Association("Products").Delete(product); err != nil {
+		return err
+	}
+	
+	/*if err := db.Model(&ProductCardProduct{}).Where("product_id = ? AND product_card_id = ?",product.Id, productCard.Id).
+		Delete().Error; err != nil {
+		return err
+	}*/
+
+	return nil
+}
+
+func (productCard *ProductCard) SyncProductByIds(products []Product) error {
+
+	// очищаем список
+	if err := db.Model(productCard).Association("Products").Clear(); err != nil {
+		return err
+	}
+
+	for _,_product := range products {
+
+		if err := productCard.AppendProduct(&Product{Id: _product.Id, AccountId: _product.AccountId}, 10); err != nil {
+			return err
+		}
+
+	}
+	
+	return nil
+}
+
+
+// спорная функция
+func (productCard *ProductCard) ExistProductById(productId uint) bool {
+	var el ProductCardProduct
+	err := db.Model(productCard).Where("product_card_id = ? AND product_id = ?",productCard.Id, productId).First(&el).Error
+	if err != nil {
+		fmt.Println("Элемента нет")
+		return false
+	}
+
+	fmt.Println("Элемент есть")
+	return true
+
 }

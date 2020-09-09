@@ -220,3 +220,106 @@ func ProductCardDelete(w http.ResponseWriter, r *http.Request) {
 	resp := u.Message(true, "DELETE ProductCard Successful")
 	u.Respond(w, resp)
 }
+
+func ProductCardSyncProducts(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailQueueId"))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	productCard := models.ProductCard{}
+	if err =account.LoadEntity(&productCard, productCardId, nil); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Карточка товара"}))
+		return
+	}
+
+	var input struct{
+		Products []models.Product `json:"products"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 1"))
+		return
+	}
+
+	if err = productCard.SyncProductByIds(input.Products); err !=nil {
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 2"))
+		return
+	}
+
+	_productCard := models.ProductCard{}
+	if err = account.LoadEntity(&_productCard, productCardId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Карточка товара"}))
+		return
+	}
+
+	resp := u.Message(true, "PATCH EmailQueueEmailTemplate MassUpdates")
+	resp["product_card"] = _productCard
+	u.Respond(w, resp)
+}
+
+func ProductCardRemoveProduct(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailQueueId"))
+		return
+	}
+
+	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	var productCard models.ProductCard
+	if err =account.LoadEntity(&productCard, productCardId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке карточки товара"}))
+		return
+	}
+
+	product := models.Product{}
+	if err =account.LoadEntity(&product, productId, nil); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
+		return
+	}
+
+	if err = productCard.RemoveProduct(&product); err !=nil {
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из карточки товара"))
+		return
+	}
+
+	// preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	/*filter := make(map[string]interface{},0)
+	filter["product_card_id"] = productCardId*/
+
+	/*var _productCard models.ProductCard
+	if err = account.LoadEntity(&_productCard, productCardId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка загрузки карточки товара"}))
+		return
+	}*/
+
+	resp := u.Message(true, "PATCH ProductCard Products Remove")
+	resp["product_card"] = productCard
+	u.Respond(w, resp)
+}

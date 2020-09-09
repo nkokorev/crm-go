@@ -138,6 +138,8 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards/{productCardId:[0-9]+}", appCr.ProductCardGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards/{productCardId:[0-9]+}", appCr.ProductCardUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards/{productCardId:[0-9]+}", appCr.ProductCardDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards/{productCardId:[0-9]+}/products", appCr.ProductCardSyncProducts).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards/{productCardId:[0-9]+}/products/{productId:[0-9]+}", appCr.ProductCardRemoveProduct).Methods(http.MethodDelete, http.MethodOptions)
 
 	// todo: byShop - сейчас косвенная принадлежность товаров к магазину не отслеживается
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products", appCr.ProductCreate).Methods(http.MethodPost, http.MethodOptions)
