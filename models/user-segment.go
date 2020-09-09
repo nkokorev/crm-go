@@ -215,12 +215,15 @@ func (usersSegment UsersSegment) Execute(data map[string]interface{}) error {
 func (usersSegment UsersSegment) ChunkUsers(offset int64, limit uint) ([]User, int64, error) {
 	// Тут идет сборка всех условий и т.д., но пока парсим просто всех пользователей
 
+	if usersSegment.Id < 1 || usersSegment.AccountId < 1 {
+		return nil,0,utils.Error{Message: "Техническая ошибка: не правильно сформирован user segment"}
+	}
 	users := make([]User,0)
 
 	// Список пользователей по ролям (выбираем все роли)
 	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
 		Select("account_users.account_id, account_users.role_id, users.*").
-		Where("account_users.account_id = ? AND users.subscribed = true AND char_length(users.email) > 6", usersSegment.AccountId).
+		Where("account_users.account_id = ? AND users.subscribed = 'true' AND char_length(users.email) > 6", usersSegment.AccountId).
 		Offset(int(offset)).Limit(int(limit)).
 		Find(&users).Error
 	if err != nil {

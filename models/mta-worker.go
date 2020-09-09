@@ -12,7 +12,7 @@ import (
 // Добавляет письма в MTA-server
 
 func init() {
-	// go mtaWorker()
+	go mtaWorker()
 }
 
 // Объем выборки задач за один цикл mtaWorker

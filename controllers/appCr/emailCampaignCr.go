@@ -318,7 +318,7 @@ func EmailCampaignCheckDouble(w http.ResponseWriter, r *http.Request) {
 	var emailCampaign models.EmailCampaign
 	err = account.LoadEntity(&emailCampaign, emailCampaignId, preloads)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить кампанию"))
 		return
 	}
 

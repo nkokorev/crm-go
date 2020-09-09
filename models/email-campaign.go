@@ -324,7 +324,10 @@ func (emailCampaign *EmailCampaign) Execute() error {
 	if err := emailCampaign.SetActiveStatus(); err != nil {return err}
 
 	// 3. Собираем всех пользователь сегмента из базы
-	users := emailCampaign.getUsersBySegment()
+	users, err := emailCampaign.getUsersBySegment()
+	if err != nil {
+		return err
+	}
 
 	// Шаблон-заготовка для каждого пользователя под задачу в mta-workflow
 	mtaWorkflow := MTAWorkflow{
@@ -607,10 +610,18 @@ func (emailCampaign *EmailCampaign) SetCancelledStatus() error {
 	return emailCampaign.updateWorkStatus(WorkStatusCancelled)
 }
 
-func (emailCampaign *EmailCampaign) getUsersBySegment() []User {
-	segment := emailCampaign.UsersSegment
-	users := make([]User,0)
+func (emailCampaign *EmailCampaign) getUsersBySegment() ([]User, error) {
 
+	if emailCampaign.UsersSegmentId == nil {
+		return nil, utils.Error{Message: "Не выбран пользовательский сегмент"}
+	}
+
+	segment := UsersSegment{Id: *emailCampaign.UsersSegmentId}
+	if err := segment.load(nil); err != nil {
+		return nil, err
+	}
+
+	users := make([]User,0)
 	offset := int64(0)
 	limit := uint(100)
 	total := int64(1)
@@ -628,7 +639,7 @@ func (emailCampaign *EmailCampaign) getUsersBySegment() []User {
 		total = _total
 	}
 
-	return users
+	return users, nil
 }
 
 func (emailCampaign EmailCampaign) Validate() error {
@@ -767,4 +778,9 @@ func (emailCampaign *EmailCampaign) CheckDoubleFromHistory() (uint, error) {
 	}
 
 	return dobules, nil
+}
+
+func (emailCampaign EmailCampaign) CheckDoubleFromHistoryTest() (uint, error) {
+	users, err := emailCampaign.getUsersBySegment()
+	return uint(len(users)), err
 }
