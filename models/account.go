@@ -78,13 +78,15 @@ type Account struct {
 
 // ###
 func (Account) PgSqlCreate() {
-	if db.Migrator().HasTable(&Account{}) { return }
+	// if db.Migrator().HasTable(&Account{}) { return }
 
 	// 1. Создаем таблицу и настройки в pgSql
-	if err := db.Migrator().CreateTable(&Account{}); err != nil {log.Fatal(err)}
+	if err := db.Migrator().CreateTable(&Account{}); err != nil {
+		log.Fatal("(Account) PgSqlCreate(): ", err)
+	}
 	// db.CreateTable(&Account{})
 
-	if err := db.SetupJoinTable(&Product{}, "Users", &AccountUser{}); err != nil {
+	if err := db.SetupJoinTable(&Account{}, "Users", &AccountUser{}); err != nil {
 		log.Fatal(err)
 	}
 

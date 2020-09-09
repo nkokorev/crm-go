@@ -182,7 +182,9 @@ func RefreshTablesPart_I() {
 	models.UserVerificationMethod{}.PgSqlCreate()
 	models.Account{}.PgSqlCreate()
 	models.User{}.PgSqlCreate()
+	models.Role{}.PgSqlCreate()
 	models.AccountUser{}.PgSqlCreate()
+
 
 	// не зависящие
 	models.PaymentSubject{}.PgSqlCreate()
@@ -190,7 +192,7 @@ func RefreshTablesPart_I() {
 	models.VatCode{}.PgSqlCreate()
 	models.OrderStatus{}.PgSqlCreate()
 	models.UnitMeasurement{}.PgSqlCreate()
-	models.Role{}.PgSqlCreate()
+	// models.Role{}.PgSqlCreate()
 	models.ApiKey{}.PgSqlCreate()
 
 	models.WebSite{}.PgSqlCreate()
@@ -275,7 +277,7 @@ func UploadEavData() {
 }
 
 func UploadTestDataPart_I() {
-	
+
 	// 1. Получаем главный аккаунт
 	mAcc, err := models.GetMainAccount()
 	if err != nil {
@@ -1831,7 +1833,7 @@ func LoadImagesAiroClimate(count int)  {
 
 			err = (models.Product{Id: uint(index)}).AppendAssociationImage(file)
 			if err != nil {
-				log.Fatalf("Error: %v", err)
+				log.Fatalf("Error product: %v", err)
 			}
 
 			// fmt.Printf("index: %v, fileId: %v\n", index, fileId)

@@ -67,13 +67,17 @@ type UserAndRole struct {
 func (User) PgSqlCreate() {
 	if db.Migrator().HasTable(&User{}) { return }
 
-	if err := db.Migrator().CreateTable(&User{}); err != nil { log.Fatal(err) }
+	if err := db.Migrator().CreateTable(&User{}); err != nil { log.Fatal("(User) PgSqlCreate(): ", err) }
 
 	// db.Model(&User{}).AddForeignKey("issuer_account_id", "accounts(id)", "SET DEFAULT", "CASCADE")
 	// db.Model(&User{}).AddForeignKey("invited_user_id", "users(id)", "SET NULL", "CASCADE")
-	err := db.Exec("ALTER TABLE users    \n    ADD CONSTRAINT users_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n\ncreate unique index uix_users_issuer_account_id_username_email_mobile_phone ON users (issuer_account_id,username,email,phone);\n-- create unique index uix_users_username_account_id_sku ON users (issuer_account_id,username) where username is not null;\ncreate unique index uix_users_username_account_id_sku ON users (issuer_account_id,username) where (length(username) > 0);\n\n-- alter table users alter column default_account_id set default null;\n-- alter table users alter column invited_user_id set default null;\n\n-- alter table  users ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n")
+	err := db.Exec("ALTER TABLE users    \n    ADD CONSTRAINT users_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE,\n--     ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n\ncreate unique index uix_users_issuer_account_id_username_email_mobile_phone ON users (issuer_account_id,username,email,phone);\n-- create unique index uix_users_username_account_id_sku ON users (issuer_account_id,username) where username is not null;\ncreate unique index uix_users_username_account_id_sku ON users (issuer_account_id,username) where (length(username) > 0);\n\n-- alter table users alter column default_account_id set default null;\n-- alter table users alter column invited_user_id set default null;\n\n-- alter table  users ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n").Error
 	if err != nil {
-		log.Fatal("Error: ", err)
+		log.Fatal("Error PgSqlCreate User: ", err)
+	}
+
+	if err := db.SetupJoinTable(&User{}, "Accounts", &AccountUser{}); err != nil {
+		log.Fatal(err)
 	}
 }
 

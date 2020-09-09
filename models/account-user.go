@@ -36,18 +36,15 @@ type AccountUser struct {
 func (AccountUser) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
-	if err := db.Migrator().DropTable(&AccountUser{}); err != nil {log.Fatal(err)}
+	// if err := db.Migrator().DropTable(&AccountUser{}); err != nil {log.Fatal(err)}
 	if err := db.Migrator().CreateTable(&AccountUser{}); err != nil {
-		log.Fatal(err)
+		log.Fatal("(AccountUser) PgSqlCreate(): ", err)
 	}
 	// db.Model(&AccountUser{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	// db.Model(&AccountUser{}).AddForeignKey("user_id", "users(id)", "CASCADE", "CASCADE")
 	// db.Model(&AccountUser{}).AddForeignKey("role_id", "roles(id)", "RESTRICT", "CASCADE")
 	db.Exec("create unique index uix_account_users_account_id_user_id_role_id ON account_users (account_id,user_id,role_id);")
-	err := db.Exec("ALTER TABLE account_users " +
-		"ADD CONSTRAINT account_users_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
-		"ADD CONSTRAINT account_users_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE," +
-		"ADD CONSTRAINT account_users_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+	err := db.Exec("ALTER TABLE account_users \n    ADD CONSTRAINT account_users_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE, \n    ADD CONSTRAINT account_users_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE, \n    ADD CONSTRAINT account_users_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE ON UPDATE CASCADE,\n    DROP CONSTRAINT IF EXISTS fk_account_users_user,\n    DROP CONSTRAINT IF EXISTS fk_account_users_account,\n    DROP CONSTRAINT IF EXISTS fk_account_users_role,\n    DROP CONSTRAINT IF EXISTS fk_accounts_account_users,\n    DROP CONSTRAINT IF EXISTS fk_users_account_user;").Error
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}

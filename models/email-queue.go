@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -49,7 +48,7 @@ func (EmailQueue) PgSqlCreate() {
 	// db.Model(&EmailQueue{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	err := db.Exec("ALTER TABLE email_queues ADD CONSTRAINT email_queues_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {
-		log.Fatal("Error: ", err)
+		log.Fatal("Error EmailQueue: ", err)
 	}
 }
 func (emailQueue *EmailQueue) BeforeCreate(tx *gorm.DB) error {
@@ -329,11 +328,8 @@ func (emailQueue EmailQueue) GetFirstStep() (*EmailQueueEmailTemplate, error) {
 	err := db.Model(&EmailQueueEmailTemplate{}).Where("email_queue_id = ? AND enabled = 'true'", emailQueue.Id).
 		Select("min(email_queue_email_templates.step)").Row().Scan(&stepSql)
 	if err != nil || !stepSql.Valid{
-		fmt.Println("Не нашли Min(1): ", stepSql)
 		return nil, utils.Error{Message: "Нет доступных писем для отправления (1)"}
 	}
-
-	fmt.Println("Нашли Min: ", stepSql)
 
 	eqet, err := emailQueue.GetStepById(uint(stepSql.Int64))
 	if err != nil {
@@ -346,15 +342,11 @@ func (emailQueue EmailQueue) GetFirstStep() (*EmailQueueEmailTemplate, error) {
 // Возвращает ближайший шаг (может быть равен order) или ошибку
 func (emailQueue EmailQueue) GetNearbyActiveStep(step uint) (*EmailQueueEmailTemplate, error) {
 
-	fmt.Println("Ищем следующий шаг за: ",step)
-	// var eqet EmailQueueEmailTemplate
-	// var _step = float64(0)
 	var stepSql sql.NullInt64
 	// err := db.Model(&EmailQueueEmailTemplate{}).Where("email_queue_id = ? AND enabled = 'true' AND email_queue_email_templates.step >= ?", emailQueue.Id, step).
 	err := db.Debug().Model(&EmailQueueEmailTemplate{}).Where("email_queue_id = ? AND enabled = 'true' AND step >= ?", emailQueue.Id, step).
 		Select("min(step)").Row().Scan(&stepSql)
 	if err != nil || !stepSql.Valid {
-		fmt.Println("Не нашли Min (2): ", stepSql)
 		return nil, utils.Error{Message: "Нет доступных писем для отправления (2)"}
 	}
 
@@ -695,10 +687,7 @@ func (emailQueue *EmailQueue) Validate() error {
 	if err := emailQueue.load([]string{"EmailQueueEmailTemplates","EmailQueueEmailTemplates.EmailTemplates","EmailQueueEmailTemplates.EmailBox"}); err != nil {
 		return err
 	}
-	fmt.Println("emailQueue.AccountId: ",emailQueue.AccountId)
 
-	// steps := make([]EmailQueueEmailTemplate,0)
-	// var steps []EmailQueueEmailTemplate
 	steps := make([]EmailQueueEmailTemplate,0)
 	/*filter := map[string]interface{}{
 		"account_id":emailQueue.AccountId,
