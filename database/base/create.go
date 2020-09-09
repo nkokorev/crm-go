@@ -290,10 +290,10 @@ func UploadTestDataPart_I() {
 	if err != nil {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
-	/*roleManagerMain, err := mAcc.GetRoleByTag(models.RoleManager)
+	roleManagerMain, err := mAcc.GetRoleByTag(models.RoleManager)
 	if err != nil {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
-	}*/
+	}
 	roleClientMain, err := mAcc.GetRoleByTag(models.RoleClient)
 	if err != nil {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
@@ -303,14 +303,14 @@ func UploadTestDataPart_I() {
 	timeNow := time.Now().UTC()
 	owner, err := mAcc.CreateUser(
 			models.User{
-			Username: 	utils.STRp("admin"),
-			Email:utils.STRp("kokorevn@gmail.com"),
-			PhoneRegion: utils.STRp("RU"),
-			Phone: utils.STRp("89251952295"),
-			Password:utils.STRp("qwerty109#QW"),
-			Name:	utils.STRp("Никита"),
-			Surname:utils.STRp("Кокорев"),
-			Patronymic:utils.STRp("Романович"),
+			Username: 		utils.STRp("admin"),
+			Email:			utils.STRp("kokorevn@gmail.com"),
+			PhoneRegion: 	utils.STRp("RU"),
+			Phone: 			utils.STRp("89251952295"),
+			Password:		utils.STRp("qwerty109#QW"),
+			Name:			utils.STRp("Никита"),
+			Surname:		utils.STRp("Кокорев"),
+			Patronymic:		utils.STRp("Романович"),
 			EmailVerifiedAt:&timeNow,
 			},
 		*roleOwnerMain,
@@ -319,40 +319,23 @@ func UploadTestDataPart_I() {
 		log.Fatal("Не удалось создать admin'a: ", err)
 	}
 
+	// Рабочий аккаунт (nkokorev)
 	mex388, err := mAcc.CreateUser(
 		models.User{
-			Username:	utils.STRp("mex388"),
-			Email:		utils.STRp("nkokorev@rus-marketing.ru"),
-			PhoneRegion: utils.STRp("RU"),
-			Phone: 		utils.STRp("79251952222"),
-			Password:	utils.STRp("qwerty109#QW"),
-			Name:		utils.STRp("Никита"),
-			Surname:	utils.STRp("Кокорев"),
-			Patronymic:	utils.STRp("Романович"),
+			Username:		utils.STRp("mex388"),
+			Email:			utils.STRp("nkokorev@rus-marketing.ru"),
+			PhoneRegion: 	utils.STRp("RU"),
+			Phone: 			utils.STRp("79251952222"),
+			Password:		utils.STRp("qwerty109#QW"),
+			Name:			utils.STRp("Никита"),
+			Surname:		utils.STRp("Кокорев"),
+			Patronymic:		utils.STRp("Романович"),
 			EmailVerifiedAt:&timeNow,
 		},
 		*roleAdminMain,
 	)
 	if err != nil || mex388 == nil {
 		log.Fatal("Не удалось создать mex388'a: ", err)
-	}
-
-	markPlatov, err := mAcc.CreateUser(
-		models.User{
-			Username:	utils.STRp("MarkPlatov"),
-			Email:		utils.STRp("markPlatov@rus-marketing.ru"),
-			PhoneRegion: utils.STRp("RU"),
-			Phone: 		utils.STRp("79777201164"),
-			Password:	utils.STRp("daUw#92QapZ"),
-			Name:		utils.STRp("Михаил"),
-			Surname:	utils.STRp("Коротченко"),
-			Patronymic:	utils.STRp("-"),
-			EmailVerifiedAt:&timeNow,
-		},
-		*roleClientMain,
-	)
-	if err != nil {
-		log.Fatal("Не удалось создать markPlatov'a: ", err)
 	}
 
 	// 3. Создаем домен для главного аккаунта
@@ -404,14 +387,110 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 		log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
 	}
 
-	////////////////////////////////////
-
 	dvc, err := models.GetUserVerificationTypeByCode(models.VerificationMethodEmailAndPhone)
 	if err != nil || dvc == nil {
 		log.Fatal("Не удалось получить верификацию...")
 		return
 	}
 
+	// ######### Ratus Media Account ############
+
+	// 2. создаем из-под mex388 RatusMedia
+	ratusMediaAcc, err := owner.CreateAccount( models.Account{
+		Name:                                "Ratus Media",
+		Website:                             "ratus.media",
+		Type:                                "service",
+		ApiEnabled:                          true,
+		UiApiEnabled:                        true,
+		UiApiAesEnabled:                     true,
+		UiApiAuthMethods:                    datatypes.JSON(utils.StringArrToRawJson([]string{"email"})),
+		UiApiEnabledUserRegistration:        true,
+		UiApiUserRegistrationInvitationOnly: false,
+		UiApiUserRegistrationRequiredFields: datatypes.JSON(utils.StringArrToRawJson([]string{"email"})),
+		UiApiUserEmailDeepValidation:        true, // хз
+		UserVerificationMethodId:            &dvc.Id,
+		UiApiEnabledLoginNotVerifiedUser:    true, // really?
+		VisibleToClients:                    false,
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать аккаунт 357 грамм")
+		return
+	}
+
+	// Создаем API ключ
+	_, err = ratusMediaAcc.ApiKeyCreate(models.ApiKey{Name:"Интеграция сайта на Rust с CRM"})
+	if err != nil {
+		log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
+	}
+
+	// 3. добавляем mex388 как админа
+	_, err = ratusMediaAcc.AppendUser(*mex388, *roleAdminMain)
+	if err != nil {
+		log.Fatal("Не удалось добавить пользователя admin in 357gr")
+		return
+	}
+	// 3. создаем MarkPlatov
+	markPlatov, err := ratusMediaAcc.CreateUser(
+		models.User{
+			Username:	utils.STRp("MarkPlatov"),
+			Email:		utils.STRp("markPlatov@rus-marketing.ru"),
+			PhoneRegion: utils.STRp("RU"),
+			Phone: 		utils.STRp("79777201164"),
+			Password:	utils.STRp("daUw#92QapZ"),
+			Name:		utils.STRp("Михаил"),
+			Surname:	utils.STRp("Коротченко"),
+			Patronymic:	utils.STRp("-"),
+			EmailVerifiedAt:&timeNow,
+		},
+		*roleManagerMain,
+	)
+	if err != nil {
+		log.Fatal("Не удалось создать markPlatov'a: ", err)
+	}
+
+
+	// 4. Создаем домен для ratus.media
+	_webSiteRatusMedia, err := ratusMediaAcc.CreateEntity(&models.WebSite{
+		Hostname: "ratus.media",
+		DKIMPublicRSAKey: `-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDYq5m0HLzmuGrIvghDA3uHR8rF
+JTmhGutraXmqrHT3dLx4en15H8y7ml37dLrqUraDQTcm7Xmi/zJaJl5i9WLOUui0
+pjg2ee1PxllVduwzzwzIUfo3k6Z9I+RiTLWtjtUCGvR1eJ7K7uzUdQOVv94M4nIp
+FeTiqGsEKHqAbsiq0QIDAQAB
+-----END PUBLIC KEY-----
+`,
+		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
+MIICXQIBAAKBgQDYq5m0HLzmuGrIvghDA3uHR8rFJTmhGutraXmqrHT3dLx4en15
+H8y7ml37dLrqUraDQTcm7Xmi/zJaJl5i9WLOUui0pjg2ee1PxllVduwzzwzIUfo3
+k6Z9I+RiTLWtjtUCGvR1eJ7K7uzUdQOVv94M4nIpFeTiqGsEKHqAbsiq0QIDAQAB
+AoGBAIwqFnipzpoC2zGZnYacjiDplIcMmcdavsjxpr9+aPxcDEB0HQ9qPutt5TZy
+QSis8Vzfp2oLXhDPvicLgyvJSmy1lsevb8KtXR7sUR6OOsSk9UDxdkziSpCxn3b1
+1cTHeS+iH5vT7oNAMl4bczA/Mf+5HbYYZOVBkAK0XZgfPlgBAkEA+HgODNGFcakr
+npk9nIYO3fQ47j3yE0WH2a7LXcMaqcqSc7+rOPI1xNqmNY1wInYKrE3nVIbt94Hp
+zEYvbo1JYQJBAN88z23O09SOK0vDNztqHLs5CONXaulHjhsumxRz/sFnJEA+39IB
+H7cLKY0bNj32naSPvlMvpOXrUs3RvoGtp3ECQA3+XPQ13KkhGPbOtJybJD014vrv
+/DE/qj4FTSjTsy263fKs6czEP2j903ySoa0fLsyzeoLVMpPM+kjp7wPv6yECQQDC
+1SH8ply+0G39K53S3yPAS2D0eeE3RFpEYwK6cRpQ1aIP6FATyyNQ8A8Ntkg7ADhJ
+3aKwm46BlEaql3p7V4IhAkBTq1wkY0mGjIfgfN5sTg8B4SbL/dhfLrl9xeRbc5qA
+AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
+-----END RSA PRIVATE KEY-----
+`,
+		DKIMSelector: "dk1",
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать домены для ratus media: ", err)
+	}
+	webSiteRatusMedia, ok := _webSiteRatusMedia.(*models.WebSite)
+	if !ok {
+		log.Fatal("Не удалось создать домены для ratus media: ", err)
+	}
+
+	// 5. Добавляем почтовые ящики в домен ratus.media
+	_, err = webSiteRatusMedia.CreateEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "Ratus Media", Box: "info"})
+	if err != nil {
+		log.Fatal("Не удалось создать MailBoxes для Ratus Media: ", err)
+	}
+	
 
 	// ######### Test Account ############
 
@@ -445,13 +524,13 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	// 3. добавляем меня как админа
 	_, err = testAcc.AppendUser(*owner, *roleAdminMain)
 	if err != nil {
-		log.Fatal("Не удалось добавить пользователя admin in 357gr")
+		log.Fatal("Не удалось добавить пользователя admin in 357gr: ", err)
 		return
 	}
 	// 3. добавляем MarkPlatov
 	_, err = testAcc.AppendUser(*markPlatov, *roleAdminMain)
 	if err != nil {
-		log.Fatal("Не удалось добавить пользователя admin in 357gr")
+		log.Fatal("Не удалось добавить пользователя admin in test account")
 		return
 	}
 
@@ -996,14 +1075,6 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	if err != nil {
 		log.Fatal("Не удалось создать MailBoxes для AiroClimate: ", err)
 	}
-	_, err = webSiteAiro.CreateEmailBox(models.EmailBox{Default: false, Allowed: true, Name: "Отдел продаж AIRO Climate", Box: "sale"})
-	if err != nil {
-		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
-	}
-	_, err = webSiteAiro.CreateEmailBox(models.EmailBox{Default: false, Allowed: true, Name: "Служба поддержки AIRO Climate", Box: "help"})
-	if err != nil {
-		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
-	}
 
 	mPage, err := airoClimat.CreateEntity(&models.WebPage{
 		AccountId: airoClimat.Id, WebSiteId: &webSiteAiro.Id, Label: utils.STRp("Главная"), Code: utils.STRp("root"),Path: utils.STRp("/"),
@@ -1498,14 +1569,14 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 func UploadTestDataPart_II() {
 
 	// 1. Получаем AiroClimate аккаунт
-	accountAiro, err := models.GetAccount(7)
+	accountAiro, err := models.GetAccount(8)
 	if err != nil {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
 	// 2. Получаем магазин
 	var webSite models.WebSite
-	err = accountAiro.LoadEntity(&webSite, 7,nil)
+	err = accountAiro.LoadEntity(&webSite, accountAiro.Id,nil)
 	if err != nil {
 		log.Fatalf("Не удалось найти webSite: %v", err)
 	}
@@ -1534,6 +1605,7 @@ func UploadTestDataPart_II() {
 		log.Fatalf("Не удалось добавить метод доставки в магазин: %v\n", err)
 	}
 
+
 	entityPickup, err := accountAiro.CreateEntity(&models.DeliveryPickup{Name: "Самовывоз из г. Москва, м. Текстильщики", Enabled: true,PaymentSubjectId: 10})
 	if err != nil {
 		log.Fatalf("Не удалось получить entityPickup: %v", err)
@@ -1556,13 +1628,12 @@ func UploadTestDataPart_II() {
 	if err := webSite.AppendDeliveryMethod(entityCourier); err != nil {
 		log.Fatalf("Не удалось добавить метод доставки в магазин: %v\n", err)
 	}
-	
 
 }
 
 func UploadTestDataPart_III() {
 	// 1. Получаем главный аккаунт
-	airoAccount, err := models.GetAccount(7)
+	airoAccount, err := models.GetAccount(8)
 	if err != nil {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
@@ -1696,7 +1767,6 @@ func UploadTestDataPart_III() {
 			log.Fatal(err)
 		}
 	}
-
 }
 
 
@@ -1706,7 +1776,7 @@ func ToStringPointer(s string) *string {
 
 func LoadImagesAiroClimate(count int)  {
 
-	account, err := models.GetAccount(7)
+	account, err := models.GetAccount(8)
 	if err != nil {
 		fmt.Println("Не удалось загрузить изображения для аккаунта", err)
 	}
@@ -1772,8 +1842,6 @@ func LoadImagesAiroClimate(count int)  {
 			}
 		}
 	}
-
-	
 }
 
 func GetFileContentType(out *os.File) (string, error) {
@@ -1794,7 +1862,7 @@ func GetFileContentType(out *os.File) (string, error) {
 }
 
 func LoadArticlesAiroClimate()  {
-	account, err := models.GetAccount(7)
+	account, err := models.GetAccount(8)
 	if err != nil {
 		fmt.Println("Не удалось найти аккаунт для загрузки статей", err)
 	}
@@ -1837,10 +1905,11 @@ func LoadArticlesAiroClimate()  {
 		}*/
 
 	}
+
 }
 
 func LoadProductDescriptionAiroClimate()  {
-	account, err := models.GetAccount(7)
+	account, err := models.GetAccount(8)
 	if err != nil {
 		fmt.Println("Не удалось найти аккаунт для загрузки статей", err)
 	}
@@ -1883,10 +1952,11 @@ func LoadProductDescriptionAiroClimate()  {
 		}
 
 	}
+
 }
 
 func LoadProductCategoryDescriptionAiroClimate()  {
-	/*account, err := models.GetAccount(7)
+	/*account, err := models.GetAccount(8)
 	if err != nil {
 		fmt.Println("Не удалось найти аккаунт для загрузки статей", err)
 	}*/
@@ -1931,18 +2001,20 @@ func LoadProductCategoryDescriptionAiroClimate()  {
 			log.Fatalf("unable to update product group descr: %v", err)
 		}
 	}
+
+
 }
 
 func UploadTestDataPart_IV()  {
 
 	// 1. Получаем AiroClimate аккаунт
-	airoAccount, err := models.GetAccount(7)
+	airoAccount, err := models.GetAccount(8)
 	if err != nil {
 		log.Fatalf("Не удалось найти главный аккаунт: %v", err)
 	}
 
 	var webSite models.WebSite
-	if err := airoAccount.LoadEntity(&webSite, 7,nil); err != nil { log.Fatal(err)}
+	if err := airoAccount.LoadEntity(&webSite, airoAccount.Id,nil); err != nil { log.Fatal(err)}
 
 	payment2Deliveries := []models.Payment2Delivery {
 		{AccountId: airoAccount.Id, WebSiteId: webSite.Id, PaymentId: 1, PaymentType: "payment_cashes", DeliveryId: 1, DeliveryType: "delivery_pickups"},
@@ -2103,7 +2175,7 @@ func UploadTestDataPart_V() {
 	}
 
 
-	// 4. Создаем домен для 357gr
+	// 4. Создаем домен для StanProf
 	_webSiteStanProf, err := stanProf.CreateEntity(&models.WebSite{
 		Hostname: "stan-prof.ru",
 		DKIMPublicRSAKey: `-----BEGIN PUBLIC KEY-----
@@ -2198,7 +2270,7 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 		log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
 	}
 
-	// 2. Создаем домен для синдиката
+	// 2. Создаем домен для Гаранта
 	_webSiteGarant, err := accCsGarant.CreateEntity(&models.WebSite{
 		Hostname: "cs-garant.ru",
 		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDEwBDUBhnVcb+wPoyj6UrobwhKp0bIMzl9znfS127PdLqeGEyxCGy6CTT7coAturzb2dw33e3OhzzOvvBjnzSamRfpAj3vuBiSWtykS4JH17EN/4+ABtf7VOqfRWwB7F80VJ+3/Xv7TzkmNcAg+ksgDzk//BCXfcVFfx56Jxf7mQIdAQAB`,
@@ -2240,7 +2312,8 @@ pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
 }
 
 func UploadBroUserData() {
-	account, err := models.GetAccount(6)
+	// Получаем BroUser
+	account, err := models.GetAccount(7)
 	if err != nil {
 		log.Fatalf("Не удалось найти BroUser аккаунт: %v", err)
 	}
@@ -2266,14 +2339,13 @@ func UploadBroUserData() {
 		Status: models.WorkStatusPending,
 	})
 
-	Iuint4 := uint(4)
 	_, _ = account.CreateEntity(&models.EmailQueueEmailTemplate{
 		AccountId: account.Id,
 		EmailQueueId: emailQueueE.GetId(),
 		Enabled: true,
 		Step: 1,
 		EmailTemplateId: utils.UINTp(5),
-		EmailBoxId: &Iuint4,
+		EmailBoxId: &account.Id,
 		DelayTime: 0,
 		Subject: utils.STRp("Тема письма 1"),
 		CreatedAt: time.Now().UTC(),
@@ -2284,7 +2356,7 @@ func UploadBroUserData() {
 		Enabled: false,
 		Step: 2,
 		EmailTemplateId: utils.UINTp(6),
-		EmailBoxId: &Iuint4,
+		EmailBoxId: &account.Id,
 		DelayTime: 0,
 		Subject: utils.STRp("Тема письма 2"),
 		CreatedAt: time.Now().UTC(),
@@ -2295,7 +2367,7 @@ func UploadBroUserData() {
 		Enabled: false,
 		Step: 3,
 		EmailTemplateId: utils.UINTp(7),
-		EmailBoxId: &Iuint4,
+		EmailBoxId: &account.Id,
 		DelayTime: 0,
 		Subject: utils.STRp("Тема письма 3"),
 		CreatedAt: time.Now().UTC(),
