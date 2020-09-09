@@ -314,9 +314,9 @@ func (emailQueue *EmailQueue) GetPreloadDb(getModel bool, autoPreload bool, prel
 //////// ###### WORKER function ########## //////////
 
 // Получает шаблон для stepId шага
-func (emailQueue EmailQueue) GetStepByOrder(order uint) (*EmailQueueEmailTemplate, error) {
+func (emailQueue EmailQueue) GetStepById(step uint) (*EmailQueueEmailTemplate, error) {
 	var eqet EmailQueueEmailTemplate
-	 if err := db.Model(&eqet).Where("email_queue_id = ? AND email_queue_email_templates.order = ?", emailQueue.Id, order).First(&eqet).Error; err != nil {
+	 if err := db.Model(&eqet).Where("email_queue_id = ? AND email_queue_email_templates.step = ?", emailQueue.Id, step).First(&eqet).Error; err != nil {
 	 	return nil, err
 	 }
 
@@ -324,14 +324,18 @@ func (emailQueue EmailQueue) GetStepByOrder(order uint) (*EmailQueueEmailTemplat
 }
 func (emailQueue EmailQueue) GetFirstStep() (*EmailQueueEmailTemplate, error) {
 	// var eqet EmailQueueEmailTemplate
-	var order = uint(0)
+	// var step = float64(0)
+	var stepSql sql.NullInt64
 	err := db.Model(&EmailQueueEmailTemplate{}).Where("email_queue_id = ? AND enabled = 'true'", emailQueue.Id).
-		Select("min(email_queue_email_templates.order)").Row().Scan(&order)
-	if err != nil {
-		return nil, utils.Error{Message: "Нет доступных писем для отправления"}
+		Select("min(email_queue_email_templates.step)").Row().Scan(&stepSql)
+	if err != nil || !stepSql.Valid{
+		fmt.Println("Не нашли Min(1): ", stepSql)
+		return nil, utils.Error{Message: "Нет доступных писем для отправления (1)"}
 	}
 
-	eqet, err := emailQueue.GetStepByOrder(order)
+	fmt.Println("Нашли Min: ", stepSql)
+
+	eqet, err := emailQueue.GetStepById(uint(stepSql.Int64))
 	if err != nil {
 		return nil, err
 	}
@@ -340,22 +344,26 @@ func (emailQueue EmailQueue) GetFirstStep() (*EmailQueueEmailTemplate, error) {
 }
 
 // Возвращает ближайший шаг (может быть равен order) или ошибку
-func (emailQueue EmailQueue) GetNearbyActiveStep(order uint) (*EmailQueueEmailTemplate, error) {
+func (emailQueue EmailQueue) GetNearbyActiveStep(step uint) (*EmailQueueEmailTemplate, error) {
 
+	fmt.Println("Ищем следующий шаг за: ",step)
 	// var eqet EmailQueueEmailTemplate
-	var _order = uint(0)
-	err := db.Model(&EmailQueueEmailTemplate{}).Where("email_queue_id = ? AND enabled = 'true' AND email_queue_email_templates.order >= ?", emailQueue.Id, order).
-		Select("min(email_queue_email_templates.order)").Row().Scan(&_order)
-	if err != nil {
-		return nil, utils.Error{Message: "Нет доступных писем для отправления"}
+	// var _step = float64(0)
+	var stepSql sql.NullInt64
+	// err := db.Model(&EmailQueueEmailTemplate{}).Where("email_queue_id = ? AND enabled = 'true' AND email_queue_email_templates.step >= ?", emailQueue.Id, step).
+	err := db.Debug().Model(&EmailQueueEmailTemplate{}).Where("email_queue_id = ? AND enabled = 'true' AND step >= ?", emailQueue.Id, step).
+		Select("min(step)").Row().Scan(&stepSql)
+	if err != nil || !stepSql.Valid {
+		fmt.Println("Не нашли Min (2): ", stepSql)
+		return nil, utils.Error{Message: "Нет доступных писем для отправления (2)"}
 	}
 
-	step, err := emailQueue.GetStepByOrder(_order)
+	stepEqEt, err := emailQueue.GetStepById(uint(stepSql.Int64))
 	if err != nil {
 		return nil, err
 	}
 
-	return step, nil
+	return stepEqEt, nil
 }
 
 func (emailQueue EmailQueue) GetNextActiveStep(currentStep uint) (*EmailQueueEmailTemplate, error) {
@@ -399,7 +407,7 @@ func (emailQueue EmailQueue) AppendUser(userId uint) error {
 }
 
 func (emailQueue EmailQueue) GetEmailTemplateByStep(order uint) (*EmailTemplate, error) {
-	step, err := emailQueue.GetStepByOrder(order)
+	step, err := emailQueue.GetStepById(order)
 	if err != nil {return nil, err}
 
 	if step.EmailTemplateId == nil {

@@ -100,6 +100,10 @@ func ConnectDb() *gorm.DB {
 
 	// db = db.LogMode(true)
 
+	if err := SettingsDb(); err != nil {
+		log.Println("Ошибка настроек БД", err)
+	}
+
 	SetDB(db)
 	fmt.Println("DataBase init full!")
 	return db
@@ -121,6 +125,10 @@ func SettingsDb() error {
 	}
 	err = db.SetupJoinTable(&ProductCard{}, "WebPages", &WebPageProductCard{})
 	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := db.SetupJoinTable(&Product{}, "Users", &AccountUser{}); err != nil {
 		log.Fatal(err)
 	}
 

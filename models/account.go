@@ -81,8 +81,12 @@ func (Account) PgSqlCreate() {
 	if db.Migrator().HasTable(&Account{}) { return }
 
 	// 1. Создаем таблицу и настройки в pgSql
-	if err := db.Migrator().AutoMigrate(&Account{}); err != nil {log.Fatal(err)}
+	if err := db.Migrator().CreateTable(&Account{}); err != nil {log.Fatal(err)}
 	// db.CreateTable(&Account{})
+
+	if err := db.SetupJoinTable(&Product{}, "Users", &AccountUser{}); err != nil {
+		log.Fatal(err)
+	}
 
 	// 2. Создаем Главный аккаунт через спец. функцию
 	_, err := CreateMainAccount()

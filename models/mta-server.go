@@ -82,7 +82,7 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 	}()
 
 	// по настоящему или нет отправляем
-	var mock =  false
+	var mock =  true
 
 
 	// m.Lock()

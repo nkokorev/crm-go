@@ -312,6 +312,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			mtaWorkflow.stopEmailSender("Данные не полные: QueueExpectedStepId == nil")
 			return utils.Error{Message: "Данные не полные: QueueExpectedStepId == nil"}
 		}
+
 		step, err := emailQueue.GetNearbyActiveStep(*mtaWorkflow.QueueExpectedStepId)
 		if err != nil {
 			// Если нет доступных шагов - удаляем задачу
@@ -336,8 +337,9 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 			return utils.Error{Message: "Отсутствует Subject"}
 		}
 
-		queueStepId = step.Id
-		
+		// queueStepId = step.Id
+		queueStepId = step.Step
+
 		Subject = *step.Subject
 		_previewText := ""
 		if step.PreviewText != nil  {
@@ -481,8 +483,15 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 		return utils.Error{ Message: "Ошибка отправления Уведомления - не удается загрузить данные по WebSite"}
 	}
 
+	name := ""
+	if user.Name != nil { name = *user.Name }
+	if user.Email == nil {
+		return utils.Error{ Message: "Ошибка отправления: отсутсвует почта у пользователя"}
+	}
+
 	var pkg = EmailPkg {
-		To: mail.Address{Name: *user.Name, Address: *user.Email},
+		// To: mail.Address{Name: *user.Name, Address: *user.Email},
+		To: mail.Address{Name: name, Address: *user.Email},
 		accountId: 	account.Id,
 		userId: 	user.Id,
 		workflowId: mtaWorkflow.Id, // мы не знаем

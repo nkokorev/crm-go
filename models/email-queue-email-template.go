@@ -20,7 +20,7 @@ type EmailQueueEmailTemplate struct {
 	
 	// В работе данное письмо в указанной серии
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false;"`
-	Step 		uint 	`json:"step" gorm:"type:int;not null;"` // порядок
+	Step 		uint 	`json:"step" gorm:"type:int;not null;"` // порядок (старый order)
 
 	EmailTemplateId	*uint	`json:"email_template_id" gorm:"type:int;"`
 	EmailTemplate	EmailTemplate `json:"email_template"`

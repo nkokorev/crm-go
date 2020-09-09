@@ -39,9 +39,9 @@ func main() {
 		base.UploadTestDataPart_V()
 	}
 
-	if err := models.SettingsDb(); err != nil {
+	/*if err := models.SettingsDb(); err != nil {
 		log.Fatal(err)
-	}
+	}*/
 
 
 	// base.Migrate_I()
