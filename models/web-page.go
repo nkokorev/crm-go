@@ -146,7 +146,7 @@ func (WebPage) getList(accountId uint, sortBy string, preload []string) ([]Entit
 }
 func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
-	emailCampaigns := make([]WebPage,0)
+	webPages := make([]WebPage,0)
 	var total int64
 
 	// if need to search
@@ -155,7 +155,7 @@ func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		search = "%"+search+"%"
 
 		err := (&WebPage{}).GetPreloadDb(false,false,preloads).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Where(filter).Find(&emailCampaigns, "label ILIKE ? OR code ILIKE ? OR route_name ILIKE ? OR icon_name ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search,search).Error
+			Where(filter).Find(&webPages, "label ILIKE ? OR code ILIKE ? OR route_name ILIKE ? OR icon_name ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -172,7 +172,7 @@ func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 	} else {
 		
 		err := (&WebPage{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Where(filter).Find(&emailCampaigns).Error
+			Where(filter).Find(&webPages).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -185,9 +185,9 @@ func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(emailCampaigns))
-	for i := range emailCampaigns {
-		entities[i] = &emailCampaigns[i]
+	entities := make([]Entity,len(webPages))
+	for i := range webPages {
+		entities[i] = &webPages[i]
 	}
 
 	return entities, total, nil

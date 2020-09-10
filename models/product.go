@@ -27,12 +27,28 @@ type Product struct {
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // можно ли продавать товар и выводить в карточки
+
+	// Марка товара
+	Label 		string 	`json:"label" gorm:"type:varchar(128);"`
+
+	// торговая марка
+	Trademark 	*string	`json:"trademark" gorm:"type:varchar(128);"`
+
+	// Маркировка товара
+	Brand 		*string	`json:"brand" gorm:"type:varchar(128);"`
+
+	// mb deprecated
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
 	ShortName 	string 	`json:"short_name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
-	
-	Article 	string 	`json:"article" gorm:"type:varchar(128);index;"` // артикул товара из иных соображений (часто публичный)
-	SKU 		string 	`json:"sku" gorm:"type:varchar(128);index;"` // уникальный складской идентификатор. 1 SKU = 1 товар (одна модель)
-	Model 		string 	`json:"model" gorm:"type:varchar(255);"` // может повторяться для вывода в web-интерфейсе как "одного" товара
+
+	// артикул товара
+	Article 	string 	`json:"article" gorm:"type:varchar(128);index;"`
+
+	// deprecated, т.к. это относится к складу, а не все товары на складе (есть сбоные и услуги)
+	SKU 		string 	`json:"sku" gorm:"type:varchar(128);index;"`
+
+	// Общая тема типа группы товаров, может повторяться для вывода в web-интерфейсе как "одного" товара
+	Model 		string 	`json:"model" gorm:"type:varchar(255);"`
 
 	// Base properties
 	RetailPrice		float64 `json:"retail_price" gorm:"type:numeric;"` // розничная цена
@@ -40,16 +56,31 @@ type Product struct {
 	PurchasePrice 	float64 `json:"purchase_price" gorm:"type:numeric;"` // закупочная цена
 	RetailDiscount 	float64 `json:"retail_discount" gorm:"type:numeric;"` // розничная фактическая скидка
 
-	// Признак предмета расчета
-	PaymentSubjectId	uint	`json:"payment_subject_id" gorm:"type:int;not null;"`// товар или услуга ? [вид номенклатуры]
-	PaymentSubject 		PaymentSubject `json:"payment_subject"`
+	// Вид номенклатуры - ассортиментные группы продаваемых товаров. Привязываются к карточкам..
+	// PaymentGroupId	uint	`json:"payment_group_id" gorm:"type:int;"`
+	// ProductGroup	ProductGroup `json:"product_group"`
 
+	// Тип вида номенклатуры: товар, услуга, сборный товар (комплект), упаковка (?)
+	// Дает возможность формировать 50гр чая => 50ед. товара N в граммах
+	// PaymentTypeId	uint	`json:"payment_type_id" gorm:"type:int;"`
+	// ProductType		ProductType `json:"product_type"`
+	
+	//  == признак предмета расчета - товар, услуга, работа, набор (комплект) = сборный товар
+	// Признак предмета расчета (бухучет - № 54-ФЗ)
+	PaymentSubjectId	uint	`json:"payment_subject_id" gorm:"type:int;"`
+	PaymentSubject 		PaymentSubject `json:"payment_subject"`
+	
+	// учет НДС (бухучет)
 	VatCodeId	uint	`json:"vat_code_id" gorm:"type:int;default:1;"`// товар или услуга ? [вид номенклатуры]
 	VatCode		VatCode	`json:"vat_code"`
 
+	// Единица измерения товара: штуки, метры, литры, граммы и т.д.
 	UnitMeasurementId 		uint	`json:"unit_measurement_id" gorm:"type:int;default:1;"` // тип измерения
 	UnitMeasurement 		UnitMeasurement `json:"unit_measurement"`// Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
-	
+
+	// товар или услуга ? [вид номенклатуры]
+	// сборно-разборный товар...
+
 	ShortDescription 	string 	`json:"short_description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 	Description 		string 	`json:"description" gorm:"type:text;"` // pgsql: text
 

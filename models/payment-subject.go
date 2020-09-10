@@ -38,24 +38,24 @@ func (PaymentSubject) PgSqlCreate() {
 	}
 
 	paymentSubjects := []PaymentSubject {
-		{Name:   "Товар",		Code: "commodity"},
+		{Name:   "Товар",				Code: "commodity"},
 		{Name:   "Подакцизный товар",	Code: "excise"},
-		{Name:   "Работа",			Code: "job"},
-		{Name:   "Услуга",			Code: "service"},
+		{Name:   "Работа",				Code: "job"},
+		{Name:   "Услуга",				Code: "service"},
 		{Name:   "Ставка в азартной игре",	Code: "gambling_bet"},
 		{Name:   "Выигрыш в азартной игре",	Code: "gambling_prize"},
 		{Name:   "Лотерейный билет",	Code: "lottery"},
 		{Name:   "Выигрыш в лотерею",	Code: "lottery_prize"},
 		{Name:   "Результаты интеллектуальной деятельности",	Code: "intellectual_activity"},
-		{Name:   "Платеж",	Code: "payment"},
+		{Name:   "Платеж",				Code: "payment"},
 		{Name:   "Агентское вознаграждение",Code: "agent_commission"},
-		{Name:   "Имущественные права",Code: "property_right"},
-		{Name:   "Внереализационный доход",Code: "non_operating_gain"},
-		{Name:   "Страховой сбор",	Code: "insurance_premium"},
-		{Name:   "Торговый сбор",	Code: "sales_tax"},
-		{Name:   "Курортный сбор",	Code: "resort_fee"},
-		{Name:   "Несколько вариантов",	Code: "composite"},
-		{Name:   "Другое",	Code: "another"},
+		{Name:   "Имущественные права",		Code: "property_right"},
+		{Name:   "Внереализационный доход",	Code: "non_operating_gain"},
+		{Name:   "Страховой сбор",			Code: "insurance_premium"},
+		{Name:   "Торговый сбор",			Code: "sales_tax"},
+		{Name:   "Курортный сбор",			Code: "resort_fee"},
+		{Name:   "Несколько вариантов",		Code: "composite"},
+		{Name:   "Другое",					Code: "another"},
 	}
 
 	for i := range(paymentSubjects) {

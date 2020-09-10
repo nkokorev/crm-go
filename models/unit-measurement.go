@@ -5,13 +5,15 @@ import (
 	"gorm.io/gorm"
 	"log"
 )
-
+// Единица измерения товара: штуки, метры, литры, граммы и т.д.
 type UnitMeasurement struct {
 	Id     uint   `json:"id" gorm:"primaryKey"`
 
 	Name 		string `json:"name" gorm:"type:varchar(128);"` // штука, коробка, комплект, киллограмм, грамм,
 	ShortName 	string `json:"short_name" gorm:"type:varchar(128);"` // шт., кор., компл., кг, гр,
-	Weight 		bool // весовой или нет
+
+	// весовой или нет
+	Weight 		bool
 
 	Tag 		string `json:"tag" gorm:"type:varchar(32);"` // для поиска
 
@@ -25,16 +27,16 @@ func (UnitMeasurement) PgSqlCreate() {
 
 	// 2.
 	units := []UnitMeasurement{
-		{Name:"штука", ShortName: "шт.", Weight: false, Tag: "piece" },
-		{Name:"коробка", ShortName: "кор.", Weight: false, Tag: "box"},
-		{Name:"упаковка", ShortName: "упак.", Weight: false, Tag: "package"},
-		{Name:"комплект", ShortName: "компл.", Weight: false, Tag: "kit"},
-		{Name:"килограмм", ShortName: "кг.", Weight: true, Tag: "kilogram"},
-		{Name:"грамм", ShortName: "гр.", Weight: true, Tag: "gram"},
-		{Name:"погонный метр", ShortName: "пог.м.", Weight: false, Tag: "linearMeter"},
-		{Name:"метр квадратный", ShortName: "м2.", Weight: false, Tag: "squareMeter"},
-		{Name:"литр", ShortName: "л.", Weight: false, Tag: "liter"},
-		{Name:"миллилитр", ShortName: "мл.", Weight: false, Tag: "milliliter"},
+		{Name:"штука", 			ShortName: "шт.", 		Weight: false, 	Tag: "piece" },
+		{Name:"коробка", 		ShortName: "кор.", 		Weight: false, 	Tag: "box"},
+		{Name:"упаковка", 		ShortName: "упак.", 	Weight: false, 	Tag: "package"},
+		{Name:"комплект", 		ShortName: "компл.", 	Weight: false, 	Tag: "kit"},
+		{Name:"килограмм", 		ShortName: "кг.", 		Weight: true, 	Tag: "kilogram"},
+		{Name:"грамм", 			ShortName: "гр.", 		Weight: true, 	Tag: "gram"},
+		{Name:"погонный метр", 	ShortName: "пог.м.", 	Weight: false, 	Tag: "linearMeter"},
+		{Name:"метр квадратный",ShortName: "м2.", 		Weight: false, 	Tag: "squareMeter"},
+		{Name:"литр", 			ShortName: "л.", 		Weight: false, 	Tag: "liter"},
+		{Name:"миллилитр", 		ShortName: "мл.", 		Weight: false, 	Tag: "milliliter"},
 	}
 
 	for i, _ := range units {
