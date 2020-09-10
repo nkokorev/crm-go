@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/datatypes"
@@ -262,7 +261,7 @@ func (productCard *ProductCard) delete () error {
 
 ////////////////
 
-func (productCard ProductCard) AppendProduct(input *Product, optPriority... int) error {
+func (productCard *ProductCard) AppendProduct(input *Product, optPriority... int) error {
 
 	priority := 10
 	if len(optPriority) > 0 {
@@ -280,6 +279,11 @@ func (productCard ProductCard) AppendProduct(input *Product, optPriority... int)
 		}
 		product = _p
 	} else {
+
+		// Продукт уже есть
+		if productCard.ExistProductById(input.Id) {
+			return nil
+		}
 		product = input
 	}
 	if err := db.Model(&ProductCardProduct{}).Create(&ProductCardProduct{ProductId: product.Id, ProductCardId: productCard.Id, Priority: priority}).Error; err != nil {
@@ -332,14 +336,13 @@ func (productCard *ProductCard) SyncProductByIds(products []Product) error {
 
 // спорная функция
 func (productCard *ProductCard) ExistProductById(productId uint) bool {
+
 	var el ProductCardProduct
-	err := db.Model(productCard).Where("product_card_id = ? AND product_id = ?",productCard.Id, productId).First(&el).Error
+
+	err := db.Model(&ProductCardProduct{}).Where("product_card_id = ? AND product_id = ?",productCard.Id, productId).First(&el).Error
 	if err != nil {
-		fmt.Println("Элемента нет")
 		return false
 	}
 
-	fmt.Println("Элемент есть")
 	return true
-
 }
