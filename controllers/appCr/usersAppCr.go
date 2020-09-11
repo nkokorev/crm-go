@@ -110,7 +110,7 @@ func UserSignUp(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		input.User.InvitedUserId = &emailToken.OwnerId
+		// input.User.InvitedUserId = &emailToken.OwnerId
 
 		defer func() {
 			if user != nil {
@@ -215,7 +215,7 @@ func UserRegistration(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		input.User.InvitedUserId = &emailToken.OwnerId
+		// input.User.InvitedUserId = &emailToken.OwnerId
 
 		defer func() {
 			if input.User != nil {

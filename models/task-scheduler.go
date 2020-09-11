@@ -45,11 +45,18 @@ type WorkStatus = string
 const (
 	WorkStatusPending		WorkStatus = "pending" // ожидается, рассматривается еще, готовится
 	WorkStatusPlanned		WorkStatus = "planned" // запланирована
-	WorkStatusActive		WorkStatus = "active"  // выполняется
-	WorkStatusPaused		WorkStatus = "paused"
+	WorkStatusActive		WorkStatus = "active"  // выполняется (доставляется)
+	WorkStatusPaused		WorkStatus = "paused"  // думаем, туда-сюда
+
+	// Shipment
+	WorkStatusShipment		WorkStatus = "shipment" // в процессе доставки (доставляется)
+	WorkStatusPosting		WorkStatus = "posting" 	// Оприходуется
+
 	WorkStatusCompleted		WorkStatus = "completed"
 	WorkStatusFailed		WorkStatus = "failed"
 	WorkStatusCancelled		WorkStatus = "cancelled"
+
+	// Статусы доставки
 )
 
 // ############# Entity interface #############

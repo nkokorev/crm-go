@@ -203,10 +203,17 @@ func RefreshTablesPart_I() {
 	models.Company{}.PgSqlCreate()
 
 
+	models.ProductType{}.PgSqlCreate()
+	models.Warehouse{}.PgSqlCreate()
 	models.Product{}.PgSqlCreate()
 	models.ProductCard{}.PgSqlCreate()
 	models.ProductCardProduct{}.PgSqlCreate()
 	models.WebPageProductCard{}.PgSqlCreate()
+	models.WarehouseItem{}.PgSqlCreate()
+
+
+	models.Shipment{}.PgSqlCreate()
+	models.ShipmentProduct{}.PgSqlCreate()
 
 	models.EmailBox{}.PgSqlCreate()
 	models.EmailTemplate{}.PgSqlCreate()

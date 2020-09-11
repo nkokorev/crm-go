@@ -20,14 +20,6 @@ func (ProductCardProduct) PgSqlCreate() {
 		log.Fatal("Error: ", err)
 	}
 
-	err = db.SetupJoinTable(&ProductCard{}, "Products", &ProductCardProduct{})
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = db.SetupJoinTable(&ProductCard{}, "WebPages", &WebPageProductCard{})
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func (ProductCardProduct) BeforeCreate(db *gorm.DB) error {

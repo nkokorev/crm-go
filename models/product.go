@@ -67,12 +67,12 @@ type Product struct {
 
 	// Вид номенклатуры - ассортиментные группы продаваемых товаров. Привязываются к карточкам..
 
-	// Товарная группа: улунский, красный (чай), углозачистной станок, шлифовальный станок
-	PaymentGroupId	uint	`json:"payment_group_id" gorm:"type:int;"`
-	ProductGroup	ProductGroup `json:"product_group"`
+	// Товарная группа для назначения характеристик
+	// PaymentGroupId	uint	`json:"payment_group_id" gorm:"type:int;"`
+	// ProductGroup	ProductGroup `json:"product_group"`
 
 	// Тип продукта: улунский, красный (чай), углозачистной станок, шлифовальный станок
-	TypeId			uint	`json:"payment_type_id" gorm:"type:int;"`
+	TypeId			*uint	`json:"payment_type_id" gorm:"type:int;"`
 	Type			ProductType `json:"product_type"`
 
 	// Тип вида номенклатуры: товар, услуга, сборный товар (комплект), упаковка (?)
@@ -84,6 +84,7 @@ type Product struct {
 	
 	// Список продуктов из которых составлен текущий. Это может быть как 1<>1, а может быть и нет (== составной товар)
 	WarehouseItems		[]WarehouseItem `json:"warehouse_items"`
+	Warehouses			[]Warehouse `json:"warehouses" gorm:"many2many:warehouse_item;"`
 
 	// Ед. измерения товара: штуки, метры, литры, граммы и т.д.  !!!!
 	UnitMeasurementId 		uint	`json:"unit_measurement_id" gorm:"type:int;default:1;"` // тип измерения
@@ -95,9 +96,9 @@ type Product struct {
 	Height 	float64 `json:"height" gorm:"type:numeric;"`
 	Weight 	float64 `json:"weight" gorm:"type:numeric;"`
 
-	// Производитель
-	ManufacturerId	uint	`json:"manufacturer_id" gorm:"type:int;"`
-	Manufacturer	Manufacturer `json:"manufacturer"`
+	// Производитель (не поставщик)
+	ManufacturerId	*uint	`json:"manufacturer_id" gorm:"type:int;"`
+	Manufacturer	Company `json:"manufacturer"`
 
 	// Дата изготовления, дата выпуска, дата производства
 	ManufactureDate	*time.Time `json:"manufacture_date"`
@@ -121,7 +122,6 @@ type Product struct {
 	Description 		string 	`json:"description" gorm:"type:text;"` // pgsql: text
 
 	// Обновлять только через AppendImage
-	// Images 			[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`  // association_autoupdate:false;
 	Images 			[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`
 	
 	Attributes 	datatypes.JSON `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
@@ -137,11 +137,11 @@ type Product struct {
 	// Questions []question // вопросы по товару
 	// Video []Video // видеообзоры по товару на ютубе
 
+	// Список поставок товара, в которых он был
+	Shipments 			[]Shipment 	`json:"shipments" gorm:"many2many:shipment_products"`
+
 	// Объем поставки товара
 	ShipmentProduct 	[]ShipmentProduct 	`json:"shipment_product"`
-
-	// Список поставок товара, в которых он был
-	Shipments 	[]Shipment 	`json:"shipments" gorm:"many2many:shipment_products"`
 
 	Account Account `json:"-"`
 	ProductCards []ProductCard `json:"product_cards" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
@@ -151,6 +151,7 @@ func (Product) PgSqlCreate() {
 
 	// 1. Создаем таблицу и настройки в pgSql
 	if err := db.Migrator().CreateTable(&Product{}); err != nil {log.Fatal(err)}
+
 	// db.Model(&Product{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	err := db.Exec("ALTER TABLE products ADD CONSTRAINT products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {
@@ -163,7 +164,7 @@ func (Product) PgSqlCreate() {
 		log.Fatal(err)
 	}
 
-	err = db.SetupJoinTable(&Product{}, "Warehouses", &WarehouseProduct{})
+	err = db.SetupJoinTable(&Product{}, "Warehouses", &WarehouseItem{})
 	if err != nil {
 		log.Fatal(err)
 	}

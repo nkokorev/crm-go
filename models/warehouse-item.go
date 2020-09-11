@@ -41,7 +41,7 @@ func (WarehouseItem) PgSqlCreate() {
 	}
 	err := db.Exec("ALTER TABLE warehouse_items " +
 		"ADD CONSTRAINT warehouse_items_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
-		"ADD CONSTRAINT warehouse_items_web_site_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT warehouse_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE," +
 		"ADD CONSTRAINT warehouse_items_web_site_id_fkey FOREIGN KEY (warehouse_id) REFERENCES warehouses(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {
 		log.Fatal("Error: ", err)

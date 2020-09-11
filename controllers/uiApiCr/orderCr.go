@@ -315,8 +315,8 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 			return
 		}
 
-		// 1.2 Если продукт недоступен к заказу
-		if !product.Enabled {
+		// 1.2 Если продукт недоступен к заказу в розницу
+		if !product.RetailSale {
 			u.Respond(w, u.MessageError(u.Error{Message:fmt.Sprintf("Заказ содержит продукты недоступные к заказу: %v", product.Name), Errors: map[string]interface{}{"cart":"Не корректный список продуктов"}}))
 			return
 		}

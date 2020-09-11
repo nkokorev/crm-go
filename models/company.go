@@ -58,7 +58,7 @@ type Company struct {
 	Description	*string `json:"description" gorm:"type:text;"`
 
 	// Расчетные счета
-	PaymentAccounts	[]PaymentAccount `json:"payment_accounts"`
+	// PaymentAccounts	[]PaymentAccount `json:"payment_accounts"`
 
 	CreatedAt 	time.Time 		`json:"created_at"`
 	UpdatedAt 	time.Time 		`json:"updated_at"`

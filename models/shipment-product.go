@@ -22,9 +22,11 @@ type ShipmentProduct struct {
 	VolumeOrder	float64 `json:"volume_order" gorm:"type:numeric;"`
 	VolumeFact	float64 `json:"volume_fact" gorm:"type:numeric;"`
 
+	// Оприходование позиции на склад в размере VolumeFact 
+	WarehousePosted	bool	`json:"warehouse_posted" gorm:"type:bool;default:false"`
+
 	// Закупочная цена
-	PurchaseAmountId  	uint	`json:"purchase_amount_id" gorm:"type:int;"`
-	PurchaseAmount 		PaymentAmount `json:"purchase_amount"`
+	PaymentAmount	float64 `json:"payment_amount" gorm:"type:numeric;"`
 
 	Product 	Product 	`json:"product"`
 	Shipment 	Shipment 	`json:"shipment"`
@@ -39,8 +41,8 @@ func (ShipmentProduct) PgSqlCreate() {
 	}
 	err := db.Exec("ALTER TABLE shipment_products " +
 		"ADD CONSTRAINT shipment_products_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
-		"ADD CONSTRAINT shipment_products_shipment_id_fkey FOREIGN KEY (web_site_id) REFERENCES shipments(id) ON DELETE CASCADE ON UPDATE CASCADE," +
-		"ADD CONSTRAINT shipment_products_product_id_fkey FOREIGN KEY (web_site_id) REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+		"ADD CONSTRAINT shipment_products_shipment_id_fkey FOREIGN KEY (shipment_id) REFERENCES shipments(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT shipment_products_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
@@ -199,7 +201,7 @@ func (shipmentProduct *ShipmentProduct) update(input map[string]interface{}, pre
 	delete(input,"product")
 	delete(input,"shipment")
 	utils.FixInputHiddenVars(&input)
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","shipment_id","product_id","purchase_amount_id"}); err != nil {
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","shipment_id","product_id"}); err != nil {
 		return err
 	}
 	// input = utils.FixInputDataTimeVars(input,[]string{"expired_at"})
@@ -220,3 +222,8 @@ func (shipmentProduct *ShipmentProduct) delete () error {
 	return shipmentProduct.GetPreloadDb(true,false,nil).Where("id = ?", shipmentProduct.Id).Delete(shipmentProduct).Error
 }
 // ######### END CRUD Functions ############
+
+// Перевод состояние позиции как загруженной на склад
+func (shipmentProduct *ShipmentProduct) SetWarehousePosted () error {
+	return shipmentProduct.update(map[string]interface{}{"warehouse_posted":true},nil)
+}

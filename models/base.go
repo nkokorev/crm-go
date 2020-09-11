@@ -65,7 +65,7 @@ func ConnectDb() *gorm.DB {
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 		logger.Config {
 			SlowThreshold: time.Millisecond*200,   // Slow SQL threshold
-			LogLevel:      logger.Silent, // Уровни логирования GORM: Silent, Error, Warn, Info
+			LogLevel:      logger.Warn, // Уровни логирования GORM: Silent, Error, Warn, Info
 			Colorful:      true,         // Disable color
 		},
 	)
@@ -119,14 +119,14 @@ func SettingsDb() error {
 		log.Fatal(err)
 	}
 
-	err = db.SetupJoinTable(&WebPage{}, "ProductCards", &WebPageProductCard{})
+	/*err = db.SetupJoinTable(&WebPage{}, "ProductCards", &WebPageProductCard{})
 	if err != nil {
 		log.Fatal(err)
-	}
-	err = db.SetupJoinTable(&ProductCard{}, "WebPages", &WebPageProductCard{})
+	}*/
+	/*err = db.SetupJoinTable(&ProductCard{}, "WebPages", &WebPageProductCard{})
 	if err != nil {
 		log.Fatal(err)
-	}
+	}*/
 
 	if err := db.SetupJoinTable(&Account{}, "Users", &AccountUser{}); err != nil {
 		log.Fatal(err)
@@ -135,7 +135,11 @@ func SettingsDb() error {
 		log.Fatal(err)
 	}
 
-	err = db.SetupJoinTable(&Warehouse{}, "Warehouses", &WarehouseProduct{})
+	err = db.SetupJoinTable(&Warehouse{}, "Products", &WarehouseItem{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.SetupJoinTable(&Product{}, "Warehouses", &WarehouseItem{})
 	if err != nil {
 		log.Fatal(err)
 	}

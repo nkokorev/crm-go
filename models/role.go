@@ -43,7 +43,7 @@ type Role struct {
 
 	// IssuerAccountId uint       `json:"issuerAccountId" gorm:"index;not null;default:1"`
 	Tag             AccessRole `json:"tag" gorm:"type:varchar(32);not null;"`	// client, admin, manager, ...
-	Type            roleType   `json:"type" gorm:"type:varchar(3);not null;"`	// gui / api / company
+	Type            roleType   `json:"type" gorm:"type:varchar(12);not null;"`	// gui / api / company
 	Name            string     `json:"name" gorm:"type:varchar(255);not null;"` // "Владелец аккаунта", "Администратор", "Менеджер" ...
 
 	Description 	*string `json:"description" gorm:"type:varchar(255);"` // Краткое описание роли
@@ -80,7 +80,7 @@ func (Role) PgSqlCreate() {
 		}
 	}
 
-	db.Exec("create unique index uix_roles_issuer_account_id_tag_code ON roles (account_id, tag);")
+	db.Exec("create unique index uix_roles_issuer_account_id_tag_code ON roles (account_id, tag) WHERE tag IS NOT NULL AND type != 'company';")
 	// db.Model(&Role{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 
 	err := db.Exec("ALTER TABLE roles ADD CONSTRAINT roles_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
@@ -120,7 +120,7 @@ func (role Role) create() (Entity, error)  {
 	if len([]rune(role.Tag)) > 32 || len([]rune(role.Tag)) < 3 {
 		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleTag":"Тип должен быть от 3 до 32 символов!"}}
 	}
-	if role.Type != roleTypeGui && role.Type != roleTypeApi {
+	if role.Type != roleTypeGui && role.Type != roleTypeApi  && role.Type != roleTypeCompany {
 		return nil, utils.Error{Message:"Не корректно указаны данные", Errors: map[string]interface{}{"roleType":"Тип должен быть или gui или api!"}}
 	}
 

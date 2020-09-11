@@ -55,8 +55,8 @@ func (Bank) PgSqlCreate() {
 
 	// 2.
 	units := []Bank{
-		{AccountId: 1, Name:"АО \"АЛЬФА-БАНК\"", 	Address: "107078, г Москва, ул Каланчевская, д 27", RCBIC: "044525593", SWIFT: "ALFARUMMXXX",INN: "7728168971",	KPP: "770801001",CorporateAccount: "30101810200000000593",RegNumber: 1326,RegistrationDate: time.Date(1991,1,3,1,0,0,0,nil), Status: "Действующий"},
-		{AccountId: 1, Name:"ПАО СБЕРБАНК", 		Address: "117312, г Москва, ул Вавилова, д 19", 	RCBIC: "044525225", SWIFT: "SABRRUMM",	INN: "7707083893",	KPP: "773601001",CorporateAccount: "30101810400000000225",RegNumber: 1481,RegistrationDate: time.Date(1991,6,20,1,0,0,0,nil), Status: "Действующий"},
+		{AccountId: 1, Name:"АО \"АЛЬФА-БАНК\"", 	Address: "107078, г Москва, ул Каланчевская, д 27", RCBIC: "044525593", SWIFT: "ALFARUMMXXX",INN: "7728168971",	KPP: "770801001",CorporateAccount: "30101810200000000593",RegNumber: 1326,RegistrationDate: time.Date(1991,1,3,1,0,0,0,time.UTC), Status: "Действующий"},
+		{AccountId: 1, Name:"ПАО СБЕРБАНК", 		Address: "117312, г Москва, ул Вавилова, д 19", 	RCBIC: "044525225", SWIFT: "SABRRUMM",	INN: "7707083893",	KPP: "773601001",CorporateAccount: "30101810400000000225",RegNumber: 1481,RegistrationDate: time.Date(1991,6,20,1,0,0,0,time.UTC), Status: "Действующий"},
 	}
 
 	for i, _ := range units {

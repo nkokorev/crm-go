@@ -14,6 +14,10 @@ type Shipment struct {
 	Id     		uint	`json:"id" gorm:"primaryKey"`
 	PublicId	uint	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
+	ParentId	*uint 	`json:"parent_id"` // дозаказанная партия товара
+
+	// Краткое имя поставки
+	Name 		*string	`json:"name" gorm:"type:varchar(255);"`
 
 	// Поставщик (может быть не известен)
 	CompanyId 	*uint	`json:"company_id" gorm:"type:int;index;"`
@@ -21,14 +25,17 @@ type Shipment struct {
 	// Склад назначения
 	WarehouseId *uint	`json:"warehouse_id" gorm:"type:int;index;"`
 
-	// Сумма поставки - высчитывается
-	Amount	 	float64 `json:"_amount" gorm:"-"`
+	// Статус поставки: планируется, ожидается поставка, ожидает оприходования, завершена/отмена/фейл.
+	Status 			WorkStatus 	`json:"status" gorm:"type:varchar(18);default:'pending'"`
+	DecryptionStatus	*string `json:"decryption_status" gorm:"type:varchar(255);"`
 
-	// Единиц товаров - высчитывается
+	// Планируемая дата поставки
+	DeliveryDate	*time.Time 	`json:"delivery_date"`
+
+	// Сумма поставки - высчитывается в AfterFind
+	PaymentAmount	 float64 `json:"_payment_amount" gorm:"-"`
+	// Товарных позиц - высчитывается
 	ProductUnits	uint `json:"_product_units" gorm:"-"`
-
-	// Завершена ли поставка. Если true - нельзя добавить или убрать из нее товар.
-	Completed	bool	`json:"completed" gorm:"type:bool;default:false"`
 
 	// Фактический список товаров в поставке + объем + закупочная цены
 	ShipmentProduct 	[]ShipmentProduct 	`json:"shipment_product"`
@@ -74,6 +81,18 @@ func (shipment *Shipment) BeforeCreate(tx *gorm.DB) error {
 }
 func (shipment *Shipment) AfterFind(tx *gorm.DB) (err error) {
 
+	stat := struct {
+		Amount float64
+		Units uint
+	}{0,0}
+	if err = db.Raw("SELECT      \n       COUNT(*) AS units,   \n       sum(payment_amount) AS amount    \nFROM shipment_products \nWHERE account_id = ? AND shipment_id = ?;",
+		shipment.AccountId, shipment.Id).
+		Scan(&stat).Error; err != nil {
+		return err
+	}
+	shipment.PaymentAmount = stat.Amount
+	shipment.ProductUnits = stat.Units
+
 	return nil
 }
 func (shipment *Shipment) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
@@ -90,7 +109,7 @@ func (shipment *Shipment) GetPreloadDb(getModel bool, autoPreload bool, preloads
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Product","Warehouse"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Product","Warehouse","ShipmentProduct","ShipmentProduct.Product"})
 
 		for _,v := range allowed {
 			_db.Preload(v)
@@ -169,7 +188,7 @@ func (Shipment) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 		search = "%"+search+"%"
 
 		err := (&Shipment{}).GetPreloadDb(false,false,preloads).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Where(filter).Find(&shipments, "label ILIKE ?", search).Error
+			Where(filter).Find(&shipments, "name ILIKE ?", search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -177,7 +196,7 @@ func (Shipment) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 
 		// Определяем total
 		err = db.Model(&Shipment{}).
-			Where("account_id = ? AND label ILIKE ?", accountId, search).
+			Where("account_id = ? AND name ILIKE ?", accountId, search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -210,10 +229,10 @@ func (shipment *Shipment) update(input map[string]interface{}, preloads []string
 
 	delete(input,"image")
 	utils.FixInputHiddenVars(&input)
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","priority","web_site_id"}); err != nil {
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","parent_id","company_id","warehouse_id"}); err != nil {
 		return err
 	}
-	input = utils.FixInputDataTimeVars(input,[]string{"expired_at"})
+	input = utils.FixInputDataTimeVars(input,[]string{"delivery_date"})
 
 	if err := shipment.GetPreloadDb(false,false,nil).Where(" id = ?", shipment.Id).
 		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
@@ -233,6 +252,223 @@ func (shipment *Shipment) delete () error {
 // ######### END CRUD Functions ############
 
 // завершает поставку и переводит все товары в целевой warehouse
-func (shipment *Shipment) CompleteDelivery() error {
+
+// Была ли оприходована поставка или нет
+func (shipment Shipment) IsPostedWarehouse() bool {
+
+	if shipment.Id < 1 {
+		return false
+	}
+
+	return shipment.Status == WorkStatusCompleted
+}
+func (shipment Shipment) Validate() error {
 	return nil
 }
+
+func (shipment *Shipment) updateWorkStatus(status WorkStatus, reason... string) error {
+	_reason := ""
+	if len(reason) > 0 {
+		_reason = reason[0]
+	}
+
+	return shipment.update(map[string]interface{}{
+		"status":	status,
+		"decryption_status": _reason,
+	},nil)
+}
+func (shipment *Shipment) SetPendingStatus() error {
+
+	// Возможен вызов из состояния planned: вернуть на доработку => pending
+	if shipment.Status != WorkStatusPlanned {
+		reason := "Невозможно установить статус,"
+		switch shipment.Status {
+		case WorkStatusPending:
+			reason += "т.к. поставка уже в разработке"
+		case WorkStatusActive:
+			reason += "т.к. поставка в процессе рассылки"
+		case WorkStatusPaused:
+			reason += "т.к. поставка на паузе, но в процессе рассылки"
+		case WorkStatusFailed:
+			reason += "т.к. поставка завершена с ошибкой"
+		case WorkStatusCompleted:
+			reason += "т.к. поставка уже завершена"
+		case WorkStatusCancelled:
+			reason += "т.к. поставка отменена"
+		}
+		return utils.Error{Message: reason}
+	}
+
+	return shipment.updateWorkStatus(WorkStatusPending)
+}
+func (shipment *Shipment) SetPlannedStatus() error {
+
+	// Возможен вызов из состояния pending: запланировать кампанию => planned
+	if shipment.Status != WorkStatusPending  {
+		reason := "Невозможно запланировать кампанию,"
+		switch shipment.Status {
+		case WorkStatusPlanned:
+			reason += "т.к. поставка уже в плане"
+		case WorkStatusActive:
+			reason += "т.к. поставка уже в процессе рассылки"
+		case WorkStatusPaused:
+			reason += "т.к. поставка на паузе, но уже в процессе рассылки"
+		case WorkStatusCompleted:
+			reason += "т.к. поставка уже завершена"
+		case WorkStatusFailed:
+			reason += "т.к. поставка завершена с ошибкой"
+		case WorkStatusCancelled:
+			reason += "т.к. поставка отменена"
+		}
+		return utils.Error{Message: reason}
+	}
+
+	// Проверяем кампанию и шаблон, чтобы не ставить в план не рабочую кампанию.
+	if err := shipment.Validate(); err != nil { return err  }
+
+	// Переводим в состояние "Запланирована", т.к. все проверки пройдены и можно ставить ее в планировщик
+	return shipment.updateWorkStatus(WorkStatusPlanned)
+}
+func (shipment *Shipment) SetActiveStatus() error {
+
+	// Возможен вызов из состояния planned или paused: запустить кампанию => active
+	if shipment.Status != WorkStatusPlanned && shipment.Status != WorkStatusPaused {
+		reason := "Невозможно запустить кампанию,"
+		switch shipment.Status {
+		case WorkStatusPending:
+			reason += "т.к. поставка еще в стадии разработки"
+		case WorkStatusActive:
+			reason += "т.к. поставка уже в процессе рассылки"
+		case WorkStatusCompleted:
+			reason += "т.к. поставка уже завершена"
+		case WorkStatusFailed:
+			reason += "т.к. поставка завершена с ошибкой"
+		case WorkStatusCancelled:
+			reason += "т.к. поставка отменена"
+		}
+		return utils.Error{Message: reason}
+	}
+
+	// Снова проверяем кампанию и шаблон
+	if err := shipment.Validate(); err != nil { return err  }
+
+	// Переводим в состояние "Активна", т.к. все проверки пройдены и можно продолжить ее выполнение
+	return shipment.updateWorkStatus(WorkStatusActive)
+}
+func (shipment *Shipment) SetPausedStatus() error {
+
+	// Возможен вызов из состояния active: приостановить кампанию => paused
+	if shipment.Status != WorkStatusActive {
+		reason := "Невозможно приостановить кампанию,"
+		switch shipment.Status {
+		case WorkStatusPending:
+			reason += "т.к. поставка еще в стадии разработки"
+		case WorkStatusPlanned:
+			reason += "т.к. поставка уже в стадии планирования"
+		case WorkStatusPaused:
+			reason += "т.к. поставка уже приостановлена"
+		case WorkStatusCompleted:
+			reason += "т.к. поставка уже завершена"
+		case WorkStatusFailed:
+			reason += "т.к. поставка завершена с ошибкой"
+		case WorkStatusCancelled:
+			reason += "т.к. поставка отменена"
+		}
+		return utils.Error{Message: reason}
+	}
+
+	// Переводим в состояние "Приостановлена", т.к. все проверки пройдены и можно приостановить кампанию
+	return shipment.updateWorkStatus(WorkStatusPaused)
+}
+func (shipment *Shipment) SetCompletedStatus() error {
+
+	// Возможен вызов из состояния active, paused: завершить кампанию => completed
+	// Сбрасываются все задачи из очереди
+	if shipment.Status != WorkStatusActive && shipment.Status != WorkStatusPaused {
+		reason := "Невозможно завершить кампанию,"
+		switch shipment.Status {
+		case WorkStatusPending:
+			reason += "т.к. поставка еще в стадии разработки"
+		case WorkStatusPlanned:
+			reason += "т.к. поставка еще в стадии планирования"
+		case WorkStatusCompleted:
+			reason += "т.к. поставка уже завершена"
+		case WorkStatusFailed:
+			reason += "т.к. поставка завершена с ошибкой"
+		case WorkStatusCancelled:
+			reason += "т.к. поставка отменена"
+		}
+		return utils.Error{Message: reason}
+	}
+
+	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
+	return shipment.updateWorkStatus(WorkStatusCompleted)
+}
+func (shipment *Shipment) SetFailedStatus(reason string) error {
+	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
+	return shipment.updateWorkStatus(WorkStatusFailed, reason)
+}
+func (shipment *Shipment) SetCancelledStatus() error {
+
+	// Возможен вызов из состояния active, paused, planned: завершить кампанию => cancelled
+	if shipment.Status != WorkStatusActive && shipment.Status != WorkStatusPaused && shipment.Status != WorkStatusPlanned {
+		reason := "Невозможно отменить кампанию,"
+		switch shipment.Status {
+		case WorkStatusPending:
+			reason += "т.к. поставка еще в стадии разработки"
+		case WorkStatusCompleted:
+			reason += "т.к. поставка уже завершена"
+		case WorkStatusFailed:
+			reason += "т.к. поставка завершена с ошибкой"
+		case WorkStatusCancelled:
+			reason += "т.к. поставка уже отменена"
+		}
+		return utils.Error{Message: reason}
+	}
+
+	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
+	return shipment.updateWorkStatus(WorkStatusCancelled)
+}
+func (shipment *Shipment) SetShipmentStatus() error {
+
+	// Возможен вызов из состояния active, paused, planned: завершить кампанию => cancelled
+	if shipment.Status != WorkStatusActive && shipment.Status != WorkStatusPaused && shipment.Status != WorkStatusPlanned {
+		reason := "Невозможно отменить кампанию,"
+		switch shipment.Status {
+		case WorkStatusPending:
+			reason += "т.к. поставка еще в стадии разработки"
+		case WorkStatusCompleted:
+			reason += "т.к. поставка уже завершена"
+		case WorkStatusFailed:
+			reason += "т.к. поставка завершена с ошибкой"
+		case WorkStatusCancelled:
+			reason += "т.к. поставка уже отменена"
+		}
+		return utils.Error{Message: reason}
+	}
+
+	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
+	return shipment.updateWorkStatus(WorkStatusCancelled)
+}
+func (shipment *Shipment) SetPostingStatus() error {
+
+	// Возможен вызов из состояния active, paused, planned: завершить кампанию => cancelled
+	if shipment.Status != WorkStatusActive && shipment.Status != WorkStatusPaused && shipment.Status != WorkStatusPlanned {
+		reason := "Невозможно отменить кампанию,"
+		switch shipment.Status {
+		case WorkStatusPending:
+			reason += "т.к. поставка еще в стадии разработки"
+		case WorkStatusCompleted:
+			reason += "т.к. поставка уже завершена"
+		case WorkStatusFailed:
+			reason += "т.к. поставка завершена с ошибкой"
+		case WorkStatusCancelled:
+			reason += "т.к. поставка уже отменена"
+		}
+		return utils.Error{Message: reason}
+	}
+
+	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
+	return shipment.updateWorkStatus(WorkStatusCancelled)
+}
+

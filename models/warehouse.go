@@ -30,7 +30,7 @@ type Warehouse struct {
 	Description	*string `json:"description" gorm:"type:text;"`
 
 	WarehouseItems	[]WarehouseItem `json:"warehouse_items"`
-	Products		[]Product 		`json:"products"`
+	Products		[]Product 		`json:"products" gorm:"many2many:warehouse_item;"`
 
 	CreatedAt 	time.Time 		`json:"created_at"`
 	UpdatedAt 	time.Time 		`json:"updated_at"`
@@ -47,7 +47,7 @@ func (Warehouse) PgSqlCreate() {
 		log.Fatal("Error: ", err)
 	}
 
-	err = db.SetupJoinTable(&Warehouse{}, "Products", &WarehouseProduct{})
+	err = db.SetupJoinTable(&Warehouse{}, "Products", &WarehouseItem{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -234,25 +234,55 @@ func (warehouse *Warehouse) delete () error {
 func (warehouse *Warehouse) Shipment(shipment Shipment, createIfNotExist bool) error {
 
 	// 1. Загружаем продукт еще раз
-	if err := product.load(nil); err != nil {
-		return utils.Error{Message: "Техническая ошибка: нельзя добавить продукт, он не найден"}
+	if err := shipment.load([]string{"ShipmentProduct","ShipmentProduct.Product"}); err != nil {
+		return utils.Error{Message: "Техническая ошибка оприходования поставки: поставка не найдена"}
 	}
 
 	// 2. Проверяем, была ли занесена эта поставка
-	if !warehouse.ExistShipment(shipment.Id) {
+	// if !warehouse.ExistShipment(shipment.Id) {
+	if shipment.IsPostedWarehouse() {
 		return utils.Error{Message: "Поставка уже занесена на склад"}
 	}
 
-	// Идем циклом про товаром с проверкой быи ли они занесены
-	if err := db.Model(&WarehouseItem{}).Create(
-		&WarehouseItem{AccountId: warehouse.AccountId, ProductId: product.Id, WarehouseId: warehouse.Id, AmountUnit: amountUnit, Stock: 0, Reservation: 0}).Error; err != nil {
+	// Идем циклом по товаром с проверкой быи ли они занесены
+	for i := range shipment.ShipmentProduct {
+		item := shipment.ShipmentProduct[i]
+
+		// Если товар был уже занесен
+		if item.WarehousePosted {
+			continue
+		}
+
+		// Проверяем, если товар на складе
+		if !warehouse.ExistProduct(item.ProductId) {
+			if err := warehouse.ProductAppended(item.Product, 1); err != nil {
+				log.Printf("Ошибка создания товара на складе: %v\n", err)
+				return err
+			}
+		}
+
+		// Пополняем запас товара по факту прихода
+		if err := warehouse.ReplenishProduct(item.ProductId, item.VolumeFact); err != nil {
+			log.Printf("Ошибка пополнения товара на складе: %v\n", err)
+			return err
+		}
+
+		if err := item.SetWarehousePosted(); err != nil {
+			log.Printf("Ошибка перевода позиции поставки в добавленную на склад: %v\n", err)
+			return err
+		}
+	}
+
+	if err := shipment.SetCompletedStatus(); err != nil {
+		log.Printf("Ошибка перевода поставки в статус завершения: %v\n", err)
 		return err
 	}
 
-	account, err := GetAccount(warehouse.AccountId)
+	// todo: нужно потом добавить событие
+	/*account, err := GetAccount(warehouse.AccountId)
 	if err == nil && account != nil {
 		event.AsyncFire(Event{}.WarehouseItemProductAppended(account.Id, warehouse.Id, product.Id))
-	}
+	}*/
 
 	return nil
 }
@@ -334,22 +364,6 @@ func (warehouse Warehouse) ExistProduct(productId uint) bool {
 		return true
 	}
 	
-	return false
-}
-
-func (warehouse Warehouse) ExistShipment(shipmentId uint) bool {
-
-	if shipmentId < 1 {
-		return false
-	}
-
-	var count int64
-
-	db.Model(&WarehouseItem{}).Where("account_id = ? AND warehouse_id = ? AND shipment_id = ?", warehouse.AccountId, warehouse.Id, shipmentId).Count(&count)
-	if count > 0 {
-		return true
-	}
-
 	return false
 }
 

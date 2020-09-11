@@ -40,7 +40,7 @@ type WebPage struct {
 
 	// У страницы может быть картинка превью.. - например, для раздела услуг
 	Image 			*Storage	`json:"image" gorm:"polymorphic:Owner;"`
-	ProductCards 	[]ProductCard 	`json:"product_cards" gorm:"many2many:web_page_product_card;"`
+	// ProductCategories	[]ProductCategory 	`json:"product_categories" gorm:"many2many:web_page_product_categories;"`
 
 	// Если страница временная (ну мало ли!)
 	ExpiredAt 		*time.Time  `json:"expired_at"`
@@ -71,11 +71,6 @@ func (WebPage) PgSqlCreate() {
 		"ADD CONSTRAINT web_pages_web_site_id_fkey FOREIGN KEY (web_site_id) REFERENCES web_sites(id) ON DELETE SET NULL ON UPDATE CASCADE;").Error
 	if err != nil {
 		log.Fatal("Error: ", err)
-	}
-
-	err = db.SetupJoinTable(&WebPage{}, "ProductCards", &WebPageProductCard{})
-	if err != nil {
-		log.Fatal(err)
 	}
 }
 func (webPage *WebPage) BeforeCreate(tx *gorm.DB) error {
@@ -232,7 +227,7 @@ func (webPage *WebPage) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Image","ProductCards"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Image","ProductCategories"})
 
 		for _,v := range allowed {
 			if v == "Image" {

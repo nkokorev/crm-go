@@ -11,7 +11,7 @@ import (
 )
 
 // Вид номенклатуры - ассортиментные группы продаваемых товаров.
-type ProductGroup struct {
+type ProductCategory struct {
 	Id     		uint	`json:"id" gorm:"primaryKey"`
 	PublicId	uint	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
@@ -33,61 +33,57 @@ type ProductGroup struct {
 	// ProductCards 	[]ProductCard 	`json:"product_cards"`
 
 	// Страницы, на которых выводятся карточки товаров этой товарной группы
-	// WebPages 		[]WebPage 	`json:"web_pages" gorm:"many2many:web_page_product_groups;"`
+	// WebPages 		[]WebPage 	`json:"web_pages" gorm:"many2many:web_page_product_categories;"`
 
 	CreatedAt 		time.Time `json:"created_at"`
 	UpdatedAt 		time.Time `json:"updated_at"`
 }
 
 // ############# Entity interface #############
-func (productGroup ProductGroup) GetId() uint { return productGroup.Id }
-func (productGroup *ProductGroup) setId(id uint) { productGroup.Id = id }
-func (productGroup *ProductGroup) setPublicId(publicId uint) { productGroup.PublicId = publicId }
-func (productGroup ProductGroup) GetAccountId() uint { return productGroup.AccountId }
-func (productGroup *ProductGroup) setAccountId(id uint) { productGroup.AccountId = id }
-func (ProductGroup) SystemEntity() bool { return false }
+func (productCategory ProductCategory) GetId() uint { return productCategory.Id }
+func (productCategory *ProductCategory) setId(id uint) { productCategory.Id = id }
+func (productCategory *ProductCategory) setPublicId(publicId uint) { productCategory.PublicId = publicId }
+func (productCategory ProductCategory) GetAccountId() uint { return productCategory.AccountId }
+func (productCategory *ProductCategory) setAccountId(id uint) { productCategory.AccountId = id }
+func (ProductCategory) SystemEntity() bool { return false }
 // ############# End Entity interface #############
-func (ProductGroup) PgSqlCreate() {
-	if err := db.Migrator().CreateTable(&ProductGroup{}); err != nil {
+func (ProductCategory) PgSqlCreate() {
+	if err := db.Migrator().CreateTable(&ProductCategory{}); err != nil {
 		log.Fatal(err)
 	}
-	// db.Model(&ProductGroup{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	// db.Model(&ProductGroup{}).AddForeignKey("email_template_id", "email_templates(id)", "SET NULL", "CASCADE")
-	// db.Model(&ProductGroup{}).AddForeignKey("email_box_id", "email_boxes(id)", "SET NULL", "CASCADE")
-	// db.Model(&ProductGroup{}).AddForeignKey("users_segment_id", "users_segments(id)", "SET NULL", "CASCADE")
-	err := db.Exec("ALTER TABLE web_pages " +
-		"ADD CONSTRAINT web_pages_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
-		// "ADD CONSTRAINT web_pages_web_site_id_fkey FOREIGN KEY (web_site_id) REFERENCES web_sites(id) ON DELETE SET NULL ON UPDATE CASCADE," +
-		"ADD CONSTRAINT web_pages_web_site_id_fkey FOREIGN KEY (web_site_id) REFERENCES web_sites(id) ON DELETE SET NULL ON UPDATE CASCADE;").Error
+	err := db.Exec("ALTER TABLE product_categories " +
+		"ADD CONSTRAINT product_categories_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		// "ADD CONSTRAINT product_categories_web_site_id_fkey FOREIGN KEY (web_site_id) REFERENCES web_sites(id) ON DELETE SET NULL ON UPDATE CASCADE," +
+		"ADD CONSTRAINT product_categories_web_site_id_fkey FOREIGN KEY (web_site_id) REFERENCES web_sites(id) ON DELETE SET NULL ON UPDATE CASCADE;").Error
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
 
-/*	err = db.SetupJoinTable(&ProductGroup{}, "ProductCards", &WebPageProductCard{})
+	/*err = db.SetupJoinTable(&ProductCategory{}, "ProductCards", &WebPageProductCard{})
 	if err != nil {
 		log.Fatal(err)
 	}*/
 }
-func (productGroup *ProductGroup) BeforeCreate(tx *gorm.DB) error {
-	productGroup.Id = 0
+func (productCategory *ProductCategory) BeforeCreate(tx *gorm.DB) error {
+	productCategory.Id = 0
 	
 	// PublicId
 	var lastIdx sql.NullInt64
-	err := db.Model(&ProductGroup{}).Where("account_id = ?",  productGroup.AccountId).
+	err := db.Model(&ProductCategory{}).Where("account_id = ?",  productCategory.AccountId).
 		Select("max(public_id)").Row().Scan(&lastIdx)
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
-	productGroup.PublicId = 1 + uint(lastIdx.Int64)
+	productCategory.PublicId = 1 + uint(lastIdx.Int64)
 
 	return nil
 }
-func (productGroup *ProductGroup) AfterFind(tx *gorm.DB) (err error) {
+func (productCategory *ProductCategory) AfterFind(tx *gorm.DB) (err error) {
 
 	return nil
 }
 // ######### CRUD Functions ############
-func (productGroup ProductGroup) create() (Entity, error)  {
+func (productCategory ProductCategory) create() (Entity, error)  {
 
-	en := productGroup
+	en := productCategory
 
 	if err := db.Create(&en).Error; err != nil {
 		return nil, err
@@ -102,41 +98,41 @@ func (productGroup ProductGroup) create() (Entity, error)  {
 
 	return newItem, nil
 }
-func (ProductGroup) get(id uint, preloads []string) (Entity, error) {
+func (ProductCategory) get(id uint, preloads []string) (Entity, error) {
 
-	var productGroup ProductGroup
+	var productCategory ProductCategory
 
-	err := productGroup.GetPreloadDb(false,false,preloads).First(&productGroup, id).Error
+	err := productCategory.GetPreloadDb(false,false,preloads).First(&productCategory, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &productGroup, nil
+	return &productCategory, nil
 }
-func (productGroup *ProductGroup) load(preloads []string) error {
+func (productCategory *ProductCategory) load(preloads []string) error {
 
-	err := productGroup.GetPreloadDb(false,false,preloads).First(productGroup, productGroup.Id).Error
+	err := productCategory.GetPreloadDb(false,false,preloads).First(productCategory, productCategory.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (productGroup *ProductGroup) loadByPublicId(preloads []string) error {
+func (productCategory *ProductCategory) loadByPublicId(preloads []string) error {
 	
-	if productGroup.PublicId < 1 {
-		return utils.Error{Message: "Невозможно загрузить ProductGroup - не указан  Id"}
+	if productCategory.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить ProductCategory - не указан  Id"}
 	}
-	if err := productGroup.GetPreloadDb(false,false, preloads).First(productGroup, "account_id = ? AND public_id = ?", productGroup.AccountId, productGroup.PublicId).Error; err != nil {
+	if err := productCategory.GetPreloadDb(false,false, preloads).First(productCategory, "account_id = ? AND public_id = ?", productCategory.AccountId, productCategory.PublicId).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
-func (ProductGroup) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return ProductGroup{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
+func (ProductCategory) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
+	return ProductCategory{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
 }
-func (ProductGroup) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
+func (ProductCategory) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
-	productGroups := make([]ProductGroup,0)
+	productGroups := make([]ProductCategory,0)
 	var total int64
 
 	// if need to search
@@ -144,7 +140,7 @@ func (ProductGroup) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 		search = "%"+search+"%"
 
-		err := (&ProductGroup{}).GetPreloadDb(false,false,preloads).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&ProductCategory{}).GetPreloadDb(false,false,preloads).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Where(filter).Find(&productGroups, "label ILIKE ? OR code ILIKE ? OR route_name ILIKE ? OR icon_name ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
@@ -152,7 +148,7 @@ func (ProductGroup) getPaginationList(accountId uint, offset, limit int, sortBy,
 		}
 
 		// Определяем total
-		err = db.Model(&ProductGroup{}).
+		err = db.Model(&ProductCategory{}).
 			Where("label ILIKE ? OR code ILIKE ? OR route_name ILIKE ? OR icon_name ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -161,14 +157,14 @@ func (ProductGroup) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 	} else {
 		
-		err := (&ProductGroup{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		err := (&ProductCategory{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Where(filter).Find(&productGroups).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&ProductGroup{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&ProductCategory{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
@@ -182,7 +178,7 @@ func (ProductGroup) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 	return entities, total, nil
 }
-func (productGroup *ProductGroup) update(input map[string]interface{}, preloads []string) error {
+func (productCategory *ProductCategory) update(input map[string]interface{}, preloads []string) error {
 
 	delete(input,"image")
 	utils.FixInputHiddenVars(&input)
@@ -191,38 +187,38 @@ func (productGroup *ProductGroup) update(input map[string]interface{}, preloads 
 	}
 	input = utils.FixInputDataTimeVars(input,[]string{"expired_at"})
 
-	if err := productGroup.GetPreloadDb(false,false,nil).Where(" id = ?", productGroup.Id).
+	if err := productCategory.GetPreloadDb(false,false,nil).Where(" id = ?", productCategory.Id).
 		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
 		return err
 	}
 
-	err := productGroup.GetPreloadDb(false,false,preloads).First(productGroup, productGroup.Id).Error
+	err := productCategory.GetPreloadDb(false,false,preloads).First(productCategory, productCategory.Id).Error
 	if err != nil {
 		return err
 	}
 
 	return nil
 }
-func (productGroup *ProductGroup) delete () error {
-	return productGroup.GetPreloadDb(true,false,nil).Where("id = ?", productGroup.Id).Delete(productGroup).Error
+func (productCategory *ProductCategory) delete () error {
+	return productCategory.GetPreloadDb(true,false,nil).Where("id = ?", productCategory.Id).Delete(productCategory).Error
 }
 // ######### END CRUD Functions ############
 
-func (productGroup *ProductGroup) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+func (productCategory *ProductCategory) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
 
 	_db := db
 
 	if getModel {
-		_db = _db.Model(productGroup)
+		_db = _db.Model(productCategory)
 	} else {
-		_db = _db.Model(&ProductGroup{})
+		_db = _db.Model(&ProductCategory{})
 	}
 
 	if autoPreload {
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Image"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Image","ProductCards"})
 
 		for _,v := range allowed {
 			if v == "Image" {
@@ -236,15 +232,15 @@ func (productGroup *ProductGroup) GetPreloadDb(getModel bool, autoPreload bool, 
 		return _db
 	}
 }
-func (productGroup ProductGroup) CreateChild(wp ProductGroup) (Entity, error){
-	wp.ParentId = productGroup.Id
+func (productCategory ProductCategory) CreateChild(wp ProductCategory) (Entity, error){
+	wp.ParentId = productCategory.Id
 
 	_webPage, err := wp.create()
 	if err != nil {return nil, err}
 
 	return _webPage, nil
 }
-func (productGroup ProductGroup) AppendProductCard(input *ProductCard, optPriority... int) error {
+func (productCategory ProductCategory) AppendProductCard(input *ProductCard, optPriority... int) error {
 
 	priority := 10
 	if len(optPriority) > 0 {
@@ -265,7 +261,7 @@ func (productGroup ProductGroup) AppendProductCard(input *ProductCard, optPriori
 		productCard = input
 	}
 	if err := db.Model(&WebPageProductCard{}).Create(
-		&WebPageProductCard{WebPageId: productGroup.Id, ProductCardId: productCard.Id, Priority: priority}).Error; err != nil {
+		&WebPageProductCard{WebPageId: productCategory.Id, ProductCardId: productCard.Id, Priority: priority}).Error; err != nil {
 		return err
 	}
 
