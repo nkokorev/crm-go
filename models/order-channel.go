@@ -67,7 +67,7 @@ func (orderChannel *OrderChannel) GetPreloadDb(getModel bool, autoPreload bool, 
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&orderChannel)
+		_db = _db.Model(orderChannel)
 	} else {
 		_db = _db.Model(&OrderChannel{})
 	}

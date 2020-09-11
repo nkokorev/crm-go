@@ -381,7 +381,7 @@ func (fs *Storage) GetPreloadDb(getModel bool, autoPreload bool, preloads []stri
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&fs)
+		_db = _db.Model(fs)
 	} else {
 		_db = _db.Model(&Storage{})
 	}

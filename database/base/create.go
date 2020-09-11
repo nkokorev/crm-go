@@ -194,10 +194,13 @@ func RefreshTablesPart_I() {
 	models.UnitMeasurement{}.PgSqlCreate()
 	// models.Role{}.PgSqlCreate()
 	models.ApiKey{}.PgSqlCreate()
+	models.Bank{}.PgSqlCreate()
 
 	models.WebSite{}.PgSqlCreate()
 	models.WebPage{}.PgSqlCreate()
 
+	models.PaymentAccount{}.PgSqlCreate()
+	models.Company{}.PgSqlCreate()
 
 
 	models.Product{}.PgSqlCreate()

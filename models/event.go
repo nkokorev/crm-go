@@ -92,6 +92,16 @@ func (Event) WebPageDeleted(accountId, webPageId uint) event.Event {
 	return event.NewBasic("WebPageDeleted", map[string]interface{}{"accountId":accountId, "webPageId":webPageId})
 }
 
+// ######### WarehouseItem #########
+func (Event) WarehouseItemProductAppended(accountId, warehouseId, productId uint) event.Event {
+	return event.NewBasic("ProductCardCreated", map[string]interface{}{"accountId":accountId, "warehouseId":warehouseId, "productId":productId})
+}
+/*func (Event) ProductCardUpdated(accountId, productCardId uint) event.Event {
+	return event.NewBasic("ProductCardUpdated", map[string]interface{}{"accountId":accountId, "productCardId":productCardId})
+}
+func (Event) ProductCardDeleted(accountId, productCardId uint) event.Event {
+	return event.NewBasic("ProductCardDeleted", map[string]interface{}{"accountId":accountId, "productCardId":productCardId})
+}*/
 
 /*func (Event) ProductGroupCreated(accountId, productGroupId uint) event.Event {
 	return event.NewBasic("ProductGroupCreated", map[string]interface{}{"accountId":accountId, "productGroupId":productGroupId})

@@ -59,7 +59,7 @@ func (webSite *WebSite) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&webSite)
+		_db = _db.Model(webSite)
 	} else {
 		_db = _db.Model(&WebSite{})
 	}

@@ -246,7 +246,7 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) GetPreloadDb(getModel bo
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&emailQueueEmailTemplate)
+		_db = _db.Model(emailQueueEmailTemplate)
 	} else {
 		_db = _db.Model(&EmailQueueEmailTemplate{})
 	}

@@ -186,7 +186,7 @@ func (userSegmentCondition *UserSegmentCondition) GetPreloadDb(getModel bool, au
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&userSegmentCondition)
+		_db = _db.Model(userSegmentCondition)
 	} else {
 		_db = _db.Model(&UserSegmentCondition{})
 	}

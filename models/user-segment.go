@@ -185,7 +185,7 @@ func (usersSegment *UsersSegment) GetPreloadDb(getModel bool, autoPreload bool, 
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&usersSegment)
+		_db = _db.Model(usersSegment)
 	} else {
 		_db = _db.Model(&UsersSegment{})
 	}

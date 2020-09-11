@@ -371,7 +371,7 @@ func (deliveryRussianPost *DeliveryRussianPost) GetPreloadDb(getModel bool, auto
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&deliveryRussianPost)
+		_db = _db.Model(deliveryRussianPost)
 	} else {
 		_db = _db.Model(&DeliveryRussianPost{})
 	}

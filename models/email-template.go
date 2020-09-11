@@ -478,7 +478,7 @@ func (emailTemplate *EmailTemplate) GetPreloadDb(getModel bool, autoPreload bool
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&emailTemplate)
+		_db = _db.Model(emailTemplate)
 	} else {
 		_db = _db.Model(&EmailTemplate{})
 	}

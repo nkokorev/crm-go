@@ -12,6 +12,7 @@ type roleType string
 const (
 	roleTypeGui roleType = "gui"
 	roleTypeApi roleType = "api"
+	roleTypeCompany roleType = "company"
 )
 
 type AccessRole = string
@@ -25,9 +26,14 @@ const (
 	RoleAuthor     AccessRole = "author"
 	RoleViewer     AccessRole = "viewer"
 	RoleClient     AccessRole = "client"
+
 	RoleFullAccess AccessRole = "full-access"
 	RoleSiteAccess AccessRole = "site-access"
 	RoleReadAccess AccessRole = "read-access"
+
+	// Не имеют прямого отношения к системе и им нельзя делать массовую рассылку
+	RoleExternalContact    	AccessRole = "external-contact"
+	RoleRelatedContact    	AccessRole = "related-contact" // нельзя делать массовую рассылку (?)
 )
 
 type Role struct {
@@ -37,23 +43,33 @@ type Role struct {
 
 	// IssuerAccountId uint       `json:"issuerAccountId" gorm:"index;not null;default:1"`
 	Tag             AccessRole `json:"tag" gorm:"type:varchar(32);not null;"`	// client, admin, manager, ...
-	Type            roleType   `json:"type" gorm:"type:varchar(3);not null;"`	// gui / api
+	Type            roleType   `json:"type" gorm:"type:varchar(3);not null;"`	// gui / api / company
 	Name            string     `json:"name" gorm:"type:varchar(255);not null;"` // "Владелец аккаунта", "Администратор", "Менеджер" ...
 
 	Description 	*string `json:"description" gorm:"type:varchar(255);"` // Краткое описание роли
 }
 
 var systemRoles = []Role{
-	{ AccountId: 1, Name: "Владелец аккаунта",Tag: RoleOwner, 	Type: roleTypeGui,	Description: utils.STRp("Доступ ко всем данным и функционалу аккаунта.")},
-	{ AccountId: 1, Name: "Администратор", 	Tag: RoleAdmin, 	Type: roleTypeGui,	Description: utils.STRp("Доступ ко всем данным и функционалу аккаунта. Не может удалить аккаунт или менять владельца аккаунта.")},
-	{ AccountId: 1, Name: "Менеджер", 		Tag: RoleManager, 	Type: roleTypeGui,	Description: utils.STRp("Не может добавлять пользователей, менять биллинговую информацию и систему ролей.")},
-	{ AccountId: 1, Name: "Маркетолог", 		Tag: RoleMarketer, 	Type: roleTypeGui,	Description: utils.STRp("Читает все клиентские данные, может изменять все что касается маркетинга, но не заказы или склады.")},
-	{ AccountId: 1, Name: "Автор", 			Tag: RoleAuthor, 	Type: roleTypeGui,	Description: utils.STRp("Может создавать контент: писать статьи, письма, описания к товарам и т.д.")},
-	{ AccountId: 1, Name: "Наблюдатель", 		Tag: RoleViewer, 	Type: roleTypeGui,	Description: utils.STRp("The Viewer can view reports in the account")},
-	{ AccountId: 1, Name: "Клиент", 			Tag: RoleClient, 	Type: roleTypeGui,	Description: utils.STRp("Стандартная роль для всех клиентов")},
-	{ AccountId: 1, Name: "Full Access", 		Tag: RoleFullAccess, Type: roleTypeApi,	Description: utils.STRp("Доступ ко всем функциям API")},
-	{ AccountId: 1, Name: "Site Access", 		Tag: RoleSiteAccess, Type: roleTypeApi,	Description: utils.STRp("Доступ к аккаунту через API, необходимый для интеграции с сайтом")},
-	{ AccountId: 1, Name: "Read Access", 		Tag: RoleReadAccess, Type: roleTypeApi,	Description: utils.STRp("Доступ к чтению основной информации об аккаунте.")},
+	{ AccountId: 1, Name: "Владелец аккаунта",	Tag: RoleOwner, 		Type: roleTypeGui,	Description: utils.STRp("Доступ ко всем данным и функционалу аккаунта.")},
+	{ AccountId: 1, Name: "Администратор", 		Tag: RoleAdmin, 		Type: roleTypeGui,	Description: utils.STRp("Доступ ко всем данным и функционалу аккаунта. Не может удалить аккаунт или менять владельца аккаунта.")},
+	{ AccountId: 1, Name: "Менеджер", 			Tag: RoleManager, 		Type: roleTypeGui,	Description: utils.STRp("Не может добавлять пользователей, менять биллинговую информацию и систему ролей.")},
+	{ AccountId: 1, Name: "Маркетолог", 		Tag: RoleMarketer, 		Type: roleTypeGui,	Description: utils.STRp("Читает все клиентские данные, может изменять все что касается маркетинга, но не заказы или склады.")},
+	{ AccountId: 1, Name: "Автор", 				Tag: RoleAuthor, 		Type: roleTypeGui,	Description: utils.STRp("Может создавать контент: писать статьи, письма, описания к товарам и т.д.")},
+	{ AccountId: 1, Name: "Наблюдатель", 		Tag: RoleViewer, 		Type: roleTypeGui,	Description: utils.STRp("The Viewer can view reports in the account")},
+	{ AccountId: 1, Name: "Клиент", 			Tag: RoleClient, 		Type: roleTypeGui,	Description: utils.STRp("Стандартная роль для всех клиентов")},
+	{ AccountId: 1, Name: "Full Access", 		Tag: RoleFullAccess,	Type: roleTypeApi,	Description: utils.STRp("Доступ ко всем функциям API")},
+	{ AccountId: 1, Name: "Site Access", 		Tag: RoleSiteAccess,	Type: roleTypeApi,	Description: utils.STRp("Доступ к аккаунту через API, необходимый для интеграции с сайтом")},
+	{ AccountId: 1, Name: "Read Access", 		Tag: RoleReadAccess,	Type: roleTypeApi,	Description: utils.STRp("Доступ к чтению основной информации об аккаунте.")},
+
+	// Внешние роли в компаниях
+	{ AccountId: 1, Name: "Учредитель", 		Tag: RoleExternalContact,Type: roleTypeCompany},
+	{ AccountId: 1, Name: "Директор", 			Tag: RoleExternalContact,Type: roleTypeCompany},
+	{ AccountId: 1, Name: "Глав. бухгалтер", 	Tag: RoleExternalContact,Type: roleTypeCompany},
+	{ AccountId: 1, Name: "Руководитель отдела продаж", 	Tag: RoleExternalContact,Type: roleTypeCompany},
+	{ AccountId: 1, Name: "Руководитель отдела закупок", 	Tag: RoleExternalContact,Type: roleTypeCompany},
+	{ AccountId: 1, Name: "Руководитель отдела маркетинга", Tag: RoleExternalContact,Type: roleTypeCompany},
+	{ AccountId: 1, Name: "Руководитель отдела разработки", Tag: RoleExternalContact,Type: roleTypeCompany},
+	{ AccountId: 1, Name: "Менеджер по продажам", 			Tag: RoleExternalContact,Type: roleTypeCompany},
 }
 
 func (Role) PgSqlCreate() {

@@ -40,6 +40,9 @@ type ProductCard struct {
 	// Preview Images - небольшие пережатые изображения товара(ов)
 	Images 				[]Storage	`json:"images" gorm:"polymorphic:Owner;"`
 
+	// Вид номенклатуры - ассортиментные группы продаваемых товаров. Привязываются к карточкам..
+	ProductCategories	[]ProductCategory `json:"product_categories" gorm:"many2many:product_category_product_card;"`
+	
 	WebPages 			[]WebPage 	`json:"web_pages" gorm:"many2many:web_page_product_card;"`
 	// WebSite		 		WebSite 	`json:"-" gorm:"-"`
 	Products 			[]Product 		`json:"products" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
@@ -66,7 +69,7 @@ func (productCard *ProductCard) GetPreloadDb(getModel bool, autoPreload bool, pr
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&productCard)
+		_db = _db.Model(productCard)
 	} else {
 		_db = _db.Model(&ProductCard{})
 	}

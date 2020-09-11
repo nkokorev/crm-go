@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/fatih/structs"
 	"log"
+	"time"
 
 	// "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nkokorev/crm-go/utils"
@@ -21,12 +22,24 @@ type AccountUser struct {
 	UserId 		uint	`json:"user_id" gorm:"type:int;index;not null;"`
 	RoleId 		uint	`json:"role_id" gorm:"type:int;not null;"`
 
+	// Разрешен ли вход, через app.ratuscrm.com
+	EnabledAuthFromApp	bool	`json:"enabled_auth_from_app" gorm:"type:bool;default:false;"`
+
+
+	Subscribed			bool		`json:"subscribed" gorm:"type:bool;default:true;"`
+	SubscribedAt 		*time.Time 	`json:"subscribed_at"`
+	UnsubscribedAt 		*time.Time 	`json:"unsubscribed_at"` // << last
+
+	// manual, gui, api,
+	SubscriptionReason	*string 	`json:"subscription_reason" gorm:"type:varchar(32);"`
+	EmailMarketingRating int8 `json:"email_marketing_rating" gorm:"type:smallint;default:3;"` // [0-5]
+
 	// Данные пользователя в контексте аккаунта
-	// JsonData postgres.Jsonb `json:"json_data" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
 	JsonData 	datatypes.JSON `json:"json_data"`
 
-	// rating [0-5]
-	EmailMarketingRating int8 `json:"email_marketing_rating" gorm:"type:smallint;default:3;"`
+	InvitedUserId 		*uint 	`json:"invited_user_id"` // кто его пригласил
+
+
 
 	User    User    `json:"-"  gorm:"preload:true"`
 	Account Account `json:"account" gorm:"preload:true"`

@@ -262,7 +262,7 @@ func (eventListener *EventListener) GetPreloadDb(getModel bool, autoPreload bool
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&eventListener)
+		_db = _db.Model(eventListener)
 	} else {
 		_db = _db.Model(&EventListener{})
 	}

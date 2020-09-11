@@ -54,22 +54,30 @@ func (OrderStatus) PgSqlCreate() {
 
 	orderStatuses := []OrderStatus{
 		// new, agreement, equipment, delivery, completed, canceled
-		{Name: "Новый заказ", 	Code: "new", Group:"new", GroupName:"Необработанные заявки",	Description: "Необработанный заказ, первоначальный статус заказа."},
-		{Name: "Заказ подтвержден", 	Code: "agreement_order", Group: "agreement", 	GroupName:"Согласование", Description: "Заказ подтвержден."},
-		{Name: "Предложена замена", 	Code: "agreement_change", Group: "agreement", 	GroupName:"Согласование", Description: "Предложена замена."},
-		{Name: "Согласование с клиентом", 	Code: "agreement_approval", Group: "agreement", GroupName:"Согласование", Description: "Согласование с клиентом."},
-		{Name: "Комплектуется", 	Code: "equipping", Group: "equipment", 		GroupName:"Комплектация", Description: "Комплектуется."},
-		{Name: "Укомплектован", 	Code: "equipped", Group: "equipment", 		GroupName:"Комплектация", Description: "Укомплектован"},
-		{Name: "Передан в доставку", 	Code: "delivery_sent", 	Group: "delivery", 	GroupName:"Доставка", Description: "Заказ передан в доставку"},
-		{Name: "Доставляется", 			Code: "delivering", 	Group: "delivery", 				GroupName:"Доставка", Description: "Заказ в процессе доставки"},
-		{Name: "Доставка перенесена", 	Code: "delivery_rescheduled", Group: "delivery", GroupName:"Доставка", Description: "Доставка перенесена"},
-		{Name: "Заказ выполнен", 	Code: "completed", Group: "completed", GroupName:"Выполнение", Description: "Заказ выполнен (завершен)"},
+		{Name: "Новый заказ", 				Code: "new", 					Group:"new", 			GroupName:"Необработанные заявки",	Description: "Необработанный заказ, первоначальный статус заказа."},
 
-		{Name: "Недозвон", 			Code: "canceled_call", 			Group: "canceled", GroupName:"Отмена", Description: "Заказ отменен"},
-		{Name: "Нет в наличии", 	Code: "canceled_out_of_stock", 	Group: "canceled", GroupName:"Отмена", Description: "Заказ отменен"},
-		{Name: "Не устроила цена", 	Code: "canceled_price", 		Group: "canceled", GroupName:"Отмена", Description: "Заказ отменен"},
-		{Name: "Не устроила доставка", 	Code: "canceled_delivery", 	Group: "canceled", GroupName:"Отмена", Description: "Заказ отменен"},
-		{Name: "Отменен", 			Code: "canceled_any", 			Group: "canceled", GroupName:"Отмена", Description: "Заказ отменен"},
+		{Name: "Заказ подтвержден", 		Code: "agreement_order", 		Group: "agreement", 	GroupName:"Согласование", 	Description: "Заказ подтвержден."},
+		{Name: "Предложена замена", 		Code: "agreement_change", 		Group: "agreement", 	GroupName:"Согласование", 	Description: "Предложена замена."},
+		{Name: "Согласование с клиентом", 	Code: "agreement_approval", 	Group: "agreement", 	GroupName:"Согласование", 	Description: "Согласование с клиентом."},
+
+		{Name: "Комплектуется", 			Code: "equipping", 				Group: "equipment", 	GroupName:"Комплектация", 	Description: "Комплектуется."},
+		{Name: "Укомплектован", 			Code: "equipped", 				Group: "equipment", 	GroupName:"Комплектация", 	Description: "Укомплектован"},
+
+		{Name: "Передан в доставку", 		Code: "delivery_sent", 			Group: "delivery", 		GroupName:"Доставка", 		Description: "Заказ передан в доставку"},
+		{Name: "Доставляется", 				Code: "delivering", 			Group: "delivery", 		GroupName:"Доставка", 		Description: "Заказ в процессе доставки"},
+		{Name: "Доставка перенесена", 		Code: "delivery_rescheduled", 	Group: "delivery", 		GroupName:"Доставка", 		Description: "Доставка перенесена"},
+
+		{Name: "Заказ выполнен", 			Code: "completed", 				Group: "completed", 	GroupName:"Выполнение", 	Description: "Заказ выполнен (завершен)"},
+
+		{Name: "Недозвон", 			Code: "canceled_call", 			Group: "canceled", 	GroupName:"Отмена", Description: "Заказ отменен"},
+		{Name: "Нет в наличии", 	Code: "canceled_out_of_stock", 	Group: "canceled", 	GroupName:"Отмена", Description: "Заказ отменен"},
+		{Name: "Не устроила цена", 	Code: "canceled_price", 		Group: "canceled", 	GroupName:"Отмена", Description: "Заказ отменен"},
+		{Name: "Не устроила доставка", 	Code: "canceled_delivery", 	Group: "canceled", 	GroupName:"Отмена", Description: "Заказ отменен"},
+		{Name: "Отменен", 			Code: "canceled_any", 			Group: "canceled", 	GroupName:"Отмена", Description: "Заказ отменен"},
+		{Name: "Спам", 				Code: "spam", 					Group: "canceled", 	GroupName:"Отмена", Description: "Спам заказ"},
+
+		{Name: "Резерв предзаказа",	Code: "pre-order-reserve", 	Group: "prepend", 	GroupName:"Формирование", 	Description: "Резерв товара для предзаказа"},
+		{Name: "Резерв для отправки",	Code: "reserve-pre-sender", Group: "prepend", 	GroupName:"Формирование", 	Description: "Резерв товара для отправки товара или перемещения"},
 	}
 	for _,v := range orderStatuses {
 		_, err = mainAccount.CreateEntity(&v)
@@ -87,7 +95,7 @@ func (orderStatus *OrderStatus) GetPreloadDb(getModel bool, autoPreload bool, pr
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&orderStatus)
+		_db = _db.Model(orderStatus)
 	} else {
 		_db = _db.Model(&OrderStatus{})
 	}

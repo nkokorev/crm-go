@@ -277,7 +277,7 @@ func (deliveryCourier *DeliveryCourier) GetPreloadDb(getModel bool, autoPreload 
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&deliveryCourier)
+		_db = _db.Model(deliveryCourier)
 	} else {
 		_db = _db.Model(&DeliveryCourier{})
 	}

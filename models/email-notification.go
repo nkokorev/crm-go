@@ -280,7 +280,7 @@ func (emailNotification *EmailNotification) GetPreloadDb(getModel bool, autoPrel
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&emailNotification)
+		_db = _db.Model(emailNotification)
 	} else {
 		_db = _db.Model(&EmailNotification{})
 	}

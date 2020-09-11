@@ -135,5 +135,28 @@ func SettingsDb() error {
 		log.Fatal(err)
 	}
 
+	err = db.SetupJoinTable(&Warehouse{}, "Warehouses", &WarehouseProduct{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = db.SetupJoinTable(&Shipment{}, "Products", &ShipmentProduct{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.SetupJoinTable(&Product{}, "Shipments", &ShipmentProduct{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = db.SetupJoinTable(&User{}, "Companies", &CompanyUser{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.SetupJoinTable(&Company{}, "Users", &CompanyUser{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return nil
 }

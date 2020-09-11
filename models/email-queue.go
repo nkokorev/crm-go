@@ -291,7 +291,7 @@ func (emailQueue *EmailQueue) GetPreloadDb(getModel bool, autoPreload bool, prel
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&emailQueue)
+		_db = _db.Model(emailQueue)
 	} else {
 		_db = _db.Model(&EmailQueue{})
 	}

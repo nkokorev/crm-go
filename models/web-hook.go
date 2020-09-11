@@ -293,7 +293,7 @@ func (webHook WebHook) GetPreloadDb(getModel bool, autoPreload bool, preloads []
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&webHook)
+		_db = _db.Model(webHook)
 	} else {
 		_db = _db.Model(&WebHook{})
 	}

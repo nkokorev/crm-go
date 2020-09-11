@@ -9,6 +9,7 @@ import (
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"log"
+	"time"
 )
 
 /*
@@ -26,12 +27,22 @@ type Product struct {
 	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // можно ли продавать товар и выводить в карточки
+	// артикул товара
+	Article 	string 	`json:"article" gorm:"type:varchar(128);index;"`
 
-	// Марка товара
+	// Доступен ли товар для продажи в розницу
+	RetailSale 	bool 	`json:"retail_sale" gorm:"type:bool;default:true"`
+
+	// Доступен ли товар для продажи оптом
+	WholesaleSale	bool	`json:"wholesale_sale" gorm:"type:bool;default:true"`
+
+	// enabled - deprecated
+	// Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // можно ли продавать товар и выводить в карточки
+
+	// Этикетка товара
 	Label 		string 	`json:"label" gorm:"type:varchar(128);"`
 
-	// торговая марка
+	// торговая марка (Объект!)
 	Trademark 	*string	`json:"trademark" gorm:"type:varchar(128);"`
 
 	// Маркировка товара
@@ -41,8 +52,6 @@ type Product struct {
 	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
 	ShortName 	string 	`json:"short_name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
 
-	// артикул товара
-	Article 	string 	`json:"article" gorm:"type:varchar(128);index;"`
 
 	// deprecated, т.к. это относится к складу, а не все товары на складе (есть сбоные и услуги)
 	SKU 		string 	`json:"sku" gorm:"type:varchar(128);index;"`
@@ -51,32 +60,59 @@ type Product struct {
 	Model 		string 	`json:"model" gorm:"type:varchar(255);"`
 
 	// Base properties
-	RetailPrice		float64 `json:"retail_price" gorm:"type:numeric;"` // розничная цена
-	WholesalePrice 	float64 `json:"wholesale_price" gorm:"type:numeric;"` // оптовая цена
-	PurchasePrice 	float64 `json:"purchase_price" gorm:"type:numeric;"` // закупочная цена
-	RetailDiscount 	float64 `json:"retail_discount" gorm:"type:numeric;"` // розничная фактическая скидка
+	RetailPrice		float64 `json:"retail_price" gorm:"type:numeric;"` 		// розничная цена
+	WholesalePrice 	float64 `json:"wholesale_price" gorm:"type:numeric;"` 	// оптовая цена
+	PurchasePrice 	float64 `json:"purchase_price" gorm:"type:numeric;"` 	// закупочная цена
+	RetailDiscount 	float64 `json:"retail_discount" gorm:"type:numeric;"` 	// розничная фактическая скидка
 
 	// Вид номенклатуры - ассортиментные группы продаваемых товаров. Привязываются к карточкам..
-	// PaymentGroupId	uint	`json:"payment_group_id" gorm:"type:int;"`
-	// ProductGroup	ProductGroup `json:"product_group"`
+
+	// Товарная группа: улунский, красный (чай), углозачистной станок, шлифовальный станок
+	PaymentGroupId	uint	`json:"payment_group_id" gorm:"type:int;"`
+	ProductGroup	ProductGroup `json:"product_group"`
+
+	// Тип продукта: улунский, красный (чай), углозачистной станок, шлифовальный станок
+	TypeId			uint	`json:"payment_type_id" gorm:"type:int;"`
+	Type			ProductType `json:"product_type"`
 
 	// Тип вида номенклатуры: товар, услуга, сборный товар (комплект), упаковка (?)
+	// Тип формирования продукта: товар, услуга, сборный товар (комплект), упаковка (?)
 	// Дает возможность формировать 50гр чая => 50ед. товара N в граммах
-	// PaymentTypeId	uint	`json:"payment_type_id" gorm:"type:int;"`
-	// ProductType		ProductType `json:"product_type"`
+
+	// Сборный ли товар? Применяется только к payment_subject = commodity, excise и т.д.
+	IsKit			*bool 		`json:"is_kit" gorm:"type:bool;default:false"`
 	
+	// Список продуктов из которых составлен текущий. Это может быть как 1<>1, а может быть и нет (== составной товар)
+	WarehouseItems		[]WarehouseItem `json:"warehouse_items"`
+
+	// Ед. измерения товара: штуки, метры, литры, граммы и т.д.  !!!!
+	UnitMeasurementId 		uint	`json:"unit_measurement_id" gorm:"type:int;default:1;"` // тип измерения
+	UnitMeasurement 		UnitMeasurement `json:"unit_measurement"`// Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
+
+	// Основные атрибуты (Можно и в атрибуты)
+	Length 	float64 `json:"length" gorm:"type:numeric;"`
+	Width 	float64 `json:"width" gorm:"type:numeric;"`
+	Height 	float64 `json:"height" gorm:"type:numeric;"`
+	Weight 	float64 `json:"weight" gorm:"type:numeric;"`
+
+	// Производитель
+	ManufacturerId	uint	`json:"manufacturer_id" gorm:"type:int;"`
+	Manufacturer	Manufacturer `json:"manufacturer"`
+
+	// Дата изготовления, дата выпуска, дата производства
+	ManufactureDate	*time.Time `json:"manufacture_date"`
+
+	// Срок годности, срок хранения (?)
+	ShelfLife	*time.Time 	`json:"shelf_life"`
+
 	//  == признак предмета расчета - товар, услуга, работа, набор (комплект) = сборный товар
 	// Признак предмета расчета (бухучет - № 54-ФЗ)
 	PaymentSubjectId	uint	`json:"payment_subject_id" gorm:"type:int;"`
 	PaymentSubject 		PaymentSubject `json:"payment_subject"`
 	
-	// учет НДС (бухучет)
+	// Ставка НДС или учет НДС (бухучет)
 	VatCodeId	uint	`json:"vat_code_id" gorm:"type:int;default:1;"`// товар или услуга ? [вид номенклатуры]
 	VatCode		VatCode	`json:"vat_code"`
-
-	// Единица измерения товара: штуки, метры, литры, граммы и т.д.
-	UnitMeasurementId 		uint	`json:"unit_measurement_id" gorm:"type:int;default:1;"` // тип измерения
-	UnitMeasurement 		UnitMeasurement `json:"unit_measurement"`// Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 
 	// товар или услуга ? [вид номенклатуры]
 	// сборно-разборный товар...
@@ -101,8 +137,13 @@ type Product struct {
 	// Questions []question // вопросы по товару
 	// Video []Video // видеообзоры по товару на ютубе
 
+	// Объем поставки товара
+	ShipmentProduct 	[]ShipmentProduct 	`json:"shipment_product"`
+
+	// Список поставок товара, в которых он был
+	Shipments 	[]Shipment 	`json:"shipments" gorm:"many2many:shipment_products"`
+
 	Account Account `json:"-"`
-	// ProductGroups []ProductGroup `json:"-" gorm:"many2many:product_group_products"`
 	ProductCards []ProductCard `json:"product_cards" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
 }
 
@@ -118,6 +159,16 @@ func (Product) PgSqlCreate() {
 	db.Exec("create unique index uix_products_account_id_sku ON products (account_id,sku) where (length(sku) > 0);\ncreate unique index uix_products_account_id_model ON products (account_id,model) WHERE (length(model) > 0);\ncreate unique index uix_products_account_id_article ON products (account_id,article) WHERE (length(article) > 0);\n-- create unique index uix_products_account_id_sku ON products (account_id,sku) WHERE sku IS NOT NULL;\n")
 
 	err = db.SetupJoinTable(&Product{}, "ProductCards", &ProductCardProduct{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = db.SetupJoinTable(&Product{}, "Warehouses", &WarehouseProduct{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = db.SetupJoinTable(&Product{}, "Shipments", &ShipmentProduct{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -141,7 +192,7 @@ func (product *Product) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&product)
+		_db = _db.Model(product)
 	} else {
 		_db = _db.Model(&Product{})
 	}

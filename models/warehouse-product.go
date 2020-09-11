@@ -11,7 +11,7 @@ import (
 )
 
 // Вид номенклатуры - ассортиментные группы продаваемых товаров.
-type ProductGroup struct {
+type WarehouseProduct struct {
 	Id     		uint	`json:"id" gorm:"primaryKey"`
 	PublicId	uint	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
@@ -40,21 +40,21 @@ type ProductGroup struct {
 }
 
 // ############# Entity interface #############
-func (productGroup ProductGroup) GetId() uint { return productGroup.Id }
-func (productGroup *ProductGroup) setId(id uint) { productGroup.Id = id }
-func (productGroup *ProductGroup) setPublicId(publicId uint) { productGroup.PublicId = publicId }
-func (productGroup ProductGroup) GetAccountId() uint { return productGroup.AccountId }
-func (productGroup *ProductGroup) setAccountId(id uint) { productGroup.AccountId = id }
-func (ProductGroup) SystemEntity() bool { return false }
+func (warehouseProduct WarehouseProduct) GetId() uint { return warehouseProduct.Id }
+func (warehouseProduct *WarehouseProduct) setId(id uint) { warehouseProduct.Id = id }
+func (warehouseProduct *WarehouseProduct) setPublicId(publicId uint) { warehouseProduct.PublicId = publicId }
+func (warehouseProduct WarehouseProduct) GetAccountId() uint { return warehouseProduct.AccountId }
+func (warehouseProduct *WarehouseProduct) setAccountId(id uint) { warehouseProduct.AccountId = id }
+func (WarehouseProduct) SystemEntity() bool { return false }
 // ############# End Entity interface #############
-func (ProductGroup) PgSqlCreate() {
-	if err := db.Migrator().CreateTable(&ProductGroup{}); err != nil {
+func (WarehouseProduct) PgSqlCreate() {
+	if err := db.Migrator().CreateTable(&WarehouseProduct{}); err != nil {
 		log.Fatal(err)
 	}
-	// db.Model(&ProductGroup{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	// db.Model(&ProductGroup{}).AddForeignKey("email_template_id", "email_templates(id)", "SET NULL", "CASCADE")
-	// db.Model(&ProductGroup{}).AddForeignKey("email_box_id", "email_boxes(id)", "SET NULL", "CASCADE")
-	// db.Model(&ProductGroup{}).AddForeignKey("users_segment_id", "users_segments(id)", "SET NULL", "CASCADE")
+	// db.Model(&WarehouseProduct{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
+	// db.Model(&WarehouseProduct{}).AddForeignKey("email_template_id", "email_templates(id)", "SET NULL", "CASCADE")
+	// db.Model(&WarehouseProduct{}).AddForeignKey("email_box_id", "email_boxes(id)", "SET NULL", "CASCADE")
+	// db.Model(&WarehouseProduct{}).AddForeignKey("users_segment_id", "users_segments(id)", "SET NULL", "CASCADE")
 	err := db.Exec("ALTER TABLE web_pages " +
 		"ADD CONSTRAINT web_pages_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
 		// "ADD CONSTRAINT web_pages_web_site_id_fkey FOREIGN KEY (web_site_id) REFERENCES web_sites(id) ON DELETE SET NULL ON UPDATE CASCADE," +
@@ -63,31 +63,31 @@ func (ProductGroup) PgSqlCreate() {
 		log.Fatal("Error: ", err)
 	}
 
-	err = db.SetupJoinTable(&ProductGroup{}, "ProductCards", &WebPageProductCard{})
+	err = db.SetupJoinTable(&WarehouseProduct{}, "ProductCards", &WebPageProductCard{})
 	if err != nil {
 		log.Fatal(err)
 	}
 }
-func (productGroup *ProductGroup) BeforeCreate(tx *gorm.DB) error {
-	productGroup.Id = 0
+func (warehouseProduct *WarehouseProduct) BeforeCreate(tx *gorm.DB) error {
+	warehouseProduct.Id = 0
 	
 	// PublicId
 	var lastIdx sql.NullInt64
-	err := db.Model(&ProductGroup{}).Where("account_id = ?",  productGroup.AccountId).
+	err := db.Model(&WarehouseProduct{}).Where("account_id = ?",  warehouseProduct.AccountId).
 		Select("max(public_id)").Row().Scan(&lastIdx)
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
-	productGroup.PublicId = 1 + uint(lastIdx.Int64)
+	warehouseProduct.PublicId = 1 + uint(lastIdx.Int64)
 
 	return nil
 }
-func (productGroup *ProductGroup) AfterFind(tx *gorm.DB) (err error) {
+func (warehouseProduct *WarehouseProduct) AfterFind(tx *gorm.DB) (err error) {
 
 	return nil
 }
 // ######### CRUD Functions ############
-func (productGroup ProductGroup) create() (Entity, error)  {
+func (warehouseProduct WarehouseProduct) create() (Entity, error)  {
 
-	en := productGroup
+	en := warehouseProduct
 
 	if err := db.Create(&en).Error; err != nil {
 		return nil, err
@@ -102,41 +102,41 @@ func (productGroup ProductGroup) create() (Entity, error)  {
 
 	return newItem, nil
 }
-func (ProductGroup) get(id uint, preloads []string) (Entity, error) {
+func (WarehouseProduct) get(id uint, preloads []string) (Entity, error) {
 
-	var productGroup ProductGroup
+	var warehouseProduct WarehouseProduct
 
-	err := productGroup.GetPreloadDb(false,false,preloads).First(&productGroup, id).Error
+	err := warehouseProduct.GetPreloadDb(false,false,preloads).First(&warehouseProduct, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &productGroup, nil
+	return &warehouseProduct, nil
 }
-func (productGroup *ProductGroup) load(preloads []string) error {
+func (warehouseProduct *WarehouseProduct) load(preloads []string) error {
 
-	err := productGroup.GetPreloadDb(false,false,preloads).First(productGroup, productGroup.Id).Error
+	err := warehouseProduct.GetPreloadDb(false,false,preloads).First(warehouseProduct, warehouseProduct.Id).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (productGroup *ProductGroup) loadByPublicId(preloads []string) error {
+func (warehouseProduct *WarehouseProduct) loadByPublicId(preloads []string) error {
 	
-	if productGroup.PublicId < 1 {
-		return utils.Error{Message: "Невозможно загрузить ProductGroup - не указан  Id"}
+	if warehouseProduct.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить WarehouseProduct - не указан  Id"}
 	}
-	if err := productGroup.GetPreloadDb(false,false, preloads).First(productGroup, "account_id = ? AND public_id = ?", productGroup.AccountId, productGroup.PublicId).Error; err != nil {
+	if err := warehouseProduct.GetPreloadDb(false,false, preloads).First(warehouseProduct, "account_id = ? AND public_id = ?", warehouseProduct.AccountId, warehouseProduct.PublicId).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
-func (ProductGroup) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return ProductGroup{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
+func (WarehouseProduct) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
+	return WarehouseProduct{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
 }
-func (ProductGroup) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
+func (WarehouseProduct) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
-	productGroups := make([]ProductGroup,0)
+	warehouseProducts := make([]WarehouseProduct,0)
 	var total int64
 
 	// if need to search
@@ -144,15 +144,15 @@ func (ProductGroup) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 		search = "%"+search+"%"
 
-		err := (&ProductGroup{}).GetPreloadDb(false,false,preloads).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Where(filter).Find(&productGroups, "label ILIKE ? OR code ILIKE ? OR route_name ILIKE ? OR icon_name ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search,search).Error
+		err := (&WarehouseProduct{}).GetPreloadDb(false,false,preloads).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Where(filter).Find(&warehouseProducts, "label ILIKE ? OR code ILIKE ? OR route_name ILIKE ? OR icon_name ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&ProductGroup{}).
+		err = db.Model(&WarehouseProduct{}).
 			Where("label ILIKE ? OR code ILIKE ? OR route_name ILIKE ? OR icon_name ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -161,28 +161,28 @@ func (ProductGroup) getPaginationList(accountId uint, offset, limit int, sortBy,
 
 	} else {
 		
-		err := (&ProductGroup{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Where(filter).Find(&productGroups).Error
+		err := (&WarehouseProduct{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Where(filter).Find(&warehouseProducts).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = db.Model(&ProductGroup{}).Where("account_id = ?", accountId).Count(&total).Error
+		err = db.Model(&WarehouseProduct{}).Where("account_id = ?", accountId).Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(productGroups))
-	for i := range productGroups {
-		entities[i] = &productGroups[i]
+	entities := make([]Entity,len(warehouseProducts))
+	for i := range warehouseProducts {
+		entities[i] = &warehouseProducts[i]
 	}
 
 	return entities, total, nil
 }
-func (productGroup *ProductGroup) update(input map[string]interface{}, preloads []string) error {
+func (warehouseProduct *WarehouseProduct) update(input map[string]interface{}, preloads []string) error {
 
 	delete(input,"image")
 	utils.FixInputHiddenVars(&input)
@@ -191,31 +191,31 @@ func (productGroup *ProductGroup) update(input map[string]interface{}, preloads 
 	}
 	input = utils.FixInputDataTimeVars(input,[]string{"expired_at"})
 
-	if err := productGroup.GetPreloadDb(false,false,nil).Where(" id = ?", productGroup.Id).
+	if err := warehouseProduct.GetPreloadDb(false,false,nil).Where(" id = ?", warehouseProduct.Id).
 		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
 		return err
 	}
 
-	err := productGroup.GetPreloadDb(false,false,preloads).First(productGroup, productGroup.Id).Error
+	err := warehouseProduct.GetPreloadDb(false,false,preloads).First(warehouseProduct, warehouseProduct.Id).Error
 	if err != nil {
 		return err
 	}
 
 	return nil
 }
-func (productGroup *ProductGroup) delete () error {
-	return productGroup.GetPreloadDb(true,false,nil).Where("id = ?", productGroup.Id).Delete(productGroup).Error
+func (warehouseProduct *WarehouseProduct) delete () error {
+	return warehouseProduct.GetPreloadDb(true,false,nil).Where("id = ?", warehouseProduct.Id).Delete(warehouseProduct).Error
 }
 // ######### END CRUD Functions ############
 
-func (productGroup *ProductGroup) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+func (warehouseProduct *WarehouseProduct) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
 
 	_db := db
 
 	if getModel {
-		_db = _db.Model(productGroup)
+		_db = _db.Model(warehouseProduct)
 	} else {
-		_db = _db.Model(&ProductGroup{})
+		_db = _db.Model(&WarehouseProduct{})
 	}
 
 	if autoPreload {
@@ -236,15 +236,15 @@ func (productGroup *ProductGroup) GetPreloadDb(getModel bool, autoPreload bool, 
 		return _db
 	}
 }
-func (productGroup ProductGroup) CreateChild(wp ProductGroup) (Entity, error){
-	wp.ParentId = productGroup.Id
+func (warehouseProduct WarehouseProduct) CreateChild(wp WarehouseProduct) (Entity, error){
+	wp.ParentId = warehouseProduct.Id
 
 	_webPage, err := wp.create()
 	if err != nil {return nil, err}
 
 	return _webPage, nil
 }
-func (productGroup ProductGroup) AppendProductCard(input *ProductCard, optPriority... int) error {
+func (warehouseProduct WarehouseProduct) AppendProductCard(input *ProductCard, optPriority... int) error {
 
 	priority := 10
 	if len(optPriority) > 0 {
@@ -265,7 +265,7 @@ func (productGroup ProductGroup) AppendProductCard(input *ProductCard, optPriori
 		productCard = input
 	}
 	if err := db.Model(&WebPageProductCard{}).Create(
-		&WebPageProductCard{WebPageId: productGroup.Id, ProductCardId: productCard.Id, Priority: priority}).Error; err != nil {
+		&WebPageProductCard{WebPageId: warehouseProduct.Id, ProductCardId: productCard.Id, Priority: priority}).Error; err != nil {
 		return err
 	}
 

@@ -201,7 +201,7 @@ func (handlerItem *HandlerItem) GetPreloadDb(getModel bool, autoPreload bool, pr
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&handlerItem)
+		_db = _db.Model(handlerItem)
 	} else {
 		_db = _db.Model(&HandlerItem{})
 	}

@@ -280,7 +280,7 @@ func (emailCampaign *EmailCampaign) GetPreloadDb(getModel bool, autoPreload bool
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&emailCampaign)
+		_db = _db.Model(emailCampaign)
 	} else {
 		_db = _db.Model(&EmailCampaign{})
 	}

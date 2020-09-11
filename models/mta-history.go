@@ -109,7 +109,7 @@ func (mtaHistory *MTAHistory) GetPreloadDb(getModel bool, autoPreload bool, prel
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&mtaHistory)
+		_db = _db.Model(mtaHistory)
 	} else {
 		_db = _db.Model(&MTAHistory{})
 	}

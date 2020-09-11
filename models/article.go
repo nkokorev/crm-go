@@ -231,7 +231,7 @@ func (article *Article) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&article)
+		_db = _db.Model(article)
 	} else {
 		_db = _db.Model(&Article{})
 	}

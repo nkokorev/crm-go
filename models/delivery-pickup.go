@@ -284,7 +284,7 @@ func (deliveryPickup *DeliveryPickup) GetPreloadDb(getModel bool, autoPreload bo
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&deliveryPickup)
+		_db = _db.Model(deliveryPickup)
 	} else {
 		_db = _db.Model(&DeliveryPickup{})
 	}

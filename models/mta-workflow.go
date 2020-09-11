@@ -87,7 +87,7 @@ func (mtaWorkflow *MTAWorkflow) GetPreloadDb(getModel bool, autoPreload bool, pr
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&mtaWorkflow)
+		_db = _db.Model(mtaWorkflow)
 	} else {
 		_db = _db.Model(&MTAWorkflow{})
 	}

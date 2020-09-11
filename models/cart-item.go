@@ -210,7 +210,7 @@ func (cartItem *CartItem) GetPreloadDb(getModel bool, autoPreload bool, preloads
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&cartItem)
+		_db = _db.Model(cartItem)
 	} else {
 		_db = _db.Model(&CartItem{})
 	}

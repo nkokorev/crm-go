@@ -255,7 +255,7 @@ func (eventItem *EventItem) GetPreloadDb(getModel bool, autoPreload bool, preloa
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&eventItem)
+		_db = _db.Model(eventItem)
 	} else {
 		_db = _db.Model(&EventItem{})
 	}

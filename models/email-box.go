@@ -202,7 +202,7 @@ func (emailBox *EmailBox) GetPreloadDb(getModel bool, autoPreload bool, preloads
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&emailBox)
+		_db = _db.Model(emailBox)
 	} else {
 		_db = _db.Model(&EmailBox{})
 	}

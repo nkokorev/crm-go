@@ -213,7 +213,7 @@ func (taskScheduler *TaskScheduler) GetPreloadDb(getModel bool, autoPreload bool
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&taskScheduler)
+		_db = _db.Model(taskScheduler)
 	} else {
 		_db = _db.Model(&TaskScheduler{})
 	}

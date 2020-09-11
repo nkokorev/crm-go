@@ -247,7 +247,7 @@ func (mtaBounced *MTABounced) GetPreloadDb(getModel bool, autoPreload bool, prel
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&mtaBounced)
+		_db = _db.Model(mtaBounced)
 	} else {
 		_db = _db.Model(&MTABounced{})
 	}

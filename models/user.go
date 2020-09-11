@@ -29,40 +29,42 @@ type User struct {
 	Surname 	*string 		`json:"surname" gorm:"type:varchar(64)"`
 	Patronymic 	*string 		`json:"patronymic" gorm:"type:varchar(64)"`
 
-	Roles 		[]Role 			`json:"roles" gorm:"many2many:account_users;"`
-	AccountUser *AccountUser	`json:"account_user" gorm:"preload"`
-	// Account 	Account `json:"account" gorm:"preload" sql:"-"`
+	// Разрешен ли вход, через app.ratuscrm.com  - deprecated
+	EnabledAuthFromApp	bool	`json:"enabled_auth_from_app" gorm:"type:bool;default:false;"`
 
-	EnabledAuthFromApp	bool	`json:"enabled_auth_from_app" gorm:"type:bool;default:false;"` // Разрешен ли вход, через app.ratuscrm.com
-
+	// deprecated!!
 	Subscribed			bool		`json:"subscribed" gorm:"type:bool;default:true;"` // Есть ли подписка на общее рассылки.
 	SubscribedAt 		*time.Time 	`json:"subscribed_at"`
 	UnsubscribedAt 		*time.Time 	`json:"unsubscribed_at"` // << last
-	// manual, gui, api,
+
+	// manual, gui, api, - deprecated!!
 	SubscriptionReason	*string 	`json:"subscription_reason" gorm:"type:varchar(32);"`
 
-	// UnsubscribedReason	string `json:"unsubscribedReason" gorm:"default:null"` << see mta-bounced...
+	// deprecated!!
+	UnsubscribedReason	string `json:"unsubscribedReason" gorm:"default:null"` // << see mta-bounced...
 
 	DefaultAccountId 	*uint 	`json:"default_account_id"` // указывает какой аккаунт по дефолту загружать
-	InvitedUserId 		*uint 	`json:"invited_user_id"` // указывает какой аккаунт по дефолту загружать
+	// InvitedUserId 		*uint 	`json:"invited_user_id"` // кто его пригласил
 
 	// Верификация, сброс пароля и т.д.
 	EmailVerifiedAt *time.Time `json:"email_verified_at"` // дата подтверждения email-а (автоматически проставляется, если методом верфикации пользователя был подтвержден email)
 	PhoneVerifiedAt *time.Time `json:"phone_verified_at"` // дата подтверждения телефона (автоматически проставляется, если методом верфикации пользователя был подтвержден телефон)
 	PasswordResetAt *time.Time `json:"password_reset_at"`
 
+	CreatedAt 	time.Time 		`json:"created_at"`
+	UpdatedAt 	time.Time 		`json:"updated_at"`
+	DeletedAt 	gorm.DeletedAt 	`json:"-" sql:"index"`
 
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"-" sql:"index"`
-
-	Accounts []Account `json:"-" gorm:"many2many:account_users;preload"`
+	AccountUser *AccountUser	`json:"account_user" gorm:"preload"` // WTF
+	// Roles 		[]Role 			`json:"roles" gorm:"many2many:account_users;"`
+	Accounts 	[]Account 		`json:"accounts" gorm:"many2many:account_users;"`
+	Companies 	[]Company 		`json:"companies" gorm:"many2many:company_users;"`
 }
 
-type UserAndRole struct {
+/*type UserAndRole struct {
 	User
 	RoleId uint `json:"role_id"`
-}
+}*/
 
 func (User) PgSqlCreate() {
 	if db.Migrator().HasTable(&User{}) { return }
@@ -77,6 +79,10 @@ func (User) PgSqlCreate() {
 	}
 
 	if err := db.SetupJoinTable(&User{}, "Accounts", &AccountUser{}); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := db.SetupJoinTable(&User{}, "Companies", &CompanyUser{}); err != nil {
 		log.Fatal(err)
 	}
 }

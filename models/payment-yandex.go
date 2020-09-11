@@ -81,7 +81,7 @@ func (paymentYandex *PaymentYandex) GetPreloadDb(getModel bool, autoPreload bool
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&paymentYandex)
+		_db = _db.Model(paymentYandex)
 	} else {
 		_db = _db.Model(&PaymentYandex{})
 	}

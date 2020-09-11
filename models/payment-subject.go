@@ -75,7 +75,7 @@ func (paymentSubject *PaymentSubject) GetPreloadDb(getModel bool, autoPreload bo
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&paymentSubject)
+		_db = _db.Model(paymentSubject)
 	} else {
 		_db = _db.Model(&PaymentSubject{})
 	}

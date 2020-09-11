@@ -318,7 +318,7 @@ func (order *Order) GetPreloadDb(getModel bool, autoPreload bool, preloads []str
 	_db := db
 
 	if getModel {
-		_db = _db.Model(&order)
+		_db = _db.Model(order)
 	} else {
 		_db = _db.Model(&Order{})
 	}
