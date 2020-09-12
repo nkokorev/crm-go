@@ -185,3 +185,14 @@ func (Event) PaymentCanceled(accountId uint, paymentId uint) event.Event {
 	return event.NewBasic("PaymentCanceled", map[string]interface{}{"accountId":accountId, "paymentId":paymentId})
 }
 
+// ######### Manufacturer #########
+func (Event) ManufacturerCreated(accountId, manufacturerId uint) event.Event {
+	return event.NewBasic("ManufacturerCreated", map[string]interface{}{"accountId":accountId, "manufacturerId":manufacturerId})
+}
+func (Event) ManufacturerUpdated(accountId, manufacturerId uint) event.Event {
+	return event.NewBasic("ManufacturerUpdated", map[string]interface{}{"accountId":accountId, "manufacturerId":manufacturerId})
+}
+func (Event) ManufacturerDeleted(accountId, manufacturerId uint) event.Event {
+	return event.NewBasic("ManufacturerDeleted", map[string]interface{}{"accountId":accountId, "manufacturerId":manufacturerId})
+}
+

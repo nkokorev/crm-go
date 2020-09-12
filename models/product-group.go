@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -244,35 +243,4 @@ func (productGroup ProductGroup) CreateChild(wp ProductGroup) (Entity, error){
 
 	return _webPage, nil
 }
-func (productGroup ProductGroup) AppendProductCard(input *ProductCard, optPriority... int) error {
 
-	priority := 10
-	if len(optPriority) > 0 {
-		priority = optPriority[0]
-	}
-	var productCard *ProductCard
-	if input.Id < 1 {
-		proPtr, err := input.create()
-		if err != nil {
-			return err
-		}
-		_productCard, ok := proPtr.(*ProductCard)
-		if !ok {
-			return utils.Error{Message: "Ошибка преобразования продуктовой карточки"}
-		}
-		productCard = _productCard
-	} else {
-		productCard = input
-	}
-	if err := db.Model(&WebPageProductCard{}).Create(
-		&WebPageProductCard{WebPageId: productGroup.Id, ProductCardId: productCard.Id, Priority: priority}).Error; err != nil {
-		return err
-	}
-
-	account, err := GetAccount(productCard.AccountId)
-	if err == nil && account != nil {
-		event.AsyncFire(Event{}.ProductCardUpdated(account.Id, productCard.Id))
-	}
-
-	return nil
-}

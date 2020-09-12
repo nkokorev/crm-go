@@ -5,7 +5,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"log"
-	"time"
 )
 
 // Вид номенклатуры - ассортиментные группы продаваемых товаров.
@@ -13,16 +12,13 @@ type ProductType struct {
 	Id     		uint	`json:"id" gorm:"primaryKey"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	// code for scope routes (группы, категории....)
+	// ulun, corner, ... (может нужно кому)
 	Code 		*string `json:"code" gorm:"type:varchar(255);"`
 
+	// Улунский, угло-зачистной, шерстянной и т.д.
 	Name 		*string `json:"name" gorm:"type:varchar(255);"` 		// menu label - Чай, кофе, ..
-
-	// Страницы, на которых выводятся карточки товаров этой товарной группы
+	
 	Products 		[]Product 	`json:"products" gorm:"ForeignKey:TypeId;References:id;"`
-
-	CreatedAt 		time.Time `json:"created_at"`
-	UpdatedAt 		time.Time `json:"updated_at"`
 }
 
 // ############# Entity interface #############

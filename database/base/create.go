@@ -195,20 +195,22 @@ func RefreshTablesPart_I() {
 	// models.Role{}.PgSqlCreate()
 	models.ApiKey{}.PgSqlCreate()
 	models.Bank{}.PgSqlCreate()
+	models.Storage{}.PgSqlCreate()
 
 	models.WebSite{}.PgSqlCreate()
 	models.WebPage{}.PgSqlCreate()
 
 	models.PaymentAccount{}.PgSqlCreate()
 	models.Company{}.PgSqlCreate()
-
+	models.Manufacturer{}.PgSqlCreate()
 
 	models.ProductType{}.PgSqlCreate()
+	models.ProductCategory{}.PgSqlCreate()
 	models.Warehouse{}.PgSqlCreate()
 	models.Product{}.PgSqlCreate()
 	models.ProductCard{}.PgSqlCreate()
 	models.ProductCardProduct{}.PgSqlCreate()
-	models.WebPageProductCard{}.PgSqlCreate()
+	models.ProductCategoryProductCard{}.PgSqlCreate()
 	models.WarehouseItem{}.PgSqlCreate()
 
 
@@ -217,7 +219,7 @@ func RefreshTablesPart_I() {
 
 	models.EmailBox{}.PgSqlCreate()
 	models.EmailTemplate{}.PgSqlCreate()
-	models.Storage{}.PgSqlCreate()
+	// models.Storage{}.PgSqlCreate()
 	models.Article{}.PgSqlCreate()
 	models.HandlerItem{}.PgSqlCreate()
 	models.EventItem{}.PgSqlCreate()

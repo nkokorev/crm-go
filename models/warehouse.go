@@ -320,8 +320,12 @@ func (warehouse Warehouse) ProductRemove(product Product) error {
 		return utils.Error{Message: "Техническая ошибка: нельзя удалить продукт, он не найден"}
 	}
 
+	if warehouse.AccountId < 1 || product.Id < 1 || warehouse.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: account id || product id || warehouse id == nil"}
+	}
+
 	if err := db.Where("account_id = ? AND product_id = ? AND warehouse_id = ?", warehouse.AccountId, product.Id, warehouse.Id).Delete(
-		&WebPageProductCard{}).Error; err != nil {
+		&WarehouseItem{}).Error; err != nil {
 		return err
 	}
 

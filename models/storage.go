@@ -78,6 +78,8 @@ func (fs *Storage) AfterCreate(tx *gorm.DB) (error) {
 		event.AsyncFire(Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
 	case "product_cards":
 		event.AsyncFire(Event{}.ProductCardUpdated(fs.AccountId, uint(fs.OwnerID)))
+	case "manufactures":
+		event.AsyncFire(Event{}.ManufacturerUpdated(fs.AccountId, uint(fs.OwnerID)))
 	default:
 		event.AsyncFire(Event{}.StorageCreated(fs.AccountId, fs.Id))
 	}
@@ -94,6 +96,8 @@ func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
 		event.AsyncFire(Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
 	case "product_cards":
 		event.AsyncFire(Event{}.ProductCardUpdated(fs.AccountId, uint(fs.OwnerID)))
+	case "manufactures":
+		event.AsyncFire(Event{}.ManufacturerUpdated(fs.AccountId, uint(fs.OwnerID)))
 	default:
 		event.AsyncFire(Event{}.StorageUpdated(fs.AccountId, fs.Id))
 	}
@@ -110,6 +114,8 @@ func (fs *Storage) AfterDelete(tx *gorm.DB) (err error) {
 		event.AsyncFire(Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
 	case "product_cards":
 		event.AsyncFire(Event{}.ProductCardUpdated(fs.AccountId, uint(fs.OwnerID)))
+	case "manufactures":
+		event.AsyncFire(Event{}.ManufacturerUpdated(fs.AccountId, uint(fs.OwnerID)))
 	default:
 		event.AsyncFire(Event{}.StorageDeleted(fs.AccountId, fs.Id))
 	}
@@ -600,6 +606,24 @@ func (webPage WebPage) AppendAssociationImage(fs Entity) error {
 		}
 	} else {
 		if err := db.Model(&webPage).Association("Image").Append(file); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+func (manufacturer Manufacturer) AppendAssociationImage(fs Entity) error {
+	file, ok := fs.(*Storage)
+	if !ok {
+		return utils.Error{Message: "Не возможно добавить изображение"}
+	}
+
+	if file.Id > 0 {
+		if err := fs.update(map[string]interface{}{"owner_id":manufacturer.Id,"owner_type":"manufactures"},nil); err != nil {
+			return err
+		}
+	} else {
+		if err := db.Model(&manufacturer).Association("Image").Append(file); err != nil {
 			return err
 		}
 	}

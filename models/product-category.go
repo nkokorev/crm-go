@@ -29,8 +29,8 @@ type ProductCategory struct {
 	// Порядок отображения в текущей иерархии категории
 	Priority 			int		`json:"priority" gorm:"type:int;default:10;"`
 
-	// HasMany ...
-	// ProductCards 	[]ProductCard 	`json:"product_cards"`
+	// Карточки товаров
+	ProductCards 	[]ProductCard 	`json:"product_cards" gorm:"many2many:product_category_product_cards;"`
 
 	// Страницы, на которых выводятся карточки товаров этой товарной группы
 	// WebPages 		[]WebPage 	`json:"web_pages" gorm:"many2many:web_page_product_categories;"`
@@ -52,17 +52,15 @@ func (ProductCategory) PgSqlCreate() {
 		log.Fatal(err)
 	}
 	err := db.Exec("ALTER TABLE product_categories " +
-		"ADD CONSTRAINT product_categories_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
-		// "ADD CONSTRAINT product_categories_web_site_id_fkey FOREIGN KEY (web_site_id) REFERENCES web_sites(id) ON DELETE SET NULL ON UPDATE CASCADE," +
-		"ADD CONSTRAINT product_categories_web_site_id_fkey FOREIGN KEY (web_site_id) REFERENCES web_sites(id) ON DELETE SET NULL ON UPDATE CASCADE;").Error
+		"ADD CONSTRAINT product_categories_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
 
-	/*err = db.SetupJoinTable(&ProductCategory{}, "ProductCards", &WebPageProductCard{})
+	err = db.SetupJoinTable(&ProductCategory{}, "ProductCards", &ProductCategoryProductCard{})
 	if err != nil {
 		log.Fatal(err)
-	}*/
+	}
 }
 func (productCategory *ProductCategory) BeforeCreate(tx *gorm.DB) error {
 	productCategory.Id = 0
@@ -260,8 +258,8 @@ func (productCategory ProductCategory) AppendProductCard(input *ProductCard, opt
 	} else {
 		productCard = input
 	}
-	if err := db.Model(&WebPageProductCard{}).Create(
-		&WebPageProductCard{WebPageId: productCategory.Id, ProductCardId: productCard.Id, Priority: priority}).Error; err != nil {
+	if err := db.Model(&ProductCategoryProductCard{}).Create(
+		&ProductCategoryProductCard{ProductCategoryId: productCategory.Id, ProductCardId: productCard.Id, Priority: priority}).Error; err != nil {
 		return err
 	}
 

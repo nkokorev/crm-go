@@ -368,9 +368,9 @@ func (webSite WebSite) CreateProductWithProductCard(input Product, newCard Produ
 		return nil, err
 	}
 
-	if err = webPage.AppendProductCard(card);err != nil {
+	/*if err = webPage.AppendProductCard(card);err != nil {
 		return nil, err
-	}
+	}*/
 
 	return product, nil
 }

@@ -74,37 +74,33 @@ type Product struct {
 	// Тип продукта: улунский, красный (чай), углозачистной станок, шлифовальный станок
 	TypeId			*uint	`json:"payment_type_id" gorm:"type:int;"`
 	Type			ProductType `json:"product_type"`
-
-	// Тип вида номенклатуры: товар, услуга, сборный товар (комплект), упаковка (?)
-	// Тип формирования продукта: товар, услуга, сборный товар (комплект), упаковка (?)
-	// Дает возможность формировать 50гр чая => 50ед. товара N в граммах
-
-	// Сборный ли товар? Применяется только к payment_subject = commodity, excise и т.д.
-	IsKit			*bool 		`json:"is_kit" gorm:"type:bool;default:false"`
 	
 	// Список продуктов из которых составлен текущий. Это может быть как 1<>1, а может быть и нет (== составной товар)
-	WarehouseItems		[]WarehouseItem `json:"warehouse_items"`
-	Warehouses			[]Warehouse `json:"warehouses" gorm:"many2many:warehouse_item;"`
+	WarehouseItems	[]WarehouseItem `json:"warehouse_items"`
+	Warehouses		[]Warehouse `json:"warehouses" gorm:"many2many:warehouse_item;"`
+
+	// Сборный ли товар? При нем warehouse_items >= 1. Применяется только к payment_subject = commodity, excise и т.д.
+	IsKit			*bool 		`json:"is_kit" gorm:"type:bool;default:false"`
 
 	// Ед. измерения товара: штуки, метры, литры, граммы и т.д.  !!!!
 	UnitMeasurementId 		uint	`json:"unit_measurement_id" gorm:"type:int;default:1;"` // тип измерения
 	UnitMeasurement 		UnitMeasurement `json:"unit_measurement"`// Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 
-	// Основные атрибуты (Можно и в атрибуты)
-	Length 	float64 `json:"length" gorm:"type:numeric;"`
-	Width 	float64 `json:"width" gorm:"type:numeric;"`
-	Height 	float64 `json:"height" gorm:"type:numeric;"`
-	Weight 	float64 `json:"weight" gorm:"type:numeric;"`
+	// Основные атрибуты для расчета (Можно и в атрибуты)
+	Length 	*float64 `json:"length" gorm:"type:numeric;"`
+	Width 	*float64 `json:"width" gorm:"type:numeric;"`
+	Height 	*float64 `json:"height" gorm:"type:numeric;"`
+	Weight 	*float64 `json:"weight" gorm:"type:numeric;"`
 
 	// Производитель (не поставщик)
-	ManufacturerId	*uint	`json:"manufacturer_id" gorm:"type:int;"`
-	Manufacturer	Company `json:"manufacturer"`
+	ManufacturerId	*uint		`json:"manufacturer_id" gorm:"type:int;"`
+	Manufacturer	Manufacturer `json:"manufacturer"`
 
 	// Дата изготовления, дата выпуска, дата производства
-	ManufactureDate	*time.Time `json:"manufacture_date"`
+	ManufactureDate	*time.Time 	`json:"manufacture_date"`
 
 	// Срок годности, срок хранения (?)
-	ShelfLife	*time.Time 	`json:"shelf_life"`
+	ShelfLife		*time.Time 	`json:"shelf_life"`
 
 	//  == признак предмета расчета - товар, услуга, работа, набор (комплект) = сборный товар
 	// Признак предмета расчета (бухучет - № 54-ФЗ)
@@ -114,9 +110,6 @@ type Product struct {
 	// Ставка НДС или учет НДС (бухучет)
 	VatCodeId	uint	`json:"vat_code_id" gorm:"type:int;default:1;"`// товар или услуга ? [вид номенклатуры]
 	VatCode		VatCode	`json:"vat_code"`
-
-	// товар или услуга ? [вид номенклатуры]
-	// сборно-разборный товар...
 
 	ShortDescription 	string 	`json:"short_description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 	Description 		string 	`json:"description" gorm:"type:text;"` // pgsql: text
@@ -138,13 +131,13 @@ type Product struct {
 	// Video []Video // видеообзоры по товару на ютубе
 
 	// Список поставок товара, в которых он был
-	Shipments 			[]Shipment 	`json:"shipments" gorm:"many2many:shipment_products"`
+	Shipments 		[]Shipment 	`json:"shipments" gorm:"many2many:shipment_products"`
 
-	// Объем поставки товара
-	ShipmentProduct 	[]ShipmentProduct 	`json:"shipment_product"`
+	// История поставок товара в деталях
+	ShipmentProduct []ShipmentProduct 	`json:"shipment_product"`
 
-	Account Account `json:"-"`
-	ProductCards []ProductCard `json:"product_cards" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
+	Account 		Account 		`json:"-"`
+	ProductCards 	[]ProductCard 	`json:"product_cards" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
 }
 
 func (Product) PgSqlCreate() {

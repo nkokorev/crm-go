@@ -41,7 +41,7 @@ type User struct {
 	SubscriptionReason	*string 	`json:"subscription_reason" gorm:"type:varchar(32);"`
 
 	// deprecated!!
-	UnsubscribedReason	string `json:"unsubscribedReason" gorm:"default:null"` // << see mta-bounced...
+	// UnsubscribedReason	*string `json:"unsubscribedReason" gorm:"default:null"` // << see mta-bounced...
 
 	DefaultAccountId 	*uint 	`json:"default_account_id"` // указывает какой аккаунт по дефолту загружать
 	// InvitedUserId 		*uint 	`json:"invited_user_id"` // кто его пригласил

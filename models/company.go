@@ -54,6 +54,9 @@ type Company struct {
 	// Фактический адрес
 	ActualAddress 	*string `json:"actual_address" gorm:"type:varchar(255);"`
 
+	// Адрес веб сайта
+	WebSite		*string `json:"web_site" gorm:"type:varchar(255);"`
+
 	// Если это поставщик чего-либо и ему нужно красивое описание
 	Description	*string `json:"description" gorm:"type:text;"`
 
