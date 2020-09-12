@@ -48,6 +48,17 @@ func (Event) ProductCardDeleted(accountId, productCardId uint) event.Event {
 	return event.NewBasic("ProductCardDeleted", map[string]interface{}{"accountId":accountId, "productCardId":productCardId})
 }
 
+// ######### ProductCategory #########
+func (Event) ProductCategoryCreated(accountId, productCategoryId uint) event.Event {
+	return event.NewBasic("ProductCategoryCreated", map[string]interface{}{"accountId":accountId, "productCategoryId":productCategoryId})
+}
+func (Event) ProductCategoryUpdated(accountId, productCategoryId uint) event.Event {
+	return event.NewBasic("ProductCategoryUpdated", map[string]interface{}{"accountId":accountId, "productCategoryId":productCategoryId})
+}
+func (Event) ProductCategoryDeleted(accountId, productCategoryId uint) event.Event {
+	return event.NewBasic("ProductCategoryDeleted", map[string]interface{}{"accountId":accountId, "productCategoryId":productCategoryId})
+}
+
 // ######### Storage #########
 func (Event) StorageCreated(accountId, storageId uint) event.Event {
 	return event.NewBasic("StorageCreated", map[string]interface{}{"accountId":accountId, "storageId":storageId})

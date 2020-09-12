@@ -7,46 +7,33 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"log"
-	"time"
 )
 
 // Вид номенклатуры - ассортиментные группы продаваемых товаров.
+// Product <> ProductCard <> ProductCategory <> WebPage .
+// Смысл в том, что одна страница может объединять несколько Категорий: "Новинки"; "Популярное".
 type ProductCategory struct {
 	Id     		uint	`json:"id" gorm:"primaryKey"`
 	PublicId	uint	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 	ParentId 	uint	`json:"parent_id"`
 
-	// code for scope routes (группы, категории....)
+	// Наименование категории: Шу Пуэр, Красный чай, Пуэр, ...
+	Label 		*string `json:"label" gorm:"type:varchar(255);"`
+	
+	// Код категории для выборки (возможно), unique ( в рамках account)
 	Code 		*string `json:"code" gorm:"type:varchar(255);"`
 
-	// Routing
-	Path 		*string `json:"path" gorm:"type:varchar(255);"`			// Имя пути - catalog, cat, /, ..
-	Label 		*string `json:"label" gorm:"type:varchar(255);"` 		// menu label - Чай, кофе, ..
-	RouteName 	*string `json:"route_name" gorm:"type:varchar(50);"` 	// route name: delivery, info.index, cart
-	IconName 	*string `json:"icon_name" gorm:"type:varchar(50);"` 	// icon name
-
-	// Порядок отображения в текущей иерархии категории
-	Priority 			int		`json:"priority" gorm:"type:int;default:10;"`
+	// Приоритет отображения категории на странице
+	// todo: доработать формат отображения... смешанный, по порядку и т.д.
+	Priority	int		`json:"priority" gorm:"type:int;default:10;"`
 
 	// Карточки товаров
 	ProductCards 	[]ProductCard 	`json:"product_cards" gorm:"many2many:product_category_product_cards;"`
 
 	// Страницы, на которых выводятся карточки товаров этой товарной группы
-	// WebPages 		[]WebPage 	`json:"web_pages" gorm:"many2many:web_page_product_categories;"`
-
-	CreatedAt 		time.Time `json:"created_at"`
-	UpdatedAt 		time.Time `json:"updated_at"`
+	WebPages 		[]WebPage 	`json:"web_pages" gorm:"many2many:web_page_product_categories;"`
 }
-
-// ############# Entity interface #############
-func (productCategory ProductCategory) GetId() uint { return productCategory.Id }
-func (productCategory *ProductCategory) setId(id uint) { productCategory.Id = id }
-func (productCategory *ProductCategory) setPublicId(publicId uint) { productCategory.PublicId = publicId }
-func (productCategory ProductCategory) GetAccountId() uint { return productCategory.AccountId }
-func (productCategory *ProductCategory) setAccountId(id uint) { productCategory.AccountId = id }
-func (ProductCategory) SystemEntity() bool { return false }
-// ############# End Entity interface #############
 func (ProductCategory) PgSqlCreate() {
 	if err := db.Migrator().CreateTable(&ProductCategory{}); err != nil {
 		log.Fatal(err)
@@ -61,7 +48,49 @@ func (ProductCategory) PgSqlCreate() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	err = db.SetupJoinTable(&ProductCategory{}, "WebPages", &WebPageProductCategories{})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
+func (productCategory *ProductCategory) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(productCategory)
+	} else {
+		_db = _db.Model(&ProductCategory{})
+	}
+
+	if autoPreload {
+		return _db.Preload(clause.Associations)
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Image","ProductCards","WebPages"})
+
+		for _,v := range allowed {
+			if v == "Image" {
+				_db.Preload("Image", func(db *gorm.DB) *gorm.DB {
+					return db.Select(Storage{}.SelectArrayWithoutDataURL())
+				})
+			} else {
+				_db.Preload(v)
+			}
+		}
+		return _db
+	}
+}
+
+// ############# Entity interface #############
+func (productCategory ProductCategory) GetId() uint { return productCategory.Id }
+func (productCategory *ProductCategory) setId(id uint) { productCategory.Id = id }
+func (productCategory *ProductCategory) setPublicId(publicId uint) { productCategory.PublicId = publicId }
+func (productCategory ProductCategory) GetAccountId() uint { return productCategory.AccountId }
+func (productCategory *ProductCategory) setAccountId(id uint) { productCategory.AccountId = id }
+func (ProductCategory) SystemEntity() bool { return false }
+// ############# End Entity interface #############
+
 func (productCategory *ProductCategory) BeforeCreate(tx *gorm.DB) error {
 	productCategory.Id = 0
 	
@@ -179,6 +208,7 @@ func (ProductCategory) getPaginationList(accountId uint, offset, limit int, sort
 func (productCategory *ProductCategory) update(input map[string]interface{}, preloads []string) error {
 
 	delete(input,"image")
+	delete(input,"web_pages")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","priority","web_site_id"}); err != nil {
 		return err
@@ -202,62 +232,27 @@ func (productCategory *ProductCategory) delete () error {
 }
 // ######### END CRUD Functions ############
 
-func (productCategory *ProductCategory) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
 
-	_db := db
-
-	if getModel {
-		_db = _db.Model(productCategory)
-	} else {
-		_db = _db.Model(&ProductCategory{})
-	}
-
-	if autoPreload {
-		return _db.Preload(clause.Associations)
-	} else {
-
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Image","ProductCards"})
-
-		for _,v := range allowed {
-			if v == "Image" {
-				_db.Preload("Image", func(db *gorm.DB) *gorm.DB {
-					return db.Select(Storage{}.SelectArrayWithoutDataURL())
-				})
-			} else {
-				_db.Preload(v)
-			}
-		}
-		return _db
-	}
-}
 func (productCategory ProductCategory) CreateChild(wp ProductCategory) (Entity, error){
 	wp.ParentId = productCategory.Id
-
+	wp.AccountId = productCategory.AccountId
 	_webPage, err := wp.create()
 	if err != nil {return nil, err}
 
 	return _webPage, nil
 }
-func (productCategory ProductCategory) AppendProductCard(input *ProductCard, optPriority... int) error {
+func (productCategory ProductCategory) AppendProductCard(productCard *ProductCard, optPriority... int) error {
 
 	priority := 10
 	if len(optPriority) > 0 {
 		priority = optPriority[0]
 	}
-	var productCard *ProductCard
-	if input.Id < 1 {
-		proPtr, err := input.create()
-		if err != nil {
-			return err
-		}
-		_productCard, ok := proPtr.(*ProductCard)
-		if !ok {
-			return utils.Error{Message: "Ошибка преобразования продуктовой карточки"}
-		}
-		productCard = _productCard
-	} else {
-		productCard = input
+
+	if productCard.Id < 1 {
+		return utils.Error{Message: "Не создана продуктовая карточка"}
 	}
+
+
 	if err := db.Model(&ProductCategoryProductCard{}).Create(
 		&ProductCategoryProductCard{ProductCategoryId: productCategory.Id, ProductCardId: productCard.Id, Priority: priority}).Error; err != nil {
 		return err
@@ -266,6 +261,35 @@ func (productCategory ProductCategory) AppendProductCard(input *ProductCard, opt
 	account, err := GetAccount(productCard.AccountId)
 	if err == nil && account != nil {
 		event.AsyncFire(Event{}.ProductCardUpdated(account.Id, productCard.Id))
+		event.AsyncFire(Event{}.ProductCategoryUpdated(account.Id, productCard.Id))
+	}
+
+	return nil
+}
+
+func (productCategory ProductCategory) RemoveProductCard(productCard ProductCard) error {
+
+	// Загружаем еще раз
+	if err := productCard.load(nil); err != nil {
+		return err
+	}
+
+	//
+
+	if productCategory.AccountId < 1 || productCard.Id < 1  || productCategory.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: account id || product card id || product category id == nil"}
+	}
+
+	if err := db.Where("account_id = ? AND product_card_id = ? AND product_category_id = ?", productCategory.AccountId, productCard.Id, productCategory.Id).Delete(
+		&ProductCategoryProductCard{}).Error; err != nil {
+		return err
+	}
+
+
+	account, err := GetAccount(productCard.AccountId)
+	if err == nil && account != nil {
+		event.AsyncFire(Event{}.ProductCardUpdated(account.Id, productCard.Id))
+		event.AsyncFire(Event{}.ProductCategoryUpdated(account.Id, productCard.Id))
 	}
 
 	return nil

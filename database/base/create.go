@@ -211,6 +211,8 @@ func RefreshTablesPart_I() {
 	models.ProductCard{}.PgSqlCreate()
 	models.ProductCardProduct{}.PgSqlCreate()
 	models.ProductCategoryProductCard{}.PgSqlCreate()
+	models.WebPageProductCategories{}.PgSqlCreate()
+
 	models.WarehouseItem{}.PgSqlCreate()
 
 
@@ -1040,8 +1042,6 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 
 	///////////////////////////////////////
 
-
-
 	///////////////////////////////////////
 	// 4. !!! Создаем магазин
 	airoShopE, err := airoClimat.CreateEntity(
@@ -1113,9 +1113,9 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		return
 	}
 
-	webCatalogRoot := catE.(*models.WebPage)
+	webPageCatalogRoot := catE.(*models.WebPage)
 
-	catGr1, err := webCatalogRoot.CreateChild(models.WebPage{
+	_webPageCatalog1, err := webPageCatalogRoot.CreateChild(models.WebPage{
 		AccountId: airoClimat.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Бактерицидные рециркуляторы"), Path:  utils.STRp("bactericidal-recirculators"),
 		MetaTitle: utils.STRp("Бактерицидные рециркуляторы :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
 		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.recirculators"),
@@ -1124,7 +1124,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 		return
 	}
-	catGr2, err := webCatalogRoot.CreateChild(models.WebPage{
+	webPageCatalog1 := _webPageCatalog1.(*models.WebPage)
+	_webPageCatalog2, err := webPageCatalogRoot.CreateChild(models.WebPage{
 		AccountId: airoClimat.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Бактерицидные камеры"), Path:  utils.STRp("bactericidal-chambers"),
 		MetaTitle: utils.STRp("Бактерицидные камеры :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
 		IconName:  utils.STRp("far fa-box-full"), RouteName:  utils.STRp("catalog.chambers"),
@@ -1133,6 +1134,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 		return
 	}
+	webPageCatalog2 := _webPageCatalog2.(*models.WebPage)
 
 	//////////////
 
@@ -1209,6 +1211,41 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
 	}
 
+	// 5* Создаем категории товаров
+
+	_CategoryRoot, err := airoClimat.CreateEntity(&models.ProductCategory{
+		Code:  utils.STRp("catalog"), Label: utils.STRp("Каталог"),
+	})
+	CategoryRoot := _CategoryRoot.(*models.ProductCategory)
+
+	_catGr1, err := CategoryRoot.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("bactericidal-recirculators"), Label: utils.STRp("Бактерицидные рециркуляторы"),
+	})
+	catGr1 := _catGr1.(*models.ProductCategory)
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
+		return
+	}
+	_catGr2, err := CategoryRoot.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("bactericidal-chambers"), Label: utils.STRp("Бактерицидные камеры"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
+		return
+	}
+	catGr2 := _catGr2.(*models.ProductCategory)
+
+	// А можно добавить категорию 1 и категорию 2
+	if err := webPageCatalogRoot.AppendProductCategory(CategoryRoot); err != nil {
+		log.Fatal(err)
+	}
+	if err := webPageCatalog1.AppendProductCategory(catGr1); err != nil {
+		log.Fatal(err)
+	}
+	if err := webPageCatalog2.AppendProductCategory(catGr2); err != nil {
+		log.Fatal(err)
+	}
+
 	// 6. Создаем карточки товара
 	cards := []models.ProductCard{
 		{Id: 0, Path: utils.STRp("airo-dez-adjustable-black"),	Label: utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой"),Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой"), 	MetaTitle:  utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой")},
@@ -1227,6 +1264,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 
 		{Id: 0, Path: utils.STRp("airo-deztumb-pine"), 			Label: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"),	Breadcrumb: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"), MetaTitle: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина")},
 	}
+
 
 	//metadata := json.RawMessage(`{"color": "white", "bodyMaterial": "металл", "filterType": "угольно-фотокаталитический"}`)
 
@@ -1561,17 +1599,17 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	// 7. Добавляем продукты в категории с созданием карточки товара
 	for i,_ := range products {
 		// var groupId uint
-		var webPage models.WebPage
+		var productCategory models.ProductCategory
 		if i < 4 {
 			// groupId = catGr1.GetId()
-			webPage = *catGr1.(*models.WebPage)
+			productCategory = *catGr1
 		} else {
 			// groupId = catGr2.GetId()
-			webPage = *catGr2.(*models.WebPage)
+			productCategory = *catGr2
 		}
 		
 		// создаем товар, карточку товара и добавляем их в группу
-		_, err = webSiteAiro.CreateProductWithProductCard(products[i], cards[i], webPage)
+		_, err = webSiteAiro.CreateProductWithProductCard(products[i], cards[i], productCategory)
 		if err != nil {
 			log.Fatal("Не удалось создать Product для airoClimat: ", err)
 		}

@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -39,7 +40,7 @@ type WebPage struct {
 
 	// У страницы может быть картинка превью.. - например, для раздела услуг
 	Image 			*Storage	`json:"image" gorm:"polymorphic:Owner;"`
-	// ProductCategories	[]ProductCategory 	`json:"product_categories" gorm:"many2many:web_page_product_categories;"`
+	ProductCategories	[]ProductCategory 	`json:"product_categories" gorm:"many2many:web_page_product_categories;"`
 
 	// Если страница временная (ну мало ли!)
 	ExpiredAt 		*time.Time  `json:"expired_at"`
@@ -48,14 +49,6 @@ type WebPage struct {
 	UpdatedAt 		time.Time `json:"updated_at"`
 }
 
-// ############# Entity interface #############
-func (webPage WebPage) GetId() uint { return webPage.Id }
-func (webPage *WebPage) setId(id uint) { webPage.Id = id }
-func (webPage *WebPage) setPublicId(publicId uint) { webPage.PublicId = publicId }
-func (webPage WebPage) GetAccountId() uint { return webPage.AccountId }
-func (webPage *WebPage) setAccountId(id uint) { webPage.AccountId = id }
-func (WebPage) SystemEntity() bool { return false }
-// ############# End Entity interface #############
 func (WebPage) PgSqlCreate() {
 	if err := db.Migrator().CreateTable(&WebPage{}); err != nil {
 		log.Fatal(err)
@@ -71,10 +64,45 @@ func (WebPage) PgSqlCreate() {
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
+
+	err = db.SetupJoinTable(&WebPage{}, "ProductCategories", &WebPageProductCategories{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+func (webPage *WebPage) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(webPage)
+	} else {
+		_db = _db.Model(&WebPage{})
+	}
+
+	if autoPreload {
+		return _db.Preload(clause.Associations)
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Image","ProductCategories"})
+
+		for _,v := range allowed {
+			if v == "Image" {
+				_db.Preload("Image", func(db *gorm.DB) *gorm.DB {
+					return db.Select(Storage{}.SelectArrayWithoutDataURL())
+				})
+			} else {
+				_db.Preload(v)
+			}
+		}
+		return _db
+	}
 }
 func (webPage *WebPage) BeforeCreate(tx *gorm.DB) error {
 	webPage.Id = 0
-	
+
 	// PublicId
 	var lastIdx sql.NullInt64
 	err := db.Model(&WebPage{}).Where("account_id = ?",  webPage.AccountId).
@@ -88,6 +116,16 @@ func (webPage *WebPage) AfterFind(tx *gorm.DB) (err error) {
 
 	return nil
 }
+
+// ############# Entity interface #############
+func (webPage WebPage) GetId() uint { return webPage.Id }
+func (webPage *WebPage) setId(id uint) { webPage.Id = id }
+func (webPage *WebPage) setPublicId(publicId uint) { webPage.PublicId = publicId }
+func (webPage WebPage) GetAccountId() uint { return webPage.AccountId }
+func (webPage *WebPage) setAccountId(id uint) { webPage.AccountId = id }
+func (WebPage) SystemEntity() bool { return false }
+// ############# End Entity interface #############
+
 // ######### CRUD Functions ############
 func (webPage WebPage) create() (Entity, error)  {
 
@@ -189,6 +227,7 @@ func (WebPage) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 func (webPage *WebPage) update(input map[string]interface{}, preloads []string) error {
 
 	delete(input,"image")
+	delete(input,"product_categories")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","priority","web_site_id"}); err != nil {
 		return err
@@ -212,34 +251,6 @@ func (webPage *WebPage) delete () error {
 }
 // ######### END CRUD Functions ############
 
-func (webPage *WebPage) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
-
-	_db := db
-
-	if getModel {
-		_db = _db.Model(webPage)
-	} else {
-		_db = _db.Model(&WebPage{})
-	}
-
-	if autoPreload {
-		return _db.Preload(clause.Associations)
-	} else {
-
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Image","ProductCategories"})
-
-		for _,v := range allowed {
-			if v == "Image" {
-				_db.Preload("Image", func(db *gorm.DB) *gorm.DB {
-					return db.Select(Storage{}.SelectArrayWithoutDataURL())
-				})
-			} else {
-				_db.Preload(v)
-			}
-		}
-		return _db
-	}
-}
 func (webPage WebPage) CreateChild(wp WebPage) (Entity, error){
 	wp.ParentId = webPage.Id
 	wp.WebSiteId = webPage.WebSiteId
@@ -249,12 +260,55 @@ func (webPage WebPage) CreateChild(wp WebPage) (Entity, error){
 
 	return _webPage, nil
 }
-func (webPage WebPage) AppendProductCategory(category *ProductCategory, optPriority... int) error {
+func (webPage WebPage) AppendProductCategory(productCategory *ProductCategory, optPriority... int) error {
 
-	/*account, err := GetAccount(productCard.AccountId)
+	priority := 10
+	if len(optPriority) > 0 {
+		priority = optPriority[0]
+	}
+
+	if productCategory.Id < 1 {
+		return utils.Error{Message: "Не создана категория продуктов"}
+	}
+
+
+	if err := db.Model(&WebPageProductCategories{}).Create(
+		&WebPageProductCategories{ProductCategoryId: productCategory.Id, WebPageId: webPage.Id, Priority: priority}).Error; err != nil {
+		return err
+	}
+
+	account, err := GetAccount(webPage.AccountId)
 	if err == nil && account != nil {
-		event.AsyncFire(Event{}.ProductCardUpdated(account.Id, productCard.Id))
-	}*/
+		event.AsyncFire(Event{}.WebPageUpdated(account.Id, webPage.Id))
+		event.AsyncFire(Event{}.ProductCategoryUpdated(account.Id, productCategory.Id))
+	}
+
+	return nil
+}
+func (webPage WebPage) RemoveProductCategory(productCategory ProductCategory) error {
+
+	// Загружаем еще раз
+	if err := productCategory.load(nil); err != nil {
+		return err
+	}
+
+	//
+
+	if webPage.AccountId < 1 || webPage.Id < 1  || productCategory.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: account id || product card id || product category id == nil"}
+	}
+
+	if err := db.Where("account_id = ? AND web_page_id = ? AND product_category_id = ?", webPage.AccountId, webPage.Id, productCategory.Id).Delete(
+		&WebPageProductCategories{}).Error; err != nil {
+		return err
+	}
+
+
+	account, err := GetAccount(webPage.AccountId)
+	if err == nil && account != nil {
+		event.AsyncFire(Event{}.WebPageUpdated(account.Id, webPage.Id))
+		event.AsyncFire(Event{}.ProductCategoryUpdated(account.Id, productCategory.Id))
+	}
 
 	return nil
 }

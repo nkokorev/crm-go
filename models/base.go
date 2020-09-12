@@ -163,5 +163,14 @@ func SettingsDb() error {
 		log.Fatal(err)
 	}
 
+	err = db.SetupJoinTable(&WebPage{}, "ProductCategories", &WebPageProductCategories{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.SetupJoinTable(&ProductCategory{}, "WebPages", &WebPageProductCategories{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return nil
 }

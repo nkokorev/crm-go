@@ -324,7 +324,7 @@ func (webSite WebSite) GetProduct(productId uint) (*Product, error) {
 
 	return product, nil
 }
-func (webSite WebSite) CreateProductWithProductCard(input Product, newCard ProductCard, webPage WebPage) (*Product, error) {
+func (webSite WebSite) CreateProductWithProductCard(input Product, newCard ProductCard, productCategory ProductCategory) (*Product, error) {
 	
 	input.AccountId = webSite.AccountId
 
@@ -368,9 +368,9 @@ func (webSite WebSite) CreateProductWithProductCard(input Product, newCard Produ
 		return nil, err
 	}
 
-	/*if err = webPage.AppendProductCard(card);err != nil {
+	if err = productCategory.AppendProductCard(card);err != nil {
 		return nil, err
-	}*/
+	}
 
 	return product, nil
 }
