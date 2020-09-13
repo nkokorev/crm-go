@@ -27,7 +27,9 @@ type Warehouse struct {
 	Email	 	*string `json:"email" gorm:"type:varchar(50);"`
 
 	// Описание склада
-	Description	*string `json:"description" gorm:"type:text;"`
+	Description	*string `json:"description" gorm:"type:varchar(255);"`
+
+	ProductCount	uint `json:"_product_count" gorm:"-"`
 
 	WarehouseItems	[]WarehouseItem `json:"warehouse_items"`
 	Products		[]Product 		`json:"products" gorm:"many2many:warehouse_item;"`
@@ -65,6 +67,7 @@ func (warehouse *Warehouse) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 func (warehouse *Warehouse) AfterFind(tx *gorm.DB) (err error) {
+	warehouse.ProductCount =  uint(db.Model(warehouse).Association("Products").Count())
 	return nil
 }
 func (warehouse *Warehouse) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
@@ -72,25 +75,19 @@ func (warehouse *Warehouse) GetPreloadDb(getModel bool, autoPreload bool, preloa
 	_db := db
 
 	if getModel {
-		_db = _db.Model(warehouse)
+		_db = db.Model(warehouse)
 	} else {
-		_db = _db.Model(&Warehouse{})
+		_db = db.Model(&Warehouse{})
 	}
 
 	if autoPreload {
-		return _db.Preload(clause.Associations)
+		return db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"WarehouseItems","Products"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"WarehouseItems","WarehouseItems.Product","Products"})
 
 		for _,v := range allowed {
-			if v == "Image" {
-				_db.Preload("Image", func(db *gorm.DB) *gorm.DB {
-					return db.Select(Storage{}.SelectArrayWithoutDataURL())
-				})
-			} else {
-				_db.Preload(v)
-			}
+			_db.Preload(v)
 		}
 		return _db
 	}
@@ -142,11 +139,12 @@ func (warehouse *Warehouse) load(preloads []string) error {
 	return nil
 }
 func (warehouse *Warehouse) loadByPublicId(preloads []string) error {
-	
-	if warehouse.PublicId < 1 {
+
+	if warehouse.PublicId < 1 || warehouse.AccountId < 1 {
 		return utils.Error{Message: "Невозможно загрузить Warehouse - не указан  Id"}
 	}
-	if err := warehouse.GetPreloadDb(false,false, preloads).First(warehouse, "account_id = ? AND public_id = ?", warehouse.AccountId, warehouse.PublicId).Error; err != nil {
+	if err := warehouse.GetPreloadDb(false,false, preloads).
+		First(warehouse, "account_id = ? AND public_id = ?", warehouse.AccountId, warehouse.PublicId).Error; err != nil {
 		return err
 	}
 
@@ -255,7 +253,7 @@ func (warehouse *Warehouse) Shipment(shipment Shipment, createIfNotExist bool) e
 
 		// Проверяем, если товар на складе
 		if !warehouse.ExistProduct(item.ProductId) {
-			if err := warehouse.ProductAppended(item.Product, 1); err != nil {
+			if err := warehouse.AppendProduct(item.Product, 1); err != nil {
 				log.Printf("Ошибка создания товара на складе: %v\n", err)
 				return err
 			}
@@ -288,7 +286,7 @@ func (warehouse *Warehouse) Shipment(shipment Shipment, createIfNotExist bool) e
 }
 
 // Добавить новую позицию товара
-func (warehouse Warehouse) ProductAppended(product Product, amountUnit float64) error {
+func (warehouse Warehouse) AppendProduct(product Product, amountUnit float64) error {
 
 	// 1. Загружаем продукт еще раз
 	if err := product.load(nil); err != nil {
@@ -313,7 +311,7 @@ func (warehouse Warehouse) ProductAppended(product Product, amountUnit float64) 
 	return nil
 }
 // Удалить со склада позицию товара
-func (warehouse Warehouse) ProductRemove(product Product) error {
+func (warehouse Warehouse) RemoveProduct(product Product) error {
 
 	// 1. Загружаем продукт еще раз
 	if err := product.load(nil); err != nil {

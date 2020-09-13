@@ -48,10 +48,9 @@ func FilterAllowedKeySTRArray(input []string, keys []string) []string {
 	for inK := range input {
 		for key := range keys {
 			if ToCamel(input[inK]) == ToCamel(keys[key]) {
-				retArr = append(retArr, ToCamel(keys[key]))
+				retArr = append(retArr, keys[key])
 			}
 		}
-
 	}
 	return retArr
 }

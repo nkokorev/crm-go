@@ -26,7 +26,7 @@ type WarehouseItem struct {
 	Reservation	float64 `json:"reservation" gorm:"type:numeric;"`
 
 	// Время хранения... - потом вызов уведомления (?)
-	ExpiredAt 	*time.Time  `json:"expired_at"`
+	ExpiredAt 	time.Time  `json:"expired_at"`
 
 	Product 	Product 	`json:"product"`
 	Warehouse 	Warehouse 	`json:"warehouse"`

@@ -126,13 +126,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-pages/{webPageId:[0-9]+}", appCr.WebPageUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-pages/{webPageId:[0-9]+}", appCr.WebPageDelete).Methods(http.MethodDelete, http.MethodOptions)
 
-	// ### Product Group ####
-	// rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups", appCr.ProductGroupCreate).Methods(http.MethodPost, http.MethodOptions)
-	// rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups", appCr.ProductGroupListPaginationByShopGet).Methods(http.MethodGet, http.MethodOptions)
-	// rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups/{productGroupId:[0-9]+}", appCr.ProductGroupByShopGet).Methods(http.MethodGet, http.MethodOptions)
-	// rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups/{productGroupId:[0-9]+}", appCr.ProductGroupUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	// rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/product-groups/{productGroupId:[0-9]+}", appCr.ProductGroupDelete).Methods(http.MethodDelete, http.MethodOptions)
-
+	// ### Product Cards ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards", appCr.ProductCardCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards", appCr.ProductCardListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards/{productCardId:[0-9]+}", appCr.ProductCardGet).Methods(http.MethodGet, http.MethodOptions)
@@ -141,6 +135,16 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards/{productCardId:[0-9]+}/products", appCr.ProductCardSyncProducts).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards/{productCardId:[0-9]+}/products/{productId:[0-9]+}", appCr.ProductCardAppendProduct).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards/{productCardId:[0-9]+}/products/{productId:[0-9]+}", appCr.ProductCardRemoveProduct).Methods(http.MethodDelete, http.MethodOptions)
+
+	// ### Warehouses ####
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses", appCr.WarehouseCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses", appCr.WarehouseListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}", appCr.WarehouseGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}", appCr.WarehouseUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}", appCr.WarehouseDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}/products/{productId:[0-9]+}", appCr.WarehouseAppendProduct).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}/products/{productId:[0-9]+}", appCr.WarehouseRemoveProduct).Methods(http.MethodDelete, http.MethodOptions)
+
 
 	// todo: byShop - сейчас косвенная принадлежность товаров к магазину не отслеживается
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products", appCr.ProductCreate).Methods(http.MethodPost, http.MethodOptions)
