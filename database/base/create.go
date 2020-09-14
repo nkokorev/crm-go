@@ -2360,6 +2360,7 @@ pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
 		log.Fatal("Не удалось создать MailBoxes для Синдиката: ", err)
 	}
 
+	fmt.Println("Загрузка данных закончена")
 
 	return
 

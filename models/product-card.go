@@ -235,7 +235,7 @@ func (productCard *ProductCard) update(input map[string]interface{}, preloads []
 
 	delete(input,"images")
 	delete(input,"products")
-	delete(input,"web_pages")
+	delete(input,"product_categories")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","web_site_id","web_page_id"}); err != nil {
 		return err

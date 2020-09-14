@@ -238,7 +238,7 @@ func ProductCardSyncProducts(w http.ResponseWriter, r *http.Request) {
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	productCard := models.ProductCard{}
-	if err =account.LoadEntity(&productCard, productCardId, nil); err != nil {
+	if err =account.LoadEntity(&productCard, productCardId, preloads); err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Карточка товара"}))
 		return
 	}
@@ -257,14 +257,14 @@ func ProductCardSyncProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_productCard := models.ProductCard{}
+/*	_productCard := models.ProductCard{}
 	if err = account.LoadEntity(&_productCard, productCardId, preloads); err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Карточка товара"}))
 		return
-	}
+	}*/
 
-	resp := u.Message(true, "PATCH EmailQueueEmailTemplate MassUpdates")
-	resp["product_card"] = _productCard
+	resp := u.Message(true, "PATCH Product Card MassUpdates")
+	resp["product_card"] = productCard
 	u.Respond(w, resp)
 }
 

@@ -72,12 +72,12 @@ type Product struct {
 	// ProductGroup	ProductGroup `json:"product_group"`
 
 	// Тип продукта: улунский, красный (чай), углозачистной станок, шлифовальный станок
-	TypeId			*uint	`json:"payment_type_id" gorm:"type:int;"`
-	Type			ProductType `json:"product_type"`
+	ProductTypeId		*uint		`json:"product_type_id" gorm:"type:int;"`
+	ProductType			ProductType `json:"product_type"`
 	
 	// Список продуктов из которых составлен текущий. Это может быть как 1<>1, а может быть и нет (== составной товар)
 	WarehouseItems	[]WarehouseItem `json:"warehouse_items"`
-	Warehouses		[]Warehouse `json:"warehouses" gorm:"many2many:warehouse_item;"`
+	Warehouses		[]Warehouse 	`json:"warehouses" gorm:"many2many:warehouse_item;"`
 
 	// Сборный ли товар? При нем warehouse_items >= 1. Применяется только к payment_subject = commodity, excise и т.д.
 	IsKit			*bool 		`json:"is_kit" gorm:"type:bool;default:false"`
@@ -134,7 +134,7 @@ type Product struct {
 	Shipments 		[]Shipment 	`json:"shipments" gorm:"many2many:shipment_products"`
 
 	// История поставок товара в деталях
-	ShipmentProduct []ShipmentProduct 	`json:"shipment_product"`
+	ShipmentProducts []ShipmentProduct 	`json:"shipment_products"`
 
 	Account 		Account 		`json:"-"`
 	ProductCards 	[]ProductCard 	`json:"product_cards" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
@@ -326,6 +326,12 @@ func (product *Product) update(input map[string]interface{}, preloads []string) 
 	delete(input,"account")
 	delete(input,"product_cards")
 	delete(input,"vat_code")
+	delete(input,"manufacturer")
+	delete(input,"product_type")
+	delete(input,"shipments")
+	delete(input,"shipment_products")
+	delete(input,"warehouse_items")
+	delete(input,"warehouses")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","payment_subject_id","vat_code_id","unit_measurement_id"}); err != nil {
 		return err

@@ -18,7 +18,7 @@ type ProductType struct {
 	// Улунский, угло-зачистной, шерстянной и т.д.
 	Name 		*string `json:"name" gorm:"type:varchar(255);"` 		// menu label - Чай, кофе, ..
 	
-	Products 		[]Product 	`json:"products" gorm:"ForeignKey:TypeId;References:id;"`
+	Products 	[]Product 	`json:"products" gorm:"ForeignKey:ProductTypeId;References:id;"`
 }
 
 // ############# Entity interface #############
