@@ -2,14 +2,13 @@ package appCr
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
 )
 
-func ProductCardCreate(w http.ResponseWriter, r *http.Request) {
+func InventoryCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil {
@@ -19,7 +18,7 @@ func ProductCardCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Get JSON-request
 	var input struct{
-		models.ProductCard
+		models.Inventory
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -27,56 +26,56 @@ func ProductCardCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productCard, err := account.CreateEntity(&input.ProductCard)
+	inventory, err := account.CreateEntity(&input.Inventory)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания"}))
 		return
 	}
 
-	resp := u.Message(true, "POST ProductCard Created")
-	resp["product_card"] = productCard
+	resp := u.Message(true, "POST Inventory Created")
+	resp["inventory"] = inventory
 	u.Respond(w, resp)
 }
 
-func ProductCardGet(w http.ResponseWriter, r *http.Request) {
+func InventoryGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	inventoryId, err := utilsCr.GetUINTVarFromRequest(r, "inventoryId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке productCard Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке inventory Id"))
 		return
 	}
 
-	var productCard models.ProductCard
+	var inventory models.Inventory
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	// 2. Узнаем, какой id учитывается нужен
 	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
-		err = account.LoadEntityByPublicId(&productCard, productCardId,preloads)
+		err = account.LoadEntityByPublicId(&inventory, inventoryId,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	} else {
-		err = account.LoadEntity(&productCard, productCardId,preloads)
+		err = account.LoadEntity(&inventory, inventoryId,preloads)
 		if err != nil {
-			fmt.Println(err)
 			u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
 			return
 		}
 	}
 
-	resp := u.Message(true, "GET ProductCard")
-	resp["product_card"] = productCard
+	resp := u.Message(true, "GET Inventory")
+	resp["inventory"] = inventory
 	u.Respond(w, resp)
 }
 
-func ProductCardListPaginationGet(w http.ResponseWriter, r *http.Request) {
+func InventoryListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
@@ -114,23 +113,24 @@ func ProductCardListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 	// Узнаем нужен ли фильтр
 	filter := map[string]interface{}{}
+	/*
 	webSiteId, _filterWebSite := utilsCr.GetQueryUINTVarFromGET(r, "webSiteId")
 	if _filterWebSite {
 		filter["web_site_id"] = webSiteId
-	}
+	}*/
 
 	var total int64 = 0
-	productCards := make([]models.Entity,0)
+	inventorys := make([]models.Entity,0)
 
 	if all && len(filter) < 1{
-		productCards, total, err = account.GetListEntity(&models.ProductCard{}, sortBy,preloads)
+		inventorys, total, err = account.GetListEntity(&models.Inventory{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список страниц"))
 			return
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		productCards, total, err = account.GetPaginationListEntity(&models.ProductCard{}, offset, limit, sortBy, search, filter,preloads)
+		inventorys, total, err = account.GetPaginationListEntity(&models.Inventory{}, offset, limit, sortBy, search, filter,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список страниц"))
 			return
@@ -138,12 +138,12 @@ func ProductCardListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	resp := u.Message(true, "GET product Cards PaginationList")
-	resp["product_cards"] = productCards
+	resp["inventorys"] = inventorys
 	resp["total"] = total
 	u.Respond(w, resp)
 }
 
-func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
+func InventoryUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -151,15 +151,15 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	inventoryId, err := utilsCr.GetUINTVarFromRequest(r, "inventoryId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
-	var productCard models.ProductCard
+	var inventory models.Inventory
 
-	err = account.LoadEntity(&productCard, productCardId,nil)
+	err = account.LoadEntity(&inventory, inventoryId,nil)
 
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
@@ -173,25 +173,18 @@ func ProductCardUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// fix variables
-	/*if err := u.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}*/
-
-	// productCard, err := account.UpdateProductCard(productCardId, &input.ProductCard)
-	err = account.UpdateEntity(&productCard, input,preloads)
+	err = account.UpdateEntity(&inventory, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH ProductCard Update")
-	resp["product_card"] = productCard
+	resp := u.Message(true, "PATCH Inventory Update")
+	resp["inventory"] = inventory
 	u.Respond(w, resp)
 }
 
-func ProductCardDelete(w http.ResponseWriter, r *http.Request) {
+func InventoryDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -199,29 +192,28 @@ func ProductCardDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	inventoryId, err := utilsCr.GetUINTVarFromRequest(r, "inventoryId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	var productCard models.ProductCard
-	err = account.LoadEntity(&productCard, productCardId,nil)
+	var inventory models.Inventory
+	err = account.LoadEntity(&inventory, inventoryId,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
 		return
 	}
 
-	if err = account.DeleteEntity(&productCard); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении карточки товара"))
+	if err = account.DeleteEntity(&inventory); err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении инвентаризации"))
 		return
 	}
 
-	resp := u.Message(true, "DELETE ProductCard Successful")
+	resp := u.Message(true, "DELETE Inventory Successful")
 	u.Respond(w, resp)
 }
-
-func ProductCardSyncProducts(w http.ResponseWriter, r *http.Request) {
+func InventoryAppendProduct(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -229,46 +221,58 @@ func ProductCardSyncProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	inventoryId, err := utilsCr.GetUINTVarFromRequest(r, "inventoryId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailQueueId"))
 		return
 	}
 
-	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
-
-	productCard := models.ProductCard{}
-	if err =account.LoadEntity(&productCard, productCardId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Карточка товара"}))
+	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
 		return
 	}
 
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	var inventory models.Inventory
+	if err =account.LoadEntity(&inventory, inventoryId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке карточки товара"}))
+		return
+	}
+
+	product := models.Product{}
+	if err =account.LoadEntity(&product, productId, nil); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
+		return
+	}
+
+	// Декодируем параметры
 	var input struct{
-		Products []models.Product `json:"products"`
+		volumeFact float64 `json:"volume_fact"`
 	}
+
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 1"))
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	if err = productCard.SyncProductByIds(input.Products); err !=nil {
-		fmt.Println(err)
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 2"))
+	if err = inventory.AppendProduct(product, input.volumeFact); err !=nil {
+		u.Respond(w, u.MessageError(err, "Ошибка добавления продукта"))
 		return
 	}
 
-/*	_productCard := models.ProductCard{}
-	if err = account.LoadEntity(&_productCard, productCardId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Карточка товара"}))
+	if err = account.LoadEntity(&inventory, inventoryId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка загрузки инвентаризации склада"}))
 		return
-	}*/
+	}
 
-	resp := u.Message(true, "PATCH Product Card MassUpdates")
-	resp["product_card"] = productCard
+	resp := u.Message(true, "PATCH Inventory Append Product")
+	resp["inventory"] = inventory
 	u.Respond(w, resp)
 }
 
-func ProductCardRemoveProduct(w http.ResponseWriter, r *http.Request) {
+func InventoryRemoveProduct(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -276,7 +280,7 @@ func ProductCardRemoveProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	inventoryId, err := utilsCr.GetUINTVarFromRequest(r, "inventoryId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailQueueId"))
 		return
@@ -287,90 +291,34 @@ func ProductCardRemoveProduct(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
 		return
 	}
-
-	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
-
-	var productCard models.ProductCard
-	if err =account.LoadEntity(&productCard, productCardId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке карточки товара"}))
-		return
-	}
-
 	product := models.Product{}
 	if err =account.LoadEntity(&product, productId, nil); err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
 		return
 	}
 
-	if err = productCard.RemoveProduct(&product); err !=nil {
-		fmt.Println(err)
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	var inventory models.Inventory
+	if err =account.LoadEntity(&inventory, inventoryId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке инвентаризации"}))
+		return
+	}
+	
+	if err = inventory.RemoveProduct(product); err !=nil {
 		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из карточки товара"))
 		return
 	}
 
-	// preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
-
-	/*filter := make(map[string]interface{},0)
-	filter["product_card_id"] = productCardId*/
-
-	/*var _productCard models.ProductCard
-	if err = account.LoadEntity(&_productCard, productCardId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка загрузки карточки товара"}))
-		return
-	}*/
-
-	resp := u.Message(true, "PATCH ProductCard Products Remove")
-	resp["product_card"] = productCard
-	u.Respond(w, resp)
-}
-
-func ProductCardAppendProduct(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailQueueId"))
-		return
-	}
-
-	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
-		return
-	}
-
-	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
-
-	var productCard models.ProductCard
-	if err =account.LoadEntity(&productCard, productCardId, preloads); err != nil {
+	// Обновляем данные карточки
+	if err =account.LoadEntity(&inventory, inventoryId, preloads); err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке карточки товара"}))
 		return
 	}
 
-	product := models.Product{}
-	if err =account.LoadEntity(&product, productId, nil); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
-		return
-	}
-
-	if err = productCard.AppendProduct(&product); err !=nil {
-		fmt.Println(err)
-		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из карточки товара"))
-		return
-	}
-
-	var _productCard models.ProductCard
-	if err = account.LoadEntity(&_productCard, productCardId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка загрузки карточки товара"}))
-		return
-	}
-
-	resp := u.Message(true, "PATCH ProductCard Append Product")
-	resp["product_card"] = _productCard
+	resp := u.Message(true, "PATCH Inventory Remove Products")
+	resp["inventory"] = inventory
 	u.Respond(w, resp)
 }
+
+

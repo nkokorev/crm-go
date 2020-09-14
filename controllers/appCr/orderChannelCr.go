@@ -187,7 +187,7 @@ func OrderChannelDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err = account.DeleteEntity(&orderChannel); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении канала заказов"))
 		return
 	}
 

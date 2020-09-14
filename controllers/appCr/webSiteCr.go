@@ -209,7 +209,7 @@ func WebSiteDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = account.DeleteEntity(&webSite); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении WebSite"))
 		return
 	}
 

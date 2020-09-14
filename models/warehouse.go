@@ -244,8 +244,8 @@ func (warehouse *Warehouse) Shipment(shipment Shipment, createIfNotExist bool) e
 	}
 
 	// Идем циклом по товаром с проверкой быи ли они занесены
-	for i := range shipment.ShipmentProduct {
-		item := shipment.ShipmentProduct[i]
+	for i := range shipment.ShipmentItems {
+		item := shipment.ShipmentItems[i]
 
 		// Если товар был уже занесен
 		if item.WarehousePosted {
@@ -368,6 +368,20 @@ func (warehouse Warehouse) ExistProduct(productId uint) bool {
 	}
 	
 	return false
+}
+
+func (warehouse Warehouse) GetProductById(productId uint) (*WarehouseItem, error) {
+
+	if productId < 1 {
+		return nil, utils.Error{Message: "Невозможно получить данные по товару: отсутствует id"}
+	}
+
+	warehouseItem, err := warehouse.GetByProductId(productId, nil)
+	if err != nil {
+        return nil, err
+	}
+
+	return warehouseItem, nil
 }
 
 // todo: поставки.. и инвентаризация

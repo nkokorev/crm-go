@@ -164,7 +164,7 @@ func DeliveryStatusDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err = account.DeleteEntity(&deliveryStatus); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении статуса заказа"))
 		return
 	}
 

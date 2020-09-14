@@ -207,7 +207,7 @@ func EmailBoxDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = account.DeleteEntity(&emailBox); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении email box"))
 		return
 	}
 

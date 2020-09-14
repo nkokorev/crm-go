@@ -131,10 +131,10 @@ type Product struct {
 	// Video []Video // видеообзоры по товару на ютубе
 
 	// Список поставок товара, в которых он был
-	Shipments 		[]Shipment 	`json:"shipments" gorm:"many2many:shipment_products"`
+	Shipments 		[]Shipment 	`json:"shipments" gorm:"many2many:shipment_items"`
+	ShipmentItems 	[]ShipmentItem 	`json:"shipment_items" gorm:"many2many:shipment_items"`
 
-	// История поставок товара в деталях
-	ShipmentProducts []ShipmentProduct 	`json:"shipment_products"`
+	Inventories 	[]Inventory	`json:"inventories" gorm:"many2many:inventory_items"`
 
 	Account 		Account 		`json:"-"`
 	ProductCards 	[]ProductCard 	`json:"product_cards" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
@@ -162,7 +162,12 @@ func (Product) PgSqlCreate() {
 		log.Fatal(err)
 	}
 
-	err = db.SetupJoinTable(&Product{}, "Shipments", &ShipmentProduct{})
+	err = db.SetupJoinTable(&Product{}, "Shipments", &ShipmentItem{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = db.SetupJoinTable(&Product{}, "Inventories", &InventoryItem{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -329,7 +334,7 @@ func (product *Product) update(input map[string]interface{}, preloads []string) 
 	delete(input,"manufacturer")
 	delete(input,"product_type")
 	delete(input,"shipments")
-	delete(input,"shipment_products")
+	delete(input,"shipment_items")
 	delete(input,"warehouse_items")
 	delete(input,"warehouses")
 	utils.FixInputHiddenVars(&input)

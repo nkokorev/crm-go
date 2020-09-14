@@ -204,7 +204,7 @@ func PaymentSubjectDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err = account.DeleteEntity(&paymentSubject); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении типа товара"))
 		return
 	}
 

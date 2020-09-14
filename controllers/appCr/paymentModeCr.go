@@ -159,7 +159,7 @@ func PaymentModeDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err = account.DeleteEntity(&paymentMode); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении способа оплаты"))
 		return
 	}
 

@@ -200,7 +200,7 @@ func EmailQueueDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err = account.DeleteEntity(&emailQueue); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении серии писем"))
 		return
 	}
 

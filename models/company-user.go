@@ -136,8 +136,8 @@ func (CompanyUser) getPaginationList(accountId uint, offset, limit int, sortBy, 
 		search = "%"+search+"%"
 
 		err := (&CompanyUser{}).GetPreloadDb(false,false,preloads).
-			Joins("LEFT JOIN products ON products.id = shipment_products.product_id").
-			Select("products.*, shipment_products.*").
+			Joins("LEFT JOIN products ON products.id = shipment_items.product_id").
+			Select("products.*, shipment_items.*").
 			Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Where(filter).Find(&companyUsers, "shipment_id ILIKE ?", search).Error
 

@@ -2,6 +2,8 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
+	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -14,10 +16,13 @@ type Shipment struct {
 	Id     		uint	`json:"id" gorm:"primaryKey"`
 	PublicId	uint	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
-	ParentId	*uint 	`json:"parent_id"` // дозаказанная партия товара
+	ParentId	*uint 	`json:"parent_id"`
 
 	// Краткое имя поставки
 	Name 		*string	`json:"name" gorm:"type:varchar(255);"`
+
+	// External code
+	Code 		*string	`json:"code" gorm:"type:varchar(255);"`
 
 	// Поставщик (может быть не известен)
 	CompanyId 	*uint	`json:"company_id" gorm:"type:int;index;"`
@@ -26,22 +31,22 @@ type Shipment struct {
 	WarehouseId *uint	`json:"warehouse_id" gorm:"type:int;index;"`
 
 	// Статус поставки: планируется, ожидается поставка, ожидает оприходования, завершена/отмена/фейл.
-	Status 			WorkStatus 	`json:"status" gorm:"type:varchar(18);default:'pending'"`
-	DecryptionStatus	*string `json:"decryption_status" gorm:"type:varchar(255);"`
+	Status 				WorkStatus 	`json:"status" gorm:"type:varchar(18);default:'pending'"`
+	DecryptionStatus	*string 	`json:"decryption_status" gorm:"type:varchar(255);"`
 
 	// Планируемая дата поставки
 	DeliveryDate	*time.Time 	`json:"delivery_date"`
 
 	// Сумма поставки - высчитывается в AfterFind
-	PaymentAmount	 float64 `json:"_payment_amount" gorm:"-"`
+	PaymentAmount	float64 `json:"_payment_amount" gorm:"-"`
 	// Товарных позиц - высчитывается
-	ProductUnits	uint `json:"_product_units" gorm:"-"`
+	ProductUnits	uint 	`json:"_product_units" gorm:"-"`
 
 	// Фактический список товаров в поставке + объем + закупочная цены
-	ShipmentProduct 	[]ShipmentProduct 	`json:"shipment_product"`
+	ShipmentItems 	[]ShipmentItem 	`json:"shipment_items"`
 
 	// Список товаров в поставке
-	Products 	[]Product 	`json:"products" gorm:"many2many:shipment_products"`
+	Products 	[]Product 	`json:"products" gorm:"many2many:shipment_items"`
 
 	Company 	Company 	`json:"company"`
 	Warehouse 	Warehouse 	`json:"warehouse"`
@@ -62,7 +67,7 @@ func (Shipment) PgSqlCreate() {
 		log.Fatal("Error: ", err)
 	}
 
-	err = db.SetupJoinTable(&Shipment{}, "Products", &ShipmentProduct{})
+	err = db.SetupJoinTable(&Shipment{}, "Products", &ShipmentItem{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -85,7 +90,7 @@ func (shipment *Shipment) AfterFind(tx *gorm.DB) (err error) {
 		Amount float64
 		Units uint
 	}{0,0}
-	if err = db.Raw("SELECT      \n       COUNT(*) AS units,   \n       sum(payment_amount) AS amount    \nFROM shipment_products \nWHERE account_id = ? AND shipment_id = ?;",
+	if err = db.Raw("SELECT      \n       COUNT(*) AS units,   \n       sum(payment_amount) AS amount    \nFROM shipment_items \nWHERE account_id = ? AND shipment_id = ?;",
 		shipment.AccountId, shipment.Id).
 		Scan(&stat).Error; err != nil {
 		return err
@@ -109,7 +114,7 @@ func (shipment *Shipment) GetPreloadDb(getModel bool, autoPreload bool, preloads
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Product","Warehouse","ShipmentProduct","ShipmentProduct.Product"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Product","Warehouse","ShipmentItems","ShipmentItems.Product"})
 
 		for _,v := range allowed {
 			_db.Preload(v)
@@ -227,9 +232,12 @@ func (Shipment) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 }
 func (shipment *Shipment) update(input map[string]interface{}, preloads []string) error {
 
-	delete(input,"image")
+	delete(input,"products")
+	delete(input,"shipment_items")
+	delete(input,"company")
+	delete(input,"warehouse")
 	utils.FixInputHiddenVars(&input)
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","parent_id","company_id","warehouse_id"}); err != nil {
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","company_id","warehouse_id"}); err != nil {
 		return err
 	}
 	input = utils.FixInputDataTimeVars(input,[]string{"delivery_date"})
@@ -472,3 +480,100 @@ func (shipment *Shipment) SetPostingStatus() error {
 	return shipment.updateWorkStatus(WorkStatusCancelled)
 }
 
+// ######### Shipment Functions ############
+
+// Добавить новую позицию товара
+func (shipment Shipment) AppendProduct(product Product, volumeOrder, paymentAmount float64) error {
+
+	fmt.Println("Добавляем товар")
+	// 1. Проверяем статус поставки
+	if shipment.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: не удается определить поставку"}
+	}
+	if err := shipment.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: не удается загрузить поставку"}
+	}
+	// нельзя добавить товар, если поставка завершена, закончена или отменена
+	if shipment.Status == WorkStatusCompleted || shipment.Status == WorkStatusFailed || shipment.Status == WorkStatusCancelled {
+		return utils.Error{Message: "Нельзя добавить товар, если поставка завершена, закончена или отменена"}
+	}
+
+	// 2. Загружаем продукт еще раз
+	if err := product.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить продукт, он не найден"}
+	}
+
+	// 3. Проверяем есть ли уже на этом складе этот продукт
+	if shipment.ExistProduct(product.Id) {
+		return nil
+		// return utils.Error{Message: "Товар уже есть в текущей поставки"}
+	}
+
+	// 4. Добавляем запись в ShipmentProduct
+	if err := db.Create(
+		&ShipmentItem{AccountId: shipment.AccountId, ProductId: product.Id, ShipmentId: shipment.Id, VolumeOrder: volumeOrder, VolumeFact: 0, PaymentAmount: paymentAmount, WarehousePosted: false}).Error; err != nil {
+		return err
+	}
+
+	// 5. Запускаем событие добавление товара в инвентаризацию (надо ли)
+	account, err := GetAccount(shipment.AccountId)
+	if err == nil && account != nil {
+		event.AsyncFire(Event{}.InventoryItemProductAppended(account.Id, shipment.Id, product.Id))
+	}
+
+	return nil
+}
+// Удалить из поставки позицию товара
+func (shipment Shipment) RemoveProduct(product Product) error {
+
+	// 1. Проверяем статус поставки
+	if shipment.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: не удается определить поставку"}
+	}
+	if err := shipment.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: не удается загрузить поставку"}
+	}
+	// нельзя удалить товар, если поставка завершена, закончена или отменена
+	if shipment.Status == WorkStatusCompleted || shipment.Status == WorkStatusFailed || shipment.Status == WorkStatusCancelled {
+		return utils.Error{Message: "Нельзя удалить товар из поставки, если поставка завершена, закончена или отменена"}
+	}
+
+	// 2. Загружаем продукт еще раз
+	if err := product.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить продукт, он не найден"}
+	}
+
+	if shipment.AccountId < 1 || product.Id < 1 || shipment.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: account id || product id || shipment id == nil"}
+	}
+
+	if err := db.Where("account_id = ? AND product_id = ? AND shipment_id = ?", shipment.AccountId, product.Id, shipment.Id).Delete(
+		&ShipmentItem{}).Error; err != nil {
+		return err
+	}
+
+
+	return nil
+}
+
+func (shipment Shipment) ExistProduct(productId uint) bool {
+
+	if productId < 1 {
+		return false
+	}
+
+	sp := ShipmentItem{}
+	result := db.Model(&ShipmentItem{}).First(&sp,"shipment_id = ? AND product_id = ?", shipment.Id, productId)
+
+	// check error ErrRecordNotFound
+	// errors.Is(result.Error, gorm.ErrRecordNotFound)
+	if result.Error != nil {
+		return false
+	}
+	if result.RowsAffected > 0 {
+		return true
+	}
+
+
+	return false
+}

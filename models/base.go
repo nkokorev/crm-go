@@ -145,11 +145,11 @@ func SettingsDb() error {
 		log.Fatal(err)
 	}
 
-	err = db.SetupJoinTable(&Shipment{}, "Products", &ShipmentProduct{})
+	err = db.SetupJoinTable(&Shipment{}, "Products", &ShipmentItem{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = db.SetupJoinTable(&Product{}, "Shipments", &ShipmentProduct{})
+	err = db.SetupJoinTable(&Product{}, "Shipments", &ShipmentItem{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -168,6 +168,15 @@ func SettingsDb() error {
 		log.Fatal(err)
 	}
 	err = db.SetupJoinTable(&ProductCategory{}, "WebPages", &WebPageProductCategories{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = db.SetupJoinTable(&Inventory{}, "Products", &InventoryItem{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.SetupJoinTable(&Product{}, "Inventories", &InventoryItem{})
 	if err != nil {
 		log.Fatal(err)
 	}

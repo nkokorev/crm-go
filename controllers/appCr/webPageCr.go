@@ -214,7 +214,7 @@ func WebPageDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = account.DeleteEntity(&webPage); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении магазина"))
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении web-страницы"))
 		return
 	}
 

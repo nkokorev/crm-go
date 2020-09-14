@@ -8,6 +8,9 @@ import (
 func UINTp(x uint) *uint {
 	return &x
 }
+func FL64p(x float64) *float64 {
+	return &x
+}
 func STRp(s string) *string {
 	return &s
 }

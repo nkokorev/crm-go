@@ -204,3 +204,19 @@ func (warehouseItem *WarehouseItem) delete () error {
 	return warehouseItem.GetPreloadDb(true,false,nil).Where("id = ?", warehouseItem.Id).Delete(warehouseItem).Error
 }
 // ######### END CRUD Functions ############
+
+func (warehouse Warehouse) GetByProductId(productId uint, preloads []string) (*WarehouseItem, error) {
+
+	if warehouse.Id < 1 || warehouse.AccountId < 1 {
+		return nil, utils.Error{Message: "Не удалось загрузить данные продукта со склада"}
+	}
+
+	warehouseItem := WarehouseItem{}
+
+	err := warehouseItem.GetPreloadDb(false,false,preloads).
+		First(&warehouseItem, "account_id = ? AND warehouse_id = ? AND product_id = ?",warehouse.AccountId, warehouse.Id, productId).Error
+	if err != nil {
+		return nil, err
+	}
+	return &warehouseItem, nil
+}

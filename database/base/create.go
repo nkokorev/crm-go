@@ -215,9 +215,12 @@ func RefreshTablesPart_I() {
 
 	models.WarehouseItem{}.PgSqlCreate()
 
+	models.Inventory{}.PgSqlCreate()
+	models.InventoryItem{}.PgSqlCreate()
+
 
 	models.Shipment{}.PgSqlCreate()
-	models.ShipmentProduct{}.PgSqlCreate()
+	models.ShipmentItem{}.PgSqlCreate()
 
 	models.EmailBox{}.PgSqlCreate()
 	models.EmailTemplate{}.PgSqlCreate()
@@ -248,8 +251,6 @@ func RefreshTablesPart_I() {
 	models.PaymentCash{}.PgSqlCreate()
 
 	models.DeliveryStatus{}.PgSqlCreate()
-
-
 
 	models.DeliveryOrder{}.PgSqlCreate()
 

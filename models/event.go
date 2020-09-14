@@ -124,6 +124,14 @@ func (Event) ProductGroupDeleted(accountId, productGroupId uint) event.Event {
 	return event.NewBasic("ProductGroupDeleted", map[string]interface{}{"accountId":accountId, "productGroupId":productGroupId})
 }*/
 
+// ######### InventoryItem #########
+func (Event) InventoryItemProductAppended(accountId, inventoryId, productId uint) event.Event {
+	return event.NewBasic("InventoryItemProductAppended", map[string]interface{}{"accountId":accountId, "inventoryId":inventoryId, "productId":productId})
+}
+func (Event) InventoryItemProductRemoved(accountId, inventoryId, productId uint) event.Event {
+	return event.NewBasic("InventoryItemProductRemoved", map[string]interface{}{"accountId":accountId, "inventoryId":inventoryId, "productId":productId})
+}
+
 
 // ######### Email Marketing #########
 func (Event) UserSubscribed(accountId uint, userId uint) event.Event {
