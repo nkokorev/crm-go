@@ -203,7 +203,8 @@ func (Warehouse) getPaginationList(accountId uint, offset, limit int, sortBy, se
 }
 func (warehouse *Warehouse) update(input map[string]interface{}, preloads []string) error {
 
-	// delete(input,"image")
+	delete(input,"products")
+	delete(input,"warehouse_items")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
 		return err
@@ -294,7 +295,7 @@ func (warehouse Warehouse) AppendProduct(product Product, amountUnit float64) er
 	}
 	
 	// 2. Проверяем есть ли уже на этом складе этот продукт
-	if !warehouse.ExistProduct(product.Id) {
+	if warehouse.ExistProduct(product.Id) {
 		return utils.Error{Message: "Продукт уже числиться на складе"}
 	}
 	

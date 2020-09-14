@@ -2,7 +2,6 @@ package appCr
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -66,7 +65,6 @@ func WarehouseGet(w http.ResponseWriter, r *http.Request) {
 	} else {
 		err = account.LoadEntity(&warehouse, warehouseId,preloads)
 		if err != nil {
-			fmt.Println(err)
 			u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
 			return
 		}
@@ -260,19 +258,17 @@ func WarehouseAppendProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = warehouse.AppendProduct(product, input.AmountUnit); err !=nil {
-		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из карточки товара"))
 		return
 	}
 
-	var _warehouse models.Warehouse
-	if err = account.LoadEntity(&_warehouse, warehouseId, preloads); err != nil {
+	if err = account.LoadEntity(&warehouse, warehouseId, preloads); err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка загрузки карточки товара"}))
 		return
 	}
 
 	resp := u.Message(true, "PATCH Warehouse Append Product")
-	resp["warehouse"] = _warehouse
+	resp["warehouse"] = warehouse
 	u.Respond(w, resp)
 }
 
@@ -295,6 +291,11 @@ func WarehouseRemoveProduct(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
 		return
 	}
+	product := models.Product{}
+	if err =account.LoadEntity(&product, productId, nil); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
+		return
+	}
 
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
@@ -303,16 +304,15 @@ func WarehouseRemoveProduct(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке карточки товара"}))
 		return
 	}
-
-	product := models.Product{}
-	if err =account.LoadEntity(&product, productId, nil); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
+	
+	if err = warehouse.RemoveProduct(product); err !=nil {
+		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из карточки товара"))
 		return
 	}
 
-	if err = warehouse.RemoveProduct(product); err !=nil {
-		fmt.Println(err)
-		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из карточки товара"))
+	// Обновляем данные карточки
+	if err =account.LoadEntity(&warehouse, warehouseId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке карточки товара"}))
 		return
 	}
 
