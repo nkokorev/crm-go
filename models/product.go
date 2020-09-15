@@ -337,6 +337,7 @@ func (product *Product) update(input map[string]interface{}, preloads []string) 
 	delete(input,"shipment_items")
 	delete(input,"warehouse_items")
 	delete(input,"warehouses")
+	delete(input,"inventories")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","payment_subject_id","vat_code_id","unit_measurement_id"}); err != nil {
 		return err

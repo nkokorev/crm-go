@@ -38,8 +38,9 @@ type Shipment struct {
 	DeliveryDate	*time.Time 	`json:"delivery_date"`
 
 	// Сумма поставки - высчитывается в AfterFind
-	PaymentAmount	float64 `json:"_payment_amount" gorm:"-"`
-	// Товарных позиц - высчитывается
+	PaymentAmountOrder	float64 `json:"_payment_amount_order" gorm:"-"`
+	PaymentAmountFact	float64 `json:"_payment_amount_fact" gorm:"-"`
+	// Товарных позиций - высчитывается
 	ProductUnits	uint 	`json:"_product_units" gorm:"-"`
 
 	// Фактический список товаров в поставке + объем + закупочная цены
@@ -87,15 +88,17 @@ func (shipment *Shipment) BeforeCreate(tx *gorm.DB) error {
 func (shipment *Shipment) AfterFind(tx *gorm.DB) (err error) {
 
 	stat := struct {
-		Amount float64
+		AmountOrder float64
+		AmountFact float64
 		Units uint
-	}{0,0}
-	if err = db.Raw("SELECT      \n       COUNT(*) AS units,   \n       sum(payment_amount) AS amount    \nFROM shipment_items \nWHERE account_id = ? AND shipment_id = ?;",
+	}{0,0,0}
+	if err = db.Raw("SELECT\n    COUNT(*) AS units,\n    sum(payment_amount * volume_order) AS amount_order,\n    sum(payment_amount * volume_fact) AS amount_fact\nFROM shipment_items\nWHERE account_id = ? AND shipment_id = ?;",
 		shipment.AccountId, shipment.Id).
 		Scan(&stat).Error; err != nil {
 		return err
 	}
-	shipment.PaymentAmount = stat.Amount
+	shipment.PaymentAmountOrder = stat.AmountOrder
+	shipment.PaymentAmountFact 	= stat.AmountFact
 	shipment.ProductUnits = stat.Units
 
 	return nil
