@@ -201,7 +201,6 @@ func EmailNotificationDelete(w http.ResponseWriter, r *http.Request) {
 
 func EmailNotificationChangeStatus(w http.ResponseWriter, r *http.Request) {
 
-
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
@@ -234,11 +233,11 @@ func EmailNotificationChangeStatus(w http.ResponseWriter, r *http.Request) {
 
 	err = emailNotification.ChangeWorkStatus(input.Status, input.Reason)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		u.Respond(w, u.MessageError(err, "Не удалось изменить статус"))
 		return
 	}
 
-	resp := u.Message(true, "GET Email Campaign Execute")
+	resp := u.Message(true, "PATH Email Notification Status")
 	resp["email_notification"] = emailNotification
 	u.Respond(w, resp)
 }

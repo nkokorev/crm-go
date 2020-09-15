@@ -41,7 +41,7 @@ type Shipment struct {
 	PaymentAmountOrder	float64 `json:"_payment_amount_order" gorm:"-"`
 	PaymentAmountFact	float64 `json:"_payment_amount_fact" gorm:"-"`
 	// Товарных позиций - высчитывается
-	ProductUnits	uint 	`json:"_product_units" gorm:"-"`
+	ProductUnits		uint 	`json:"_product_units" gorm:"-"`
 
 	// Фактический список товаров в поставке + объем + закупочная цены
 	ShipmentItems 	[]ShipmentItem 	`json:"shipment_items"`
@@ -277,6 +277,34 @@ func (shipment Shipment) Validate() error {
 	return nil
 }
 
+func (shipment *Shipment) ChangeWorkStatus(status WorkStatus, reason... string) error {
+
+	switch status {
+		case WorkStatusPending:
+			return shipment.SetPendingStatus()
+		case WorkStatusPlanned:
+			return shipment.SetPlannedStatus()
+		case WorkStatusActive:
+			return shipment.SetActiveStatus()
+		case WorkStatusPaused:
+			return shipment.SetPausedStatus()
+		case WorkStatusPosting:
+			return shipment.SetPostingStatus()
+		case WorkStatusFailed:
+			_reason := ""
+			if len(reason) > 0 {
+				_reason = reason[0]
+			}
+			return shipment.SetFailedStatus(_reason)
+		case WorkStatusCompleted:
+			return shipment.SetCompletedStatus()
+		case WorkStatusCancelled:
+			return shipment.SetCancelledStatus()
+		default:
+			return utils.Error{Message: "Статус не опознан"}
+	}
+
+}
 func (shipment *Shipment) updateWorkStatus(status WorkStatus, reason... string) error {
 	_reason := ""
 	if len(reason) > 0 {
@@ -314,9 +342,9 @@ func (shipment *Shipment) SetPendingStatus() error {
 }
 func (shipment *Shipment) SetPlannedStatus() error {
 
-	// Возможен вызов из состояния pending: запланировать кампанию => planned
+	// Возможен вызов из состояния pending: запланировать поставку => planned
 	if shipment.Status != WorkStatusPending  {
-		reason := "Невозможно запланировать кампанию,"
+		reason := "Невозможно запланировать поставку,"
 		switch shipment.Status {
 		case WorkStatusPlanned:
 			reason += "т.к. поставка уже в плане"
@@ -334,22 +362,20 @@ func (shipment *Shipment) SetPlannedStatus() error {
 		return utils.Error{Message: reason}
 	}
 
-	// Проверяем кампанию и шаблон, чтобы не ставить в план не рабочую кампанию.
+	// Проверяем поставку и шаблон, чтобы не ставить в план не рабочую поставку.
 	if err := shipment.Validate(); err != nil { return err  }
 
 	// Переводим в состояние "Запланирована", т.к. все проверки пройдены и можно ставить ее в планировщик
 	return shipment.updateWorkStatus(WorkStatusPlanned)
 }
 func (shipment *Shipment) SetActiveStatus() error {
-
-	// Возможен вызов из состояния planned или paused: запустить кампанию => active
-	if shipment.Status != WorkStatusPlanned && shipment.Status != WorkStatusPaused {
-		reason := "Невозможно запустить кампанию,"
+	
+	// Возможен вызов из состояния planned или paused: запустить поставку => active
+	if shipment.Status != WorkStatusPlanned && shipment.Status != WorkStatusPaused && shipment.Status != WorkStatusPending{
+		reason := "Невозможно запустить поставку,"
 		switch shipment.Status {
-		case WorkStatusPending:
-			reason += "т.к. поставка еще в стадии разработки"
 		case WorkStatusActive:
-			reason += "т.к. поставка уже в процессе рассылки"
+			reason += "т.к. она уже в процессе рассылки"
 		case WorkStatusCompleted:
 			reason += "т.к. поставка уже завершена"
 		case WorkStatusFailed:
@@ -360,7 +386,7 @@ func (shipment *Shipment) SetActiveStatus() error {
 		return utils.Error{Message: reason}
 	}
 
-	// Снова проверяем кампанию и шаблон
+	// Снова проверяем поставку и шаблон
 	if err := shipment.Validate(); err != nil { return err  }
 
 	// Переводим в состояние "Активна", т.к. все проверки пройдены и можно продолжить ее выполнение
@@ -368,9 +394,9 @@ func (shipment *Shipment) SetActiveStatus() error {
 }
 func (shipment *Shipment) SetPausedStatus() error {
 
-	// Возможен вызов из состояния active: приостановить кампанию => paused
+	// Возможен вызов из состояния active: приостановить поставку => paused
 	if shipment.Status != WorkStatusActive {
-		reason := "Невозможно приостановить кампанию,"
+		reason := "Невозможно приостановить поставку,"
 		switch shipment.Status {
 		case WorkStatusPending:
 			reason += "т.к. поставка еще в стадии разработки"
@@ -388,15 +414,15 @@ func (shipment *Shipment) SetPausedStatus() error {
 		return utils.Error{Message: reason}
 	}
 
-	// Переводим в состояние "Приостановлена", т.к. все проверки пройдены и можно приостановить кампанию
+	// Переводим в состояние "Приостановлена", т.к. все проверки пройдены и можно приостановить поставку
 	return shipment.updateWorkStatus(WorkStatusPaused)
 }
 func (shipment *Shipment) SetCompletedStatus() error {
 
-	// Возможен вызов из состояния active, paused: завершить кампанию => completed
+	// Возможен вызов из состояния active, paused: завершить поставку => completed
 	// Сбрасываются все задачи из очереди
 	if shipment.Status != WorkStatusActive && shipment.Status != WorkStatusPaused {
-		reason := "Невозможно завершить кампанию,"
+		reason := "Невозможно завершить поставку,"
 		switch shipment.Status {
 		case WorkStatusPending:
 			reason += "т.к. поставка еще в стадии разработки"
@@ -412,18 +438,18 @@ func (shipment *Shipment) SetCompletedStatus() error {
 		return utils.Error{Message: reason}
 	}
 
-	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
+	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить поставку
 	return shipment.updateWorkStatus(WorkStatusCompleted)
 }
 func (shipment *Shipment) SetFailedStatus(reason string) error {
-	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
+	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить поставку
 	return shipment.updateWorkStatus(WorkStatusFailed, reason)
 }
 func (shipment *Shipment) SetCancelledStatus() error {
 
-	// Возможен вызов из состояния active, paused, planned: завершить кампанию => cancelled
+	// Возможен вызов из состояния active, paused, planned: завершить поставку => cancelled
 	if shipment.Status != WorkStatusActive && shipment.Status != WorkStatusPaused && shipment.Status != WorkStatusPlanned {
-		reason := "Невозможно отменить кампанию,"
+		reason := "Невозможно отменить поставку,"
 		switch shipment.Status {
 		case WorkStatusPending:
 			reason += "т.к. поставка еще в стадии разработки"
@@ -437,14 +463,14 @@ func (shipment *Shipment) SetCancelledStatus() error {
 		return utils.Error{Message: reason}
 	}
 
-	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
+	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить поставку
 	return shipment.updateWorkStatus(WorkStatusCancelled)
 }
 func (shipment *Shipment) SetShipmentStatus() error {
 
-	// Возможен вызов из состояния active, paused, planned: завершить кампанию => cancelled
+	// Возможен вызов из состояния active, paused, planned: завершить поставку => cancelled
 	if shipment.Status != WorkStatusActive && shipment.Status != WorkStatusPaused && shipment.Status != WorkStatusPlanned {
-		reason := "Невозможно отменить кампанию,"
+		reason := "Невозможно отменить поставку,"
 		switch shipment.Status {
 		case WorkStatusPending:
 			reason += "т.к. поставка еще в стадии разработки"
@@ -458,14 +484,14 @@ func (shipment *Shipment) SetShipmentStatus() error {
 		return utils.Error{Message: reason}
 	}
 
-	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
+	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить поставку
 	return shipment.updateWorkStatus(WorkStatusCancelled)
 }
 func (shipment *Shipment) SetPostingStatus() error {
 
-	// Возможен вызов из состояния active, paused, planned: завершить кампанию => cancelled
+	// Возможен вызов из состояния active, paused, planned: завершить поставку => cancelled
 	if shipment.Status != WorkStatusActive && shipment.Status != WorkStatusPaused && shipment.Status != WorkStatusPlanned {
-		reason := "Невозможно отменить кампанию,"
+		reason := "Невозможно отменить поставку,"
 		switch shipment.Status {
 		case WorkStatusPending:
 			reason += "т.к. поставка еще в стадии разработки"
@@ -479,7 +505,7 @@ func (shipment *Shipment) SetPostingStatus() error {
 		return utils.Error{Message: reason}
 	}
 
-	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить кампанию
+	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить поставку
 	return shipment.updateWorkStatus(WorkStatusCancelled)
 }
 

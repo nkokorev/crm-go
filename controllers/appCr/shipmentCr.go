@@ -313,4 +313,46 @@ func ShipmentRemoveProduct(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+func ShipmentChangeStatus(w http.ResponseWriter, r *http.Request) {
+	
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	shipmentId, err := utilsCr.GetUINTVarFromRequest(r, "shipmentId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id"))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	var shipment models.Shipment
+	err = account.LoadEntity(&shipment, shipmentId, preloads)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить данные доставки"))
+		return
+	}
+
+	var input struct{
+		Status string `json:"status"`
+		Reason string `json:"reason"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	err = shipment.ChangeWorkStatus(input.Status, input.Reason)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось изменить статус"))
+		return
+	}
+
+	resp := u.Message(true, "PATH Shipment Status")
+	resp["shipment"] = shipment
+	u.Respond(w, resp)
+}
 

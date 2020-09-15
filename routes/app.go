@@ -153,6 +153,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shipments/{shipmentId:[0-9]+}", appCr.ShipmentDelete).Methods(http.MethodDelete, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shipments/{shipmentId:[0-9]+}/products/{productId:[0-9]+}", appCr.ShipmentAppendProduct).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shipments/{shipmentId:[0-9]+}/products/{productId:[0-9]+}", appCr.ShipmentRemoveProduct).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/shipments/{shipmentId:[0-9]+}/change-status", appCr.ShipmentChangeStatus).Methods(http.MethodPatch, http.MethodOptions)
 
 	// ### Inventories ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses", appCr.InventoryCreate).Methods(http.MethodPost, http.MethodOptions)

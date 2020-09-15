@@ -49,7 +49,6 @@ const (
 	WorkStatusPaused		WorkStatus = "paused"  // думаем, туда-сюда
 
 	// Shipment
-	WorkStatusShipment		WorkStatus = "shipment" // в процессе доставки (доставляется)
 	WorkStatusPosting		WorkStatus = "posting" 	// Оприходуется
 
 	WorkStatusCompleted		WorkStatus = "completed"
