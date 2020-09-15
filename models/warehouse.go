@@ -287,7 +287,7 @@ func (warehouse *Warehouse) Shipment(shipment Shipment, createIfNotExist bool) e
 }
 
 // Добавить новую позицию товара
-func (warehouse Warehouse) AppendProduct(product Product, amountUnit float64) error {
+func (warehouse Warehouse) AppendProduct(product Product, amountUnit float64, strict... bool) error {
 
 	// 1. Загружаем продукт еще раз
 	if err := product.load(nil); err != nil {
@@ -296,7 +296,11 @@ func (warehouse Warehouse) AppendProduct(product Product, amountUnit float64) er
 	
 	// 2. Проверяем есть ли уже на этом складе этот продукт
 	if warehouse.ExistProduct(product.Id) {
-		return utils.Error{Message: "Продукт уже числиться на складе"}
+		if len(strict) > 1 {
+			return utils.Error{Message: "Продукт уже числиться на складе"}
+		} else {
+			return nil
+		}
 	}
 	
 	if err := db.Model(&WarehouseItem{}).Create(

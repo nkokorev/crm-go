@@ -21,14 +21,13 @@ import (
 */
 
 type Product struct {
-	// Id    		uint   `json:"id" gorm:"primaryKey"`
 	Id        	uint 	`json:"id" gorm:"primaryKey"`
-	// gorm.Model
-	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
+
+	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// артикул товара
-	Article 	string 	`json:"article" gorm:"type:varchar(128);index;"`
+	Article 	string 	`json:"article" gorm:"type:varchar(128);"`
 
 	// Доступен ли товар для продажи в розницу
 	RetailSale 	bool 	`json:"retail_sale" gorm:"type:bool;default:true"`
@@ -36,33 +35,34 @@ type Product struct {
 	// Доступен ли товар для продажи оптом
 	WholesaleSale	bool	`json:"wholesale_sale" gorm:"type:bool;default:true"`
 
-	// enabled - deprecated
-	// Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // можно ли продавать товар и выводить в карточки
+	// Для продажи ли товар (= можно ли включать в карточки товаров)
+	ForRetailSale 		bool 	`json:"for_retail_sale" gorm:"type:bool;default:true"`
+	ForWholesaleSale 	bool 	`json:"for_wholesale_sale" gorm:"type:bool;default:true"`
 
 	// Этикетка товара
-	Label 		string 	`json:"label" gorm:"type:varchar(128);"`
+	Label 		*string 	`json:"label" gorm:"type:varchar(128);"`
+	ShortLabel 	*string 	`json:"short_name" gorm:"type:varchar(128);"`
 
 	// торговая марка (Объект!)
-	Trademark 	*string	`json:"trademark" gorm:"type:varchar(128);"`
+	Trademark 	*string		`json:"trademark" gorm:"type:varchar(128);"`
 
 	// Маркировка товара
-	Brand 		*string	`json:"brand" gorm:"type:varchar(128);"`
-
-	// mb deprecated
-	Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
-	ShortName 	string 	`json:"short_name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
-
-
-	// deprecated, т.к. это относится к складу, а не все товары на складе (есть сбоные и услуги)
-	SKU 		string 	`json:"sku" gorm:"type:varchar(128);index;"`
+	Brand 		*string		`json:"brand" gorm:"type:varchar(128);"`
 
 	// Общая тема типа группы товаров, может повторяться для вывода в web-интерфейсе как "одного" товара
-	Model 		string 	`json:"model" gorm:"type:varchar(255);"`
+	Model 		*string		`json:"model" gorm:"type:varchar(255);"`
+
+	// mb deprecated
+	// Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
+	// ShortName 	string 	`json:"short_name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
+	
+	// deprecated, т.к. это относится к складу, а не все товары на складе (есть сборные и услуги)
+	// SKU 		string 	`json:"sku" gorm:"type:varchar(128);index;"`
 
 	// Base properties
 	RetailPrice		float64 `json:"retail_price" gorm:"type:numeric;"` 		// розничная цена
 	WholesalePrice 	float64 `json:"wholesale_price" gorm:"type:numeric;"` 	// оптовая цена
-	PurchasePrice 	float64 `json:"purchase_price" gorm:"type:numeric;"` 	// закупочная цена
+	// PurchasePrice 	float64 `json:"purchase_price" gorm:"type:numeric;"` 	// закупочная цена
 	RetailDiscount 	float64 `json:"retail_discount" gorm:"type:numeric;"` 	// розничная фактическая скидка
 
 	// Вид номенклатуры - ассортиментные группы продаваемых товаров. Привязываются к карточкам..
@@ -87,16 +87,16 @@ type Product struct {
 	UnitMeasurement 		UnitMeasurement `json:"unit_measurement"`// Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 
 	// Основные атрибуты для расчета (Можно и в атрибуты)
-	Length 	*float64 `json:"length" gorm:"type:numeric;"`
-	Width 	*float64 `json:"width" gorm:"type:numeric;"`
-	Height 	*float64 `json:"height" gorm:"type:numeric;"`
-	Weight 	*float64 `json:"weight" gorm:"type:numeric;"`
+	// Length 	*float64 `json:"length" gorm:"type:numeric;"`
+	// Width 	*float64 `json:"width" gorm:"type:numeric;"`
+	// Height 	*float64 `json:"height" gorm:"type:numeric;"`
+	// Weight 	*float64 `json:"weight" gorm:"type:numeric;"`
 
 	// Производитель (не поставщик)
 	ManufacturerId	*uint		`json:"manufacturer_id" gorm:"type:int;"`
 	Manufacturer	Manufacturer `json:"manufacturer"`
 
-	// Дата изготовления, дата выпуска, дата производства
+	// Дата изготовления (условная штука т.к. зависит от поставки), дата выпуска, дата производства
 	ManufactureDate	*time.Time 	`json:"manufacture_date"`
 
 	// Срок годности, срок хранения (?)
@@ -127,7 +127,7 @@ type Product struct {
 	// ConsiderWeight	bool	`json:"considerWeight" gorm:"type:bool;default:false"`
 
 	// Reviews []Review // Product reviews (отзывы на товар - с рейтингом(?))
-	// Questions []question // вопросы по товару
+	// Questions []Question // вопросы по товару
 	// Video []Video // видеообзоры по товару на ютубе
 
 	// Список поставок товара, в которых он был
@@ -138,6 +138,7 @@ type Product struct {
 
 	Account 		Account 		`json:"-"`
 	ProductCards 	[]ProductCard 	`json:"product_cards" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
+	ProductCategories 		[]ProductCategory 	`json:"product_categories" gorm:"many2many:product_category_products;"`
 }
 
 func (Product) PgSqlCreate() {
@@ -150,7 +151,7 @@ func (Product) PgSqlCreate() {
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
-	db.Exec("create unique index uix_products_account_id_sku ON products (account_id,sku) where (length(sku) > 0);\ncreate unique index uix_products_account_id_model ON products (account_id,model) WHERE (length(model) > 0);\ncreate unique index uix_products_account_id_article ON products (account_id,article) WHERE (length(article) > 0);\n-- create unique index uix_products_account_id_sku ON products (account_id,sku) WHERE sku IS NOT NULL;\n")
+	db.Exec("create unique index uix_products_account_id_model ON products (account_id,model) WHERE (length(model) > 0);\ncreate unique index uix_products_account_id_article ON products (account_id,article) WHERE (length(article) > 0);\n")
 
 	err = db.SetupJoinTable(&Product{}, "ProductCards", &ProductCardProduct{})
 	if err != nil {
@@ -168,6 +169,11 @@ func (Product) PgSqlCreate() {
 	}
 
 	err = db.SetupJoinTable(&Product{}, "Inventories", &InventoryItem{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = db.SetupJoinTable(&Product{}, "ProductCategories", &ProductCategoryProduct{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -338,6 +344,7 @@ func (product *Product) update(input map[string]interface{}, preloads []string) 
 	delete(input,"warehouse_items")
 	delete(input,"warehouses")
 	delete(input,"inventories")
+	delete(input,"product_categories")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","payment_subject_id","vat_code_id","unit_measurement_id"}); err != nil {
 		return err
@@ -359,19 +366,8 @@ func (product *Product) delete () error {
 // ######### END CRUD Functions ############
 
 // ########## SELF FUNCTIONAL ############
-func (product Product) ExistSKU() bool {
-	if len(product.SKU) < 1 {
-		return false
-	}
-	var count int64
-	db.Model(&Product{}).Where("account_id = ? AND sku = ?", product.AccountId, product.SKU).Count(&count)
-	if count > 0 {
-		return true
-	}
-	return false
-}
 func (product Product) ExistModel() bool {
-	if len(product.Model) < 1 {
+	if product.Model == nil {
 		return false
 	}
 	var count int64

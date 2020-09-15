@@ -211,6 +211,7 @@ func RefreshTablesPart_I() {
 	models.ProductCard{}.PgSqlCreate()
 	models.ProductCardProduct{}.PgSqlCreate()
 	models.ProductCategoryProductCard{}.PgSqlCreate()
+	models.ProductCategoryProduct{}.PgSqlCreate()
 	models.WebPageProductCategories{}.PgSqlCreate()
 
 	models.WarehouseItem{}.PgSqlCreate()
@@ -1266,14 +1267,11 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{Id: 0, Path: utils.STRp("airo-deztumb-pine"), 			Label: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"),	Breadcrumb: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"), MetaTitle: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина")},
 	}
 
-
-	//metadata := json.RawMessage(`{"color": "white", "bodyMaterial": "металл", "filterType": "угольно-фотокаталитический"}`)
-
 	// 7. Создаем список товаров
 	products := []models.Product{
 		{
-			Model: "AIRO-DEZ с регулировкой черный", //,
-			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности черный", ShortName: "Рециркулятор AIRO-DEZ черный",
+			Model: utils.STRp("AIRO-DEZ с регулировкой черный"), //,
+			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности черный"), ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ черный"),
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1.0,
 			RetailPrice: 19500.00, RetailDiscount: 1000,
 			ShortDescription: "",Description: "",
@@ -1298,8 +1296,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: "AIRO-DEZ черный",
-			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ черный", ShortName: "Рециркулятор AIRO-DEZ черный",
+			Model: utils.STRp("AIRO-DEZ черный"),
+			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ черный"), ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ черный"),
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1.0,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			ShortDescription: "",
@@ -1324,8 +1322,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: "AIRO-DEZ с регулировкой белый", //ToStringPointer("AIRO-DEZ с регулировкой белый"),
-			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности белый",  ShortName: "Рециркулятор AIRO-DEZ белый",
+			Model: utils.STRp("AIRO-DEZ с регулировкой белый"),
+			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности белый"),  ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ белый"),
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 19500.00, RetailDiscount: 1000,
 			ShortDescription: "",
@@ -1350,8 +1348,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: "AIRO-DEZ белый",//ToStringPointer("AIRO-DEZ белый"),
-			Name:"Рециркулятор воздуха бактерицидный AIRO-DEZ",  ShortName: "Рециркулятор AIRO-DEZ белый",
+			Model: utils.STRp("AIRO-DEZ белый"),
+			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ"),  ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ белый"),
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 17500.00, RetailDiscount: 1000,
 			ShortDescription: "",
@@ -1376,8 +1374,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: "AIRO-DEZ COMPACT", //ToStringPointer("AIRO-DEZ COMPACT"),
-			Name:"Мобильный аиродезинфектор AIRO-DEZ COMPACT",  ShortName: "Аиродезинфектор AIRO-DEZ COMPACT",
+			Model: utils.STRp("AIRO-DEZ COMPACT"),
+			Label: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"),  ShortLabel: utils.STRp("Аиродезинфектор AIRO-DEZ COMPACT"),
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 39000.00, RetailDiscount: 3000,
 			ShortDescription: "",
@@ -1404,8 +1402,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		},
 		
 		{
-			Model: "AIRO-DEZPUF", //ToStringPointer("AIRO-DEZPUF"),
-			Name:"Бактерицидная камера пуф AIRO-DEZPUF",  ShortName: "Камера пуф AIRO-DEZPUF",
+			Model: utils.STRp("AIRO-DEZPUF"),
+			Label: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF"),  ShortLabel: utils.STRp("Камера пуф AIRO-DEZPUF"),
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 11000.00, RetailDiscount: 1000,
 			ShortDescription: "",
@@ -1431,8 +1429,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: "AIRO-DEZPUF венге", //ToStringPointer("AIRO-DEZPUF венге"),
-			Name:"Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге",  ShortName: "Камера AIRO-DEZBOX",
+			Model: utils.STRp("AIRO-DEZPUF венге"),
+			Label: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"), ShortLabel: utils.STRp("Камера AIRO-DEZBOX"),
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 12000.00, RetailDiscount: 1000,
 			ShortDescription: "",
@@ -1459,8 +1457,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		},
 
 		{
-			Model: "AIRO-DEZBOX", //ToStringPointer("AIRO-DEZBOX"),
-			Name:"Бактерицидная камера AIRO-DEZBOX",  ShortName: "Камера AIRO-DEZBOX",
+			Model: utils.STRp("AIRO-DEZBOX"),
+			Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX"),  ShortLabel: utils.STRp("Камера AIRO-DEZBOX"),
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 7800.00, RetailDiscount: 800,
 			ShortDescription: "",
@@ -1486,8 +1484,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: "AIRO-DEZBOX белая", //ToStringPointer("AIRO-DEZBOX белая"),
-			Name:"Бактерицидная камера AIRO-DEZBOX белая",  ShortName: "Камера AIRO-DEZBOX белая",
+			Model: utils.STRp("AIRO-DEZBOX белая"),
+			Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая"),  ShortLabel: utils.STRp("Камера AIRO-DEZBOX белая"),
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 7800.00, RetailDiscount: 800,
 			ShortDescription: "",
@@ -1513,8 +1511,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: "AIRO-DEZTUMB", //ToStringPointer("AIRO-DEZTUMB"),
-			Name:"Тумба облучатель бактерицидный AIRO-DEZTUMB",  ShortName: "Бактерицидная тумба AIRO-DEZTUMB",
+			Model: utils.STRp("AIRO-DEZTUMB"),
+			Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB"),  ShortLabel: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB"),
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
@@ -1540,8 +1538,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: "AIROTUMB big", //ToStringPointer("AIROTUMB big"),
-			Name:"Тумба облучатель бактерицидный AIRO-DEZTUMB big",  ShortName: "Облучатель AIROTUMB big",
+			Model: utils.STRp("AIROTUMB big"),
+			Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"),  ShortLabel: utils.STRp("Облучатель AIROTUMB big"),
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
@@ -1568,8 +1566,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		},
 		
 		{
-			Model: "AIRO-DEZTUMB касцина", //ToStringPointer("AIRO-DEZTUMB касцина"),
-			Name:"Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина",  ShortName: "Бактерицидная тумба AIRO-DEZTUMB",
+			Model: utils.STRp("AIRO-DEZTUMB касцина"),
+			Label: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"),  ShortLabel: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB"),
 			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
 			RetailPrice: 11500.00, RetailDiscount: 1000,
 			ShortDescription: "",
@@ -1618,7 +1616,6 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 
 
 	return
-
 }
 
 func UploadTestDataPart_II() {
@@ -2361,8 +2358,6 @@ pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
 		log.Fatal("Не удалось создать MailBoxes для Синдиката: ", err)
 	}
 
-	fmt.Println("Загрузка данных закончена")
-
 	return
 
 }
@@ -2428,6 +2423,715 @@ func UploadBroUserData() {
 		Subject: utils.STRp("Тема письма 3"),
 		CreatedAt: time.Now().UTC(),
 	})
+}
+
+func Upload357grData() {
+
+	account, err := models.GetAccount(5)
+	if err != nil || account.Name != "357 грамм" {
+		log.Fatal("Ошибка поиска аккаунта 357 грамм: ", err)
+	}
+
+	Page, err := account.CreateEntity(&models.WebPage {
+		AccountId: account.Id, WebSiteId: &account.Id, Label: utils.STRp("Главная"), Code: utils.STRp("root"),Path: utils.STRp("/"),
+		MetaTitle: utils.STRp("Главная :: 357 грамм"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
+		IconName:  utils.STRp("far fa-home"), RouteName:  utils.STRp("home"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать mPage для airoClimat webSite: ", err)
+		return
+	}
+	webPageRoot := Page.(*models.WebPage)
+
+	_rootCatalogPage, err := webPageRoot.CreateChild(models.WebPage {
+		AccountId: account.Id, Code:  utils.STRp("catalog"), Label:  utils.STRp("Весь каталог"), Path:  utils.STRp("catalog"),
+		MetaTitle: utils.STRp("Каталог :: 357 грамм"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
+		IconName:  utils.STRp("far fa-th-large"), RouteName:  utils.STRp("catalog"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для 357 грамм webSite: ", err)
+		return
+	}
+
+	rootPageCatalog := _rootCatalogPage.(*models.WebPage)
+
+	// ################# Каталог #################
+	// Страница с чаем
+	_webPageTea, err := rootPageCatalog.CreateChild( models.WebPage{
+		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Чай"), Path:  utils.STRp("tea"),
+		MetaTitle: utils.STRp("Каталог чая :: 357 грамм"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
+		return
+	}
+	webPageTea := _webPageTea.(*models.WebPage)
+
+	// Страница с кофе
+	_webPageCoffee, err := rootPageCatalog.CreateChild(models.WebPage{
+		AccountId: account.Id, Code:  utils.STRp("catalog"), Label:  utils.STRp("Кофе"), Path:  utils.STRp("coffee"),
+		MetaTitle: utils.STRp("Каталог кофе :: 357 грамм"),
+		IconName:  utils.STRp("far fa-box-full"), RouteName:  utils.STRp("catalog.coffee"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageCoffee для 357gr webSite: ", err)
+		return
+	}
+	webPageCoffee := _webPageCoffee.(*models.WebPage)
+
+	// Страница с подарками
+	_webPageGifts, err := rootPageCatalog.CreateChild(models.WebPage{
+		AccountId: account.Id, Code:  utils.STRp("catalog"), Label:  utils.STRp("Подарки"), Path:  utils.STRp("gifts"),
+		MetaTitle: utils.STRp("Каталог подарков :: 357 грамм"),
+		IconName:  utils.STRp("far fa-box-full"), RouteName:  utils.STRp("catalog.gifts"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageGifts для 357gr webSite: ", err)
+		return
+	}
+	webPageGifts := _webPageGifts.(*models.WebPage)
+
+	// Страница с посудой
+	_webPageTeaThings, err := rootPageCatalog.CreateChild(models.WebPage{
+		AccountId: account.Id, Code:  utils.STRp("catalog"), Label:  utils.STRp("Посуда и аксессуары"), Path:  utils.STRp("tea-things"),
+		MetaTitle: utils.STRp("Посуда и аксессуары :: 357 грамм"),
+		IconName:  utils.STRp("far fa-box-full"), RouteName:  utils.STRp("catalog.tea-things"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageTeaThings для 357gr webSite: ", err)
+		return
+	}
+	webPageTeaThings := _webPageTeaThings.(*models.WebPage)
+
+	// Новинки
+	_webPageNewProducts, err := rootPageCatalog.CreateChild(models.WebPage{
+		AccountId: account.Id, Code:  utils.STRp("catalog"), Label:  utils.STRp("Новинки"), Path:  utils.STRp("new-products"),
+		MetaTitle: utils.STRp("Новые поступления :: 357 грамм"),
+		IconName:  utils.STRp("far fa-box-full"), RouteName:  utils.STRp("catalog.new-products"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageNewProducts для 357gr webSite: ", err)
+		return
+	}
+	webPageNewProducts := _webPageNewProducts.(*models.WebPage)
+
+	// Акции и скидки
+	_webPagePromotions, err := rootPageCatalog.CreateChild(models.WebPage{
+		AccountId: account.Id, Code:  utils.STRp("catalog"), Label:  utils.STRp("Акции и скидки"), Path:  utils.STRp("promotions"),
+		MetaTitle: utils.STRp("Акции и скидки :: 357 грамм"),
+		IconName:  utils.STRp("far fa-box-full"), RouteName:  utils.STRp("catalog.promotions"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageTeaThings для 357gr webSite: ", err)
+		return
+	}
+	webPagePromotions := _webPagePromotions.(*models.WebPage)
+
+	fmt.Println(webPagePromotions, webPageNewProducts,webPageTeaThings,webPageGifts,webPageCoffee,webPageTea)
+
+	// ################# Базовые страницы #################
+
+	_, err = webPageRoot.CreateChild(
+		models.WebPage{
+			AccountId: account.Id, Code:  utils.STRp("info"), Label:  utils.STRp("Контакты"), Path:  utils.STRp("contacts"),
+			MetaTitle: utils.STRp("Контакты :: 357 грамм"),
+			IconName:  utils.STRp("far fa-address-book"), RouteName:  utils.STRp("info.contacts"),  Priority: 10,
+		})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для 357 грамм webSite: ", err)
+	}
+
+	_, err = webPageRoot.CreateChild(
+		models.WebPage{
+			AccountId: account.Id, Code:  utils.STRp("info"), Label:  utils.STRp("О магазине"), Path:  utils.STRp("about"),
+			MetaTitle: utils.STRp("О магазине :: 357 грамм"),
+			IconName:  utils.STRp("far fa-home-heart"), RouteName:  utils.STRp("info.about"),  Priority: 10,
+		})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для 357 грамм webSite: ", err)
+	}
+
+	_, err = webPageRoot.CreateChild(
+		models.WebPage{
+			AccountId: account.Id, Code:  utils.STRp("info"), Label:  utils.STRp("Полезные материалы"), Path:  utils.STRp("articles"),
+			MetaTitle: utils.STRp("Полезные материалы :: 357 грамм"),
+			IconName:  utils.STRp("far fa-books"), RouteName:  utils.STRp("info.articles"),  Priority: 10,
+		})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для 357 грамм webSite: ", err)
+	}
+	
+	deliveryGrE, err := webPageRoot.CreateChild(
+		models.WebPage{
+			AccountId: account.Id, Code:  utils.STRp("delivery"), Label:  utils.STRp("Доставка товара"), Path:  utils.STRp("delivery"),
+			MetaTitle: utils.STRp("Доставка товара :: 357 грамм"),
+			IconName:  utils.STRp("far fa-shipping-fast"), RouteName:  utils.STRp("delivery"), Priority: 1,
+		})
+	if err != nil {
+		log.Fatal(err)
+	}
+	deliveryGroupRoute := deliveryGrE.(*models.WebPage)
+	_, err = deliveryGroupRoute.CreateChild(
+		models.WebPage{
+			AccountId: account.Id, Code:  utils.STRp("delivery"), Label:  utils.STRp("Способы оплаты"), Path:  utils.STRp("payment"),
+			MetaTitle: utils.STRp("Способы оплаты :: 357 грамм"),
+			IconName:  utils.STRp("far fa-hand-holding-usd"), RouteName:  utils.STRp("delivery.payment"), Priority: 2,
+		})
+	_, err = deliveryGroupRoute.CreateChild(
+		models.WebPage{
+			AccountId: account.Id, Code:  utils.STRp("delivery"), Label:  utils.STRp("Возврат товара"), Path:  utils.STRp("moneyback"),
+			MetaTitle: utils.STRp("Возврат товара :: 357 грамм"),
+			IconName:  utils.STRp("far fa-exchange-alt"), RouteName:  utils.STRp("delivery.moneyback"), Priority: 3,
+		})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для 357 грамм webSite: ", err)
+	}
+
+	_, err = webPageRoot.CreateChild(
+		models.WebPage{
+			AccountId: account.Id, Code:  utils.STRp("info"), Label:  utils.STRp("Политика конфиденциальности"), Path:  utils.STRp("privacy-policy"),
+			MetaTitle: utils.STRp("Политика конфиденциальности :: 357 грамм"),
+			IconName:  utils.STRp("far fa-home-heart"), RouteName:  utils.STRp("info.privacy-policy"),      Priority: 6,
+		})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для 357 грамм webSite: ", err)
+	}
+
+
+
+	// ################# Корзина страницы #################
+	////////
+
+	_cartWebPage, err := webPageRoot.CreateChild(
+		models.WebPage{
+			AccountId: account.Id, Code:  utils.STRp("cart"), Label:  utils.STRp("Корзина"), Path:  utils.STRp("cart"),
+			MetaTitle: utils.STRp("Корзина :: 357 грамм"),
+			IconName:  utils.STRp("far fa-cart-arrow-down"), RouteName:  utils.STRp("cart"), Priority: 1,
+		})
+	if err != nil {
+		log.Fatal("Не удалось создать ProductGroup для 357 грамм webSite: ", err)
+	}
+	cartWebPage := _cartWebPage.(*models.WebPage)
+
+	_, err = cartWebPage.CreateChild(
+		models.WebPage{
+			AccountId: account.Id, Code:  utils.STRp("cart"), Label:  utils.STRp("Благодарим за заказ"), Path:  utils.STRp("checkout"),
+			MetaTitle: utils.STRp("Благодарим за заказ :: 357 грамм"),
+			IconName:  utils.STRp("far fa-cart-arrow-down"), RouteName:  utils.STRp("cart"), Priority: 1,
+		})
+	if err != nil {
+		log.Fatal("Не удалось создать checkout для 357 грамм webSite: ", err)
+	}
+
+
+
+	// ################# Категории товаров #################
+
+	
+	// 5* Создаем категории товаров
+
+	_CategoryRoot, err := account.CreateEntity(&models.ProductCategory{
+		Code:  utils.STRp("catalog"), Label: utils.STRp("Весь каталог"),
+	})
+	CategoryRoot := _CategoryRoot.(*models.ProductCategory)
+
+	// категория: весь чай
+	_catTea, err := CategoryRoot.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("tea"), Label: utils.STRp("Чай"),
+	})
+	catTea := _catTea.(*models.ProductCategory)
+	if err != nil {
+		log.Fatal("Не удалось создать catTea для 357 catalog: ", err)
+		return
+	}
+
+	// категория: красный чай
+	_catRedTea, err := catTea.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("red-tea"), Label: utils.STRp("Красный чай"),
+	})
+	catRedTea := _catRedTea.(*models.ProductCategory)
+	if err != nil {
+		log.Fatal("Не удалось создать catTea для 357 catalog: ", err)
+		return
+	}
+
+	// категория: зеленый чай
+	_catGreenTea, err := catTea.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("green-tea"), Label: utils.STRp("Зеленый чай"),
+	})
+	catGreenTea := _catGreenTea.(*models.ProductCategory)
+	if err != nil {
+		log.Fatal("Не удалось создать catTea для 357 catalog: ", err)
+		return
+	}
+
+	// категория: улунский чай
+	_catUlunTea, err := catTea.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("ulun-tea"), Label: utils.STRp("Улунский чай"),
+	})
+	catUlunTea := _catUlunTea.(*models.ProductCategory)
+	if err != nil {
+		log.Fatal("Не удалось создать catTea для 357 catalog: ", err)
+		return
+	}
+
+	// категория: Пуэр
+	_catPuer, err := catTea.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("puer-tea"), Label: utils.STRp("Пуэр"),
+	})
+	catPuer := _catPuer.(*models.ProductCategory)
+	if err != nil {
+		log.Fatal("Не удалось создать catTea для 357 catalog: ", err)
+		return
+	}
+
+	// подкатегория: Шу Пуэр
+	_catShuPuer, err := catPuer.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("shu-puer"), Label: utils.STRp("Шу Пуэр"),
+	})
+	catShuPuer := _catShuPuer.(*models.ProductCategory)
+	if err != nil {
+		log.Fatal("Не удалось создать catTea для 357 catalog: ", err)
+		return
+	}
+
+	// подкатегория: Шу Пуэр пресованный
+	_, err = catShuPuer.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("shu-puer-pressed"), Label: utils.STRp("Шу Пуэр прессованный"),
+	})
+	// подкатегория: Шу Пуэр рассыпной
+	_, err = catShuPuer.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("shu-puer-loose"), Label: utils.STRp("Шу Пуэр рассыпной"),
+	})
+
+	// подкатегория: Шэн Пуэр
+	_catShenPuer, err := catPuer.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("shen-puer"), Label: utils.STRp("Шэн Пуэр"),
+	})
+	catShenPuer := _catShenPuer.(*models.ProductCategory)
+	if err != nil {
+		log.Fatal("Не удалось создать catTea для 357 catalog: ", err)
+		return
+	}
+
+	// подкатегория: Шэн Пуэр пресованный
+	_, err = catShenPuer.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("shen-puer-pressed"), Label: utils.STRp("Шэн Пуэр прессованный"),
+	})
+	// подкатегория: Шэн Пуэр рассыпной
+	_, err = catShenPuer.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("shen-puer-loose"), Label: utils.STRp("Шэн Пуэр рассыпной"),
+	})
+
+
+	fmt.Println(catUlunTea, catGreenTea, catRedTea)
+
+
+
+	// категория: весь кофе
+	_catCoffee, err := CategoryRoot.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("coffee"), Label: utils.STRp("Кофе"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catCoffee для 357gr category: ", err)
+		return
+	}
+	catCoffee := _catCoffee.(*models.ProductCategory)
+
+	// подкатегория: Зеленый кофе
+	_, err = catCoffee.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("green-coffee"), Label: utils.STRp("Зеленый кофе"),
+	})
+
+	// подкатегория: Кофе в зернах
+	_, err = catCoffee.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("beans-coffee"), Label: utils.STRp("Кофе в зернах"),
+	})
+
+	
+
+	/*// А можно добавить категорию 1 и категорию 2
+	if err := webPageCatalogRoot.AppendProductCategory(CategoryRoot); err != nil {
+		log.Fatal(err)
+	}
+	if err := webPageCatalog1.AppendProductCategory(catGr1); err != nil {
+		log.Fatal(err)
+	}
+	if err := webPageCatalog2.AppendProductCategory(catGr2); err != nil {
+		log.Fatal(err)
+	}
+
+	// 6. Создаем карточки товара
+	cards := []models.ProductCard{
+		{Id: 0, Path: utils.STRp("airo-dez-adjustable-black"),	Label: utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой"),Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой"), 	MetaTitle:  utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой")},
+		{Id: 0, Path: utils.STRp("airo-dez-black"), 				Label:utils.STRp("Рециркулятор AIRO-DEZ черный"), 				Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ черный"), 					MetaTitle: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ черный")},
+		{Id: 0, Path: utils.STRp("airo-dez-adjustable-white"), 	Label:utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой"), 	Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой"),	MetaTitle: utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой")},
+		{Id: 0, Path: utils.STRp("airo-dez-white"), 				Label:utils.STRp("Рециркулятор AIRO-DEZ белый"), 				Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ белый"),					MetaTitle: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ белый")},
+		{Id: 0, Path: utils.STRp("airo-dez-compact"), 			Label:utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"), 	Breadcrumb: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"),	MetaTitle: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT")},
+
+		{Id: 0, Path: utils.STRp("airo-dezpuf"),					Label: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF"), 				Breadcrumb: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF"),			MetaTitle: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF")},
+		{Id: 0, Path: utils.STRp("airo-dezpuf-wenge"), 			Label: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"), Breadcrumb: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"),MetaTitle: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге")},
+
+		{Id: 0, Path: utils.STRp("airo-dezbox"), 				Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX"), 					Breadcrumb: utils.STRp("Бактерицидная камера AIRO-DEZBOX"),				MetaTitle: utils.STRp("Бактерицидная камера AIRO-DEZBOX")},
+		{Id: 0, Path: utils.STRp("airo-dezbox-white"), 			Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая"),				Breadcrumb: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая"), 		MetaTitle: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая")},
+		{Id: 0, Path: utils.STRp("airo-deztumb"), 				Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB"), 		Breadcrumb: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB"),	MetaTitle: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB")},
+		{Id: 0, Path: utils.STRp("airo-deztumb-big"), 			Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"), 	Breadcrumb: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"),MetaTitle: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big")},
+
+		{Id: 0, Path: utils.STRp("airo-deztumb-pine"), 			Label: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"),	Breadcrumb: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"), MetaTitle: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина")},
+	}
+
+	// 7. Создаем список товаров
+	products := []models.Product{
+		{
+			Model: utils.STRp("AIRO-DEZ с регулировкой черный"), //,
+			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности черный"), ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ черный"),
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1.0,
+			RetailPrice: 19500.00, RetailDiscount: 1000,
+			ShortDescription: "",Description: "",
+			WeightKey: "grossWeight",
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"черный",
+				"bodyMaterial":"металл",
+				"filterType":"угольно-фотокаталитический",
+				"performance":150, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				"powerLampRecirculator":10.8, // Вт/m2
+				"powerConsumption":60, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
+				"noiseLevel":35, //дБ
+				"grossWeight": 5.5, // Брутто, кг
+			})),
+		},
+		{
+			Model: utils.STRp("AIRO-DEZ черный"),
+			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ черный"), ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ черный"),
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1.0,
+			RetailPrice: 17500.00, RetailDiscount: 1000,
+			ShortDescription: "",
+			Description: "",
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"черный",
+				"bodyMaterial":"металл",
+				"filterType":"угольно-фотокаталитический",
+				"performance":150, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				"powerLampRecirculator":10.8, // Вт/m2
+				"powerConsumption":60, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":35, //дБ
+				"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5.5, // Брутто, кг
+			})),
+		},
+		{
+			Model: utils.STRp("AIRO-DEZ с регулировкой белый"),
+			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности белый"),  ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ белый"),
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
+			RetailPrice: 19500.00, RetailDiscount: 1000,
+			ShortDescription: "",
+			Description: "",
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"белый",
+				"bodyMaterial":"металл",
+				"filterType":"угольно-фотокаталитический",
+				"performance":150, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				"powerLampRecirculator":10.8, // Вт/m2
+				"powerConsumption":60, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":35, //дБ
+				"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5.5, // Брутто, кг
+			})),
+		},
+		{
+			Model: utils.STRp("AIRO-DEZ белый"),
+			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ"),  ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ белый"),
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
+			RetailPrice: 17500.00, RetailDiscount: 1000,
+			ShortDescription: "",
+			Description: "",
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"белый",
+				"bodyMaterial":"металл",
+				"filterType":"угольно-фотокаталитический",
+				"performance":150, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				"powerLampRecirculator":10.8, // Вт/m2
+				"powerConsumption":60, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":35, //дБ
+				"overallDimensions":"690х250х250мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5.5, // Брутто, кг
+			})),
+		},
+		{
+			Model: utils.STRp("AIRO-DEZ COMPACT"),
+			Label: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"),  ShortLabel: utils.STRp("Аиродезинфектор AIRO-DEZ COMPACT"),
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
+			RetailPrice: 39000.00, RetailDiscount: 3000,
+			ShortDescription: "",
+			Description: "",
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"черный",
+				"bodyMaterial":"металл",
+				"filterType":"угольно-фотокаталитический",
+				"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				"powerLampRecirculator":19, // Вт/m2
+				"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":135, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":45, //дБ
+				"overallDimensions":"300х610х150мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 6.8, // Брутто, кг
+			})),
+		},
+
+		{
+			Model: utils.STRp("AIRO-DEZPUF"),
+			Label: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF"),  ShortLabel: utils.STRp("Камера пуф AIRO-DEZPUF"),
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
+			RetailPrice: 11000.00, RetailDiscount: 1000,
+			ShortDescription: "",
+			Description: "",
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"черный",
+				"bodyMaterial":"металл",
+				//"filterType":"угольно-фотокаталитический",
+				//"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				//"powerLampRecirculator":19, // Вт/m2
+				//"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":10, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"G13", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":25, //дБ
+				"overallDimensions":"480х500х320мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5, // Брутто, кг
+			})),
+		},
+		{
+			Model: utils.STRp("AIRO-DEZPUF венге"),
+			Label: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"), ShortLabel: utils.STRp("Камера AIRO-DEZBOX"),
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
+			RetailPrice: 12000.00, RetailDiscount: 1000,
+			ShortDescription: "",
+			Description: "",
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"венге",
+				"bodyMaterial":"металл",
+				//"filterType":"угольно-фотокаталитический",
+				//"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				//"powerLampRecirculator":19, // Вт/m2
+				//"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":10, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"G13", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":25, //дБ
+				"overallDimensions":"500х500х320мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5, // Брутто, кг
+			})),
+		},
+
+		{
+			Model: utils.STRp("AIRO-DEZBOX"),
+			Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX"),  ShortLabel: utils.STRp("Камера AIRO-DEZBOX"),
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
+			RetailPrice: 7800.00, RetailDiscount: 800,
+			ShortDescription: "",
+			Description: "",
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"черный",
+				"bodyMaterial":"металл",
+				//"filterType":"угольно-фотокаталитический",
+				//"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				//"powerLampRecirculator":19, // Вт/m2
+				//"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":10, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"G13", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":25, //дБ
+				"overallDimensions":"400х500х320мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5, // Брутто, кг
+			})),
+		},
+		{
+			Model: utils.STRp("AIRO-DEZBOX белая"),
+			Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая"),  ShortLabel: utils.STRp("Камера AIRO-DEZBOX белая"),
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
+			RetailPrice: 7800.00, RetailDiscount: 800,
+			ShortDescription: "",
+			Description: "",
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"белый",
+				"bodyMaterial":"металл",
+				//"filterType":"угольно-фотокаталитический",
+				//"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				//"powerLampRecirculator":19, // Вт/m2
+				//"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":10, // Вт
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"G13", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":25, //дБ
+				"overallDimensions":"400х500х320мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5, // Брутто, кг
+			})),
+		},
+		{
+			Model: utils.STRp("AIRO-DEZTUMB"),
+			Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB"),  ShortLabel: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB"),
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
+			RetailPrice: 11500.00, RetailDiscount: 1000,
+			ShortDescription: "",
+			Description: "",
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"черный",
+				//"bodyMaterial":"металл",
+				//"filterType":"угольно-фотокаталитический",
+				//"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				//"powerLampRecirculator":19, // Вт/m2
+				//"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":10, // Вт мощность устр-ва
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"G13", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":5, //дБ
+				"overallDimensions":"560х450х400мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5, // Брутто, кг
+			})),
+		},
+		{
+			Model: utils.STRp("AIROTUMB big"),
+			Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"),  ShortLabel: utils.STRp("Облучатель AIROTUMB big"),
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
+			RetailPrice: 11500.00, RetailDiscount: 1000,
+			ShortDescription: "",
+			Description: "",
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"белый",
+				//"bodyMaterial":"металл",
+				//"filterType":"угольно-фотокаталитический",
+				//"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				//"powerLampRecirculator":19, // Вт/m2
+				//"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":10, // Вт мощность устр-ва
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"G13", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":5, //дБ
+				"overallDimensions":"670х450х400мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5, // Брутто, кг
+			})),
+		},
+
+		{
+			Model: utils.STRp("AIRO-DEZTUMB касцина"),
+			Label: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"),  ShortLabel: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB"),
+			PaymentSubjectId: 1, UnitMeasurementId: 1, VatCodeId: 1,
+			RetailPrice: 11500.00, RetailDiscount: 1000,
+			ShortDescription: "",
+			Description: "",
+			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
+				"color":"светлая сосна",
+				"bodyMaterial":"металл",
+				//"filterType":"угольно-фотокаталитический",
+				//"performance":220, // m3/час
+				"rangeUVRadiation":"250-260Hm",
+				//"powerLampRecirculator":19, // Вт/m2
+				//"powerLampIrradiator":10.8, // Вт/m2
+				"powerConsumption":10, // Вт мощность устр-ва
+				"lifeTimeDevice":100000, // часов
+				"lifeTimeLamp":9000, // часов
+				"baseTypeLamp":"G13", //Тип цоколя лампы
+				"degreeProtection":"IP20",
+				"supplyVoltage":"175-265В",
+				"temperatureMode":"+2...+50C",
+				"noiseLevel":25, //дБ
+				"overallDimensions":"460х500х320мм", //Габаритные размеры(ВхШхГ)
+				"grossWeight": 5, // Брутто, кг
+			})),
+		},
+	}
+
+
+	// 7. Добавляем продукты в категории с созданием карточки товара
+	for i,_ := range products {
+		// var groupId uint
+		var productCategory models.ProductCategory
+		if i < 4 {
+			// groupId = catGr1.GetId()
+			productCategory = *catGr1
+		} else {
+			// groupId = catGr2.GetId()
+			productCategory = *catGr2
+		}
+
+		// создаем товар, карточку товара и добавляем их в группу
+		_, err = webSiteAiro.CreateProductWithProductCard(products[i], cards[i], productCategory)
+		if err != nil {
+			log.Fatal("Не удалось создать Product для airoClimat: ", err)
+		}
+	}*/
+
+
+	fmt.Println("Загрузка данных закончена")
+	
+	return
 }
 
 func Migrate_I() {

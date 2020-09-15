@@ -13,6 +13,9 @@ type WarehouseItem struct {
 	Id     		uint	`json:"id" gorm:"primaryKey"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
+	// Уникальный складской идентификатор
+	SKU 		*uint 	`json:"sku" gorm:"type:int;index;"`
+	
 	ProductId 	uint	`json:"product_id" gorm:"type:int;index;"`
 	WarehouseId uint	`json:"warehouse_id" gorm:"type:int;index;"`
 

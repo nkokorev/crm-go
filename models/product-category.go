@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
@@ -31,8 +32,15 @@ type ProductCategory struct {
 	// Карточки товаров
 	ProductCards 	[]ProductCard 	`json:"product_cards" gorm:"many2many:product_category_product_cards;"`
 
+	ProductCardsCount 	uint 	`json:"_product_cards_count" gorm:"-"`
+	WebPagesCount 		uint 	`json:"_web_pages_count" gorm:"-"`
+	ProductsCount 		uint 	`json:"_products_count" gorm:"-"`
+
 	// Страницы, на которых выводятся карточки товаров этой товарной группы
 	WebPages 		[]WebPage 	`json:"web_pages" gorm:"many2many:web_page_product_categories;"`
+
+	// Страницы, на которых выводятся карточки товаров этой товарной группы
+	Products 		[]Product 	`json:"products" gorm:"many2many:product_category_products;"`
 }
 func (ProductCategory) PgSqlCreate() {
 	if err := db.Migrator().CreateTable(&ProductCategory{}); err != nil {
@@ -52,6 +60,10 @@ func (ProductCategory) PgSqlCreate() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	err = db.SetupJoinTable(&ProductCategory{}, "Products", &ProductCategoryProduct{})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 func (productCategory *ProductCategory) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
 
@@ -67,16 +79,10 @@ func (productCategory *ProductCategory) GetPreloadDb(getModel bool, autoPreload 
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Image","ProductCards","WebPages"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Products","ProductCards","WebPages"})
 
 		for _,v := range allowed {
-			if v == "Image" {
-				_db.Preload("Image", func(db *gorm.DB) *gorm.DB {
-					return db.Select(Storage{}.SelectArrayWithoutDataURL())
-				})
-			} else {
-				_db.Preload(v)
-			}
+			_db.Preload(v)
 		}
 		return _db
 	}
@@ -104,6 +110,20 @@ func (productCategory *ProductCategory) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 func (productCategory *ProductCategory) AfterFind(tx *gorm.DB) (err error) {
+	/*stat := struct {
+		ProductCardsCount uint
+		WebPagesCount uint
+		ProductsCount uint
+	}{0,0,0}
+	if err = db.Raw("SELECT\n    COUNT(*) AS units,\n    sum(payment_amount * volume_order) AS amount_order,\n    sum(payment_amount * volume_fact) AS amount_fact\nFROM shipment_items\nWHERE account_id = ? AND shipment_id = ?;",
+		shipment.AccountId, shipment.Id).
+		Scan(&stat).Error; err != nil {
+		return err
+	}
+
+	productCategory.ProductCardsCount 	= stat.ProductCardsCount
+	productCategory.WebPagesCount 		= stat.WebPagesCount
+	productCategory.ProductsCount 		= stat.ProductsCount*/
 
 	return nil
 }
@@ -209,6 +229,8 @@ func (productCategory *ProductCategory) update(input map[string]interface{}, pre
 
 	delete(input,"image")
 	delete(input,"web_pages")
+	delete(input,"products")
+	delete(input,"product_cards")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","priority","web_site_id"}); err != nil {
 		return err
@@ -266,7 +288,6 @@ func (productCategory ProductCategory) AppendProductCard(productCard *ProductCar
 
 	return nil
 }
-
 func (productCategory ProductCategory) RemoveProductCard(productCard ProductCard) error {
 
 	// Загружаем еще раз
@@ -293,4 +314,69 @@ func (productCategory ProductCategory) RemoveProductCard(productCard ProductCard
 	}
 
 	return nil
+}
+
+func (productCategory *ProductCategory) AppendProduct(product *Product, strict... bool) error {
+
+	// 1. Загружаем продукт еще раз
+	if err := product.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить продукт, он не найден"}
+	}
+
+	// 2. Проверяем есть ли уже в этой категории этот продукт
+	if productCategory.ExistProduct(product.Id) {
+		if len(strict) > 0 {
+			return utils.Error{Message: "Продукт уже числиться в категории"}
+		} else {
+			return nil
+		}
+	}
+
+	if err := db.Create(
+		&ProductCategoryProduct{
+			ProductId: product.Id, ProductCategoryId: productCategory.Id}).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func (productCategory *ProductCategory) RemoveProduct(product *Product) error {
+
+	// 1. Загружаем продукт еще раз
+	if err := product.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя удалить продукт, он не найден"}
+	}
+
+	if productCategory.AccountId < 1 || product.Id < 1 || productCategory.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: account id || product id || product category id == nil"}
+	}
+
+	fmt.Printf("Удаляем продукт: %v || %v", productCategory.Id, product.Id)
+	if err := db.Where("product_category_id = ? AND product_id = ?", productCategory.Id, product.Id).Delete(
+		&ProductCategoryProduct{}).Error; err != nil {
+		return err
+	}
+
+
+	return nil
+}
+
+func (productCategory *ProductCategory) ExistProduct(productId uint) bool {
+
+	if productId < 1 {
+		return false
+	}
+
+	pcp := ProductCategoryProduct{}
+	result := db.Model(&ProductCategoryProduct{}).First(&pcp,"product_category_id = ? AND product_id = ?", productCategory.Id, productId)
+
+	if result.Error != nil {
+		return false
+	}
+	if result.RowsAffected > 0 {
+		return true
+	}
+
+
+	return false
 }

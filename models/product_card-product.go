@@ -9,8 +9,7 @@ import (
 type ProductCardProduct struct {
 	ProductId  		uint `json:"product_id"`
 	ProductCardId 	uint `json:"product_card_id"`
-	// Order			int `json:"order" gorm:"type:int;default:10;"`
-	Priority 	int		`json:"priority" gorm:"type:int;default:10;"` // Порядок отображения (часто нужно файлам)
+	Priority 	int		`json:"priority" gorm:"type:int;default:10;"`
 }
 
 func (ProductCardProduct) PgSqlCreate() {

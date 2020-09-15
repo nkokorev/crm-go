@@ -37,6 +37,7 @@ func main() {
 		base.UploadBroUserData()
 
 		base.UploadTestDataPart_V()
+		base.Upload357grData()
 	}
 
 	if err := models.SettingsDb(); err != nil {

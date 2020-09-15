@@ -317,7 +317,7 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 
 		// 1.2 Если продукт недоступен к заказу в розницу
 		if !product.RetailSale {
-			u.Respond(w, u.MessageError(u.Error{Message:fmt.Sprintf("Заказ содержит продукты недоступные к заказу: %v", product.Name), Errors: map[string]interface{}{"cart":"Не корректный список продуктов"}}))
+			u.Respond(w, u.MessageError(u.Error{Message:fmt.Sprintf("Заказ содержит продукты недоступные к заказу: %v", product.Label), Errors: map[string]interface{}{"cart":"Не корректный список продуктов"}}))
 			return
 		}
 
@@ -333,10 +333,14 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 
 
 		// 1.4 Формируем и добавляем Cart Item в общий список
-		cartItems = append(cartItems, models.CartItem{
+		desc := "Описание продукта"
+		if product.Label != nil {
+			desc = *product.Label
+		}
+		cartItems = append(cartItems, models.CartItem {
 			AccountId: account.Id,
 			ProductId: product.Id,
-			Description: product.Name,
+			Description: desc,
 			Quantity: v.Quantity,
 			Amount: models.PaymentAmount{Value: ProductCost, Currency: "RUB"},
 			VatCode: product.VatCodeId,

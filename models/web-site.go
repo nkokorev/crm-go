@@ -279,10 +279,7 @@ func (webSite WebSite) CreatePage(input WebPage) (*WebPage, error) {
 // ######### SHOP PRODUCT Functions ############
 func (webSite WebSite) CreateProduct(input Product, card ProductCard) (*Product, error) {
 	input.AccountId = webSite.AccountId
-
-	if input.ExistSKU() {
-		return nil, utils.Error{Message: "Повторение данных", Errors: map[string]interface{}{"sku":"Товар с таким SKU уже есть"}}
-	}
+	
 	if input.ExistModel() {
 		return nil, utils.Error{Message: "Повторение данных", Errors: map[string]interface{}{"model":"Товар с такой моделью уже есть"}}
 	}
@@ -327,10 +324,7 @@ func (webSite WebSite) GetProduct(productId uint) (*Product, error) {
 func (webSite WebSite) CreateProductWithProductCard(input Product, newCard ProductCard, productCategory ProductCategory) (*Product, error) {
 	
 	input.AccountId = webSite.AccountId
-
-	if input.ExistSKU() {
-		return nil, utils.Error{Message: "Повторение данных", Errors: map[string]interface{}{"sku":"Товар с таким SKU уже есть"}}
-	}
+	
 	if input.ExistModel() {
 		return nil, utils.Error{Message: "Повторение данных", Errors: map[string]interface{}{"model":"Товар с такой моделью уже есть"}}
 	}
