@@ -319,15 +319,15 @@ func (shipment *Shipment) updateWorkStatus(status WorkStatus, reason... string) 
 func (shipment *Shipment) SetPendingStatus() error {
 
 	// Возможен вызов из состояния planned: вернуть на доработку => pending
-	if shipment.Status != WorkStatusPlanned {
+	if shipment.Status != WorkStatusPlanned && shipment.Status != WorkStatusActive {
 		reason := "Невозможно установить статус,"
 		switch shipment.Status {
 		case WorkStatusPending:
 			reason += "т.к. поставка уже в разработке"
-		case WorkStatusActive:
-			reason += "т.к. поставка в процессе рассылки"
 		case WorkStatusPaused:
-			reason += "т.к. поставка на паузе, но в процессе рассылки"
+			reason += "т.к. поставка приостановлена"
+		case WorkStatusPosting:
+			reason += "т.к. поставка в процессе разгрузки"
 		case WorkStatusFailed:
 			reason += "т.к. поставка завершена с ошибкой"
 		case WorkStatusCompleted:
@@ -421,20 +421,21 @@ func (shipment *Shipment) SetCompletedStatus() error {
 
 	// Возможен вызов из состояния active, paused: завершить поставку => completed
 	// Сбрасываются все задачи из очереди
-	if shipment.Status != WorkStatusActive && shipment.Status != WorkStatusPaused {
+	if shipment.Status != WorkStatusActive && shipment.Status != WorkStatusPaused && shipment.Status != WorkStatusPosting {
 		reason := "Невозможно завершить поставку,"
 		switch shipment.Status {
-		case WorkStatusPending:
-			reason += "т.к. поставка еще в стадии разработки"
-		case WorkStatusPlanned:
-			reason += "т.к. поставка еще в стадии планирования"
-		case WorkStatusCompleted:
-			reason += "т.к. поставка уже завершена"
-		case WorkStatusFailed:
-			reason += "т.к. поставка завершена с ошибкой"
-		case WorkStatusCancelled:
-			reason += "т.к. поставка отменена"
-		}
+			case WorkStatusPending:
+				reason += "т.к. поставка еще в стадии разработки"
+			case WorkStatusPlanned:
+				reason += "т.к. поставка еще в стадии планирования"
+			case WorkStatusCompleted:
+				reason += "т.к. поставка уже завершена"
+			case WorkStatusFailed:
+				reason += "т.к. поставка завершена с ошибкой"
+			case WorkStatusCancelled:
+				reason += "т.к. поставка отменена"
+			}
+			
 		return utils.Error{Message: reason}
 	}
 
@@ -466,32 +467,11 @@ func (shipment *Shipment) SetCancelledStatus() error {
 	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить поставку
 	return shipment.updateWorkStatus(WorkStatusCancelled)
 }
-func (shipment *Shipment) SetShipmentStatus() error {
-
-	// Возможен вызов из состояния active, paused, planned: завершить поставку => cancelled
-	if shipment.Status != WorkStatusActive && shipment.Status != WorkStatusPaused && shipment.Status != WorkStatusPlanned {
-		reason := "Невозможно отменить поставку,"
-		switch shipment.Status {
-		case WorkStatusPending:
-			reason += "т.к. поставка еще в стадии разработки"
-		case WorkStatusCompleted:
-			reason += "т.к. поставка уже завершена"
-		case WorkStatusFailed:
-			reason += "т.к. поставка завершена с ошибкой"
-		case WorkStatusCancelled:
-			reason += "т.к. поставка уже отменена"
-		}
-		return utils.Error{Message: reason}
-	}
-
-	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить поставку
-	return shipment.updateWorkStatus(WorkStatusCancelled)
-}
 func (shipment *Shipment) SetPostingStatus() error {
 
 	// Возможен вызов из состояния active, paused, planned: завершить поставку => cancelled
 	if shipment.Status != WorkStatusActive && shipment.Status != WorkStatusPaused && shipment.Status != WorkStatusPlanned {
-		reason := "Невозможно отменить поставку,"
+		reason := "Невозможно перевести в статус разгрузки,"
 		switch shipment.Status {
 		case WorkStatusPending:
 			reason += "т.к. поставка еще в стадии разработки"
@@ -505,8 +485,8 @@ func (shipment *Shipment) SetPostingStatus() error {
 		return utils.Error{Message: reason}
 	}
 
-	// Переводим в состояние "Завершена", т.к. все проверки пройдены и можно приостановить поставку
-	return shipment.updateWorkStatus(WorkStatusCancelled)
+	// Переводим в состояние "Разгрузка", т.к. все проверки пройдены и можно приостановить поставку
+	return shipment.updateWorkStatus(WorkStatusPosting)
 }
 
 // ######### Shipment Functions ############
