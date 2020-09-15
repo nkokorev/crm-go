@@ -247,7 +247,7 @@ func (deliveryPickup DeliveryPickup) AppendPaymentMethods(paymentMethods []Payme
 	return nil
 }
 func (deliveryPickup DeliveryPickup) RemovePaymentMethods(paymentMethods []PaymentMethod) error  {
-	/*if err := db.Model(&deliveryPickup).Association("PaymentOptions").Delete(paymentMethods).Error; err != nil {
+	/*if err := db.Model(&deliveryPickup).Association("PaymentOptions").Delete(&paymentMethods).Error; err != nil {
 		return err
 	}*/
 

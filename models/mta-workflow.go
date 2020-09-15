@@ -591,6 +591,6 @@ func (mtaWorkflow *MTAWorkflow) pausedEmailSender(reason string) {
 func (mtaWorkflow *MTAWorkflow) removeWorkflowUser(userId uint) {
 
 	// Удаляем все задачи из WorkFlow для этого типа отправителя
-	db.Where("owner_id = ? AND owner_type = ? AND user_id = ?", mtaWorkflow.OwnerId, mtaWorkflow.OwnerType,userId).Delete(MTAWorkflow{})
+	db.Where("owner_id = ? AND owner_type = ? AND user_id = ?", mtaWorkflow.OwnerId, mtaWorkflow.OwnerType,userId).Delete(&MTAWorkflow{})
 
 }

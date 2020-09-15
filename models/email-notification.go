@@ -692,7 +692,7 @@ func (emailNotification *EmailNotification) SetCompletedStatus() error {
 func (emailNotification *EmailNotification) SetFailedStatus(reason string) error {
 	
 	// Удаляем все задачи из WorkFlow
-	err := db.Where("owner_id = ? AND owner_type = ?", emailNotification.Id, emailNotification.GetType()).Delete(MTAWorkflow{}).Error
+	err := db.Where("owner_id = ? AND owner_type = ?", emailNotification.Id, emailNotification.GetType()).Delete(&MTAWorkflow{}).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		log.Printf("Ошибка удаления очереди из MTAWorkflow: %v\b", err)
 		return utils.Error{Message: "Ошибка завершения кампании - невозможно удалить остаток задач"}
@@ -725,7 +725,7 @@ func (emailNotification *EmailNotification) SetCancelledStatus() error {
 	}
 
 	// Удаляем все задачи из WorkFlow
-	err := db.Where("owner_id = ? AND owner_type = ?", emailNotification.Id, emailNotification.GetType()).Delete(MTAWorkflow{}).Error
+	err := db.Where("owner_id = ? AND owner_type = ?", emailNotification.Id, emailNotification.GetType()).Delete(&MTAWorkflow{}).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		log.Printf("Ошибка удаления очереди из MTAWorkflow: %v\b", err)
 		return utils.Error{Message: "Ошибка завершения кампании - невозможно удалить остаток задач"}
@@ -816,7 +816,7 @@ func (emailNotification *EmailNotification) RemoveRunTask() error {
 
 	// Удаляем все задачи, которые можно "выполнить" в будущем
 	err := db.Where("owner_id = ? AND owner_type = ? AND (status != ? OR status != ? OR status != ?)",
-		emailNotification.Id, TaskEmailNotificationRun, WorkStatusCompleted, WorkStatusCancelled, WorkStatusFailed).Delete(TaskScheduler{}).Error
+		emailNotification.Id, TaskEmailNotificationRun, WorkStatusCompleted, WorkStatusCancelled, WorkStatusFailed).Delete(&TaskScheduler{}).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		log.Printf("Ошибка удаления очереди из TaskScheduler: %v\b", err)
 		return utils.Error{Message: "Ошибка удаления задачи по запуску кампании"}

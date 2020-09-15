@@ -542,8 +542,8 @@ func (inventory Inventory) RemoveProduct(product Product) error {
 		return utils.Error{Message: "Техническая ошибка: account id || product id || inventory id == nil"}
 	}
 
-	if err := db.Where("account_id = ? AND product_id = ? AND inventory_id = ?", inventory.AccountId, product.Id, inventory.Id).Delete(
-		&WarehouseItem{}).Error; err != nil {
+	if err := db.Where("account_id = ? AND product_id = ? AND inventory_id = ?", inventory.AccountId, product.Id, inventory.Id).
+		Delete(&WarehouseItem{}).Error; err != nil {
 		return err
 	}
 

@@ -185,7 +185,7 @@ func (EmailAccessToken) UserDeletePasswordReset(user *User) {
 
 	// Удаляем токен, если находим
 	// todo: лютая хуйня вроде как __^^__
-	if err := db.Delete(EmailAccessToken{},"(owner_id = ? OR destination_email = ?) AND action_type = ?", user.Id, user.Email, EmailTokenType.USER_EMAIL_RESET_PASSWORD).Error; err != nil {
+	if err := db.Delete(&EmailAccessToken{},"(owner_id = ? OR destination_email = ?) AND action_type = ?", user.Id, user.Email, EmailTokenType.USER_EMAIL_RESET_PASSWORD).Error; err != nil {
 		// log.Fatal()...
 	}
 }

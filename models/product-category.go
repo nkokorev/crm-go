@@ -280,8 +280,8 @@ func (productCategory ProductCategory) RemoveProductCard(productCard ProductCard
 		return utils.Error{Message: "Техническая ошибка: account id || product card id || product category id == nil"}
 	}
 
-	if err := db.Where("account_id = ? AND product_card_id = ? AND product_category_id = ?", productCategory.AccountId, productCard.Id, productCategory.Id).Delete(
-		&ProductCategoryProductCard{}).Error; err != nil {
+	if err := db.Where("account_id = ? AND product_card_id = ? AND product_category_id = ?", productCategory.AccountId, productCard.Id, productCategory.Id).
+		Delete(&ProductCategoryProductCard{}).Error; err != nil {
 		return err
 	}
 

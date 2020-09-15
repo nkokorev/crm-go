@@ -298,8 +298,8 @@ func (webPage WebPage) RemoveProductCategory(productCategory ProductCategory) er
 		return utils.Error{Message: "Техническая ошибка: account id || product card id || product category id == nil"}
 	}
 
-	if err := db.Where("account_id = ? AND web_page_id = ? AND product_category_id = ?", webPage.AccountId, webPage.Id, productCategory.Id).Delete(
-		&WebPageProductCategories{}).Error; err != nil {
+	if err := db.Where("account_id = ? AND web_page_id = ? AND product_category_id = ?", webPage.AccountId, webPage.Id, productCategory.Id).
+		Delete(&WebPageProductCategories{}).Error; err != nil {
 		return err
 	}
 

@@ -576,8 +576,8 @@ func (shipment Shipment) RemoveProduct(product Product) error {
 		return utils.Error{Message: "Техническая ошибка: account id || product id || shipment id == nil"}
 	}
 
-	if err := db.Where("account_id = ? AND product_id = ? AND shipment_id = ?", shipment.AccountId, product.Id, shipment.Id).Delete(
-		&ShipmentItem{}).Error; err != nil {
+	if err := db.Where("account_id = ? AND product_id = ? AND shipment_id = ?", shipment.AccountId, product.Id, shipment.Id).
+		Delete(&ShipmentItem{}).Error; err != nil {
 		return err
 	}
 
