@@ -136,9 +136,9 @@ type Product struct {
 
 	Inventories 	[]Inventory	`json:"inventories" gorm:"many2many:inventory_items"`
 
-	Account 		Account 		`json:"-"`
-	ProductCards 	[]ProductCard 	`json:"product_cards" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
-	ProductCategories 		[]ProductCategory 	`json:"product_categories" gorm:"many2many:product_category_products;"`
+	Account 			Account 		`json:"-"`
+	ProductCards 		[]ProductCard 	`json:"product_cards" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
+	ProductCategories 	[]ProductCategory 	`json:"product_categories" gorm:"many2many:product_category_products;"`
 }
 
 func (Product) PgSqlCreate() {

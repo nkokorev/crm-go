@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
@@ -17,7 +16,8 @@ type ProductCategory struct {
 	Id     		uint	`json:"id" gorm:"primaryKey"`
 	PublicId	uint	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
-	ParentId 	uint	`json:"parent_id"`
+	ParentId 	*uint	`json:"parent_id"`
+	Children	[]ProductCategory `json:"children" gorm:"foreignkey:ParentId"`
 
 	// Наименование категории: Шу Пуэр, Красный чай, Пуэр, ...
 	Label 		*string `json:"label" gorm:"type:varchar(255);"`
@@ -39,7 +39,7 @@ type ProductCategory struct {
 	// Страницы, на которых выводятся карточки товаров этой товарной группы
 	WebPages 		[]WebPage 	`json:"web_pages" gorm:"many2many:web_page_product_categories;"`
 
-	// Страницы, на которых выводятся карточки товаров этой товарной группы
+	// Товары, которые входят в эту категорию
 	Products 		[]Product 	`json:"products" gorm:"many2many:product_category_products;"`
 }
 func (ProductCategory) PgSqlCreate() {
@@ -79,10 +79,16 @@ func (productCategory *ProductCategory) GetPreloadDb(getModel bool, autoPreload 
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Products","ProductCards","WebPages"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Products","ProductCards","WebPages","Children","Children12"})
 
 		for _,v := range allowed {
-			_db.Preload(v)
+			if v == "Children12" {
+				_db.Preload("Children.Children.Children.Children.Children.Children.Children.Children.Children.Children.Children.Children")
+					
+			} else {
+				_db.Preload(v)
+			}
+
 		}
 		return _db
 	}
@@ -110,6 +116,25 @@ func (productCategory *ProductCategory) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 func (productCategory *ProductCategory) AfterFind(tx *gorm.DB) (err error) {
+
+	// tx.Joins("ProductCategory").Preload("Children")
+	// Считаем число товаров
+
+	// 1. Собираем все ID дочерних категорий
+	/*var arr []uint
+
+	if productCategory.Children != nil {
+
+		children := productCategory.Children
+		for i := range children {
+			child := children[i]
+			arr = append(arr, child.Id)
+		}
+	}*/
+
+	// fmt.Println("Ищем еще товары")
+	
+
 	/*stat := struct {
 		ProductCardsCount uint
 		WebPagesCount uint
@@ -256,7 +281,7 @@ func (productCategory *ProductCategory) delete () error {
 
 
 func (productCategory ProductCategory) CreateChild(wp ProductCategory) (Entity, error){
-	wp.ParentId = productCategory.Id
+	wp.ParentId = utils.UINTp(productCategory.Id)
 	wp.AccountId = productCategory.AccountId
 	_webPage, err := wp.create()
 	if err != nil {return nil, err}
@@ -351,7 +376,6 @@ func (productCategory *ProductCategory) RemoveProduct(product *Product) error {
 		return utils.Error{Message: "Техническая ошибка: account id || product id || product category id == nil"}
 	}
 
-	fmt.Printf("Удаляем продукт: %v || %v", productCategory.Id, product.Id)
 	if err := db.Where("product_category_id = ? AND product_id = ?", productCategory.Id, product.Id).Delete(
 		&ProductCategoryProduct{}).Error; err != nil {
 		return err
