@@ -3126,6 +3126,24 @@ func Upload357grData() {
 	})
 	CategoryRoot := _CategoryRoot.(*models.ProductCategory)
 
+	// категория: Новинки
+	_, err = CategoryRoot.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("news"), Label: utils.STRp("Новинки"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать news для 357gr category: ", err)
+		return
+	}
+
+	// категория: участие в акции
+	_, err = CategoryRoot.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("promotions"), Label: utils.STRp("Акции"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать promotions для 357gr category: ", err)
+		return
+	}
+
 	// категория: весь чай
 	_catTea, err := CategoryRoot.CreateChild(models.ProductCategory{
 		Code:  utils.STRp("tea"), Label: utils.STRp("Чай"),

@@ -210,7 +210,7 @@ func (ProductCategory) getList(accountId uint, sortBy string, preload []string) 
 }
 func (ProductCategory) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
-	productGroups := make([]ProductCategory,0)
+	productCategories := make([]ProductCategory,0)
 	var total int64
 
 	// if need to search
@@ -219,7 +219,7 @@ func (ProductCategory) getPaginationList(accountId uint, offset, limit int, sort
 		search = "%"+search+"%"
 
 		err := (&ProductCategory{}).GetPreloadDb(false,false,preloads).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Where(filter).Find(&productGroups, "label ILIKE ? OR code ILIKE ? OR route_name ILIKE ? OR icon_name ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search,search).Error
+			Where(filter).Find(&productCategories, "label ILIKE ? OR label_plural ILIKE ? OR code ILIKE ?", search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -227,7 +227,7 @@ func (ProductCategory) getPaginationList(accountId uint, offset, limit int, sort
 
 		// Определяем total
 		err = db.Model(&ProductCategory{}).
-			Where("label ILIKE ? OR code ILIKE ? OR route_name ILIKE ? OR icon_name ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search,search).
+			Where("account_id = ? AND label ILIKE ? OR label_plural ILIKE ? OR code ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -236,7 +236,7 @@ func (ProductCategory) getPaginationList(accountId uint, offset, limit int, sort
 	} else {
 		
 		err := (&ProductCategory{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Where(filter).Find(&productGroups).Error
+			Where(filter).Find(&productCategories).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
@@ -249,9 +249,9 @@ func (ProductCategory) getPaginationList(accountId uint, offset, limit int, sort
 	}
 
 	// Преобразуем полученные данные
-	entities := make([]Entity,len(productGroups))
-	for i := range productGroups {
-		entities[i] = &productGroups[i]
+	entities := make([]Entity,len(productCategories))
+	for i := range productCategories {
+		entities[i] = &productCategories[i]
 	}
 
 	return entities, total, nil
