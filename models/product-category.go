@@ -19,15 +19,21 @@ type ProductCategory struct {
 	ParentId 	*uint	`json:"parent_id"`
 	Children	[]ProductCategory `json:"children" gorm:"foreignkey:ParentId"`
 
-	// Наименование категории: Шу Пуэр, Красный чай, Пуэр, ...
+	// Наименование категории в ед. числе: Шу Пуэр, Красный чай, Пуэр, ...
 	Label 		*string `json:"label" gorm:"type:varchar(255);"`
+
+	// Наименование категории в множ. числе: Шу Пуэры, Красные чаи, Пуэры, ...
+	LabelPlural *string `json:"label_plural" gorm:"type:varchar(255);"`
 	
-	// Код категории для выборки (возможно), unique ( в рамках account)
+	// Код категории для выборки (возможно), unique ( в рамках account), для назначения цвета
 	Code 		*string `json:"code" gorm:"type:varchar(255);"`
 
 	// Приоритет отображения категории на странице
 	// todo: доработать формат отображения... смешанный, по порядку и т.д.
 	Priority	int		`json:"priority" gorm:"type:int;default:10;"`
+
+	// Отображать ли категорию в свойствах товара
+	ShowProperty	bool	`json:"show_property" gorm:"type:bool;default:false"`
 
 	// Карточки товаров
 	ProductCards 	[]ProductCard 	`json:"product_cards" gorm:"many2many:product_category_product_cards;"`

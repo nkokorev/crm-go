@@ -3120,6 +3120,7 @@ func Upload357grData() {
 	
 	// 5* Создаем категории товаров
 
+	// псевдо категория
 	_CategoryRoot, err := account.CreateEntity(&models.ProductCategory{
 		Code:  utils.STRp("catalog"), Label: utils.STRp("Весь каталог"),
 	})
@@ -3136,10 +3137,10 @@ func Upload357grData() {
 	}
 
 	// категория: красный чай
-	_catRedTea, err := catTea.CreateChild(models.ProductCategory{
+	_, err = catTea.CreateChild(models.ProductCategory{
 		Code:  utils.STRp("red-tea"), Label: utils.STRp("Красный чай"),
 	})
-	catRedTea := _catRedTea.(*models.ProductCategory)
+	// catRedTea := _catRedTea.(*models.ProductCategory)
 	if err != nil {
 		log.Fatal("Не удалось создать catTea для 357 catalog: ", err)
 		return
@@ -3279,12 +3280,7 @@ func Upload357grData() {
 		log.Fatal("Не удалось создать catTea для 357 catalog: ", err)
 		return
 	}
-
-
-	fmt.Println(catUlunTea, catGreenTea, catRedTea)
-
-
-
+	
 	// категория: весь кофе
 	_catCoffee, err := CategoryRoot.CreateChild(models.ProductCategory{
 		Code:  utils.STRp("coffee"), Label: utils.STRp("Кофе"),
@@ -3305,7 +3301,227 @@ func Upload357grData() {
 		Code:  utils.STRp("beans-coffee"), Label: utils.STRp("Кофе в зернах"),
 	})
 
+
+	// категория: Подарки
+	_catGifts, err := CategoryRoot.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("gifts"), Label: utils.STRp("Подарки"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catGifts для 357gr category: ", err)
+		return
+	}
+	catGifts := _catGifts.(*models.ProductCategory)
+	// подкатегория: Чайные сувениры
+	_, err = catGifts.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("gifts"), Label: utils.STRp("Чайные сувениры"),
+	})
+	_, err = catGifts.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("gifts"), Label: utils.STRp("Подарочные корзины"),
+	})
+	_, err = catGifts.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("gifts"), Label: utils.STRp("Подарочные букеты"),
+	})
+	_, err = catGifts.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("gifts"), Label: utils.STRp("Подарки руководителю"),
+	})
+
+	// категория: Посуда и аксессуары
+	_catAccessories, err := CategoryRoot.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("accessories"), Label: utils.STRp("Посуда и аксессуары"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catAccessories для 357gr category: ", err)
+		return
+	}
+	catAccessories := _catAccessories.(*models.ProductCategory)
+
 	
+	// под подкатегория: Для заваривания
+	_catBrewing, err := catAccessories.CreateChild(models.ProductCategory{
+		Code:  utils.STRp("accessories.brewing"), Label: utils.STRp("Для заваривания"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catBrewing для 357gr category: ", err)
+		return
+	}
+	catBrewing := _catBrewing.(*models.ProductCategory)
+	
+	// под подкатегория: Для чаепития
+	_catForTea, err := catAccessories.CreateChild( models.ProductCategory{
+		Code:  utils.STRp("accessories.for-tea"), Label: utils.STRp("Для чаепития"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catForTea для 357gr category: ", err)
+		return
+	}
+	catForTea := _catForTea.(*models.ProductCategory)
+
+	// под подкатегория: Для хранения
+	_catTeaStorage, err := catAccessories.CreateChild( models.ProductCategory{
+		Code:  utils.STRp("accessories.storage"), Label: utils.STRp("Для хранения чая"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catBrewing для 357gr category: ", err)
+		return
+	}
+	catTeaStorage := _catTeaStorage.(*models.ProductCategory)
+
+	// под подкатегория: Разное
+	_catOthers, err := catAccessories.CreateChild( models.ProductCategory{
+		Code:  utils.STRp("accessories.others"), Label: utils.STRp("Разное"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catOthers для 357gr category: ", err)
+		return
+	}
+	catOthers := _catOthers.(*models.ProductCategory)
+
+	// под под под категория посуда и акксесуары
+
+	// для заваривания - Традиционная посуда
+	_, err = catBrewing.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.tableware.traditional"), Label: utils.STRp("Традиционная посуда"),LabelPlural: utils.STRp("Традиционная посуда"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+	// для заваривания - Европейская посуда
+	_, err = catBrewing.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.tableware.european"), Label: utils.STRp("Европейская посуда"),LabelPlural: utils.STRp("Европейская посуда"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+	// для заваривания - Типоды
+	_, err = catBrewing.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.tableware.gunfu"), Label: utils.STRp("Типод"),LabelPlural: utils.STRp("Типоды"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+	// для заваривания - Сифоны
+	_, err = catBrewing.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.tableware.siphons"), Label: utils.STRp("Сифон"),LabelPlural: utils.STRp("Сифоны"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+
+	
+	// Для чаепития - Для чайной церемонии
+	_, err = catForTea.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.tableware.traditional"), Label: utils.STRp("Для чайной церемонии"), LabelPlural: utils.STRp("Для чайной церемонии"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+	// Для чаепития - Сервизы
+	_, err = catForTea.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.tableware.european"), Label: utils.STRp("чайный сервиз"), LabelPlural: utils.STRp("Сервизы"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+	// Для чаепития - Чашки
+	_, err = catForTea.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.tableware.gunfu"), Label: utils.STRp("Чашка"), LabelPlural: utils.STRp("Чашки"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+	// Для чаепития - Пиалы
+	_, err = catForTea.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.tableware.siphons"), Label: utils.STRp("Пиала"), LabelPlural: utils.STRp("Пиалы"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+
+
+	
+	// для хранения - Банки металлические
+	_, err = catTeaStorage.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.storage.metal"), Label: utils.STRp("Банка металлическая"), LabelPlural: utils.STRp("Банки металлические"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+	// для хранения - Банки картонные
+	_, err = catTeaStorage.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.storage.cartons"), Label: utils.STRp("Банка картонная"), LabelPlural: utils.STRp("Банки картонные"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+	// для хранения - Упаковка для пуэров
+	_, err = catTeaStorage.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.storage.caps"), Label: utils.STRp("Упаковка для пуэра"), LabelPlural: utils.STRp("Упаковки для пуэров"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+	// для хранения - Чайницы
+	_, err = catTeaStorage.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.storage.pialas"), Label: utils.STRp("Чайница"), LabelPlural: utils.STRp("Чайницы"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+
+
+	// Разное - Благовония
+	_, err = catOthers.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.for-tea.ceremonies"), Label: utils.STRp("Благовонье"),LabelPlural: utils.STRp("Благовония"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+	// Разное - Чайные фигурки
+	_, err = catOthers.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.for-tea.services"), Label: utils.STRp("Чайная фигурка"),LabelPlural: utils.STRp("Чайные фигурки"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+	// Разное - Электрические плитки
+	_, err = catOthers.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.for-tea.caps"), Label: utils.STRp("Электрическая плитка"),LabelPlural: utils.STRp("Электрические плитки"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+	// Разное - Чистящие средства
+	_, err = catOthers.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.for-tea.pialas"), Label: utils.STRp("Чистящее средство"),LabelPlural: utils.STRp("Чистящие средства"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+	// Разное - Чайный инструмент
+	_, err = catOthers.CreateChild( models.ProductCategory {
+		Code:  utils.STRp("accessories.for-tea.pialas"), Label: utils.STRp("Чайный инструмент"),LabelPlural: utils.STRp("Чайный инструмент"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _catTableware для 357gr category: ", err)
+		return
+	}
+
 
 	/*// А можно добавить категорию 1 и категорию 2
 	if err := webPageCatalogRoot.AppendProductCategory(CategoryRoot); err != nil {
