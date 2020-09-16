@@ -2470,6 +2470,19 @@ func Upload357grData() {
 	webPageTea := _webPageTea.(*models.WebPage)
 
 	// Подстраницы с чаем
+
+	// Китайский чай
+	_, err = webPageTea.CreateChild( models.WebPage{
+		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Китайский чай"), Path:  utils.STRp("china-tea"),
+		MetaTitle: utils.STRp("Китайский чай :: 357 грамм"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.china-tea"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
+		return
+	}
+
+	// красный чай
 	_, err = webPageTea.CreateChild( models.WebPage{
 		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Красный чай"), Path:  utils.STRp("red-tea"),
 		MetaTitle: utils.STRp("Красный чай :: 357 грамм"),
@@ -2489,17 +2502,20 @@ func Upload357grData() {
 		return
 	}
 	webPageGreenTea := _webPageGreenTea.(*models.WebPage)
-	_, err = webPageTea.CreateChild( models.WebPage{
-		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Улун"), Path:  utils.STRp("ulun-tea"),
+
+	_webPageOolongTea, err := webPageTea.CreateChild( models.WebPage{
+		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Улун"), Path:  utils.STRp("oolong-tea"),
 		MetaTitle: utils.STRp("Улуны :: 357 грамм"),
-		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea.ulun"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea.oolong"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
 		return
 	}
-	_, err = webPageTea.CreateChild( models.WebPage{
-		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Пуэр"), Path:  utils.STRp("ulun-tea"),
+	webPageOolongTea := _webPageOolongTea.(*models.WebPage)
+
+	_webPagePuerTea, err := webPageTea.CreateChild( models.WebPage{
+		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Пуэр"), Path:  utils.STRp("oolong-tea"),
 		MetaTitle: utils.STRp("Пуэры :: 357 грамм"),
 		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea.puer"),
 	})
@@ -2507,6 +2523,7 @@ func Upload357grData() {
 		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
 		return
 	}
+	webPagePuerTea := _webPagePuerTea.(*models.WebPage)
 	_, err = webPageTea.CreateChild( models.WebPage{
 		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Травяной чай"), Path:  utils.STRp("herbal-tea"),
 		MetaTitle: utils.STRp("Травяной чай :: 357 грамм"),
@@ -2526,7 +2543,7 @@ func Upload357grData() {
 		return
 	}
 
-	// ---
+	// подстраницы Зеленого чая ---
 	_, err = webPageGreenTea.CreateChild( models.WebPage{
 		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Китайский зеленый чай"), Path:  utils.STRp("china"),
 		MetaTitle: utils.STRp("Китайский зеленый чай :: 357 грамм"),
@@ -2549,6 +2566,92 @@ func Upload357grData() {
 		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Связанный чай"), Path:  utils.STRp("related"),
 		MetaTitle: utils.STRp("Связанный чай :: 357 грамм"),
 		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea.green.related"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
+		return
+	}
+	// подстраницы Улунского чая ---
+	_, err = webPageOolongTea.CreateChild( models.WebPage{
+		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Южнофуцзянские улуны"), Path:  utils.STRp("china"),
+		MetaTitle: utils.STRp("Южнофуцзянские улуны :: 357 грамм"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea.oolong.china"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
+		return
+	}
+	_, err = webPageOolongTea.CreateChild( models.WebPage{
+		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Уишаньские улуны"), Path:  utils.STRp("jasmine"),
+		MetaTitle: utils.STRp("Уишаньские улуны :: 357 грамм"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea.green.jasmine"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
+		return
+	}
+	_, err = webPageOolongTea.CreateChild( models.WebPage{
+		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Тайваньские улуны"), Path:  utils.STRp("related"),
+		MetaTitle: utils.STRp("Тайваньские улуны :: 357 грамм"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea.green.related"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
+		return
+	}
+	_, err = webPageOolongTea.CreateChild( models.WebPage{
+		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Гуандунские улуны"), Path:  utils.STRp("related"),
+		MetaTitle: utils.STRp("Гуандунские улуны :: 357 грамм"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea.green.related"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
+		return
+	}
+
+	// подстраницы Пуэра чая ---
+	_, err = webPagePuerTea.CreateChild( models.WebPage{
+		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Шу Пуэр пресованный"), Path:  utils.STRp("shu"),
+		MetaTitle: utils.STRp("Шу Пуэр пресованный :: 357 грамм"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea.puer.shu-pressed"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
+		return
+	}
+	_, err = webPagePuerTea.CreateChild( models.WebPage{
+		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Шу Пуэр рассыпной"), Path:  utils.STRp("shu-loose"),
+		MetaTitle: utils.STRp("Шу Пуэр рассыпной :: 357 грамм"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea.puer.shu-loose"),
+	})
+	
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
+		return
+	}
+	_, err = webPagePuerTea.CreateChild( models.WebPage {
+		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Шэн Пуэр пресованный"), Path:  utils.STRp("shen"),
+		MetaTitle: utils.STRp("Шэн Пуэр пресованный :: 357 грамм"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea.puer.shen-pressed"),
+	})
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
+		return
+	}
+	_, err = webPagePuerTea.CreateChild( models.WebPage {
+		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Шэн Пуэр рассыпной"), Path:  utils.STRp("shen-loose"),
+		MetaTitle: utils.STRp("Шэн Пуэр рассыпной :: 357 грамм"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea.puer.shen-loose"),
+	})
+	
+	if err != nil {
+		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
+		return
+	}
+	_, err = webPagePuerTea.CreateChild( models.WebPage {
+		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Белый Пуэр"), Path:  utils.STRp("white"),
+		MetaTitle: utils.STRp("Белый Пуэр :: 357 грамм"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea.puer.white"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
@@ -2686,9 +2789,7 @@ func Upload357grData() {
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для 357 грамм webSite: ", err)
 	}
-
-
-
+	
 	// ################# Корзина страницы #################
 
 	_cartWebPage, err := webPageRoot.CreateChild(
@@ -2781,7 +2882,7 @@ func Upload357grData() {
 
 	// категория: улунский чай
 	_catUlunTea, err := catTea.CreateChild(models.ProductCategory{
-		Code:  utils.STRp("ulun-tea"), Label: utils.STRp("Улунский чай"),
+		Code:  utils.STRp("oolong-tea"), Label: utils.STRp("Улунский чай"),
 	})
 	catUlunTea := _catUlunTea.(*models.ProductCategory)
 	if err != nil {
