@@ -26,31 +26,31 @@ type Product struct {
 	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	// артикул товара
-	Article 	string 	`json:"article" gorm:"type:varchar(128);"`
-
 	// Доступен ли товар для продажи в розницу
-	RetailSale 	bool 	`json:"retail_sale" gorm:"type:bool;default:true"`
+	RetailSale 			bool 	`json:"retail_sale" gorm:"type:bool;default:true"`
 
 	// Доступен ли товар для продажи оптом
-	WholesaleSale	bool	`json:"wholesale_sale" gorm:"type:bool;default:true"`
+	WholesaleSale		bool	`json:"wholesale_sale" gorm:"type:bool;default:true"`
 
 	// Для продажи ли товар (= можно ли включать в карточки товаров)
 	ForRetailSale 		bool 	`json:"for_retail_sale" gorm:"type:bool;default:true"`
 	ForWholesaleSale 	bool 	`json:"for_wholesale_sale" gorm:"type:bool;default:true"`
 
 	// Этикетка товара
-	Label 		*string 	`json:"label" gorm:"type:varchar(128);"`
-	ShortLabel 	*string 	`json:"short_name" gorm:"type:varchar(128);"`
+	Label 			*string 	`json:"label" gorm:"type:varchar(128);"`
+	ShortLabel 		*string 	`json:"short_name" gorm:"type:varchar(128);"`
 
+	// артикул товара
+	Article 		*string 	`json:"article" gorm:"type:varchar(128);"`
+	
 	// торговая марка (Объект!)
-	Trademark 	*string		`json:"trademark" gorm:"type:varchar(128);"`
+	Trademark 		*string		`json:"trademark" gorm:"type:varchar(128);"`
 
 	// Маркировка товара
-	Brand 		*string		`json:"brand" gorm:"type:varchar(128);"`
+	Brand 			*string		`json:"brand" gorm:"type:varchar(128);"`
 
 	// Общая тема типа группы товаров, может повторяться для вывода в web-интерфейсе как "одного" товара
-	Model 		*string		`json:"model" gorm:"type:varchar(255);"`
+	Model 			*string		`json:"model" gorm:"type:varchar(255);"`
 
 	// mb deprecated
 	// Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
@@ -60,10 +60,15 @@ type Product struct {
 	// SKU 		string 	`json:"sku" gorm:"type:varchar(128);index;"`
 
 	// Base properties
-	RetailPrice		float64 `json:"retail_price" gorm:"type:numeric;"` 		// розничная цена
-	WholesalePrice 	float64 `json:"wholesale_price" gorm:"type:numeric;"` 	// оптовая цена
+	RetailPrice			*float64 `json:"retail_price" gorm:"type:numeric;"` 		// розничная цена
+	
+	WholesalePrice1 	*float64 `json:"wholesale_price_1" gorm:"type:numeric;"` 	// оптовая цена
+	WholesalePrice2 	*float64 `json:"wholesale_price_2" gorm:"type:numeric;"` 	// оптовая цена
+	WholesalePrice3 	*float64 `json:"wholesale_price_3" gorm:"type:numeric;"` 	// оптовая цена
+	
+	RetailDiscount 		*float64 `json:"retail_discount" gorm:"type:numeric;"` 	// розничная фактическая скидка
+
 	// PurchasePrice 	float64 `json:"purchase_price" gorm:"type:numeric;"` 	// закупочная цена
-	RetailDiscount 	float64 `json:"retail_discount" gorm:"type:numeric;"` 	// розничная фактическая скидка
 
 	// Вид номенклатуры - ассортиментные группы продаваемых товаров. Привязываются к карточкам..
 
