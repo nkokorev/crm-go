@@ -32,6 +32,9 @@ var ApiRoutes = func (rApi *mux.Router) {
 	rApi.HandleFunc("/articles", appCr.ArticleListPaginationGet).Methods(http.MethodGet)
 	rApi.HandleFunc("/articles/{articleId:[0-9]+}", appCr.ArticleGet).Methods(http.MethodGet)
 
+	rApi.HandleFunc("/manufacturers", appCr.ManufacturerListPaginationGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/manufacturers/{manufacturerId:[0-9]+}", appCr.ManufacturerGet).Methods(http.MethodGet)
+
 	// ######### User #########
 	// rApi.HandleFunc("/articles/{articleId:[0-9]+}", appCr.ArticleGet).Methods(http.MethodGet)
 	rApi.HandleFunc("/users", appCr.UserCreate).Methods(http.MethodPost, http.MethodOptions)
