@@ -175,11 +175,19 @@ var AppRoutes = func(r *mux.Router) {
 
 
 	// todo: byShop - сейчас косвенная принадлежность товаров к магазину не отслеживается
+	// ### Products ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products", appCr.ProductCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}", appCr.ProductGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products", appCr.ProductListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}", appCr.ProductUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}", appCr.ProductDelete).Methods(http.MethodDelete, http.MethodOptions)
+
+	// ### Measurement Units ###
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/measurement-units", appCr.MeasurementUnitStatusCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/measurement-units", appCr.MeasurementUnitStatusGetList).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/measurement-units/{measurementUnitsId:[0-9]+}", appCr.MeasurementUnitStatusGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/measurement-units/{measurementUnitsId:[0-9]+}", appCr.MeasurementUnitStatusUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/measurement-units/{measurementUnitsId:[0-9]+}", appCr.MeasurementUnitStatusDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### Deliveries ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/deliveries", appCr.DeliveryCreate).Methods(http.MethodPost, http.MethodOptions)

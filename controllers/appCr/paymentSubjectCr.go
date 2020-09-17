@@ -113,18 +113,11 @@ func PaymentSubjectGetListPagination(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
 		paymentSubjects, total, err = account.GetPaginationListEntity(&models.PaymentSubject{}, offset, limit, sortBy, search, nil,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
-	}
-
-	paymentSubjects, total, err = account.GetPaginationListEntity(&models.PaymentSubject{}, offset, limit, sortBy, search, nil,preloads)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
-		return
 	}
 
 	resp := u.Message(true, "GET PaymentSubject Pagination List")

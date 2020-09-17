@@ -36,6 +36,9 @@ type Product struct {
 	ForRetailSale 		bool 	`json:"for_retail_sale" gorm:"type:bool;default:true"`
 	ForWholesaleSale 	bool 	`json:"for_wholesale_sale" gorm:"type:bool;default:true"`
 
+	// Сборный ли товар? При нем warehouse_items >= 1. Применяется только к payment_subject = commodity, excise и т.д.
+	IsKit			bool 		`json:"is_kit" gorm:"type:bool;default:false"`
+
 	// Этикетка товара
 	Label 			*string 	`json:"label" gorm:"type:varchar(128);"`
 	ShortLabel 		*string 	`json:"short_name" gorm:"type:varchar(128);"`
@@ -84,12 +87,9 @@ type Product struct {
 	WarehouseItems	[]WarehouseItem `json:"warehouse_items"`
 	Warehouses		[]Warehouse 	`json:"warehouses" gorm:"many2many:warehouse_item;"`
 
-	// Сборный ли товар? При нем warehouse_items >= 1. Применяется только к payment_subject = commodity, excise и т.д.
-	IsKit			*bool 		`json:"is_kit" gorm:"type:bool;default:false"`
-
 	// Ед. измерения товара: штуки, метры, литры, граммы и т.д.  !!!!
-	UnitMeasurementId 		uint	`json:"unit_measurement_id" gorm:"type:int;default:1;"` // тип измерения
-	UnitMeasurement 		UnitMeasurement `json:"unit_measurement"`// Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
+	MeasurementUnitId 		*uint	`json:"measurement_unit_id" gorm:"type:int;"` // тип измерения
+	MeasurementUnit 		MeasurementUnit `json:"unit_measurement"`// Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 
 	// Основные атрибуты для расчета (Можно и в атрибуты)
 	// Length 	*float64 `json:"length" gorm:"type:numeric;"`

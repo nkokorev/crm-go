@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func VatCodeCreate(w http.ResponseWriter, r *http.Request) {
+func MeasurementUnitStatusCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -23,7 +23,7 @@ func VatCodeCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Get JSON-request
 	var input struct{
-		models.VatCode
+		models.MeasurementUnit
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -31,25 +31,25 @@ func VatCodeCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vatCode, err := account.CreateEntity(&input.VatCode)
+	measurementUnit, err := account.CreateEntity(&input.MeasurementUnit)
 	if err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания статуса"}))
 		return
 	}
 
-	resp := u.Message(true, "POST VatCode Created")
-	resp["vat_code"] = vatCode
+	resp := u.Message(true, "POST MeasurementUnit Created")
+	resp["measurement_unit"] = measurementUnit
 	u.Respond(w, resp)
 }
 
-func VatCodeGet(w http.ResponseWriter, r *http.Request) {
+func MeasurementUnitStatusGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	vatCodeId, err := utilsCr.GetUINTVarFromRequest(r, "vatCodeId")
+	measurementUnitId, err := utilsCr.GetUINTVarFromRequest(r, "measurementUnitId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке web site Id"))
 		return
@@ -57,79 +57,43 @@ func VatCodeGet(w http.ResponseWriter, r *http.Request) {
 
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
-	var vatCode models.VatCode
-	err = account.LoadEntity(&vatCode, vatCodeId,preloads)
+	var measurementUnit models.MeasurementUnit
+	err = account.LoadEntity(&measurementUnit, measurementUnitId,preloads)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
-	resp := u.Message(true, "GET VatCode")
-	resp["vat_code"] = vatCode
+	resp := u.Message(true, "GET MeasurementUnit")
+	resp["measurement_unit"] = measurementUnit
 	u.Respond(w, resp)
 }
 
-func VatCodeGetListPagination(w http.ResponseWriter, r *http.Request) {
+func MeasurementUnitStatusGetList(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
 		return
 	}
 
-	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
-	if !ok {
-		limit = 25
-	}
-	if limit > 100 { limit = 100 }
-	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
-	if !ok || offset < 0 {
-		offset = 0
-	}
-	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
-	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
-	if !ok {
-		sortBy = "id"
-	}
-	if sortDesc {
-		sortBy += " desc"
-	}
-
-	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
-	if !ok {
-		search = ""
-	}
-
-	// 2. Узнаем, какой список нужен
-	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
-
 	var total int64 = 0
-	vatCodes := make([]models.Entity,0)
+	measurementUnits := make([]models.Entity,0)
 
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
-	if all {
-		vatCodes, total, err = account.GetListEntity(&models.VatCode{}, sortBy,preloads)
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
-			return
-		}
-	} else {
-		vatCodes, total, err = account.GetPaginationListEntity(&models.VatCode{}, offset, limit, sortBy, search, nil,preloads)
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
-			return
-		}
+	measurementUnits, total, err = account.GetListEntity(&models.MeasurementUnit{},"id",preloads)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		return
 	}
 
-
-
-	resp := u.Message(true, "GET VatCode Pagination List")
+	resp := u.Message(true, "GET MeasurementUnit List")
 	resp["total"] = total
-	resp["vat_codes"] = vatCodes
+	resp["measurement_units"] = measurementUnits
 	u.Respond(w, resp)
 }
 
-func VatCodeUpdate(w http.ResponseWriter, r *http.Request) {
+func MeasurementUnitStatusUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -142,7 +106,7 @@ func VatCodeUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vatCodeId, err := utilsCr.GetUINTVarFromRequest(r, "vatCodeId")
+	measurementUnitId, err := utilsCr.GetUINTVarFromRequest(r, "measurementUnitId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
@@ -150,8 +114,8 @@ func VatCodeUpdate(w http.ResponseWriter, r *http.Request) {
 
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
-	var vatCode models.VatCode
-	err = account.LoadEntity(&vatCode, vatCodeId,preloads)
+	var measurementUnit models.MeasurementUnit
+	err = account.LoadEntity(&measurementUnit, measurementUnitId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return
@@ -163,18 +127,18 @@ func VatCodeUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&vatCode, input, preloads)
+	err = account.UpdateEntity(&measurementUnit, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH VatCode Update")
-	resp["vat_code"] = vatCode
+	resp := u.Message(true, "PATCH MeasurementUnit Update")
+	resp["measurement_unit"] = measurementUnit
 	u.Respond(w, resp)
 }
 
-func VatCodeDelete(w http.ResponseWriter, r *http.Request) {
+func MeasurementUnitStatusDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -187,22 +151,23 @@ func VatCodeDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vatCodeId, err := utilsCr.GetUINTVarFromRequest(r, "vatCodeId")
+	measurementUnitId, err := utilsCr.GetUINTVarFromRequest(r, "measurementUnitId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
-	var vatCode models.VatCode
-	err = account.LoadEntity(&vatCode, vatCodeId,nil)
+
+	var measurementUnit models.MeasurementUnit
+	err = account.LoadEntity(&measurementUnit, measurementUnitId, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
-	if err = account.DeleteEntity(&vatCode); err != nil {
+	if err = account.DeleteEntity(&measurementUnit); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении"))
 		return
 	}
 
-	resp := u.Message(true, "DELETE VatCode Successful")
+	resp := u.Message(true, "DELETE MeasurementUnit Successful")
 	u.Respond(w, resp)
 }

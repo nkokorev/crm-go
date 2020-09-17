@@ -69,15 +69,15 @@ func (OrderStatus) PgSqlCreate() {
 
 		{Name: "Заказ выполнен", 			Code: "completed", 				Group: "completed", 	GroupName:"Выполнение", 	Description: "Заказ выполнен (завершен)"},
 
-		{Name: "Недозвон", 			Code: "canceled_call", 			Group: "canceled", 	GroupName:"Отмена", Description: "Заказ отменен"},
-		{Name: "Нет в наличии", 	Code: "canceled_out_of_stock", 	Group: "canceled", 	GroupName:"Отмена", Description: "Заказ отменен"},
-		{Name: "Не устроила цена", 	Code: "canceled_price", 		Group: "canceled", 	GroupName:"Отмена", Description: "Заказ отменен"},
-		{Name: "Не устроила доставка", 	Code: "canceled_delivery", 	Group: "canceled", 	GroupName:"Отмена", Description: "Заказ отменен"},
-		{Name: "Отменен", 			Code: "canceled_any", 			Group: "canceled", 	GroupName:"Отмена", Description: "Заказ отменен"},
-		{Name: "Спам", 				Code: "spam", 					Group: "canceled", 	GroupName:"Отмена", Description: "Спам заказ"},
+		{Name: "Недозвон", 					Code: "canceled_call", 			Group: "canceled", 		GroupName:"Отмена", 		Description: "Заказ отменен"},
+		{Name: "Нет в наличии", 			Code: "canceled_out_of_stock", 	Group: "canceled", 		GroupName:"Отмена", 		Description: "Заказ отменен"},
+		{Name: "Не устроила цена", 			Code: "canceled_price", 		Group: "canceled", 		GroupName:"Отмена", 		Description: "Заказ отменен"},
+		{Name: "Не устроила доставка", 		Code: "canceled_delivery", 		Group: "canceled", 		GroupName:"Отмена", 		Description: "Заказ отменен"},
+		{Name: "Отменен", 					Code: "canceled_any", 			Group: "canceled", 		GroupName:"Отмена", 		Description: "Заказ отменен"},
+		{Name: "Спам", 						Code: "spam", 					Group: "canceled", 		GroupName:"Отмена", 		Description: "Спам заказ"},
 
-		{Name: "Резерв предзаказа",	Code: "pre-order-reserve", 	Group: "prepend", 	GroupName:"Формирование", 	Description: "Резерв товара для предзаказа"},
-		{Name: "Резерв для отправки",	Code: "reserve-pre-sender", Group: "prepend", 	GroupName:"Формирование", 	Description: "Резерв товара для отправки товара или перемещения"},
+		{Name: "Резерв предзаказа",			Code: "pre-order-reserve", 		Group: "prepend", 		GroupName:"Формирование", 	Description: "Резерв товара для предзаказа"},
+		{Name: "Резерв для отправки",		Code: "reserve-pre-sender", 	Group: "prepend", 		GroupName:"Формирование", 	Description: "Резерв товара для отправки товара или перемещения"},
 	}
 	for _,v := range orderStatuses {
 		_, err = mainAccount.CreateEntity(&v)

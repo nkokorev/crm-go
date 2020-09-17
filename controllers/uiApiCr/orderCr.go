@@ -328,10 +328,16 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 		}
 
 		// 1.3 Считаем цену товара с учетом скидок
-		ProductCost := product.RetailPrice - product.RetailDiscount
-
-
-
+		retailPrice := float64(0)
+		if product.RetailPrice != nil {
+			retailPrice	= *product.RetailPrice
+		}
+		retailDiscount := float64(0)
+		if product.RetailPrice != nil {
+			retailDiscount	= *product.RetailDiscount
+		}
+		ProductCost := retailPrice - retailDiscount
+		
 		// 1.4 Формируем и добавляем Cart Item в общий список
 		desc := "Описание продукта"
 		if product.Label != nil {

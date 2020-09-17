@@ -37,18 +37,18 @@ func (OrderChannel) PgSqlCreate() {
 	
 	db.Delete(&OrderChannel{},"id > 0")
 	orderChannels := []OrderChannel {
-		{Code:"offline", Name:   "Оффлайн",		Description: "-"},
-		{Code:"phone", 			Name:   "По телефону",	Description: "-"},
-		{Code:"missed_call", 	Name:   "Пропущенный звонок",	Description: "-"},
+		{Code:"offline", 			Name:   "Оффлайн",		Description: "-"},
+		{Code:"phone", 				Name:   "По телефону",	Description: "-"},
+		{Code:"missed_call", 		Name:   "Пропущенный звонок",	Description: "-"},
 		{Code:"through_the_basket", Name:   "Через корзину",	Description: "-"},
 		{Code:"with_one_click", 	Name:   "В один клик",		Description: "Экспресс заказ"},
 		{Code:"request_to_lower_the_price", 	Name:   "Запрос на понижение цены",	Description: "-"},
 		{Code:"request_from_the_landing_page",	Name:   "Заявка с посадочной страницы",Description: "-"},
 		{Code:"messenger", 			Name:   "Мессенджеры",	Description: "-"},
 		{Code:"online_assistant", 	Name:   "Онлайн-консультант",Description: "-"},
-		{Code:"mobile_apps", 	Name:   "Мобильное приложение",Description: "-"},
-		{Code:"callback_phone", Name:   "Заказ обратного звонка",Description: "-"},
-		{Code:"callback_form", Name:   "Вопрос с формы на сайте",Description: "-"},
+		{Code:"mobile_apps", 		Name:   "Мобильное приложение",Description: "-"},
+		{Code:"callback_phone", 	Name:   "Заказ обратного звонка",Description: "-"},
+		{Code:"callback_form", 		Name:   "Вопрос с формы на сайте",Description: "-"},
 	}
 	for i := range(orderChannels) {
 		_, err := Account{Id: 1}.CreateEntity(&orderChannels[i])
