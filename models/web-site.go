@@ -421,7 +421,7 @@ func (webSite WebSite) CalculateDelivery(deliveryRequest DeliveryRequest) (total
 
 		// todo: 'что есть вес?'
 		// _w, err := product.GetAttribute(deliveryRequest.DeliveryData.ProductWeightKey)
-		_w, err := product.GetAttribute(product.WeightKey)
+		_w, err := product.GetAttribute("grossWeight")
 		if err != nil || _w == nil {
 			// log.Println("Ошибка получения веса: ", err)
 			continue

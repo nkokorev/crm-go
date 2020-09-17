@@ -126,7 +126,7 @@ type Product struct {
 
 	// todo: можно изменить и сделать свойства товара
 	// ключ для расчета веса продукта
-	WeightKey 	string `json:"weight_key" gorm:"type:varchar(32);default:'grossWeight'"`
+	// WeightKey 	string `json:"weight_key" gorm:"type:varchar(32);default:'grossWeight'"`
 
 	// Нужно ли считать вес для расчета доставки у данного продукта
 	// ConsiderWeight	bool	`json:"considerWeight" gorm:"type:bool;default:false"`

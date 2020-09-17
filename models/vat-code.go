@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-// Признак предмета расчета
+// Коды ставок НДС
 type VatCode struct {
 	
 	Id     		uint   	`json:"id" gorm:"primaryKey"`
@@ -16,7 +16,7 @@ type VatCode struct {
 	Name	string	`json:"name" gorm:"type:varchar(128);unique;not null;"`
 	Code	string	`json:"code" gorm:"type:varchar(32);unique;not null;"`
 
-	// Системный ID у яндекса, подробнее: https://kassa.yandex.ru/developers/54fz/parameters-values#vat-codes
+	// Коды ставок НДС у у яндекса, подробнее: https://kassa.yandex.ru/developers/54fz/parameters-values#vat-codes
 	YandexCode	uint	`json:"yandex_code" gorm:"type:int;unique;not null;"`
 }
 

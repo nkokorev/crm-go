@@ -120,7 +120,7 @@ func PaymentSubjectGetListPagination(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	resp := u.Message(true, "GET PaymentSubject Pagination List")
+	resp := u.Message(true, "GET PaymentSubject pagination list")
 	resp["total"] = total
 	resp["payment_subjects"] = paymentSubjects
 	u.Respond(w, resp)

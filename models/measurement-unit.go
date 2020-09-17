@@ -40,21 +40,21 @@ func (MeasurementUnit) PgSqlCreate() {
 	}
 
 	measurementUnits := []MeasurementUnit{
-		{Name:"штука", 			ShortName: "шт.", 		Weighed: false, 	Tag: "piece" },
-		{Name:"коробка", 		ShortName: "кор.", 		Weighed: false, 	Tag: "box"},
-		{Name:"упаковка", 		ShortName: "упак.", 	Weighed: false, 	Tag: "package"},
-		{Name:"комплект", 		ShortName: "компл.", 	Weighed: false, 	Tag: "kit"},
+		{Name:"Штука", 			ShortName: "шт.", 		Weighed: false, 	Tag: "piece" },
+		{Name:"Коробка", 		ShortName: "кор.", 		Weighed: false, 	Tag: "box"},
+		{Name:"Упаковка", 		ShortName: "упак.", 	Weighed: false, 	Tag: "package"},
+		{Name:"Комплект", 		ShortName: "компл.", 	Weighed: false, 	Tag: "kit"},
 
-		{Name:"грамм", 			ShortName: "гр.", 		Weighed: true, 	Tag: "gram"},
-		{Name:"килограмм", 		ShortName: "кг.", 		Weighed: true, 	Tag: "kilogram"},
-		{Name:"тонн", 			ShortName: "т.", 		Weighed: true, 	Tag: "tone"},
+		{Name:"Грамм", 			ShortName: "гр.", 		Weighed: true, 	Tag: "gram"},
+		{Name:"Килограмм", 		ShortName: "кг.", 		Weighed: true, 	Tag: "kilogram"},
+		{Name:"Тонн", 			ShortName: "т.", 		Weighed: true, 	Tag: "tone"},
 
-		{Name:"погонный метр", 	ShortName: "пог.м.", 	Weighed: false, 	Tag: "linearMeter"},
-		{Name:"метр квадратный",ShortName: "м2.", 		Weighed: false, 	Tag: "squareMeter"},
-		{Name:"метр кубический",ShortName: "м3.", 		Weighed: false, 	Tag: "cubicMeter"},
+		{Name:"Погонный метр", 	ShortName: "пог.м.", 	Weighed: false, 	Tag: "linearMeter"},
+		{Name:"Метр квадратный",ShortName: "м2.", 		Weighed: false, 	Tag: "squareMeter"},
+		{Name:"Метр кубический",ShortName: "м3.", 		Weighed: false, 	Tag: "cubicMeter"},
 
-		{Name:"литр", 			ShortName: "л.", 		Weighed: false, 	Tag: "liter"},
-		{Name:"миллилитр", 		ShortName: "мл.", 		Weighed: false, 	Tag: "milliliter"},
+		{Name:"Литр", 			ShortName: "л.", 		Weighed: false, 	Tag: "liter"},
+		{Name:"Миллилитр", 		ShortName: "мл.", 		Weighed: false, 	Tag: "milliliter"},
 	}
 	for _,v := range measurementUnits {
 		_, err = mainAccount.CreateEntity(&v)

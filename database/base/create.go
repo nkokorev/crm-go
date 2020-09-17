@@ -1275,7 +1275,6 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1.0,
 			RetailPrice: utils.FL64p(19500.00), RetailDiscount: utils.FL64p(1000),
 			ShortDescription: "",Description: "",
-			WeightKey: "grossWeight",
 			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
 				"color":"черный",
 				"bodyMaterial":"металл",
