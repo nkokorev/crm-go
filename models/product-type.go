@@ -1,21 +1,26 @@
 package models
 
 import (
+	"database/sql"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"log"
 )
 
-// Вид номенклатуры - ассортиментные группы продаваемых товаров.
+// Простой способ показать что это за товар. Категория: "Зеленый чай", тип чая: "Зеленый"
 type ProductType struct {
 	Id     		uint	`json:"id" gorm:"primaryKey"`
+	PublicId	uint	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// ulun, corner, ... (может нужно кому)
-	Code 		*string `json:"code" gorm:"type:varchar(255);"`
+	Code 		*string `json:"code" gorm:"type:varchar(64);"`
 
-	// Улунский, угло-зачистной, шерстянной и т.д.
+	// цвет подсветки
+	Color 		*string `json:"color" gorm:"type:varchar(32);"`
+
+	// Улунский, угло-зачистной, шерстянной, зеленый и т.д.
 	Name 		*string `json:"name" gorm:"type:varchar(255);"` 		// menu label - Чай, кофе, ..
 	
 	Products 	[]Product 	`json:"products" gorm:"ForeignKey:ProductTypeId;References:id;"`
@@ -24,7 +29,7 @@ type ProductType struct {
 // ############# Entity interface #############
 func (productType ProductType) GetId() uint { return productType.Id }
 func (productType *ProductType) setId(id uint) { productType.Id = id }
-func (productType *ProductType) setPublicId(publicId uint) { }
+func (productType *ProductType) setPublicId(publicId uint) { productType.PublicId = publicId }
 func (productType ProductType) GetAccountId() uint { return productType.AccountId }
 func (productType *ProductType) setAccountId(id uint) { productType.AccountId = id }
 func (ProductType) SystemEntity() bool { return false }
@@ -45,6 +50,13 @@ func (ProductType) PgSqlCreate() {
 }
 func (productType *ProductType) BeforeCreate(tx *gorm.DB) error {
 	productType.Id = 0
+
+	// PublicId
+	var lastIdx sql.NullInt64
+	err := db.Model(&ProductType{}).Where("account_id = ?",  productType.AccountId).
+		Select("max(public_id)").Row().Scan(&lastIdx)
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	productType.PublicId = 1 + uint(lastIdx.Int64)
 
 	return nil
 }
@@ -89,8 +101,16 @@ func (productType *ProductType) load(preloads []string) error {
 	return nil
 }
 func (productType *ProductType) loadByPublicId(preloads []string) error {
-	
-	return utils.Error{Message: "Невозможно загрузить тип продукта через публичный ID"}
+	if productType.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить ProductType - не указан  Id"}
+	}
+	if err := productType.GetPreloadDb(false,false, preloads).
+		First(productType, "account_id = ? AND public_id = ?", productType.AccountId, productType.PublicId).
+		Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 func (ProductType) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
 	return ProductType{}.getPaginationList(accountId, 0, 100, sortBy, "",nil, preload)
@@ -144,8 +164,7 @@ func (ProductType) getPaginationList(accountId uint, offset, limit int, sortBy, 
 	return entities, total, nil
 }
 func (productType *ProductType) update(input map[string]interface{}, preloads []string) error {
-
-	delete(input,"image")
+	delete(input,"products")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","priority","web_site_id"}); err != nil {
 		return err

@@ -34,8 +34,8 @@ type Product struct {
 	WholesaleSale		bool	`json:"wholesale_sale" gorm:"type:bool;default:true"`
 
 	// Для продажи ли товар (= можно ли включать в карточки товаров)
-	ForRetailSale 		bool 	`json:"for_retail_sale" gorm:"type:bool;default:true"`
-	ForWholesaleSale 	bool 	`json:"for_wholesale_sale" gorm:"type:bool;default:true"`
+	// ForRetailSale 		bool 	`json:"for_retail_sale" gorm:"type:bool;default:true"`
+	// ForWholesaleSale 	bool 	`json:"for_wholesale_sale" gorm:"type:bool;default:true"`
 
 	// Сборный ли товар? При нем warehouse_items >= 1. Применяется только к payment_subject = commodity, excise и т.д.
 	IsKit			bool 		`json:"is_kit" gorm:"type:bool;default:false"`
@@ -137,10 +137,10 @@ type Product struct {
 	// Video []Video // видеообзоры по товару на ютубе
 
 	// Список поставок товара, в которых он был
-	Shipments 		[]Shipment 	`json:"shipments" gorm:"many2many:shipment_items"`
-	ShipmentItems 	[]ShipmentItem 	`json:"shipment_items" gorm:"many2many:shipment_items"`
+	Shipments 			[]Shipment 	`json:"shipments" gorm:"many2many:shipment_items"`
+	ShipmentItems 		[]ShipmentItem 	`json:"shipment_items" gorm:"many2many:shipment_items"`
 
-	Inventories 	[]Inventory	`json:"inventories" gorm:"many2many:inventory_items"`
+	Inventories 		[]Inventory	`json:"inventories" gorm:"many2many:inventory_items"`
 
 	Account 			Account 		`json:"-"`
 	ProductCards 		[]ProductCard 	`json:"product_cards" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
@@ -209,14 +209,12 @@ func (product *Product) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 	}
 
 	if autoPreload {
-		return db.Preload("PaymentSubject","VatCode","ProductCategories","MeasurementUnit","Account","ProductCards","Manufacturer").Preload("Images", func(db *gorm.DB) *gorm.DB {
+		return db.Preload("PaymentSubject","ProductType","VatCode","ProductCategories","MeasurementUnit","Account","ProductCards","Manufacturer").Preload("Images", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		})
 	} else {
 
-		// fmt.Println("Грузим: Manufacturer 3", preloads)
-
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Images","ProductCategories","PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards", "Manufacturer"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Images","ProductType","ProductCategories","PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards", "Manufacturer"})
 
 		for _,v := range allowed {
 			if v == "Images" {
@@ -355,7 +353,7 @@ func (product *Product) update(input map[string]interface{}, preloads []string) 
 	delete(input,"inventories")
 	delete(input,"product_categories")
 	utils.FixInputHiddenVars(&input)
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","payment_subject_id","vat_code_id","measurement_unit_id","manufacturer_id"}); err != nil {
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","payment_subject_id","vat_code_id","measurement_unit_id","manufacturer_id","product_type_id"}); err != nil {
 		return err
 	}
 

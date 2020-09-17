@@ -1248,6 +1248,16 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		log.Fatal(err)
 	}
 
+	// 5.5 Создаем продуктовые типы
+	productTypes := []models.ProductType{
+		{Name: utils.STRp("Бактерицидный облучатель"), Code: utils.STRp("bactericidal_irradiator")},
+		{Name: utils.STRp("Бактерицидный рециркулятор"), Code: utils.STRp("bactericidal_recirculator")},
+	}
+
+	for i := range productTypes {
+		_,_ = airoClimat.CreateEntity(&productTypes[i])
+	}
+
 	// 6. Создаем карточки товара
 	cards := []models.ProductCard{
 		{Id: 0, RouteName: utils.STRp("catalog.recirculators"), 	Path: utils.STRp("airo-dez-adjustable-black"),	Label: utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой"),Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой"), 	MetaTitle:  utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой")},
@@ -1272,7 +1282,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZ с регулировкой черный"), Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности черный"), ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ черный"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1.0,
+			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1.0, ProductTypeId: utils.UINTp(1),
 			RetailPrice: utils.FL64p(19500.00), RetailDiscount: utils.FL64p(1000),
 			ShortDescription: "",Description: "",
 			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
@@ -1297,7 +1307,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZ черный"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ черный"), ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ черный"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1.0,
+			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1.0,  ProductTypeId: utils.UINTp(1),
 			RetailPrice: utils.FL64p(17500.00), RetailDiscount: utils.FL64p(1000),
 			ShortDescription: "",
 			Description: "",
@@ -1323,7 +1333,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZ с регулировкой белый"), Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности белый"),  ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ белый"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
+			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(1),
 			RetailPrice: utils.FL64p(19500.00), RetailDiscount: utils.FL64p(1000),
 			ShortDescription: "",
 			Description: "",
@@ -1349,7 +1359,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZ белый"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ"),  ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ белый"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
+			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(1),
 			RetailPrice: utils.FL64p(17500.00), RetailDiscount: utils.FL64p(1000),
 			ShortDescription: "",
 			Description: "",
@@ -1375,7 +1385,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZ COMPACT"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"),  ShortLabel: utils.STRp("Аиродезинфектор AIRO-DEZ COMPACT"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
+			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(1),
 			RetailPrice: utils.FL64p(39000.00), RetailDiscount: utils.FL64p(3000),
 			ShortDescription: "",
 			Description: "",
@@ -1403,7 +1413,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZPUF"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF"),  ShortLabel: utils.STRp("Камера пуф AIRO-DEZPUF"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
+			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(2),
 			RetailPrice: utils.FL64p(11000.00), RetailDiscount: utils.FL64p(1000),
 			ShortDescription: "",
 			Description: "",
@@ -1430,7 +1440,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZPUF венге"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"), ShortLabel: utils.STRp("Камера AIRO-DEZBOX"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
+			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(2),
 			RetailPrice: utils.FL64p(12000.00), RetailDiscount: utils.FL64p(1000),
 			ShortDescription: "",
 			Description: "",
@@ -1458,7 +1468,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZBOX"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX"),  ShortLabel: utils.STRp("Камера AIRO-DEZBOX"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
+			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(2),
 			RetailPrice: utils.FL64p(7800.00), RetailDiscount: utils.FL64p(800),
 			ShortDescription: "",
 			Description: "",
@@ -1485,7 +1495,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZBOX белая"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая"),  ShortLabel: utils.STRp("Камера AIRO-DEZBOX белая"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
+			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(2),
 			RetailPrice: utils.FL64p(7800.00), RetailDiscount: utils.FL64p(800),
 			ShortDescription: "",
 			Description: "",
@@ -1512,7 +1522,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZTUMB"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB"),  ShortLabel: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
+			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(2),
 			RetailPrice: utils.FL64p(11500.00), RetailDiscount: utils.FL64p(1000),
 			ShortDescription: "",
 			Description: "",
@@ -1539,7 +1549,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIROTUMB big"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"),  ShortLabel: utils.STRp("Облучатель AIROTUMB big"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
+			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(2),
 			RetailPrice: utils.FL64p(11500.00), RetailDiscount: utils.FL64p(1000),
 			ShortDescription: "",
 			Description: "",
@@ -1567,7 +1577,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZTUMB касцина"), Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"),  ShortLabel: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
+			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(2),
 			RetailPrice: utils.FL64p(11500.00), RetailDiscount: utils.FL64p(1000),
 			ShortDescription: "",
 			Description: "",
@@ -1925,7 +1935,7 @@ func LoadArticlesAiroClimate()  {
 	}
 
 	// идем по файлам
-	for _, file := range files {
+	for i, file := range files {
 
 		//fmt.Println("Open: ", url + file.Name())
 		f, err := os.Open(url + file.Name())
@@ -1939,9 +1949,26 @@ func LoadArticlesAiroClimate()  {
 			log.Fatalf("unable to read file: %v", err)
 		}
 
+		Title 	:= utils.STRp("Бактерицидные облучатели")
+		Path 	:= utils.STRp("bactericidal-irradiators")
+		Breadcrumb := utils.STRp("Бактерицидные облучатели")
+		Name 	:= utils.STRp("Бактерицидные облучатели")
+		
+		if i ==1 {
+			Title 	= utils.STRp("Бактерицидные рециркуляторы")
+			Path 	= utils.STRp("bactericidal-recirculators")
+			Breadcrumb = utils.STRp("Бактерицидные рециркуляторы")
+			Name 	= utils.STRp("Бактерицидные рециркуляторы")
+		}
+
+
 		articleNew := models.Article{
-			WebSiteId: utils.UINTp(7),
-			Name: utils.STRp(strings.ToLower(file.Name())),
+			WebSiteId: utils.UINTp(account.Id),
+			// Name: utils.STRp(strings.ToLower(file.Name())),
+			MetaTitle: Title,
+			Path: Path,
+			Breadcrumb: Breadcrumb,
+			Name: Name,
 			Public: true,
 			Shared: true,
 			Body: utils.STRp(string(body)),
@@ -2003,6 +2030,8 @@ func LoadProductDescriptionAiroClimate()  {
 		}
 
 	}
+
+
 
 }
 
@@ -2130,8 +2159,6 @@ func UploadTestDataPart_IV()  {
 		}
 
 	}
-
-	fmt.Println("Данные загружены IV !")
 
 }
 

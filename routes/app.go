@@ -145,6 +145,13 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-categories/{productCategoryId:[0-9]+}/products/{productId:[0-9]+}", appCr.ProductCategoryAppendProduct).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-categories/{productCategoryId:[0-9]+}/products/{productId:[0-9]+}", appCr.ProductCategoryRemoveProduct).Methods(http.MethodDelete, http.MethodOptions)
 
+	// ### Product Types ####
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-types", appCr.ProductTypeCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-types", appCr.ProductTypeListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-types/{productTypeId:[0-9]+}", appCr.ProductTypeGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-types/{productTypeId:[0-9]+}", appCr.ProductTypeUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-types/{productTypeId:[0-9]+}", appCr.ProductTypeDelete).Methods(http.MethodDelete, http.MethodOptions)
+
 	// ### Warehouses ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses", appCr.WarehouseCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses", appCr.WarehouseListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
