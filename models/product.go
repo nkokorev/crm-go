@@ -41,7 +41,7 @@ type Product struct {
 
 	// Этикетка товара
 	Label 			*string 	`json:"label" gorm:"type:varchar(128);"`
-	ShortLabel 		*string 	`json:"short_name" gorm:"type:varchar(128);"`
+	ShortLabel 		*string 	`json:"short_label" gorm:"type:varchar(128);"`
 
 	// артикул товара
 	Article 		*string 	`json:"article" gorm:"type:varchar(128);"`
@@ -65,9 +65,9 @@ type Product struct {
 	// Base properties
 	RetailPrice			*float64 `json:"retail_price" gorm:"type:numeric;"` 		// розничная цена
 	
-	WholesalePrice1 	*float64 `json:"wholesale_price_1" gorm:"type:numeric;"` 	// оптовая цена
-	WholesalePrice2 	*float64 `json:"wholesale_price_2" gorm:"type:numeric;"` 	// оптовая цена
-	WholesalePrice3 	*float64 `json:"wholesale_price_3" gorm:"type:numeric;"` 	// оптовая цена
+	WholesalePrice1 	*float64 `json:"wholesale_price_1" gorm:"type:numeric;column:wholesale_price_1;"` 	// оптовая цена
+	WholesalePrice2 	*float64 `json:"wholesale_price_2" gorm:"type:numeric;column:wholesale_price_2;"` 	// оптовая цена
+	WholesalePrice3 	*float64 `json:"wholesale_price_3" gorm:"type:numeric;column:wholesale_price_3;"` 	// оптовая цена
 	
 	RetailDiscount 		*float64 `json:"retail_discount" gorm:"type:numeric;"` 	// розничная фактическая скидка
 
@@ -89,7 +89,7 @@ type Product struct {
 
 	// Ед. измерения товара: штуки, метры, литры, граммы и т.д.  !!!!
 	MeasurementUnitId 		*uint	`json:"measurement_unit_id" gorm:"type:int;"` // тип измерения
-	MeasurementUnit 		MeasurementUnit `json:"unit_measurement"`// Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
+	MeasurementUnit 		MeasurementUnit `json:"measurement_unit"`// Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 
 	// Основные атрибуты для расчета (Можно и в атрибуты)
 	// Length 	*float64 `json:"length" gorm:"type:numeric;"`
@@ -208,12 +208,14 @@ func (product *Product) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 	}
 
 	if autoPreload {
-		return db.Preload("PaymentSubject","VatCode","UnitMeasurement","Account","ProductCards").Preload("Images", func(db *gorm.DB) *gorm.DB {
+		return db.Preload("PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards","Manufacturer").Preload("Images", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		})
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"PaymentSubject","VatCode","UnitMeasurement","Account","ProductCards","Images"})
+		// fmt.Println("Грузим: Manufacturer 3", preloads)
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Images","PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards", "Manufacturer"})
 
 		for _,v := range allowed {
 			if v == "Images" {
@@ -280,7 +282,8 @@ func (product *Product) loadByPublicId(preloads []string) error {
 	if product.PublicId < 1 {
 		return utils.Error{Message: "Невозможно загрузить Product - не указан  Id"}
 	}
-	if err := product.GetPreloadDb(false,false, preloads).First(product, "account_id = ? AND public_id = ?", product.AccountId, product.PublicId).Error; err != nil {
+	if err := product.GetPreloadDb(false,false, preloads).
+		First(product, "account_id = ? AND public_id = ?", product.AccountId, product.PublicId).Error; err != nil {
 		return err
 	}
 
@@ -337,7 +340,7 @@ func (Product) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 }
 func (product *Product) update(input map[string]interface{}, preloads []string) error {
 	delete(input,"payment_subject")
-	delete(input,"unit_measurement")
+	delete(input,"measurement_unit")
 	delete(input,"images")
 	delete(input,"account")
 	delete(input,"product_cards")
@@ -351,7 +354,7 @@ func (product *Product) update(input map[string]interface{}, preloads []string) 
 	delete(input,"inventories")
 	delete(input,"product_categories")
 	utils.FixInputHiddenVars(&input)
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","payment_subject_id","vat_code_id","unit_measurement_id"}); err != nil {
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","payment_subject_id","vat_code_id","measurement_unit_id","manufacturer_id"}); err != nil {
 		return err
 	}
 

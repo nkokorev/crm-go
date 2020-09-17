@@ -25,7 +25,6 @@ type Article struct {
 	Name 		*string `json:"name" gorm:"type:varchar(255);"` // Полное имя Имя статьи
 	ShortName 	*string `json:"short_name" gorm:"type:varchar(255);"` // Короткое имя статьи
 
-
 	Body 		*string `json:"body" gorm:"type:text;"` // pgsql: text
 	Description *string `json:"description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 

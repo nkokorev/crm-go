@@ -351,4 +351,18 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/users-segments/{usersSegmentId}", appCr.UsersSegmentGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/users-segments/{usersSegmentId}", appCr.UsersSegmentUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/users-segments/{usersSegmentId}", appCr.UsersSegmentDelete).Methods(http.MethodDelete, http.MethodOptions)
+
+	// ### Manufacturers ####
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/manufacturers", appCr.ManufacturerCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/manufacturers", appCr.ManufacturerListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/manufacturers/{manufacturerId:[0-9]+}", appCr.ManufacturerGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/manufacturers/{manufacturerId:[0-9]+}", appCr.ManufacturerUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/manufacturers/{manufacturerId:[0-9]+}", appCr.ManufacturerDelete).Methods(http.MethodDelete, http.MethodOptions)
+
+	// ### Companies ####
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/companies", appCr.CompanyCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/companies", appCr.CompanyListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/companies/{companyId:[0-9]+}", appCr.CompanyGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/companies/{companyId:[0-9]+}", appCr.CompanyUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/companies/{companyId:[0-9]+}", appCr.CompanyDelete).Methods(http.MethodDelete, http.MethodOptions)
 }

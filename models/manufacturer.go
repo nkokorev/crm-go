@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-// Контрагенты и клиенты
+// Производитель (товара)
 type Manufacturer struct {
 	Id     		uint	`json:"id" gorm:"primaryKey"`
 	PublicId	uint	`json:"public_id" gorm:"type:int;index;"`
@@ -201,10 +201,9 @@ func (Manufacturer) getPaginationList(accountId uint, offset, limit int, sortBy,
 }
 func (manufacturer *Manufacturer) update(input map[string]interface{}, preloads []string) error {
 
-	delete(input,"users")
-	delete(input,"payment_accounts")
+	delete(input,"image")
 	utils.FixInputHiddenVars(&input)
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","inn","kpp","ogrn"}); err != nil {
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
 		return err
 	}
 

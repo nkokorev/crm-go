@@ -68,7 +68,7 @@ func (fs *Storage) BeforeCreate(tx *gorm.DB) error {
 	fs.CreatedAt = time.Now().UTC()
 	return nil
 }
-func (fs *Storage) AfterCreate(tx *gorm.DB) (error) {
+func (fs *Storage) AfterCreate(tx *gorm.DB) error {
 	switch fs.OwnerType {
 	case "products":
 		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, uint(fs.OwnerID)))
