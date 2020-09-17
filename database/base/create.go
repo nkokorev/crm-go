@@ -1251,10 +1251,10 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	// 6. Создаем карточки товара
 	cards := []models.ProductCard{
 		{Id: 0, Path: utils.STRp("airo-dez-adjustable-black"),	Label: utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой"),Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой"), 	MetaTitle:  utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой")},
-		{Id: 0, Path: utils.STRp("airo-dez-black"), 				Label:utils.STRp("Рециркулятор AIRO-DEZ черный"), 				Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ черный"), 					MetaTitle: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ черный")},
-		{Id: 0, Path: utils.STRp("airo-dez-adjustable-white"), 	Label:utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой"), 	Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой"),	MetaTitle: utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой")},
-		{Id: 0, Path: utils.STRp("airo-dez-white"), 				Label:utils.STRp("Рециркулятор AIRO-DEZ белый"), 				Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ белый"),					MetaTitle: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ белый")},
-		{Id: 0, Path: utils.STRp("airo-dez-compact"), 			Label:utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"), 	Breadcrumb: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"),	MetaTitle: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT")},
+		{Id: 0, Path: utils.STRp("airo-dez-black"), 				Label: utils.STRp("Рециркулятор AIRO-DEZ черный"), 				Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ черный"), 					MetaTitle: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ черный")},
+		{Id: 0, Path: utils.STRp("airo-dez-adjustable-white"), 	Label: utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой"), 	Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой"),	MetaTitle: utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой")},
+		{Id: 0, Path: utils.STRp("airo-dez-white"), 				Label: utils.STRp("Рециркулятор AIRO-DEZ белый"), 				Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ белый"),					MetaTitle: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ белый")},
+		{Id: 0, Path: utils.STRp("airo-dez-compact"), 			Label: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"), 	Breadcrumb: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"),	MetaTitle: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT")},
 
 		{Id: 0, Path: utils.STRp("airo-dezpuf"),					Label: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF"), 				Breadcrumb: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF"),			MetaTitle: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF")},
 		{Id: 0, Path: utils.STRp("airo-dezpuf-wenge"), 			Label: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"), Breadcrumb: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"),MetaTitle: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге")},
@@ -1270,7 +1270,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	// 7. Создаем список товаров
 	products := []models.Product{
 		{
-			Model: utils.STRp("AIRO-DEZ с регулировкой черный"), //,
+			Model: utils.STRp("AIRO-DEZ с регулировкой черный"), Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности черный"), ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ черный"),
 			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1.0,
 			RetailPrice: utils.FL64p(19500.00), RetailDiscount: utils.FL64p(1000),
@@ -1295,7 +1295,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: utils.STRp("AIRO-DEZ черный"),
+			Model: utils.STRp("AIRO-DEZ черный"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ черный"), ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ черный"),
 			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1.0,
 			RetailPrice: utils.FL64p(17500.00), RetailDiscount: utils.FL64p(1000),
@@ -1321,7 +1321,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: utils.STRp("AIRO-DEZ с регулировкой белый"),
+			Model: utils.STRp("AIRO-DEZ с регулировкой белый"), Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности белый"),  ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ белый"),
 			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
 			RetailPrice: utils.FL64p(19500.00), RetailDiscount: utils.FL64p(1000),
@@ -1347,7 +1347,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: utils.STRp("AIRO-DEZ белый"),
+			Model: utils.STRp("AIRO-DEZ белый"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ"),  ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ белый"),
 			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
 			RetailPrice: utils.FL64p(17500.00), RetailDiscount: utils.FL64p(1000),
@@ -1373,7 +1373,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: utils.STRp("AIRO-DEZ COMPACT"),
+			Model: utils.STRp("AIRO-DEZ COMPACT"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"),  ShortLabel: utils.STRp("Аиродезинфектор AIRO-DEZ COMPACT"),
 			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
 			RetailPrice: utils.FL64p(39000.00), RetailDiscount: utils.FL64p(3000),
@@ -1401,7 +1401,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		},
 		
 		{
-			Model: utils.STRp("AIRO-DEZPUF"),
+			Model: utils.STRp("AIRO-DEZPUF"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF"),  ShortLabel: utils.STRp("Камера пуф AIRO-DEZPUF"),
 			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
 			RetailPrice: utils.FL64p(11000.00), RetailDiscount: utils.FL64p(1000),
@@ -1428,7 +1428,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: utils.STRp("AIRO-DEZPUF венге"),
+			Model: utils.STRp("AIRO-DEZPUF венге"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"), ShortLabel: utils.STRp("Камера AIRO-DEZBOX"),
 			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
 			RetailPrice: utils.FL64p(12000.00), RetailDiscount: utils.FL64p(1000),
@@ -1456,7 +1456,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		},
 
 		{
-			Model: utils.STRp("AIRO-DEZBOX"),
+			Model: utils.STRp("AIRO-DEZBOX"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX"),  ShortLabel: utils.STRp("Камера AIRO-DEZBOX"),
 			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
 			RetailPrice: utils.FL64p(7800.00), RetailDiscount: utils.FL64p(800),
@@ -1483,7 +1483,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: utils.STRp("AIRO-DEZBOX белая"),
+			Model: utils.STRp("AIRO-DEZBOX белая"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая"),  ShortLabel: utils.STRp("Камера AIRO-DEZBOX белая"),
 			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
 			RetailPrice: utils.FL64p(7800.00), RetailDiscount: utils.FL64p(800),
@@ -1510,7 +1510,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: utils.STRp("AIRO-DEZTUMB"),
+			Model: utils.STRp("AIRO-DEZTUMB"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB"),  ShortLabel: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB"),
 			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
 			RetailPrice: utils.FL64p(11500.00), RetailDiscount: utils.FL64p(1000),
@@ -1537,7 +1537,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 		{
-			Model: utils.STRp("AIROTUMB big"),
+			Model: utils.STRp("AIROTUMB big"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"),  ShortLabel: utils.STRp("Облучатель AIROTUMB big"),
 			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
 			RetailPrice: utils.FL64p(11500.00), RetailDiscount: utils.FL64p(1000),
@@ -1565,7 +1565,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		},
 		
 		{
-			Model: utils.STRp("AIRO-DEZTUMB касцина"),
+			Model: utils.STRp("AIRO-DEZTUMB касцина"), Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"),  ShortLabel: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB"),
 			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1,
 			RetailPrice: utils.FL64p(11500.00), RetailDiscount: utils.FL64p(1000),

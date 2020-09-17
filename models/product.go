@@ -303,14 +303,14 @@ func (Product) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		search = "%"+search+"%"
 
 		err := (&Product{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&products, "name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?", search,search,search,search,search,search).Error
+			Find(&products, "label ILIKE ? OR short_label ILIKE ? OR article ILIKE ? OR brand ILIKE ? OR model ILIKE ? OR description ILIKE ?", search,search,search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
 		err = (&Product{}).GetPreloadDb(false, false, nil).
-			Where("account_id = ? AND name ILIKE ? OR short_name ILIKE ? OR article ILIKE ? OR sku ILIKE ? OR model ILIKE ? OR description ILIKE ?", accountId, search,search,search,search,search,search).
+			Where("account_id = ? AND label ILIKE ? OR short_label ILIKE ? OR article ILIKE ? OR brand ILIKE ? OR model ILIKE ? OR description ILIKE ?", accountId, search,search,search,search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
