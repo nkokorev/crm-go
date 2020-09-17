@@ -181,6 +181,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products", appCr.ProductListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}", appCr.ProductUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}", appCr.ProductDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-categories", appCr.ProductSyncProductCategories).Methods(http.MethodPatch, http.MethodOptions)
 
 	// ### Measurement Units ###
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/measurement-units", appCr.MeasurementUnitStatusCreate).Methods(http.MethodPost, http.MethodOptions)

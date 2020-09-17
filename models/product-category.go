@@ -35,15 +35,15 @@ type ProductCategory struct {
 	// Отображать ли категорию в свойствах товара
 	ShowProperty	bool	`json:"show_property" gorm:"type:bool;default:false"`
 
-	// Карточки товаров
-	ProductCards 	[]ProductCard 	`json:"product_cards" gorm:"many2many:product_category_product_cards;"`
-
 	ProductCardsCount 	uint 	`json:"_product_cards_count" gorm:"-"`
 	WebPagesCount 		uint 	`json:"_web_pages_count" gorm:"-"`
 	ProductsCount 		uint 	`json:"_products_count" gorm:"-"`
-
-	// Страницы, на которых выводятся карточки товаров этой товарной группы
+	
+	// (up) Страницы, на которых выводятся карточки товаров этой товарной группы
 	WebPages 		[]WebPage 	`json:"web_pages" gorm:"many2many:web_page_product_categories;"`
+
+	// (down) Карточки товаров
+	ProductCards 	[]ProductCard 	`json:"product_cards" gorm:"many2many:product_category_product_cards;"`
 
 	// Товары, которые входят в эту категорию
 	Products 		[]Product 	`json:"products" gorm:"many2many:product_category_products;"`
@@ -226,7 +226,7 @@ func (ProductCategory) getPaginationList(accountId uint, offset, limit int, sort
 		}
 
 		// Определяем total
-		err = db.Model(&ProductCategory{}).
+		err = (&ProductCategory{}).GetPreloadDb(false,false,nil).
 			Where("account_id = ? AND label ILIKE ? OR label_plural ILIKE ? OR code ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
@@ -356,7 +356,7 @@ func (productCategory *ProductCategory) AppendProduct(product *Product, strict..
 
 	// 2. Проверяем есть ли уже в этой категории этот продукт
 	if productCategory.ExistProduct(product.Id) {
-		if len(strict) > 0 {
+		if len(strict) > 0 && strict[0] {
 			return utils.Error{Message: "Продукт уже числиться в категории"}
 		} else {
 			return nil
@@ -378,7 +378,7 @@ func (productCategory *ProductCategory) RemoveProduct(product *Product) error {
 		return utils.Error{Message: "Техническая ошибка: нельзя удалить продукт, он не найден"}
 	}
 
-	if productCategory.AccountId < 1 || product.Id < 1 || productCategory.Id < 1 {
+	if product.Id < 1 || productCategory.Id < 1 {
 		return utils.Error{Message: "Техническая ошибка: account id || product id || product category id == nil"}
 	}
 

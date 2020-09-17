@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -208,14 +209,14 @@ func (product *Product) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 	}
 
 	if autoPreload {
-		return db.Preload("PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards","Manufacturer").Preload("Images", func(db *gorm.DB) *gorm.DB {
+		return db.Preload("PaymentSubject","VatCode","ProductCategories","MeasurementUnit","Account","ProductCards","Manufacturer").Preload("Images", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		})
 	} else {
 
 		// fmt.Println("Грузим: Manufacturer 3", preloads)
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Images","PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards", "Manufacturer"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Images","ProductCategories","PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards", "Manufacturer"})
 
 		for _,v := range allowed {
 			if v == "Images" {
@@ -428,4 +429,92 @@ func (p *PropertyMap) Scan(src interface{}) error {
 	}
 
 	return nil
+}
+
+func (product *Product) AppendProductCategory(productCategory *ProductCategory, strict... bool) error {
+
+	// 1. Загружаем продукт еще раз
+	if err := productCategory.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить категорию, она не найдена"}
+	}
+
+	if product.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить категорию, продукта не загружен"}
+	}
+
+	// 2. Проверяем есть ли уже в этой категории этот продукт
+	if product.ExistProduct(productCategory.Id) {
+		if len(strict) > 0 && strict[0] {
+			return utils.Error{Message: "Категория уже числиться за товаром"}
+		} else {
+			return nil
+		}
+	}
+
+	if err := db.Create(
+		&ProductCategoryProduct{
+			ProductId: product.Id, ProductCategoryId: productCategory.Id}).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func (product *Product) RemoveProductCategory(productCategory *ProductCategory) error {
+
+	// 1. Загружаем продукт еще раз
+	if err := productCategory.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя удалить продукт, он не найден"}
+	}
+
+	if product.Id < 1 || productCategory.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: account id || product id || product category id == nil"}
+	}
+
+	if err := db.Where("product_category_id = ? AND product_id = ?", productCategory.Id, product.Id).Delete(
+		&ProductCategoryProduct{}).Error; err != nil {
+		return err
+	}
+
+
+	return nil
+}
+
+func (product *Product) SyncProductCategoriesByIds(productCategories []ProductCategory) error {
+
+	fmt.Println("Очищаем список категорий: ", productCategories)
+
+	// очищаем список категорий
+	if err := db.Model(product).Association("ProductCategories").Clear(); err != nil {
+		return err
+	}
+
+	for _,_productCategory := range productCategories {
+
+		if err := product.AppendProductCategory(&ProductCategory{Id: _productCategory.Id}, false); err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+func (product *Product) ExistProduct(productCategoryId uint) bool {
+
+	if productCategoryId < 1 {
+		return false
+	}
+
+	pcp := ProductCategoryProduct{}
+	result := db.Model(&ProductCategoryProduct{}).First(&pcp,"product_category_id = ? AND product_id = ?", productCategoryId, product.Id)
+
+	if result.Error != nil {
+		return false
+	}
+	if result.RowsAffected > 0 {
+		return true
+	}
+
+
+	return false
 }

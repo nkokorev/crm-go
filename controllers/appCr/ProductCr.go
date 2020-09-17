@@ -215,3 +215,48 @@ func ProductDelete(w http.ResponseWriter, r *http.Request) {
 	resp := u.Message(true, "DELETE Product Successful")
 	u.Respond(w, resp)
 }
+
+func ProductSyncProductCategories(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id productId"))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	product := models.Product{}
+	if err =account.LoadEntity(&product, productId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
+		return
+	}
+
+	var input struct{
+		ProductCategories []models.ProductCategory `json:"product_categories"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 1"))
+		return
+	}
+
+	if err = product.SyncProductCategoriesByIds(input.ProductCategories); err !=nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 2"))
+		return
+	}
+
+	if err =account.LoadEntity(&product, productId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
+		return
+	}
+
+	resp := u.Message(true, "PATCH Product sync Product Categories")
+	resp["product"] = product
+	u.Respond(w, resp)
+}

@@ -16,7 +16,9 @@ type ProductCard struct {
 	AccountId 			uint 	`json:"-" gorm:"type:int;index;not null;"` // потребуется, если productGroupId == null
 	WebSiteId 			*uint 	`json:"web_site_id" gorm:"type:int;"` // магазин, к которому относится
 
-	Enabled 			bool 	`json:"enabled" gorm:"type:bool;default:true"` // активна ли карточка товара
+	// Активна ли карточка товара
+	EnableRetailSale 	bool 	`json:"enable_retail_sale" gorm:"type:bool;default:true"`
+	EnableWholesaleSale bool 	`json:"enable_wholesale_sale" gorm:"type:bool;default:true"`
 
 	Label	 			*string 	`json:"label" gorm:"type:varchar(255);"` 	// что выводить в список товаров
 	Path 				*string 	`json:"path" gorm:"type:varchar(255);"` 	// идентификатор страницы (syao-chzhun )

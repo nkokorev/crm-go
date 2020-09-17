@@ -345,8 +345,7 @@ func (webSite WebSite) CreateProductWithProductCard(input Product, newCard Produ
 	// Создаем карточку товара
 	newCard.AccountId = webSite.AccountId
 	newCard.WebSiteId = &webSite.Id
-	// newCard.WebPageId = &webPageId
-	
+
 	cardE, err := newCard.create()
 	if err != nil {
 		return nil, err
