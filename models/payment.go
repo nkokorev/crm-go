@@ -119,7 +119,10 @@ func (Payment) PgSqlCreate() {
 	// db.Model(&Payment{}).AddForeignKey("income_amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
 	// db.Model(&Payment{}).AddForeignKey("refunded_amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
 	err := db.Exec("ALTER TABLE payments " +
-		"ADD CONSTRAINT payments_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+		"ADD CONSTRAINT payments_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"DROP CONSTRAINT IF EXISTS fk_orders_payment" +
+		"DROP CONSTRAINT IF EXISTS fk_payments_amount" +
+		"DROP CONSTRAINT IF EXISTS fk_payments_refunded_amount").Error
 		// "ADD CONSTRAINT payments_amount_id_fkey FOREIGN KEY (amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
 		// "ADD CONSTRAINT payments_income_amount_id_fkey FOREIGN KEY (income_amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
 		// "ADD CONSTRAINT payments_refunded_amount_id_fkey FOREIGN KEY (refunded_amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE;").Error
@@ -210,10 +213,10 @@ type Confirmation struct {
 	Type 	string `json:"type" gorm:"type:varchar(32);"` // embedded, redirect, external, qr
 	ReturnUrl 	string `json:"return_url" gorm:"type:varchar(255);"`
 }
-
+// псевдо..
 type Customer struct {
 	FullName	string	`json:"full_name"`
-	Inn	string	`json:"inn"`
+	Inn	string	`json:"-"`
 	Email	string	`json:"email"`
 	Phone	string	`json:"phone"`
 }
@@ -225,7 +228,7 @@ type Recipient struct {
 }
 
 type Receipt struct {
-	Customer  Customer
+	Customer  Customer `json:"customer"`
 	Items	[]CartItem `json:"items"`
 	// TaxSystemCode int `json:"tax_system_code"`
 	Email	string	`json:"email"`
@@ -403,6 +406,15 @@ func (payment *Payment) update(input map[string]interface{}, preloads []string) 
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","external_id","amount_id","income_amount_id","refunded_amount_id","owner_id","order_id","payment_method_id"}); err != nil {
 		return err
 	}
+	if _, ok := input["externalCreatedAt"]; ok {
+		input["external_created_at"] = input["externalCreatedAt"]
+		delete(input,"externalCreatedAt")
+	}
+	if _, ok := input["externalId"]; ok {
+		input["external_id"] = input["externalId"]
+		delete(input,"externalId")
+	}
+
 
 	if err := payment.GetPreloadDb(false, false, nil).Where("id = ?", payment.Id).Omit("id", "account_id").Updates(input).
 		Error; err != nil {return err}

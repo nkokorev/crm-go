@@ -439,10 +439,12 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 	}
 	
 	var order models.Order
-	if err := account.LoadEntity(&order, orderEntity.GetId(), nil); err != nil {
+	if err := account.LoadEntity(&order, orderEntity.GetId(), []string{"Customer","CartItems","CartItems.Product","CartItems.Amount","Amount","Payment"}); err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
 		return
 	}
+
+	// fmt.Println("order before: ", order.CartItems)
 
 	// Моментальная доставкатовара или нет
 	var mode models.PaymentMode
@@ -460,7 +462,7 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 			return
 		}
 	}
-
+	
 	// Создаем платеж на основании заказа
 	payment, err := paymentMethod.CreatePaymentByOrder(order, mode)
 	if err != nil {

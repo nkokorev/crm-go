@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -27,13 +28,13 @@ type CartItem struct {
 
 	// Признак предмета расчета
 	PaymentSubjectId	uint			`json:"payment_subject_id" gorm:"type:int;not null;default:1"`// товар или услуга ? [вид номенклатуры]
-	PaymentSubject 		PaymentSubject 	`json:"payment_subject"`
-	PaymentSubjectYandex	string 		`json:"payment_subject_yandex"`
+	PaymentSubject 		PaymentSubject 	`json:"payment_subject_yandex"`
+	PaymentSubjectYandex	string 		`json:"payment_subject"`
 
 	// Признак способа расчета
 	PaymentModeId	uint	`json:"payment_mode_id" gorm:"type:int;not null;default:1"`//
-	PaymentMode 	PaymentMode `json:"payment_mode"`
-	PaymentModeYandex 	string `json:"payment_mode_yandex"`
+	PaymentMode 	PaymentMode `json:"payment_mode_yandex"`
+	PaymentModeYandex 	string `json:"payment_mode"`
 
 	// Ставка НДС
 	VatCode	uint	`json:"vat_code"`
@@ -84,7 +85,7 @@ func (cartItem *CartItem) setId(id uint) { cartItem.Id = id }
 func (cartItem *CartItem) setPublicId(publicId uint) { }
 func (cartItem CartItem) GetAccountId() uint { return cartItem.AccountId }
 func (cartItem *CartItem) setAccountId(id uint) { cartItem.AccountId = id }
-func (cartItem CartItem) SystemEntity() bool { return false; }
+func (cartItem CartItem) SystemEntity() bool { return false }
 // ############# End of Entity interface #############
 
 
@@ -220,9 +221,10 @@ func (cartItem *CartItem) GetPreloadDb(getModel bool, autoPreload bool, preloads
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Amount","PaymentMethod","Product"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Amount","Product","PaymentSubject","PaymentAmount","PaymentMode"})
 
 		for _,v := range allowed {
+			fmt.Println(v)
 			_db.Preload(v)
 		}
 		return _db
