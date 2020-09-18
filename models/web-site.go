@@ -410,7 +410,7 @@ func (webSite WebSite) CalculateDelivery(deliveryRequest DeliveryRequest) (total
 	// проходим циклом по продуктам и складываем их общий вес
 	for _,v := range deliveryRequest.Cart {
 		// 1. Получаем продукт
-		product, err := webSite.GetProduct(v.ProductId)
+		product, err := webSite.GetProduct(v.Id)
 		if err != nil {
 			return 0, 0,err
 		}

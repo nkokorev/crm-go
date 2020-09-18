@@ -28,10 +28,10 @@ type CreateOrderForm struct {
 
 	// Компании - это еще будет доработано.
 	// todo: если заказчик юр.лицо, будет требоваться CustomerCompany для создания заказа или поиск модели Company - hashId
-	CompanyHashId			string	`json:"companyHashId"`
+	CompanyHashId			string	`json:"company_hash_id"`
 	
 	// hashId персонального менеджера (если такой есть)
-	ManagerHashId	string	`json:"managerHashId"`
+	ManagerHashId	string	`json:"manager_hash_id"`
 
 	// ID магазина, от имени которого создается заявка
 	WebSiteId 		uint	`json:"web_site_id"`
@@ -40,7 +40,7 @@ type CreateOrderForm struct {
 	Individual		bool 	`json:"individual"`
 
 	// подписка на новости
-	SubscribeNews		bool 	`json:"subscribeNews"`
+	SubscribeNews		bool 	`json:"subscribe_news"`
 
 	CustomerComment	string	`json:"customer_comment"`
 
@@ -55,13 +55,14 @@ type CreateOrderForm struct {
 	// Собственно, сама корзина
 	Cart []models.CartData `json:"cart"`
 
-	PaymentMethod struct{
-		Id uint `json:"id"`
-		Code string `json:"code"`
-		Type string `json:"type"`
+	PaymentMethod	`json:"payment_method"`
 
-	}
+}
 
+type PaymentMethod struct{
+	Id uint `json:"id"`
+	Code string `json:"code"`
+	Type string `json:"type"`
 }
 
 // todo: список обязательных полей - дело настроек OrderSettings
@@ -102,6 +103,7 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 	// 1. Получаем магазин из контекста
 	var webSite models.WebSite
 	if err := account.LoadEntity(&webSite, input.WebSiteId,[]string{"EmailBoxes"}); err != nil {
+		
 		u.Respond(w, u.MessageError(err, "Ошибка в запросе: проверьте id магазина"))
 		return
 	}
@@ -187,9 +189,8 @@ func getCustomerFromInput(account models.Account, userHashId, email, phone, name
 		userByEmail, errEmail := account.GetUserByEmail(email)
 		userByPhone, errPhone := account.GetUserByPhone(phone, "RU")
 
-
 		// ! Оба пользователя найдены = В случае, если у обоих пользователей указаны телефон и емейл, но при этом емейл разные
-		if errEmail == nil && errPhone == nil && userByEmail.Email != nil && userByPhone.Email != nil && (userByEmail.Email != userByPhone.Email) {
+		if errEmail == nil && errPhone == nil && userByEmail.Email != nil && userByPhone.Email != nil && (*userByEmail.Email != *userByPhone.Email) {
 			return nil, u.Error{Message:"Ошибка идентификации пользователя",
 				Errors: map[string]interface{}{
 				"email":"Пользователь с таким email'ом имеет другой телефон",
@@ -198,7 +199,7 @@ func getCustomerFromInput(account models.Account, userHashId, email, phone, name
 		}
 
 		// ! Оба пользователя найдены = В случае, если у обоих пользователей указаны телефон и емейл, но при этом телефоны разные
-		if errEmail == nil && errPhone == nil && userByEmail.Phone != nil && userByPhone.Phone != nil && (userByEmail.Phone != userByPhone.Phone) {
+		if errEmail == nil && errPhone == nil && userByEmail.Phone != nil && userByPhone.Phone != nil && (*userByEmail.Phone != *userByPhone.Phone) {
 			return nil, u.Error{Message:"Ошибка идентификации пользователя",
 				Errors: map[string]interface{}{
 					"email":"Пользователь с таким email'ом имеет другой телефон",
@@ -249,7 +250,6 @@ func getCustomerFromInput(account models.Account, userHashId, email, phone, name
 			// 2. Создаем пользователя
 			__user, err := account.CreateUser(_user, *role)
 			if err != nil {
-				fmt.Println(err)
 				return nil, u.Error{Message:"Ошибка создания пользователя"}
 			}
 
@@ -309,7 +309,7 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 
 		// 1.1 Получаем продукт
 		var product models.Product
-		err := account.LoadEntity(&product, v.ProductId, nil)
+		err := account.LoadEntity(&product, v.Id, []string{"PaymentSubject"})
 		if err != nil {
 			u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска ответственного менеджера", Errors: map[string]interface{}{"managerHashId":"Не удалось найти менеджера"}}))
 			return
@@ -412,7 +412,6 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 	// 8. Создаем / находим компанию
 	if input.CompanyHashId != "" {
 		// todo создание / поиск компании
-		fmt.Println("Поиск компании..")
 	}
 
 	//////////////////////
@@ -522,7 +521,6 @@ func createOrderFromCallbackPhone(w http.ResponseWriter, input CreateOrderForm, 
 	// 8. Создаем / находим компанию
 	if input.CompanyHashId != "" {
 		// todo создание / поиск компании
-		fmt.Println("Поиск компании..")
 	}
 
 	//////////////////////
@@ -614,7 +612,6 @@ func createOrderFromCallbackForm(w http.ResponseWriter, input CreateOrderForm, a
 	// 8. Создаем / находим компанию
 	if input.CompanyHashId != "" {
 		// todo создание / поиск компании
-		fmt.Println("Поиск компании..")
 	}
 
 	//////////////////////

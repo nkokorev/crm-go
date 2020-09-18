@@ -1142,7 +1142,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		models.WebPage{
 			AccountId: airoClimat.Id, Code:  utils.STRp("info"), Label:  utils.STRp("Статьи"), Path:  utils.STRp("articles"),
 			MetaTitle: utils.STRp("Статьи :: AiroClimate"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),
-			IconName:  utils.STRp("far fa-books"), RouteName:  utils.STRp("info.articles"), Priority: 1,
+			IconName:  utils.STRp("far fa-books"), RouteName:  utils.STRp("articles"), Priority: 1,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
@@ -1214,12 +1214,12 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	// 5* Создаем категории товаров
 
 	_CategoryRoot, err := airoClimat.CreateEntity(&models.ProductCategory{
-		Code:  utils.STRp("catalog"), Label: utils.STRp("Каталог"),
+		Code:  utils.STRp("catalog"), Label: utils.STRp("Каталог"),LabelPlural: utils.STRp("Каталог"),
 	})
 	CategoryRoot := _CategoryRoot.(*models.ProductCategory)
 
 	_catGr1, err := CategoryRoot.CreateChild(models.ProductCategory{
-		Code:  utils.STRp("bactericidal-recirculators"), Label: utils.STRp("Бактерицидный рециркулятор"),LabelPlural: utils.STRp("Бактерицидные рециркуляторы"),
+		Code:  utils.STRp("recirculators"), Label: utils.STRp("Бактерицидный рециркулятор"),LabelPlural: utils.STRp("Бактерицидные рециркуляторы"),
 	})
 	catGr1 := _catGr1.(*models.ProductCategory)
 	if err != nil {
@@ -1227,7 +1227,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		return
 	}
 	_catGr2, err := CategoryRoot.CreateChild(models.ProductCategory{
-		Code:  utils.STRp("bactericidal-chambers"), Label: utils.STRp("Бактерицидная камера"),LabelPlural: utils.STRp("Бактерицидные камеры"),
+		Code:  utils.STRp("chambers"), Label: utils.STRp("Бактерицидная камера"),LabelPlural: utils.STRp("Бактерицидные камеры"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
@@ -1258,21 +1258,21 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 
 	// 6. Создаем карточки товара
 	cards := []models.ProductCard{
-		{Id: 0, RouteName: utils.STRp("catalog.recirculators"), 	Path: utils.STRp("airo-dez-adjustable-black"),	Label: utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой"),Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой"), 	MetaTitle:  utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой")},
-		{Id: 0, RouteName: utils.STRp("catalog.recirculators"),	Path: utils.STRp("airo-dez-black"), 				Label: utils.STRp("Рециркулятор AIRO-DEZ черный"), 				Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ черный"), 					MetaTitle: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ черный")},
-		{Id: 0, RouteName: utils.STRp("catalog.recirculators"),	Path: utils.STRp("airo-dez-adjustable-white"), 	Label: utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой"), 	Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой"),	MetaTitle: utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой")},
-		{Id: 0, RouteName: utils.STRp("catalog.recirculators"),	Path: utils.STRp("airo-dez-white"), 				Label: utils.STRp("Рециркулятор AIRO-DEZ белый"), 				Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ белый"),					MetaTitle: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ белый")},
-		{Id: 0, RouteName: utils.STRp("catalog.recirculators"),	Path: utils.STRp("airo-dez-compact"), 			Label: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"), 	Breadcrumb: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"),	MetaTitle: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT")},
+		{Id: 0, RouteName: utils.STRp("catalog.recirculators.card"), Path: utils.STRp("airo-dez-adjustable-black"),	Label: utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой"),Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой"), 	MetaTitle:  utils.STRp("Рециркулятор AIRO-DEZ черный с регулировкой")},
+		{Id: 0, RouteName: utils.STRp("catalog.recirculators.card"),	Path: utils.STRp("airo-dez-black"), 				Label: utils.STRp("Рециркулятор AIRO-DEZ черный"), 				Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ черный"), 					MetaTitle: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ черный")},
+		{Id: 0, RouteName: utils.STRp("catalog.recirculators.card"),	Path: utils.STRp("airo-dez-adjustable-white"), 	Label: utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой"), 	Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой"),	MetaTitle: utils.STRp("Рециркулятор AIRO-DEZ белый с регулировкой")},
+		{Id: 0, RouteName: utils.STRp("catalog.recirculators.card"),	Path: utils.STRp("airo-dez-white"), 				Label: utils.STRp("Рециркулятор AIRO-DEZ белый"), 				Breadcrumb: utils.STRp("Рециркулятор AIRO-DEZ белый"),					MetaTitle: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ белый")},
+		{Id: 0, RouteName: utils.STRp("catalog.recirculators.card"),	Path: utils.STRp("airo-dez-compact"), 			Label: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"), 	Breadcrumb: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"),	MetaTitle: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT")},
 
-		{Id: 0, RouteName: utils.STRp("catalog.chambers"),		Path: utils.STRp("airo-dezpuf"),					Label: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF"), 				Breadcrumb: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF"),			MetaTitle: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF")},
-		{Id: 0, RouteName: utils.STRp("catalog.chambers"),		Path: utils.STRp("airo-dezpuf-wenge"), 			Label: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"), Breadcrumb: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"),MetaTitle: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге")},
+		{Id: 0, RouteName: utils.STRp("catalog.chambers.card"),		Path: utils.STRp("airo-dezpuf"),					Label: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF"), 				Breadcrumb: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF"),			MetaTitle: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF")},
+		{Id: 0, RouteName: utils.STRp("catalog.chambers.card"),		Path: utils.STRp("airo-dezpuf-wenge"), 			Label: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"), Breadcrumb: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"),MetaTitle: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге")},
 		
-		{Id: 0, RouteName: utils.STRp("catalog.chambers"),		Path: utils.STRp("airo-dezbox"), 				Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX"), 					Breadcrumb: utils.STRp("Бактерицидная камера AIRO-DEZBOX"),				MetaTitle: utils.STRp("Бактерицидная камера AIRO-DEZBOX")},
-		{Id: 0, RouteName: utils.STRp("catalog.chambers"),		Path: utils.STRp("airo-dezbox-white"), 			Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая"),				Breadcrumb: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая"), 		MetaTitle: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая")},
-		{Id: 0, RouteName: utils.STRp("catalog.chambers"),		Path: utils.STRp("airo-deztumb"), 				Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB"), 		Breadcrumb: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB"),	MetaTitle: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB")},
-		{Id: 0, RouteName: utils.STRp("catalog.chambers"),		Path: utils.STRp("airo-deztumb-big"), 			Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"), 	Breadcrumb: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"),MetaTitle: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big")},
+		{Id: 0, RouteName: utils.STRp("catalog.chambers.card"),		Path: utils.STRp("airo-dezbox"), 				Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX"), 					Breadcrumb: utils.STRp("Бактерицидная камера AIRO-DEZBOX"),				MetaTitle: utils.STRp("Бактерицидная камера AIRO-DEZBOX")},
+		{Id: 0, RouteName: utils.STRp("catalog.chambers.card"),		Path: utils.STRp("airo-dezbox-white"), 			Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая"),				Breadcrumb: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая"), 		MetaTitle: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая")},
+		{Id: 0, RouteName: utils.STRp("catalog.chambers.card"),		Path: utils.STRp("airo-deztumb"), 				Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB"), 		Breadcrumb: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB"),	MetaTitle: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB")},
+		{Id: 0, RouteName: utils.STRp("catalog.chambers.card"),		Path: utils.STRp("airo-deztumb-big"), 			Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"), 	Breadcrumb: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"),MetaTitle: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big")},
 
-		{Id: 0, Path: utils.STRp("airo-deztumb-pine"), 			Label: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"),	Breadcrumb: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"), MetaTitle: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина")},
+		{Id: 0, RouteName: utils.STRp("catalog.chambers.card"),		Path: utils.STRp("airo-deztumb-pine"), 			Label: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"),	Breadcrumb: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"), MetaTitle: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина")},
 	}
 
 	// 7. Создаем список товаров
@@ -1607,7 +1607,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	for i := range products {
 		// var groupId uint
 
-		if i < 4 {
+		if i <= 4 {
 			// groupId = catGr1.GetId()
 			productCategory = *catGr1
 		} else {
@@ -3073,7 +3073,7 @@ func Upload357grData() {
 		models.WebPage{
 			AccountId: account.Id, Code:  utils.STRp("info"), Label:  utils.STRp("Полезные материалы"), Path:  utils.STRp("articles"),
 			MetaTitle: utils.STRp("Полезные материалы :: 357 грамм"),
-			IconName:  utils.STRp("far fa-books"), RouteName:  utils.STRp("info.articles"),  Priority: 10,
+			IconName:  utils.STRp("far fa-books"), RouteName:  utils.STRp("articles"),  Priority: 10,
 		})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для 357 грамм webSite: ", err)

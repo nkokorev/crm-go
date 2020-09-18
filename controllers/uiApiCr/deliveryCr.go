@@ -76,7 +76,7 @@ func DeliveryCalculateDeliveryCost(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET Calculate Delivery")
 	resp["weight"] = weight
-	resp["totalCost"] = totalCost
+	resp["total_cost"] = totalCost
 	u.Respond(w, resp)
 }
 

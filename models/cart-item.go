@@ -59,6 +59,7 @@ func (CartItem) PgSqlCreate() {
 		"ADD CONSTRAINT cart_items_amount_id_fkey FOREIGN KEY (amount_id) REFERENCES payment_amounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
 		"ADD CONSTRAINT cart_items_order_id_fkey FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE ON UPDATE CASCADE," +
 		"ADD CONSTRAINT cart_items_payment_subject_id_fkey FOREIGN KEY (payment_subject_id) REFERENCES payment_subjects(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
+		"DROP CONSTRAINT IF EXISTS fk_cart_items_product," +
 		"ADD CONSTRAINT cart_items_payment_mode_id_fkey FOREIGN KEY (payment_mode_id) REFERENCES payment_modes(id) ON DELETE RESTRICT ON UPDATE CASCADE;").Error
 	if err != nil {
 		log.Fatal("Error: ", err)

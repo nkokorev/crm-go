@@ -277,6 +277,7 @@ func (order *Order) update(input map[string]interface{}, preloads []string) erro
 	delete(input,"order_channel")
 	delete(input,"company")
 	delete(input,"comments")
+	delete(input,"payment_method")
 
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","manager_id","web_site_id","customer_id","company_id","order_channel_id","payment_method_id",

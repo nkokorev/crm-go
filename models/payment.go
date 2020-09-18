@@ -119,10 +119,17 @@ func (Payment) PgSqlCreate() {
 	// db.Model(&Payment{}).AddForeignKey("income_amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
 	// db.Model(&Payment{}).AddForeignKey("refunded_amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
 	err := db.Exec("ALTER TABLE payments " +
-		"ADD CONSTRAINT payments_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
-		"ADD CONSTRAINT payments_amount_id_fkey FOREIGN KEY (amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
-		"ADD CONSTRAINT payments_income_amount_id_fkey FOREIGN KEY (income_amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
-		"ADD CONSTRAINT payments_refunded_amount_id_fkey FOREIGN KEY (refunded_amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE;").Error
+		"ADD CONSTRAINT payments_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+		// "ADD CONSTRAINT payments_amount_id_fkey FOREIGN KEY (amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
+		// "ADD CONSTRAINT payments_income_amount_id_fkey FOREIGN KEY (income_amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
+		// "ADD CONSTRAINT payments_refunded_amount_id_fkey FOREIGN KEY (refunded_amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE;").Error
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
+	err = db.Exec("ALTER TABLE payments " +
+		"DROP CONSTRAINT IF EXISTS fk_orders_amount," +
+		"DROP CONSTRAINT IF EXISTS fk_payments_amount," +
+		"DROP CONSTRAINT IF EXISTS fk_payments_refunded_amount;").Error
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}

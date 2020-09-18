@@ -38,10 +38,10 @@ func (PaymentAmount) PgSqlCreate() {
 		log.Fatal(err)
 	}
 	// db.Model(&PaymentAmount{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	err := db.Exec("ALTER TABLE payment_amounts ADD CONSTRAINT payment_amounts_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
+/*	err := db.Exec("ALTER TABLE payment_amounts ADD CONSTRAINT \n    payment_amounts_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {
 		log.Fatal("Error: ", err)
-	}
+	}*/
 }
 func (paymentAmount *PaymentAmount) BeforeCreate(tx *gorm.DB) error {
 	paymentAmount.Id = 0

@@ -22,7 +22,7 @@ type ProductCard struct {
 
 	Label	 			*string 	`json:"label" gorm:"type:varchar(255);"` 	// что выводить в список товаров
 	Path 				*string 	`json:"path" gorm:"type:varchar(255);"` 	// идентификатор страницы (syao-chzhun )
-	RouteName 			*string 	`json:"route_name" gorm:"type:varchar(50);default:'catalog.product'"`    // {catalog.product} - может быть удобно в каких-то фреймворках
+	RouteName 			*string 	`json:"route_name" gorm:"type:varchar(50);"`    // {catalog.product} - может быть удобно в каких-то фреймворках
 	Breadcrumb 			*string 	`json:"breadcrumb" gorm:"type:varchar(255);"`
 
 	MetaTitle 			*string 	`json:"meta_title" gorm:"type:varchar(255);"`

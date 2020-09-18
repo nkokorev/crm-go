@@ -50,7 +50,7 @@ type DeliveryData struct {
 }
 
 type CartData struct {
-	ProductId 	uint	`json:"product_id"`	// id product
+	Id 	uint	`json:"id"`	// id product
 	Quantity	uint	`json:"quantity"`	// число позиций
 }
 
