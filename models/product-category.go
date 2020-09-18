@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -20,13 +19,13 @@ type ProductCategory struct {
 	Children	[]ProductCategory `json:"children" gorm:"foreignkey:ParentId"`
 
 	// Наименование категории в ед. числе: Шу Пуэр, Красный чай, Пуэр, ...
-	Label 		*string `json:"label" gorm:"type:varchar(255);"`
+	Label 		*string `json:"label" gorm:"type:varchar(128);"`
 
 	// Наименование категории в множ. числе: Шу Пуэры, Красные чаи, Пуэры, ...
-	LabelPlural *string `json:"label_plural" gorm:"type:varchar(255);"`
+	LabelPlural *string `json:"label_plural" gorm:"type:varchar(128);"`
 	
 	// Код категории для выборки (возможно), unique ( в рамках account), для назначения цвета
-	Code 		*string `json:"code" gorm:"type:varchar(255);"`
+	Code 		*string `json:"code" gorm:"type:varchar(128);"`
 
 	// Приоритет отображения категории на странице
 	// todo: доработать формат отображения... смешанный, по порядку и т.д.
@@ -58,10 +57,6 @@ func (ProductCategory) PgSqlCreate() {
 		log.Fatal("Error: ", err)
 	}
 
-	err = db.SetupJoinTable(&ProductCategory{}, "ProductCards", &ProductCategoryProductCard{})
-	if err != nil {
-		log.Fatal(err)
-	}
 	err = db.SetupJoinTable(&ProductCategory{}, "WebPages", &WebPageProductCategories{})
 	if err != nil {
 		log.Fatal(err)
@@ -85,7 +80,7 @@ func (productCategory *ProductCategory) GetPreloadDb(getModel bool, autoPreload 
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Products","ProductCards","WebPages","Children","Children12"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Products","WebPages","Children","Children12"})
 
 		for _,v := range allowed {
 			if v == "Children12" {
@@ -294,59 +289,6 @@ func (productCategory ProductCategory) CreateChild(wp ProductCategory) (Entity, 
 
 	return _webPage, nil
 }
-func (productCategory ProductCategory) AppendProductCard(productCard *ProductCard, optPriority... int) error {
-
-	priority := 10
-	if len(optPriority) > 0 {
-		priority = optPriority[0]
-	}
-
-	if productCard.Id < 1 {
-		return utils.Error{Message: "Не создана продуктовая карточка"}
-	}
-
-
-	if err := db.Model(&ProductCategoryProductCard{}).Create(
-		&ProductCategoryProductCard{ProductCategoryId: productCategory.Id, ProductCardId: productCard.Id, Priority: priority}).Error; err != nil {
-		return err
-	}
-
-	account, err := GetAccount(productCard.AccountId)
-	if err == nil && account != nil {
-		event.AsyncFire(Event{}.ProductCardUpdated(account.Id, productCard.Id))
-		event.AsyncFire(Event{}.ProductCategoryUpdated(account.Id, productCard.Id))
-	}
-
-	return nil
-}
-func (productCategory ProductCategory) RemoveProductCard(productCard ProductCard) error {
-
-	// Загружаем еще раз
-	if err := productCard.load(nil); err != nil {
-		return err
-	}
-
-	//
-
-	if productCategory.AccountId < 1 || productCard.Id < 1  || productCategory.Id < 1 {
-		return utils.Error{Message: "Техническая ошибка: account id || product card id || product category id == nil"}
-	}
-
-	if err := db.Where("account_id = ? AND product_card_id = ? AND product_category_id = ?", productCategory.AccountId, productCard.Id, productCategory.Id).
-		Delete(&ProductCategoryProductCard{}).Error; err != nil {
-		return err
-	}
-
-
-	account, err := GetAccount(productCard.AccountId)
-	if err == nil && account != nil {
-		event.AsyncFire(Event{}.ProductCardUpdated(account.Id, productCard.Id))
-		event.AsyncFire(Event{}.ProductCategoryUpdated(account.Id, productCard.Id))
-	}
-
-	return nil
-}
-
 func (productCategory *ProductCategory) AppendProduct(product *Product, strict... bool) error {
 
 	// 1. Загружаем продукт еще раз

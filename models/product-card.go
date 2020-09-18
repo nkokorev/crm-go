@@ -42,9 +42,6 @@ type ProductCard struct {
 	// Preview Images - небольшие пережатые изображения товара(ов)
 	Images 				[]Storage	`json:"images" gorm:"polymorphic:Owner;"`
 
-	// Вид номенклатуры - ассортиментные группы продаваемых товаров. Привязываются к карточкам..
-	ProductCategories	[]ProductCategory `json:"product_categories" gorm:"many2many:product_category_product_cards;"`
-
 	// deprecated
 	Products 			[]Product 		`json:"products" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
 }
@@ -57,10 +54,6 @@ func (ProductCard) PgSqlCreate() {
 	}
 
 	err = db.SetupJoinTable(&ProductCard{}, "Products", &ProductCardProduct{})
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = db.SetupJoinTable(&ProductCard{}, "ProductCategories", &ProductCategoryProductCard{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -260,7 +253,6 @@ func (productCard *ProductCard) delete () error {
 	return productCard.GetPreloadDb(true,false,nil).Where("id = ?", productCard.Id).Delete(productCard).Error
 }
 // ######### END CRUD Functions ############
-
 
 
 ////////////////

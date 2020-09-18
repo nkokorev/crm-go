@@ -106,7 +106,6 @@ func Test() {
 	models.WebSite{}.PgSqlCreate()
 	models.WebPage{}.PgSqlCreate()
 
-	// models.ProductGroup{}.PgSqlCreate()
 	models.PaymentMode{}.PgSqlCreate()
 	models.PaymentAmount{}.PgSqlCreate()
 
@@ -210,7 +209,6 @@ func RefreshTablesPart_I() {
 	models.Product{}.PgSqlCreate()
 	models.ProductCard{}.PgSqlCreate()
 	models.ProductCardProduct{}.PgSqlCreate()
-	models.ProductCategoryProductCard{}.PgSqlCreate()
 	models.ProductCategoryProduct{}.PgSqlCreate()
 	models.WebPageProductCategories{}.PgSqlCreate()
 
@@ -1221,7 +1219,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	CategoryRoot := _CategoryRoot.(*models.ProductCategory)
 
 	_catGr1, err := CategoryRoot.CreateChild(models.ProductCategory{
-		Code:  utils.STRp("bactericidal-recirculators"), Label: utils.STRp("Бактерицидные рециркуляторы"),
+		Code:  utils.STRp("bactericidal-recirculators"), Label: utils.STRp("Бактерицидный рециркулятор"),LabelPlural: utils.STRp("Бактерицидные рециркуляторы"),
 	})
 	catGr1 := _catGr1.(*models.ProductCategory)
 	if err != nil {
@@ -1229,7 +1227,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		return
 	}
 	_catGr2, err := CategoryRoot.CreateChild(models.ProductCategory{
-		Code:  utils.STRp("bactericidal-chambers"), Label: utils.STRp("Бактерицидные камеры"),
+		Code:  utils.STRp("bactericidal-chambers"), Label: utils.STRp("Бактерицидная камера"),LabelPlural: utils.STRp("Бактерицидные камеры"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать ProductGroup для airoClimat webSite: ", err)
@@ -1602,12 +1600,13 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			})),
 		},
 	}
-	
-	
+
+
+	var productCategory models.ProductCategory
 	// 7. Добавляем продукты в категории с созданием карточки товара
-	for i,_ := range products {
+	for i := range products {
 		// var groupId uint
-		var productCategory models.ProductCategory
+
 		if i < 4 {
 			// groupId = catGr1.GetId()
 			productCategory = *catGr1

@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
@@ -340,8 +339,6 @@ func (webSite WebSite) CreateProductWithProductCard(input Product, newCard Produ
 		return nil, utils.Error{Message: "Ошибка преобразования Product"}
 	}
 
-	fmt.Println(product)
-
 	// Создаем карточку товара
 	newCard.AccountId = webSite.AccountId
 	newCard.WebSiteId = &webSite.Id
@@ -361,7 +358,7 @@ func (webSite WebSite) CreateProductWithProductCard(input Product, newCard Produ
 		return nil, err
 	}
 
-	if err = productCategory.AppendProductCard(card);err != nil {
+	if err = productCategory.AppendProduct(product);err != nil {
 		return nil, err
 	}
 
