@@ -42,7 +42,6 @@ type ProductCard struct {
 	// Preview Images - небольшие пережатые изображения товара(ов)
 	Images 				[]Storage	`json:"images" gorm:"polymorphic:Owner;"`
 
-	// deprecated
 	Products 			[]Product 		`json:"products" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
 }
 
@@ -126,7 +125,7 @@ func (productCard *ProductCard) AfterUpdate(tx *gorm.DB) error {
 	return nil
 }
 func (productCard *ProductCard) AfterDelete(tx *gorm.DB) error {
-	event.AsyncFire(Event{}.DeliveryOrderDeleted(productCard.AccountId, productCard.Id))
+	event.AsyncFire(Event{}.ProductCardDeleted(productCard.AccountId, productCard.Id))
 	return nil
 }
 // ######### CRUD Functions ############

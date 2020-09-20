@@ -76,7 +76,7 @@ func ConnectDb() *gorm.DB {
 	}), &gorm.Config{
 		Logger: dbLogger,
 		SkipDefaultTransaction: false, // ожидать завершения записи
-		PrepareStmt: true, // Режим подготовленных операторов создает preparedstmt и кэширует их для ускорения будущих вызовов
+		PrepareStmt: false, // Режим подготовленных операторов создает preparedstmt и кэширует их для ускорения будущих вызовов
 		// DisableForeignKeyConstraintWhenMigrating: true,
 		/*NamingStrategy: schema.NamingStrategy{
 			TablePrefix: "t_",   // префикс имен таблиц, таблица для `User` будет `t_users`
@@ -178,6 +178,15 @@ func SettingsDb() error {
 		log.Fatal(err)
 	}
 	err = db.SetupJoinTable(&Product{}, "ProductCategories", &ProductCategoryProduct{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = db.SetupJoinTable(&Product{}, "ProductTags", &ProductTagProduct{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.SetupJoinTable(&ProductTag{}, "Products", &ProductTagProduct{})
 	if err != nil {
 		log.Fatal(err)
 	}

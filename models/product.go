@@ -18,7 +18,6 @@ import (
 Продукт может быть как шт., упак., так и сборным из других товаров.
 Продукт может входить во множество web-карточек (витрин)
 Список характеристик продукта не регламентируются, но удобно, когда он принадлежит какой-то группе с фикс. списком параметров.
-
 */
 
 type Product struct {
@@ -83,14 +82,16 @@ type Product struct {
 	// Тип продукта: улунский, красный (чай), углозачистной станок, шлифовальный станок
 	ProductTypeId		*uint		`json:"product_type_id" gorm:"type:int;"`
 	ProductType			ProductType `json:"product_type"`
-	
+
+	ProductTags				[]ProductTag `json:"product_tags" gorm:"many2many:product_tag_products;"`
+
 	// Список продуктов из которых составлен текущий. Это может быть как 1<>1, а может быть и нет (== составной товар)
 	WarehouseItems		[]WarehouseItem `json:"warehouse_items"`
 	Warehouses			[]Warehouse 	`json:"warehouses" gorm:"many2many:warehouse_item;"`
 
 	// Ед. измерения товара: штуки, метры, литры, граммы и т.д.  !!!!
-	MeasurementUnitId 		*uint	`json:"measurement_unit_id" gorm:"type:int;"` // тип измерения
-	MeasurementUnit 		MeasurementUnit `json:"measurement_unit"`// Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
+	MeasurementUnitId 	*uint	`json:"measurement_unit_id" gorm:"type:int;"` // тип измерения
+	MeasurementUnit 	MeasurementUnit `json:"measurement_unit"`// Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 
 	// Основные атрибуты для расчета (Можно и в атрибуты)
 	// Length 	*float64 `json:"length" gorm:"type:numeric;"`
@@ -180,6 +181,11 @@ func (Product) PgSqlCreate() {
 	}
 
 	err = db.SetupJoinTable(&Product{}, "ProductCategories", &ProductCategoryProduct{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = db.SetupJoinTable(&Product{}, "ProductTags", &ProductTagProduct{})
 	if err != nil {
 		log.Fatal(err)
 	}

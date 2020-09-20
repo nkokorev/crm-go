@@ -172,7 +172,12 @@ func RefreshTablesPart_I() {
 
 	pool := models.GetPool()
 
-	err := pool.Exec("DROP SCHEMA public CASCADE;\nCREATE SCHEMA public;").Error
+	/*err := pool.Exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;").Error
+	if err != nil {
+		log.Fatal(err)
+	}*/
+
+	err := pool.Exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;").Exec("").Error
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -203,6 +208,8 @@ func RefreshTablesPart_I() {
 	models.Company{}.PgSqlCreate()
 	models.Manufacturer{}.PgSqlCreate()
 
+
+
 	models.ProductType{}.PgSqlCreate()
 	models.ProductCategory{}.PgSqlCreate()
 	models.Warehouse{}.PgSqlCreate()
@@ -211,6 +218,13 @@ func RefreshTablesPart_I() {
 	models.ProductCardProduct{}.PgSqlCreate()
 	models.ProductCategoryProduct{}.PgSqlCreate()
 	models.WebPageProductCategories{}.PgSqlCreate()
+
+
+	models.ProductTagGroup{}.PgSqlCreate()
+	models.ProductTag{}.PgSqlCreate()
+	models.ProductTagProduct{}.PgSqlCreate()
+
+
 
 	models.WarehouseItem{}.PgSqlCreate()
 
