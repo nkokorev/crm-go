@@ -26,6 +26,9 @@ type ProductTag struct {
 	ProductTagGroupId	*uint 				`json:"product_tag_group_id" gorm:"type:int;"`
 	ProductTagGroup		*ProductTagGroup	`json:"product_tag_group"`
 
+	// число тегов *hidden*
+	ProductCount 		int64 	`json:"_product_count" gorm:"-"`
+
 	Products 			[]Product	`json:"products" gorm:"many2many:product_tag_products;"`
 }
 
@@ -55,7 +58,7 @@ func (productTag *ProductTag) GetPreloadDb(getModel bool, autoPreload bool, prel
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Products","TagGroup"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Products","ProductTagGroup"})
 
 		for _,v := range allowed {
 			_db.Preload(v)
@@ -86,6 +89,7 @@ func (productTag *ProductTag) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 func (productTag *ProductTag) AfterFind(tx *gorm.DB) (err error) {
+	productTag.ProductCount =  db.Model(productTag).Association("Products").Count()
 	return nil
 }
 func (productTag *ProductTag) AfterCreate(tx *gorm.DB) error {
