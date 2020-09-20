@@ -14,12 +14,13 @@ type ProductTag struct {
 	PublicId			uint   	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 			uint 	`json:"-" gorm:"type:int;index;not null;"` // потребуется, если productGroupId == null
 
-	// Активна ли карточка товара
-	ForProduct		 	bool 	`json:"enable_retail_sale" gorm:"type:bool;default:true"`
-	ForArticle		 	bool 	`json:"for_article" gorm:"type:bool;default:true"`
-	ForSome			 	bool 	`json:"for_some" gorm:"type:bool;default:true"`
+	// Для чего тег?
+	// ForProduct		 	bool 	`json:"enable_retail_sale" gorm:"type:bool;default:true"`
+	// ForArticle		 	bool 	`json:"for_article" gorm:"type:bool;default:true"`
+	// ForSome			 	bool 	`json:"for_some" gorm:"type:bool;default:true"`
 
 	Label	 			*string `json:"label" gorm:"type:varchar(255);"` 	// [пуэр,зеленый, красный, белый, улун], [лето,зима,осень,весна]
+	Code	 			*string `json:"code" gorm:"type:varchar(255);"` 	// код, значение,..
 	Color 				*string `json:"color" gorm:"type:varchar(32);"` 	// цвет чего-либо
 
 	ProductTagGroupId	*uint 				`json:"product_tag_group_id" gorm:"type:int;"`
@@ -286,7 +287,7 @@ func (productTag *ProductTag) ExistProductById(productId uint) bool {
 
 	var el ProductTagProduct
 
-	err := db.Model(&ProductTagProduct{}).Where("product_tag_id = ? AND product_id = ?",productTag.Id, productId).First(&el).Error
+	err := db.Model(&ProductTagProduct{}).Where("account_id = ? AND product_tag_id = ? AND product_id = ?",productTag.AccountId, productTag.Id, productId).First(&el).Error
 	if err != nil {
 		return false
 	}

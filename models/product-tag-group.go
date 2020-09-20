@@ -15,6 +15,15 @@ type ProductTagGroup struct {
 
 	// [пуэр,зеленый, красный, белый, улун], [лето,зима,осень,весна], [рассыпной, упаковка]
 	Label	 			*string `json:"label" gorm:"type:varchar(255);"`
+	Code	 			*string `json:"code" gorm:"type:varchar(255);"`
+
+	// Filter, по которому можно фильтровать данные
+	FilterLabel	 			*string `json:"filter_label" gorm:"type:varchar(255);"`
+	FilterCode	 			*string `json:"filter_code" gorm:"type:varchar(255);"`
+
+	// todo: добавить выбор доступных фильтров
+
+	Color 				*string `json:"color" gorm:"type:varchar(32);"`
 
 	// Что-то про фильтры
 	EnableRetailSale 	bool 	`json:"enable_retail_sale" gorm:"type:bool;default:true"`
@@ -232,56 +241,53 @@ func (productTagGroup *ProductTagGroup) delete () error {
 
 ////////////////
 
-func (productTagGroup *ProductTagGroup) AppendProduct(product *Product) error {
+func (productTagGroup *ProductTagGroup) AppendProductTag(productTag *ProductTag) error {
 
-	if productTagGroup.ExistProductById(product.Id) {
-		return nil
+	// 1. Загружаем продукт еще раз
+	if err := productTag.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить tag, т.к. он не найден"}
 	}
-	if err := db.Create(&ProductTagProduct{ProductId: product.Id, ProductTagId: productTagGroup.Id}).Error; err != nil {
+
+	productTag.ProductTagGroupId = &productTagGroup.Id
+
+	// if err := db.Model(productTag).Update("product_tag_group_id", &productTagGroup.Id).Error; err != nil {
+	if err := db.Save(productTag).Error; err != nil {
 		return err
 	}
 	
 	return nil
 }
-func (productTagGroup *ProductTagGroup) RemoveProduct(product *Product) error {
+func (productTagGroup *ProductTagGroup) RemoveProductTag(productTag *ProductTag) error {
 
-	if product.Id < 1 {
-		return utils.Error{Message: "Необходимо указать верный id товара"}
+	// 1. Загружаем продукт еще раз
+	if err := productTag.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить tag, т.к. он не найден"}
 	}
 
-	if err := db.Model(productTagGroup).Association("Products").Delete(product); err != nil {
+	productTag.ProductTagGroupId = nil
+
+	if err := db.Save(productTag).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (productTagGroup *ProductTagGroup) SyncProductByIds(products []Product) error {
+/*func (productTagGroup *ProductTagGroup) SyncProductTagByIds(productTags []ProductTag) error {
 
-	// очищаем список
-	if err := db.Model(productTagGroup).Association("Products").Clear(); err != nil {
-		return err
+	// 1. Удалим все Ids...
+	if err := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Model(&ProductTagGroup{}).
+		Where("account_id = ? AND product_tag_group_id = ?", productTagGroup.AccountId, productTagGroup.Id ).
+		Update("product_tag_group_id", nil).Error; err != nil {
+			return err
 	}
 
-	for _,_product := range products {
-		if err := productTagGroup.AppendProduct(&Product{Id: _product.Id, AccountId: _product.AccountId}); err != nil {
+	for _,_productTag := range productTags {
+
+		if err := productTagGroup.AppendTag(&ProductTag{Id: _productTag.Id, AccountId: productTagGroup.AccountId}); err != nil {
 			return err
 		}
 	}
-	
+
 	return nil
-}
-
-
-// спорная функция
-func (productTagGroup *ProductTagGroup) ExistProductById(productId uint) bool {
-
-	var el ProductTagProduct
-
-	err := db.Model(&ProductTagProduct{}).Where("product_card_id = ? AND product_id = ?",productTagGroup.Id, productId).First(&el).Error
-	if err != nil {
-		return false
-	}
-
-	return true
-}
+}*/

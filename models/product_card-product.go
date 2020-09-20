@@ -7,8 +7,8 @@ import (
 
 // HELPER FOR M<>M IN PgSQL
 type ProductCardProduct struct {
-	ProductId  		uint 	`json:"product_id"`
-	ProductCardId 	uint 	`json:"product_card_id"`
+	ProductId  		uint 	`json:"product_id" gorm:"type:int;index;not null;"`
+	ProductCardId 	uint 	`json:"product_card_id" gorm:"type:int;index;not null;"`
 	Priority 		int		`json:"priority" gorm:"type:int;default:10;"`
 }
 

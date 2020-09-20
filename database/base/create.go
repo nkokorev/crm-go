@@ -223,14 +223,10 @@ func RefreshTablesPart_I() {
 	models.ProductTagGroup{}.PgSqlCreate()
 	models.ProductTag{}.PgSqlCreate()
 	models.ProductTagProduct{}.PgSqlCreate()
-
-
-
+	
 	models.WarehouseItem{}.PgSqlCreate()
-
 	models.Inventory{}.PgSqlCreate()
 	models.InventoryItem{}.PgSqlCreate()
-
 
 	models.Shipment{}.PgSqlCreate()
 	models.ShipmentItem{}.PgSqlCreate()
@@ -2471,6 +2467,51 @@ func Upload357grData() {
 	}
 	webPageRoot := Page.(*models.WebPage)
 
+	// 2. Создаем ProductTagGroups
+	productTagGroups := []models.ProductTagGroup {
+		{Label: utils.STRp("Вид чая"), Code: utils.STRp("puers"), 				FilterLabel: utils.STRp("Вид чая"), FilterCode: utils.STRp("type_of_tea"), Color: utils.STRp("#84fabbff"), Description: utils.STRp("Вид чая, но не сортовая группа.")},
+		{Label: utils.STRp("Тип ферментации"), Code: utils.STRp("fermentations"), FilterLabel: utils.STRp("Тип ферментации"), FilterCode: utils.STRp("type_of_fermentation"), Color: utils.STRp("#84fabbff"), Description: utils.STRp("Тип ферментации чая при его производстве.")},
+		{Label: utils.STRp("Сложность приготовления"), Code: utils.STRp("preparations"), FilterLabel: utils.STRp("Сложность приготовления"), FilterCode: utils.STRp("type_of_preparation"), Color: utils.STRp("#84fabbff"), Description: utils.STRp("На сколько сложно приготовить этот чай.")},
+		{Label: utils.STRp("Эффект от чая"), Code: utils.STRp("effect"), FilterLabel: utils.STRp("Эффект от чая"), FilterCode: utils.STRp("effect_of_tea"), Color: utils.STRp("#84fabbff"), Description: utils.STRp("На сколько (условно) чай дает эффект: бодрость, сон и т.д.")},
+	}
+	for i := range productTagGroups {
+		_pgr,err := account.CreateEntity(&productTagGroups[i]); if err != nil {
+			log.Fatal(err)
+		}
+		productTagGroups[i] = *_pgr.(*models.ProductTagGroup)
+	}
+
+	// 1. Создаем ProductTag
+	productTags := []models.ProductTag{
+		{Label: utils.STRp("Пуэр"), Code: utils.STRp(""), 	Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(1)},
+		{Label: utils.STRp("Красный"), Code: utils.STRp(""), 	Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(1)},
+		{Label: utils.STRp("Улунский"), Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(1)},
+		{Label: utils.STRp("Зеленый"), Code: utils.STRp(""), 	Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(1)},
+		{Label: utils.STRp("Белый"), Code: utils.STRp(""), 	Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(1)},
+		{Label: utils.STRp("Желтый"), Code: utils.STRp(""), 	Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(1)},
+		                          //5
+		{Label: utils.STRp("Слабоферментированный"), Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(2)},
+		{Label: utils.STRp("Среднеферментированный"),Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(2)},
+		{Label: utils.STRp("Сильноферментированный"),Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(2)},
+		{Label: utils.STRp("Постферментированный"), 	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(2)},
+		                            // 8
+		{Label: utils.STRp("Просто (для новичков)"), Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(3)},
+		{Label: utils.STRp("Средне"), 				Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(3)},
+		{Label: utils.STRp("Сложно"), 				Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(3)},
+		{Label: utils.STRp("Для чайных мастеров"), 	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(3)},
+		                                // 12
+		{Label: utils.STRp("Расслабляет"), 			Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(4)},
+		{Label: utils.STRp("Успокаивает"), 			Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(4)},
+		{Label: utils.STRp("Сосредотачивает"),	 	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(4)},
+		{Label: utils.STRp("Бодрит"), 				Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(4)},
+	}
+	for i := range productTags {
+		_,err := account.CreateEntity(&productTags[i]); if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// 2. Создаем Root catalog
 	_rootCatalogPage, err := webPageRoot.CreateChild(models.WebPage {
 		AccountId: account.Id, Code:  utils.STRp("catalog"), Label:  utils.STRp("Весь каталог"), Path:  utils.STRp("catalog"),
 		MetaTitle: utils.STRp("Каталог :: 357 грамм"),MetaKeywords: utils.STRp(""),MetaDescription: utils.STRp(""),

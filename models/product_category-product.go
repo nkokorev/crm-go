@@ -7,8 +7,8 @@ import (
 
 // HELPER FOR M<>M IN PgSQL
 type ProductCategoryProduct struct {
-	ProductId  		uint `json:"product_id"`
-	ProductCategoryId 	uint `json:"product_category_id"`
+	ProductId  			uint `json:"product_id" gorm:"type:int;index;not null;"`
+	ProductCategoryId 	uint `json:"product_category_id" gorm:"type:int;index;not null;"`
 }
 
 func (ProductCategoryProduct) PgSqlCreate() {

@@ -5,7 +5,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -447,7 +446,7 @@ func (product *Product) AppendProductCategory(productCategory *ProductCategory, 
 	}
 
 	// 2. Проверяем есть ли уже в этой категории этот продукт
-	if product.ExistProduct(productCategory.Id) {
+	if product.ExistProductCategory(productCategory.Id) {
 		if len(strict) > 0 && strict[0] {
 			return utils.Error{Message: "Категория уже числиться за товаром"}
 		} else {
@@ -485,9 +484,11 @@ func (product *Product) RemoveProductCategory(productCategory *ProductCategory) 
 
 func (product *Product) SyncProductCategoriesByIds(productCategories []ProductCategory) error {
 
-	fmt.Println("Очищаем список категорий: ", productCategories)
-
 	// очищаем список категорий
+	if product.Id < 1 {
+		return utils.Error{Message: "Не найден продукт"}
+	}
+
 	if err := db.Model(product).Association("ProductCategories").Clear(); err != nil {
 		return err
 	}
@@ -503,7 +504,78 @@ func (product *Product) SyncProductCategoriesByIds(productCategories []ProductCa
 	return nil
 }
 
-func (product *Product) ExistProduct(productCategoryId uint) bool {
+
+func (product *Product) AppendProductTag(productTag *ProductTag, strict... bool) error {
+
+	// 1. Загружаем продукт еще раз
+	if err := productTag.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить tag, она не найдена"}
+	}
+
+	if product.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить tag, т.к. продукта не загружен"}
+	}
+
+	// 2. Проверяем есть ли уже в этой категории этот продукт
+	if product.ExistProductTag(productTag.Id) {
+		if len(strict) > 0 && strict[0] {
+			return utils.Error{Message: "Tag уже числиться за товаром"}
+		} else {
+			return nil
+		}
+	}
+
+	if err := db.Create(
+		&ProductTagProduct{
+			ProductId: product.Id, ProductTagId: productTag.Id}).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func (product *Product) RemoveProductTag(productTag *ProductTag) error {
+
+	// 1. Загружаем продукт еще раз
+	if err := productTag.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя удалить продукт, он не найден"}
+	}
+
+	if product.Id < 1 || productTag.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: account id || product id || product tag id == nil"}
+	}
+
+	if err := db.Where("product_tag_id = ? AND product_id = ?", productTag.Id, product.Id).Delete(
+		&ProductTagProduct{}).Error; err != nil {
+		return err
+	}
+
+
+	return nil
+}
+func (product *Product) SyncProductTagsByIds(ProductTags []ProductTag) error {
+
+	// 1. Загружаем продукт еще раз
+	if product.Id < 1 {
+		return utils.Error{Message: "Не найден продукт"}
+	}
+
+	// очищаем список категорий
+	if err := db.Model(product).Association("ProductTags").Clear(); err != nil {
+		return err
+	}
+
+	for _,_productTag := range ProductTags {
+
+		if err := product.AppendProductCategory(&ProductCategory{Id: _productTag.Id}, false); err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+func (product *Product) ExistProductCategory(productCategoryId uint) bool {
 
 	if productCategoryId < 1 {
 		return false
@@ -511,6 +583,25 @@ func (product *Product) ExistProduct(productCategoryId uint) bool {
 
 	pcp := ProductCategoryProduct{}
 	result := db.Model(&ProductCategoryProduct{}).First(&pcp,"product_category_id = ? AND product_id = ?", productCategoryId, product.Id)
+
+	if result.Error != nil {
+		return false
+	}
+	if result.RowsAffected > 0 {
+		return true
+	}
+
+
+	return false
+}
+func (product *Product) ExistProductTag(tagId uint) bool {
+
+	if tagId < 1 {
+		return false
+	}
+
+	pcp := ProductTagProduct{}
+	result := db.Model(&ProductTagProduct{}).First(&pcp,"product_tag_id = ? AND product_id = ?", tagId, product.Id)
 
 	if result.Error != nil {
 		return false

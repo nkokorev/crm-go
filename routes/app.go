@@ -145,6 +145,24 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-categories/{productCategoryId:[0-9]+}/products/{productId:[0-9]+}", appCr.ProductCategoryAppendProduct).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-categories/{productCategoryId:[0-9]+}/products/{productId:[0-9]+}", appCr.ProductCategoryRemoveProduct).Methods(http.MethodDelete, http.MethodOptions)
 
+	// ### Product Tags ####
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-tags", appCr.ProductTagCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-tags", appCr.ProductTagListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-tags/{productTagId:[0-9]+}", appCr.ProductTagGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-tags/{productTagId:[0-9]+}", appCr.ProductTagUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-tags/{productTagId:[0-9]+}", appCr.ProductTagDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-tags/{productTagId:[0-9]+}/products/{productId:[0-9]+}", appCr.ProductTagAppendProduct).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-tags/{productTagId:[0-9]+}/products/{productId:[0-9]+}", appCr.ProductTagRemoveProduct).Methods(http.MethodDelete, http.MethodOptions)
+
+	// ### Product Tag Groups ####
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-tag-groups", appCr.ProductTagGroupCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-tag-groups", appCr.ProductTagGroupListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-tag-groups/{productTagGroupId:[0-9]+}", appCr.ProductTagGroupGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-tag-groups/{productTagGroupId:[0-9]+}", appCr.ProductTagGroupUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-tag-groups/{productTagGroupId:[0-9]+}", appCr.ProductTagGroupDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-tag-groups/{productTagGroupId:[0-9]+}/product-tags/{productTagId:[0-9]+}", appCr.ProductTagGroupAppendProductTag).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-tag-groups/{productTagGroupId:[0-9]+}/product-tags/{productTagId:[0-9]+}", appCr.ProductTagGroupRemoveProductTag).Methods(http.MethodDelete, http.MethodOptions)
+
 	// ### Product Types ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-types", appCr.ProductTypeCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-types", appCr.ProductTypeListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
@@ -189,6 +207,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}", appCr.ProductUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}", appCr.ProductDelete).Methods(http.MethodDelete, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-categories", appCr.ProductSyncProductCategories).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-tags", appCr.ProductSyncProductTags).Methods(http.MethodPatch, http.MethodOptions)
 
 	// ### Measurement Units ###
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/measurement-units", appCr.MeasurementUnitStatusCreate).Methods(http.MethodPost, http.MethodOptions)

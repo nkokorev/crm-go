@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func ProductCreate(w http.ResponseWriter, r *http.Request) {
+func ProductTagCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil {
@@ -19,7 +19,7 @@ func ProductCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Get JSON-request
 	var input struct{
-		models.Product
+		models.ProductTag
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -27,45 +27,43 @@ func ProductCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	product, err := account.CreateEntity(&input.Product)
+	productTag, err := account.CreateEntity(&input.ProductTag)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания"}))
 		return
 	}
 
-	resp := u.Message(true, "POST Product Created")
-	resp["product"] = product
+	resp := u.Message(true, "POST ProductTag Created")
+	resp["product_tag"] = productTag
 	u.Respond(w, resp)
 }
 
-func ProductGet(w http.ResponseWriter, r *http.Request) {
+func ProductTagGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	productTagId, err := utilsCr.GetUINTVarFromRequest(r, "productTagId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке product Id"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке productTag Id"))
 		return
 	}
 
-	var product models.Product
-
+	var productTag models.ProductTag
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
-
 	// 2. Узнаем, какой id учитывается нужен
 	publicOk := utilsCr.GetQueryBoolVarFromGET(r, "public_id")
 
 	if publicOk  {
-		err = account.LoadEntityByPublicId(&product, productId,preloads)
+		err = account.LoadEntityByPublicId(&productTag, productTagId,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 			return
 		}
 	} else {
-		err = account.LoadEntity(&product, productId,preloads)
+		err = account.LoadEntity(&productTag, productTagId,preloads)
 		if err != nil {
 			fmt.Println(err)
 			u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
@@ -73,12 +71,12 @@ func ProductGet(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	resp := u.Message(true, "GET Product ")
-	resp["product"] = product
+	resp := u.Message(true, "GET ProductTag")
+	resp["product_tag"] = productTag
 	u.Respond(w, resp)
 }
 
-func ProductListPaginationGet(w http.ResponseWriter, r *http.Request) {
+func ProductTagListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
@@ -109,36 +107,43 @@ func ProductListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		search = ""
 	}
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
 	// 2. Узнаем, какой список нужен
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
+	// Узнаем нужен ли фильтр
+	filter := map[string]interface{}{}
+	webSiteId, _filterWebSite := utilsCr.GetQueryUINTVarFromGET(r, "webSiteId")
+	if _filterWebSite {
+		filter["web_site_id"] = webSiteId
+	}
+
 	var total int64 = 0
-	webSites := make([]models.Entity,0)
+	productTags := make([]models.Entity,0)
 
-	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
-
-	if all {
-		webSites, total, err = account.GetListEntity(&models.Product{}, sortBy,preloads)
+	if all && len(filter) < 1{
+		productTags, total, err = account.GetListEntity(&models.ProductTag{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список страниц"))
 			return
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		webSites, total, err = account.GetPaginationListEntity(&models.Product{}, offset, limit, sortBy, search, nil,preloads)
+		productTags, total, err = account.GetPaginationListEntity(&models.ProductTag{}, offset, limit, sortBy, search, filter,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список страниц"))
 			return
 		}
 	}
-
-	resp := u.Message(true, "GET Product PaginationList")
-	resp["products"] = webSites
+	
+	resp := u.Message(true, "GET product Cards PaginationList")
+	resp["product_tags"] = productTags
 	resp["total"] = total
 	u.Respond(w, resp)
 }
 
-func ProductUpdate(w http.ResponseWriter, r *http.Request) {
+func ProductTagUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -146,16 +151,16 @@ func ProductUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	productTagId, err := utilsCr.GetUINTVarFromRequest(r, "productTagId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
-
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+	var productTag models.ProductTag
 
-	var product models.Product
-	err = account.LoadEntity(&product, productId, preloads)
+	err = account.LoadEntity(&productTag, productTagId,nil)
+
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
@@ -174,19 +179,19 @@ func ProductUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}*/
 
-	// product, err := account.UpdateProduct(productId, &input.Product)
-	err = account.UpdateEntity(&product, input,preloads)
+	// productTag, err := account.UpdateProductTag(productTagId, &input.ProductTag)
+	err = account.UpdateEntity(&productTag, input,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH Product Update")
-	resp["product"] = product
+	resp := u.Message(true, "PATCH ProductTag Update")
+	resp["product_tag"] = productTag
 	u.Respond(w, resp)
 }
 
-func ProductDelete(w http.ResponseWriter, r *http.Request) {
+func ProductTagDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -194,29 +199,29 @@ func ProductDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	productTagId, err := utilsCr.GetUINTVarFromRequest(r, "productTagId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	var product models.Product
-	err = account.LoadEntity(&product, productId,nil)
+	var productTag models.ProductTag
+	err = account.LoadEntity(&productTag, productTagId,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
 		return
 	}
 
-	if err = account.DeleteEntity(&product); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении продукта"))
+	if err = account.DeleteEntity(&productTag); err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении категории товара"))
 		return
 	}
 
-	resp := u.Message(true, "DELETE Product Successful")
+	resp := u.Message(true, "DELETE ProductTag Successful")
 	u.Respond(w, resp)
 }
 
-func ProductSyncProductCategories(w http.ResponseWriter, r *http.Request) {
+func ProductTagRemoveProduct(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -224,44 +229,49 @@ func ProductSyncProductCategories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	productTagId, err := utilsCr.GetUINTVarFromRequest(r, "productTagId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailQueueId"))
+		return
+	}
+
 	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id productId"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
 		return
 	}
 
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
+	var productTag models.ProductTag
+	if err =account.LoadEntity(&productTag, productTagId, nil); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке категории товара"}))
+		return
+	}
+
 	product := models.Product{}
-	if err =account.LoadEntity(&product, productId, preloads); err != nil {
+	if err =account.LoadEntity(&product, productId, nil); err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
 		return
 	}
 
-	var input struct{
-		ProductCategories []models.ProductCategory `json:"product_categories"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 1"))
+	if err = productTag.RemoveProduct(&product); err !=nil {
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из категории товара"))
 		return
 	}
 
-	if err = product.SyncProductCategoriesByIds(input.ProductCategories); err !=nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 2"))
+	if err = account.LoadEntity(&productTag, productTagId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке категории товара"}))
 		return
 	}
 
-	if err =account.LoadEntity(&product, productId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
-		return
-	}
-
-	resp := u.Message(true, "PATCH Product sync Product Categories")
-	resp["product"] = product
+	resp := u.Message(true, "PATCH ProductTag Products Remove")
+	resp["product_tag"] = productTag
 	u.Respond(w, resp)
 }
 
-func ProductSyncProductTags(w http.ResponseWriter, r *http.Request) {
+func ProductTagAppendProduct(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -269,39 +279,45 @@ func ProductSyncProductTags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	productTagId, err := utilsCr.GetUINTVarFromRequest(r, "productTagId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailQueueId"))
+		return
+	}
+
 	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id productId"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
 		return
 	}
 
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
+	var productTag models.ProductTag
+	if err =account.LoadEntity(&productTag, productTagId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке категории товара"}))
+		return
+	}
+
 	product := models.Product{}
-	if err =account.LoadEntity(&product, productId, preloads); err != nil {
+	if err =account.LoadEntity(&product, productId, nil); err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
 		return
 	}
 
-	var input struct{
-		ProductTags []models.ProductTag `json:"product_categories"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 1"))
+	if err = productTag.AppendProduct(&product); err !=nil {
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из категории товара"))
 		return
 	}
 
-	if err = product.SyncProductTagsByIds(input.ProductTags); err !=nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 2"))
+	var _productTag models.ProductTag
+	if err = account.LoadEntity(&_productTag, productTagId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка загрузки категории товара"}))
 		return
 	}
 
-	if err =account.LoadEntity(&product, productId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
-		return
-	}
-
-	resp := u.Message(true, "PATCH Product Sync Product Tags")
-	resp["product"] = product
+	resp := u.Message(true, "PATCH ProductTag Append Product")
+	resp["product_tag"] = _productTag
 	u.Respond(w, resp)
 }
