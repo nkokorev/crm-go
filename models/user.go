@@ -16,7 +16,7 @@ import (
 
 type User struct {
 	Id        		uint 		`json:"id" gorm:"primaryKey"`
-	HashId 			string 		`json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	HashId 			string 		`json:"hash_id" gorm:"type:varchar(12);uniqueIndex;not null;"` // публичный Id для защиты от спама/парсинга
 	IssuerAccountId uint 		`json:"issuer_account_id" gorm:"index;not null;"`
 	
 	Username 	*string 		`json:"username" gorm:"type:varchar(255);index;"` // уникальный, т.к. через него вход в главный аккаунт

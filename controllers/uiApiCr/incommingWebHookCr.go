@@ -2,6 +2,7 @@ package uiApiCr
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
@@ -19,11 +20,13 @@ func PaymentYandexWebHook(w http.ResponseWriter, r *http.Request) {
 	// Проверяем, что такой способ платеж вообще есть, иначе реджект
 	paymentYandexHashId, ok := utilsCr.GetSTRVarFromRequest(r, "paymentYandexHashId")
 	if !ok {
+		fmt.Println("WebHook: не найден paymentYandexHashId", err)
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка - не найден paymentYandexHashId"}))
 		return
 	}
 	_, err = account.GetPaymentYandexByHashId(paymentYandexHashId)
 	if err != nil {
+		fmt.Println("WebHook: Не удалось найти способ оплаты", err)
 		u.Respond(w, u.MessageError(err, "Не удалось найти способ оплаты"))
 		return
 	}
@@ -42,6 +45,7 @@ func PaymentYandexWebHook(w http.ResponseWriter, r *http.Request) {
 		Object ObjectPayment `json:"object"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		fmt.Println("WebHook:  проверьте обязательные поля и типы переменных", err)
 		u.Respond(w, u.MessageError(err, "Ошибка в запросе: проверьте обязательные поля и типы переменных"))
 		return
 	}
@@ -54,6 +58,7 @@ func PaymentYandexWebHook(w http.ResponseWriter, r *http.Request) {
 
 	payment, err := account.GetPaymentByExternalId(input.Object.Id)
 	if err != nil {
+		fmt.Println("WebHook: Не удалось найти платежку", err)
 		u.Respond(w, u.MessageError(err, "Не удалось найти платежку"))
 		return
 	}
@@ -74,6 +79,7 @@ func PaymentYandexWebHook(w http.ResponseWriter, r *http.Request) {
 	}
 	err = account.UpdateEntity(payment, m, nil)
 	if err != nil {
+		fmt.Println("Эх! Не удалось обновить платежку: ", err)
 		u.Respond(w, u.MessageError(err, "Не удалось обновить платежку"))
 		return
 	}

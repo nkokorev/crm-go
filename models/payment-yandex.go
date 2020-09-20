@@ -18,7 +18,7 @@ import (
 
 type PaymentYandex struct {
 	Id     		uint   	`json:"id" gorm:"primaryKey"`
-	HashId 		string  `json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	HashId 		string  `json:"hash_id" gorm:"type:varchar(12);uniqueIndex;not null;"` // публичный Id для защиты от спама/парсинга
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 	WebSiteId	uint 	`json:"web_site_id" gorm:"type:int;index;"` // магазин, к которому относится
 

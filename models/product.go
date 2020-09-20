@@ -28,10 +28,10 @@ type Product struct {
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Доступен ли товар для продажи в розницу
-	RetailSale 			bool 	`json:"retail_sale" gorm:"type:bool;default:true"`
+	RetailSale 			bool 	`json:"retail_sale" gorm:"type:bool;default:false"`
 
 	// Доступен ли товар для продажи оптом
-	WholesaleSale		bool	`json:"wholesale_sale" gorm:"type:bool;default:true"`
+	WholesaleSale		bool	`json:"wholesale_sale" gorm:"type:bool;default:false"`
 
 	// Для продажи ли товар (= можно ли включать в карточки товаров)
 	// ForRetailSale 		bool 	`json:"for_retail_sale" gorm:"type:bool;default:true"`
@@ -85,8 +85,8 @@ type Product struct {
 	ProductType			ProductType `json:"product_type"`
 	
 	// Список продуктов из которых составлен текущий. Это может быть как 1<>1, а может быть и нет (== составной товар)
-	WarehouseItems	[]WarehouseItem `json:"warehouse_items"`
-	Warehouses		[]Warehouse 	`json:"warehouses" gorm:"many2many:warehouse_item;"`
+	WarehouseItems		[]WarehouseItem `json:"warehouse_items"`
+	Warehouses			[]Warehouse 	`json:"warehouses" gorm:"many2many:warehouse_item;"`
 
 	// Ед. измерения товара: штуки, метры, литры, граммы и т.д.  !!!!
 	MeasurementUnitId 		*uint	`json:"measurement_unit_id" gorm:"type:int;"` // тип измерения

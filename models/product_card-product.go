@@ -7,9 +7,9 @@ import (
 
 // HELPER FOR M<>M IN PgSQL
 type ProductCardProduct struct {
-	ProductId  		uint `json:"product_id"`
-	ProductCardId 	uint `json:"product_card_id"`
-	Priority 	int		`json:"priority" gorm:"type:int;default:10;"`
+	ProductId  		uint 	`json:"product_id"`
+	ProductCardId 	uint 	`json:"product_card_id"`
+	Priority 		int		`json:"priority" gorm:"type:int;default:10;"`
 }
 
 func (ProductCardProduct) PgSqlCreate() {

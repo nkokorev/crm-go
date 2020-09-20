@@ -16,7 +16,7 @@ import (
 type MTAHistory struct {
 
 	Id     		uint   	`json:"id" gorm:"primaryKey"` // очень большой индекс может быть
-	HashId 		string `json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	HashId 		string `json:"hash_id" gorm:"type:varchar(12);uniqueIndex;not null;"` // публичный Id для защиты от спама/парсинга
 	
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 

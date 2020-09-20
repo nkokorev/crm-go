@@ -18,8 +18,8 @@ type WebSite struct {
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name 		string `json:"name" gorm:"type:varchar(255);default:'Новый магазин';not null;"` // Внутреннее имя сайта
-	Hostname 	string `json:"hostname" gorm:"type:varchar(255);not_null;"` // ratuscrm.com, airoclimate.ru, vetvent.ru, ..
-	URL 		string `json:"url" gorm:"type:varchar(255);not_null;"` // https://ratuscrm.com, https://airoclimate.ru, http://vetvent.ru, ..
+	Hostname 	string `json:"hostname" gorm:"type:varchar(255);not null;"` // ratuscrm.com, airoclimate.ru, vetvent.ru, ..
+	URL 		string `json:"url" gorm:"type:varchar(255);not null;"` // https://ratuscrm.com, https://airoclimate.ru, http://vetvent.ru, ..
 
 	// Email DKIM
 	DKIMPublicRSAKey 	string `json:"dkim_public_rsa_key" gorm:"type:text;"` // публичный ключ

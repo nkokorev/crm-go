@@ -15,7 +15,7 @@ type EmailCampaign struct {
 	Id     			uint   		`json:"id" gorm:"primaryKey"`
 	PublicId		uint   		`json:"public_id" gorm:"type:int;index;not null;default:1"`
 	AccountId 		uint 		`json:"-" gorm:"type:int;index;not null;"`
-	HashId 			string 		`json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"`
+	HashId 			string 		`json:"hash_id" gorm:"type:varchar(12);uniqueIndex;not null;"`
 
 	// Результат выполнения: planned / pending / active / completed / failed / cancelled .
 	Status 			WorkStatus 	`json:"status" gorm:"type:varchar(18);default:'pending'"`

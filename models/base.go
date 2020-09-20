@@ -76,6 +76,7 @@ func ConnectDb() *gorm.DB {
 	}), &gorm.Config{
 		Logger: dbLogger,
 		SkipDefaultTransaction: false, // ожидать завершения записи
+		PrepareStmt: true, // Режим подготовленных операторов создает preparedstmt и кэширует их для ускорения будущих вызовов
 		// DisableForeignKeyConstraintWhenMigrating: true,
 		/*NamingStrategy: schema.NamingStrategy{
 			TablePrefix: "t_",   // префикс имен таблиц, таблица для `User` будет `t_users`

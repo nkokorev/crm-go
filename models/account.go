@@ -23,7 +23,7 @@ const (
 
 type Account struct {
 	Id     	uint   `json:"id" gorm:"primaryKey"`
-	HashId 	string `json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	HashId 	string `json:"hash_id" gorm:"type:varchar(12);uniqueIndex;not null;"` // публичный Id для защиты от спама/парсинга
 
 	Name    string `json:"name" gorm:"type:varchar(255)"`
 

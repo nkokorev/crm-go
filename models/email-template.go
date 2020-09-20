@@ -28,7 +28,7 @@ type EmailTemplate struct {
 
 	Id     		uint   	`json:"id" gorm:"primaryKey"`
 	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"`
-	HashId 		string 	`json:"hash_id" gorm:"type:varchar(12);unique_index;not null;"` // публичный Id для защиты от спама/парсинга
+	HashId 		string 	`json:"hash_id" gorm:"type:varchar(12);uniqueIndex;not null;"` // публичный Id для защиты от спама/парсинга
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name 		string	`json:"name" gorm:"type:varchar(255);not null"` // inside name of mail

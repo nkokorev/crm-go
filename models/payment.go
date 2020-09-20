@@ -106,10 +106,10 @@ type Payment struct {
 	PaymentMethod 		PaymentMethod `json:"payment_method" gorm:"-"`
 
 	// Внутреннее время
-	PaidAt time.Time  `json:"paidAt"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	DeletedAt *time.Time `json:"-" sql:"index"`
+	PaidAt 		*time.Time  `json:"paid_at"`
+	CreatedAt 	time.Time  `json:"created_at"`
+	UpdatedAt 	time.Time  `json:"updated_at"`
+	DeletedAt 	*time.Time `json:"-" sql:"index"`
 }
 
 func (Payment) PgSqlCreate() {
@@ -120,9 +120,9 @@ func (Payment) PgSqlCreate() {
 	// db.Model(&Payment{}).AddForeignKey("refunded_amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
 	err := db.Exec("ALTER TABLE payments " +
 		"ADD CONSTRAINT payments_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
-		"DROP CONSTRAINT IF EXISTS fk_orders_payment" +
-		"DROP CONSTRAINT IF EXISTS fk_payments_amount" +
-		"DROP CONSTRAINT IF EXISTS fk_payments_refunded_amount").Error
+		"DROP CONSTRAINT IF EXISTS fk_orders_payment," +
+		"DROP CONSTRAINT IF EXISTS fk_payments_amount," +
+		"DROP CONSTRAINT IF EXISTS fk_payments_refunded_amount;").Error
 		// "ADD CONSTRAINT payments_amount_id_fkey FOREIGN KEY (amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
 		// "ADD CONSTRAINT payments_income_amount_id_fkey FOREIGN KEY (income_amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
 		// "ADD CONSTRAINT payments_refunded_amount_id_fkey FOREIGN KEY (refunded_amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE;").Error
@@ -413,6 +413,10 @@ func (payment *Payment) update(input map[string]interface{}, preloads []string) 
 	if _, ok := input["externalId"]; ok {
 		input["external_id"] = input["externalId"]
 		delete(input,"externalId")
+	}
+	if _, ok := input["paidAt"]; ok {
+		input["paid_at"] = input["paidAt"]
+		delete(input,"paidAt")
 	}
 
 
