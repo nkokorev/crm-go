@@ -2489,17 +2489,18 @@ func Upload357grData() {
 		{Label: utils.STRp("Зеленый"), Code: utils.STRp(""), 	Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(1)},
 		{Label: utils.STRp("Белый"), Code: utils.STRp(""), 	Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(1)},
 		{Label: utils.STRp("Желтый"), Code: utils.STRp(""), 	Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(1)},
-		                          //5
+
+		//5
 		{Label: utils.STRp("Слабоферментированный"), Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(2)},
 		{Label: utils.STRp("Среднеферментированный"),Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(2)},
 		{Label: utils.STRp("Сильноферментированный"),Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(2)},
 		{Label: utils.STRp("Постферментированный"), 	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(2)},
-		                            // 8
+		// 8
 		{Label: utils.STRp("Просто (для новичков)"), Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(3)},
 		{Label: utils.STRp("Средне"), 				Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(3)},
 		{Label: utils.STRp("Сложно"), 				Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(3)},
 		{Label: utils.STRp("Для чайных мастеров"), 	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(3)},
-		                                // 12
+		// 12
 		{Label: utils.STRp("Расслабляет"), 			Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(4)},
 		{Label: utils.STRp("Успокаивает"), 			Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(4)},
 		{Label: utils.STRp("Сосредотачивает"),	 	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(4)},

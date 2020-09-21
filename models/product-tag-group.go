@@ -26,8 +26,8 @@ type ProductTagGroup struct {
 	Color 				*string `json:"color" gorm:"type:varchar(32);"`
 
 	// Что-то про фильтры
-	EnableRetailSale 	bool 	`json:"enable_retail_sale" gorm:"type:bool;default:true"`
-	EnableWholesaleSale bool 	`json:"enable_wholesale_sale" gorm:"type:bool;default:true"`
+	EnableSorting	 	bool 	`json:"enable_sorting" gorm:"type:bool;default:true"`
+	EnableView			bool 	`json:"enable_view" gorm:"type:bool;default:true"`
 
 	// краткое описание группы тегов ()
 	Description 	*string 	`json:"description" gorm:"type:varchar(255);"`

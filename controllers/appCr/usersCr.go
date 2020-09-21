@@ -91,7 +91,6 @@ func UserUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	resp := u.Message(true, "CREATE Users in Account")
 	u.Respond(w, resp)
 }
@@ -302,10 +301,18 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 			apiRoleId64 = _apiRoleId64
 		}
 	}
+	if apiRoleIdI, ok := input["role_id"]; ok {
+		if _apiRoleId64, ok := apiRoleIdI.(float64); ok {
+			apiRoleId64 = _apiRoleId64
+		}
+	}
 
 	delete(input, "_role")
 	delete(input, "roleId")
 	delete(input, "accountUser")
+	delete(input, "_role")
+	delete(input, "role_id")
+	delete(input, "account_user")
 
 	// Обновляем данные пользователя
 
@@ -314,7 +321,6 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Пользователь не найден"))
 		return
 	}
-
 
 	// Обновляем роль пользователя, если она изменилась
 	currentRole, err := account.GetUserRole(*user)
@@ -326,7 +332,6 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}  else {
-
 		 if apiRoleId64 > 0 {
 			 currentRole2, err := account.GetUserRole(*user)
 			 if err == nil && (currentRole2.Id != uint(apiRoleId64)){
@@ -364,8 +369,6 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-// Удаляет пользователя из аккаунта
-// Если issuerId = accountId, то может быть применен запрос на удаление пользователя
 func UserRemoveFromAccount(w http.ResponseWriter, r *http.Request) {
 	
 	account, err := utilsCr.GetWorkAccount(w, r)
