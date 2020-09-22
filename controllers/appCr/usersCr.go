@@ -21,6 +21,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		models.User
 		RoleId uint `json:"role_id"`
+		RoleIdBeta uint `json:"roleId"`
 		Password string `json:"password"`
 	}
 
@@ -34,8 +35,16 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 
 	var role models.Role
 	if err = account.LoadEntity(&role, input.RoleId,preloads); err != nil {
-		u.Respond(w, u.MessageError(err, "Роль пользователя не найдена!"))
-		return
+
+		// todo: apiBeta
+		if err = account.LoadEntity(&role, input.RoleIdBeta,preloads); err != nil {
+
+			u.Respond(w, u.MessageError(err, "Роль пользователя не найдена!"))
+			return
+		}
+
+		// u.Respond(w, u.MessageError(err, "Роль пользователя не найдена!"))
+		// return
 	}
 
 	if role.IsOwner() {
