@@ -18,8 +18,8 @@ type ProductTagGroup struct {
 	Code	 			*string `json:"code" gorm:"type:varchar(255);"`
 
 	// Filter, по которому можно фильтровать данные
-	FilterLabel	 			*string `json:"filter_label" gorm:"type:varchar(255);"`
-	FilterCode	 			*string `json:"filter_code" gorm:"type:varchar(255);"`
+	FilterLabel	 		*string `json:"filter_label" gorm:"type:varchar(255);"`
+	FilterCode	 		*string `json:"filter_code" gorm:"type:varchar(255);"`
 
 	// todo: добавить выбор доступных фильтров
 
@@ -28,6 +28,7 @@ type ProductTagGroup struct {
 	// Что-то про фильтры
 	EnableSorting	 	bool 	`json:"enable_sorting" gorm:"type:bool;default:true"`
 	EnableView			bool 	`json:"enable_view" gorm:"type:bool;default:true"`
+	ManyOf				bool 	`json:"many_of" gorm:"type:bool;default:true"`
 
 	// краткое описание группы тегов ()
 	Description 	*string 	`json:"description" gorm:"type:varchar(255);"`

@@ -357,6 +357,7 @@ func (product *Product) update(input map[string]interface{}, preloads []string) 
 	delete(input,"warehouses")
 	delete(input,"inventories")
 	delete(input,"product_categories")
+	delete(input,"product_tags")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","payment_subject_id","vat_code_id","measurement_unit_id","manufacturer_id","product_type_id"}); err != nil {
 		return err
@@ -503,7 +504,6 @@ func (product *Product) SyncProductCategoriesByIds(productCategories []ProductCa
 
 	return nil
 }
-
 
 func (product *Product) AppendProductTag(productTag *ProductTag, strict... bool) error {
 
