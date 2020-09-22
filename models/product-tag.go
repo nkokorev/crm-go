@@ -355,7 +355,7 @@ func (productTag *ProductTag) ExistProductById(productId uint) bool {
 
 	var el ProductTagProduct
 
-	err := db.Model(&ProductTagProduct{}).Where("account_id = ? AND product_tag_id = ? AND product_id = ?",productTag.AccountId, productTag.Id, productId).First(&el).Error
+	err := db.Model(&ProductTagProduct{}).Where("product_tag_id = ? AND product_id = ?",productTag.Id, productId).First(&el).Error
 	if err != nil {
 		return false
 	}
