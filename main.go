@@ -21,7 +21,6 @@ func main() {
 	// defer db.Close()
 	// defer pool.Close()
 
-
 	// base.Test()
 
 	if false {
@@ -43,7 +42,6 @@ func main() {
 	if err := models.SettingsDb(); err != nil {
 		log.Fatal(err)
 	}
-
 
 	// base.Migrate_I()
 	if err := (models.EventListener{}).ReloadEventHandlers(); err != nil {

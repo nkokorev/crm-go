@@ -82,7 +82,7 @@ type Product struct {
 	ProductTypeId		*uint		`json:"product_type_id" gorm:"type:int;"`
 	ProductType			ProductType `json:"product_type"`
 
-	ProductTags				[]ProductTag `json:"product_tags" gorm:"many2many:product_tag_products;"`
+	ProductTags			[]ProductTag `json:"product_tags" gorm:"many2many:product_tag_products;"`
 
 	// Список продуктов из которых составлен текущий. Это может быть как 1<>1, а может быть и нет (== составной товар)
 	WarehouseItems		[]WarehouseItem `json:"warehouse_items"`
@@ -214,12 +214,13 @@ func (product *Product) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 	}
 
 	if autoPreload {
-		return db.Preload("PaymentSubject","ProductType","VatCode","ProductCategories","MeasurementUnit","Account","ProductCards","Manufacturer").Preload("Images", func(db *gorm.DB) *gorm.DB {
+		return db.Preload("PaymentSubject","ProductType","VatCode","ProductCategories","MeasurementUnit","Account","ProductCards","Manufacturer","ProductTags").
+			Preload("Images", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		})
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Images","ProductType","ProductCategories","PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards", "Manufacturer"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Images","ProductType","ProductCategories","PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards", "Manufacturer","ProductTags"})
 
 		for _,v := range allowed {
 			if v == "Images" {
@@ -556,7 +557,7 @@ func (product *Product) SyncProductTagsByIds(ProductTags []ProductTag) error {
 
 	// 1. Загружаем продукт еще раз
 	if product.Id < 1 {
-		return utils.Error{Message: "Не найден продукт"}
+		return utils.Error{Message: "Тег не найден"}
 	}
 
 	// очищаем список категорий
@@ -565,11 +566,9 @@ func (product *Product) SyncProductTagsByIds(ProductTags []ProductTag) error {
 	}
 
 	for _,_productTag := range ProductTags {
-
-		if err := product.AppendProductCategory(&ProductCategory{Id: _productTag.Id}, false); err != nil {
+		if err := product.AppendProductTag(&ProductTag{Id: _productTag.Id}, false); err != nil {
 			return err
 		}
-
 	}
 
 	return nil
@@ -601,15 +600,9 @@ func (product *Product) ExistProductTag(tagId uint) bool {
 	}
 
 	pcp := ProductTagProduct{}
-	result := db.Model(&ProductTagProduct{}).First(&pcp,"product_tag_id = ? AND product_id = ?", tagId, product.Id)
-
-	if result.Error != nil {
+	if err := db.Model(&ProductTagProduct{}).First(&pcp,"product_tag_id = ? AND product_id = ?", tagId, product.Id).Error; err != nil {
 		return false
 	}
-	if result.RowsAffected > 0 {
-		return true
-	}
 
-
-	return false
+	return true
 }
