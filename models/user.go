@@ -18,7 +18,7 @@ type User struct {
 	Id        		uint 		`json:"id" gorm:"primaryKey"`
 	HashId 			string 		`json:"hash_id" gorm:"type:varchar(12);uniqueIndex;not null;"` // публичный Id для защиты от спама/парсинга
 	IssuerAccountId uint 		`json:"issuer_account_id" gorm:"index;not null;"`
-	IssuerAccountIdBeta uint 		`json:"issuerAccountId" gorm:"-"`
+	IssuerAccountIdBeta uint 	`json:"issuerAccountId" gorm:"-"`
 
 	Username 	*string 		`json:"username" gorm:"type:varchar(255);index;"` // уникальный, т.к. через него вход в главный аккаунт
 	Email 		*string 		`json:"email" gorm:"type:varchar(255);index;"`
@@ -57,11 +57,11 @@ type User struct {
 	PhoneVerifiedAt *time.Time `json:"phone_verified_at"` // дата подтверждения телефона (автоматически проставляется, если методом верфикации пользователя был подтвержден телефон)
 	PasswordResetAt *time.Time `json:"password_reset_at"`
 
-	CreatedAt 	time.Time 		`json:"created_at"`
+	CreatedAt 		time.Time 		`json:"created_at"`
 	CreatedAtBeta 	time.Time 	`json:"createdAt" gorm:"-"`
-	UpdatedAt 	time.Time 		`json:"updated_at"`
+	UpdatedAt 		time.Time 		`json:"updated_at"`
 	UpdatedAtBeta 	time.Time 	`json:"updatedAt" gorm:"-"`
-	DeletedAt 	gorm.DeletedAt 	`json:"-" sql:"index"`
+	DeletedAt 		gorm.DeletedAt 	`json:"-" sql:"index"`
 
 	AccountUser *AccountUser	`json:"account_user" gorm:"preload"` // WTF
 	// Roles 		[]Role 			`json:"roles" gorm:"many2many:account_users;"`
@@ -208,7 +208,20 @@ func (user *User) update (input map[string]interface{}) error {
 
 	delete(input,"roles")
 	delete(input,"account_user")
+	delete(input,"accountUsers")
 	delete(input,"account")
+	delete(input,"accounts")
+	delete(input,"companies")
+
+	delete(input,"subscribedAt")
+	delete(input,"unsubscribedAt")
+	delete(input,"subscriptionReason")
+	delete(input,"createdAt")
+	delete(input,"updatedAt")
+	delete(input,"issuerAccountId")
+	delete(input,"phoneRegion")
+	delete(input,"roleId")
+	
 	if err := u.ConvertMapVarsToUINT(&input, []string{"issuer_account_id","default_account_id","invited_user_id"}); err != nil {
 		return err
 	}
