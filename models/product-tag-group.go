@@ -9,26 +9,26 @@ import (
 
 // Карточка "товара" в магазине в котором могут быть разные торговые предложения
 type ProductTagGroup struct {
-	Id        			uint 	`json:"id" gorm:"primaryKey"`
-	PublicId			uint   	`json:"public_id" gorm:"type:int;index;not null;"`
-	AccountId 			uint 	`json:"-" gorm:"type:int;index;not null;"` // потребуется, если productGroupId == null
+	Id        		uint 	`json:"id" gorm:"primaryKey"`
+	PublicId		uint   	`json:"public_id" gorm:"type:int;index;not null;"`
+	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"` // потребуется, если productGroupId == null
 
 	// [пуэр,зеленый, красный, белый, улун], [лето,зима,осень,весна], [рассыпной, упаковка]
-	Label	 			*string `json:"label" gorm:"type:varchar(255);"`
-	Code	 			*string `json:"code" gorm:"type:varchar(255);"`
+	Label	 		*string `json:"label" gorm:"type:varchar(255);"`
+	Code	 		*string `json:"code" gorm:"type:varchar(255);"`
+	Color 			*string `json:"color" gorm:"type:varchar(32);"`
 
 	// Filter, по которому можно фильтровать данные
-	FilterLabel	 		*string `json:"filter_label" gorm:"type:varchar(255);"`
-	FilterCode	 		*string `json:"filter_code" gorm:"type:varchar(255);"`
-
-	// todo: добавить выбор доступных фильтров
-
-	Color 				*string `json:"color" gorm:"type:varchar(32);"`
+	FilterLabel	 	*string `json:"filter_label" gorm:"type:varchar(255);"`
+	FilterCode	 	*string `json:"filter_code" gorm:"type:varchar(255);"`
 
 	// Что-то про фильтры
-	EnableSorting	 	bool 	`json:"enable_sorting" gorm:"type:bool;default:true"`
-	EnableView			bool 	`json:"enable_view" gorm:"type:bool;default:true"`
-	ManyOf				bool 	`json:"many_of" gorm:"type:bool;default:true"`
+	EnableViewing	bool 	`json:"enable_view" gorm:"type:bool;default:true"`
+	EnableSorting	bool 	`json:"enable_sorting" gorm:"type:bool;default:true"`
+	EnableManyOf	bool 	`json:"enable_many_of" gorm:"type:bool;default:true"`
+	
+	MinRange		*float64 `json:"min_range" gorm:"type:numeric;"`
+	MaxRange		*float64 `json:"max_range" gorm:"type:numeric;"`
 
 	// краткое описание группы тегов ()
 	Description 	*string 	`json:"description" gorm:"type:varchar(255);"`
@@ -173,8 +173,8 @@ func (ProductTagGroup) getPaginationList(accountId uint, offset, limit int, sort
 		search = "%"+search+"%"
 
 		err := (&ProductTagGroup{}).GetPreloadDb(false,false, preloads).
-			Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).Where(filter).
-			Find(&productCards, "label ILIKE ? OR path ILIKE ? OR breadcrumb ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search).Error
+			Limit(limit).Limit(limit).Offset(offset).Order(sortBy).
+			Find(&productCards, "account_id = ? AND label ILIKE ? OR code ILIKE ? OR color ILIKE ? OR filter_label ILIKE ? OR filter_code ILIKE ?", accountId, search,search,search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -182,7 +182,7 @@ func (ProductTagGroup) getPaginationList(accountId uint, offset, limit int, sort
 
 		// Определяем total
 		err = (&ProductTagGroup{}).GetPreloadDb(false,false, nil).
-			Where("label ILIKE ? OR path ILIKE ? OR breadcrumb ILIKE ? OR meta_title ILIKE ? OR meta_description ILIKE ? OR short_description ILIKE ? OR description ILIKE ?", search,search,search,search,search,search,search).
+			Where("account_id = ? AND label ILIKE ? OR code ILIKE ? OR color ILIKE ? OR filter_label ILIKE ? OR filter_code ILIKE ?", accountId, search,search,search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
