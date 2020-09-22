@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"log"
@@ -272,7 +271,7 @@ func (productTagGroup ProductTagGroup) GetTagPaginationList(accountId uint, offs
 			return nil, 0, err
 		}
 
-		err = (&ProductTag{}).GetPreloadDb(false, false, preloads).
+		err = (&ProductTag{}).GetPreloadDb(false, false, nil).
 			Joins("left join product_tag_groups on product_tag_groups.id = product_tags.product_tag_group_id").
 			Select("product_tag_groups.*,product_tags.*").
 			Where("product_tag_groups.id = ? AND product_tag_groups.account_id = ?", productTagGroup.Id, accountId).
@@ -299,35 +298,31 @@ func (productTagGroup ProductTagGroup) GetTagPaginationList(accountId uint, offs
 	} else {
 
 
-		if err := db.Model(&productTagGroup).Preload("ProductTagGroup").Association("ProductTags").Find(&productTags); err != nil {
+		/*if err := db.Model(&productTagGroup).Preload("ProductTagGroup").Association("ProductTags").Find(&productTags); err != nil {
 			fmt.Println(err)
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
 
-		total =  db.Model(&productTagGroup).Association("ProductTags").Count()
-		
-	/*	err := (&ProductTag{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order("products."+sortBy).
-			Joins("left join product_tag_products on product_tag_products.product_id = products.id").
-			Joins("left join product_tags on product_tags.id = product_tag_products.product_tag_id").
-			Select("product_tag_products.*,product_tags.*,products.*").
-			Where("product_tags.id = ? AND products.account_id = ? AND product_tags.account_id = ?", productTagGroup.Id, accountId, accountId).
+		total =  db.Model(&productTagGroup).Association("ProductTags").Count()*/
+
+		err := (&ProductTag{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order("product_tags."+sortBy).
+			Joins("left join product_tag_groups on product_tag_groups.id = product_tags.product_tag_group_id").
+			Select("product_tag_groups.*,product_tags.*").
+			Where("product_tag_groups.id = ? AND product_tag_groups.account_id = ?", productTagGroup.Id, accountId).
 			Find(&productTags).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
-			fmt.Println(err)
 			return nil, 0, err
 		}
 
-		// Определяем total
 		err = (&ProductTag{}).GetPreloadDb(false, false, nil).
-			Joins("left join product_tag_products on product_tag_products.product_id = products.id").
-			Joins("left join product_tags on product_tags.id = product_tag_products.product_tag_id").
-			Select("product_tag_products.*,product_tags.*,products.*").
-			Where("product_tags.id = ? AND products.account_id = ? AND product_tags.account_id = ?", productTagGroup.Id, accountId, accountId).
+			Joins("left join product_tag_groups on product_tag_groups.id = product_tags.product_tag_group_id").
+			Select("product_tag_groups.*,product_tags.*").
+			Where("product_tag_groups.id = ? AND product_tag_groups.account_id = ?", productTagGroup.Id, accountId).
 			Count(&total).Error
-		if err != nil {
-			fmt.Println(err)
-			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-		}*/
+		if err != nil && err != gorm.ErrRecordNotFound{
+			return nil, 0, err
+		}
+
 	}
 
 	entities := make([]Entity, len(productTags))
