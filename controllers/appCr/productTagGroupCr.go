@@ -211,6 +211,67 @@ func ProductTagGroupDelete(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+func ProductTagGroupTagListPaginationGet(w http.ResponseWriter, r *http.Request) {
+
+	var account *models.Account
+	var err error
+	// 1. Получаем рабочий аккаунт в зависимости от источника (автома. сверка с {hashId}.)
+
+	account, err = utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	limit, ok := utilsCr.GetQueryINTVarFromGET(r, "limit")
+	if !ok {
+		limit = 25
+	}
+	offset, ok := utilsCr.GetQueryINTVarFromGET(r, "offset")
+	if !ok || offset < 0 {
+		offset = 0
+	}
+	sortDesc := utilsCr.GetQueryBoolVarFromGET(r, "sortDesc") // обратный или нет порядок
+	sortBy, ok := utilsCr.GetQuerySTRVarFromGET(r, "sortBy")
+	if !ok {
+		sortBy = "id"
+	}
+	if sortDesc {
+		sortBy += " desc"
+	}
+	search, ok := utilsCr.GetQuerySTRVarFromGET(r, "search")
+	if !ok {
+		search = ""
+	}
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	// Узнаем нужен ли фильтр
+	filter := map[string]interface{}{}
+	productTagGroupId, err := utilsCr.GetUINTVarFromRequest(r, "productTagGroupId")
+	if err == nil {
+		filter["product_tag_group_id"] = productTagGroupId
+	}
+
+	var productTagGroup models.ProductTagGroup
+	err = account.LoadEntity(&productTagGroup, productTagGroupId,nil)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
+		return
+	}
+
+	var total int64 = 0
+	productTags := make([]models.Entity,0)
+
+	productTags, total, err = productTagGroup.GetTagPaginationList(account.Id, offset, limit, sortBy, search, filter, preloads)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список товаров"))
+		return
+	}
+
+	resp := u.Message(true, "GET ProductTags by Product Tag Group Pagination List")
+	resp["product_tags"] = productTags
+	resp["total"] = total
+	u.Respond(w, resp)
+}
 
 func ProductTagGroupRemoveProductTag(w http.ResponseWriter, r *http.Request) {
 
