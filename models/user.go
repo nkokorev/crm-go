@@ -18,10 +18,13 @@ type User struct {
 	Id        		uint 		`json:"id" gorm:"primaryKey"`
 	HashId 			string 		`json:"hash_id" gorm:"type:varchar(12);uniqueIndex;not null;"` // публичный Id для защиты от спама/парсинга
 	IssuerAccountId uint 		`json:"issuer_account_id" gorm:"index;not null;"`
-	
+	IssuerAccountIdBeta uint 		`json:"issuerAccountId" gorm:"-"`
+
 	Username 	*string 		`json:"username" gorm:"type:varchar(255);index;"` // уникальный, т.к. через него вход в главный аккаунт
 	Email 		*string 		`json:"email" gorm:"type:varchar(255);index;"`
 	PhoneRegion *string 		`json:"phone_region" gorm:"type:varchar(3);not null;default:'RU';"` // нужно проработать формат данных
+	PhoneRegionBeta *string 	`json:"phoneRegion" gorm:"-"` // нужно проработать формат данных
+
 	Phone		*string 		`json:"phone" gorm:"type:varchar(32);"` // нужно проработать формат данных
 	Password 	*string 		`json:"-" gorm:"type:varchar(255);"` // json:"-"
 
@@ -35,15 +38,18 @@ type User struct {
 	// deprecated!!
 	Subscribed			bool		`json:"subscribed" gorm:"type:bool;default:true;"` // Есть ли подписка на общее рассылки.
 	SubscribedAt 		*time.Time 	`json:"subscribed_at"`
+	SubscribedAtBeta 	*time.Time 	`json:"subscribedAt" gorm:"-"`
 	UnsubscribedAt 		*time.Time 	`json:"unsubscribed_at"` // << last
+	UnsubscribedAtBeta 	*time.Time 	`json:"unsubscribedAt" gorm:"-"` // << last
 
 	// manual, gui, api, - deprecated!!
-	SubscriptionReason	*string 	`json:"subscription_reason" gorm:"type:varchar(32);"`
+	SubscriptionReason		*string 	`json:"subscription_reason" gorm:"type:varchar(32);"`
+	SubscriptionReasonBeta	*string 	`json:"subscriptionReason" gorm:"-"`
 
 	// deprecated!!
 	// UnsubscribedReason	*string `json:"unsubscribedReason" gorm:"default:null"` // << see mta-bounced...
 
-	DefaultAccountId 	*uint 	`json:"default_account_id"` // указывает какой аккаунт по дефолту загружать
+	DefaultAccountId 		*uint 	`json:"default_account_id"` // указывает какой аккаунт по дефолту загружать
 	// InvitedUserId 		*uint 	`json:"invited_user_id"` // кто его пригласил
 
 	// Верификация, сброс пароля и т.д.
@@ -52,7 +58,9 @@ type User struct {
 	PasswordResetAt *time.Time `json:"password_reset_at"`
 
 	CreatedAt 	time.Time 		`json:"created_at"`
+	CreatedAtBeta 	time.Time 	`json:"createdAt" gorm:"-"`
 	UpdatedAt 	time.Time 		`json:"updated_at"`
+	UpdatedAtBeta 	time.Time 	`json:"updatedAt" gorm:"-"`
 	DeletedAt 	gorm.DeletedAt 	`json:"-" sql:"index"`
 
 	AccountUser *AccountUser	`json:"account_user" gorm:"preload"` // WTF
@@ -61,10 +69,6 @@ type User struct {
 	Companies 	[]Company 		`json:"companies" gorm:"many2many:company_users;"`
 }
 
-/*type UserAndRole struct {
-	User
-	RoleId uint `json:"role_id"`
-}*/
 
 func (User) PgSqlCreate() {
 	if db.Migrator().HasTable(&User{}) { return }
@@ -119,6 +123,26 @@ func (user *User) AfterUpdate(tx *gorm.DB) (err error) {
 	return nil
 }
 func (user *User) AfterFind(tx *gorm.DB) (err error) {
+	if user.PhoneRegion != nil {
+		user.PhoneRegionBeta = user.PhoneRegion
+	}
+	if user.SubscribedAt != nil {
+		user.SubscribedAtBeta = user.SubscribedAt
+	}
+	if user.UnsubscribedAt != nil {
+		user.UnsubscribedAtBeta = user.UnsubscribedAt
+	}
+	if user.SubscriptionReason != nil {
+		user.SubscriptionReasonBeta = user.SubscriptionReason
+	}
+	if user.SubscriptionReason != nil {
+		user.SubscriptionReasonBeta = user.SubscriptionReason
+	}
+	user.CreatedAtBeta = user.CreatedAt
+	user.UpdatedAtBeta = user.UpdatedAt
+
+	user.IssuerAccountIdBeta = user.IssuerAccountId
+
 	return nil
 }
 

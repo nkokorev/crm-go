@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func UserCreate(w http.ResponseWriter, r *http.Request) {
@@ -21,8 +22,14 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		models.User
 		RoleId uint `json:"role_id"`
-		RoleIdBeta uint `json:"roleId"`
+
 		Password string `json:"password"`
+
+		RoleIdBeta 			uint 		`json:"roleId"`
+		PhoneRegionBeta 	*string 	`json:"phoneRegion"`
+		SubscribedAtBeta 	*time.Time 	`json:"subscribedAt"`
+		UnsubscribedAtBeta 	*time.Time 	`json:"unsubscribedAt"`
+		SubscriptionReason	*string 	`json:"subscriptionReason"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -50,6 +57,20 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	if role.IsOwner() {
 		u.Respond(w, u.MessageError(err, "Нельзя создать пользователя с ролью владельца аккаунта"))
 		return
+	}
+
+	// todo: apiBeta
+	if input.PhoneRegionBeta != nil {
+		input.User.PhoneRegion = input.PhoneRegionBeta
+	}
+	if input.SubscribedAtBeta != nil {
+		input.User.SubscribedAt = input.SubscribedAtBeta
+	}
+	if input.UnsubscribedAtBeta != nil {
+		input.User.UnsubscribedAt = input.UnsubscribedAtBeta
+	}
+	if input.SubscriptionReason != nil {
+		input.User.SubscriptionReason = input.SubscriptionReason
 	}
 
 	// Т.к. пароль не передается, читаем и назначем отдельно json -
@@ -268,6 +289,7 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 
 	delete(input, "roleId")*/
 
+	// лютая хйня, но работает!
 	if _role, ok := input["_role"]; ok {
 
 		mRole, ok := _role.(map[string]interface{})
@@ -305,14 +327,16 @@ func UserUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 
-	if apiRoleIdI, ok := input["roleId"]; ok {
-		if _apiRoleId64, ok := apiRoleIdI.(float64); ok {
-			apiRoleId64 = _apiRoleId64
-		}
-	}
+
 	if apiRoleIdI, ok := input["role_id"]; ok {
 		if _apiRoleId64, ok := apiRoleIdI.(float64); ok {
 			apiRoleId64 = _apiRoleId64
+		}
+	} else {
+		if apiRoleIdIBeta, ok := input["roleId"]; ok {
+			if _apiRoleId64, ok := apiRoleIdIBeta.(float64); ok {
+				apiRoleId64 = _apiRoleId64
+			}
 		}
 	}
 
