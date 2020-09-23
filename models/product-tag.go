@@ -177,23 +177,7 @@ func (ProductTag) getPaginationList(accountId uint, offset, limit int, sortBy, s
 			fmt.Println(err)
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
-
-	/*	err := (&ProductTag{}).GetPreloadDb(false,false, preloads).
-			Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).Where(filter).
-			Find(&productTags, "label ILIKE ? OR code ILIKE ? OR color ILIKE ?", search,search,search).Error
-
-		if err != nil && err != gorm.ErrRecordNotFound{
-			return nil, 0, err
-		}
-
-		// Определяем total
-		err = (&ProductTag{}).GetPreloadDb(false,false, nil).
-			Where("account_id = ? AND label ILIKE ? OR code ILIKE ? OR color ILIKE ?",accountId,search,search,search).
-			Count(&total).Error
-		if err != nil {
-			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-		}*/
-
+		
 	} else {
 
 		err := (&ProductTag{}).GetPreloadDb(false,false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).

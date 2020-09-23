@@ -626,7 +626,7 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 		VisibleToClients:                    false,
 	})
 	if err != nil {
-		log.Fatal("Не удалось создать аккаунт 357 грамм")
+		log.Fatal("Не удалось создать аккаунт Demo account")
 		return
 	}
 
@@ -635,16 +635,32 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 		log.Fatalf("Не удалось создать API ключ для аккаунта: %v, Error: %s", mAcc.Name, err)
 	}
 
+	_, err = demoAcc.CreateUser(models.User{
+		Username:	utils.STRp("demoUser"),
+		// Email:"vp@357gr.ru",
+		Email:		utils.STRp("demo-user@example.com"),
+		Password:	utils.STRp("demoUser1#"),
+		Name:		utils.STRp("Иван"),
+		Surname:	utils.STRp("Иванов"),
+		Patronymic:	utils.STRp("Иванович"),
+		EmailVerifiedAt:&timeNow,
+		EnabledAuthFromApp: true,
+	}, *roleAdminMain)
+	if err != nil {
+		log.Fatal("Не удалось добавить пользователя demoUser in demoAcc")
+		return
+	}
+
 	// 3. добавляем меня как админа
 	_, err = demoAcc.AppendUser(*owner, *roleAdminMain)
 	if err != nil {
-		log.Fatal("Не удалось добавить пользователя admin in 357gr")
+		log.Fatal("Не удалось добавить пользователя admin in demoAcc")
 		return
 	}
 	// 3. добавляем MarkPlatov
 	_, err = demoAcc.AppendUser(*markPlatov, *roleAdminMain)
 	if err != nil {
-		log.Fatal("Не удалось добавить пользователя admin in 357gr")
+		log.Fatal("Не удалось добавить пользователя admin in demoAcc")
 		return
 	}
 
@@ -657,17 +673,17 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 		DKIMSelector: "dk1",
 	})
 	if err != nil {
-		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
+		log.Fatal("Не удалось создать домены для demoAcc аккаунта: ", err)
 	}
 	webSiteDemo, ok := _webSiteDemo.(*models.WebSite)
 	if !ok {
-		log.Fatal("Не удалось создать домены для главного аккаунта: ", err)
+		log.Fatal("Не удалось создать домены для demoAcc аккаунта: ", err)
 	}
 
 	// 5. Добавляем почтовые ящики в домен 357gr
 	_, err = webSiteDemo.CreateEmailBox(models.EmailBox{Default: true, Allowed: true, Name: "Demo account", Box: "info"})
 	if err != nil {
-		log.Fatal("Не удалось создать MailBoxes для главного аккаунта: ", err)
+		log.Fatal("Не удалось создать MailBoxes для demoAcc аккаунта: ", err)
 	}
 
 
@@ -693,7 +709,6 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 	if err != nil || owner == nil {
 		log.Fatal("Не удалось создать vpopov'a: ", err)
 	}
-	
 
 	
 	// 2. создаем из-под Василия 357gr

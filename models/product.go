@@ -35,6 +35,9 @@ type Product struct {
 	// ForRetailSale 		bool 	`json:"for_retail_sale" gorm:"type:bool;default:true"`
 	// ForWholesaleSale 	bool 	`json:"for_wholesale_sale" gorm:"type:bool;default:true"`
 
+	// isSource - этот товар ТОЛЬКО для сбора других товаров для продажи. Упрощает систему склада...
+	IsSource			bool 	`json:"is_source" gorm:"type:bool;default:false"`
+
 	// Сборный ли товар? При нем warehouse_items >= 1. Применяется только к payment_subject = commodity, excise и т.д.
 	IsKit			bool 		`json:"is_kit" gorm:"type:bool;default:false"`
 
