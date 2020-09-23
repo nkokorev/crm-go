@@ -39,10 +39,11 @@ type Product struct {
 	IsSource		bool 	`json:"is_source" gorm:"type:bool;default:false"`
 
 	// При isSource = true, - сборный ли товар? При нем warehouse_items >= 1. Применяется только к payment_subject = commodity, excise и т.д.
-	IsKit			bool 		`json:"is_kit" gorm:"type:bool;default:false"`
+	// IsKit			bool 		`json:"is_kit" gorm:"type:bool;default:false"`
 
 	// При isSource = true, - из каких товаров и в каком количестве состоит
 	Sources			[]*Product `json:"sources" gorm:"many2many:product_sources;"` // ForeignKey:id;References:id;
+	SourceItems		[]*ProductSource `json:"source_items"` // ForeignKey:id;References:id;
 
 
 	// Этикетка товара
@@ -60,13 +61,6 @@ type Product struct {
 
 	// Общая тема типа группы товаров, может повторяться для вывода в web-интерфейсе как "одного" товара
 	Model 			*string		`json:"model" gorm:"type:varchar(255);"`
-
-	// mb deprecated
-	// Name 		string 	`json:"name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
-	// ShortName 	string 	`json:"short_name" gorm:"type:varchar(128);default:''"` // Имя товара, не более 128 символов
-	
-	// deprecated, т.к. это относится к складу, а не все товары на складе (есть сборные и услуги)
-	// SKU 		string 	`json:"sku" gorm:"type:varchar(128);index;"`
 
 	// Base properties
 	RetailPrice			*float64 `json:"retail_price" gorm:"type:numeric;"` 		// розничная цена
@@ -117,15 +111,15 @@ type Product struct {
 
 	//  == признак предмета расчета - товар, услуга, работа, набор (комплект) = сборный товар
 	// Признак предмета расчета (бухучет - № 54-ФЗ)
-	PaymentSubjectId	uint	`json:"payment_subject_id" gorm:"type:int;"`
+	PaymentSubjectId	*uint	`json:"payment_subject_id" gorm:"type:int;"`
 	PaymentSubject 		PaymentSubject `json:"payment_subject"`
 	
 	// Ставка НДС или учет НДС (бухучет)
-	VatCodeId	uint	`json:"vat_code_id" gorm:"type:int;default:1;"`// товар или услуга ? [вид номенклатуры]
+	VatCodeId	*uint	`json:"vat_code_id" gorm:"type:int;default:1;"`// товар или услуга ? [вид номенклатуры]
 	VatCode		VatCode	`json:"vat_code"`
 
-	ShortDescription 	string 	`json:"short_description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
-	Description 		string 	`json:"description" gorm:"type:text;"` // pgsql: text
+	ShortDescription 	*string 	`json:"short_description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
+	Description 		*string 	`json:"description" gorm:"type:text;"` // pgsql: text
 
 	// Обновлять только через AppendImage
 	Images 			[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`
@@ -221,13 +215,16 @@ func (product *Product) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 	}
 
 	if autoPreload {
-		return db.Preload("PaymentSubject","ProductType","VatCode","ProductCategories","MeasurementUnit","Account","ProductCards","Manufacturer","ProductTags").
+		return db.Preload("ProductType","ProductCategories","PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards",
+			"Manufacturer","ProductTags","Sources","SourceItems","SourceItems.Source","SourceItems.Source.MeasurementUnit").
 			Preload("Images", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		})
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Images","ProductType","ProductCategories","PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards", "Manufacturer","ProductTags"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,
+			[]string{"Images","ProductType","ProductCategories","PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards",
+				"Manufacturer","ProductTags","Sources","SourceItems","SourceItems.Source","SourceItems.Source.MeasurementUnit"})
 
 		for _,v := range allowed {
 			if v == "Images" {
@@ -366,6 +363,8 @@ func (product *Product) update(input map[string]interface{}, preloads []string) 
 	delete(input,"inventories")
 	delete(input,"product_categories")
 	delete(input,"product_tags")
+	delete(input,"sources")
+	delete(input,"source_items")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","payment_subject_id","vat_code_id","measurement_unit_id","manufacturer_id","product_type_id"}); err != nil {
 		return err

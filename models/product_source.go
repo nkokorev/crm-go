@@ -12,9 +12,14 @@ type ProductSource struct {
 
 	// Источник, source
 	SourceId 	uint `json:"source_id" gorm:"type:int;index;not null;"`
+	Product		Product `json:"-"`
+	Source		Product `json:"source"`
 
 	// Сколько ед. в одном товаре ()
 	AmountUnits 	float64 `json:"amount_units" gorm:"type:numeric;"`
+
+	// Отображать или нет в списке содержание
+	EnableViewing	bool 	`json:"enable_viewing" gorm:"type:bool;default:true"`
 }
 
 func (ProductSource) PgSqlCreate() {

@@ -8,6 +8,13 @@ import (
 func UINTp(x uint) *uint {
 	return &x
 }
+func ParseUINTp(x *uint) uint {
+	if x == nil {
+		return 0
+	}
+	return *x
+}
+
 func FL64p(x float64) *float64 {
 	return &x
 }

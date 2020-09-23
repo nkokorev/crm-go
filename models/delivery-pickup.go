@@ -27,7 +27,7 @@ type DeliveryPickup struct {
 	PostalCodeRequired	bool	`json:"postal_code_required" gorm:"type:bool;default:false"` // Требуется ли индекс в адресе доставки
 
 	// Признак предмета расчета
-	PaymentSubjectId	uint	`json:"payment_subject_id" gorm:"type:int;not null;"`//
+	PaymentSubjectId	*uint	`json:"payment_subject_id" gorm:"type:int;not null;"`//
 	PaymentSubject 		PaymentSubject `json:"payment_subject"`
 
 	VatCodeId	uint	`json:"vat_code_id" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]

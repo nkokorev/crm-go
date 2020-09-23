@@ -1311,9 +1311,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZ с регулировкой черный"), Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности черный"), ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ черный"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1.0, ProductTypeId: utils.UINTp(1),
+			PaymentSubjectId: utils.UINTp(1), MeasurementUnitId: utils.UINTp(1), VatCodeId: utils.UINTp(1), ProductTypeId: utils.UINTp(1),
 			RetailPrice: utils.FL64p(19500.00), RetailDiscount: utils.FL64p(1000),RetailSale: true,
-			ShortDescription: "",Description: "",
 			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
 				"color":"черный",
 				"bodyMaterial":"металл",
@@ -1336,9 +1335,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZ черный"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ черный"), ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ черный"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1.0,  ProductTypeId: utils.UINTp(1),
+			PaymentSubjectId: utils.UINTp(1), MeasurementUnitId: utils.UINTp(1), VatCodeId: utils.UINTp(1),  ProductTypeId: utils.UINTp(1),
 			RetailPrice: utils.FL64p(17500.00), RetailDiscount: utils.FL64p(1000), RetailSale: true,
-			ShortDescription: "",Description: "",
 			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
 				"color":"черный",
 				"bodyMaterial":"металл",
@@ -1361,9 +1359,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZ с регулировкой белый"), Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ с регулировкой мощности белый"),  ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ белый"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(1),
+			PaymentSubjectId: utils.UINTp(1), MeasurementUnitId: utils.UINTp(1), VatCodeId: utils.UINTp(1), ProductTypeId: utils.UINTp(1),
 			RetailPrice: utils.FL64p(19500.00), RetailDiscount: utils.FL64p(1000),RetailSale: true,
-			ShortDescription: "",Description: "",
 			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
 				"color":"белый",
 				"bodyMaterial":"металл",
@@ -1386,9 +1383,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZ белый"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Рециркулятор воздуха бактерицидный AIRO-DEZ"),  ShortLabel: utils.STRp("Рециркулятор AIRO-DEZ белый"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(1),
+			PaymentSubjectId: utils.UINTp(1), MeasurementUnitId: utils.UINTp(1), VatCodeId: utils.UINTp(1), ProductTypeId: utils.UINTp(1),
 			RetailPrice: utils.FL64p(17500.00), RetailDiscount: utils.FL64p(1000),RetailSale: true,
-			ShortDescription: "",Description: "",
 			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
 				"color":"белый",
 				"bodyMaterial":"металл",
@@ -1411,9 +1407,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZ COMPACT"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Мобильный аиродезинфектор AIRO-DEZ COMPACT"),  ShortLabel: utils.STRp("Аиродезинфектор AIRO-DEZ COMPACT"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(1),
+			PaymentSubjectId: utils.UINTp(1), MeasurementUnitId: utils.UINTp(1), VatCodeId: utils.UINTp(1), ProductTypeId: utils.UINTp(1),
 			RetailPrice: utils.FL64p(39000.00), RetailDiscount: utils.FL64p(3000), RetailSale: true,
-			ShortDescription: "",Description: "",
 			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
 				"color":"черный",
 				"bodyMaterial":"металл",
@@ -1434,13 +1429,12 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 				"grossWeight": 6.8, // Брутто, кг
 			})),
 		},
-		
+
 		{
 			Model: utils.STRp("AIRO-DEZPUF"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Бактерицидная камера пуф AIRO-DEZPUF"),  ShortLabel: utils.STRp("Камера пуф AIRO-DEZPUF"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(2),
+			PaymentSubjectId: utils.UINTp(1), MeasurementUnitId: utils.UINTp(1), VatCodeId: utils.UINTp(1), ProductTypeId: utils.UINTp(2),
 			RetailPrice: utils.FL64p(11000.00), RetailDiscount: utils.FL64p(1000),RetailSale: true,
-			ShortDescription: "",Description: "",
 			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
 				"color":"черный",
 				"bodyMaterial":"металл",
@@ -1464,9 +1458,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZPUF венге"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Бактерицидная тумба пуф AIRO-DEZPUF цвет дуб венге"), ShortLabel: utils.STRp("Камера AIRO-DEZBOX"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(2),
+			PaymentSubjectId: utils.UINTp(1), MeasurementUnitId: utils.UINTp(1), VatCodeId: utils.UINTp(1), ProductTypeId: utils.UINTp(2),
 			RetailPrice: utils.FL64p(12000.00), RetailDiscount: utils.FL64p(1000), RetailSale: true,
-			ShortDescription: "",Description: "",
 			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
 				"color":"венге",
 				"bodyMaterial":"металл",
@@ -1491,9 +1484,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZBOX"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX"),  ShortLabel: utils.STRp("Камера AIRO-DEZBOX"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(2),
+			PaymentSubjectId: utils.UINTp(1), MeasurementUnitId: utils.UINTp(1), VatCodeId: utils.UINTp(1), ProductTypeId: utils.UINTp(2),
 			RetailPrice: utils.FL64p(7800.00), RetailDiscount: utils.FL64p(800), RetailSale: true,
-			ShortDescription: "",Description: "",
 			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
 				"color":"черный",
 				"bodyMaterial":"металл",
@@ -1517,9 +1509,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZBOX белая"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Бактерицидная камера AIRO-DEZBOX белая"),  ShortLabel: utils.STRp("Камера AIRO-DEZBOX белая"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(2),
+			PaymentSubjectId: utils.UINTp(1), MeasurementUnitId: utils.UINTp(1), VatCodeId: utils.UINTp(1), ProductTypeId: utils.UINTp(2),
 			RetailPrice: utils.FL64p(7800.00), RetailDiscount: utils.FL64p(800), RetailSale: true,
-			ShortDescription: "",Description: "",
 			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
 				"color":"белый",
 				"bodyMaterial":"металл",
@@ -1543,9 +1534,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIRO-DEZTUMB"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB"),  ShortLabel: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(2),
+			PaymentSubjectId: utils.UINTp(1), MeasurementUnitId: utils.UINTp(1), VatCodeId: utils.UINTp(1), ProductTypeId: utils.UINTp(2),
 			RetailPrice: utils.FL64p(11500.00), RetailDiscount: utils.FL64p(1000),RetailSale: true,
-			ShortDescription: "",Description: "",
 			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
 				"color":"черный",
 				//"bodyMaterial":"металл",
@@ -1569,9 +1559,8 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		{
 			Model: utils.STRp("AIROTUMB big"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"),  ShortLabel: utils.STRp("Облучатель AIROTUMB big"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(2),
+			PaymentSubjectId: utils.UINTp(1), MeasurementUnitId: utils.UINTp(1), VatCodeId: utils.UINTp(1), ProductTypeId: utils.UINTp(2),
 			RetailPrice: utils.FL64p(11500.00), RetailDiscount: utils.FL64p(1000),
-			ShortDescription: "",Description: "",
 			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
 				"color":"белый",
 				//"bodyMaterial":"металл",
@@ -1592,13 +1581,12 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 				"grossWeight": 5, // Брутто, кг
 			})),
 		},
-		
+
 		{
 			Model: utils.STRp("AIRO-DEZTUMB касцина"), Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB цвет сосна касцина"),  ShortLabel: utils.STRp("Бактерицидная тумба AIRO-DEZTUMB"),
-			PaymentSubjectId: 1, MeasurementUnitId: utils.UINTp(1), VatCodeId: 1, ProductTypeId: utils.UINTp(2),
+			PaymentSubjectId: utils.UINTp(1), MeasurementUnitId: utils.UINTp(1), VatCodeId: utils.UINTp(1), ProductTypeId: utils.UINTp(2),
 			RetailPrice: utils.FL64p(11500.00), RetailDiscount: utils.FL64p(1000),RetailSale: true,
-			ShortDescription: "",Description: "",
 			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
 				"color":"светлая сосна",
 				"bodyMaterial":"металл",
@@ -1671,7 +1659,7 @@ func UploadTestDataPart_II() {
 			PostalCodeFrom: "109390",
 			MailCategory: "ORDINARY",
 			MailType: "POSTAL_PARCEL",
-			PaymentSubjectId: 10, // Платеж
+			PaymentSubjectId: utils.UINTp(1),
 			MaxWeight: 20.0,
 			Fragile: false,
 			WithElectronicNotice: true,
@@ -1686,7 +1674,7 @@ func UploadTestDataPart_II() {
 	}
 
 
-	entityPickup, err := accountAiro.CreateEntity(&models.DeliveryPickup{Name: "Самовывоз из г. Москва, м. Текстильщики", Enabled: true,PaymentSubjectId: 10})
+	entityPickup, err := accountAiro.CreateEntity(&models.DeliveryPickup{Name: "Самовывоз из г. Москва, м. Текстильщики", Enabled: true,PaymentSubjectId: utils.UINTp(1)})
 	if err != nil {
 		log.Fatalf("Не удалось получить entityPickup: %v", err)
 	}
@@ -1700,7 +1688,7 @@ func UploadTestDataPart_II() {
 			Enabled: true,
 			Price: 500,
 			MaxWeight: 40.0,
-			PaymentSubjectId: 10,
+			PaymentSubjectId: utils.UINTp(1),
 		})
 	if err != nil {
 		log.Fatalf("Не удалось получить entityCourier: %v", err)
@@ -3225,9 +3213,7 @@ func Upload357grData() {
 	if err != nil {
 		log.Fatal("Не удалось создать checkout для 357 грамм webSite: ", err)
 	}
-
-
-
+	
 	// ################# Категории товаров #################
 
 	
@@ -3653,6 +3639,12 @@ func Upload357grData() {
 		return
 	}
 
+
+	products := []models.Product{
+		{Label: utils.STRp("ДянХун"),ShortLabel: utils.STRp("ДянХун"),Article: utils.STRp("001"),IsSource: true,MeasurementUnitId: utils.UINTp(5),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1)},
+	}
+
+	fmt.Println(products)
 	// ...
 
 	fmt.Println("Загрузка данных закончена")

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
+	"github.com/nkokorev/crm-go/utils"
 	u "github.com/nkokorev/crm-go/utils"
 	"github.com/ttacon/libphonenumber"
 	"log"
@@ -343,14 +344,15 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 		if product.Label != nil {
 			desc = *product.Label
 		}
+
 		cartItems = append(cartItems, models.CartItem {
 			AccountId: account.Id,
 			ProductId: product.Id,
 			Description: desc,
 			Quantity: v.Quantity,
 			Amount: models.PaymentAmount{Value: ProductCost, Currency: "RUB"},
-			VatCode: product.VatCodeId,
-			PaymentSubjectId: product.PaymentSubjectId, // признак предмета расчета
+			VatCode: utils.ParseUINTp(product.VatCodeId),
+			PaymentSubjectId: utils.ParseUINTp(product.PaymentSubjectId), // признак предмета расчета
 			PaymentSubjectYandex: product.PaymentSubject.Code,
 		})
 
