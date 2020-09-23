@@ -156,7 +156,29 @@ func (ProductTag) getPaginationList(accountId uint, offset, limit int, sortBy, s
 
 		search = "%"+search+"%"
 
-		err := (&ProductTag{}).GetPreloadDb(false,false, preloads).
+		err := (&ProductTag{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order("product_tags." + sortBy).
+			Joins("left join product_tag_groups on product_tag_groups.id = product_tags.product_tag_group_id").
+			Select("product_tag_groups.*,product_tags.*").
+			Where("product_tags.account_id = ? AND product_tag_groups.account_id = ? ", accountId, accountId).
+			Find(&productTags, "product_tags.label ILIKE ? OR product_tags.code ILIKE ? OR product_tags.color ILIKE ? OR product_tag_groups.code ILIKE ?OR product_tag_groups.label ILIKE ?", search,search,search,search,search).Error
+		if err != nil && err != gorm.ErrRecordNotFound{
+			fmt.Println(err)
+			return nil, 0, err
+		}
+
+		// Определяем total
+		err = (&ProductTag{}).GetPreloadDb(false, false, nil).
+			Joins("left join product_tag_groups on product_tag_groups.id = product_tags.product_tag_group_id").
+			Select("product_tag_groups.*,product_tags.*").
+			Where("product_tags.account_id = ? AND product_tag_groups.account_id = ? ", accountId, accountId).
+			Where("product_tags.label ILIKE ? OR product_tags.code ILIKE ? OR product_tags.color ILIKE ? OR product_tag_groups.code ILIKE ?OR product_tag_groups.label ILIKE ?", search,search,search,search,search).
+			Count(&total).Error
+		if err != nil {
+			fmt.Println(err)
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
+
+	/*	err := (&ProductTag{}).GetPreloadDb(false,false, preloads).
 			Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).Where(filter).
 			Find(&productTags, "label ILIKE ? OR code ILIKE ? OR color ILIKE ?", search,search,search).Error
 
@@ -170,7 +192,7 @@ func (ProductTag) getPaginationList(accountId uint, offset, limit int, sortBy, s
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
-		}
+		}*/
 
 	} else {
 
