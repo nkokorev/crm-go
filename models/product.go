@@ -26,20 +26,24 @@ type Product struct {
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Доступен ли товар для продажи в розницу
-	RetailSale 			bool 	`json:"retail_sale" gorm:"type:bool;default:false"`
+	RetailSale 		bool 	`json:"retail_sale" gorm:"type:bool;default:false"`
 
 	// Доступен ли товар для продажи оптом
-	WholesaleSale		bool	`json:"wholesale_sale" gorm:"type:bool;default:false"`
+	WholesaleSale	bool	`json:"wholesale_sale" gorm:"type:bool;default:false"`
 
 	// Для продажи ли товар (= можно ли включать в карточки товаров)
 	// ForRetailSale 		bool 	`json:"for_retail_sale" gorm:"type:bool;default:true"`
 	// ForWholesaleSale 	bool 	`json:"for_wholesale_sale" gorm:"type:bool;default:true"`
 
 	// isSource - этот товар ТОЛЬКО для сбора других товаров для продажи. Упрощает систему склада...
-	IsSource			bool 	`json:"is_source" gorm:"type:bool;default:false"`
+	IsSource		bool 	`json:"is_source" gorm:"type:bool;default:false"`
 
-	// Сборный ли товар? При нем warehouse_items >= 1. Применяется только к payment_subject = commodity, excise и т.д.
+	// При isSource = true, - сборный ли товар? При нем warehouse_items >= 1. Применяется только к payment_subject = commodity, excise и т.д.
 	IsKit			bool 		`json:"is_kit" gorm:"type:bool;default:false"`
+
+	// При isSource = true, - из каких товаров и в каком количестве состоит
+	Sources			[]*Product `json:"sources" gorm:"many2many:product_sources;"` // ForeignKey:id;References:id;
+
 
 	// Этикетка товара
 	Label 			*string 	`json:"label" gorm:"type:varchar(128);"`
@@ -126,7 +130,7 @@ type Product struct {
 	// Обновлять только через AppendImage
 	Images 			[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`
 	
-	Attributes 	datatypes.JSON `json:"attributes" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+	Attributes 	datatypes.JSON `json:"attributes"`
 
 	// todo: можно изменить и сделать свойства товара
 	// ключ для расчета веса продукта

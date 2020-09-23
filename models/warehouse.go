@@ -254,7 +254,7 @@ func (warehouse *Warehouse) Shipment(shipment Shipment, createIfNotExist bool) e
 
 		// Проверяем, если товар на складе
 		if !warehouse.ExistProduct(item.ProductId) {
-			if err := warehouse.AppendProduct(item.Product, 1); err != nil {
+			if err := warehouse.AppendProduct(item.Product); err != nil {
 				log.Printf("Ошибка создания товара на складе: %v\n", err)
 				return err
 			}
@@ -287,7 +287,7 @@ func (warehouse *Warehouse) Shipment(shipment Shipment, createIfNotExist bool) e
 }
 
 // Добавить новую позицию товара
-func (warehouse Warehouse) AppendProduct(product Product, amountUnit float64, strict... bool) error {
+func (warehouse Warehouse) AppendProduct(product Product, strict... bool) error {
 
 	// 1. Загружаем продукт еще раз
 	if err := product.load(nil); err != nil {
@@ -304,7 +304,7 @@ func (warehouse Warehouse) AppendProduct(product Product, amountUnit float64, st
 	}
 	
 	if err := db.Model(&WarehouseItem{}).Create(
-		&WarehouseItem{AccountId: warehouse.AccountId, ProductId: product.Id, WarehouseId: warehouse.Id, AmountUnit: amountUnit, Stock: 0, Reservation: 0}).Error; err != nil {
+		&WarehouseItem{AccountId: warehouse.AccountId, ProductId: product.Id, WarehouseId: warehouse.Id, Stock: 0, Reservation: 0}).Error; err != nil {
 		return err
 	}
 

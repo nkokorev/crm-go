@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"log"
 )
 
@@ -23,7 +24,7 @@ type ProductTagGroup struct {
 	FilterCode	 	*string `json:"filter_code" gorm:"type:varchar(255);"`
 
 	// Что-то про фильтры
-	EnableViewing	bool 	`json:"enable_view" gorm:"type:bool;default:true"`
+	EnableViewing	bool 	`json:"enable_viewing" gorm:"type:bool;default:true"`
 	EnableSorting	bool 	`json:"enable_sorting" gorm:"type:bool;default:true"`
 	EnableManyOf	bool 	`json:"enable_many_of" gorm:"type:bool;default:true"`
 	
@@ -57,22 +58,13 @@ func (productTagGroup *ProductTagGroup) GetPreloadDb(getModel bool, autoPreload 
 	}
 
 	if autoPreload {
-		return db.Preload("Products").Preload("Images", func(db *gorm.DB) *gorm.DB {
-			return db.Select(Storage{}.SelectArrayWithoutDataURL())
-		})
+		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Images","Products"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"ProductTags"})
 
 		for _,v := range allowed {
-			if v == "Images" {
-				_db.Preload("Images", func(db *gorm.DB) *gorm.DB {
-					return db.Select(Storage{}.SelectArrayWithoutDataURL())
-				})
-			} else {
-				_db.Preload(v)
-			}
-
+			_db.Preload(v)
 		}
 		return _db
 	}
@@ -102,7 +94,7 @@ func (productTagGroup *ProductTagGroup) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 func (productTagGroup *ProductTagGroup) AfterFind(tx *gorm.DB) (err error) {
-	productTagGroup.TagCount =  db.Model(productTagGroup).Association("Tags").Count()
+	productTagGroup.TagCount =  db.Model(productTagGroup).Association("ProductTags").Count()
 	return nil
 }
 func (productTagGroup *ProductTagGroup) AfterCreate(tx *gorm.DB) error {
@@ -213,17 +205,16 @@ func (ProductTagGroup) getPaginationList(accountId uint, offset, limit int, sort
 }
 func (productTagGroup *ProductTagGroup) update(input map[string]interface{}, preloads []string) error {
 
-	delete(input,"images")
 	delete(input,"products")
-	delete(input,"product_categories")
+	delete(input,"product_tags")
 	utils.FixInputHiddenVars(&input)
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","web_site_id","web_page_id"}); err != nil {
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
 		return err
 	}
-	input = utils.FixInputDataTimeVars(input,[]string{"expired_at"})
+	// input = utils.FixInputDataTimeVars(input,[]string{"expired_at"})
 
 	if err := productTagGroup.GetPreloadDb(false,false,nil).Where(" id = ?", productTagGroup.Id).
-		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
+		Omit("id", "account_id","public_id").Updates(input).Error; err != nil {
 		return err
 	}
 

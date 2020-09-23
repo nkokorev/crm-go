@@ -213,7 +213,13 @@ func (ProductCategory) getPaginationList(accountId uint, offset, limit int, sort
 
 		search = "%"+search+"%"
 
-		err := (&ProductCategory{}).GetPreloadDb(false,false,preloads).Limit(limit).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		// fmt.Println("search: ", search)
+		// fmt.Println("limit: ", limit)
+		// fmt.Println("offset: ", offset)
+		// fmt.Println("sortBy: ", sortBy)
+		// fmt.Println("accountId: ", accountId)
+
+		err := (&ProductCategory{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
 			Where(filter).Find(&productCategories, "label ILIKE ? OR label_plural ILIKE ? OR code ILIKE ?", search,search,search).Error
 
 		if err != nil && err != gorm.ErrRecordNotFound{

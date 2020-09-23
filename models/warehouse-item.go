@@ -19,9 +19,6 @@ type WarehouseItem struct {
 	ProductId 	uint	`json:"product_id" gorm:"type:int;index;"`
 	WarehouseId uint	`json:"warehouse_id" gorm:"type:int;index;"`
 
-	// Сколько ед. в одном товаре ()
-	AmountUnit 	float64 `json:"amount_unit" gorm:"type:numeric;"`
-
 	// Остаток
 	Stock 		float64 `json:"stock" gorm:"type:numeric;"`
 

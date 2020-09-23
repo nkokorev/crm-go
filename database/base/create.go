@@ -208,12 +208,11 @@ func RefreshTablesPart_I() {
 	models.Company{}.PgSqlCreate()
 	models.Manufacturer{}.PgSqlCreate()
 
-
-
 	models.ProductType{}.PgSqlCreate()
 	models.ProductCategory{}.PgSqlCreate()
 	models.Warehouse{}.PgSqlCreate()
 	models.Product{}.PgSqlCreate()
+	models.ProductSource{}.PgSqlCreate()
 	models.ProductCard{}.PgSqlCreate()
 	models.ProductCardProduct{}.PgSqlCreate()
 	models.ProductCategoryProduct{}.PgSqlCreate()
@@ -610,7 +609,7 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 
 	// 2. создаем из-под mex388 TestAccount
 	demoAcc, err := mex388.CreateAccount( models.Account{
-		Name:                                "Demo account",
+		Name:                                "Demo Account",
 		Website:                             "example.com",
 		Type:                                "store",
 		ApiEnabled:                          true,
@@ -647,7 +646,7 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 		EnabledAuthFromApp: true,
 	}, *roleAdminMain)
 	if err != nil {
-		log.Fatal("Не удалось добавить пользователя demoUser in demoAcc")
+		log.Fatal("Не удалось создать пользователя demoUser in demoAcc: ",err)
 		return
 	}
 
@@ -2491,12 +2490,14 @@ func Upload357grData() {
 	}
 	webPageRoot := Page.(*models.WebPage)
 
-	// 2. Создаем ProductTagGroups
+	// Tag Groups
 	productTagGroups := []models.ProductTagGroup {
-		{Label: utils.STRp("Вид чая"), Code: utils.STRp("puers"), 				FilterLabel: utils.STRp("Вид чая"), FilterCode: utils.STRp("type_of_tea"), Color: utils.STRp("#84fabbff"), Description: utils.STRp("Вид чая, но не сортовая группа.")},
-		{Label: utils.STRp("Тип ферментации"), Code: utils.STRp("fermentations"), FilterLabel: utils.STRp("Тип ферментации"), FilterCode: utils.STRp("type_of_fermentation"), Color: utils.STRp("#84fabbff"), Description: utils.STRp("Тип ферментации чая при его производстве.")},
-		{Label: utils.STRp("Сложность приготовления"), Code: utils.STRp("preparations"), FilterLabel: utils.STRp("Сложность приготовления"), FilterCode: utils.STRp("type_of_preparation"), Color: utils.STRp("#84fabbff"), Description: utils.STRp("На сколько сложно приготовить этот чай.")},
-		{Label: utils.STRp("Эффект от чая"), Code: utils.STRp("effect"), FilterLabel: utils.STRp("Эффект от чая"), FilterCode: utils.STRp("effect_of_tea"), Color: utils.STRp("#84fabbff"), Description: utils.STRp("На сколько (условно) чай дает эффект: бодрость, сон и т.д.")},
+		{Label: utils.STRp("Вид чая"), 			Code: utils.STRp("puers"), 				FilterLabel: utils.STRp("Вид чая"), FilterCode: utils.STRp("type_of_tea"), Color: utils.STRp("#84fabbff"), Description: utils.STRp("Вид чая, но не сортовая группа.")},
+		{Label: utils.STRp("Тип ферментации"), 	Code: utils.STRp("fermentations"), 		FilterLabel: utils.STRp("Тип ферментации"), FilterCode: utils.STRp("type_of_fermentation"), Color: utils.STRp("#84fabbff"), Description: utils.STRp("Тип ферментации чая при его производстве.")},
+		{Label: utils.STRp("Сложность приготовления"), Code: utils.STRp("preparations"), 	FilterLabel: utils.STRp("Сложность приготовления"), FilterCode: utils.STRp("type_of_preparation"), Color: utils.STRp("#84fabbff"), Description: utils.STRp("На сколько сложно приготовить этот чай.")},
+		{Label: utils.STRp("Эффект от чая"), 	Code: utils.STRp("effect"), 				FilterLabel: utils.STRp("Эффект от чая"), FilterCode: utils.STRp("effect_of_tea"), Color: utils.STRp("#84fabbff"), Description: utils.STRp("На сколько (условно) чай дает эффект: бодрость, сон и т.д.")},
+		{Label: utils.STRp("Год сбора сырья"), 		Code: utils.STRp("coll_raw_materials"), 	FilterLabel: utils.STRp("Год сбора сырья"), FilterCode: utils.STRp("coll_raw_materials"), Color: utils.STRp("#84fabbff"), Description: utils.STRp("На сколько (условно) чай дает эффект: бодрость, сон и т.д.")},
+		{Label: utils.STRp("Время года сбора сырья"), 		Code: utils.STRp("season"), 	FilterLabel: utils.STRp("Время года сбора сырья"), FilterCode: utils.STRp("season"), Color: utils.STRp("#84fabbff"), Description: utils.STRp("На сколько (условно) чай дает эффект: бодрость, сон и т.д.")},
 	}
 	for i := range productTagGroups {
 		_pgr,err := account.CreateEntity(&productTagGroups[i]); if err != nil {
@@ -2519,16 +2520,34 @@ func Upload357grData() {
 		{Label: utils.STRp("Среднеферментированный"),Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(2)},
 		{Label: utils.STRp("Сильноферментированный"),Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(2)},
 		{Label: utils.STRp("Постферментированный"), 	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(2)},
+
 		// 8
 		{Label: utils.STRp("Просто (для новичков)"), Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(3)},
 		{Label: utils.STRp("Средне"), 				Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(3)},
 		{Label: utils.STRp("Сложно"), 				Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(3)},
 		{Label: utils.STRp("Для чайных мастеров"), 	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(3)},
-		// 12
+
+		// Эффект от чая
 		{Label: utils.STRp("Расслабляет"), 			Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(4)},
 		{Label: utils.STRp("Успокаивает"), 			Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(4)},
 		{Label: utils.STRp("Сосредотачивает"),	 	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(4)},
 		{Label: utils.STRp("Бодрит"), 				Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(4)},
+		{Label: utils.STRp("Придает настроения"),	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(4)},
+
+		// Год сбора
+		{Label: utils.STRp("2020"), 		Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(5)},
+		{Label: utils.STRp("2019"),		Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(5)},
+		{Label: utils.STRp("2018"),		Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(5)},
+		{Label: utils.STRp("2015-2018"),	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(5)},
+		{Label: utils.STRp("2010-2014"),	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(5)},
+		{Label: utils.STRp("2005-2009"),	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(5)},
+		{Label: utils.STRp("2000-2004"),	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(5)},
+
+		// Время года
+		{Label: utils.STRp("Весна"),	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(6)},
+		{Label: utils.STRp("Лето"),	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(6)},
+		{Label: utils.STRp("Осень"),	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(6)},
+		{Label: utils.STRp("Зима"),	Code: utils.STRp(""), Color: utils.STRp("#84fabbff"), ProductTagGroupId: utils.UINTp(6)},
 	}
 	for i := range productTags {
 		_,err := account.CreateEntity(&productTags[i]); if err != nil {

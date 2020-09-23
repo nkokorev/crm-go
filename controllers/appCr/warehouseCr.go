@@ -248,16 +248,16 @@ func WarehouseAppendProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Декодируем параметры
-	var input struct{
-		AmountUnit float64 `json:"amount_unit"`
+	/*var input struct{
+		AmountUnits float64 `json:"amount_units"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
-	}
+	}*/
 
-	if err = warehouse.AppendProduct(product, input.AmountUnit); err !=nil {
+	if err = warehouse.AppendProduct(product); err !=nil {
 		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из карточки товара"))
 		return
 	}
