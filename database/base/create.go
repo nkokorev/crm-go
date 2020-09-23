@@ -338,6 +338,7 @@ func UploadTestDataPart_I() {
 			Surname:		utils.STRp("Кокорев"),
 			Patronymic:		utils.STRp("Романович"),
 			EmailVerifiedAt:&timeNow,
+			EnabledAuthFromApp: true,
 			},
 		*roleOwnerMain,
 		)
@@ -357,6 +358,7 @@ func UploadTestDataPart_I() {
 			Surname:		utils.STRp("Кокорев"),
 			Patronymic:		utils.STRp("Романович"),
 			EmailVerifiedAt:&timeNow,
+			EnabledAuthFromApp: true,
 		},
 		*roleAdminMain,
 	)
@@ -467,6 +469,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 			Surname:	utils.STRp("Коротченко"),
 			Patronymic:	utils.STRp("-"),
 			EmailVerifiedAt:&timeNow,
+			EnabledAuthFromApp: true,
 		},
 		*roleManagerMain,
 	)
@@ -683,6 +686,7 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 			Surname:	utils.STRp("Попов"),
 			Patronymic:	utils.STRp("Николаевич"),
 			EmailVerifiedAt:&timeNow,
+			EnabledAuthFromApp: true,
 		},
 		*roleClientMain,
 	)
@@ -818,6 +822,7 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 			Surname:	utils.STRp("Толстов"),
 			// Patronymic: nil,
 			EmailVerifiedAt:&timeNow,
+			EnabledAuthFromApp: true,
 		},
 		*roleClientMain,
 	)
@@ -984,6 +989,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			Patronymic:	utils.STRp("Валерьевич"),
 			Subscribed: false,
 			EmailVerifiedAt:&timeNow,
+			EnabledAuthFromApp: true,
 		},
 		*roleClientMain,
 	)
@@ -1004,6 +1010,7 @@ XwD6jHhp7GfxzP+SlwJBALL6Mmgkk9i5m5k2hocMR8U8+CMM3yHtHZRec7AdRv0c
 			Patronymic:	nil,
 			Subscribed: false,
 			EmailVerifiedAt:&timeNow,
+			EnabledAuthFromApp: true,
 		},
 		*roleClientMain,
 	)
@@ -2203,6 +2210,7 @@ func UploadTestDataPart_V() {
 			Surname:	utils.STRp(""),
 			Patronymic:	utils.STRp(""),
 			EmailVerifiedAt:&timeNow,
+			EnabledAuthFromApp: true,
 		},
 		*roleClientMain,
 	)
@@ -2306,6 +2314,7 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 			Name:		utils.STRp("Ярослав"),
 			Surname:	utils.STRp("Ананьев"),
 			EmailVerifiedAt:&timeNow,
+			EnabledAuthFromApp: true,
 		},
 		*roleClientMain,
 	)
