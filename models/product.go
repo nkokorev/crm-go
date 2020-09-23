@@ -42,8 +42,8 @@ type Product struct {
 	// IsKit			bool 		`json:"is_kit" gorm:"type:bool;default:false"`
 
 	// При isSource = true, - из каких товаров и в каком количестве состоит
-	Sources			[]*Product `json:"sources" gorm:"many2many:product_sources;"` // ForeignKey:id;References:id;
-	SourceItems		[]*ProductSource `json:"source_items"` // ForeignKey:id;References:id;
+	// Sources			[]*Product `json:"sources" gorm:"many2many:product_sources;"` // ForeignKey:id;References:id;
+	SourceItems		[]*ProductSource `json:"source_items"`
 
 
 	// Этикетка товара
@@ -216,7 +216,7 @@ func (product *Product) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 
 	if autoPreload {
 		return db.Preload("ProductType","ProductCategories","PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards",
-			"Manufacturer","ProductTags","Sources","SourceItems","SourceItems.Source","SourceItems.Source.MeasurementUnit").
+			"Manufacturer","ProductTags","SourceItems","SourceItems.Source","SourceItems.Source.MeasurementUnit").
 			Preload("Images", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		})
@@ -224,7 +224,7 @@ func (product *Product) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 
 		allowed := utils.FilterAllowedKeySTRArray(preloads,
 			[]string{"Images","ProductType","ProductCategories","PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards",
-				"Manufacturer","ProductTags","Sources","SourceItems","SourceItems.Source","SourceItems.Source.MeasurementUnit"})
+				"Manufacturer","ProductTags","SourceItems","SourceItems.Source","SourceItems.Source.MeasurementUnit"})
 
 		for _,v := range allowed {
 			if v == "Images" {
@@ -600,6 +600,67 @@ func (product *Product) ExistProductCategory(productCategoryId uint) bool {
 	return false
 }
 func (product *Product) ExistProductTag(tagId uint) bool {
+
+	if tagId < 1 {
+		return false
+	}
+
+	pcp := ProductTagProduct{}
+	if err := db.Model(&ProductTagProduct{}).First(&pcp,"product_tag_id = ? AND product_id = ?", tagId, product.Id).Error; err != nil {
+		return false
+	}
+
+	return true
+}
+
+func (product *Product) AppendSourceItem(source *Product, AmountUnits float64, EnableViewing bool, strict bool) error {
+
+	// 1. Загружаем продукт еще раз
+	if err := source.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить tag, она не найдена"}
+	}
+
+	if product.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить tag, т.к. продукта не загружен"}
+	}
+
+	// 2. Проверяем есть ли уже в этой категории этот продукт
+	if product.ExistSourceItem(source.Id) {
+		if strict {
+			return utils.Error{Message: "Tag уже числиться за товаром"}
+		} else {
+			return nil
+		}
+	}
+
+	if err := db.Create(
+		&ProductSource{
+			ProductId: product.Id, SourceId: source.Id}).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func (product *Product) RemoveSourceItem(sourceId uint) error {
+
+	// 1. Загружаем продукт еще раз
+	if err := productTag.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя удалить продукт, он не найден"}
+	}
+
+	if product.Id < 1 || productTag.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: account id || product id || product tag id == nil"}
+	}
+
+	if err := db.Where("product_tag_id = ? AND product_id = ?", productTag.Id, product.Id).Delete(
+		&ProductTagProduct{}).Error; err != nil {
+		return err
+	}
+
+
+	return nil
+}
+func (product *Product) ExistSourceItem(sourceId uint) bool {
 
 	if tagId < 1 {
 		return false
