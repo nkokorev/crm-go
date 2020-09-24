@@ -660,6 +660,26 @@ func (product *Product) RemoveSourceItem(sourceId uint) error {
 	
 	return nil
 }
+func (product *Product) SyncSourceItems(productSources []ProductSource) error {
+
+	// 1. Загружаем продукт еще раз
+	if product.Id < 1 {
+		return utils.Error{Message: "Тег не найден"}
+	}
+
+	// очищаем список связей
+	if err := db.Model(product).Association("SourceItems").Clear(); err != nil {
+		return err
+	}
+
+	for _,sourceItem := range productSources {
+		if err := product.AppendSourceItem( &Product{Id: sourceItem.ProductId}, sourceItem.AmountUnits, sourceItem.EnableViewing, false); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 func (product *Product) ExistSourceItem(sourceId uint) bool {
 
 	if sourceId < 1 {
@@ -673,3 +693,4 @@ func (product *Product) ExistSourceItem(sourceId uint) bool {
 
 	return true
 }
+
