@@ -613,15 +613,15 @@ func (product *Product) ExistProductTag(tagId uint) bool {
 	return true
 }
 
-func (product *Product) AppendSourceItem(source *Product, AmountUnits float64, EnableViewing bool, strict bool) error {
+func (product *Product) AppendSourceItem(source *Product, amountUnits float64, enableViewing bool, strict bool) error {
 
-	// 1. Загружаем продукт еще раз
+	// 1. Загружаем продукт-источник еще раз
 	if err := source.load(nil); err != nil {
 		return utils.Error{Message: "Техническая ошибка: нельзя добавить tag, она не найдена"}
 	}
 
 	if product.Id < 1 {
-		return utils.Error{Message: "Техническая ошибка: нельзя добавить tag, т.к. продукта не загружен"}
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить source, т.к. продукта не загружен"}
 	}
 
 	// 2. Проверяем есть ли уже в этой категории этот продукт
@@ -629,13 +629,19 @@ func (product *Product) AppendSourceItem(source *Product, AmountUnits float64, E
 		if strict {
 			return utils.Error{Message: "Tag уже числиться за товаром"}
 		} else {
+
+			// update
+			if err := db.Model(&ProductSource{}).Where("active = ?", true).
+				Updates(map[string]interface{}{"amount_units": amountUnits,"enable_viewing":enableViewing}).Error; err != nil {
+				return err
+			}
 			return nil
 		}
 	}
 
 	if err := db.Create(
-		&ProductSource{
-			ProductId: product.Id, SourceId: source.Id}).Error; err != nil {
+		&ProductSource {
+			ProductId: product.Id, SourceId: source.Id, AmountUnits: amountUnits, EnableViewing: enableViewing}).Error; err != nil {
 		return err
 	}
 
@@ -643,31 +649,25 @@ func (product *Product) AppendSourceItem(source *Product, AmountUnits float64, E
 }
 func (product *Product) RemoveSourceItem(sourceId uint) error {
 
-	// 1. Загружаем продукт еще раз
-	if err := productTag.load(nil); err != nil {
-		return utils.Error{Message: "Техническая ошибка: нельзя удалить продукт, он не найден"}
+	if product.Id < 1 || sourceId < 1 {
+		return utils.Error{Message: "Техническая ошибка: product id || source id == nil"}
 	}
 
-	if product.Id < 1 || productTag.Id < 1 {
-		return utils.Error{Message: "Техническая ошибка: account id || product id || product tag id == nil"}
-	}
-
-	if err := db.Where("product_tag_id = ? AND product_id = ?", productTag.Id, product.Id).Delete(
-		&ProductTagProduct{}).Error; err != nil {
+	if err := db.Where("source_id = ? AND product_id = ?", sourceId, product.Id).Delete(
+		&ProductSource{}).Error; err != nil {
 		return err
 	}
-
-
+	
 	return nil
 }
 func (product *Product) ExistSourceItem(sourceId uint) bool {
 
-	if tagId < 1 {
+	if sourceId < 1 {
 		return false
 	}
 
-	pcp := ProductTagProduct{}
-	if err := db.Model(&ProductTagProduct{}).First(&pcp,"product_tag_id = ? AND product_id = ?", tagId, product.Id).Error; err != nil {
+	pcp := ProductSource{}
+	if err := db.First(&pcp,"source_id = ? AND product_id = ?", sourceId, product.Id).Error; err != nil {
 		return false
 	}
 
