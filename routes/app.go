@@ -211,10 +211,11 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-categories", appCr.ProductSyncProductCategories).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-tags", appCr.ProductSyncProductTags).Methods(http.MethodPatch, http.MethodOptions)
 
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/pproduct/{productId:[0-9]+}/product-sources/{productSourceId:[0-9]+}", appCr.ProductTagGroupAppendProductTag).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-sources/{productSourceId:[0-9]+}", appCr.ProductTagGroupRemoveProductTag).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-sources", appCr.ProductAppendSourceItem).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-sources/{productSourceId:[0-9]+}", appCr.ProductRemoveSourceItem).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-sources/{productSourceId:[0-9]+}", appCr.ProductUpdateSourceItem).Methods(http.MethodPatch, http.MethodOptions)
 
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-sources", appCr.ProductSyncSourceItems).Methods(http.MethodPatch, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-sources", appCr.ProductSyncSourceItems).Methods(http.MethodPatch, http.MethodOptions)
 
 	// ### Measurement Units ###
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/measurement-units", appCr.MeasurementUnitStatusCreate).Methods(http.MethodPost, http.MethodOptions)

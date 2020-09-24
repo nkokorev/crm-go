@@ -3,6 +3,7 @@ package appCr
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/fatih/structs"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
@@ -408,6 +409,7 @@ func ProductAppendSourceItem(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }*/
 
+// Добавляет продукт в POST сообщение по source_id
 func ProductAppendSourceItem(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
@@ -422,12 +424,6 @@ func ProductAppendSourceItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productSourceId, err := utilsCr.GetUINTVarFromRequest(r, "productSourceId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке productSourceId"))
-		return
-	}
-
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	var product models.Product
@@ -435,20 +431,21 @@ func ProductAppendSourceItem(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
 		return
 	}
-
-	productSource := models.Product{}
-	if err =account.LoadEntity(&productSource, productSourceId, nil); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
-		return
-	}
-
+	
 	var input struct{
-		SourceId		models.Product `json:"source_id"` // ?
-		AmountUnits 	float64 `json:"amount_units"`
-		EnableViewing	bool 	`json:"enable_viewing"`
+		SourceId		uint		`json:"source_id"`
+		AmountUnits 	float64 	`json:"amount_units"`
+		EnableViewing	bool 		`json:"enable_viewing"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 1"))
+		return
+	}
+
+	// Получаем продукт source
+	productSource := models.Product{}
+	if err =account.LoadEntity(&productSource, input.SourceId, nil); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
 		return
 	}
 
@@ -463,7 +460,6 @@ func ProductAppendSourceItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	resp := u.Message(true, "PATCH ProductTagGroup Append Product")
 	resp["product"] = product
 	u.Respond(w, resp)
@@ -477,45 +473,106 @@ func ProductRemoveSourceItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productTagGroupId, err := utilsCr.GetUINTVarFromRequest(r, "productTagGroupId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailQueueId"))
-		return
-	}
-
-	productTagId, err := utilsCr.GetUINTVarFromRequest(r, "productTagId")
+	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
 		return
 	}
 
-	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
-
-	var productTagGroup models.ProductTagGroup
-	if err =account.LoadEntity(&productTagGroup, productTagGroupId, nil); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке категории товара"}))
-		return
-	}
-
-	productTag := models.ProductTag{}
-	if err =account.LoadEntity(&productTag, productTagId, nil); err != nil {
+	var product models.Product
+	if err =account.LoadEntity(&product, productId, nil); err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
 		return
 	}
 
-	if err = productTagGroup.RemoveProductTag(&productTag); err !=nil {
+	// Получаем id товара, которого нужно удалить из source items
+	productSourceId, err := utilsCr.GetUINTVarFromRequest(r, "productSourceId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке productSourceId"))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	if err = product.RemoveSourceItem(productSourceId); err !=nil {
 		fmt.Println(err)
-		u.Respond(w, u.MessageError(err, "Ошибка удаления тега из группы"))
+		u.Respond(w, u.MessageError(err, "Ошибка удаления товара из source"))
 		return
 	}
 
-	if err = account.LoadEntity(&productTagGroup, productTagGroupId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке группы тегов"}))
+	if err = account.LoadEntity(&product, productId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
 		return
 	}
 
-	resp := u.Message(true, "PATCH ProductTagGroup Products Remove")
-	resp["product_tag_group"] = productTagGroup
+	resp := u.Message(true, "DELETE Product remove source item")
+	resp["product"] = product
+	u.Respond(w, resp)
+}
+
+func ProductUpdateSourceItem(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
+		return
+	}
+
+	var product models.Product
+	if err =account.LoadEntity(&product, productId, nil); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
+		return
+	}
+
+	// Получаем id товара, которого нужно удалить из source items
+	productSourceId, err := utilsCr.GetUINTVarFromRequest(r, "productSourceId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке productSourceId"))
+		return
+	}
+
+	// Загружаем связь, которую нужно изменить
+	var productSource models.Product
+	if err = account.LoadEntity(&productSource, productSourceId, nil); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	// Данные по обновлению
+	var input struct{
+		// ProductId  		uint 	`json:"product_id"`
+		// SourceId 		uint 	`json:"source_id"`
+		AmountUnits 	float64 `json:"amount_units"`
+		EnableViewing	bool	`json:"enable_viewing"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	maps := structs.Map(&input)
+
+	if err = product.UpdateSourceItem(productSourceId, maps); err !=nil {
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Ошибка обновления товара из source"))
+		return
+	}
+
+	if err = account.LoadEntity(&product, productId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
+		return
+	}
+
+	resp := u.Message(true, "DELETE Product remove source item")
+	resp["product"] = product
 	u.Respond(w, resp)
 }
 

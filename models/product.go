@@ -660,6 +660,21 @@ func (product *Product) RemoveSourceItem(sourceId uint) error {
 	
 	return nil
 }
+func (product *Product) UpdateSourceItem(sourceId uint, input map[string]interface{}) error {
+
+	if product.Id < 1 || sourceId < 1 {
+		return utils.Error{Message: "Техническая ошибка: product id || source id == nil" }
+	}
+
+	if err := db.Model(&ProductSource{}).Where("source_id = ? AND product_id = ?", sourceId, product.Id).
+		Omit("source_id", "product_id").Updates(input).Error; err != nil {return err}
+
+	/*if err := db.Model().Where("source_id = ? AND product_id = ?", sourceId, product.Id).Updates(input).Error; err != nil {
+		return err
+	}*/
+
+	return nil
+}
 func (product *Product) SyncSourceItems(productSources []ProductSource) error {
 
 	// 1. Загружаем продукт еще раз
