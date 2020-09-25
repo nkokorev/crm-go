@@ -3641,12 +3641,12 @@ func Upload357grData() {
 
 
 	products := []models.Product{
-		{Label: utils.STRp("ДянХун"),			ShortLabel: utils.STRp("ДянХун"),Article: utils.STRp("001"),IsSource: true,	MeasurementUnitId: utils.UINTp(5),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(6.0),RetailSale: true},
-		{Label: utils.STRp("ДянХун 25гр"),		ShortLabel: utils.STRp("25 гр"),	Article: utils.STRp("002"),IsSource: false,	MeasurementUnitId: utils.UINTp(5),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(150.0),RetailSale: true},
-		{Label: utils.STRp("ДянХун 50гр"),		ShortLabel: utils.STRp("50 гр"),	Article: utils.STRp("003"),IsSource: false,	MeasurementUnitId: utils.UINTp(5),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(300.0),RetailSale: true},
-		{Label: utils.STRp("ДянХун 200гр"),		ShortLabel: utils.STRp("200 гр"),Article: utils.STRp("004"),IsSource: false,	MeasurementUnitId: utils.UINTp(5),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(1200.0),RetailSale: true},
-		{Label: utils.STRp("SAMADOYO SAG-08"),	ShortLabel: utils.STRp("SAG-08"),Brand: utils.STRp("SAMADOYO"), Article: utils.STRp("005"),IsSource: false,	MeasurementUnitId: utils.UINTp(5),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(1600.0),RetailSale: true},
-		{Label: utils.STRp("ДянХун 200гр + типод"),	ShortLabel: utils.STRp("ДянХун + типод"), Article: utils.STRp("006"),IsSource: false,	MeasurementUnitId: utils.UINTp(5),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(4000.0),RetailDiscount: utils.FL64p(400), RetailSale: true},
+		{Label: utils.STRp("ДянХун"),			ShortLabel: utils.STRp("ДянХун"),Article: utils.STRp("001"),IsKit: false,	MeasurementUnitId: utils.UINTp(5),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(6.0),RetailSale: true},
+		{Label: utils.STRp("ДянХун 25гр"),		ShortLabel: utils.STRp("25 гр"),	Article: utils.STRp("002"),IsKit: true,	MeasurementUnitId: utils.UINTp(1),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(150.0),RetailSale: true},
+		{Label: utils.STRp("ДянХун 50гр"),		ShortLabel: utils.STRp("50 гр"),	Article: utils.STRp("003"),IsKit: true,	MeasurementUnitId: utils.UINTp(1),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(300.0),RetailSale: true},
+		{Label: utils.STRp("ДянХун 200гр"),		ShortLabel: utils.STRp("200 гр"),Article: utils.STRp("004"),IsKit: true,	MeasurementUnitId: utils.UINTp(1),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(1200.0),RetailSale: true},
+		{Label: utils.STRp("SAMADOYO SAG-08"),	ShortLabel: utils.STRp("SAG-08"),Brand: utils.STRp("SAMADOYO"), Article: utils.STRp("005"),IsKit: false,	MeasurementUnitId: utils.UINTp(1),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(1600.0),RetailSale: true},
+		{Label: utils.STRp("ДянХун 200гр + типод"),	ShortLabel: utils.STRp("ДянХун + типод"), Article: utils.STRp("006"),IsKit: true,	MeasurementUnitId: utils.UINTp(5),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(4000.0),RetailDiscount: utils.FL64p(400), RetailSale: true},
 	}
 
 	for i := range products {

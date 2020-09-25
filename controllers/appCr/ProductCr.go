@@ -547,9 +547,7 @@ func ProductUpdateSourceItem(w http.ResponseWriter, r *http.Request) {
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	// Данные по обновлению
-	var input struct{
-		// ProductId  		uint 	`json:"product_id"`
-		// SourceId 		uint 	`json:"source_id"`
+	var input struct {
 		AmountUnits 	float64 `json:"amount_units"`
 		EnableViewing	bool	`json:"enable_viewing"`
 	}
@@ -607,6 +605,7 @@ func ProductSyncSourceItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = product.SyncSourceItems(input.ProductSources); err !=nil {
+		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 2"))
 		return
 	}

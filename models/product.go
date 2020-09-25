@@ -31,18 +31,14 @@ type Product struct {
 	// Доступен ли товар для продажи оптом
 	WholesaleSale	bool	`json:"wholesale_sale" gorm:"type:bool;default:false"`
 
-	// Для продажи ли товар (= можно ли включать в карточки товаров)
-	// ForRetailSale 		bool 	`json:"for_retail_sale" gorm:"type:bool;default:true"`
-	// ForWholesaleSale 	bool 	`json:"for_wholesale_sale" gorm:"type:bool;default:true"`
-
 	// isSource - этот товар ТОЛЬКО для сбора других товаров для продажи. Упрощает систему склада...
-	IsSource		bool 	`json:"is_source" gorm:"type:bool;default:false"`
+	// IsSource		bool 	`json:"is_source" gorm:"type:bool;default:false"`
 
 	// При isSource = true, - сборный ли товар? При нем warehouse_items >= 1. Применяется только к payment_subject = commodity, excise и т.д.
-	// IsKit			bool 		`json:"is_kit" gorm:"type:bool;default:false"`
+	IsKit			bool 		`json:"is_kit" gorm:"type:bool;default:false"`
 
 	// При isSource = true, - из каких товаров и в каком количестве состоит
-	// Sources			[]*Product `json:"sources" gorm:"many2many:product_sources;"` // ForeignKey:id;References:id;
+	Sources			[]*Product `json:"-" gorm:"many2many:product_sources;"` // ForeignKey:id;References:id;
 	SourceItems		[]*ProductSource `json:"source_items"`
 
 
@@ -627,11 +623,11 @@ func (product *Product) AppendSourceItem(source *Product, amountUnits float64, e
 	// 2. Проверяем есть ли уже в этой категории этот продукт
 	if product.ExistSourceItem(source.Id) {
 		if strict {
-			return utils.Error{Message: "Tag уже числиться за товаром"}
+			return utils.Error{Message: "Source item уже числиться за товаром"}
 		} else {
 
 			// update
-			if err := db.Model(&ProductSource{}).Where("active = ?", true).
+			if err := db.Model(&ProductSource{}).Where("source_id = ? AND product_id = ?", source.Id, product.Id).
 				Updates(map[string]interface{}{"amount_units": amountUnits,"enable_viewing":enableViewing}).Error; err != nil {
 				return err
 			}
@@ -679,11 +675,11 @@ func (product *Product) SyncSourceItems(productSources []ProductSource) error {
 
 	// 1. Загружаем продукт еще раз
 	if product.Id < 1 {
-		return utils.Error{Message: "Тег не найден"}
+		return utils.Error{Message: "Товар не найден"}
 	}
 
 	// очищаем список связей
-	if err := db.Model(product).Association("SourceItems").Clear(); err != nil {
+	if err := db.Model(product).Association("Sources").Clear(); err != nil {
 		return err
 	}
 
