@@ -449,7 +449,7 @@ func ProductAppendSourceItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = product.AppendSourceItem(&productSource,input.AmountUnits, input.EnableViewing, false); err !=nil {
+	if err = product.AppendSourceItem(&productSource,input.AmountUnits, input.EnableViewing, true); err !=nil {
 		u.Respond(w, u.MessageError(err, "Ошибка добавления товара как источник"))
 		return
 	}

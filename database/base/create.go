@@ -1560,7 +1560,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			Model: utils.STRp("AIROTUMB big"),Brand: utils.STRp("AIRO-Climate"),
 			Label: utils.STRp("Тумба облучатель бактерицидный AIRO-DEZTUMB big"),  ShortLabel: utils.STRp("Облучатель AIROTUMB big"),
 			PaymentSubjectId: utils.UINTp(1), MeasurementUnitId: utils.UINTp(1), VatCodeId: utils.UINTp(1), ProductTypeId: utils.UINTp(2),
-			RetailPrice: utils.FL64p(11500.00), RetailDiscount: utils.FL64p(1000),
+			RetailPrice: utils.FL64p(11500.00), RetailDiscount: utils.FL64p(1000), RetailSale: true,
 			Attributes: datatypes.JSON(utils.MapToRawJson(map[string]interface{}{
 				"color":"белый",
 				//"bodyMaterial":"металл",
@@ -1624,9 +1624,13 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 		}
 		
 		// создаем товар, карточку товара и добавляем их в группу
-		_, err = webSiteAiro.CreateProductWithProductCard(products[i], cards[i], productCategory)
+		product, err := webSiteAiro.CreateProductWithProductCard(products[i], cards[i], productCategory)
 		if err != nil {
 			log.Fatal("Не удалось создать Product для airoClimat: ", err)
+		}
+
+		if err := product.SyncSourceItems([]models.ProductSource{{SourceId: utils.ParseUINTp(&product.Id), ProductId: utils.ParseUINTp(&product.Id), AmountUnits: 1, EnableViewing: true}}); err != nil {
+			log.Fatal(err)
 		}
 	}
 
@@ -3646,14 +3650,21 @@ func Upload357grData() {
 		{Label: utils.STRp("ДянХун 50гр"),		ShortLabel: utils.STRp("50 гр"),	Article: utils.STRp("003"),IsKit: true,	MeasurementUnitId: utils.UINTp(1),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(300.0),RetailSale: true},
 		{Label: utils.STRp("ДянХун 200гр"),		ShortLabel: utils.STRp("200 гр"),Article: utils.STRp("004"),IsKit: true,	MeasurementUnitId: utils.UINTp(1),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(1200.0),RetailSale: true},
 		{Label: utils.STRp("SAMADOYO SAG-08"),	ShortLabel: utils.STRp("SAG-08"),Brand: utils.STRp("SAMADOYO"), Article: utils.STRp("005"),IsKit: false,	MeasurementUnitId: utils.UINTp(1),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(1600.0),RetailSale: true},
-		{Label: utils.STRp("ДянХун 200гр + типод"),	ShortLabel: utils.STRp("ДянХун + типод"), Article: utils.STRp("006"),IsKit: true,	MeasurementUnitId: utils.UINTp(5),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(4000.0),RetailDiscount: utils.FL64p(400), RetailSale: true},
+		{Label: utils.STRp("ДянХун 200гр + типод"),	ShortLabel: utils.STRp("ДянХун + типод"), Article: utils.STRp("006"),IsKit: true,	MeasurementUnitId: utils.UINTp(4),PaymentSubjectId:utils.UINTp(1),VatCodeId: utils.UINTp(1),RetailPrice: utils.FL64p(4000.0),RetailDiscount: utils.FL64p(400), RetailSale: true},
 	}
 
 	for i := range products {
-		_, err := account.CreateEntity(&products[i])
+		_product, err := account.CreateEntity(&products[i])
 		if err != nil {
 			log.Fatal(err)
 		}
+		product := _product.(*models.Product)
+		if !product.IsKit {
+			if err := product.SyncSourceItems([]models.ProductSource{{SourceId: utils.ParseUINTp(&product.Id), ProductId: utils.ParseUINTp(&product.Id), AmountUnits: 1, EnableViewing: true}}); err != nil {
+				log.Fatal(err)
+			}
+		}
+
 	}
 
 	// Добавляем модели складского учета

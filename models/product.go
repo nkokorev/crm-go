@@ -5,11 +5,11 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"log"
-	"time"
 )
 
 /*
@@ -31,10 +31,7 @@ type Product struct {
 	// Доступен ли товар для продажи оптом
 	WholesaleSale	bool	`json:"wholesale_sale" gorm:"type:bool;default:false"`
 
-	// isSource - этот товар ТОЛЬКО для сбора других товаров для продажи. Упрощает систему склада...
-	// IsSource		bool 	`json:"is_source" gorm:"type:bool;default:false"`
-
-	// При isSource = true, - сборный ли товар? При нем warehouse_items >= 1. Применяется только к payment_subject = commodity, excise и т.д.
+	// Сборный ли товар? При нем warehouse_items >= 1. Применяется только к payment_subject = commodity, excise и т.д.
 	IsKit			bool 		`json:"is_kit" gorm:"type:bool;default:false"`
 
 	// При isSource = true, - из каких товаров и в каком количестве состоит
@@ -67,8 +64,6 @@ type Product struct {
 	
 	RetailDiscount 		*float64 `json:"retail_discount" gorm:"type:numeric;"` 	// розничная фактическая скидка
 
-	// PurchasePrice 	float64 `json:"purchase_price" gorm:"type:numeric;"` 	// закупочная цена
-
 	// Вид номенклатуры - ассортиментные группы продаваемых товаров. Привязываются к карточкам..
 
 	// Товарная группа для назначения характеристик
@@ -100,10 +95,13 @@ type Product struct {
 	Manufacturer	Manufacturer `json:"manufacturer"`
 
 	// Дата изготовления (условная штука т.к. зависит от поставки), дата выпуска, дата производства
-	ManufactureDate	*time.Time 	`json:"manufacture_date"`
+	ManufactureDate	*string 	`json:"manufacture_date" gorm:"type:varchar(255);"`
+
+	// Условия хранения
+	StorageRequirements	*string	`json:"storage_requirements" gorm:"type:varchar(255);"`
 
 	// Срок годности, срок хранения (?)
-	ShelfLife		*time.Time 	`json:"shelf_life"`
+	ShelfLife		*string 	`json:"shelf_life" gorm:"type:varchar(255);"`
 
 	//  == признак предмета расчета - товар, услуга, работа, набор (комплект) = сборный товар
 	// Признак предмета расчета (бухучет - № 54-ФЗ)
@@ -126,8 +124,8 @@ type Product struct {
 	// ключ для расчета веса продукта
 	// WeightKey 	string `json:"weight_key" gorm:"type:varchar(32);default:'grossWeight'"`
 
-	// Нужно ли считать вес для расчета доставки у данного продукта
-	// ConsiderWeight	bool	`json:"considerWeight" gorm:"type:bool;default:false"`
+	// Весовой товар? = нужно ли считать вес для расчета доставки у данного продукта
+	ConsiderWeight	bool	`json:"consider_weight" gorm:"type:bool;default:true"`
 
 	// Reviews []Review // Product reviews (отзывы на товар - с рейтингом(?))
 	// Questions []Question // вопросы по товару
@@ -139,7 +137,6 @@ type Product struct {
 
 	Inventories 		[]Inventory	`json:"inventories" gorm:"many2many:inventory_items"`
 
-	Account 			Account 		`json:"-"`
 	ProductCards 		[]ProductCard 	`json:"product_cards" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
 	ProductCategories 	[]ProductCategory 	`json:"product_categories" gorm:"many2many:product_category_products;"`
 }
@@ -235,6 +232,30 @@ func (product *Product) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 		return _db
 	}
 
+}
+func (product *Product) AfterCreate(tx *gorm.DB) error {
+	event.AsyncFire(Event{}.ProductCreated(product.AccountId, product.Id))
+
+	// Создаем содержание null
+	/*if !product.IsKit && product.Id > 0{
+		p := Product{}
+		err := Account{Id: product.AccountId}.LoadEntity(&p,product.Id, nil)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+	}*/
+
+	return nil
+}
+func (product *Product) AfterUpdate(tx *gorm.DB) (err error) {
+	event.AsyncFire(Event{}.ProductUpdated(product.AccountId, product.Id))
+	return nil
+}
+func (product *Product) AfterDelete(tx *gorm.DB) (err error) {
+	event.AsyncFire(Event{}.ProductDeleted(product.AccountId, product.Id))
+	return nil
 }
 
 // ######### INTERFACE EVENT Functions ############
@@ -613,11 +634,18 @@ func (product *Product) AppendSourceItem(source *Product, amountUnits float64, e
 
 	// 1. Загружаем продукт-источник еще раз
 	if err := source.load(nil); err != nil {
-		return utils.Error{Message: "Техническая ошибка: нельзя добавить tag, она не найдена"}
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить source, т.к. он не найден"}
 	}
 
 	if product.Id < 1 {
 		return utils.Error{Message: "Техническая ошибка: нельзя добавить source, т.к. продукта не загружен"}
+	}
+
+	if product.IsKit && product.Id == source.Id {
+		if strict {
+			return utils.Error{Message: "Сборный товар не может состоять из себя же"}
+		}
+		return nil
 	}
 
 	// 2. Проверяем есть ли уже в этой категории этот продукт
@@ -684,6 +712,11 @@ func (product *Product) SyncSourceItems(productSources []ProductSource) error {
 	}
 
 	for _,sourceItem := range productSources {
+		// fmt.Println("sourceItem.ProductId: ", sourceItem.ProductId)
+		// fmt.Println("sourceItem.AmountUnits: ", sourceItem.AmountUnits)
+		if product.IsKit && product.Id == sourceItem.ProductId {
+			continue
+		}
 		if err := product.AppendSourceItem( &Product{Id: sourceItem.ProductId}, sourceItem.AmountUnits, sourceItem.EnableViewing, false); err != nil {
 			return err
 		}
