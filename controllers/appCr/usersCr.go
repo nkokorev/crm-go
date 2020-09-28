@@ -23,7 +23,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 		models.User
 		RoleId uint `json:"role_id"`
 
-		Password string `json:"password"`
+		Password *string `json:"password"`
 
 		RoleIdBeta 			uint 		`json:"roleId"`
 		PhoneRegionBeta 	*string 	`json:"phoneRegion"`
@@ -74,7 +74,9 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Т.к. пароль не передается, читаем и назначем отдельно json -
-	input.User.Password = &input.Password
+	if input.Password != nil {
+		input.User.Password = input.Password
+	}
 
 	user, err := account.CreateUser(input.User, role)
 	if err != nil {

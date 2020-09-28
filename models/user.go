@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 type User struct {
@@ -57,9 +58,9 @@ type User struct {
 	PhoneVerifiedAt *time.Time `json:"phone_verified_at"` // дата подтверждения телефона (автоматически проставляется, если методом верфикации пользователя был подтвержден телефон)
 	PasswordResetAt *time.Time `json:"password_reset_at"`
 
-	CreatedAt 		time.Time 		`json:"created_at"`
+	CreatedAt 		time.Time 	`json:"created_at"`
 	CreatedAtBeta 	time.Time 	`json:"createdAt" gorm:"-"`
-	UpdatedAt 		time.Time 		`json:"updated_at"`
+	UpdatedAt 		time.Time 	`json:"updated_at"`
 	UpdatedAtBeta 	time.Time 	`json:"updatedAt" gorm:"-"`
 	DeletedAt 		gorm.DeletedAt 	`json:"-" sql:"index"`
 
@@ -94,6 +95,18 @@ func (User) PgSqlCreate() {
 func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
 	user.Id = 0
 	user.HashId = strings.ToLower(u.RandStringBytesMaskImprSrcUnsafe(12, true))
+
+	if user.Name != nil {
+		str := *user.Name
+
+		for len(str) > 0 {
+			r, size := utf8.DecodeRuneInString(str)
+			fmt.Printf("%c %v\n", r, size)
+
+			str = str[size:]
+			user.Name = &str
+		}
+	}
 	// user.CreatedAt = time.Now().UTC()
 	return nil
 }

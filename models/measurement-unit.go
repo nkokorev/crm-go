@@ -98,7 +98,6 @@ func (measurementUnit *MeasurementUnit) setPublicId(id uint) { measurementUnit.I
 func (measurementUnit MeasurementUnit) GetAccountId() uint { return measurementUnit.AccountId }
 func (measurementUnit *MeasurementUnit) setAccountId(id uint) { measurementUnit.AccountId = id }
 func (measurementUnit MeasurementUnit) SystemEntity() bool { return measurementUnit.AccountId == 1 }
-
 // ############# Entity interface #############
 
 

@@ -177,10 +177,23 @@ func RefreshTablesPart_I() {
 		log.Fatal(err)
 	}*/
 
-	err := pool.Exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;").Exec("").Error
+	err := pool.Exec("DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;").Exec("").Error
+	// err = pool.Exec("DROP DATABASE IF EXISTS crm_db").Exec("").Error
+	// err = pool.Exec("-- DROP SCHEMA public CASCADE; CREATE SCHEMA public DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_unicode_ci;\n\nCREATE DATABASE \"crm_db\"\n    WITH OWNER \"postgres\"\n    ENCODING 'UTF8'\n    LC_COLLATE = 'ru_RU.UTF-8'\n    LC_CTYPE = 'ru_RU.UTF-8'\n    TEMPLATE template0;").Exec("").Error
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	/*err := pool.Exec("DROP SCHEMA public CASCADE;").Exec("").Error
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = pool.Exec("DROP DATABASE IF EXISTS crm_db;").Exec("").Error
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = pool.Exec("CREATE DATABASE \"crm_db\"\n    WITH OWNER \"postgres\"\n    ENCODING 'UTF8'\n    LC_COLLATE = 'en_US.UTF-8'\n    LC_COLLATE = 'ru_RU.UTF-8'     \n--     LC_CTYPE = 'en_US.UTF-8',\n    LC_CTYPE = 'ru_RU.UTF-8';").Exec("").Error
+	*/
 
 	models.CrmSetting{}.PgSqlCreate()
 	models.UserVerificationMethod{}.PgSqlCreate()
@@ -453,7 +466,7 @@ JY0w37/g0vPnSkxvmjyeF8ARRR+FbfL/Tyzhn6r/kf7n
 	// 3. добавляем mex388 как админа
 	_, err = ratusMediaAcc.AppendUser(*mex388, *roleAdminMain)
 	if err != nil {
-		log.Fatal("Не удалось добавить пользователя admin in 357gr")
+		log.Fatal("Не удалось добавить пользователя admin in ratus meida")
 		return
 	}
 	// 3. создаем MarkPlatov
@@ -552,7 +565,7 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 	// 3. добавляем меня как админа
 	_, err = testAcc.AppendUser(*owner, *roleAdminMain)
 	if err != nil {
-		log.Fatal("Не удалось добавить пользователя admin in 357gr: ", err)
+		log.Fatal("Не удалось добавить пользователя admin in test acc: ", err)
 		return
 	}
 	// 3. добавляем MarkPlatov
@@ -740,7 +753,7 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 	// 3. добавляем меня как админа
 	_, err = acc357.AppendUser(*owner, *roleAdminMain)
 	if err != nil {
-		log.Fatal("Не удалось добавить пользователя admin in 357gr")
+		log.Fatal("Не удалось добавить пользователя owner in 357gr")
 		return
 	}
 
@@ -861,7 +874,7 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 	// 2. добавляем меня как админа
 	_, err = accSyndicAd.AppendUser(*owner, *roleAdminMain)
 	if err != nil {
-		log.Fatal("Не удалось добавить пользователя admin in 357gr")
+		log.Fatal("Не удалось добавить пользователя owner in sync")
 		return
 	}
 
@@ -932,7 +945,7 @@ pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
 	// 2. добавляем меня как админа
 	_, err = brouser.AppendUser(*owner, *roleAdminMain)
 	if err != nil {
-		log.Fatal("Не удалось добавить пользователя admin in 357gr")
+		log.Fatal("Не удалось добавить пользователя owner in brouser")
 		return
 	}
 
@@ -950,7 +963,7 @@ pBRlD1bMcxJEBYvc/tLA1LqyGGhd1mabVQ7iYPq45w==
 
 	// 2. Создаем домен для BroUser
 	_webSiteBro, err := brouser.CreateEntity(&models.WebSite{
-		Name: "Сайт-визитка",
+		Name: "Сайт компании",
 		Hostname: "brouser.com",
 		DKIMPublicRSAKey: `MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDXVD+X2Jja2cckCCYTg9UURSPb9Qx9c8idTcFqmpJVxKjKPvryklToXJATsKVzvOwbmrt9FVn2VnB9VQgmUyifF1RYqt0OgLRn+LB0o8x2WbzBKXHcumqZvEA+ZEFq5CzBGpW+4WWyPGIrKXst5A77EHhNgVskzrvcoaCrOT9MJQIDAQAB`,
 		DKIMPrivateRSAKey: `-----BEGIN RSA PRIVATE KEY-----
@@ -2345,7 +2358,7 @@ AJnnVkwI9ntl6+d3uML4VA7hUloxsufH7fZ3lmaR+453
 	// 2. добавляем меня как админа
 	_, err = accCsGarant.AppendUser(*owner, *roleAdminMain)
 	if err != nil {
-		log.Fatal("Не удалось добавить пользователя admin in 357gr")
+		log.Fatal("Не удалось добавить пользователя owner in accCsGarant")
 		return
 	}
 

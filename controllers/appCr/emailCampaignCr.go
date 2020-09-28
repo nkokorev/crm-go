@@ -184,37 +184,6 @@ func EmailCampaignUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 
-/*func EmailCampaignPlanning(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	emailCampaignId, err := utilsCr.GetUINTVarFromRequest(r, "emailCampaignId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
-		return
-	}
-
-	var emailCampaign models.EmailCampaign
-	err = account.LoadEntity(&emailCampaign, emailCampaignId)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
-		return
-	}
-
-	// Добавляет кампанию в планировщик
-	if err := emailCampaign.Planning(); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка запуска кампании"))
-		return
-	}
-
-	resp := u.Message(true, "GET Email Campaign Execute")
-	resp["emailCampaign"] = emailCampaign
-	u.Respond(w, resp)
-}*/
 func EmailCampaignChangeStatus(w http.ResponseWriter, r *http.Request) {
 
 

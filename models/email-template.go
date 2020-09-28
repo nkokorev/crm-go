@@ -40,8 +40,8 @@ type EmailTemplate struct {
 	Public 		bool `json:"public" gorm:"type:bool;"` // показывать ли на домене public
 
 	// User *User `json:"-" sql:"-"` // Пользователь, который получит сообщение
-	// Json pgtype.JSON `json:"json" gorm:"type:json;default:'{\"Example\":\"Тестовые данные в формате json\"}'"`
-	// JsonData postgres.Jsonb `json:"json_data" gorm:"type:JSONB;DEFAULT '{}'::JSONB"`
+
+	// Контекстные данные в формате JSON
 	JsonData 	datatypes.JSON `json:"json_data"`
 
 	
@@ -273,7 +273,7 @@ func (emailTemplate EmailTemplate) PrepareViewData(subject, previewText string, 
 	}, nil
 }
 
-// Возвращает тело письма в формате string в кодировке HTML, учитывая переменные в T[map]
+// Возвращает тело письма в формате string в кодировке HTML, учитывая переменные в ViewData
 func (emailTemplate EmailTemplate) GetHTML(viewData *ViewData) (html string, err error) {
 
 	body := new(bytes.Buffer)
@@ -288,6 +288,7 @@ func (emailTemplate EmailTemplate) GetHTML(viewData *ViewData) (html string, err
 		return "", err
 	}
 
+	// Собираем тело письма со всеми вложенными данные во ViewData
 	err = tmpl.Execute(body, viewData)
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("Ошибка email-шаблона: %s\r", err))

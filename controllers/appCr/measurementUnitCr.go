@@ -16,11 +16,6 @@ func MeasurementUnitStatusCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !account.IsMainAccount() {
-		u.Respond(w, u.MessageError(u.Error{Message:"У вас нет прав на создание/изменение объектов этого типа"}))
-		return
-	}
-
 	// Get JSON-request
 	var input struct{
 		models.MeasurementUnit
@@ -101,11 +96,6 @@ func MeasurementUnitStatusUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !account.IsMainAccount() {
-		u.Respond(w, u.MessageError(u.Error{Message:"У вас нет прав на создание/изменение объектов этого типа"}))
-		return
-	}
-
 	measurementUnitId, err := utilsCr.GetUINTVarFromRequest(r, "measurementUnitId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
@@ -118,6 +108,12 @@ func MeasurementUnitStatusUpdate(w http.ResponseWriter, r *http.Request) {
 	err = account.LoadEntity(&measurementUnit, measurementUnitId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
+		return
+	}
+
+	// Проверка прав
+	if measurementUnit.AccountId != account.Id {
+		u.Respond(w, u.MessageError(u.Error{ Message:"У вас нет прав на создание/изменение объектов этого типа"}))
 		return
 	}
 
@@ -146,11 +142,6 @@ func MeasurementUnitStatusDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !account.IsMainAccount() {
-		u.Respond(w, u.MessageError(u.Error{Message:"У вас нет прав на создание/изменение объектов этого типа"}))
-		return
-	}
-
 	measurementUnitId, err := utilsCr.GetUINTVarFromRequest(r, "measurementUnitId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
@@ -163,6 +154,13 @@ func MeasurementUnitStatusDelete(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
+
+	// Проверка на права изменения
+	if measurementUnit.AccountId != account.Id {
+		u.Respond(w, u.MessageError(u.Error{ Message:"У вас нет прав на создание/изменение объектов этого типа"}))
+		return
+	}
+
 	if err = account.DeleteEntity(&measurementUnit); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении"))
 		return

@@ -92,7 +92,7 @@ func (eventListener EventListener) EmailNotificationRun(e event.Event) error {
 		return utils.Error{Message: fmt.Sprintf("Уведомление id = %v не может быть отправлено т.к. находится в статусе - 'Отключено'", eventListener.EntityId)}
 	}
 
-	// Загружаем данные в теле
+	// Загружаем данные в тело события по их id (accountId => Account)
 	eventListener.uploadEntitiesData(&e)
 
 	return en.Execute(e.Data())
@@ -165,6 +165,7 @@ func (eventListener EventListener) WebHookCall(e event.Event) error {
 	// return webHook.Execute(e)
 	return webHook.Execute(e.Data())
 }
+
 // #############   END Of Event Handlers   #############
 
 
@@ -252,5 +253,4 @@ func (eventListener EventListener) uploadEntitiesData(event *event.Event) {
 			e.Add("Payment", payment)
 		}
 	}
-	
 }

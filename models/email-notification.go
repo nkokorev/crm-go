@@ -307,7 +307,7 @@ func (emailNotification *EmailNotification) GetPreloadDb(getModel bool, autoPrel
 
 }
 
-// Вызов уведомления
+// Вызов уведомления с контекстом данных {data}
 func (emailNotification EmailNotification) Execute(data map[string]interface{}) error {
 
 	// Проверяем статус уведомления
@@ -741,7 +741,7 @@ func (emailNotification *EmailNotification) SetCancelledStatus() error {
 }
 
 // Проверяет возможность отправки email-уведомления
-func (emailNotification *EmailNotification) Validate() error {
+func (emailNotification *EmailNotification) Validate(contextData map[string]interface{}) error {
 
 	account, err := GetAccount(emailNotification.AccountId)
 	if err != nil {
@@ -788,22 +788,32 @@ func (emailNotification *EmailNotification) Validate() error {
 
 	// Тестовые данные
 	// Локальные данные аккаунта, пользователя
-	data := make(map[string]interface{})
+	systemData := make(map[string]interface{})
 
-	data["accountId"] = account.Id
-	data["Account"] = account.GetDepersonalizedData() // << хз
-	data["userId"] = 0
-	data["User"] = User{Id: 1,Name: utils.STRp("TIvan"), Username: utils.STRp("TUsername"), Surname: utils.STRp("TSurname"), Patronymic: utils.STRp("TPatronymic"),
+	systemData["accountId"] = account.Id
+	systemData["Account"] = account.GetDepersonalizedData() // << хз
+	systemData["userId"] = 0
+	systemData["User"] = User{Id: 1,Name: utils.STRp("TIvan"), Username: utils.STRp("TUsername"), Surname: utils.STRp("TSurname"), Patronymic: utils.STRp("TPatronymic"),
 		PhoneRegion: utils.STRp("RU"), Phone: utils.STRp("+79251000000")} // << хз
-	data["unsubscribeUrl"] = "/unsubscribe_url"
+	systemData["unsubscribeUrl"] = "/unsubscribe_url"
 
+	// Данные передающиеся в контекст письма
+	data := make(map[string]interface{})
+	data = systemData
+
+	for k := range contextData {
+		// проверяем, если такой системный ключ
+		if _, ok := systemData[k]; !ok {
+			data[k] = contextData[k]
+		}
+	}
 
 
 	viewData := ViewData {
 		Subject: *emailNotification.Subject,
 		PreviewText: *emailNotification.PreviewText,
 		Data: data,
-		Json: data,
+		Json: data, //
 		UnsubscribeURL: "",
 		PixelURL: "",
 		PixelHTML: "<div></div>",

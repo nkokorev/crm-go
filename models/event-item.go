@@ -1,7 +1,7 @@
 package models
 
 import (
-	"errors"
+	"database/sql"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -12,11 +12,24 @@ import (
 // Список событий, на которые можно навесить обработчик EventHandler
 type EventItem struct {
 	Id     		uint   	`json:"id" gorm:"primaryKey"`
+	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;default:1"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	Name		string 	`json:"name" gorm:"type:varchar(255);unique;not null;"`  // 'Пользователь создан'
 	Code		string 	`json:"code" gorm:"type:varchar(255);unique;not null;"`  // 'UserCreated'
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:false;"` // Глобальный статус события (вызывать ли его или нет)
+
+	// Доступен ли вызов через API с контекстом. У почти всех системных событий = false
+	AvailableAPI 	bool 	`json:"available_api" gorm:"type:bool;default:false;"`
+
+	// Получение списка пользователей из API в контексте recipient_list []
+	ParsingRecipientList 	bool 	`json:"parsing_recipient_list" gorm:"type:bool;default:false;"`
+	ParsingJsonData		 	bool 	`json:"parsing_json_data" gorm:"type:bool;default:false;"`
+
+	// Данные события: recipient_list[], DataJson{},
+
+	// JsonData, переданное в событие
+	Data 		map[string]interface{} `json:"data" gorm:"-"`
 
 	Description string 	`json:"description" gorm:"type:text;"` // pgsql: text
 
@@ -105,19 +118,26 @@ func (EventItem) PgSqlCreate() {
 
 func (eventItem *EventItem) BeforeCreate(tx *gorm.DB) error {
 	eventItem.Id = 0
+
+	// PublicId
+	var lastIdx sql.NullInt64
+	err := db.Model(&EventItem{}).Where("account_id = ?",  eventItem.AccountId).
+		Select("max(public_id)").Row().Scan(&lastIdx)
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
+	eventItem.PublicId = 1 + uint(lastIdx.Int64)
+
 	return nil
 }
 
 // ############# Entity interface #############
 func (eventItem EventItem) GetId() uint { return eventItem.Id }
 func (eventItem *EventItem) setId(id uint) { eventItem.Id = id }
-func (eventItem *EventItem) setPublicId(id uint) {  }
+func (eventItem *EventItem) setPublicId(publicId uint) { eventItem.PublicId = publicId }
 func (eventItem EventItem) GetAccountId() uint { return eventItem.AccountId }
 func (eventItem *EventItem) setAccountId(id uint) { eventItem.AccountId = id }
 func (eventItem EventItem) SystemEntity() bool { return eventItem.AccountId == 1 }
 
 // ############# Entity interface #############
-
 
 func (eventItem EventItem) create() (Entity, error)  {
 
@@ -137,7 +157,6 @@ func (eventItem EventItem) create() (Entity, error)  {
 
 	return entity, nil
 }
-
 func (EventItem) get(id uint, preloads []string) (Entity, error) {
 	var item EventItem
 
@@ -160,8 +179,15 @@ func (eventItem *EventItem) load(preloads []string) error {
 	}
 	return nil
 }
-func (*EventItem) loadByPublicId(preloads []string) error {
-	return errors.New("Нет возможности загрузить объект по Public Id")
+func (eventItem *EventItem) loadByPublicId(preloads []string) error {
+	if eventItem.PublicId < 1 {
+		return utils.Error{Message: "Невозможно загрузить Article - не указан  Id"}
+	}
+	if err := eventItem.GetPreloadDb(false,false, preloads).First(eventItem, "account_id = ? AND public_id = ?", eventItem.AccountId, eventItem.PublicId).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (EventItem) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {

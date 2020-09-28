@@ -34,7 +34,10 @@ type ViewData struct {
 	Subject string
 	PreviewText string
 
+	// Системные данные System-Data
 	Data map[string]interface{}
+
+	// Контекстные данные Context-JSON
 	Json map[string]interface{}
 
 	UnsubscribeURL string
