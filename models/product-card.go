@@ -33,7 +33,7 @@ type ProductCard struct {
 	Description 		*string 	`json:"description" gorm:"type:text;"` // фулл описание товара
 
 	// число товаров *hidden*
-	ProductCount 		int64 	`json:"_product_count" gorm:"-"` // фулл описание товара
+	ProductCount 		int64 	`json:"_product_count" gorm:"-"` 
 
 	// Хелперы карточки: какой параметр выводить в качестве переключателя(ей) (цвета, шт, кг и т.д.)
 	SwitchProducts	 	datatypes.JSON `json:"switch_products"` // {color, size} Параметры переключения среди предложений
@@ -73,7 +73,8 @@ func (productCard *ProductCard) GetPreloadDb(getModel bool, autoPreload bool, pr
 		})
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Images","Products","Products.ProductCards","Products.PaymentSubject","Products.MeasurementUnit"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,
+			[]string{"Images","Products","Products.ProductCards","Products.PaymentSubject","Products.MeasurementUnit"})
 
 		for _,v := range allowed {
 			if v == "Images" {

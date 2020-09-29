@@ -42,7 +42,7 @@ type ProductCategory struct {
 	WebPages 		[]WebPage 	`json:"web_pages" gorm:"many2many:web_page_product_categories;"`
 
 	// (down) Карточки товаров
-	ProductCards 	[]ProductCard 	`json:"product_cards" gorm:"many2many:product_category_product_cards;"`
+	// ProductCards 	[]ProductCard 	`json:"product_cards" gorm:"many2many:product_category_product_cards;"`
 
 	// Товары, которые входят в эту категорию
 	Products 		[]Product 	`json:"products" gorm:"many2many:product_category_products;"`
@@ -79,8 +79,8 @@ func (productCategory *ProductCategory) GetPreloadDb(getModel bool, autoPreload 
 	if autoPreload {
 		return _db.Preload(clause.Associations)
 	} else {
-
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Products","WebPages","Children","Children12"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Products","WebPages","Children","Children12",
+			"Products.ProductCards","Products.PaymentSubject","Products.MeasurementUnit"})
 
 		for _,v := range allowed {
 			if v == "Children12" {
@@ -136,20 +136,20 @@ func (productCategory *ProductCategory) AfterFind(tx *gorm.DB) (err error) {
 	// fmt.Println("Ищем еще товары")
 	
 
-	/*stat := struct {
-		ProductCardsCount uint
-		WebPagesCount uint
+	stat := struct {
+		// ProductCardsCount uint
+		// WebPagesCount uint
 		ProductsCount uint
-	}{0,0,0}
-	if err = db.Raw("SELECT\n    COUNT(*) AS units,\n    sum(payment_amount * volume_order) AS amount_order,\n    sum(payment_amount * volume_fact) AS amount_fact\nFROM shipment_items\nWHERE account_id = ? AND shipment_id = ?;",
-		shipment.AccountId, shipment.Id).
+	}{0}
+	if err = db.Raw("SELECT\n    COUNT(*) AS products_count\n--     sum(payment_amount * volume_order) AS amount_order,\n--     sum(payment_amount * volume_fact) AS amount_fact\nFROM product_category_products\nWHERE product_category_id = ?;",
+		 productCategory.Id).
 		Scan(&stat).Error; err != nil {
 		return err
 	}
 
-	productCategory.ProductCardsCount 	= stat.ProductCardsCount
-	productCategory.WebPagesCount 		= stat.WebPagesCount
-	productCategory.ProductsCount 		= stat.ProductsCount*/
+	// productCategory.ProductCardsCount 	= stat.ProductCardsCount
+	// productCategory.WebPagesCount 		= stat.WebPagesCount
+	productCategory.ProductsCount 		= stat.ProductsCount
 
 	return nil
 }
