@@ -368,7 +368,7 @@ func StorageMassUpdates(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println("input.Files[0].OwnerID: ",		input.Files[0].OwnerID)
 
 	if len(input.Files) < 1 {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе: необходимо указать OwnerType & OwnerID"))
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе: необходимо указать []files"))
 		return
 	}
 
