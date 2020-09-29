@@ -23,19 +23,19 @@ type UsersSegment struct {
 	IsFixed 		bool 	`json:"is_fixed" gorm:"type:bool;default:false;"`
 
 	// Список пользователей в сегменте
-	Users []User `json:"users" gorm:"many2many:user_segments_users;"`
+	Users []User `json:"users" gorm:"many2many:users_segment_users;"`
 	UserSegmentConditions []UserSegmentCondition `json:"user_segment_conditions" gorm:"many2many:user_segments_user_segment_conditions;"`
 }
 
 func (UsersSegment) PgSqlCreate() {
-	if err := db.Migrator().AutoMigrate(&UsersSegment{}); err != nil {log.Fatal(err)}
+	if err := db.Migrator().CreateTable(&UsersSegment{}); err != nil {log.Fatal(err)}
 	// db.Model(&UsersSegment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
 	err := db.Exec("ALTER TABLE users_segments ADD CONSTRAINT users_segments_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
 
-	err = db.SetupJoinTable(&UsersSegment{}, "Users", &UserSegmentUser{})
+	err = db.SetupJoinTable(&UsersSegment{}, "Users", &UsersSegmentUser{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -189,7 +189,8 @@ func (UsersSegment) getPaginationList(accountId uint, offset, limit int, sortBy,
 }
 func (usersSegment *UsersSegment) update(input map[string]interface{}, preloads []string) error {
 
-	delete(input,"user_segment_rules")
+	delete(input,"users")
+	delete(input,"user_segment_conditions")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
 		return err
@@ -266,11 +267,6 @@ func (usersSegment UsersSegment) ChunkUsers(offset int64, limit uint) ([]User, i
 	}
 
 	// Тут идет сборка всех условий и т.д., но пока парсим просто всех пользователей
-
-
-
-
-
 
 	return users, total, nil
 }

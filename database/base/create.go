@@ -258,7 +258,7 @@ func RefreshTablesPart_I() {
 
 	models.UsersSegment{}.PgSqlCreate()
 
-	models.UserSegmentUser{}.PgSqlCreate()
+	models.UsersSegmentUser{}.PgSqlCreate()
 	models.CompanyUser{}.PgSqlCreate()
 
 	models.EmailCampaign{}.PgSqlCreate()

@@ -283,7 +283,7 @@ func (account Account) GetMTAHistoryByHashId(hashId string) (*MTAHistory, error)
 func (mtaHistory *MTAHistory) UpdateSetUnsubscribeUser(ipV4 string) error {
 	return mtaHistory.update(map[string]interface{}{
 		"unsubscribed"		: 	true,
-		"unsubscribedAt"	: 	time.Now().UTC(),
+		"unsubscribed_at"	: 	time.Now().UTC(),
 		// "net_ip"	:	ipV4,
 	},nil)
 }
@@ -294,7 +294,7 @@ func (mtaHistory *MTAHistory) UpdateOpenUser(ipV4 string) error {
 		// "net_ip"	:	ipV4,
 	}
 	if mtaHistory.Opens <= 0 {
-		input["openedAt"] = time.Now().UTC()
+		input["opened_at"] = time.Now().UTC()
 	}
 
 	return mtaHistory.update(input,nil)

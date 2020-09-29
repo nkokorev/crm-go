@@ -291,7 +291,7 @@ func (inventory *Inventory) SetPlannedStatus() error {
 
 	// Возможен вызов из состояния pending: запланировать кампанию => planned
 	if inventory.Status != WorkStatusPending  {
-		reason := "Невозможно запланировать кампанию,"
+		reason := "Невозможно запланировать,"
 		switch inventory.Status {
 		case WorkStatusPlanned:
 			reason += "т.к. инвентаризация уже в плане"

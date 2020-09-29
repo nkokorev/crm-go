@@ -422,7 +422,7 @@ func (emailCampaign *EmailCampaign) SetPendingStatus() error {
 func (emailCampaign *EmailCampaign) SetPlannedStatus() error {
 
 	// Возможен вызов из состояния pending: запланировать кампанию => planned
-	if emailCampaign.Status != WorkStatusPending  {
+	if emailCampaign.Status != WorkStatusPending && emailCampaign.Status != WorkStatusCompleted  {
 		reason := "Невозможно запланировать кампанию,"
 		switch emailCampaign.Status {
 		case WorkStatusPlanned:
@@ -431,8 +431,8 @@ func (emailCampaign *EmailCampaign) SetPlannedStatus() error {
 			reason += "т.к. кампания уже в процессе рассылки"
 		case WorkStatusPaused:
 			reason += "т.к. кампания на паузе, но уже в процессе рассылки"
-		case WorkStatusCompleted:
-			reason += "т.к. кампания уже завершена"
+		/*case WorkStatusCompleted:
+			reason += "т.к. кампания уже завершена"*/
 		case WorkStatusFailed:
 			reason += "т.к. кампания завершена с ошибкой"
 		case WorkStatusCancelled:

@@ -25,7 +25,7 @@ const 	deepMTACh 		= 50 	// Объем буфера из пакетов
 const 	dialTimeout 	= time.Second * 10 // максимальное время для установки соединения с smtp сервером получателя
 
 // true = "типа отправляем"
-const mock = true
+const mock = false
 
 func init() {
 	smtpCh = make(chan EmailPkg, deepMTACh)
@@ -145,7 +145,9 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 	}
 
 	if mock {
-		fmt.Println("Типа отсылаем...: ", time.Now().String())
+		// fmt.Println("Типа отсылаем...: ", time.Now().String())
+		fmt.Println("unsubscribeUrl: ", unsubscribeUrl)
+		fmt.Println("pixelURL: ", pixelURL)
 		// n := rand.Intn(3) // n will be between 0 and 10
 		// fmt.Printf("Sleeping %d seconds...\n", n)
 		// time.Sleep(time.Duration(n)*time.Second)

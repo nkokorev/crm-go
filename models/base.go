@@ -192,11 +192,11 @@ func SettingsDb() error {
 		log.Fatal(err)
 	}
 
-	err = db.SetupJoinTable(&User{}, "UserSegments", &UserSegmentUser{})
+	err = db.SetupJoinTable(&User{}, "UsersSegments", &UsersSegmentUser{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = db.SetupJoinTable(&UsersSegment{}, "Users", &UserSegmentUser{})
+	err = db.SetupJoinTable(&UsersSegment{}, "Users", &UsersSegmentUser{})
 	if err != nil {
 		log.Fatal(err)
 	}

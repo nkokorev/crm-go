@@ -3,6 +3,7 @@ package trackingCr
 import (
 	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
+	"log"
 	"net/http"
 	"time"
 )
@@ -12,10 +13,6 @@ import (
 // 	?u={userHashId}&?i={mtaHistoryId}&hi={hashId}
 // 	?u={userHashId}&hi={hashId}
 func UnsubscribeUser(w http.ResponseWriter, r *http.Request) {
-
-
-	// body, _ := ioutil.ReadFile("templates/register.html")
-
 
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
@@ -56,15 +53,18 @@ func UnsubscribeUser(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			// если hashId Отправки совпадает, то отписываем. Это как проверочный код.
 			if mtaHistory.HashId == mtaHistoryHashId {
-				_ = mtaHistory.UpdateSetUnsubscribeUser(utilsCr.GetIP(r))
+				if err := mtaHistory.UpdateSetUnsubscribeUser(utilsCr.GetIP(r)); err != nil {
+					log.Printf("Ошибка обновления истории отписки пользователя: %v\n", err)
+				}
 			}
+		} else {
+			log.Printf("Ошибка обновления истории отписки пользователя (2): %v\n", err)
 		}
 	}
 
 	retHTML(w, "Пользователь успешно отписан от всех рассылок")
 	return
 }
-
 
 func OpenEmailByPixelUser(w http.ResponseWriter, r *http.Request) {
 
@@ -75,7 +75,10 @@ func OpenEmailByPixelUser(w http.ResponseWriter, r *http.Request) {
 
 			mtaHistory, err := account.GetMTAHistoryByHashId(mtaHistoryHashId)
 			if err == nil {
-				_ = mtaHistory.UpdateOpenUser(utilsCr.GetIP(r))
+
+				if err := mtaHistory.UpdateOpenUser(utilsCr.GetIP(r)); err != nil {
+					log.Printf("Ошибка обновления счетчика открытий: %v\n", err)
+				}
 			}
 		}
 	}

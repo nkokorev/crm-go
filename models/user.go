@@ -66,7 +66,7 @@ type User struct {
 	// Roles 		[]Role 			`json:"roles" gorm:"many2many:account_users;"`
 	Accounts 		[]Account 		`json:"accounts" gorm:"many2many:account_users;"`
 	Companies 		[]Company 		`json:"companies" gorm:"many2many:company_users;"`
-	UserSegments 	[]UsersSegment	`json:"user_segments" gorm:"many2many:user_segments_users;"`
+	UsersSegments 	[]UsersSegment	`json:"users_segments" gorm:"many2many:users_segment_users;"`
 }
 
 
@@ -90,7 +90,7 @@ func (User) PgSqlCreate() {
 		log.Fatal(err)
 	}
 
-	err = db.SetupJoinTable(&User{}, "UserSegments", &UserSegmentUser{})
+	err = db.SetupJoinTable(&User{}, "UsersSegments", &UsersSegmentUser{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -238,6 +238,7 @@ func (user *User) update (input map[string]interface{}) error {
 	delete(input,"account")
 	delete(input,"accounts")
 	delete(input,"companies")
+	delete(input,"users_segments")
 
 	delete(input,"subscribedAt")
 	delete(input,"unsubscribedAt")
@@ -247,7 +248,8 @@ func (user *User) update (input map[string]interface{}) error {
 	delete(input,"issuerAccountId")
 	delete(input,"phoneRegion")
 	delete(input,"roleId")
-	
+
+
 	if err := u.ConvertMapVarsToUINT(&input, []string{"issuer_account_id","default_account_id","invited_user_id"}); err != nil {
 		return err
 	}
@@ -628,7 +630,7 @@ func (user User) GetDepersonalizedData() interface{} {
 func (user *User) Unsubscribing() error {
 	input := map[string]interface{} {
 		"subscribed":false,
-		"unsubscribedAt":time.Now().UTC(),
+		"unsubscribed_at":time.Now().UTC(),
 	}
 
 	// Событие отписки отслеживается в функции update()
