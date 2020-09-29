@@ -37,6 +37,9 @@ type WebPage struct {
 	MetaKeywords 	*string 	`json:"meta_keywords" gorm:"type:varchar(255);"`
 	MetaDescription *string 	`json:"meta_description" gorm:"type:varchar(255);"`
 
+	// Hidden data
+	ProductsCategoriesCount		int64 	`json:"_product_categories_count" gorm:"-"`
+
 	// У страницы может быть картинка превью.. - например, для раздела услуг
 	Image 			*Storage	`json:"image" gorm:"polymorphic:Owner;"`
 	ProductCategories	[]ProductCategory 	`json:"product_categories" gorm:"many2many:web_page_product_categories;"`
@@ -112,7 +115,7 @@ func (webPage *WebPage) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 func (webPage *WebPage) AfterFind(tx *gorm.DB) (err error) {
-
+	webPage.ProductsCategoriesCount =  db.Model(webPage).Association("ProductCategories").Count()
 	return nil
 }
 
