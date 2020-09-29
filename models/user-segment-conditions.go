@@ -9,13 +9,17 @@ import (
 	"time"
 )
 
+// фактически, они только системные. А настройки определяются в отношении UserSegment<>UserSegmentConditions
 type UserSegmentCondition struct {
 	Id     		uint   	`json:"id" gorm:"primaryKey"`
 	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;default:1"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	// Имя кампании сегмента: 'активные участники', 'только клиенты', 'майские подписчики'
+	// Имя сегмента: 'активные участники', 'только клиенты', 'майские подписчики'
 	Name 		string	`json:"name" gorm:"type:varchar(128);"`
+
+	// Код сегмента: 'активные участники', 'только клиенты', 'майские подписчики'
+	Code 		string	`json:"code" gorm:"type:varchar(64);"`
 
 	// Объекты для определения типа соответствия
 	OwnerId		uint	`json:"owner_id" gorm:"type:int;not null;"` // Id в
@@ -31,7 +35,7 @@ func (userSegmentCondition *UserSegmentCondition) setId(id uint) { userSegmentCo
 func (userSegmentCondition *UserSegmentCondition) setPublicId(publicId uint) { userSegmentCondition.PublicId = publicId }
 func (userSegmentCondition UserSegmentCondition) GetAccountId() uint { return userSegmentCondition.AccountId }
 func (userSegmentCondition *UserSegmentCondition) setAccountId(id uint) { userSegmentCondition.AccountId = id }
-func (UserSegmentCondition) SystemEntity() bool { return false }
+func (userSegmentCondition UserSegmentCondition) SystemEntity() bool { return userSegmentCondition.AccountId == 1 }
 
 // ############# Entity interface #############
 

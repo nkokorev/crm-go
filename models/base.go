@@ -111,6 +111,7 @@ func ConnectDb() *gorm.DB {
 }
 
 func SettingsDb() error {
+	
 	err := db.SetupJoinTable(&ProductCard{}, "Products", &ProductCardProduct{})
 	if err != nil {
 		log.Fatal(err)
@@ -187,6 +188,15 @@ func SettingsDb() error {
 		log.Fatal(err)
 	}
 	err = db.SetupJoinTable(&ProductTag{}, "Products", &ProductTagProduct{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = db.SetupJoinTable(&User{}, "UserSegments", &UserSegmentUser{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.SetupJoinTable(&UsersSegment{}, "Users", &UserSegmentUser{})
 	if err != nil {
 		log.Fatal(err)
 	}

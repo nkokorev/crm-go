@@ -640,6 +640,9 @@ func (emailCampaign *EmailCampaign) getUsersBySegment() ([]User, error) {
 		total = _total
 	}
 
+	// fmt.Println("Список пользователей: ", len(users))
+	// return nil, errors.New("Test")
+
 	return users, nil
 }
 

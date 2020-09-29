@@ -330,7 +330,7 @@ func (account Account) UploadUsers(users []User, role Role) error {
 		user.IssuerAccountId = account.Id
 
 		// ### !!!! Проверка входящих данных !!! ### ///
-		if len(*user.Username) > 0 {
+		if user.Username != nil {
 
 			username = true
 			if err := utils.VerifyUsername(user.Username); err != nil {
@@ -338,15 +338,17 @@ func (account Account) UploadUsers(users []User, role Role) error {
 			}
 		}
 
-		if len(*user.Email) > 0 {
+		if user.Email != nil {
 			email = true
 			// if err := utils.EmailValidation(user.Email); err != nil {
-			if err := utils.EmailValidation(*user.Email); err != nil {
+			// todo: deep validate
+			// if err := utils.EmailValidation(*user.Email); err != nil {
+			if err := utils.EmailDeepValidation(*user.Email); err != nil {
 				continue
 			}
 		}
 
-		if len(*user.Phone) > 0 {
+		if user.Phone != nil {
 			phone = true
 
 			if *user.PhoneRegion == "" {
@@ -379,14 +381,16 @@ func (account Account) UploadUsers(users []User, role Role) error {
 		}
 
 		// создаем пользователя
-		user, err := user.create()
-		if err != nil || user == nil {
+		
+		userNew, err := user.create()
+		if err != nil {
 			continue
 		}
 
 		// Автоматически добавляем пользователя в аккаунт
-		_, err = account.AppendUser(*user, role)
+		_, err = account.AppendUser(*userNew, role)
 		if err != nil {
+			log.Println("Ошибка добавления пользователя: ", err)
 			continue
 		}
 	}
@@ -526,7 +530,6 @@ func (account Account) GetUserByPhone(phone string, regions... string) (*User, e
 		Where("account_users.account_id = ? AND phone = ? AND phone_region = ?", account.Id, _phone, region).
 		First(&user).Error
 	if err != nil {
-		// fmt.Println("Пользователь не найден по телефону! ", err)
 		return nil, err
 	}
 	
@@ -652,9 +655,10 @@ func (account Account) ExistAccountUser(userId uint) bool {
 	if err != nil {
 		return false
 	}
-	if count > 0 { return true }
-	// fmt.Println("count: ", count)
-	// fmt.Println("Пользователь есть!")
+	if count > 0 {
+		fmt.Println(account.Id, " - ",userId)
+		return true
+	}
 	return false
 }
 
@@ -787,7 +791,6 @@ func (account Account) AuthorizationUserByUsername(username, password string, on
 // проверяет, имеет ли указанный пользователь доступ к аккаунту
 func (account Account) AccessUserById(userId uint) bool {
 	if userId < 1 {return false}
-	// fmt.Printf("issuer_account_id = %v AND email = %v\n", account.Id, email)
 	err := db.Model(&AccountUser{}).Where("account_id = ? AND user_id = ?", account.Id, userId).First(&AccountUser{}).Error
 	if err != nil {
 		return false
@@ -900,7 +903,6 @@ func (account *Account) RemoveUser(user *User) error {
 	}
 
 	if err := db.Model(&user).Association("Accounts").Delete(account); err != nil {
-		fmt.Println(err)
 		return err
 	}
 
@@ -978,7 +980,6 @@ func (account Account) SetUserRole(user *User, role Role) (*AccountUser, error) 
 		FirstOrCreate(&aUser).
 		Updates(map[string]interface{}{"role_id":role.Id}).Find(&aUser).Error
 	if err != nil {
-		fmt.Println("Ошибка: ", err)
 		return nil, err
 	}
 
@@ -1022,7 +1023,6 @@ func (account Account) existUserByEmail(email *string) bool {
 	if email == nil {
 		return false
 	}
-	// fmt.Printf("issuer_account_id = %v AND email = %v\n", account.Id, email)
 	if err := db.Model(&User{}).Where("issuer_account_id = ? AND email = ?", account.Id, email).First(&User{}).Error; err != nil {
 		return false
 	} else {
@@ -1208,7 +1208,6 @@ func (account Account) ParseToken(decryptedToken string, claims *JWT) (err error
 	// получаем библиотечный токен
 	token, err := jwt.ParseWithClaims(decryptedToken, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			log.Printf("JWT: Unexpected signing method: %v", token.Header["alg"])
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(*account.UiApiJwtKey), nil

@@ -17,21 +17,15 @@ type UsersSegment struct {
 	Name 			string 		`json:"name" gorm:"type:varchar(128);"`
 
 	// true = AND ; false = ANY
-	StrictMatching 		bool 	`json:"strict_matching" gorm:"type:bool;default:true;"`
+	StrictMatching 	bool 	`json:"strict_matching" gorm:"type:bool;default:true;"`
 
-	// персональные настройки сегмента
-	UserSegmentRules []UserSegmentCondition `json:"user_segment_rules" gorm:"many2many:user_segments_user_segment_conditions"`
+	// Фиксированный ли сегмент пользователей
+	IsFixed 		bool 	`json:"is_fixed" gorm:"type:bool;default:false;"`
+
+	// Список пользователей в сегменте
+	Users []User `json:"users" gorm:"many2many:user_segments_users;"`
+	UserSegmentConditions []UserSegmentCondition `json:"user_segment_conditions" gorm:"many2many:user_segments_user_segment_conditions;"`
 }
-
-// ############# Entity interface #############
-func (usersSegment UsersSegment) GetId() uint { return usersSegment.Id }
-func (usersSegment *UsersSegment) setId(id uint) { usersSegment.Id = id }
-func (usersSegment *UsersSegment) setPublicId(publicId uint) { usersSegment.PublicId = publicId }
-func (usersSegment UsersSegment) GetAccountId() uint { return usersSegment.AccountId }
-func (usersSegment *UsersSegment) setAccountId(id uint) { usersSegment.AccountId = id }
-func (UsersSegment) SystemEntity() bool { return false }
-
-// ############# Entity interface #############
 
 func (UsersSegment) PgSqlCreate() {
 	if err := db.Migrator().AutoMigrate(&UsersSegment{}); err != nil {log.Fatal(err)}
@@ -39,6 +33,11 @@ func (UsersSegment) PgSqlCreate() {
 	err := db.Exec("ALTER TABLE users_segments ADD CONSTRAINT users_segments_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {
 		log.Fatal("Error: ", err)
+	}
+
+	err = db.SetupJoinTable(&UsersSegment{}, "Users", &UserSegmentUser{})
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 func (usersSegment *UsersSegment) BeforeCreate(tx *gorm.DB) error {
@@ -56,6 +55,39 @@ func (usersSegment *UsersSegment) BeforeCreate(tx *gorm.DB) error {
 func (usersSegment *UsersSegment) AfterFind(tx *gorm.DB) (err error) {
 	return nil
 }
+func (usersSegment *UsersSegment) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(usersSegment)
+	} else {
+		_db = _db.Model(&UsersSegment{})
+	}
+
+	if autoPreload {
+		return _db.Preload(clause.Associations)
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"UserSegmentConditions","Users"})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
+		return _db
+	}
+}
+
+// ############# Entity interface #############
+func (usersSegment UsersSegment) GetId() uint { return usersSegment.Id }
+func (usersSegment *UsersSegment) setId(id uint) { usersSegment.Id = id }
+func (usersSegment *UsersSegment) setPublicId(publicId uint) { usersSegment.PublicId = publicId }
+func (usersSegment UsersSegment) GetAccountId() uint { return usersSegment.AccountId }
+func (usersSegment *UsersSegment) setAccountId(id uint) { usersSegment.AccountId = id }
+func (UsersSegment) SystemEntity() bool { return false }
+
+// ############# Entity interface #############
+
 
 // ######### CRUD Functions ############
 func (usersSegment UsersSegment) create() (Entity, error)  {
@@ -180,29 +212,7 @@ func (usersSegment *UsersSegment) delete () error {
 }
 // ######### END CRUD Functions ############
 
-func (usersSegment *UsersSegment) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
 
-	_db := db
-
-	if getModel {
-		_db = _db.Model(usersSegment)
-	} else {
-		_db = _db.Model(&UsersSegment{})
-	}
-
-	if autoPreload {
-		return _db.Preload(clause.Associations)
-	} else {
-
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Amount","PaymentMethod","Product"})
-
-		for _,v := range allowed {
-			_db.Preload(v)
-		}
-		return _db
-	}
-
-}
 
 // Получения списка пользователей в сегменте
 func (usersSegment UsersSegment) Execute(data map[string]interface{}) error {
@@ -213,33 +223,54 @@ func (usersSegment UsersSegment) Execute(data map[string]interface{}) error {
 
 // Самая важная функция - возвращает пользователей согласно сегменту
 func (usersSegment UsersSegment) ChunkUsers(offset int64, limit uint) ([]User, int64, error) {
-	// Тут идет сборка всех условий и т.д., но пока парсим просто всех пользователей
 
 	if usersSegment.Id < 1 || usersSegment.AccountId < 1 {
 		return nil,0,utils.Error{Message: "Техническая ошибка: не правильно сформирован user segment"}
 	}
+
+	// Пользователи
 	users := make([]User,0)
-
-	// Список пользователей по ролям (выбираем все роли)
-	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
-		Select("account_users.account_id, account_users.role_id, users.*").
-		Where("account_users.account_id = ? AND users.subscribed = 'true' AND char_length(users.email) > 6", usersSegment.AccountId).
-		Offset(int(offset)).Limit(int(limit)).
-		Find(&users).Error
-	if err != nil {
-		log.Printf("ChunkUsers:  %v", err)
-		return nil, 0, err
-	}
-
-	// Определяем total
 	var total = int64(0)
-	err = db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
-		Select("account_users.account_id, account_users.role_id, users.*").
-		Where("account_users.account_id = ? AND users.subscribed = true AND char_length(users.email) > 6", usersSegment.AccountId).
-		Count(&total).Error
-	if err != nil {
-		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+
+	// Если сегмент фиксированный
+	if usersSegment.IsFixed {
+
+		// Загружаем пользователей
+		total = db.Model(usersSegment).Association("Users").Count()
+		if err := db.Model(usersSegment).Offset(int(offset)).Limit(int(limit)).Association("Users").Find(&users); err != nil {
+			return nil, 0, err
+		}
+
+	} else {
+		// Считаем что тут all =
+		// Список пользователей по ролям (выбираем все роли)
+		err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+			Select("account_users.account_id, account_users.role_id, users.*").
+			Where("account_users.account_id = ? AND users.subscribed = 'true' AND char_length(users.email) > 6", usersSegment.AccountId).
+			Offset(int(offset)).Limit(int(limit)).
+			Find(&users).Error
+		if err != nil {
+			log.Printf("ChunkUsers:  %v", err)
+			return nil, 0, err
+		}
+
+		// Определяем total
+
+		err = db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+			Select("account_users.account_id, account_users.role_id, users.*").
+			Where("account_users.account_id = ? AND users.subscribed = true AND char_length(users.email) > 6", usersSegment.AccountId).
+			Count(&total).Error
+		if err != nil {
+			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+		}
 	}
+
+	// Тут идет сборка всех условий и т.д., но пока парсим просто всех пользователей
+
+
+
+
+
 
 	return users, total, nil
 }

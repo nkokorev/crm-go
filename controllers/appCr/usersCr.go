@@ -118,6 +118,7 @@ func UserUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// fmt.Println(*input.Users[0].Email)
 	if err := account.UploadUsers(input.Users, role); err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось создать пользователей"))
 		return

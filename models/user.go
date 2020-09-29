@@ -11,7 +11,6 @@ import (
 	"os"
 	"strings"
 	"time"
-	"unicode/utf8"
 )
 
 type User struct {
@@ -63,10 +62,11 @@ type User struct {
 	UpdatedAtBeta 	time.Time 	`json:"updatedAt" gorm:"-"`
 	DeletedAt 		gorm.DeletedAt 	`json:"-" sql:"index"`
 
-	AccountUser *AccountUser	`json:"account_user" gorm:"preload"` // WTF
+	AccountUser 	*AccountUser	`json:"account_user" gorm:"preload"` // WTF
 	// Roles 		[]Role 			`json:"roles" gorm:"many2many:account_users;"`
-	Accounts 	[]Account 		`json:"accounts" gorm:"many2many:account_users;"`
-	Companies 	[]Company 		`json:"companies" gorm:"many2many:company_users;"`
+	Accounts 		[]Account 		`json:"accounts" gorm:"many2many:account_users;"`
+	Companies 		[]Company 		`json:"companies" gorm:"many2many:company_users;"`
+	UserSegments 	[]UsersSegment	`json:"user_segments" gorm:"many2many:user_segments_users;"`
 }
 
 
@@ -89,13 +89,22 @@ func (User) PgSqlCreate() {
 	if err := db.SetupJoinTable(&User{}, "Companies", &CompanyUser{}); err != nil {
 		log.Fatal(err)
 	}
+
+	err = db.SetupJoinTable(&User{}, "UserSegments", &UserSegmentUser{})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
 	user.Id = 0
 	user.HashId = strings.ToLower(u.RandStringBytesMaskImprSrcUnsafe(12, true))
 
-	if user.Name != nil {
+	/*if user.Subscribed {
+		time := time.Now().UTC()
+		user.SubscribedAt = &time
+	}*/
+	/*if user.Name != nil {
 		str := *user.Name
 
 		for len(str) > 0 {
@@ -105,7 +114,7 @@ func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
 			str = str[size:]
 			user.Name = &str
 		}
-	}
+	}*/
 	// user.CreatedAt = time.Now().UTC()
 	return nil
 }
@@ -169,16 +178,23 @@ func (user User) create () (*User, error) {
 	}
 
 	// Теперь создаем crypto-пароль
-	password, err := bcrypt.GenerateFromPassword([]byte(*user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
+
+	if user.Password != nil {
+		password, err := bcrypt.GenerateFromPassword([]byte(*user.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, err
+		}
+		user.Password = u.STRp(string(password))
 	}
-	user.Password = u.STRp(string(password))
+
+
 	// fix
 	var timeNow = time.Now()
 	user.EmailVerifiedAt = &timeNow
 
 	var userReturn = user
+	// var userReturn = User{}
+
 
 	if err := db.Create(&userReturn).First(&userReturn).Error; err != nil {
 		return nil, err
@@ -286,7 +302,6 @@ func (account Account) UpdateUser(userId uint, input map[string]interface{}) (*U
 	// todo: возможно стоит проверить _user => user
 	// Если флаг подписки был изменен
 	if ok && (_newStatusSubscribed != _user.Subscribed) {
-		// fmt.Println("Статус обновлен!")
 		// Статус обновлен
 		_ = user.Unsubscribing()
 
@@ -295,11 +310,9 @@ func (account Account) UpdateUser(userId uint, input map[string]interface{}) (*U
 
 		// флаги подписки / отписки
 		if _newStatusSubscribed {
-			// fmt.Println("Пользователь подписался")
 			// AsyncFire(*Event{}.UserSubscribed(account.Id, _user.Id))
 			AsyncFire(NewEvent("UserSubscribed", map[string]interface{}{"account_id":account.Id, "user_id":_user.Id}))
 		} else {
-			// fmt.Println("Пользователь отписался")
 			// AsyncFire(*Event{}.UserUnsubscribed(account.Id, _user.Id))
 			AsyncFire(NewEvent("UserUnsubscribed", map[string]interface{}{"account_id":account.Id, "user_id":_user.Id}))
 		}
@@ -432,7 +445,7 @@ func (user User) ValidateCreate() error {
 	}
 
 	// 4. Проверка password
-	if len(*user.Password) > 0 {
+	if user.Password != nil {
 		if err := u.VerifyPassword(*user.Password); err != nil {
 			return u.Error{Message:"Проверьте правильность заполнения формы", Errors: map[string]interface{}{"password" : err.Error()}}
 		}

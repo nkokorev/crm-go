@@ -255,7 +255,12 @@ func RefreshTablesPart_I() {
 	models.Comment{}.PgSqlCreate()
 	models.EmailQueue{}.PgSqlCreate()
 	models.EmailQueueEmailTemplate{}.PgSqlCreate()
+
 	models.UsersSegment{}.PgSqlCreate()
+
+	models.UserSegmentUser{}.PgSqlCreate()
+	models.CompanyUser{}.PgSqlCreate()
+
 	models.EmailCampaign{}.PgSqlCreate()
 	models.TaskScheduler{}.PgSqlCreate()
 	models.MTAWorkflow{}.PgSqlCreate()
