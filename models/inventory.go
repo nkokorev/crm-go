@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -513,7 +512,8 @@ func (inventory Inventory) AppendProduct(product Product, volumeFact float64) er
 	// 5. Запускаем событие добавление товара в инвентаризацию (надо ли)
 	account, err := GetAccount(inventory.AccountId)
 	if err == nil && account != nil {
-		event.AsyncFire(Event{}.InventoryItemProductAppended(account.Id, inventory.Id, product.Id))
+		// AsyncFire(*Event{}.InventoryItemProductAppended(account.Id, inventory.Id, product.Id))
+		// AsyncFire(NewEvent("InventoryItemProductAppended", map[string]interface{}{"account_id":user.IssuerAccountId, "user_id":user.Id}))
 	}
 
 	return nil

@@ -11,7 +11,7 @@ import (
 // Добавляет письма в MTA-server
 
 func init() {
-	go taskWorker()
+	// go taskWorker()
 }
 
 func taskWorker() {

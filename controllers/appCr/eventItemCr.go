@@ -2,14 +2,13 @@ package appCr
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
 	"net/http"
 )
 
-func EventItemCreate(w http.ResponseWriter, r *http.Request) {
+func EventCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -19,7 +18,7 @@ func EventItemCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Get JSON-request
 	var input struct{
-		models.EventItem
+		models.Event
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -27,25 +26,25 @@ func EventItemCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventItem, err := account.CreateEntity(&input.EventItem)
+	event, err := account.CreateEntity(&input.Event)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время объекта"}))
 		return
 	}
 
 	resp := u.Message(true, "POST Event Item Created")
-	resp["event_item"] = eventItem
+	resp["event"] = event
 	u.Respond(w, resp)
 }
 
-func EventItemGet(w http.ResponseWriter, r *http.Request) {
+func EventGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
 		return
 	}
 
-	eventItemId, err := utilsCr.GetUINTVarFromRequest(r, "eventItemId")
+	eventId, err := utilsCr.GetUINTVarFromRequest(r, "eventId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке observer Item Id"))
 		return
@@ -53,19 +52,19 @@ func EventItemGet(w http.ResponseWriter, r *http.Request) {
 
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
-	var eventItem models.EventItem
-	err = account.LoadEntity(&eventItem, eventItemId, preloads)
+	var event models.Event
+	err = account.LoadEntity(&event, eventId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить observer item"))
 		return
 	}
 
 	resp := u.Message(true, "GET Event List")
-	resp["event_item"] = eventItem
+	resp["event"] = event
 	u.Respond(w, resp)
 }
 
-func EventItemGetListPagination(w http.ResponseWriter, r *http.Request) {
+func EventGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w, r)
 	if err != nil || account == nil {
@@ -98,16 +97,16 @@ func EventItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	var total int64 = 0
-	observerItems := make([]models.Entity,0)
+	events := make([]models.Entity,0)
 
 	if all {
-		observerItems, total, err = account.GetListEntity(&models.EventItem{}, sortBy,preloads)
+		events, total, err = account.GetListEntity(&models.Event{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
 		}
 	} else {
-		observerItems, total, err = account.GetPaginationListEntity(&models.EventItem{}, offset, limit, sortBy, search, nil,nil)
+		events, total, err = account.GetPaginationListEntity(&models.Event{}, offset, limit, sortBy, search, nil,nil)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 			return
@@ -116,13 +115,13 @@ func EventItemGetListPagination(w http.ResponseWriter, r *http.Request) {
 
 
 
-	resp := u.Message(true, "GET System Event Pagination List")
+	resp := u.Message(true, "GET System Events List")
 	resp["total"] = total
-	resp["event_items"] = observerItems
+	resp["events"] = events
 	u.Respond(w, resp)
 }
 
-func EventItemUpdate(w http.ResponseWriter, r *http.Request) {
+func EventUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -130,7 +129,7 @@ func EventItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventItemId, err := utilsCr.GetUINTVarFromRequest(r, "eventItemId")
+	eventId, err := utilsCr.GetUINTVarFromRequest(r, "eventId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке observer Item Id"))
 		return
@@ -138,15 +137,15 @@ func EventItemUpdate(w http.ResponseWriter, r *http.Request) {
 
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
-	var eventItem models.EventItem
-	err = account.LoadEntity(&eventItem, eventItemId, preloads)
+	var event models.Event
+	err = account.LoadEntity(&event, eventId, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return
 	}
 
 	// Проверка на права изменения
-	if eventItem.AccountId != account.Id {
+	if event.AccountId != account.Id {
 		u.Respond(w, u.MessageError(u.Error{ Message:"У вас нет прав на создание/изменение объектов этого типа"}))
 		return
 	}
@@ -158,18 +157,18 @@ func EventItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&eventItem, input, preloads)
+	err = account.UpdateEntity(&event, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
 	resp := u.Message(true, "PATCH Event Item Update")
-	resp["event_item"] = eventItem
+	resp["event"] = event
 	u.Respond(w, resp)
 }
 
-func EventItemDelete(w http.ResponseWriter, r *http.Request) {
+func EventDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -177,36 +176,36 @@ func EventItemDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventItemId, err := utilsCr.GetUINTVarFromRequest(r, "eventItemId")
+	eventId, err := utilsCr.GetUINTVarFromRequest(r, "eventId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	var eventItem models.EventItem
-	err = account.LoadEntity(&eventItem, eventItemId, nil)
+	var event models.Event
+	err = account.LoadEntity(&event, eventId, nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить объект"))
 		return
 	}
 
 	// Проверка на права изменения
-	if eventItem.AccountId != account.Id {
+	if event.AccountId != account.Id {
 		u.Respond(w, u.MessageError(u.Error{ Message:"У вас нет прав на создание/изменение объектов этого типа"}))
 		return
 	}
 
 	// Удаляем объект
-	if err = account.DeleteEntity(&eventItem); err != nil {
+	if err = account.DeleteEntity(&event); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении"))
 		return
 	}
 
-	resp := u.Message(true, "DELETE EventItem Successful")
+	resp := u.Message(true, "DELETE Event Successful")
 	u.Respond(w, resp)
 }
 
-func EventItemExecute(w http.ResponseWriter, r *http.Request) {
+func EventExecute(w http.ResponseWriter, r *http.Request) {
 
 
 	account, err := utilsCr.GetWorkAccount(w,r)
@@ -215,83 +214,50 @@ func EventItemExecute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventItemId, err := utilsCr.GetUINTVarFromRequest(r, "eventItemId")
+	eventId, err := utilsCr.GetUINTVarFromRequest(r, "eventId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке {eventItemId}"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке {eventId}"))
 		return
 	}
 
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
-	var eventItem models.EventItem
-	err = account.LoadEntity(&eventItem, eventItemId, preloads)
+	var event models.Event
+	err = account.LoadEntity(&event, eventId, preloads)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить событие"))
+		u.Respond(w, u.MessageError(err, "Не удалось найти событие. Проверьте /.../{eventId}"))
 		return
 	}
 
 	// Проверяем, что для этого событие разрешен вызов по API
-	if !eventItem.AvailableAPI {
+	if !event.AvailableAPI {
 		u.Respond(w, u.MessageError(err, "Вызов не удался: запрещен вызов события по API"))
 		return
 	}
 
-	// Собираем входящие данные
+	// Определяем тип запроса
+	if r.Method == http.MethodGet {
+		
+	}
+	
+	// Собираем входящие данные, если запрос не GET
 	var input struct{
-		Status string `json:"status"`
-		Reason string `json:"reason"`
+		RecipientListIds string `json:"recipient_list_ids"`
+		Payload map[string]interface{} `json:"payload"` // JSONData for
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
 
-	switch input.Status {
-	case models.WorkStatusPending:
-		err := emailCampaign.SetPendingStatus()
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
-			return
-		}
-	case models.WorkStatusPlanned:
-		err := emailCampaign.SetPlannedStatus()
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
-			return
-		}
-	case models.WorkStatusActive:
-		err := emailCampaign.SetActiveStatus()
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
-			return
-		}
-	case models.WorkStatusPaused:
-		err := emailCampaign.SetPausedStatus()
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
-			return
-		}
-	case models.WorkStatusCompleted:
-		err := emailCampaign.SetCompletedStatus()
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
-			return
-		}
-	case models.WorkStatusFailed:
-		err := emailCampaign.SetFailedStatus(input.Reason)
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
-			return
-		}
-	case models.WorkStatusCancelled:
-		err := emailCampaign.SetCancelledStatus()
-		if err != nil {
-			u.Respond(w, u.MessageError(err, "Не удалось получить список"))
-			return
-		}
-	}
+	// Устанавливаем контекстные данные для события
+	event.SetPayload(input.Payload)
+	// event.Payload = input.Payload
+	
 
-	resp := u.Message(true, "GET Email Campaign Execute")
-	resp["email_campaign"] = emailCampaign
+	// event.Ex
+
+
+	resp := u.Message(true, "GET Event Execute")
 	u.Respond(w, resp)
 }

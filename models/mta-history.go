@@ -87,17 +87,17 @@ func (mtaHistory *MTAHistory) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (mtaHistory *MTAHistory) AfterCreate(tx *gorm.DB) (error) {
-	// event.AsyncFire(Event{}.PaymentCreated(mtaHistory.AccountId, mtaHistory.Id))
+	// AsyncFire(*Event{}.PaymentCreated(mtaHistory.AccountId, mtaHistory.Id))
 	return nil
 }
 func (mtaHistory *MTAHistory) AfterUpdate(tx *gorm.DB) (err error) {
 
-	// event.AsyncFire(Event{}.PaymentUpdated(mtaHistory.AccountId, mtaHistory.Id))
+	// AsyncFire(*Event{}.PaymentUpdated(mtaHistory.AccountId, mtaHistory.Id))
 
 	return nil
 }
 func (mtaHistory *MTAHistory) AfterDelete(tx *gorm.DB) (err error) {
-	// event.AsyncFire(Event{}.PaymentDeleted(mtaHistory.AccountId, mtaHistory.Id))
+	// AsyncFire(*Event{}.PaymentDeleted(mtaHistory.AccountId, mtaHistory.Id))
 	return nil
 }
 func (mtaHistory *MTAHistory) AfterFind(tx *gorm.DB) (err error) {

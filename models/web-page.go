@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -279,8 +278,10 @@ func (webPage WebPage) AppendProductCategory(productCategory *ProductCategory, o
 
 	account, err := GetAccount(webPage.AccountId)
 	if err == nil && account != nil {
-		event.AsyncFire(Event{}.WebPageUpdated(account.Id, webPage.Id))
-		event.AsyncFire(Event{}.ProductCategoryUpdated(account.Id, productCategory.Id))
+		// AsyncFire(*Event{}.WebPageUpdated(account.Id, webPage.Id))
+		AsyncFire(NewEvent("WebPageUpdated", map[string]interface{}{"account_id":account.Id, "web_page_id":webPage.Id}))
+		// AsyncFire(*Event{}.ProductCategoryUpdated(account.Id, productCategory.Id))
+		AsyncFire(NewEvent("ProductCategoryUpdated", map[string]interface{}{"account_id":account.Id, "product_category_id":productCategory.Id}))
 	}
 
 	return nil
@@ -306,8 +307,11 @@ func (webPage WebPage) RemoveProductCategory(productCategory ProductCategory) er
 
 	account, err := GetAccount(webPage.AccountId)
 	if err == nil && account != nil {
-		event.AsyncFire(Event{}.WebPageUpdated(account.Id, webPage.Id))
-		event.AsyncFire(Event{}.ProductCategoryUpdated(account.Id, productCategory.Id))
+		// AsyncFire(*Event{}.WebPageUpdated(account.Id, webPage.Id))
+		// AsyncFire(*Event{}.ProductCategoryUpdated(account.Id, productCategory.Id))
+
+		AsyncFire(NewEvent("WebPageUpdated", map[string]interface{}{"account_id":account.Id, "web_page_id":webPage.Id}))
+		AsyncFire(NewEvent("ProductCategoryUpdated", map[string]interface{}{"account_id":account.Id, "product_category_id":productCategory.Id}))
 	}
 
 	return nil

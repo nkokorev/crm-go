@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -27,7 +26,7 @@ type EventListener struct {
 
 	Priority 	int		`json:"priority" gorm:"type:int;default:0"` // Приоритет выполнения, по умолчанию 0 - Normal
 
-	Event 		EventItem 		`json:"event"`
+	Event 		Event 		`json:"event"`
 	Handler 	HandlerItem		`json:"handler"`       // gorm:"preload:true"
 
 	// TargetName string `json:"-" gorm:"-"`// Имя функции, которую вызывают локально
@@ -45,7 +44,7 @@ func (EventListener) PgSqlCreate() {
 	// db.Model(&EventListener{}).AddForeignKey("handler_id", "handler_items(id)", "CASCADE", "CASCADE")
 	err := db.Exec("ALTER TABLE event_listeners " +
 		"ADD CONSTRAINT event_listeners_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
-		"ADD CONSTRAINT event_listeners_event_id_fkey FOREIGN KEY (event_id) REFERENCES event_items(id) ON DELETE CASCADE ON UPDATE CASCADE," +
+		"ADD CONSTRAINT event_listeners_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE ON UPDATE CASCADE," +
 		"ADD CONSTRAINT event_listeners_handler_id_fkey FOREIGN KEY (handler_id) REFERENCES handler_items(id) ON DELETE CASCADE ON UPDATE CASCADE;").Error
 	if err != nil {
 		log.Fatal("Error: ", err)
@@ -135,7 +134,7 @@ func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy
 
 	type EventListenerSearch struct {
 		EventListener
-		EventItem
+		Event
 	}
 	// eventListeners := make([]EventListenerSearch,0)
 	eventListeners := make([]EventListener,0)
@@ -149,9 +148,9 @@ func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy
 
 		// err := db.Table("event_listeners").Model(&EventListener{}).
 		err := (&EventListener{}).GetPreloadDb(false, false, preloads).Table("event_listeners").
-			Joins("LEFT JOIN event_items ON event_items.id = event_listeners.event_id").Select("event_items.name as e_name, event_listeners.*").
+			Joins("LEFT JOIN events ON events.id = event_listeners.event_id").Select("events.name as e_name, event_listeners.*").
 			Limit(limit).Offset(offset).Order(sortBy).Where( "event_listeners.account_id = ?", accountId).Preload("Event").Preload("Handler").
-			Find(&eventListeners, "event_listeners.name ILIKE ? OR event_items.name ILIKE ?", search,search).Error
+			Find(&eventListeners, "event_listeners.name ILIKE ? OR events.name ILIKE ?", search,search).Error
 		
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -159,8 +158,8 @@ func (EventListener) getPaginationList(accountId uint, offset, limit int, sortBy
 
 		// Определяем total
 		err = db.Table("event_listeners").
-			Joins("LEFT JOIN event_items ON event_items.id = event_listeners.event_id").Select("event_items.name as e_name, event_items.description as e_desc, event_listeners.*").
-			Where( "event_listeners.account_id = ? AND event_listeners.name ILIKE ? OR event_items.name ILIKE ?", accountId, search,search).
+			Joins("LEFT JOIN events ON events.id = event_listeners.event_id").Select("events.name as e_name, events.description as e_desc, event_listeners.*").
+			Where( "event_listeners.account_id = ? AND event_listeners.name ILIKE ? OR events.name ILIKE ?", accountId, search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
@@ -241,7 +240,7 @@ func (EventListener) Registration() error {
 }
 
 func (EventListener) ReloadEventHandlers() error {
-	em := event.DefaultEM
+	em := DefaultEM
 	em.Clear()
 
 	return EventListener{}.Registration()
@@ -253,7 +252,7 @@ func (eventListener EventListener) LoadListener() {
 		log.Println("LoadListener is empty name")
 		return
 	}
-	em := event.DefaultEM
+	em := DefaultEM
 	em.AddListener(eventListener.Event.Code, &eventListener, eventListener.Priority)
 }
 
@@ -288,7 +287,7 @@ func (eventListener *EventListener) GetPreloadDb(getModel bool, autoPreload bool
 // ########################################################
 // Функции, которые могут быть вызваны для обработки событий типа Event
 // Для добавления функции обработчика нужно:
-// 1. Создать функцию ниже func (EventListener) FName(event.Event) error
+// 1. Создать функцию ниже func (EventListener) FName(Event) error
 // 2. Создать запись в таблице ObserverList, добавим описание и назначение функции
 
 

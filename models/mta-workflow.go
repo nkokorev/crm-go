@@ -65,17 +65,17 @@ func (mtaWorkflow *MTAWorkflow) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 func (mtaWorkflow *MTAWorkflow) AfterCreate(tx *gorm.DB) error {
-	// event.AsyncFire(Event{}.PaymentCreated(mtaWorkflow.AccountId, mtaWorkflow.Id))
+	// AsyncFire(*Event{}.PaymentCreated(mtaWorkflow.AccountId, mtaWorkflow.Id))
 	return nil
 }
 func (mtaWorkflow *MTAWorkflow) AfterUpdate(tx *gorm.DB) (err error) {
 
-	// event.AsyncFire(Event{}.PaymentUpdated(mtaWorkflow.AccountId, mtaWorkflow.Id))
+	// AsyncFire(*Event{}.PaymentUpdated(mtaWorkflow.AccountId, mtaWorkflow.Id))
 
 	return nil
 }
 func (mtaWorkflow *MTAWorkflow) AfterDelete(tx *gorm.DB) (err error) {
-	// event.AsyncFire(Event{}.PaymentDeleted(mtaWorkflow.AccountId, mtaWorkflow.Id))
+	// AsyncFire(*Event{}.PaymentDeleted(mtaWorkflow.AccountId, mtaWorkflow.Id))
 	return nil
 }
 func (mtaWorkflow *MTAWorkflow) AfterFind(tx *gorm.DB) (err error) {
@@ -471,7 +471,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	}
 
 	// Готовим еще раз полностью данные
-	vData, err := emailTemplate.PrepareViewData(_subject, PreviewText, data, pixelURL, &unsubscribeUrl)
+	vData, err := emailTemplate.PrepareViewData(_subject, PreviewText, data, nil, pixelURL, &unsubscribeUrl)
 	if err != nil {
 		mtaWorkflow.stopEmailSender(fmt.Sprintf("Ошибка подготовки данных для сообщения: %v",err.Error()))
 		return utils.Error{ Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}

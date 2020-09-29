@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"fmt"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -527,7 +526,8 @@ func (shipment Shipment) AppendProduct(product Product, volumeOrder, paymentAmou
 	// 5. Запускаем событие добавление товара в инвентаризацию (надо ли)
 	account, err := GetAccount(shipment.AccountId)
 	if err == nil && account != nil {
-		event.AsyncFire(Event{}.InventoryItemProductAppended(account.Id, shipment.Id, product.Id))
+		// AsyncFire(*Event{}.InventoryItemProductAppended(account.Id, shipment.Id, product.Id))
+		AsyncFire(NewEvent("InventoryItemProductAppended", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
 	}
 
 	return nil

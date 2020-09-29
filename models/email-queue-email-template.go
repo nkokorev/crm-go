@@ -79,17 +79,17 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) BeforeCreate(tx *gorm.DB
 }
 
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) AfterCreate(tx *gorm.DB) error {
-	// event.AsyncFire(Event{}.PaymentCreated(emailQueueEmailTemplate.AccountId, emailQueueEmailTemplate.Id))
+	// AsyncFire(*Event{}.PaymentCreated(emailQueueEmailTemplate.AccountId, emailQueueEmailTemplate.Id))
 	return nil
 }
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) AfterUpdate(tx *gorm.DB) (err error) {
 
-	// event.AsyncFire(Event{}.PaymentUpdated(emailQueueEmailTemplate.AccountId, emailQueueEmailTemplate.Id))
+	// AsyncFire(*Event{}.PaymentUpdated(emailQueueEmailTemplate.AccountId, emailQueueEmailTemplate.Id))
 
 	return nil
 }
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) AfterDelete(tx *gorm.DB) (err error) {
-	// event.AsyncFire(Event{}.PaymentDeleted(emailQueueEmailTemplate.AccountId, emailQueueEmailTemplate.Id))
+	// AsyncFire(*Event{}.PaymentDeleted(emailQueueEmailTemplate.AccountId, emailQueueEmailTemplate.Id))
 	return nil
 }
 func (emailQueueEmailTemplate *EmailQueueEmailTemplate) AfterFind(tx *gorm.DB) (err error) {
@@ -340,7 +340,7 @@ func (emailQueueEmailTemplate *EmailQueueEmailTemplate) Validate() error {
 		Subject: *emailQueueEmailTemplate.Subject,
 		PreviewText: *emailQueueEmailTemplate.PreviewText,
 		Data: data,
-		Json: data,
+		Payload: data,
 		UnsubscribeURL: "",
 		PixelURL: "",
 		PixelHTML: "<div></div>",

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -745,7 +744,8 @@ func (account Account) AppendUser(user User, role Role) (*AccountUser, error) {
 
 		acs = *_asc
 
-		event.AsyncFire(Event{}.UserAppendedToAccount(account.Id, acs.UserId, acs.RoleId))
+		// AsyncFire(*Event{}.UserAppendedToAccount(account.Id, acs.UserId, acs.RoleId))
+		AsyncFire(NewEvent("UserAppendedToAccount", map[string]interface{}{"account_id":account.Id, "user_id":acs.UserId, "role_id":acs.RoleId}))
 	}
 
 	return &acs, nil
@@ -881,7 +881,8 @@ func (account *Account) DeleteUser(user *User) error {
 		return err
 	}
 
-	event.AsyncFire(Event{}.UserDeleted(account.Id, user.Id))
+	// AsyncFire(*Event{}.UserDeleted(account.Id, user.Id))
+	AsyncFire(NewEvent("UserDeleted", map[string]interface{}{"account_id":account.Id, "user_id":user.Id}))
 
 	return nil
 }
@@ -903,7 +904,8 @@ func (account *Account) RemoveUser(user *User) error {
 		return err
 	}
 
-	event.AsyncFire(Event{}.UserRemovedFromAccount(account.Id, user.Id))
+	// AsyncFire(*Event{}.UserRemovedFromAccount(account.Id, user.Id))
+	AsyncFire(NewEvent("UserRemovedFromAccount", map[string]interface{}{"account_id":account.Id, "user_id":user.Id}))
 
 	return nil
 }

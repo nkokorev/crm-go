@@ -316,7 +316,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 	}
 
 	// Проверяем возможность отправки. Может излишне, но при небольшой нагрузке - ок, об ошибках узнаем До отправки
-	if err := emailNotification.Validate(); err != nil {
+	if err := emailNotification.Validate(nil); err != nil {
 		return err
 	}
 
@@ -405,7 +405,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			_subject = fmt.Sprintf("Уведомление по почте #%v", emailNotification.Id)
 		}
 
-		vData, err := emailTemplate.PrepareViewData(_subject, *emailNotification.PreviewText, data, pixelURL, &unsubscribeUrl)
+		vData, err := emailTemplate.PrepareViewData(_subject, *emailNotification.PreviewText, data, nil, pixelURL, &unsubscribeUrl)
 		if err != nil {
 			log.Printf("Ошибка отправления Уведомления - не удается подготовить данные для сообщения. emailNotificationId: %v\n", emailNotification.Id)
 			continue
@@ -581,7 +581,7 @@ func (emailNotification *EmailNotification) SetPlannedStatus() error {
 	}
 
 	// Проверяем кампанию и шаблон, чтобы не ставить в план не рабочую кампанию.
-	if err := emailNotification.Validate(); err != nil { return err  }
+	if err := emailNotification.Validate(nil); err != nil { return err  }
 
 	// На всякий случай удаляем задачу по запуску этой кампании, чтобы не было дубля
 	if err := emailNotification.RemoveRunTask(); err != nil {
@@ -628,7 +628,7 @@ func (emailNotification *EmailNotification) SetActiveStatus() error {
 	}
 
 	// Снова проверяем кампанию и шаблон
-	if err := emailNotification.Validate(); err != nil { return err  }
+	if err := emailNotification.Validate(nil); err != nil { return err  }
 
 	// Переводим в состояние "Активна", т.к. все проверки пройдены и можно продолжить ее выполнение
 	return emailNotification.updateWorkStatus(WorkStatusActive)
@@ -741,7 +741,7 @@ func (emailNotification *EmailNotification) SetCancelledStatus() error {
 }
 
 // Проверяет возможность отправки email-уведомления
-func (emailNotification *EmailNotification) Validate(contextData map[string]interface{}) error {
+func (emailNotification *EmailNotification) Validate(payloadData map[string]interface{}) error {
 
 	account, err := GetAccount(emailNotification.AccountId)
 	if err != nil {
@@ -797,23 +797,11 @@ func (emailNotification *EmailNotification) Validate(contextData map[string]inte
 		PhoneRegion: utils.STRp("RU"), Phone: utils.STRp("+79251000000")} // << хз
 	systemData["unsubscribeUrl"] = "/unsubscribe_url"
 
-	// Данные передающиеся в контекст письма
-	data := make(map[string]interface{})
-	data = systemData
-
-	for k := range contextData {
-		// проверяем, если такой системный ключ
-		if _, ok := systemData[k]; !ok {
-			data[k] = contextData[k]
-		}
-	}
-
-
 	viewData := ViewData {
 		Subject: *emailNotification.Subject,
 		PreviewText: *emailNotification.PreviewText,
-		Data: data,
-		Json: data, //
+		Data: systemData,
+		Payload: payloadData,
 		UnsubscribeURL: "",
 		PixelURL: "",
 		PixelHTML: "<div></div>",

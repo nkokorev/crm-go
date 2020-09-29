@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -174,25 +173,30 @@ func (payment *Payment) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 }
 
 func (payment *Payment) AfterCreate(tx *gorm.DB) error {
-	event.AsyncFire(Event{}.PaymentCreated(payment.AccountId, payment.Id))
+	// AsyncFire(*Event{}.PaymentCreated(payment.AccountId, payment.Id))
+	AsyncFire(NewEvent("PaymentCreated", map[string]interface{}{"account_id":payment.AccountId, "payment_id":payment.Id}))
 	return nil
 }
 func (payment *Payment) AfterUpdate(tx *gorm.DB) (err error) {
 
-	event.AsyncFire(Event{}.PaymentUpdated(payment.AccountId, payment.Id))
+	// AsyncFire(*Event{}.PaymentUpdated(payment.AccountId, payment.Id))
+	AsyncFire(NewEvent("PaymentUpdated", map[string]interface{}{"account_id":payment.AccountId, "payment_id":payment.Id}))
 
 	// статус платежа:  [pending, waiting_for_capture, succeeded и canceled]
 	if payment.Paid || payment.Status == "succeeded" {
-		event.AsyncFire(Event{}.PaymentCompleted(payment.AccountId, payment.Id))
+		// AsyncFire(*Event{}.PaymentCompleted(payment.AccountId, payment.Id))
+		AsyncFire(NewEvent("PaymentCompleted", map[string]interface{}{"account_id":payment.AccountId, "payment_id":payment.Id}))
 	}
 	if payment.Status == "canceled" {
-		event.AsyncFire(Event{}.PaymentCanceled(payment.AccountId, payment.Id))
+		// AsyncFire(*Event{}.PaymentCanceled(payment.AccountId, payment.Id))
+		AsyncFire(NewEvent("PaymentCanceled", map[string]interface{}{"account_id":payment.AccountId, "payment_id":payment.Id}))
 	}
 
 	return nil
 }
 func (payment *Payment) AfterDelete(tx *gorm.DB) (err error) {
-	event.AsyncFire(Event{}.PaymentDeleted(payment.AccountId, payment.Id))
+	// AsyncFire(*Event{}.PaymentDeleted(payment.AccountId, payment.Id))
+	AsyncFire(NewEvent("PaymentDeleted", map[string]interface{}{"account_id":payment.AccountId, "payment_id":payment.Id}))
 	return nil
 }
 func (payment *Payment) AfterFind(tx *gorm.DB) (err error) {

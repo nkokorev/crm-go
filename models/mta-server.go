@@ -20,13 +20,16 @@ import (
 
 var smtpCh chan EmailPkg
 
-var gorutines = 30 // число поток по отправке
-const deepMTACh = 50 // Объем буфера из пакетов
-const dialTimeout = time.Second * 10 // максимальное время для установки соединения с smtp сервером получателя
+var 	gorutines 		= 30 	// число поток по отправке
+const 	deepMTACh 		= 50 	// Объем буфера из пакетов
+const 	dialTimeout 	= time.Second * 10 // максимальное время для установки соединения с smtp сервером получателя
+
+// true = "типа отправляем"
+const mock = true
 
 func init() {
 	smtpCh = make(chan EmailPkg, deepMTACh)
-	go mtaServer(smtpCh) // start MTA server
+	// go mtaServer(smtpCh) // start MTA server
 }
 
 // Содержание письма компилируется из ViewData
@@ -37,8 +40,8 @@ type ViewData struct {
 	// Системные данные System-Data
 	Data map[string]interface{}
 
-	// Контекстные данные Context-JSON
-	Json map[string]interface{}
+	// Контекстные данные Payload
+	Payload map[string]interface{}
 
 	UnsubscribeURL string
 	PixelURL string // ссылка для пикселя
@@ -83,10 +86,6 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 		gorutines++
 		m.Unlock() // release lock
 	}()
-
-	// по настоящему или нет отправляем
-	var mock =  false
-
 
 	// m.Lock()
 	// defer m.Unlock()
@@ -146,7 +145,7 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 	}
 
 	if mock {
-		// fmt.Println("Типа отсылаем...: ", time.Now().String())
+		fmt.Println("Типа отсылаем...: ", time.Now().String())
 		// n := rand.Intn(3) // n will be between 0 and 10
 		// fmt.Printf("Sleeping %d seconds...\n", n)
 		// time.Sleep(time.Duration(n)*time.Second)

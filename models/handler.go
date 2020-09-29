@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"log"
 	"reflect"
@@ -10,7 +9,63 @@ import (
 
 // Список всех событий, которы могут быть вызваны // !!! Не добавлять другие функции под этим интерфейсом !!!
 
-func (eventListener *EventListener) Handle(e event.Event) error {
+func (eventListener *EventListener) Handle(e Event) error {
+	
+	TargetName := eventListener.Handler.Code
+
+	if TargetName == "" {
+		log.Printf("EventListener Handle Name is nill: %v\n", TargetName)
+		return utils.Error{Message: fmt.Sprintf("EventListener Handle Name is nill %v\n", TargetName)}
+	}
+
+	// 1. Получаем метод обработки по имени Target
+	v := reflect.ValueOf(eventListener)
+	if v.IsNil() {
+		log.Println("Observer ValueOf handle is nill 1")
+		return utils.Error{Message: fmt.Sprintf("Observer Handle is nill: %v", TargetName)}
+	}
+
+	// Тест на существование
+	el := v.Type()
+	_, ok := el.MethodByName(TargetName)
+	if !ok {
+		log.Println("Observer ValueOf handle is nill 2")
+		return utils.Error{Message: fmt.Sprintf("Observer Handle Type is nill: %v", TargetName)}
+	}
+
+	// Получаем метод
+	m := v.MethodByName(TargetName)
+	if m.IsNil() {
+		log.Println("Observer Handle is nill 3")
+		return utils.Error{Message: fmt.Sprintf("Observer MethodByName not found: %v", TargetName)}
+	}
+
+	// 2. Преобразуем метод, чтобы его можно было вызвать от объекта Event
+	// target, ok := m.Interface().(func(e Event) error)
+	target, ok := m.Interface().(func(e Event) error)
+	if !ok {
+		log.Println("Observer mCallable !ok 4")
+		return utils.Error{Message: fmt.Sprintf("Observer mCallable !ok: %v", TargetName)}
+	}
+
+	// 3. Вызываем Target-метод с объектом Event
+	accountStr := e.Get("account_id")
+	accountId, ok :=  accountStr.(uint)
+	if !ok || eventListener.AccountId != accountId {
+		log.Println("Event Handler: if !ok || eventListener.AccountId != accountId")
+		return nil
+	}
+
+	if err := target(e); err != nil {
+		log.Println(err)
+	}
+
+	log.Println("target успешно выполнен!")
+
+	return nil
+}
+
+func (eventListener *EventListener) OLDHandle(e Event) error {
 
 	TargetName := eventListener.Handler.Code
 
@@ -42,14 +97,16 @@ func (eventListener *EventListener) Handle(e event.Event) error {
 	}
 
 	// 2. Преобразуем метод, чтобы его можно было вызвать от объекта Event
-	target, ok := m.Interface().(func(e event.Event) error)
+	// target, ok := m.Interface().(func(e Event) error)
+	target, ok := m.Interface().(func(e Event) error)
 	if !ok {
+		log.Println(m.Interface())
 		log.Println("Observer mCallable !ok 4")
 		return utils.Error{Message: fmt.Sprintf("Observer mCallable !ok: %v", TargetName)}
 	}
 
 	// 3. Вызываем Target-метод с объектом Event
-	accountStr := e.Get("accountId")
+	accountStr := e.Get("account_id")
 	accountId, ok :=  accountStr.(uint)
 	if !ok || eventListener.AccountId != accountId {
 		return nil
@@ -59,7 +116,7 @@ func (eventListener *EventListener) Handle(e event.Event) error {
 		log.Println(err)
 	}
 
-	// fmt.Println("target успешно выполнен!")
+	fmt.Println("target успешно выполнен!")
 
 	return nil
 }
@@ -67,12 +124,12 @@ func (eventListener *EventListener) Handle(e event.Event) error {
 // #############   Event Handlers   #############
 
 
-func (eventListener EventListener) EmailNotificationRun(e event.Event) error {
+func (eventListener EventListener) EmailNotificationRun(e Event) error {
 
 	fmt.Printf("#### Запуск уведомления письмом, обытие: %v данные: %v\n",e.Name(), e.Data())
 	// fmt.Println("Observer entity id: ", handler.EntityId) // контекст серии писем, какой именно и т.д.
 
-	accountStr := e.Get("accountId")
+	accountStr := e.Get("account_id")
 	accountId, ok :=  accountStr.(uint)
 	if !ok {
 		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить Email Notification id = %v, не найден accountId.", eventListener.EntityId)}
@@ -98,10 +155,10 @@ func (eventListener EventListener) EmailNotificationRun(e event.Event) error {
 	return en.Execute(e.Data())
 }
 
-func (eventListener EventListener) EmailQueueRun(e event.Event) error {
+func (eventListener EventListener) EmailQueueRun(e Event) error {
 	fmt.Printf("Запуск серии писем, обытие: %v данные: %v\n",e.Name(), e.Data())
 
-	accountStr := e.Get("accountId")
+	accountStr := e.Get("account_id")
 	accountId, ok :=  accountStr.(uint)
 	if !ok {
 		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить EmailQueue id = %v, не найден accountId.", eventListener.EntityId)}
@@ -137,11 +194,11 @@ func (eventListener EventListener) EmailQueueRun(e event.Event) error {
 	return nil
 }
 
-func (eventListener EventListener) WebHookCall(e event.Event) error {
+func (eventListener EventListener) WebHookCall(e Event) error {
 
 	// fmt.Printf("Вызов вебхука, событие: %v Данные: %v, EventId %v\n", e.Name(), e.Data(), eventListener.EventId)
 
-	accountStr := e.Get("accountId")
+	accountStr := e.Get("account_id")
 	accountId, ok :=  accountStr.(uint)
 	if !ok {
 		return utils.Error{Message: fmt.Sprintf("Невозможно выполнить WebHook id = %v, не найден accountId.", eventListener.EntityId)}
@@ -170,12 +227,12 @@ func (eventListener EventListener) WebHookCall(e event.Event) error {
 
 
 // Загружает данные по переданным id
-func (eventListener EventListener) uploadEntitiesData(event *event.Event) {
+func (eventListener EventListener) uploadEntitiesData(event *Event) {
 	// data :=(*e).Data()
 	e := *event
 
 	// 1. Get Account
-	accountId, ok :=  e.Get("accountId").(uint)
+	accountId, ok :=  e.Get("account_id").(uint)
 	if !ok { return }
 
 	account, err := GetAccount(accountId)

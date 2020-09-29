@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fatih/structs"
-	"github.com/nkokorev/crm-go/event"
 	u "github.com/nkokorev/crm-go/utils"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -111,8 +110,9 @@ func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-func (user *User) AfterCreate(tx *gorm.DB) (error) {
-	event.AsyncFire(Event{}.UserCreated(user.IssuerAccountId, user.Id))
+func (user *User) AfterCreate(tx *gorm.DB) error {
+	// AsyncFire(*Event{}.UserCreated(user.IssuerAccountId, user.Id))
+	AsyncFire(NewEvent("UserCreated", map[string]interface{}{"account_id":user.IssuerAccountId, "user_id":user.Id}))
 	return nil
 }
 func (user *User) BeforeUpdate(tx *gorm.DB) (err error) {
@@ -132,7 +132,8 @@ func (user *User) BeforeUpdate(tx *gorm.DB) (err error) {
 	return nil
 }
 func (user *User) AfterUpdate(tx *gorm.DB) (err error) {
-	event.AsyncFire(Event{}.UserUpdated(user.IssuerAccountId, user.Id))
+	// AsyncFire(Event{}.UserUpdated(user.IssuerAccountId, user.Id))
+	// AsyncFire(*NewEvent("UserUpdated", map[string]interface{}{"accountId":user.IssuerAccountId, "userId":user.Id}))
 	return nil
 }
 func (user *User) AfterFind(tx *gorm.DB) (err error) {
@@ -159,7 +160,6 @@ func (user *User) AfterFind(tx *gorm.DB) (err error) {
 	return nil
 }
 
-
 func (user User) create () (*User, error) {
 
 	// !!! Проверка существования такого же пользователя для склейки - на строне аккаунта / контроллера !!!
@@ -184,11 +184,10 @@ func (user User) create () (*User, error) {
 		return nil, err
 	}
 
-	// event.AsyncFire(Event{}.UserCreated(user.IssuerAccountId, userReturn.Id))
+	// AsyncFire(*Event{}.UserCreated(user.IssuerAccountId, userReturn.Id))
 
 	return &userReturn, nil
 }
-
 func (User) get(id uint) (*User, error) {
 	user := User{}
 
@@ -206,7 +205,6 @@ func (user *User) load(preloads []string) error {
 	}
 	return nil
 }
-
 func (User) getByHashId(hashId string) (*User, error) {
 	user := User{}
 
@@ -216,7 +214,6 @@ func (User) getByHashId(hashId string) (*User, error) {
 	}
 	return &user, nil
 }
-
 func (user *User) update (input map[string]interface{}) error {
 
 	delete(input,"roles")
@@ -291,21 +288,26 @@ func (account Account) UpdateUser(userId uint, input map[string]interface{}) (*U
 	if ok && (_newStatusSubscribed != _user.Subscribed) {
 		// fmt.Println("Статус обновлен!")
 		// Статус обновлен
-		user.Unsubscribing()
-		event.AsyncFire(Event{}.UserUpdateSubscribeStatus(account.Id, _user.Id))
+		_ = user.Unsubscribing()
+
+		// AsyncFire(*Event{}.UserUpdateSubscribeStatus(account.Id, _user.Id))
+		AsyncFire(NewEvent("UserUpdateSubscribeStatus", map[string]interface{}{"account_id":account.Id, "user_id":_user.Id}))
 
 		// флаги подписки / отписки
 		if _newStatusSubscribed {
 			// fmt.Println("Пользователь подписался")
-			event.AsyncFire(Event{}.UserSubscribed(account.Id, _user.Id))
+			// AsyncFire(*Event{}.UserSubscribed(account.Id, _user.Id))
+			AsyncFire(NewEvent("UserSubscribed", map[string]interface{}{"account_id":account.Id, "user_id":_user.Id}))
 		} else {
 			// fmt.Println("Пользователь отписался")
-			event.AsyncFire(Event{}.UserUnsubscribed(account.Id, _user.Id))
+			// AsyncFire(*Event{}.UserUnsubscribed(account.Id, _user.Id))
+			AsyncFire(NewEvent("UserUnsubscribed", map[string]interface{}{"account_id":account.Id, "user_id":_user.Id}))
 		}
 
 	}
 
-	event.AsyncFire(Event{}.UserUpdated(account.Id, user.Id))
+	AsyncFire(NewEvent("UserUpdated", map[string]interface{}{"account_id":account.Id, "user_id":user.Id}))
+	// AsyncFire(*Event{}.UserUpdated(account.Id, user.Id))
 
 	return user, err
 }
@@ -356,7 +358,6 @@ func (user User) Exist() bool {
 		return true
 	}
 }
-
 func (User) ExistEmail(email string) bool {
 	if err := db.Unscoped().First(&User{},"email = ?", email).Error;err != nil {
 		return false
@@ -364,7 +365,6 @@ func (User) ExistEmail(email string) bool {
 		return true
 	}
 }
-
 func (User) ExistUsername(username string) bool {
 	if err := db.Unscoped().First(&User{},"username = ?", username).Error;err != nil {
 		return false
@@ -372,7 +372,6 @@ func (User) ExistUsername(username string) bool {
 		return true
 	}
 }
-
 func (user User) DepersonalizedDataMap() *map[string]interface{} {
 
 	// получаем карту
@@ -394,7 +393,6 @@ func (user User) DepersonalizedDataMap() *map[string]interface{} {
 
 	return &userMap
 }
-
 // Проверка НЕ нулевых входящих полей для СОЗДАНИЯ пользователя
 func (user User) ValidateCreate() error {
 	
@@ -460,7 +458,6 @@ func (user User) ValidateCreate() error {
 
 	return nil
 }
-
 // Проверяет и отправляет email подтвеждение
 func (user *User) SendEmailVerification() error {
 
@@ -473,7 +470,6 @@ func (user *User) SendEmailVerification() error {
 	// 2. Отправляем письмо
 	return  emailToken.SendMail()
 }
-
 // Отправляет имя пользователя на его почту
 func (user *User) SendEmailRecoveryUsername() error {
 
@@ -482,7 +478,6 @@ func (user *User) SendEmailRecoveryUsername() error {
 	// собственно тут простая отправка письма пользователю с его именем
 	return  nil
 }
-
 // Проверяет пароль пользователя
 func (user User) ComparePassword(password string) bool {
 	if err := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(password)); err != nil {
@@ -491,7 +486,6 @@ func (user User) ComparePassword(password string) bool {
 
 	return true
 }
-
 // Отправляет ссылку для сброса пароля пользователя на его почту и создает токен для сброса
 func (user *User) RecoveryPasswordSendEmail() error {
 

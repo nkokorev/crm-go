@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/fatih/structs"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"log"
@@ -71,17 +70,23 @@ func (fs *Storage) BeforeCreate(tx *gorm.DB) error {
 func (fs *Storage) AfterCreate(tx *gorm.DB) error {
 	switch fs.OwnerType {
 	case "products":
-		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, uint(fs.OwnerID)))
+		// AsyncFire(*Event{}.ProductUpdated(fs.AccountId, uint(fs.OwnerID)))
+		AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":fs.AccountId, "product_id":fs.OwnerID}))
 	case "articles":
-		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
+		// AsyncFire(*Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
+		AsyncFire(NewEvent("ArticleUpdated", map[string]interface{}{"account_id":fs.AccountId, "article_id":fs.OwnerID}))
 	case "web_pages":
-		event.AsyncFire(Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
+		// AsyncFire(*Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
+		AsyncFire(NewEvent("WebPageUpdated", map[string]interface{}{"account_id":fs.AccountId, "web_page_id":fs.OwnerID}))
 	case "product_cards":
-		event.AsyncFire(Event{}.ProductCardUpdated(fs.AccountId, uint(fs.OwnerID)))
+		// AsyncFire(*Event{}.ProductCardUpdated(fs.AccountId, uint(fs.OwnerID)))
+		AsyncFire(NewEvent("ProductCardUpdated", map[string]interface{}{"account_id":fs.AccountId, "product_card_id":fs.OwnerID}))
 	case "manufactures":
-		event.AsyncFire(Event{}.ManufacturerUpdated(fs.AccountId, uint(fs.OwnerID)))
+		// AsyncFire(*Event{}.ManufacturerUpdated(fs.AccountId, uint(fs.OwnerID)))
+		AsyncFire(NewEvent("ManufacturerUpdated", map[string]interface{}{"account_id":fs.AccountId, "manufacturer_id":fs.OwnerID}))
 	default:
-		event.AsyncFire(Event{}.StorageCreated(fs.AccountId, fs.Id))
+		// AsyncFire(*Event{}.StorageCreated(fs.AccountId, fs.Id))
+		AsyncFire(NewEvent("StorageCreated", map[string]interface{}{"account_id":fs.AccountId, "storage_id":fs.Id}))
 	}
 	return nil
 }
@@ -89,17 +94,23 @@ func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
 	
 	switch fs.OwnerType {
 	case "products":
-		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, uint(fs.OwnerID)))
+		// AsyncFire(*Event{}.ProductUpdated(fs.AccountId, uint(fs.OwnerID)))
+		AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":fs.AccountId, "product_id":fs.OwnerID}))
 	case "articles":
-		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
+		// AsyncFire(*Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
+		AsyncFire(NewEvent("ArticleUpdated", map[string]interface{}{"account_id":fs.AccountId, "article_id":fs.OwnerID}))
 	case "web_pages":
-		event.AsyncFire(Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
+		// AsyncFire(*Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
+		AsyncFire(NewEvent("WebPageUpdated", map[string]interface{}{"account_id":fs.AccountId, "web_page_id":fs.OwnerID}))
 	case "product_cards":
-		event.AsyncFire(Event{}.ProductCardUpdated(fs.AccountId, uint(fs.OwnerID)))
+		// AsyncFire(*Event{}.ProductCardUpdated(fs.AccountId, uint(fs.OwnerID)))
+		AsyncFire(NewEvent("ProductCardUpdated", map[string]interface{}{"account_id":fs.AccountId, "product_card_id":fs.OwnerID}))
 	case "manufactures":
-		event.AsyncFire(Event{}.ManufacturerUpdated(fs.AccountId, uint(fs.OwnerID)))
+		// AsyncFire(*Event{}.ManufacturerUpdated(fs.AccountId, uint(fs.OwnerID)))
+		AsyncFire(NewEvent("ManufacturerUpdated", map[string]interface{}{"account_id":fs.AccountId, "manufacturer_id":fs.OwnerID}))
 	default:
-		event.AsyncFire(Event{}.StorageUpdated(fs.AccountId, fs.Id))
+		// AsyncFire(*Event{}.StorageUpdated(fs.AccountId, fs.Id))
+		AsyncFire(NewEvent("StorageUpdated", map[string]interface{}{"account_id":fs.AccountId, "storage_id":fs.Id}))
 	}
 	
 	return nil
@@ -107,17 +118,23 @@ func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
 func (fs *Storage) AfterDelete(tx *gorm.DB) (err error) {
 	switch fs.OwnerType {
 	case "products":
-		event.AsyncFire(Event{}.ProductUpdated(fs.AccountId, uint(fs.OwnerID)))
+		// AsyncFire(*Event{}.ProductUpdated(fs.AccountId, uint(fs.OwnerID)))
+		AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":fs.AccountId, "product_id":fs.OwnerID}))
 	case "articles":
-		event.AsyncFire(Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
+		// AsyncFire(*Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
+		AsyncFire(NewEvent("ArticleUpdated", map[string]interface{}{"account_id":fs.AccountId, "article_id":fs.OwnerID}))
 	case "web_pages":
-		event.AsyncFire(Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
+		// AsyncFire(*Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
+		AsyncFire(NewEvent("WebPageUpdated", map[string]interface{}{"account_id":fs.AccountId, "web_page_id":fs.OwnerID}))
 	case "product_cards":
-		event.AsyncFire(Event{}.ProductCardUpdated(fs.AccountId, uint(fs.OwnerID)))
+		// AsyncFire(*Event{}.ProductCardUpdated(fs.AccountId, uint(fs.OwnerID)))
+		AsyncFire(NewEvent("ProductCardUpdated", map[string]interface{}{"account_id":fs.AccountId, "product_card_id":fs.OwnerID}))
 	case "manufactures":
-		event.AsyncFire(Event{}.ManufacturerUpdated(fs.AccountId, uint(fs.OwnerID)))
+		// AsyncFire(*Event{}.ManufacturerUpdated(fs.AccountId, uint(fs.OwnerID)))
+		AsyncFire(NewEvent("ManufacturerUpdated", map[string]interface{}{"account_id":fs.AccountId, "manufacturer_id":fs.OwnerID}))
 	default:
-		event.AsyncFire(Event{}.StorageDeleted(fs.AccountId, fs.Id))
+		// AsyncFire(*Event{}.StorageDeleted(fs.AccountId, fs.Id))
+		AsyncFire(NewEvent("StorageDeleted", map[string]interface{}{"account_id":fs.AccountId, "storage_id":fs.Id}))
 	}
 	return nil
 }

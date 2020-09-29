@@ -65,17 +65,17 @@ func (emailQueue *EmailQueue) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (emailQueue *EmailQueue) AfterCreate(tx *gorm.DB) (error) {
-	// event.AsyncFire(Event{}.PaymentCreated(emailQueue.AccountId, emailQueue.Id))
+	// AsyncFire(*Event{}.PaymentCreated(emailQueue.AccountId, emailQueue.Id))
 	return nil
 }
 func (emailQueue *EmailQueue) AfterUpdate(tx *gorm.DB) (err error) {
 
-	// event.AsyncFire(Event{}.PaymentUpdated(emailQueue.AccountId, emailQueue.Id))
+	// AsyncFire(*Event{}.PaymentUpdated(emailQueue.AccountId, emailQueue.Id))
 
 	return nil
 }
 func (emailQueue *EmailQueue) AfterDelete(tx *gorm.DB) (err error) {
-	// event.AsyncFire(Event{}.PaymentDeleted(emailQueue.AccountId, emailQueue.Id))
+	// AsyncFire(*Event{}.PaymentDeleted(emailQueue.AccountId, emailQueue.Id))
 	return nil
 }
 func (emailQueue *EmailQueue) AfterFind(tx *gorm.DB) (err error) {

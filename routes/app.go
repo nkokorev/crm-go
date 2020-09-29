@@ -271,11 +271,12 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/handlers/{handlerItemId:[0-9]+}", appCr.HandlerItemDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### Event items ###
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/events", appCr.EventItemCreate).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/events", appCr.EventItemGetListPagination).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/{eventItemId:[0-9]+}", appCr.EventItemGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/{eventItemId:[0-9]+}", appCr.EventItemUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/{eventItemId:[0-9]+}", appCr.EventItemDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/events", appCr.EventCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/events", appCr.EventGetListPagination).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/{eventId:[0-9]+}", appCr.EventGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/{eventId:[0-9]+}", appCr.EventUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/{eventId:[0-9]+}", appCr.EventDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/{eventId:[0-9]+}/execute", appCr.EventExecute).Methods(http.MethodGet,http.MethodPost, http.MethodOptions)
 
 	// ### Email Templates ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-notifications", appCr.EmailNotificationCreate).Methods(http.MethodPost, http.MethodOptions)

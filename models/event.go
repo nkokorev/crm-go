@@ -1,217 +1,108 @@
 package models
 
-import (
-	"github.com/nkokorev/crm-go/event"
+// Priority
+const (
+	Min         = -300
+	Low         = -200
+	BelowNormal = -100
+	Normal      = 0
+	AboveNormal = 100
+	High        = 200
+	Max         = 300
 )
 
-// Список всех событий, которы могут быть вызваны // !!! Не добавлять другие функции под этим интерфейсом !!!
-// При добавлении нового события - внести в список EventItem!!!
-type Event struct {}
+// NewEvent new an basic event instance
+func NewEvent(name string, payload M) Event {
+	if payload == nil {
+		payload = make(map[string]interface{})
+	}
 
-// ######### User #########
-func (Event) UserCreated(accountId uint, userId uint) event.Event {
-	return event.NewBasic("UserCreated", map[string]interface{}{"accountId":accountId, "userId":userId})
-}
-func (Event) UserUpdated(accountId uint, userId uint) event.Event {
-	return event.NewBasic("UserUpdated", map[string]interface{}{"accountId":accountId, "userId":userId})
-}
-func (Event) UserDeleted(accountId uint, userId uint) event.Event {
-	return event.NewBasic("UserDeleted", map[string]interface{}{"accountId":accountId, "userId":userId})
+	return Event{
+		name: name,
+		payload: payload,
+	}
 }
 
-func (Event) UserAppendedToAccount(accountId, userId, roleId uint) event.Event {
-	return event.NewBasic("UserAppendedToAccount", map[string]interface{}{"accountId":accountId, "userId":userId, "roleId":roleId})
-}
-func (Event) UserRemovedFromAccount(accountId, userId uint) event.Event {
-	return event.NewBasic("UserRemovedFromAccount", map[string]interface{}{"accountId":accountId, "userId":userId})
+// Abort abort event loop exec
+func (event *Event) Abort(abort bool) {
+	event.aborted = abort
 }
 
-// ######### Product #########
-func (Event) ProductCreated(accountId, productId uint) event.Event {
-	return event.NewBasic("ProductCreated", map[string]interface{}{"accountId":accountId, "productId":productId})
-}
-func (Event) ProductUpdated(accountId, productId uint) event.Event {
-	return event.NewBasic("ProductUpdated", map[string]interface{}{"accountId":accountId, "productId":productId})
-}
-func (Event) ProductDeleted(accountId, productId uint) event.Event {
-	return event.NewBasic("ProductDeleted", map[string]interface{}{"accountId":accountId, "productId":productId})
+// Fill event data
+func (event *Event) Fill(target interface{}, payload M) *Event {
+	if payload != nil {
+		event.payload = payload
+	}
+
+	event.target = target
+	return event
 }
 
-// ######### ProductCard #########
-func (Event) ProductCardCreated(accountId, productCardId uint) event.Event {
-	return event.NewBasic("ProductCardCreated", map[string]interface{}{"accountId":accountId, "productCardId":productCardId})
-}
-func (Event) ProductCardUpdated(accountId, productCardId uint) event.Event {
-	return event.NewBasic("ProductCardUpdated", map[string]interface{}{"accountId":accountId, "productCardId":productCardId})
-}
-func (Event) ProductCardDeleted(accountId, productCardId uint) event.Event {
-	return event.NewBasic("ProductCardDeleted", map[string]interface{}{"accountId":accountId, "productCardId":productCardId})
+// AttachTo add current event to the event manager.
+func (event *Event) AttachTo(em ManagerFace) {
+	em.AddEvent(*event)
 }
 
-// ######### ProductCategory #########
-func (Event) ProductCategoryCreated(accountId, productCategoryId uint) event.Event {
-	return event.NewBasic("ProductCategoryCreated", map[string]interface{}{"accountId":accountId, "productCategoryId":productCategoryId})
-}
-func (Event) ProductCategoryUpdated(accountId, productCategoryId uint) event.Event {
-	return event.NewBasic("ProductCategoryUpdated", map[string]interface{}{"accountId":accountId, "productCategoryId":productCategoryId})
-}
-func (Event) ProductCategoryDeleted(accountId, productCategoryId uint) event.Event {
-	return event.NewBasic("ProductCategoryDeleted", map[string]interface{}{"accountId":accountId, "productCategoryId":productCategoryId})
+// Get get data by index
+func (event *Event) Get(key string) interface{} {
+	if v, ok := event.payload[key]; ok {
+		return v
+	}
+
+	return nil
 }
 
-// ######### Storage #########
-func (Event) StorageCreated(accountId, storageId uint) event.Event {
-	return event.NewBasic("StorageCreated", map[string]interface{}{"accountId":accountId, "storageId":storageId})
-}
-func (Event) StorageUpdated(accountId, storageId uint) event.Event {
-	return event.NewBasic("StorageUpdated", map[string]interface{}{"accountId":accountId, "storageId":storageId})
-}
-func (Event) StorageDeleted(accountId, storageId uint) event.Event {
-	return event.NewBasic("StorageDeleted", map[string]interface{}{"accountId":accountId, "storageId":storageId})
+// Add value by key
+func (event *Event) Add(key string, val interface{}) {
+	if _, ok := event.payload[key]; !ok {
+		event.Set(key, val)
+	}
 }
 
-// ######### Article #########
-func (Event) ArticleCreated(accountId, articleId uint) event.Event {
-	return event.NewBasic("ArticleCreated", map[string]interface{}{"accountId":accountId, "articleId":articleId})
-}
-func (Event) ArticleUpdated(accountId, articleId uint) event.Event {
-	return event.NewBasic("ArticleUpdated", map[string]interface{}{"accountId":accountId, "articleId":articleId})
-}
-func (Event) ArticleDeleted(accountId, articleId uint) event.Event {
-	return event.NewBasic("ArticleDeleted", map[string]interface{}{"accountId":accountId, "articleId":articleId})
+// Set value by key
+func (event *Event) Set(key string, val interface{}) {
+	if event.payload == nil {
+		event.payload = make(map[string]interface{})
+	}
+
+	event.payload[key] = val
 }
 
-// ######### WebSite #########
-func (Event) WebSiteCreated(accountId, webSiteId uint) event.Event {
-	return event.NewBasic("WebSiteCreated", map[string]interface{}{"accountId":accountId, "webSiteId":webSiteId})
-}
-func (Event) WebSiteUpdated(accountId, webSiteId uint) event.Event {
-	return event.NewBasic("WebSiteUpdated", map[string]interface{}{"accountId":accountId, "webSiteId":webSiteId})
-}
-func (Event) WebSiteDeleted(accountId, webSiteId uint) event.Event {
-	return event.NewBasic("WebSiteDeleted", map[string]interface{}{"accountId":accountId, "webSiteId":webSiteId})
+// Name get event name
+func (event *Event) Name() string {
+	return event.name
 }
 
-// ######### WebPage #########
-func (Event) WebPageCreated(accountId, webPageId uint) event.Event {
-	return event.NewBasic("WebPageCreated", map[string]interface{}{"accountId":accountId, "webPageId":webPageId})
-}
-func (Event) WebPageUpdated(accountId, webPageId uint) event.Event {
-	return event.NewBasic("WebPageUpdated", map[string]interface{}{"accountId":accountId, "webPageId":webPageId})
-}
-func (Event) WebPageDeleted(accountId, webPageId uint) event.Event {
-	return event.NewBasic("WebPageDeleted", map[string]interface{}{"accountId":accountId, "webPageId":webPageId})
+// Data get all data
+func (event *Event) Data() map[string]interface{} {
+	return event.payload
 }
 
-// ######### WarehouseItem #########
-func (Event) WarehouseItemProductAppended(accountId, warehouseId, productId uint) event.Event {
-	return event.NewBasic("ProductCardCreated", map[string]interface{}{"accountId":accountId, "warehouseId":warehouseId, "productId":productId})
-}
-/*func (Event) ProductCardUpdated(accountId, productCardId uint) event.Event {
-	return event.NewBasic("ProductCardUpdated", map[string]interface{}{"accountId":accountId, "productCardId":productCardId})
-}
-func (Event) ProductCardDeleted(accountId, productCardId uint) event.Event {
-	return event.NewBasic("ProductCardDeleted", map[string]interface{}{"accountId":accountId, "productCardId":productCardId})
-}*/
-
-/*func (Event) ProductGroupCreated(accountId, productGroupId uint) event.Event {
-	return event.NewBasic("ProductGroupCreated", map[string]interface{}{"accountId":accountId, "productGroupId":productGroupId})
-}
-func (Event) ProductGroupUpdated(accountId, productGroupId uint) event.Event {
-	return event.NewBasic("ProductGroupUpdated", map[string]interface{}{"accountId":accountId, "productGroupId":productGroupId})
-}
-func (Event) ProductGroupDeleted(accountId, productGroupId uint) event.Event {
-	return event.NewBasic("ProductGroupDeleted", map[string]interface{}{"accountId":accountId, "productGroupId":productGroupId})
-}*/
-
-// ######### InventoryItem #########
-func (Event) InventoryItemProductAppended(accountId, inventoryId, productId uint) event.Event {
-	return event.NewBasic("InventoryItemProductAppended", map[string]interface{}{"accountId":accountId, "inventoryId":inventoryId, "productId":productId})
-}
-func (Event) InventoryItemProductRemoved(accountId, inventoryId, productId uint) event.Event {
-	return event.NewBasic("InventoryItemProductRemoved", map[string]interface{}{"accountId":accountId, "inventoryId":inventoryId, "productId":productId})
+// IsAborted check.
+func (event *Event) IsAborted() bool {
+	return event.aborted
 }
 
-
-// ######### Email Marketing #########
-func (Event) UserSubscribed(accountId uint, userId uint) event.Event {
-	return event.NewBasic("UserSubscribed", map[string]interface{}{"accountId":accountId, "userId":userId})
-}
-func (Event) UserUnsubscribed(accountId uint, userId uint) event.Event {
-	return event.NewBasic("UserUnsubscribed", map[string]interface{}{"accountId":accountId, "userId":userId})
-}
-func (Event) UserUpdateSubscribeStatus(accountId uint, userId uint) event.Event {
-	return event.NewBasic("UserUpdateSubscribeStatus", map[string]interface{}{"accountId":accountId, "userId":userId})
+// Target get target
+func (event *Event) Target() interface{} {
+	return event.target
 }
 
-// ######### Order #########
-func (Event) OrderCreated(accountId uint, orderId uint) event.Event {
-	return event.NewBasic("OrderCreated", map[string]interface{}{"accountId":accountId, "orderId":orderId})
-}
-func (Event) OrderUpdated(accountId uint, orderId uint) event.Event {
-	return event.NewBasic("OrderUpdated", map[string]interface{}{"accountId":accountId, "orderId":orderId})
-}
-func (Event) OrderDeleted(accountId uint, orderId uint) event.Event {
-	return event.NewBasic("OrderDeleted", map[string]interface{}{"accountId":accountId, "orderId":orderId})
-}
-func (Event) OrderCompleted(accountId uint, orderId uint) event.Event {
-	return event.NewBasic("OrderCompleted", map[string]interface{}{"accountId":accountId, "orderId":orderId})
-}
-func (Event) OrderCanceled(accountId uint, orderId uint) event.Event {
-	return event.NewBasic("OrderCanceled", map[string]interface{}{"accountId":accountId, "orderId":orderId})
+// SetName set event name
+func (event *Event) SetName(name string) *Event {
+	event.name = name
+	return event
 }
 
-// ######### DeliveryOrder #########
-func (Event) DeliveryOrderCreated(accountId uint, deliveryOrderId uint) event.Event {
-	return event.NewBasic("DeliveryOrderCreated", map[string]interface{}{"accountId":accountId, "deliveryOrderId":deliveryOrderId})
-}
-func (Event) DeliveryOrderUpdated(accountId uint, deliveryOrderId uint) event.Event {
-	return event.NewBasic("DeliveryOrderUpdated", map[string]interface{}{"accountId":accountId, "deliveryOrderId":deliveryOrderId})
-}
-func (Event) DeliveryOrderAlimented(accountId uint, deliveryOrderId uint) event.Event {
-	return event.NewBasic("DeliveryOrderAlimented", map[string]interface{}{"accountId":accountId, "deliveryOrderId":deliveryOrderId})
-}
-func (Event) DeliveryOrderInProcess(accountId uint, deliveryOrderId uint) event.Event {
-	return event.NewBasic("DeliveryOrderInProcess", map[string]interface{}{"accountId":accountId, "deliveryOrderId":deliveryOrderId})
-}
-func (Event) DeliveryOrderCompleted(accountId uint, deliveryOrderId uint) event.Event {
-	return event.NewBasic("DeliveryOrderCompleted", map[string]interface{}{"accountId":accountId, "deliveryOrderId":deliveryOrderId})
-}
-func (Event) DeliveryOrderCanceled(accountId uint, deliveryOrderId uint) event.Event {
-	return event.NewBasic("DeliveryOrderCanceled", map[string]interface{}{"accountId":accountId, "deliveryOrderId":deliveryOrderId})
-}
-func (Event) DeliveryOrderStatusUpdated(accountId uint, deliveryOrderId uint) event.Event {
-	return event.NewBasic("DeliveryOrderStatusUpdated", map[string]interface{}{"accountId":accountId, "deliveryOrderId":deliveryOrderId})
-}
-func (Event) DeliveryOrderDeleted(accountId uint, deliveryOrderId uint) event.Event {
-	return event.NewBasic("DeliveryOrderDeleted", map[string]interface{}{"accountId":accountId, "deliveryOrderId":deliveryOrderId})
+func (event *Event) SetPayload(payload M) Event {
+	if payload != nil {
+		event.payload = payload
+	}
+	return *event
 }
 
-// ######### Payment #########
-func (Event) PaymentCreated(accountId uint, paymentId uint) event.Event {
-	return event.NewBasic("PaymentCreated", map[string]interface{}{"accountId":accountId, "paymentId":paymentId})
+// SetTarget set event target
+func (event *Event) SetTarget(target interface{}) *Event {
+	event.target = target
+	return event
 }
-func (Event) PaymentUpdated(accountId uint, paymentId uint) event.Event {
-	return event.NewBasic("PaymentUpdated", map[string]interface{}{"accountId":accountId, "paymentId":paymentId})
-}
-func (Event) PaymentDeleted(accountId uint, paymentId uint) event.Event {
-	return event.NewBasic("PaymentDeleted", map[string]interface{}{"accountId":accountId, "paymentId":paymentId})
-}
-func (Event) PaymentCompleted(accountId uint, paymentId uint) event.Event {
-	return event.NewBasic("PaymentCompleted", map[string]interface{}{"accountId":accountId, "paymentId":paymentId})
-}
-func (Event) PaymentCanceled(accountId uint, paymentId uint) event.Event {
-	return event.NewBasic("PaymentCanceled", map[string]interface{}{"accountId":accountId, "paymentId":paymentId})
-}
-
-// ######### Manufacturer #########
-func (Event) ManufacturerCreated(accountId, manufacturerId uint) event.Event {
-	return event.NewBasic("ManufacturerCreated", map[string]interface{}{"accountId":accountId, "manufacturerId":manufacturerId})
-}
-func (Event) ManufacturerUpdated(accountId, manufacturerId uint) event.Event {
-	return event.NewBasic("ManufacturerUpdated", map[string]interface{}{"accountId":accountId, "manufacturerId":manufacturerId})
-}
-func (Event) ManufacturerDeleted(accountId, manufacturerId uint) event.Event {
-	return event.NewBasic("ManufacturerDeleted", map[string]interface{}{"accountId":accountId, "manufacturerId":manufacturerId})
-}
-

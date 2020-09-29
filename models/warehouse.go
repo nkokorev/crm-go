@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -280,7 +279,7 @@ func (warehouse *Warehouse) Shipment(shipment Shipment, createIfNotExist bool) e
 	// todo: нужно потом добавить событие
 	/*account, err := GetAccount(warehouse.AccountId)
 	if err == nil && account != nil {
-		event.AsyncFire(Event{}.WarehouseItemProductAppended(account.Id, warehouse.Id, product.Id))
+		AsyncFire(*Event{}.WarehouseItemProductAppended(account.Id, warehouse.Id, product.Id))
 	}*/
 
 	return nil
@@ -310,7 +309,8 @@ func (warehouse Warehouse) AppendProduct(product Product, strict... bool) error 
 
 	account, err := GetAccount(warehouse.AccountId)
 	if err == nil && account != nil {
-		event.AsyncFire(Event{}.WarehouseItemProductAppended(account.Id, warehouse.Id, product.Id))
+		// AsyncFire(*Event{}.WarehouseItemProductAppended(account.Id, warehouse.Id, product.Id))
+		// AsyncFire(NewEvent("UserCreated", map[string]interface{}{"account_id":user.IssuerAccountId, "user_id":user.Id}))
 	}
 
 	return nil

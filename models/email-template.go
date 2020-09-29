@@ -9,7 +9,6 @@ import (
 	"github.com/fatih/structs"
 	"github.com/nkokorev/crm-go/utils"
 	"github.com/toorop/go-dkim"
-	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"html/template"
@@ -39,12 +38,6 @@ type EmailTemplate struct {
 
 	Public 		bool `json:"public" gorm:"type:bool;"` // показывать ли на домене public
 
-	// User *User `json:"-" sql:"-"` // Пользователь, который получит сообщение
-
-	// Контекстные данные в формате JSON
-	JsonData 	datatypes.JSON `json:"json_data"`
-
-	
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 	// Шаблоны не удаляемы теперь для MTAHistory
@@ -245,7 +238,7 @@ func (Account) EmailTemplateGetSharedByHashId(hashId string) (*EmailTemplate, er
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 
 // Подготавливает данные для отправки обезличивая их
-func (emailTemplate EmailTemplate) PrepareViewData(subject, previewText string, data map[string]interface{}, pixelURL string, unsubscribeUrl *string) (*ViewData, error) {
+func (emailTemplate EmailTemplate) PrepareViewData(subject, previewText string, systemData, contextData map[string]interface{}, pixelURL string, unsubscribeUrl *string) (*ViewData, error) {
 
 	// 1. Готовим JSON
 	// WORK OLD !!!
@@ -259,14 +252,14 @@ func (emailTemplate EmailTemplate) PrepareViewData(subject, previewText string, 
 		unsubUrl = *unsubscribeUrl
 	}
 
-	jsonMap := make(map[string]interface{})
-	jsonMap = utils.ParseJSONBToMapString(emailTemplate.JsonData)
+	// jsonMap := make(map[string]interface{})
+	// jsonMap = utils.ParseJSONBToMapString(emailTemplate.JsonData)
 	
-	return &ViewData{
+	return &ViewData {
 		Subject: subject,
 		PreviewText: previewText,
-		Data: data,
-		Json: jsonMap,
+		Data: systemData, 	// SystemData
+		Payload: contextData, 	// ContextData
 		UnsubscribeURL: unsubUrl,
 		PixelURL: pixelURL,
 		PixelHTML: emailTemplate.GetPixelHTML(pixelURL),

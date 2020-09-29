@@ -5,7 +5,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -237,7 +236,8 @@ func (product *Product) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 
 }
 func (product *Product) AfterCreate(tx *gorm.DB) error {
-	event.AsyncFire(Event{}.ProductCreated(product.AccountId, product.Id))
+	// AsyncFire(*Event{}.ProductCreated(product.AccountId, product.Id))
+	AsyncFire(NewEvent("ProductCreated", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
 
 	// Создаем содержание null
 	/*if !product.IsKit && product.Id > 0{
@@ -253,11 +253,13 @@ func (product *Product) AfterCreate(tx *gorm.DB) error {
 	return nil
 }
 func (product *Product) AfterUpdate(tx *gorm.DB) (err error) {
-	event.AsyncFire(Event{}.ProductUpdated(product.AccountId, product.Id))
+	// AsyncFire(*Event{}.ProductUpdated(product.AccountId, product.Id))
+	AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
 	return nil
 }
 func (product *Product) AfterDelete(tx *gorm.DB) (err error) {
-	event.AsyncFire(Event{}.ProductDeleted(product.AccountId, product.Id))
+	// AsyncFire(*Event{}.ProductDeleted(product.AccountId, product.Id))
+	AsyncFire(NewEvent("ProductDeleted", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
 	return nil
 }
 

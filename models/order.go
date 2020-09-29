@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -105,21 +104,25 @@ func (order *Order) BeforeCreate(tx *gorm.DB) error {
 	
 	return nil
 }
-func (order *Order) AfterCreate(tx *gorm.DB) (error) {
-	event.AsyncFire(Event{}.OrderCreated(order.AccountId, order.Id))
+func (order *Order) AfterCreate(tx *gorm.DB) error {
+	// AsyncFire(*Event{}.OrderCreated(order.AccountId, order.Id))
+	AsyncFire(NewEvent("OrderCreated", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
 	return nil
 }
 func (order *Order) AfterUpdate(tx *gorm.DB) (err error) {
-	event.AsyncFire(Event{}.OrderUpdated(order.AccountId, order.Id))
+	// AsyncFire(*Event{}.OrderUpdated(order.AccountId, order.Id))
+	AsyncFire(NewEvent("OrderUpdated", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
 
 	orderStatusEntity, err := OrderStatus{}.get(order.StatusId,nil)
 	if err == nil && orderStatusEntity.GetAccountId() == order.AccountId {
 		if orderStatus, ok := orderStatusEntity.(*OrderStatus); ok {
 			if orderStatus.Code == "completed" {
-				event.AsyncFire(Event{}.OrderCompleted(order.AccountId, order.Id))
+				// AsyncFire(*Event{}.OrderCompleted(order.AccountId, order.Id))
+				AsyncFire(NewEvent("OrderCompleted", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
 			}
 			if orderStatus.Code == "canceled" {
-				event.AsyncFire(Event{}.OrderCanceled(order.AccountId, order.Id))
+				// AsyncFire(*Event{}.OrderCanceled(order.AccountId, order.Id))
+				AsyncFire(NewEvent("OrderCanceled", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
 			}
 		}
 
@@ -127,7 +130,8 @@ func (order *Order) AfterUpdate(tx *gorm.DB) (err error) {
 	return nil
 }
 func (order *Order) AfterDelete(tx *gorm.DB) (err error) {
-	event.AsyncFire(Event{}.OrderDeleted(order.AccountId, order.Id))
+	// AsyncFire(*Event{}.OrderDeleted(order.AccountId, order.Id))
+	AsyncFire(NewEvent("OrderDeleted", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
 	return nil
 }
 func (order *Order) AfterFind(tx *gorm.DB) (err error) {

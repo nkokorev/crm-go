@@ -716,7 +716,7 @@ func (emailCampaign EmailCampaign) Validate() error {
 		Subject: *emailCampaign.Subject,
 		PreviewText: *emailCampaign.PreviewText,
 		Data: data,
-		Json: data,
+		Payload: data,
 		UnsubscribeURL: "",
 		PixelURL: "",
 		PixelHTML: "<div></div>",

@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -117,15 +116,18 @@ func (productCard *ProductCard) AfterFind(tx *gorm.DB) (err error) {
 	return nil
 }
 func (productCard *ProductCard) AfterCreate(tx *gorm.DB) error {
-	event.AsyncFire(Event{}.ProductCardCreated(productCard.AccountId, productCard.Id))
+	// AsyncFire(*Event{}.ProductCardCreated(productCard.AccountId, productCard.Id))
+	AsyncFire(NewEvent("ProductCardCreated", map[string]interface{}{"account_id":productCard.AccountId, "product_card_id":productCard.Id}))
 	return nil
 }
 func (productCard *ProductCard) AfterUpdate(tx *gorm.DB) error {
-	event.AsyncFire(Event{}.ProductCardUpdated(productCard.AccountId, productCard.Id))
+	// AsyncFire(*Event{}.ProductCardUpdated(productCard.AccountId, productCard.Id))
+	AsyncFire(NewEvent("ProductCardUpdated", map[string]interface{}{"account_id":productCard.AccountId, "product_card_id":productCard.Id}))
 	return nil
 }
 func (productCard *ProductCard) AfterDelete(tx *gorm.DB) error {
-	event.AsyncFire(Event{}.ProductCardDeleted(productCard.AccountId, productCard.Id))
+	// AsyncFire(*Event{}.ProductCardDeleted(productCard.AccountId, productCard.Id))
+	AsyncFire(NewEvent("ProductCardDeleted", map[string]interface{}{"account_id":productCard.AccountId, "product_card_id":productCard.Id}))
 	return nil
 }
 // ######### CRUD Functions ############
@@ -287,7 +289,8 @@ func (productCard *ProductCard) AppendProduct(input *Product, optPriority... int
 
 	account, err := GetAccount(productCard.AccountId)
 	if err == nil && account != nil {
-		event.AsyncFire(Event{}.ProductCardUpdated(account.Id, productCard.Id))
+		// AsyncFire(*Event{}.ProductCardUpdated(account.Id, productCard.Id))
+		AsyncFire(NewEvent("ProductCardUpdated", map[string]interface{}{"account_id":account.Id, "product_card_id":productCard.Id}))
 	}
 	
 	return nil

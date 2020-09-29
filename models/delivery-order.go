@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"fmt"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -90,21 +89,23 @@ func (deliveryOrder *DeliveryOrder) AfterFind(tx *gorm.DB) (err error) {
 	return nil
 }
 func (deliveryOrder *DeliveryOrder) AfterCreate(tx *gorm.DB) error {
-	event.AsyncFire(Event{}.DeliveryOrderCreated(deliveryOrder.AccountId, deliveryOrder.Id))
+	// AsyncFire(*Event{}.DeliveryOrderCreated(deliveryOrder.AccountId, deliveryOrder.Id))
+	AsyncFire(NewEvent("DeliveryOrderCreated", map[string]interface{}{"account_id":deliveryOrder.AccountId, "delivery_order_id":deliveryOrder.Id}))
 	return nil
 }
 func (deliveryOrder *DeliveryOrder) AfterUpdate(tx *gorm.DB) (err error) {
 
-	event.AsyncFire(Event{}.DeliveryOrderUpdated(deliveryOrder.AccountId, deliveryOrder.Id))
+	// AsyncFire(*Event{}.DeliveryOrderUpdated(deliveryOrder.AccountId, deliveryOrder.Id))
+	AsyncFire(NewEvent("DeliveryOrderUpdated", map[string]interface{}{"account_id":deliveryOrder.AccountId, "delivery_order_id":deliveryOrder.Id}))
 
 /*	orderStatusEntity, err := DeliveryStatus{}.get(deliveryOrder.StatusId)
 	if err == nil && orderStatusEntity.GetAccountId() == deliveryOrder.AccountId {
 		if deliveryStatus, ok := orderStatusEntity.(*DeliveryStatus); ok {
 			if deliveryStatus.Code == "completed" {
-				event.AsyncFire(Event{}.DeliveryOrderCompleted(deliveryOrder.AccountId, deliveryOrder.Id))
+				AsyncFire(*Event{}.DeliveryOrderCompleted(deliveryOrder.AccountId, deliveryOrder.Id))
 			}
 			if deliveryStatus.Code == "canceled" {
-				event.AsyncFire(Event{}.DeliveryOrderCanceled(deliveryOrder.AccountId, deliveryOrder.Id))
+				AsyncFire(*Event{}.DeliveryOrderCanceled(deliveryOrder.AccountId, deliveryOrder.Id))
 			}
 		}
 
@@ -113,7 +114,8 @@ func (deliveryOrder *DeliveryOrder) AfterUpdate(tx *gorm.DB) (err error) {
 	return nil
 }
 func (deliveryOrder *DeliveryOrder) AfterDelete(tx *gorm.DB) (err error) {
-	event.AsyncFire(Event{}.DeliveryOrderDeleted(deliveryOrder.AccountId, deliveryOrder.Id))
+	// AsyncFire(*Event{}.DeliveryOrderDeleted(deliveryOrder.AccountId, deliveryOrder.Id))
+	AsyncFire(NewEvent("DeliveryOrderDeleted", map[string]interface{}{"account_id":deliveryOrder.AccountId, "delivery_order_id":deliveryOrder.Id}))
 	return nil
 }
 
@@ -255,9 +257,12 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 
 		switch deliveryOrder.Status.Group {
 		case "agreement":
-			event.AsyncFire(Event{}.DeliveryOrderAlimented(deliveryOrder.AccountId, deliveryOrder.PublicId))
+			// AsyncFire(*Event{}.DeliveryOrderAlimented(deliveryOrder.AccountId, deliveryOrder.PublicId))
+			AsyncFire(NewEvent("DeliveryOrderAlimented", map[string]interface{}{"account_id":deliveryOrder.AccountId, "delivery_order_id":deliveryOrder.Id}))
+
 		case "delivery":
-			event.AsyncFire(Event{}.DeliveryOrderInProcess(deliveryOrder.AccountId, deliveryOrder.PublicId))
+			// AsyncFire(*Event{}.DeliveryOrderInProcess(deliveryOrder.AccountId, deliveryOrder.PublicId))
+			AsyncFire(NewEvent("DeliveryOrderInProcess", map[string]interface{}{"account_id":deliveryOrder.AccountId, "delivery_order_id":deliveryOrder.Id}))
 		case "completed":
 			// Обновляем платеж
 			var order Order
@@ -297,14 +302,16 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 
 			// todo: !!! Перевести ЗАКАЗ в статус - Выполнено!!
 
-			event.AsyncFire(Event{}.DeliveryOrderCompleted(deliveryOrder.AccountId, deliveryOrder.PublicId))
+			// AsyncFire(*Event{}.DeliveryOrderCompleted(deliveryOrder.AccountId, deliveryOrder.PublicId))
+			AsyncFire(NewEvent("DeliveryOrderCompleted", map[string]interface{}{"account_id":deliveryOrder.AccountId, "delivery_order_id":deliveryOrder.Id}))
 		case "canceled":
-			event.AsyncFire(Event{}.DeliveryOrderCanceled(deliveryOrder.AccountId, deliveryOrder.PublicId))
+			// AsyncFire(*Event{}.DeliveryOrderCanceled(deliveryOrder.AccountId, deliveryOrder.PublicId))
+			AsyncFire(NewEvent("DeliveryOrderCanceled", map[string]interface{}{"account_id":deliveryOrder.AccountId, "delivery_order_id":deliveryOrder.Id}))
 		}
 
 		// общая информация об обновлении статуса
-		event.AsyncFire(Event{}.DeliveryOrderStatusUpdated(deliveryOrder.AccountId, deliveryOrder.PublicId))
-
+		// AsyncFire(*Event{}.DeliveryOrderStatusUpdated(deliveryOrder.AccountId, deliveryOrder.PublicId))
+		AsyncFire(NewEvent("DeliveryOrderStatusUpdated", map[string]interface{}{"account_id":deliveryOrder.AccountId, "delivery_order_id":deliveryOrder.Id}))
 
 	}
 

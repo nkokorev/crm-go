@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/mitchellh/mapstructure"
-	"github.com/nkokorev/crm-go/event"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -117,15 +116,18 @@ func (webSite *WebSite) AfterFind(tx *gorm.DB) (err error) {
 }
 
 func (webSite *WebSite) AfterCreate(tx *gorm.DB) error {
-	event.AsyncFire(Event{}.WebSiteCreated(webSite.AccountId, webSite.Id))
+	// AsyncFire(*Event{}.WebSiteCreated(webSite.AccountId, webSite.Id))
+	AsyncFire(NewEvent("WebSiteCreated", map[string]interface{}{"account_id":webSite.AccountId, "web_site_id":webSite.Id}))
 	return nil
 }
 func (webSite *WebSite) AfterUpdate(tx *gorm.DB) (err error) {
-	event.AsyncFire(Event{}.WebSiteUpdated(webSite.AccountId, webSite.Id))
+	// AsyncFire(*Event{}.WebSiteUpdated(webSite.AccountId, webSite.Id))
+	AsyncFire(NewEvent("WebSiteUpdated", map[string]interface{}{"account_id":webSite.AccountId, "web_site_id":webSite.Id}))
 	return nil
 }
 func (webSite *WebSite) AfterDelete(tx *gorm.DB) (err error) {
-	event.AsyncFire(Event{}.WebSiteDeleted(webSite.AccountId, webSite.Id))
+	// AsyncFire(*Event{}.WebSiteDeleted(webSite.AccountId, webSite.Id))
+	AsyncFire(NewEvent("WebSiteDeleted", map[string]interface{}{"account_id":webSite.AccountId, "web_site_id":webSite.Id}))
 	return nil
 }
 
