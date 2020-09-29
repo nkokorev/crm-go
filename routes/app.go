@@ -276,7 +276,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/{eventId:[0-9]+}", appCr.EventGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/{eventId:[0-9]+}", appCr.EventUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/{eventId:[0-9]+}", appCr.EventDelete).Methods(http.MethodDelete, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/{eventId:[0-9]+}/execute", appCr.EventExecute).Methods(http.MethodGet,http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/events/{eventId:[0-9]+}/execute", appCr.EventExecute).Methods(http.MethodPost, http.MethodOptions)
 
 	// ### Email Templates ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/email-notifications", appCr.EmailNotificationCreate).Methods(http.MethodPost, http.MethodOptions)

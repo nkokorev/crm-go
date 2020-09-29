@@ -234,15 +234,10 @@ func EventExecute(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Вызов не удался: запрещен вызов события по API"))
 		return
 	}
-
-	// Определяем тип запроса
-	if r.Method == http.MethodGet {
-		
-	}
 	
 	// Собираем входящие данные, если запрос не GET
 	var input struct{
-		RecipientListIds string `json:"recipient_list_ids"`
+		RecipientListIds []uint `json:"recipient_list_ids"`
 		Payload map[string]interface{} `json:"payload"` // JSONData for
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -250,13 +245,22 @@ func EventExecute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Устанавливаем базовые данные
+	event.Set("account_id", account.Id)
+
+	// Устанавливаем контекстные данные для события, переданные по API
+	if event.ParsingPayload {
+		event.SetPayload(input.Payload)
+	}
+
 	// Устанавливаем контекстные данные для события
-	event.SetPayload(input.Payload)
-	// event.Payload = input.Payload
+	if event.ParsingRecipientList {
+		event.SetRecipientList(input.RecipientListIds)
+	}
 	
 
-	// event.Ex
-
+	// Вызываем событие
+	models.AsyncFire(event)
 
 	resp := u.Message(true, "GET Event Execute")
 	u.Respond(w, resp)

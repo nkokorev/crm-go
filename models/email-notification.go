@@ -308,7 +308,7 @@ func (emailNotification *EmailNotification) GetPreloadDb(getModel bool, autoPrel
 }
 
 // Вызов уведомления с контекстом данных {data}
-func (emailNotification EmailNotification) Execute(data map[string]interface{}) error {
+func (emailNotification EmailNotification) Execute(payload map[string]interface{}) error {
 
 	// Проверяем статус уведомления
 	if !emailNotification.IsActive() {
@@ -354,7 +354,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 
 	}
 	if emailNotification.ParseRecipientUser {
-		if userSTR, ok := data["userId"]; ok {
+		if userSTR, ok := payload["user_id"]; ok {
 			if userId, ok := userSTR.(uint); ok {
 				user, err := account.GetUser(userId)
 				if err == nil && user.Email != nil {
@@ -364,7 +364,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		}
 	}
 	if emailNotification.ParseRecipientCustomer {
-		if customerSTR, ok := data["customerId"]; ok {
+		if customerSTR, ok := payload["customer_id"]; ok {
 			if customerId, ok := customerSTR.(uint); ok {
 				customer, err := account.GetUser(customerId)
 				if err == nil && customer.Email != nil {
@@ -374,7 +374,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		}
 	}
 	if emailNotification.ParseRecipientManager {
-		if managerSTR, ok := data["managerId"]; ok {
+		if managerSTR, ok := payload["manager_id"]; ok {
 			if managerId, ok := managerSTR.(uint); ok {
 				manager, err := account.GetUser(managerId)
 				if err == nil && *manager.Email != "" {
@@ -396,7 +396,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 		if emailNotification.Subject == nil || emailNotification.PreviewText == nil {
 			break
 		}
-		_subject, err := parseSubjectByData(*emailNotification.Subject, data)
+		_subject, err := parseSubjectByData(*emailNotification.Subject, payload)
 		if err != nil {
 			log.Printf("Ошибка отправления Уведомления - не удается прочитать тему сообщения. emailNotificationId: %v\n", emailNotification.Id)
 			continue
@@ -405,7 +405,7 @@ func (emailNotification EmailNotification) Execute(data map[string]interface{}) 
 			_subject = fmt.Sprintf("Уведомление по почте #%v", emailNotification.Id)
 		}
 
-		vData, err := emailTemplate.PrepareViewData(_subject, *emailNotification.PreviewText, data, nil, pixelURL, &unsubscribeUrl)
+		vData, err := emailTemplate.PrepareViewData(_subject, *emailNotification.PreviewText, payload, pixelURL, &unsubscribeUrl)
 		if err != nil {
 			log.Printf("Ошибка отправления Уведомления - не удается подготовить данные для сообщения. emailNotificationId: %v\n", emailNotification.Id)
 			continue

@@ -15,9 +15,12 @@ type Event struct {
 	// #### Entity ####
 
 	// Полезная нагрузка события
-	payload map[string]interface{} `json:"payload" gorm:"-"`
+	data 		map[string]interface{} `json:"data" gorm:"-"`
+
+	// Список пользователей (иногда нужно)
+	recipientList 	[]uint `json:"recipient_list" gorm:"-"`
 	// target
-	target interface{} `json:"-" gorm:"-"`
+	target 			interface{} `json:"-" gorm:"-"`
 	// mark is aborted
 	aborted bool 		`json:"aborted" gorm:"-"`
 	/// #### END of Entity ####
@@ -32,7 +35,7 @@ type Event struct {
 
 	// Получение списка пользователей / данных из API в контексте recipient_list []
 	ParsingRecipientList 	bool 	`json:"parsing_recipient_list" gorm:"type:bool;default:false;"`
-	ParsingJsonData		 	bool 	`json:"parsing_json_data" gorm:"type:bool;default:false;"`
+	ParsingPayload		 	bool 	`json:"parsing_payload" gorm:"type:bool;default:false;"`
 
 	// Данные события: recipient_list[], DataJson{},
 	

@@ -344,7 +344,7 @@ func (emailQueue EmailQueue) GetNearbyActiveStep(step uint) (*EmailQueueEmailTem
 
 	var stepSql sql.NullInt64
 	// err := db.Model(&EmailQueueEmailTemplate{}).Where("email_queue_id = ? AND enabled = 'true' AND email_queue_email_templates.step >= ?", emailQueue.Id, step).
-	err := db.Debug().Model(&EmailQueueEmailTemplate{}).Where("email_queue_id = ? AND enabled = 'true' AND step >= ?", emailQueue.Id, step).
+	err := db.Model(&EmailQueueEmailTemplate{}).Where("email_queue_id = ? AND enabled = 'true' AND step >= ?", emailQueue.Id, step).
 		Select("min(step)").Row().Scan(&stepSql)
 	if err != nil || !stepSql.Valid {
 		return nil, utils.Error{Message: "Нет доступных писем для отправления (2)"}

@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -360,7 +359,7 @@ func (pkg EmailPkg) handleQueue() bool {
 		}
 
 		// Обновляем задачу для следующего шага или удаляем текущий
-		fmt.Println("Обновляем задачу, следующий шаг: ", pkg.queueStepId)
+		// fmt.Println("Обновляем задачу, следующий шаг: ", pkg.queueStepId)
 		nextStep, err := emailQueue.GetNextActiveStep(pkg.queueStepId)
 		if err != nil {
 			// серия завершена, т.к. нет следующих шагов

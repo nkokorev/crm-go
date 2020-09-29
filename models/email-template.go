@@ -238,7 +238,7 @@ func (Account) EmailTemplateGetSharedByHashId(hashId string) (*EmailTemplate, er
 // ########### END OF ACCOUNT FUNCTIONAL ###########
 
 // Подготавливает данные для отправки обезличивая их
-func (emailTemplate EmailTemplate) PrepareViewData(subject, previewText string, systemData, contextData map[string]interface{}, pixelURL string, unsubscribeUrl *string) (*ViewData, error) {
+func (emailTemplate EmailTemplate) PrepareViewData(subject, previewText string, payload map[string]interface{}, pixelURL string, unsubscribeUrl *string) (*ViewData, error) {
 
 	// 1. Готовим JSON
 	// WORK OLD !!!
@@ -258,8 +258,8 @@ func (emailTemplate EmailTemplate) PrepareViewData(subject, previewText string, 
 	return &ViewData {
 		Subject: subject,
 		PreviewText: previewText,
-		Data: systemData, 	// SystemData
-		Payload: contextData, 	// ContextData
+		Data: payload, 	// SystemData
+		// Payload: payload, 	// ContextData
 		UnsubscribeURL: unsubUrl,
 		PixelURL: pixelURL,
 		PixelHTML: emailTemplate.GetPixelHTML(pixelURL),

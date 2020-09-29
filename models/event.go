@@ -12,14 +12,14 @@ const (
 )
 
 // NewEvent new an basic event instance
-func NewEvent(name string, payload M) Event {
-	if payload == nil {
-		payload = make(map[string]interface{})
+func NewEvent(name string, data M) Event {
+	if data == nil {
+		data = make(map[string]interface{})
 	}
 
 	return Event{
 		Name: name,
-		payload: payload,
+		data: data,
 	}
 }
 
@@ -29,9 +29,9 @@ func (event *Event) Abort(abort bool) {
 }
 
 // Fill event data
-func (event *Event) Fill(target interface{}, payload M) *Event {
-	if payload != nil {
-		event.payload = payload
+func (event *Event) Fill(target interface{}, data M) *Event {
+	if data != nil {
+		event.data = data
 	}
 
 	event.target = target
@@ -45,7 +45,7 @@ func (event *Event) AttachTo(em ManagerFace) {
 
 // Get get data by index
 func (event *Event) Get(key string) interface{} {
-	if v, ok := event.payload[key]; ok {
+	if v, ok := event.data[key]; ok {
 		return v
 	}
 
@@ -54,18 +54,18 @@ func (event *Event) Get(key string) interface{} {
 
 // Add value by key
 func (event *Event) Add(key string, val interface{}) {
-	if _, ok := event.payload[key]; !ok {
+	if _, ok := event.data[key]; !ok {
 		event.Set(key, val)
 	}
 }
 
 // Set value by key
 func (event *Event) Set(key string, val interface{}) {
-	if event.payload == nil {
-		event.payload = make(map[string]interface{})
+	if event.data == nil {
+		event.data = make(map[string]interface{})
 	}
 
-	event.payload[key] = val
+	event.data[key] = val
 }
 
 // Name get event name
@@ -75,7 +75,7 @@ func (event *Event) GetName() string {
 
 // Data get all data
 func (event *Event) Data() map[string]interface{} {
-	return event.payload
+	return event.data
 }
 
 // IsAborted check.
@@ -94,11 +94,23 @@ func (event *Event) SetName(name string) *Event {
 	return event
 }
 
-func (event *Event) SetPayload(payload M) Event {
-	if payload != nil {
-		event.payload = payload
+func (event *Event) SetData(data M) *Event {
+	if data != nil {
+		event.data = data
 	}
-	return *event
+	return event
+}
+
+func (event *Event) SetPayload(payload M) *Event {
+	event.Set("payload", payload)
+	return event
+}
+
+func (event *Event) SetRecipientList(recipientList 	[]uint) *Event {
+	if recipientList != nil {
+		event.recipientList = recipientList
+	}
+	return event
 }
 
 // SetTarget set event target

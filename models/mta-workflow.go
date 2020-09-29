@@ -471,7 +471,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	}
 
 	// Готовим еще раз полностью данные
-	vData, err := emailTemplate.PrepareViewData(_subject, PreviewText, data, nil, pixelURL, &unsubscribeUrl)
+	vData, err := emailTemplate.PrepareViewData(_subject, PreviewText, data, pixelURL, &unsubscribeUrl)
 	if err != nil {
 		mtaWorkflow.stopEmailSender(fmt.Sprintf("Ошибка подготовки данных для сообщения: %v",err.Error()))
 		return utils.Error{ Message: "Ошибка отправления Уведомления - не удается подготовить данные для сообщения"}
@@ -486,7 +486,7 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	name := ""
 	if user.Name != nil { name = *user.Name }
 	if user.Email == nil {
-		return utils.Error{ Message: "Ошибка отправления: отсутсвует почта у пользователя"}
+		return utils.Error{ Message: "Ошибка отправления: отсутствует почта у пользователя"}
 	}
 
 	var pkg = EmailPkg {

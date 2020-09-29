@@ -142,7 +142,7 @@ func (em *Manager) Fire(name string, params M) (err error, e Event) {
 	// call listeners use defined Event
 	if e, ok := em.events[name]; ok {
 		if params != nil {
-			e.SetPayload(params)
+			e.SetData(params)
 		}
 
 		err = em.FireEvent(e)
@@ -284,7 +284,7 @@ func (em *Manager) newEvent(name string, payload M) *Event {
 	var cp = *em.sample
 
 	cp.SetName(name)
-	cp.SetPayload(payload)
+	cp.SetData(payload)
 
 	return &cp
 }
