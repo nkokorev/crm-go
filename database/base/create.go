@@ -1797,7 +1797,7 @@ func UploadTestDataPart_III() {
 		{Name: "Delete article", Code: models.EventArticleDeleted, URL: domainAiroSite + "/api/ratuscrm/webhooks/articles/{{.articleId}}", HttpMethod: http.MethodDelete},
 		{Name: "Upload all articles", Code: models.EventArticlesUpdate, URL: domainAiroSite + "/api/ratuscrm/webhooks/articles", HttpMethod: http.MethodGet},
 
-		{Name: "Upload all webSite data", Code: models.EventUpdateAllShopData, URL: domainAiroSite + "/api/ratuscrm/webhooks/upload/all", HttpMethod: http.MethodGet},
+		{Name: "Upload all webSite data", Code: models.EventUpdateAllShopData, URL: domainAiroSite + "/api/ratuscrm/webhooks/upload/all?key=fdSdk8SAj2-SqqNsje", HttpMethod: http.MethodGet},
 	}
 	for i,_ := range webHooks {
 		// _, err = airoAccount.CreateWebHook(webHooks[i])

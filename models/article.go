@@ -203,7 +203,7 @@ func (article *Article) update(input map[string]interface{}, preloads []string) 
 	delete(input,"image")
 	// delete(input,"preloads")
 	utils.FixInputHiddenVars(&input)
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","web_site_id"}); err != nil {
 		return err
 	}
 
