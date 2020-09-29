@@ -18,7 +18,7 @@ func NewEvent(name string, payload M) Event {
 	}
 
 	return Event{
-		name: name,
+		Name: name,
 		payload: payload,
 	}
 }
@@ -69,8 +69,8 @@ func (event *Event) Set(key string, val interface{}) {
 }
 
 // Name get event name
-func (event *Event) Name() string {
-	return event.name
+func (event *Event) GetName() string {
+	return event.Name
 }
 
 // Data get all data
@@ -90,7 +90,7 @@ func (event *Event) Target() interface{} {
 
 // SetName set event name
 func (event *Event) SetName(name string) *Event {
-	event.name = name
+	event.Name = name
 	return event
 }
 

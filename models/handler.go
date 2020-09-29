@@ -126,7 +126,7 @@ func (eventListener *EventListener) OLDHandle(e Event) error {
 
 func (eventListener EventListener) EmailNotificationRun(e Event) error {
 
-	fmt.Printf("#### Запуск уведомления письмом, обытие: %v данные: %v\n",e.Name(), e.Data())
+	fmt.Printf("#### Запуск уведомления письмом, обытие: %v данные: %v\n",e.GetName(), e.Data())
 	// fmt.Println("Observer entity id: ", handler.EntityId) // контекст серии писем, какой именно и т.д.
 
 	accountStr := e.Get("account_id")
@@ -156,7 +156,7 @@ func (eventListener EventListener) EmailNotificationRun(e Event) error {
 }
 
 func (eventListener EventListener) EmailQueueRun(e Event) error {
-	fmt.Printf("Запуск серии писем, обытие: %v данные: %v\n",e.Name(), e.Data())
+	fmt.Printf("Запуск серии писем, обытие: %v данные: %v\n",e.GetName(), e.Data())
 
 	accountStr := e.Get("account_id")
 	accountId, ok :=  accountStr.(uint)
@@ -178,7 +178,7 @@ func (eventListener EventListener) EmailQueueRun(e Event) error {
 	eventListener.uploadEntitiesData(&e)
 
 	// Получаем userId
-	if userId, ok := e.Get("userId").(uint); ok {
+	if userId, ok := e.Get("user_id").(uint); ok {
 		// Проверяем, что он аккаунте
 		if account.ExistAccountUser(userId) {
 			if err := emailQueue.AppendUser(userId); err != nil {
@@ -241,44 +241,44 @@ func (eventListener EventListener) uploadEntitiesData(event *Event) {
 	}
 	e.Add("Account", account.GetDepersonalizedData())
 
-	if userId, ok := e.Get("userId").(uint); ok {
+	if userId, ok := e.Get("user_id").(uint); ok {
 		user, err := account.GetUser(userId)
 		if err == nil {
-			e.Add("userId", userId)
+			e.Add("user_id", userId)
 			e.Add("User", user.GetDepersonalizedData())
 		}
 	}
 
-	if productId, ok := e.Get("productId").(uint); ok {
+	if productId, ok := e.Get("product_id").(uint); ok {
 		var product Product
 		err := account.LoadEntity(&product, productId,nil)
 	   if err == nil {
-		   e.Add("productId", productId)
+		   e.Add("product_id", productId)
 		   e.Add("Product", product)
 	   }
 	}
 
-	if productCardId, ok := e.Get("productCardId").(uint); ok {
+	if productCardId, ok := e.Get("product_card_id").(uint); ok {
 		var productCard ProductCard
 		err := account.LoadEntity(&productCard, productCardId,nil)
 		if err == nil {
-			e.Add("productCardId", productCardId)
+			e.Add("product_card_id", productCardId)
 			e.Add("ProductCard", productCard)
 		}
 	}
 
-	if orderId, ok := e.Get("orderId").(uint); ok {
+	if orderId, ok := e.Get("order_id").(uint); ok {
 		var order Order
 		err := account.LoadEntity(&order, orderId,nil)
 		if err == nil {
-			e.Add("orderId", orderId)
+			e.Add("order_id", orderId)
 			e.Add("Order", order)
 
 			// Добавляем заказчика
 			if order.CustomerId > 0 {
 				customer, err := account.GetUser(order.CustomerId)
 				if err == nil {
-					e.Add("customerId", order.CustomerId)
+					e.Add("customer_id", order.CustomerId)
 					e.Add("Customer", customer)
 				}
 			}
@@ -286,27 +286,27 @@ func (eventListener EventListener) uploadEntitiesData(event *Event) {
 			if *order.ManagerId > 0 {
 				manager, err := account.GetUser(*order.ManagerId)
 				if err == nil {
-					e.Add("managerId", order.ManagerId)
+					e.Add("manager_id", order.ManagerId)
 					e.Add("Manager", manager)
 				}
 			}
 		}
 	}
 
-	if deliveryOrderId, ok := e.Get("deliveryOrderId").(uint); ok {
+	if deliveryOrderId, ok := e.Get("delivery_order_id").(uint); ok {
 		var deliveryOrder DeliveryOrder
 		err := account.LoadEntity(&deliveryOrder, deliveryOrderId,nil)
 		if err == nil {
-			e.Add("deliveryOrderId", deliveryOrderId)
+			e.Add("delivery_order_id", deliveryOrderId)
 			e.Add("DeliveryOrder", deliveryOrder)
 		}
 	}
 
-	if paymentId, ok := e.Get("paymentId").(uint); ok {
+	if paymentId, ok := e.Get("payment_id").(uint); ok {
 		var payment DeliveryOrder
 		err := account.LoadEntity(&payment, paymentId,nil)
 		if err == nil {
-			e.Add("paymentId", paymentId)
+			e.Add("payment_id", paymentId)
 			e.Add("Payment", payment)
 		}
 	}

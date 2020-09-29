@@ -29,7 +29,7 @@ const mock = true
 
 func init() {
 	smtpCh = make(chan EmailPkg, deepMTACh)
-	// go mtaServer(smtpCh) // start MTA server
+	go mtaServer(smtpCh) // start MTA server
 }
 
 // Содержание письма компилируется из ViewData

@@ -229,7 +229,7 @@ func (EventListener) Registration() error {
 	// fmt.Println("eventListeners")
 
 	for i,v := range eventListeners {
-		if v.Enabled && eventListeners[i].Event.Enabled && eventListeners[i].Handler.Enabled {
+		if v.Enabled && eventListeners[i].Handler.Enabled {
 			// fmt.Println("Event listener: ", v.Event.Name, " - ", v.Handler.Name)
 			eventListeners[i].LoadListener()
 			// event.On(v.Event.Name, Handler{TargetName: v.Handler.Name}, v.Priority)

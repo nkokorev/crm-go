@@ -199,7 +199,7 @@ func (em *Manager) FireBatch(es ...interface{}) (ers []error) {
 func (em *Manager) FireEvent(e Event) (err error) {
 	// ensure aborted is false.
 	e.Abort(false)
-	name := e.Name()
+	name := e.GetName()
 
 	// find matched listeners
 	lq, ok := em.listeners[name]
@@ -247,7 +247,7 @@ func (em *Manager) FireEvent(e Event) (err error) {
 
 // AddEvent add a defined event instance to manager.
 func (em *Manager) AddEvent(e Event) {
-	name := goodName(e.Name())
+	name := goodName(e.GetName())
 	em.events[name] = e
 }
 

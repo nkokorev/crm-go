@@ -230,7 +230,7 @@ func EventExecute(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Проверяем, что для этого событие разрешен вызов по API
-	if !event.AvailableAPI {
+	if !event.ExternalCallAvailable {
 		u.Respond(w, u.MessageError(err, "Вызов не удался: запрещен вызов события по API"))
 		return
 	}
