@@ -51,6 +51,7 @@ type EmailNotification struct {
 	ParseRecipientUser		bool	`json:"parse_recipient_user" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя(ей) по userId / users: ['email@mail.ru']
 	ParseRecipientCustomer	bool	`json:"parse_recipient_customer" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя по customerId / users: ['email@mail.ru']
 	ParseRecipientManager	bool	`json:"parse_recipient_manager" gorm:"type:bool;default:false"` // Спарсить из контекста пользователя по customerId / users: ['email@mail.ru']
+	ParseRecipientFromEvent	bool	`json:"parse_recipient_from_event" gorm:"type:bool;default:false"` // Спарсить из контекста событии по iDs
 
 	// ==========================================
 

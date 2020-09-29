@@ -78,6 +78,13 @@ func (event *Event) Data() map[string]interface{} {
 	return event.data
 }
 
+func (event *Event) RecipientList() []uint {
+	if event.recipientList == nil {
+		event.recipientList = []uint{}
+	}
+	return event.recipientList
+}
+
 // IsAborted check.
 func (event *Event) IsAborted() bool {
 	return event.aborted
