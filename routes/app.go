@@ -125,6 +125,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-pages/{webPageId:[0-9]+}", appCr.WebPageGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-pages/{webPageId:[0-9]+}", appCr.WebPageUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-pages/{webPageId:[0-9]+}", appCr.WebPageDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-pages/{webPageId:[0-9]+/product-categories", appCr.ProductCardSyncProducts).Methods(http.MethodPatch, http.MethodOptions)
 
 	// ### Product Cards ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards", appCr.ProductCardCreate).Methods(http.MethodPost, http.MethodOptions)

@@ -60,7 +60,7 @@ func (eventListener *EventListener) Handle(e Event) error {
 		log.Println(err)
 	}
 
-	log.Println("target успешно выполнен!")
+	// log.Println("target успешно выполнен!")
 
 	return nil
 }
@@ -116,7 +116,7 @@ func (eventListener *EventListener) OLDHandle(e Event) error {
 		log.Println(err)
 	}
 
-	fmt.Println("target успешно выполнен!")
+	// fmt.Println("target успешно выполнен!")
 
 	return nil
 }

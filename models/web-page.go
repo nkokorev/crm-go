@@ -262,17 +262,28 @@ func (webPage WebPage) CreateChild(wp WebPage) (Entity, error){
 
 	return _webPage, nil
 }
-func (webPage WebPage) AppendProductCategory(productCategory *ProductCategory, optPriority... int) error {
+func (webPage WebPage) AppendProductCategory(productCategory *ProductCategory, strict bool, priority int) error {
 
-	priority := 10
-	if len(optPriority) > 0 {
-		priority = optPriority[0]
+	// 1. Загружаем продукт еще раз
+	if err := productCategory.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить tag, она не найдена"}
 	}
 
+	if webPage.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить tag, т.к. продукта не загружен"}
+	}
 	if productCategory.Id < 1 {
 		return utils.Error{Message: "Не создана категория продуктов"}
 	}
 
+	// 2. Проверяем есть ли уже в этой категории этот продукт
+	if webPage.ExistProductCategoryById(productCategory.Id) {
+		if strict {
+			return utils.Error{Message: "Категория уже числиться за товаром"}
+		} else {
+			return nil
+		}
+	}
 
 	if err := db.Model(&WebPageProductCategories{}).Create(
 		&WebPageProductCategories{ProductCategoryId: productCategory.Id, WebPageId: webPage.Id, Priority: priority}).Error; err != nil {
@@ -281,9 +292,7 @@ func (webPage WebPage) AppendProductCategory(productCategory *ProductCategory, o
 
 	account, err := GetAccount(webPage.AccountId)
 	if err == nil && account != nil {
-		// AsyncFire(*Event{}.WebPageUpdated(account.Id, webPage.Id))
 		AsyncFire(NewEvent("WebPageUpdated", map[string]interface{}{"account_id":account.Id, "web_page_id":webPage.Id}))
-		// AsyncFire(*Event{}.ProductCategoryUpdated(account.Id, productCategory.Id))
 		AsyncFire(NewEvent("ProductCategoryUpdated", map[string]interface{}{"account_id":account.Id, "product_category_id":productCategory.Id}))
 	}
 
@@ -296,8 +305,6 @@ func (webPage WebPage) RemoveProductCategory(productCategory ProductCategory) er
 		return err
 	}
 
-	//
-
 	if webPage.AccountId < 1 || webPage.Id < 1  || productCategory.Id < 1 {
 		return utils.Error{Message: "Техническая ошибка: account id || product card id || product category id == nil"}
 	}
@@ -306,8 +313,7 @@ func (webPage WebPage) RemoveProductCategory(productCategory ProductCategory) er
 		Delete(&WebPageProductCategories{}).Error; err != nil {
 		return err
 	}
-
-
+	
 	account, err := GetAccount(webPage.AccountId)
 	if err == nil && account != nil {
 		// AsyncFire(*Event{}.WebPageUpdated(account.Id, webPage.Id))
@@ -318,4 +324,35 @@ func (webPage WebPage) RemoveProductCategory(productCategory ProductCategory) er
 	}
 
 	return nil
+}
+func (webPage WebPage) SyncProductCategoriesByIds(items []WebPageProductCategories) error {
+
+	// 1. Загружаем продукт еще раз
+	if webPage.Id < 1 {
+		return utils.Error{Message: "WebPage не найден"}
+	}
+
+	// очищаем список категорий
+	if err := db.Model(&webPage).Association("ProductCategories").Clear(); err != nil {
+		return err
+	}
+
+	for _,item := range items {
+		if err := webPage.AppendProductCategory(&ProductCategory{Id: item.ProductCategoryId}, false, item.Priority); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+func (webPage WebPage) ExistProductCategoryById(productCategoryId uint) bool {
+
+	var el WebPageProductCategories
+
+	err := db.Model(&WebPageProductCategories{}).Where("web_page_id = ? AND product_category_id = ?",webPage.Id, productCategoryId).First(&el).Error
+	if err != nil {
+		return false
+	}
+
+	return true
 }
