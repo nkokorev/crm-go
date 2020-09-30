@@ -298,14 +298,17 @@ func (account Account) UpdateUser(userId uint, input map[string]interface{}) (*U
 	_newStatusSubscribed, ok := input["subscribed"].(bool)
 	_user := *user
 
+	// fmt.Println("User subs: ", input["subscribed"])
 	err = user.update(input)
 	if err != nil { return nil, err }
 
 	// todo: возможно стоит проверить _user => user
 	// Если флаг подписки был изменен
 	if ok && (_newStatusSubscribed != _user.Subscribed) {
+
+
 		// Статус обновлен
-		_ = user.Unsubscribing()
+		// _ = user.Unsubscribing()
 
 		// AsyncFire(*Event{}.UserUpdateSubscribeStatus(account.Id, _user.Id))
 		AsyncFire(NewEvent("UserUpdateSubscribeStatus", map[string]interface{}{"account_id":account.Id, "user_id":_user.Id}))
