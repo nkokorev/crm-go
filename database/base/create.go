@@ -1285,13 +1285,13 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 	catGr2 := _catGr2.(*models.ProductCategory)
 
 	// А можно добавить категорию 1 и категорию 2
-	if err := webPageCatalogRoot.AppendProductCategory(CategoryRoot); err != nil {
+	if err := webPageCatalogRoot.AppendProductCategory(CategoryRoot, false, utils.INTp(10)); err != nil {
 		log.Fatal(err)
 	}
-	if err := webPageCatalog1.AppendProductCategory(catGr1); err != nil {
+	if err := webPageCatalog1.AppendProductCategory(catGr1,false, utils.INTp(10)); err != nil {
 		log.Fatal(err)
 	}
-	if err := webPageCatalog2.AppendProductCategory(catGr2); err != nil {
+	if err := webPageCatalog2.AppendProductCategory(catGr2,false, utils.INTp(10)); err != nil {
 		log.Fatal(err)
 	}
 

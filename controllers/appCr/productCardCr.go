@@ -231,7 +231,7 @@ func ProductCardSyncProducts(w http.ResponseWriter, r *http.Request) {
 
 	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailQueueId"))
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id productCardId"))
 		return
 	}
 

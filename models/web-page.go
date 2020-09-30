@@ -262,7 +262,7 @@ func (webPage WebPage) CreateChild(wp WebPage) (Entity, error){
 
 	return _webPage, nil
 }
-func (webPage WebPage) AppendProductCategory(productCategory *ProductCategory, strict bool, priority int) error {
+func (webPage WebPage) AppendProductCategory(productCategory *ProductCategory, strict bool, priority *int) error {
 
 	// 1. Загружаем продукт еще раз
 	if err := productCategory.load(nil); err != nil {
@@ -309,7 +309,7 @@ func (webPage WebPage) RemoveProductCategory(productCategory ProductCategory) er
 		return utils.Error{Message: "Техническая ошибка: account id || product card id || product category id == nil"}
 	}
 
-	if err := db.Where("account_id = ? AND web_page_id = ? AND product_category_id = ?", webPage.AccountId, webPage.Id, productCategory.Id).
+	if err := db.Where("web_page_id = ? AND product_category_id = ?", webPage.Id, productCategory.Id).
 		Delete(&WebPageProductCategories{}).Error; err != nil {
 		return err
 	}

@@ -230,7 +230,7 @@ func WebPageSyncProductCategories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	webPageId, err := utilsCr.GetUINTVarFromRequest(r, "webPageId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailQueueId"))
 		return
@@ -238,34 +238,34 @@ func WebPageSyncProductCategories(w http.ResponseWriter, r *http.Request) {
 
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
-	productCard := models.ProductCard{}
-	if err =account.LoadEntity(&productCard, productCardId, preloads); err != nil {
+	webPage := models.WebPage{}
+	if err =account.LoadEntity(&webPage, webPageId, nil); err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Карточка товара"}))
 		return
 	}
 
 	var input struct{
-		Products []models.Product `json:"products"`
+		Items []models.WebPageProductCategories `json:"web_page_product_categories"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 1"))
 		return
 	}
 
-	if err = productCard.SyncProductByIds(input.Products); err !=nil {
+	if err = webPage.SyncProductCategoriesByIds(input.Items); err !=nil {
 		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 2"))
 		return
 	}
 
-	/*	_productCard := models.ProductCard{}
-		if err = account.LoadEntity(&_productCard, productCardId, preloads); err != nil {
-			u.Respond(w, u.MessageError(u.Error{Message:"Карточка товара"}))
-			return
-		}*/
+	// Загружаем еще раз
+	if err = account.LoadEntity(&webPage, webPageId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Карточка товара"}))
+		return
+	}
 
 	resp := u.Message(true, "PATCH Product Card MassUpdates")
-	resp["product_card"] = productCard
+	resp["web_page"] = webPage
 	u.Respond(w, resp)
 }
 
@@ -277,13 +277,13 @@ func WebPageRemoveCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	webPageId, err := utilsCr.GetUINTVarFromRequest(r, "webPageId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailQueueId"))
 		return
 	}
 
-	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	productCategoryId, err := utilsCr.GetUINTVarFromRequest(r, "productCategoryId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
 		return
@@ -291,37 +291,33 @@ func WebPageRemoveCategory(w http.ResponseWriter, r *http.Request) {
 
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
-	var productCard models.ProductCard
-	if err =account.LoadEntity(&productCard, productCardId, preloads); err != nil {
+	var webPage models.WebPage
+	if err =account.LoadEntity(&webPage, webPageId, preloads); err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке карточки товара"}))
 		return
 	}
 
-	product := models.Product{}
-	if err =account.LoadEntity(&product, productId, nil); err != nil {
+	// Загружаем, чтобы убедить, что она принадлежит этому аккаунту
+	productCategory := models.ProductCategory{}
+	if err =account.LoadEntity(&productCategory, productCategoryId, nil); err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
 		return
 	}
 
-	if err = productCard.RemoveProduct(&product); err !=nil {
+	if err = webPage.RemoveProductCategory(productCategory); err !=nil {
 		fmt.Println(err)
-		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из карточки товара"))
+		u.Respond(w, u.MessageError(err, "Ошибка удаления категории со страницы"))
 		return
 	}
 
-	// preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
-
-	/*filter := make(map[string]interface{},0)
-	filter["product_card_id"] = productCardId*/
-
-	/*var _productCard models.ProductCard
-	if err = account.LoadEntity(&_productCard, productCardId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка загрузки карточки товара"}))
+	// Загружаем еще раз
+	if err = account.LoadEntity(&webPage, webPageId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Карточка товара"}))
 		return
-	}*/
+	}
 
 	resp := u.Message(true, "PATCH ProductCard Products Remove")
-	resp["product_card"] = productCard
+	resp["web_page"] = webPage
 	u.Respond(w, resp)
 }
 

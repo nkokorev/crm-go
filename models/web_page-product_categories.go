@@ -13,7 +13,7 @@ type WebPageProductCategories struct {
 	ProductCategory	ProductCategory `json:"product_category"`
 
 	// Порядок отображения карточки на странице (нужно ли)
-	Priority 	int		`json:"priority" gorm:"type:int;default:10;"`
+	Priority 	*int		`json:"priority" gorm:"type:int;default:10;"`
 }
 func (WebPageProductCategories) PgSqlCreate() {
 	if err := db.Migrator().CreateTable(&WebPageProductCategories{}); err != nil { log.Fatal(err) }

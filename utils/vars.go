@@ -8,6 +8,9 @@ import (
 func UINTp(x uint) *uint {
 	return &x
 }
+func INTp(x int) *int {
+	return &x
+}
 func ParseUINTp(x *uint) uint {
 	if x == nil {
 		return 0
