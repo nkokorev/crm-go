@@ -131,6 +131,8 @@ func (article Article) create() (Entity, error)  {
 		return nil, err
 	}
 
+	AsyncFire(NewEvent("ArticleCreated", map[string]interface{}{"account_id":en.AccountId, "article_id":en.Id}))
+
 	var newItem Entity = &en
 
 	return newItem, nil
@@ -257,7 +259,13 @@ func (article *Article) update(input map[string]interface{}, preloads []string) 
 }
 
 func (article *Article) delete () error {
-	return article.GetPreloadDb(true,false,nil).Where("id = ?", article.Id).Delete(article).Error
+	if err := article.GetPreloadDb(true,false,nil).Where("id = ?", article.Id).Delete(article).Error; err != nil {
+		return err
+	}
+
+	AsyncFire(NewEvent("ArticleDeleted", map[string]interface{}{"account_id":article.AccountId, "article_id":article.Id}))
+
+	return nil
 }
 // ######### END CRUD Functions ############
 
