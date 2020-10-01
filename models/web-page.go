@@ -246,6 +246,9 @@ func (webPage *WebPage) update(input map[string]interface{}, preloads []string) 
 		return err
 	}
 
+	// fmt.Println(map[string]interface{}{"account_id":webPage.AccountId, "web_page_id":webPage.Id})
+	AsyncFire(NewEvent("WebPageUpdated", map[string]interface{}{"account_id":webPage.AccountId, "web_page_id":webPage.Id}))
+	
 	return nil
 }
 func (webPage *WebPage) delete () error {

@@ -242,6 +242,7 @@ func (webHook WebHook) Execute(data map[string]interface{}) error {
 	}
 
 	urlB := new(bytes.Buffer)
+
 	/*var data interface{}
 
 	if e != nil && e.Data() != nil {

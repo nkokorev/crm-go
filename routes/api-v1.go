@@ -20,8 +20,8 @@ var ApiRoutesV1 = func (rApi *mux.Router) {
 	rApi.HandleFunc("/web-sites/{webSiteId:[0-9]+}", appCr.WebSiteGet).Methods(http.MethodGet, http.MethodOptions)
 
 	// webSite id ?
-	rApi.HandleFunc("/web-sites/{webSiteId:[0-9]+}/web-pages", appCr.WebPageListPaginationGet).Methods(http.MethodGet)
-	rApi.HandleFunc("/web-sites/{webSiteId:[0-9]+}/web-pages/{webPageId:[0-9]+}", appCr.WebPageGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/web-pages", appCr.WebPageListPaginationGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/web-pages/{webPageId:[0-9]+}", appCr.WebPageGet).Methods(http.MethodGet)
 
 	rApi.HandleFunc("/product-cards", appCr.ProductCardListPaginationGet).Methods(http.MethodGet)
 	rApi.HandleFunc("/product-cards/{productCardId:[0-9]+}", appCr.ProductCardGet).Methods(http.MethodGet)

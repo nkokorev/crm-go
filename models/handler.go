@@ -63,7 +63,8 @@ func (eventListener *EventListener) Handle(e Event) error {
 
 	// 3. Вызываем Target-метод с объектом Event
 	if err := target(e); err != nil {
-		log.Println(err)
+		// log.Println(err)
+		return err
 	}
 
 	// log.Println("target успешно выполнен!")
@@ -119,7 +120,9 @@ func (eventListener *EventListener) OLDHandle(e Event) error {
 	}
 
 	if err := target(e); err != nil {
-		log.Println(err)
+		// что-то пошло не так...
+		// log.Println(err)
+		// return err
 	}
 
 	// fmt.Println("target успешно выполнен!")
