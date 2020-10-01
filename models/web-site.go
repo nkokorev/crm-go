@@ -247,7 +247,12 @@ func (webSite *WebSite) update(input map[string]interface{}, preloads []string) 
 	return nil
 }
 func (webSite *WebSite) delete () error {
-	return webSite.GetPreloadDb(true,false, nil).Where("id = ?", webSite.Id).Delete(webSite).Error
+	if err := webSite.GetPreloadDb(true,false, nil).Where("id = ?", webSite.Id).Delete(webSite).Error; err != nil {
+		return err
+	}
+	AsyncFire(NewEvent("WebSiteDeleted", map[string]interface{}{"account_id":webSite.AccountId, "web_site_id":webSite.Id}))
+
+	return nil
 }
 // ######### END CRUD Functions ############
 

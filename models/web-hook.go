@@ -230,6 +230,7 @@ func (webHook *WebHook) delete () error {
 
 func (webHook WebHook) Execute(data map[string]interface{}) error {
 
+
 	// проверка
 	if !webHook.Enabled || webHook.URL == "" {
 		return utils.Error{Message: "Не корректные данные ВебХука"}
@@ -256,6 +257,8 @@ func (webHook WebHook) Execute(data map[string]interface{}) error {
 
 	url := urlB.String()
 
+	// fmt.Println("url: ", url)
+	
 	var response *http.Response
 	var request *http.Request
 

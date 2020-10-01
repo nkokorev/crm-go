@@ -118,7 +118,11 @@ func (webPage *WebPage) AfterFind(tx *gorm.DB) (err error) {
 	webPage.ProductsCategoriesCount =  db.Model(webPage).Association("ProductCategories").Count()
 	return nil
 }
-
+func (webPage *WebPage) AfterCreate(tx *gorm.DB) error {
+	// AsyncFire(*Event{}.WebSiteCreated(webSite.AccountId, webSite.Id))
+	AsyncFire(NewEvent("WebPageCreated", map[string]interface{}{"account_id":webPage.AccountId, "web_page_id":webPage.Id}))
+	return nil
+}
 // ############# Entity interface #############
 func (webPage WebPage) GetId() uint { return webPage.Id }
 func (webPage *WebPage) setId(id uint) { webPage.Id = id }
@@ -131,18 +135,18 @@ func (WebPage) SystemEntity() bool { return false }
 // ######### CRUD Functions ############
 func (webPage WebPage) create() (Entity, error)  {
 
-	en := webPage
+	item := webPage
 
-	if err := db.Create(&en).Error; err != nil {
+	if err := db.Create(&item).Error; err != nil {
 		return nil, err
 	}
 
-	err := en.GetPreloadDb(false, false, nil).First(&en, en.Id).Error
+	err := item.GetPreloadDb(false, false, nil).First(&item, item.Id).Error
 	if err != nil {
 		return nil, err
 	}
 
-	var newItem Entity = &en
+	var newItem Entity = &item
 
 	return newItem, nil
 }
@@ -252,7 +256,9 @@ func (webPage *WebPage) update(input map[string]interface{}, preloads []string) 
 	return nil
 }
 func (webPage *WebPage) delete () error {
-	return webPage.GetPreloadDb(true,false,nil).Where("id = ?", webPage.Id).Delete(webPage).Error
+	if err := webPage.GetPreloadDb(true,false,nil).Where("id = ?", webPage.Id).Delete(webPage).Error; err != nil {return err}
+	AsyncFire(NewEvent("WebPageDeleted", map[string]interface{}{"account_id":webPage.AccountId, "web_page_id":webPage.Id}))
+	return nil
 }
 // ######### END CRUD Functions ############
 
