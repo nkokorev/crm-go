@@ -226,11 +226,9 @@ func (EventListener) Registration() error {
 		return utils.Error{Message: "Не удалось загрузить EventHandlers!"}
 	}
 
-	// fmt.Println("eventListeners")
-
-	for i,v := range eventListeners {
-		if v.Enabled && eventListeners[i].Handler.Enabled {
-			// fmt.Println("Event listener: ", v.Event.Name, " - ", v.Handler.Name)
+	for i := range eventListeners {
+		if eventListeners[i].Enabled && eventListeners[i].Handler.Enabled {
+			// fmt.Println("Event listener: ", eventListeners[i].Event.Name, " - ", eventListeners[i].Handler.Name)
 			eventListeners[i].LoadListener()
 			// event.On(v.Event.Name, Handler{TargetName: v.Handler.Name}, v.Priority)
 		}
@@ -279,6 +277,7 @@ func (eventListener *EventListener) GetPreloadDb(getModel bool, autoPreload bool
 	}
 
 }
+
 
 // для интерфейса event.Listener - функция обработчик для каждого события
 // Она вызывается в цепочке первой, а затем уже соответствующая функция target из EventListener (см. ниже)

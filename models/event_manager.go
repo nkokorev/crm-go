@@ -197,6 +197,7 @@ func (em *Manager) FireBatch(es ...interface{}) (ers []error) {
 
 // FireEvent fire event by given Event instance
 func (em *Manager) FireEvent(e Event) (err error) {
+	
 	// ensure aborted is false.
 	e.Abort(false)
 	name := e.GetName()
@@ -206,6 +207,12 @@ func (em *Manager) FireEvent(e Event) (err error) {
 	if ok {
 		// sort by priority before call.
 		for _, li := range lq.Sort().Items() {
+
+			/*if e.AccountId != li.Listener.GetAccountId() {
+				fmt.Println("e.AccountId: ", e.AccountId)
+				fmt.Println("li.Listener.GetAccountId(): ", li.Listener.GetAccountId())
+			}*/
+
 			err = li.Listener.Handle(e)
 			if err != nil || e.IsAborted() {
 				return
@@ -221,6 +228,9 @@ func (em *Manager) FireEvent(e Event) (err error) {
 
 		if lq, ok := em.listeners[groupName]; ok {
 			for _, li := range lq.Sort().Items() {
+
+				// if e.AccountId != li.Listener.GetAccountId() { continue }
+
 				err = li.Listener.Handle(e)
 				if err != nil || e.IsAborted() {
 					return
@@ -232,6 +242,9 @@ func (em *Manager) FireEvent(e Event) (err error) {
 	// has wildcard event listeners
 	if lq, ok := em.listeners[Wildcard]; ok {
 		for _, li := range lq.Sort().Items() {
+
+			// if e.AccountId != li.Listener.GetAccountId() { continue }
+
 			err = li.Listener.Handle(e)
 			if err != nil || e.IsAborted() {
 				break

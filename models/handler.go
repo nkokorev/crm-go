@@ -8,14 +8,27 @@ import (
 )
 
 // Список всех событий, которы могут быть вызваны // !!! Не добавлять другие функции под этим интерфейсом !!!
-
+// Event - не загружен!
 func (eventListener *EventListener) Handle(e Event) error {
-	
+
 	TargetName := eventListener.Handler.Code
 
 	if TargetName == "" {
 		log.Printf("EventListener Handle Name is nill: %v\n", TargetName)
 		return utils.Error{Message: fmt.Sprintf("EventListener Handle Name is nill %v\n", TargetName)}
+	}
+
+	// Проверяем принадлежность
+	accountStr := e.Get("account_id")
+	accountId, ok :=  accountStr.(uint)
+	if !ok {
+		log.Println("Event Handler: accountStr.(uint):: ", eventListener.Name)
+		return nil
+	}
+	if eventListener.AccountId != accountId {
+		// log.Println("Event listener event Id: ", eventListener.EventId, " Handle ID: ", eventListener.HandlerId)
+		// log.Println("Event Handler: eventListener.AccountId != accountId:: ", eventListener.Name, " eventListener.AccountId: ", eventListener.AccountId, " accountID: ", accountId)
+		return nil
 	}
 
 	// 1. Получаем метод обработки по имени Target
@@ -27,7 +40,7 @@ func (eventListener *EventListener) Handle(e Event) error {
 
 	// Тест на существование
 	el := v.Type()
-	_, ok := el.MethodByName(TargetName)
+	_, ok = el.MethodByName(TargetName)
 	if !ok {
 		log.Println("Observer ValueOf handle is nill 2")
 		return utils.Error{Message: fmt.Sprintf("Observer Handle Type is nill: %v", TargetName)}
@@ -49,13 +62,6 @@ func (eventListener *EventListener) Handle(e Event) error {
 	}
 
 	// 3. Вызываем Target-метод с объектом Event
-	accountStr := e.Get("account_id")
-	accountId, ok :=  accountStr.(uint)
-	if !ok || eventListener.AccountId != accountId {
-		log.Println("Event Handler: if !ok || eventListener.AccountId != accountId:: ", eventListener.Name)
-		return nil
-	}
-
 	if err := target(e); err != nil {
 		log.Println(err)
 	}

@@ -7,6 +7,7 @@ import (
 // Listener interface
 type Listener interface {
 	Handle(e Event) error
+	GetAccountId() uint
 }
 
 // ListenerFunc func definition.
