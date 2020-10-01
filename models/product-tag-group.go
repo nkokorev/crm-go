@@ -118,6 +118,8 @@ func (productTagGroup ProductTagGroup) create() (Entity, error)  {
 		return nil, err
 	}
 
+	AsyncFire(NewEvent("ProductTagGroupCreated", map[string]interface{}{"account_id":_item.AccountId, "product_tag_group_id":_item.Id}))
+
 	var entity Entity = &_item
 
 	return entity, nil
@@ -218,6 +220,8 @@ func (productTagGroup *ProductTagGroup) update(input map[string]interface{}, pre
 		return err
 	}
 
+	AsyncFire(NewEvent("ProductTagGroupUpdated", map[string]interface{}{"account_id":productTagGroup.AccountId, "product_tag_group_id":productTagGroup.Id}))
+		
 	err := productTagGroup.GetPreloadDb(false,false,preloads).First(productTagGroup, productTagGroup.Id).Error
 	if err != nil {
 		return err
@@ -226,7 +230,11 @@ func (productTagGroup *ProductTagGroup) update(input map[string]interface{}, pre
 	return nil
 }
 func (productTagGroup *ProductTagGroup) delete () error {
-	return productTagGroup.GetPreloadDb(true,false,nil).Where("id = ?", productTagGroup.Id).Delete(productTagGroup).Error
+	if err := productTagGroup.GetPreloadDb(true,false,nil).Where("id = ?", productTagGroup.Id).Delete(productTagGroup).Error; err != nil {
+		return err
+	}
+	AsyncFire(NewEvent("ProductTagGroupDeleted", map[string]interface{}{"account_id":productTagGroup.AccountId, "product_tag_group_id":productTagGroup.Id}))
+	return nil
 }
 // ######### END CRUD Functions ############
 

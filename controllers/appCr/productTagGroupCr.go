@@ -254,7 +254,7 @@ func ProductTagGroupTagListPaginationGet(w http.ResponseWriter, r *http.Request)
 	var productTagGroup models.ProductTagGroup
 	err = account.LoadEntity(&productTagGroup, productTagGroupId,nil)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить productTagGroup"))
 		return
 	}
 

@@ -29,8 +29,11 @@ var ApiRoutesV1 = func (rApi *mux.Router) {
 	rApi.HandleFunc("/product-categories", appCr.ProductCategoryListPaginationGet).Methods(http.MethodGet)
 	rApi.HandleFunc("/product-categories/{productCategoryId:[0-9]+}", appCr.ProductCategoryGet).Methods(http.MethodGet)
 
-	rApi.HandleFunc("/web-sites/{webSiteId:[0-9]+}/products", appCr.ProductListPaginationGet).Methods(http.MethodGet)
-	rApi.HandleFunc("/web-sites/{webSiteId:[0-9]+}/products/{productId:[0-9]+}", appCr.ProductGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/products", appCr.ProductListPaginationGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/products/{productId:[0-9]+}", appCr.ProductGet).Methods(http.MethodGet)
+
+	rApi.HandleFunc("/product-tag-groups", appCr.ProductTagGroupListPaginationGet).Methods(http.MethodGet)
+	rApi.HandleFunc("/product-tag-groups/{productTagGroupId:[0-9]+}", appCr.ProductTagGroupGet).Methods(http.MethodGet)
 
 	rApi.HandleFunc("/articles", appCr.ArticleListPaginationGet).Methods(http.MethodGet)
 	rApi.HandleFunc("/articles/{articleId:[0-9]+}", appCr.ArticleGet).Methods(http.MethodGet)

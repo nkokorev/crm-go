@@ -205,7 +205,7 @@ func (eventListener EventListener) EmailQueueRun(e Event) error {
 
 func (eventListener EventListener) WebHookCall(e Event) error {
 
-	// fmt.Printf("Вызов вебхука, событие: %v Данные: %v, EventId %v\n", e.Name(), e.Data(), eventListener.EventId)
+	// fmt.Printf("Вызов вебхука, событие: %v Данные: %v, EventId %v\n", e.Name, e.Data(), eventListener.EventId)
 
 	accountStr := e.Get("account_id")
 	accountId, ok :=  accountStr.(uint)

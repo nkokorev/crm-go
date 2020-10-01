@@ -252,16 +252,6 @@ func (product *Product) AfterCreate(tx *gorm.DB) error {
 
 	return nil
 }
-func (product *Product) AfterUpdate(tx *gorm.DB) (err error) {
-	// AsyncFire(*Event{}.ProductUpdated(product.AccountId, product.Id))
-	AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
-	return nil
-}
-func (product *Product) AfterDelete(tx *gorm.DB) (err error) {
-	// AsyncFire(*Event{}.ProductDeleted(product.AccountId, product.Id))
-	AsyncFire(NewEvent("ProductDeleted", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
-	return nil
-}
 
 // ######### INTERFACE EVENT Functions ############
 // ############# Entity interface #############
@@ -395,6 +385,8 @@ func (product *Product) update(input map[string]interface{}, preloads []string) 
 	if err := product.GetPreloadDb(false, false, nil).Where("id = ?", product.Id).Omit("id", "account_id").Updates(input).
 		Error; err != nil {return err}
 
+		AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
+
 	err := product.GetPreloadDb(false,false, preloads).First(product, product.Id).Error
 	if err != nil {
 		return err
@@ -403,7 +395,13 @@ func (product *Product) update(input map[string]interface{}, preloads []string) 
 	return nil
 }
 func (product *Product) delete () error {
-	return product.GetPreloadDb(false,false,nil).Where("id = ?", product.Id).Delete(product).Error
+	if err := product.GetPreloadDb(false,false,nil).Where("id = ?", product.Id).Delete(product).Error;err != nil {
+		return err
+	}
+
+	AsyncFire(NewEvent("ProductDeleted", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
+
+	return nil
 }
 // ######### END CRUD Functions ############
 

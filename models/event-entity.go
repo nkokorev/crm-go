@@ -111,6 +111,18 @@ func (Event) PgSqlCreate() {
 		{Name: "Платеж удален", 	Code: "PaymentDeleted", Description: "Объект платеж удален из системы. В контексте глобальный id заказа."},
 		{Name: "Платеж оплачен", 	Code: "PaymentCompleted", Description: "Платеж перешел в статус succeeded или помечен как оплаченный. Учитывается любой из видов расчета: нал/безнал. В контексте глобальный id заказа."},
 		{Name: "Платеж отменен", 	Code: "PaymentCanceled", Description: "Платеж отменен по каким-то причинам. В контексте глобальный id заказа."},
+
+		{Name: "Производитель создан", 	Code: "ManufacturerCreated", Description: "В системе добавлен производитель."},
+		{Name: "Производитель обновлен",Code: "ManufacturerUpdated", Description: "Данные производителя обновлены."},
+		{Name: "Производитель удален", 	Code: "ManufacturerDeleted", Description: "Производитель удален из системы."},
+
+		{Name: "Группа тегов товаров создана", 	Code: "ProductTagGroupCreated", Description: "В системе добавлена группа тегов товаров."},
+		{Name: "Группа тегов товаров обновлена",Code: "ProductTagGroupUpdated", Description: "Группа тегов товаров обновлена."},
+		{Name: "Группа тегов товаров удалена", 	Code: "ProductTagGroupDeleted", Description: "Группа тегов товаров удалена."},
+
+		{Name: "Тег товаров создан", 	Code: "ProductTagCreated", Description: "В системе добавлен тег товаров."},
+		{Name: "Тег товаров обновлен",Code: "ProductTagUpdated", Description: "Тег товаров обновлен."},
+		{Name: "Тег товаров удален", 	Code: "ProductTagDeleted", Description: "Тег товаров удален."},
 	}
 	for _,v := range events {
 		_, err = mainAccount.CreateEntity(&v)

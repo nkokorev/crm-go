@@ -88,15 +88,6 @@ func (productTag *ProductTag) AfterFind(tx *gorm.DB) (err error) {
 	productTag.ProductCount =  db.Model(productTag).Association("Products").Count()
 	return nil
 }
-func (productTag *ProductTag) AfterCreate(tx *gorm.DB) error {
-	return nil
-}
-func (productTag *ProductTag) AfterUpdate(tx *gorm.DB) error {
-	return nil
-}
-func (productTag *ProductTag) AfterDelete(tx *gorm.DB) error {
-	return nil
-}
 
 // ######### CRUD Functions ############
 func (productTag ProductTag) create() (Entity, error)  {
@@ -109,6 +100,8 @@ func (productTag ProductTag) create() (Entity, error)  {
 	if err := _item.GetPreloadDb(false,false, nil).First(&_item,_item.Id).Error; err != nil {
 		return nil, err
 	}
+
+	AsyncFire(NewEvent("ProductTagCreated", map[string]interface{}{"account_id":_item.AccountId, "product_tag_id":_item.Id}))
 
 	var entity Entity = &_item
 
@@ -216,6 +209,8 @@ func (productTag *ProductTag) update(input map[string]interface{}, preloads []st
 		return err
 	}
 
+	AsyncFire(NewEvent("ProductTagUpdated", map[string]interface{}{"account_id":productTag.AccountId, "product_tag_id":productTag.Id}))
+
 	err := productTag.GetPreloadDb(false,false,preloads).First(productTag, productTag.Id).Error
 	if err != nil {
 		return err
@@ -224,7 +219,13 @@ func (productTag *ProductTag) update(input map[string]interface{}, preloads []st
 	return nil
 }
 func (productTag *ProductTag) delete () error {
-	return productTag.GetPreloadDb(true,false,nil).Where("id = ?", productTag.Id).Delete(productTag).Error
+	if err :=  productTag.GetPreloadDb(true,false,nil).Where("id = ?", productTag.Id).Delete(productTag).Error; err != nil {
+		return err
+	}
+
+	AsyncFire(NewEvent("ProductTagDeleted", map[string]interface{}{"account_id":productTag.AccountId, "product_tag_id":productTag.Id}))
+
+	return nil
 }
 // ######### END CRUD Functions ############
 
