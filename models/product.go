@@ -84,7 +84,7 @@ type Product struct {
 	MeasurementUnit 	MeasurementUnit `json:"measurement_unit"`// Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 
 	// Целое или дробное количество товара
-	IsInteger 			bool 		`json:"is_integer" gorm:"type:bool;default:true"`
+	IsInteger 			bool	`json:"is_integer" gorm:"type:bool;default:true"`
 
 	// Основные атрибуты для расчета (Можно и в атрибуты)
 	// Length 	*float64 `json:"length" gorm:"type:numeric;"`

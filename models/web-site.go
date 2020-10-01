@@ -114,15 +114,9 @@ func (webSite *WebSite) AfterFind(tx *gorm.DB) (err error) {
 	webSite.Deliveries = webSite.GetDeliveryMethods()
 	return nil
 }
-
 func (webSite *WebSite) AfterCreate(tx *gorm.DB) error {
 	// AsyncFire(*Event{}.WebSiteCreated(webSite.AccountId, webSite.Id))
 	AsyncFire(NewEvent("WebSiteCreated", map[string]interface{}{"account_id":webSite.AccountId, "web_site_id":webSite.Id}))
-	return nil
-}
-func (webSite *WebSite) AfterUpdate(tx *gorm.DB) (err error) {
-	// AsyncFire(*Event{}.WebSiteUpdated(webSite.AccountId, webSite.Id))
-	AsyncFire(NewEvent("WebSiteUpdated", map[string]interface{}{"account_id":webSite.AccountId, "web_site_id":webSite.Id}))
 	return nil
 }
 func (webSite *WebSite) AfterDelete(tx *gorm.DB) (err error) {
@@ -234,7 +228,7 @@ func (webSite *WebSite) update(input map[string]interface{}, preloads []string) 
 	delete(input,"email_boxes")
 	delete(input,"web_pages")
 	delete(input,"deliveries")
-
+	
 	// fmt.Printf("Type: %T | %v\n", input["public_id"], input["public_id"])
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
 		return err
@@ -242,6 +236,8 @@ func (webSite *WebSite) update(input map[string]interface{}, preloads []string) 
 
 	if err := webSite.GetPreloadDb(false, false, nil).Where("id = ?", webSite.Id).Omit("id", "account_id","public_id").Updates(input).
 		Error; err != nil {return err}
+
+	AsyncFire(NewEvent("WebSiteUpdated", map[string]interface{}{"account_id":webSite.AccountId, "web_site_id":webSite.Id}))
 
 	err := webSite.GetPreloadDb(false,false, preloads).First(webSite, webSite.Id).Error
 	if err != nil {

@@ -14,6 +14,7 @@ type Article struct {
 	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"` // Публичный ID заказа внутри магазина
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 	HashId 		string 	`json:"hash_id" gorm:"type:varchar(12);uniqueIndex;not null;"` // публичный Id для защиты от спама/парсинга
+
 	WebSiteId 	*uint 	`json:"web_site_id" gorm:"type:int;index;"`
 
 	Public	 	bool 	`json:"public" gorm:"type:bool;default:false"` // Опубликована ли статья
@@ -72,6 +73,39 @@ func (article *Article) BeforeCreate(tx *gorm.DB) error {
 }
 func (article *Article) AfterFind(tx *gorm.DB) (err error) {
 	return nil
+}
+func (article *Article) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(article)
+	} else {
+		_db = _db.Model(&Article{})
+	}
+
+	if autoPreload {
+		return db.Preload("Image", func(db *gorm.DB) *gorm.DB {
+			return db.Select(Storage{}.SelectArrayWithoutDataURL())
+		})
+
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Image"})
+
+		for _,v := range allowed {
+			if v == "Image" {
+				_db.Preload("Image", func(db *gorm.DB) *gorm.DB {
+					return db.Select(Storage{}.SelectArrayWithoutDataURL())
+				})
+			} else {
+				_db.Preload(v)
+			}
+
+		}
+		return _db
+	}
+
 }
 
 // ############# Entity interface #############
@@ -212,6 +246,8 @@ func (article *Article) update(input map[string]interface{}, preloads []string) 
 		return err
 	}
 
+	AsyncFire(NewEvent("ArticleUpdated", map[string]interface{}{"account_id":article.AccountId, "article_id":article.Id}))
+
 	err := article.GetPreloadDb(false,false,preloads).First(article, article.Id).Error
 	if err != nil {
 		return err
@@ -224,40 +260,6 @@ func (article *Article) delete () error {
 	return article.GetPreloadDb(true,false,nil).Where("id = ?", article.Id).Delete(article).Error
 }
 // ######### END CRUD Functions ############
-
-func (article *Article) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
-
-	_db := db
-
-	if getModel {
-		_db = _db.Model(article)
-	} else {
-		_db = _db.Model(&Article{})
-	}
-
-	if autoPreload {
-		return db.Preload("Image", func(db *gorm.DB) *gorm.DB {
-			return db.Select(Storage{}.SelectArrayWithoutDataURL())
-		})
-
-	} else {
-
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Image"})
-
-		for _,v := range allowed {
-			if v == "Image" {
-				_db.Preload("Image", func(db *gorm.DB) *gorm.DB {
-					return db.Select(Storage{}.SelectArrayWithoutDataURL())
-				})
-			} else {
-				_db.Preload(v)
-			}
-
-		}
-		return _db
-	}
-
-}
 
 // ########## SELF FUNCTIONAL ############
 

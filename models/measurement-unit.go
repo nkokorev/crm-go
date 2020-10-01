@@ -17,7 +17,7 @@ type MeasurementUnit struct {
 	// ### Настройки ед. измерения 
 
 	// весовой или нет
-	Weighed 		bool `json:"weighed" gorm:"type:bool;default:false"`
+	Weighed 	bool `json:"weighed" gorm:"type:bool;default:false"`
 
 	// тег для поиска
 	Tag 		string `json:"tag" gorm:"type:varchar(32);"`

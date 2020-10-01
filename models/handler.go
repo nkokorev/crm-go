@@ -52,7 +52,7 @@ func (eventListener *EventListener) Handle(e Event) error {
 	accountStr := e.Get("account_id")
 	accountId, ok :=  accountStr.(uint)
 	if !ok || eventListener.AccountId != accountId {
-		log.Println("Event Handler: if !ok || eventListener.AccountId != accountId")
+		log.Println("Event Handler: if !ok || eventListener.AccountId != accountId:: ", eventListener.Name)
 		return nil
 	}
 
