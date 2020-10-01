@@ -115,6 +115,8 @@ func (manufacturer Manufacturer) create() (Entity, error)  {
 		return nil, err
 	}
 
+	AsyncFire(NewEvent("ManufacturerCreated", map[string]interface{}{"account_id":en.AccountId, "manufacturer_id":en.Id}))
+
 	var newItem Entity = &en
 
 	return newItem, nil
@@ -212,6 +214,8 @@ func (manufacturer *Manufacturer) update(input map[string]interface{}, preloads 
 		return err
 	}
 
+	AsyncFire(NewEvent("ManufacturerUpdated", map[string]interface{}{"account_id":manufacturer.AccountId, "manufacturer_id":manufacturer.Id}))
+
 	err := manufacturer.GetPreloadDb(false,false,preloads).First(manufacturer, manufacturer.Id).Error
 	if err != nil {
 		return err
@@ -220,11 +224,11 @@ func (manufacturer *Manufacturer) update(input map[string]interface{}, preloads 
 	return nil
 }
 func (manufacturer *Manufacturer) delete () error {
-	return manufacturer.GetPreloadDb(true,false,nil).Where("id = ?", manufacturer.Id).Delete(manufacturer).Error
+	if err := manufacturer.GetPreloadDb(true,false,nil).Where("id = ?", manufacturer.Id).Delete(manufacturer).Error; err != nil {
+		return err
+	}
+	AsyncFire(NewEvent("ManufacturerDeleted", map[string]interface{}{"account_id":manufacturer.AccountId, "manufacturer_id":manufacturer.Id}))
+
+	return nil
 }
 // ######### END CRUD Functions ############
-
-// ######### COMPANY ACTIONS ############
-
-
-// ######### END COMPANY Functions ############
