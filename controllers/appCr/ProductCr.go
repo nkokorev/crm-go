@@ -69,7 +69,7 @@ func ProductGet(w http.ResponseWriter, r *http.Request) {
 		err = account.LoadEntity(&product, productId,preloads)
 		if err != nil {
 			fmt.Println(err)
-			u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
+			u.Respond(w, u.MessageError(err, "Не удалось загрузить товар"))
 			return
 		}
 	}
@@ -204,7 +204,7 @@ func ProductDelete(w http.ResponseWriter, r *http.Request) {
 	var product models.Product
 	err = account.LoadEntity(&product, productId,nil)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить товар"))
 		return
 	}
 
@@ -638,12 +638,40 @@ func ProductGetProductTags(w http.ResponseWriter, r *http.Request) {
 	err = account.LoadEntity(&product, productId,[]string{"ProductTags"})
 	if err != nil {
 		fmt.Println(err)
-		u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить товар"))
 		return
 	}
 
 
 	resp := u.Message(true, "GET Product Tags")
 	resp["product_tags"] = product.ProductTags
+	u.Respond(w, resp)
+}
+
+func ProductGetProductCategories(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке product Id"))
+		return
+	}
+
+	var product models.Product
+
+	err = account.LoadEntity(&product, productId,[]string{"ProductCategories"})
+	if err != nil {
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Не удалось товар"))
+		return
+	}
+
+
+	resp := u.Message(true, "GET Proeduct Categories")
+	resp["product_categories"] = product.ProductCategories
 	u.Respond(w, resp)
 }

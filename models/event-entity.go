@@ -125,13 +125,16 @@ func (Event) PgSqlCreate() {
 		{Name: "Тег товаров удален", 	Code: "ProductTagDeleted", Description: "Тег товаров удален."},
 
 		{Name: "Теги товара синхронизированы", 	Code: "ProductSyncProductTags", Description: "Синхронизация тегов товара."},
-		{Name: "Категории товара синхронизированы", 	Code: "ProductSyncProductCategories", Description: "Синхронизация категорий товара."},
+		{Name: "У товара синхронизированы категории товара", 	Code: "ProductSyncProductCategories", Description: "Синхронизация категорий товара."},
 		
 		{Name: "В карточку товара добавлен товар", 	Code: "ProductCardAppendedProduct", Description: "В карточку товара добавлен товар."},
 		{Name: "Из карточки товара убран товар", 	Code: "ProductCardRemovedProduct", 	Description: "Из карточки товара убран товар."},
-		
-		{Name: "В категорию товара добавлен товар", Code: "ProductCategoryAppendedProduct",Description: "В категорию товара добавлен товар."},
-		{Name: "Из категории товара убран товар", 	Code: "ProductCategoryRemovedProduct", Description: "Из категории товара убран товар."},
+
+		{Name: "Категория товаров создана", 		Code: "ProductCategoryCreated", Description: "Категория товаров создана."},
+		{Name: "Категория товаров обновлена",		Code: "ProductCategoryUpdated", Description: "Категория товаров обновлена."},
+		{Name: "Категория товаров удалена", 		Code: "ProductCategoryDeleted", Description: "Категория товаров удален."},
+		{Name: "В категорию товаров добавлен товар",Code: "ProductCategoryAppendedProduct",Description: "В категорию товара добавлен товар."},
+		{Name: "Из категории товаров убран товар", 	Code: "ProductCategoryRemovedProduct", Description: "Из категории товара убран товар."},
 
 	}
 	for _,v := range events {

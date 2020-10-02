@@ -16,7 +16,8 @@ type ProductCategory struct {
 	PublicId	uint	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 	ParentId 	*uint	`json:"parent_id"`
-	Children	[]ProductCategory `json:"children" gorm:"foreignkey:ParentId"`
+	Parent		*ProductCategory `json:"parent"`
+	// Children	[]ProductCategory `json:"children" gorm:"foreignKey:ParentId"`
 
 	// Наименование категории в ед. числе: Шу Пуэр, Красный чай, Пуэр, ...
 	Label 		*string `json:"label" gorm:"type:varchar(128);"`
@@ -66,47 +67,9 @@ func (ProductCategory) PgSqlCreate() {
 		log.Fatal(err)
 	}
 }
-func (productCategory *ProductCategory) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
-
-	_db := db
-
-	if getModel {
-		_db = _db.Model(productCategory)
-	} else {
-		_db = _db.Model(&ProductCategory{})
-	}
-
-	if autoPreload {
-		return _db.Preload(clause.Associations)
-	} else {
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Products","WebPages","Children","Children12",
-			"Products.ProductCards","Products.PaymentSubject","Products.MeasurementUnit"})
-
-		for _,v := range allowed {
-			if v == "Children12" {
-				_db.Preload("Children.Children.Children.Children.Children.Children.Children.Children.Children.Children.Children.Children")
-					
-			} else {
-				_db.Preload(v)
-			}
-
-		}
-		return _db
-	}
-}
-
-// ############# Entity interface #############
-func (productCategory ProductCategory) GetId() uint { return productCategory.Id }
-func (productCategory *ProductCategory) setId(id uint) { productCategory.Id = id }
-func (productCategory *ProductCategory) setPublicId(publicId uint) { productCategory.PublicId = publicId }
-func (productCategory ProductCategory) GetAccountId() uint { return productCategory.AccountId }
-func (productCategory *ProductCategory) setAccountId(id uint) { productCategory.AccountId = id }
-func (ProductCategory) SystemEntity() bool { return false }
-// ############# End Entity interface #############
-
 func (productCategory *ProductCategory) BeforeCreate(tx *gorm.DB) error {
 	productCategory.Id = 0
-	
+
 	// PublicId
 	var lastIdx sql.NullInt64
 	err := db.Model(&ProductCategory{}).Where("account_id = ?",  productCategory.AccountId).
@@ -134,7 +97,7 @@ func (productCategory *ProductCategory) AfterFind(tx *gorm.DB) (err error) {
 	}*/
 
 	// fmt.Println("Ищем еще товары")
-	
+
 
 	stat := struct {
 		// ProductCardsCount uint
@@ -142,7 +105,7 @@ func (productCategory *ProductCategory) AfterFind(tx *gorm.DB) (err error) {
 		ProductsCount uint
 	}{0}
 	if err = db.Raw("SELECT\n    COUNT(*) AS products_count\n--     sum(payment_amount * volume_order) AS amount_order,\n--     sum(payment_amount * volume_fact) AS amount_fact\nFROM product_category_products\nWHERE product_category_id = ?;",
-		 productCategory.Id).
+		productCategory.Id).
 		Scan(&stat).Error; err != nil {
 		return err
 	}
@@ -153,6 +116,45 @@ func (productCategory *ProductCategory) AfterFind(tx *gorm.DB) (err error) {
 
 	return nil
 }
+func (productCategory *ProductCategory) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(productCategory)
+	} else {
+		_db = _db.Model(&ProductCategory{})
+	}
+
+	if autoPreload {
+		return _db.Preload(clause.Associations)
+	} else {
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Products","WebPages","Children","Children12",
+			"Products.ProductCards","Products.PaymentSubject","Products.MeasurementUnit","Parent"})
+
+		for _,v := range allowed {
+			if v == "Children12" {
+				_db.Preload("Children.Children.Children.Children.Children.Children.Children.Children.Children.Children.Children.Children")
+					
+			} else {
+				_db.Preload(v)
+			}
+
+		}
+		return _db
+	}
+}
+
+// ############# Entity interface #############
+func (productCategory ProductCategory) GetId() uint { return productCategory.Id }
+func (productCategory *ProductCategory) setId(id uint) { productCategory.Id = id }
+func (productCategory *ProductCategory) setPublicId(publicId uint) { productCategory.PublicId = publicId }
+func (productCategory ProductCategory) GetAccountId() uint { return productCategory.AccountId }
+func (productCategory *ProductCategory) setAccountId(id uint) { productCategory.AccountId = id }
+func (ProductCategory) SystemEntity() bool { return false }
+// ############# End Entity interface #############
+
+
 // ######### CRUD Functions ############
 func (productCategory ProductCategory) create() (Entity, error)  {
 
@@ -166,6 +168,8 @@ func (productCategory ProductCategory) create() (Entity, error)  {
 	if err != nil {
 		return nil, err
 	}
+
+	AsyncFire(NewEvent("ProductCategoryCreated", map[string]interface{}{"account_id":en.AccountId, "product_category_id":en.Id}))
 
 	var newItem Entity = &en
 
@@ -263,6 +267,9 @@ func (productCategory *ProductCategory) update(input map[string]interface{}, pre
 	delete(input,"web_pages")
 	delete(input,"products")
 	delete(input,"product_cards")
+	delete(input,"children")
+	delete(input,"parent")
+
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","priority","web_site_id"}); err != nil {
 		return err
@@ -274,6 +281,8 @@ func (productCategory *ProductCategory) update(input map[string]interface{}, pre
 		return err
 	}
 
+	AsyncFire(NewEvent("ProductCategoryUpdated", map[string]interface{}{"account_id":productCategory.AccountId, "product_category_id":productCategory.Id}))
+
 	err := productCategory.GetPreloadDb(false,false,preloads).First(productCategory, productCategory.Id).Error
 	if err != nil {
 		return err
@@ -282,7 +291,11 @@ func (productCategory *ProductCategory) update(input map[string]interface{}, pre
 	return nil
 }
 func (productCategory *ProductCategory) delete () error {
-	return productCategory.GetPreloadDb(true,false,nil).Where("id = ?", productCategory.Id).Delete(productCategory).Error
+	if err := productCategory.GetPreloadDb(true,false,nil).Where("id = ?", productCategory.Id).Delete(productCategory).Error; err != nil {
+		return err
+	}
+	AsyncFire(NewEvent("ProductCategoryDeleted", map[string]interface{}{"account_id":productCategory.AccountId, "product_category_id":productCategory.Id}))
+	return nil
 }
 // ######### END CRUD Functions ############
 
@@ -317,6 +330,9 @@ func (productCategory *ProductCategory) AppendProduct(product *Product, strict..
 		return err
 	}
 
+	AsyncFire(NewEvent("ProductCategoryAppendedProduct",
+		map[string]interface{}{"account_id":productCategory.AccountId, "product_category_id":productCategory.Id,"product_id":product.Id}))
+
 	return nil
 }
 func (productCategory *ProductCategory) RemoveProduct(product *Product) error {
@@ -335,7 +351,9 @@ func (productCategory *ProductCategory) RemoveProduct(product *Product) error {
 		return err
 	}
 
-
+	AsyncFire(NewEvent("ProductCategoryRemovedProduct",
+		map[string]interface{}{"account_id":productCategory.AccountId, "product_category_id":productCategory.Id,"product_id":product.Id}))
+		
 	return nil
 }
 

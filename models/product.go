@@ -488,9 +488,6 @@ func (product *Product) AppendProductCategory(productCategory *ProductCategory, 
 		return err
 	}
 
-	AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
-	AsyncFire(NewEvent("ProductCategoryUpdated", map[string]interface{}{"account_id":product.AccountId, "product_category_id":productCategory.Id}))
-
 	return nil
 }
 func (product *Product) RemoveProductCategory(productCategory *ProductCategory) error {
@@ -508,9 +505,6 @@ func (product *Product) RemoveProductCategory(productCategory *ProductCategory) 
 		&ProductCategoryProduct{}).Error; err != nil {
 		return err
 	}
-
-	AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
-	AsyncFire(NewEvent("ProductCategoryUpdated", map[string]interface{}{"account_id":product.AccountId, "product_category_id":productCategory.Id}))
 
 	return nil
 }

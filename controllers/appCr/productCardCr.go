@@ -66,7 +66,7 @@ func ProductCardGet(w http.ResponseWriter, r *http.Request) {
 		err = account.LoadEntity(&productCard, productCardId,preloads)
 		if err != nil {
 			fmt.Println(err)
-			u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
+			u.Respond(w, u.MessageError(err, "Не удалось загрузить карточку товара"))
 			return
 		}
 	}
@@ -208,7 +208,7 @@ func ProductCardDelete(w http.ResponseWriter, r *http.Request) {
 	var productCard models.ProductCard
 	err = account.LoadEntity(&productCard, productCardId,nil)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
+		u.Respond(w, u.MessageError(err, "Не удалось получить карточку товара"))
 		return
 	}
 
@@ -393,7 +393,7 @@ func ProductCardProductsGet(w http.ResponseWriter, r *http.Request) {
 	err = account.LoadEntity(&productCard, productCardId,[]string{"Products"})
 	if err != nil {
 		fmt.Println(err)
-		u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить карточку товара"))
 		return
 	}
 

@@ -145,7 +145,7 @@ func (webHook *WebHook) loadByPublicId(preloads []string) error {
 	return nil
 }
 func (WebHook) getList(accountId uint, sortBy string, preload []string) ([]Entity, int64, error) {
-	return WebHook{}.getPaginationList(accountId,0,25,sortBy, "", nil, preload)
+	return WebHook{}.getPaginationList(accountId,0,200,sortBy, "", nil, preload)
 }
 func (WebHook) getPaginationList(accountId uint, offset, limit int, sortBy, search string, filter map[string]interface{},preloads []string) ([]Entity, int64, error) {
 
