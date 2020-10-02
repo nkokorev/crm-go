@@ -123,6 +123,16 @@ func (Event) PgSqlCreate() {
 		{Name: "Тег товаров создан", 	Code: "ProductTagCreated", Description: "В системе добавлен тег товаров."},
 		{Name: "Тег товаров обновлен",Code: "ProductTagUpdated", Description: "Тег товаров обновлен."},
 		{Name: "Тег товаров удален", 	Code: "ProductTagDeleted", Description: "Тег товаров удален."},
+
+		{Name: "Теги товара синхронизированы", 	Code: "ProductSyncProductTags", Description: "Синхронизация тегов товара."},
+		{Name: "Категории товара синхронизированы", 	Code: "ProductSyncProductCategories", Description: "Синхронизация категорий товара."},
+		
+		{Name: "В карточку товара добавлен товар", 	Code: "ProductCardAppendedProduct", Description: "В карточку товара добавлен товар."},
+		{Name: "Из карточки товара убран товар", 	Code: "ProductCardRemovedProduct", 	Description: "Из карточки товара убран товар."},
+		
+		{Name: "В категорию товара добавлен товар", Code: "ProductCategoryAppendedProduct",Description: "В категорию товара добавлен товар."},
+		{Name: "Из категории товара убран товар", 	Code: "ProductCategoryRemovedProduct", Description: "Из категории товара убран товар."},
+
 	}
 	for _,v := range events {
 		_, err = mainAccount.CreateEntity(&v)

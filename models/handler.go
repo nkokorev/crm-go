@@ -63,7 +63,7 @@ func (eventListener *EventListener) Handle(e Event) error {
 
 	// 3. Вызываем Target-метод с объектом Event
 	if err := target(e); err != nil {
-		// log.Println(err)
+		log.Println(err)
 		return err
 	}
 

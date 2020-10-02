@@ -385,7 +385,7 @@ func (product *Product) update(input map[string]interface{}, preloads []string) 
 	if err := product.GetPreloadDb(false, false, nil).Where("id = ?", product.Id).Omit("id", "account_id").Updates(input).
 		Error; err != nil {return err}
 
-		AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
+	AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
 
 	err := product.GetPreloadDb(false,false, preloads).First(product, product.Id).Error
 	if err != nil {
@@ -488,6 +488,9 @@ func (product *Product) AppendProductCategory(productCategory *ProductCategory, 
 		return err
 	}
 
+	AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
+	AsyncFire(NewEvent("ProductCategoryUpdated", map[string]interface{}{"account_id":product.AccountId, "product_category_id":productCategory.Id}))
+
 	return nil
 }
 func (product *Product) RemoveProductCategory(productCategory *ProductCategory) error {
@@ -506,6 +509,8 @@ func (product *Product) RemoveProductCategory(productCategory *ProductCategory) 
 		return err
 	}
 
+	AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
+	AsyncFire(NewEvent("ProductCategoryUpdated", map[string]interface{}{"account_id":product.AccountId, "product_category_id":productCategory.Id}))
 
 	return nil
 }
@@ -522,12 +527,12 @@ func (product *Product) SyncProductCategoriesByIds(productCategories []ProductCa
 	}
 
 	for _,_productCategory := range productCategories {
-
 		if err := product.AppendProductCategory(&ProductCategory{Id: _productCategory.Id}, false); err != nil {
 			return err
 		}
-
 	}
+
+	AsyncFire(NewEvent("ProductSyncProductCategories", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
 
 	return nil
 }
@@ -576,7 +581,6 @@ func (product *Product) RemoveProductTag(productTag *ProductTag) error {
 		return err
 	}
 
-
 	return nil
 }
 func (product *Product) SyncProductTagsByIds(ProductTags []ProductTag) error {
@@ -596,6 +600,8 @@ func (product *Product) SyncProductTagsByIds(ProductTags []ProductTag) error {
 			return err
 		}
 	}
+
+	AsyncFire(NewEvent("ProductSyncProductTags", map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id}))
 
 	return nil
 }

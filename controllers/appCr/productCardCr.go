@@ -374,3 +374,66 @@ func ProductCardAppendProduct(w http.ResponseWriter, r *http.Request) {
 	resp["product_card"] = _productCard
 	u.Respond(w, resp)
 }
+
+func ProductCardProductsGet(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке productCard Id"))
+		return
+	}
+
+	var productCard models.ProductCard
+
+	err = account.LoadEntity(&productCard, productCardId,[]string{"Products"})
+	if err != nil {
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
+		return
+	}
+
+	resp := u.Message(true, "GET ProductCard")
+	resp["products"] = productCard.Products
+	u.Respond(w, resp)
+}
+
+func ProductCardProductMany2ManyGet(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке product Id"))
+		return
+	}
+	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке productCard Id"))
+		return
+	}
+
+	var productCard models.ProductCard
+	err = account.LoadEntity(&productCard, productCardId,nil)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить product Card"))
+		return
+	}
+
+	m2m, err := productCard.ManyToManyProductById(productId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке many 2 many"))
+		return
+	}
+
+	resp := u.Message(true, "GET ManyToMany Product ById")
+	resp["product_card_product"] = m2m
+	u.Respond(w, resp)
+}

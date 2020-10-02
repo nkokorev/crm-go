@@ -116,21 +116,6 @@ func (productCard *ProductCard) AfterFind(tx *gorm.DB) (err error) {
 	productCard.ProductCount =  db.Model(productCard).Association("Products").Count()
 	return nil
 }
-func (productCard *ProductCard) AfterCreate(tx *gorm.DB) error {
-	// AsyncFire(*Event{}.ProductCardCreated(productCard.AccountId, productCard.Id))
-	AsyncFire(NewEvent("ProductCardCreated", map[string]interface{}{"account_id":productCard.AccountId, "product_card_id":productCard.Id}))
-	return nil
-}
-func (productCard *ProductCard) AfterUpdate(tx *gorm.DB) error {
-	// AsyncFire(*Event{}.ProductCardUpdated(productCard.AccountId, productCard.Id))
-	AsyncFire(NewEvent("ProductCardUpdated", map[string]interface{}{"account_id":productCard.AccountId, "product_card_id":productCard.Id}))
-	return nil
-}
-func (productCard *ProductCard) AfterDelete(tx *gorm.DB) error {
-	// AsyncFire(*Event{}.ProductCardDeleted(productCard.AccountId, productCard.Id))
-	AsyncFire(NewEvent("ProductCardDeleted", map[string]interface{}{"account_id":productCard.AccountId, "product_card_id":productCard.Id}))
-	return nil
-}
 // ######### CRUD Functions ############
 func (productCard ProductCard) create() (Entity, error)  {
 
@@ -142,6 +127,8 @@ func (productCard ProductCard) create() (Entity, error)  {
 	if err := _item.GetPreloadDb(false,false, nil).First(&_item,_item.Id).Error; err != nil {
 		return nil, err
 	}
+
+	AsyncFire(NewEvent("ProductCardCreated", map[string]interface{}{"account_id":_item.AccountId, "product_card_id":_item.Id}))
 
 	var entity Entity = &_item
 
@@ -244,6 +231,8 @@ func (productCard *ProductCard) update(input map[string]interface{}, preloads []
 		return err
 	}
 
+	AsyncFire(NewEvent("ProductCardUpdated", map[string]interface{}{"account_id":productCard.AccountId, "product_card_id":productCard.Id}))
+
 	err := productCard.GetPreloadDb(false,false,preloads).First(productCard, productCard.Id).Error
 	if err != nil {
 		return err
@@ -252,7 +241,12 @@ func (productCard *ProductCard) update(input map[string]interface{}, preloads []
 	return nil
 }
 func (productCard *ProductCard) delete () error {
-	return productCard.GetPreloadDb(true,false,nil).Where("id = ?", productCard.Id).Delete(productCard).Error
+	if err := productCard.GetPreloadDb(true,false,nil).Where("id = ?", productCard.Id).Delete(productCard).Error; err != nil {
+		return err
+	}
+	AsyncFire(NewEvent("ProductCardDeleted", map[string]interface{}{"account_id":productCard.AccountId, "product_card_id":productCard.Id}))
+
+	return nil
 }
 // ######### END CRUD Functions ############
 
@@ -290,8 +284,9 @@ func (productCard *ProductCard) AppendProduct(input *Product, optPriority... int
 
 	account, err := GetAccount(productCard.AccountId)
 	if err == nil && account != nil {
-		// AsyncFire(*Event{}.ProductCardUpdated(account.Id, productCard.Id))
-		AsyncFire(NewEvent("ProductCardUpdated", map[string]interface{}{"account_id":account.Id, "product_card_id":productCard.Id}))
+		// AsyncFire(NewEvent("ProductCardUpdated", map[string]interface{}{"account_id":account.Id, "product_card_id":productCard.Id}))
+		AsyncFire(NewEvent("ProductCardAppendedProduct",
+			map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id, "product_card_id":productCard.Id}))
 	}
 	
 	return nil
@@ -305,11 +300,12 @@ func (productCard *ProductCard) RemoveProduct(product *Product) error {
 	if err := db.Model(productCard).Association("Products").Delete(product); err != nil {
 		return err
 	}
-	
-	/*if err := db.Model(&ProductCardProduct{}).Where("product_id = ? AND product_card_id = ?",product.Id, productCard.Id).
-		Delete().Error; err != nil {
-		return err
-	}*/
+
+	account, err := GetAccount(productCard.AccountId)
+	if err == nil && account != nil {
+		AsyncFire(NewEvent("ProductCardRemovedProduct",
+			map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id, "product_card_id":productCard.Id}))
+	}
 
 	return nil
 }
@@ -344,4 +340,16 @@ func (productCard *ProductCard) ExistProductById(productId uint) bool {
 	}
 
 	return true
+}
+
+func (productCard ProductCard) ManyToManyProductById(productId uint) (*ProductCardProduct, error) {
+	
+	var el ProductCardProduct
+
+	err := db.Model(&ProductCardProduct{}).Where("product_card_id = ? AND product_id = ?",productCard.Id, productId).First(&el).Error
+	if err != nil {
+		return nil, utils.Error{Message: "Товар не найден в карточке товара"}
+	}
+
+	return &el, nil
 }

@@ -619,3 +619,31 @@ func ProductSyncSourceItems(w http.ResponseWriter, r *http.Request) {
 	resp["product"] = product
 	u.Respond(w, resp)
 }
+
+func ProductGetProductTags(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке product Id"))
+		return
+	}
+
+	var product models.Product
+	
+	err = account.LoadEntity(&product, productId,[]string{"ProductTags"})
+	if err != nil {
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить магазин"))
+		return
+	}
+
+
+	resp := u.Message(true, "GET Product Tags")
+	resp["product_tags"] = product.ProductTags
+	u.Respond(w, resp)
+}
