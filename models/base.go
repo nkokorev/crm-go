@@ -156,11 +156,11 @@ func SettingsDb() error {
 		log.Fatal(err)
 	}
 
-	err = db.SetupJoinTable(&WebPage{}, "ProductCategories", &WebPageProductCategories{})
+	err = db.SetupJoinTable(&WebPage{}, "ProductCategories", &WebPageProductCategory{})
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = db.SetupJoinTable(&ProductCategory{}, "WebPages", &WebPageProductCategories{})
+	err = db.SetupJoinTable(&ProductCategory{}, "WebPages", &WebPageProductCategory{})
 	if err != nil {
 		log.Fatal(err)
 	}

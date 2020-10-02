@@ -67,7 +67,7 @@ func (WebPage) PgSqlCreate() {
 		log.Fatal("Error: ", err)
 	}
 
-	err = db.SetupJoinTable(&WebPage{}, "ProductCategories", &WebPageProductCategories{})
+	err = db.SetupJoinTable(&WebPage{}, "ProductCategories", &WebPageProductCategory{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -294,16 +294,13 @@ func (webPage WebPage) AppendProductCategory(productCategory *ProductCategory, s
 		}
 	}
 
-	if err := db.Model(&WebPageProductCategories{}).Create(
-		&WebPageProductCategories{ProductCategoryId: productCategory.Id, WebPageId: webPage.Id, Priority: priority}).Error; err != nil {
+	if err := db.Model(&WebPageProductCategory{}).Create(
+		&WebPageProductCategory{ProductCategoryId: productCategory.Id, WebPageId: webPage.Id, Priority: priority}).Error; err != nil {
 		return err
 	}
 
-	account, err := GetAccount(webPage.AccountId)
-	if err == nil && account != nil {
-		AsyncFire(NewEvent("WebPageUpdated", map[string]interface{}{"account_id":account.Id, "web_page_id":webPage.Id}))
-		AsyncFire(NewEvent("ProductCategoryUpdated", map[string]interface{}{"account_id":account.Id, "product_category_id":productCategory.Id}))
-	}
+	AsyncFire(NewEvent("WebPageAppendedProductCategory",
+		map[string]interface{}{"account_id":webPage.AccountId, "web_page_id":webPage.Id,"product_category_id":productCategory.Id}))
 
 	return nil
 }
@@ -319,10 +316,13 @@ func (webPage WebPage) RemoveProductCategory(productCategory ProductCategory) er
 	}
 
 	if err := db.Where("web_page_id = ? AND product_category_id = ?", webPage.Id, productCategory.Id).
-		Delete(&WebPageProductCategories{}).Error; err != nil {
+		Delete(&WebPageProductCategory{}).Error; err != nil {
 		return err
 	}
-	
+
+	AsyncFire(NewEvent("WebPageRemovedProductCategory",
+		map[string]interface{}{"account_id":webPage.AccountId, "web_page_id":webPage.Id,"product_category_id":productCategory.Id}))
+
 	account, err := GetAccount(webPage.AccountId)
 	if err == nil && account != nil {
 		// AsyncFire(*Event{}.WebPageUpdated(account.Id, webPage.Id))
@@ -334,7 +334,7 @@ func (webPage WebPage) RemoveProductCategory(productCategory ProductCategory) er
 
 	return nil
 }
-func (webPage WebPage) SyncProductCategoriesByIds(items []WebPageProductCategories) error {
+func (webPage WebPage) SyncProductCategoriesByIds(items []WebPageProductCategory) error {
 
 	// 1. Загружаем продукт еще раз
 	if webPage.Id < 1 {
@@ -352,16 +352,30 @@ func (webPage WebPage) SyncProductCategoriesByIds(items []WebPageProductCategori
 		}
 	}
 
+	AsyncFire(NewEvent("WebPageSyncProductCategories", map[string]interface{}{"account_id":webPage.AccountId, "web_page_id":webPage.Id}))
+
 	return nil
 }
 func (webPage WebPage) ExistProductCategoryById(productCategoryId uint) bool {
 
-	var el WebPageProductCategories
+	var el WebPageProductCategory
 
-	err := db.Model(&WebPageProductCategories{}).Where("web_page_id = ? AND product_category_id = ?",webPage.Id, productCategoryId).First(&el).Error
+	err := db.Model(&WebPageProductCategory{}).Where("web_page_id = ? AND product_category_id = ?",webPage.Id, productCategoryId).First(&el).Error
 	if err != nil {
 		return false
 	}
 
 	return true
+}
+
+func (webPage WebPage) ManyToManyProductCategoryById(productCategoryId uint) (*WebPageProductCategory, error) {
+
+	var el WebPageProductCategory
+
+	err := db.Model(&WebPageProductCategory{}).Where("web_page_id = ? AND product_category_id = ?",webPage.Id, productCategoryId).First(&el).Error
+	if err != nil {
+		return nil, utils.Error{Message: "Объект не найден в на странице"}
+	}
+
+	return &el, nil
 }

@@ -58,7 +58,7 @@ func (ProductCategory) PgSqlCreate() {
 		log.Fatal("Error: ", err)
 	}
 
-	err = db.SetupJoinTable(&ProductCategory{}, "WebPages", &WebPageProductCategories{})
+	err = db.SetupJoinTable(&ProductCategory{}, "WebPages", &WebPageProductCategory{})
 	if err != nil {
 		log.Fatal(err)
 	}

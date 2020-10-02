@@ -245,7 +245,7 @@ func WebPageSyncProductCategories(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var input struct{
-		Items []models.WebPageProductCategories `json:"web_page_product_categories"`
+		Items []models.WebPageProductCategory `json:"web_page_product_categories"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 1"))
@@ -369,5 +369,68 @@ func WebPageAppendCategory(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "PATCH ProductCard Append Product")
 	resp["product_card"] = _productCard
+	u.Respond(w, resp)
+}
+
+func WebPageGetProductCategories(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	webPageId, err := utilsCr.GetUINTVarFromRequest(r, "webPageId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке webPage Id"))
+		return
+	}
+
+	var webPage models.WebPage
+
+	err = account.LoadEntity(&webPage, webPageId,[]string{"ProductCategories"})
+	if err != nil {
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Не удалось страницу сайта"))
+		return
+	}
+
+	resp := u.Message(true, "GET Web Page Categories")
+	resp["product_categories"] = webPage.ProductCategories
+	u.Respond(w, resp)
+}
+
+func WebPageProductCategoryMany2ManyGet(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	webPageId, err := utilsCr.GetUINTVarFromRequest(r, "webPageId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке webPage Id"))
+		return
+	}
+	productCategoryId, err := utilsCr.GetUINTVarFromRequest(r, "productCategoryId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке productCategory Id"))
+		return
+	}
+
+	var webPage models.WebPage
+	err = account.LoadEntity(&webPage, webPageId,nil)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить webPage"))
+		return
+	}
+
+	m2m, err := webPage.ManyToManyProductCategoryById(productCategoryId)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке many 2 many"))
+		return
+	}
+
+	resp := u.Message(true, "GET ManyToMany WebPage Product Category ById")
+	resp["web_page_product_category"] = m2m
 	u.Respond(w, resp)
 }

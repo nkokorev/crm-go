@@ -229,7 +229,7 @@ func RefreshTablesPart_I() {
 	models.ProductCard{}.PgSqlCreate()
 	models.ProductCardProduct{}.PgSqlCreate()
 	models.ProductCategoryProduct{}.PgSqlCreate()
-	models.WebPageProductCategories{}.PgSqlCreate()
+	models.WebPageProductCategory{}.PgSqlCreate()
 
 
 	models.ProductTagGroup{}.PgSqlCreate()
