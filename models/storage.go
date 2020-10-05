@@ -338,6 +338,8 @@ func (fs *Storage) update(input map[string]interface{}, preloads []string) error
 	delete(input,"size")
 	// delete(input,"owner_id")
 	// delete(input,"owner_type")
+	// Обновляем без data, т.к. изображение не изменяется
+	delete(input,"data")
 	delete(input,"mime")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"owner_id","priority"}); err != nil {

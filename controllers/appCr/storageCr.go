@@ -329,7 +329,7 @@ func StorageUpdateFile(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
-
+	delete(input, "data")
 	err = account.UpdateEntity(&file,input,preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка обновления файла"}))
@@ -456,8 +456,6 @@ func StorageDiskSpaceUsed(w http.ResponseWriter, r *http.Request) {
 	resp["disk_space_used"] = diskSpaceUsed
 	u.Respond(w, resp)
 }
-
-
 
 
 // ### FOR CDN ###

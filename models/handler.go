@@ -131,8 +131,6 @@ func (eventListener *EventListener) OLDHandle(e Event) error {
 }
 
 // #############   Event Handlers   #############
-
-
 func (eventListener EventListener) EmailNotificationRun(e Event) error {
 
 	fmt.Printf("#### Запуск уведомления письмом, обытие: %v данные: %v\n",e.GetName(), e.Data())
@@ -206,7 +204,6 @@ func (eventListener EventListener) EmailQueueRun(e Event) error {
 func (eventListener EventListener) WebHookCall(e Event) error {
 
 	// fmt.Printf("Вызов вебхука, событие: %v Данные: %v, EventId %v\n", e.Name, e.Data(), eventListener.EventId)
-
 	accountStr := e.Get("account_id")
 	accountId, ok :=  accountStr.(uint)
 	if !ok {
@@ -226,8 +223,6 @@ func (eventListener EventListener) WebHookCall(e Event) error {
 	// Загружаем данные в теле
 	eventListener.uploadEntitiesData(&e)
 
-	// return en.Execute(e.Data())
-	
 	// return webHook.Execute(e)
 	return webHook.Execute(e.Data())
 }
