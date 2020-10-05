@@ -8,7 +8,6 @@ import (
 
 /**
 * [API] - группа роутов доступных только после Bearer Авторизации. В контексте всегда доступен account & accountId
-
 */
 var ApiRoutesV1 = func (rApi *mux.Router) {
 

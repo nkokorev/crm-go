@@ -22,5 +22,3 @@ func (WebPageProductCategory) PgSqlCreate() {
 		log.Fatal("Error: ", err)
 	}
 }
-
-
