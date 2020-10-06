@@ -39,6 +39,8 @@ type AccountUser struct {
 
 	InvitedUserId 		*uint 	`json:"invited_user_id"` // кто его пригласил
 
+	// Идентификатор платежа в Яндекс.Кассе или у другого посредника.
+	// ExternalId	string	`json:"external_id" gorm:"type:varchar(128);index;"`
 
 
 	User    User    `json:"-"  gorm:"preload:true"`

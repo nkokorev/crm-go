@@ -19,9 +19,9 @@ type User struct {
 	IssuerAccountId uint 		`json:"issuer_account_id" gorm:"index;not null;"`
 	IssuerAccountIdBeta uint 	`json:"issuerAccountId" gorm:"-"`
 
-	Username 	*string 		`json:"username" gorm:"type:varchar(255);index;"` // уникальный, т.к. через него вход в главный аккаунт
-	Email 		*string 		`json:"email" gorm:"type:varchar(255);index;"`
-	PhoneRegion *string 		`json:"phone_region" gorm:"type:varchar(3);not null;default:'RU';"` // нужно проработать формат данных
+	Username 		*string 		`json:"username" gorm:"type:varchar(255);index;"` // уникальный, т.к. через него вход в главный аккаунт
+	Email 			*string 		`json:"email" gorm:"type:varchar(255);index;"`
+	PhoneRegion 	*string 		`json:"phone_region" gorm:"type:varchar(3);not null;default:'RU';"` // нужно проработать формат данных
 	PhoneRegionBeta *string 	`json:"phoneRegion" gorm:"-"` // нужно проработать формат данных
 
 	Phone		*string 		`json:"phone" gorm:"type:varchar(32);"` // нужно проработать формат данных
@@ -50,6 +50,9 @@ type User struct {
 
 	DefaultAccountId 		*uint 	`json:"default_account_id"` // указывает какой аккаунт по дефолту загружать
 	// InvitedUserId 		*uint 	`json:"invited_user_id"` // кто его пригласил
+
+	// Внешний ID парсится из AccountUser
+	// ExternalId	string	`json:"external_id" gorm:"-"`
 
 	// Верификация, сброс пароля и т.д.
 	EmailVerifiedAt *time.Time `json:"email_verified_at"` // дата подтверждения email-а (автоматически проставляется, если методом верфикации пользователя был подтвержден email)

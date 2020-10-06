@@ -218,6 +218,7 @@ func (ProductCard) getPaginationList(accountId uint, offset, limit int, sortBy, 
 func (productCard *ProductCard) update(input map[string]interface{}, preloads []string) error {
 
 	delete(input,"images")
+	delete(input,"image")
 	delete(input,"products")
 	delete(input,"product_categories")
 	utils.FixInputHiddenVars(&input)

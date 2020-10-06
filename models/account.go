@@ -324,6 +324,18 @@ func (account Account) UploadUsers(users []User, role Role) error {
 
 	for _, user := range users {
 		var err error
+
+		// Проверка дублирование полей
+		if account.existUserByUsername(user.Username) {
+			continue
+		}
+		if account.existUserByEmail(user.Email) {
+			continue
+		}
+		if account.existUserByPhone(user.Phone) {
+			continue
+		}
+
 		var username, email, phone bool
 
 		// Утверждаем main-account пользователя
@@ -369,16 +381,7 @@ func (account Account) UploadUsers(users []User, role Role) error {
 			continue
 		}
 
-		// Проверка дублирование полей
-		if account.existUserByUsername(user.Username) {
-			continue
-		}
-		if account.existUserByEmail(user.Email) {
-			continue
-		}
-		if account.existUserByPhone(user.Phone) {
-			continue
-		}
+
 
 		// создаем пользователя
 		

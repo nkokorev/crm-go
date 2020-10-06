@@ -90,31 +90,6 @@ func (fs *Storage) AfterCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
-func (fs *Storage) AfterUpdate(tx *gorm.DB) (err error) {
-	
-	switch fs.OwnerType {
-	case "products":
-		// AsyncFire(*Event{}.ProductUpdated(fs.AccountId, uint(fs.OwnerID)))
-		AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":fs.AccountId, "product_id":fs.OwnerID}))
-	case "articles":
-		// AsyncFire(*Event{}.ArticleUpdated(fs.AccountId, uint(fs.OwnerID)))
-		AsyncFire(NewEvent("ArticleUpdated", map[string]interface{}{"account_id":fs.AccountId, "article_id":fs.OwnerID}))
-	case "web_pages":
-		// AsyncFire(*Event{}.WebPageUpdated(fs.AccountId, uint(fs.OwnerID)))
-		AsyncFire(NewEvent("WebPageUpdated", map[string]interface{}{"account_id":fs.AccountId, "web_page_id":fs.OwnerID}))
-	case "product_cards":
-		// AsyncFire(*Event{}.ProductCardUpdated(fs.AccountId, uint(fs.OwnerID)))
-		AsyncFire(NewEvent("ProductCardUpdated", map[string]interface{}{"account_id":fs.AccountId, "product_card_id":fs.OwnerID}))
-	case "manufactures":
-		// AsyncFire(*Event{}.ManufacturerUpdated(fs.AccountId, uint(fs.OwnerID)))
-		AsyncFire(NewEvent("ManufacturerUpdated", map[string]interface{}{"account_id":fs.AccountId, "manufacturer_id":fs.OwnerID}))
-	default:
-		// AsyncFire(*Event{}.StorageUpdated(fs.AccountId, fs.Id))
-		AsyncFire(NewEvent("StorageUpdated", map[string]interface{}{"account_id":fs.AccountId, "storage_id":fs.Id}))
-	}
-	
-	return nil
-}
 func (fs *Storage) AfterDelete(tx *gorm.DB) (err error) {
 	switch fs.OwnerType {
 	case "products":
@@ -349,6 +324,22 @@ func (fs *Storage) update(input map[string]interface{}, preloads []string) error
 	err := db.Model(fs).Omit("id", "hashId", "account_id","created_at").Updates(input).Error
 	if err != nil {
 		return err
+	}
+
+	switch fs.OwnerType {
+	case "products":
+		AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":fs.AccountId, "product_id":fs.OwnerID}))
+	case "articles":
+		AsyncFire(NewEvent("ArticleUpdated", map[string]interface{}{"account_id":fs.AccountId, "article_id":fs.OwnerID}))
+	case "web_pages":
+		AsyncFire(NewEvent("WebPageUpdated", map[string]interface{}{"account_id":fs.AccountId, "web_page_id":fs.OwnerID}))
+	case "product_cards":
+		AsyncFire(NewEvent("ProductCardUpdated", map[string]interface{}{"account_id":fs.AccountId, "product_card_id":fs.OwnerID}))
+	case "manufactures":
+		AsyncFire(NewEvent("ManufacturerUpdated", map[string]interface{}{"account_id":fs.AccountId, "manufacturer_id":fs.OwnerID}))
+	default:
+		// AsyncFire(*Event{}.StorageUpdated(fs.AccountId, fs.Id))
+		AsyncFire(NewEvent("StorageUpdated", map[string]interface{}{"account_id":fs.AccountId, "storage_id":fs.Id}))
 	}
 
 	err = fs.GetPreloadDb(false,false, preloads, true).First(fs, fs.Id).Error

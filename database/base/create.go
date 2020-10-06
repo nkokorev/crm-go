@@ -2670,7 +2670,7 @@ func Upload357grData() {
 	_, err = webPageGreenTea.CreateChild( models.WebPage{
 		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Китайский зеленый чай"), Path:  utils.STRp("china"),
 		MetaTitle: utils.STRp("Китайский зеленый чай :: 357 грамм"),
-		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea.green.china"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea.china"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
@@ -2829,7 +2829,7 @@ func Upload357grData() {
 	_, err = webPageCoffeeBeans.CreateChild( models.WebPage{
 		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Фирменные смеси"), Path:  utils.STRp("classic"),
 		MetaTitle: utils.STRp("Фирменные смеси кофе :: 357 грамм"),
-		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.coffee.beans.classic"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.coffee.beans.proprietary"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать webPageCoffeeBeans для 357gr webSite: ", err)
@@ -2853,7 +2853,7 @@ func Upload357grData() {
 	_, err = webPageCoffeeBeans.CreateChild( models.WebPage {
 		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Чайные сувениры"), Path:  utils.STRp("souvenirs"),
 		MetaTitle: utils.STRp("Чайные сувениры :: 357 грамм"),
-		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.coffee.gifts.souvenirs"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.gifts.souvenirs"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
@@ -2862,7 +2862,7 @@ func Upload357grData() {
 	_, err = webPageCoffeeBeans.CreateChild( models.WebPage {
 		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Подарочные корзины"), Path:  utils.STRp("baskets"),
 		MetaTitle: utils.STRp("Подарочные корзины :: 357 грамм"),
-		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.coffee.gifts.baskets"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.gifts.baskets"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать webPageCoffeeBeans для 357gr webSite: ", err)
@@ -2871,7 +2871,7 @@ func Upload357grData() {
 	_, err = webPageCoffeeBeans.CreateChild( models.WebPage {
 		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Подарочные букеты"), Path:  utils.STRp("bouquets"),
 		MetaTitle: utils.STRp("Подарочные букеты :: 357 грамм"),
-		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.coffee.gifts.bouquets"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.gifts.bouquets"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать webPageCoffeeBeans для 357gr webSite: ", err)
@@ -2880,7 +2880,7 @@ func Upload357grData() {
 	_, err = webPageCoffeeBeans.CreateChild( models.WebPage {
 		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Подарки руководителю"), Path:  utils.STRp("manager"),
 		MetaTitle: utils.STRp("Подарки руководителю :: 357 грамм"),
-		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.coffee.gifts.manager"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.gifts.manager"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать webPageCoffeeBeans для 357gr webSite: ", err)
@@ -2904,7 +2904,7 @@ func Upload357grData() {
 	_webPageTeaBrewing, err := webPageTeaThings.CreateChild( models.WebPage {
 		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Для заваривания"), Path:  utils.STRp("brewing"),
 		MetaTitle: utils.STRp("Посуда для заваривания чая :: 357 грамм"),
-		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.coffee.tea-things.brewing"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea-things.brewing"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
@@ -2916,7 +2916,7 @@ func Upload357grData() {
 	_, err = webPageTeaBrewing.CreateChild( models.WebPage {
 		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Традиционная"), Path:  utils.STRp("traditional"),
 		MetaTitle: utils.STRp("Традиционная посуда для заваривания чая :: 357 грамм"),
-		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.coffee.tea-things.brewing.traditional"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea-things.brewing.traditional"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
@@ -2925,7 +2925,7 @@ func Upload357grData() {
 	_, err = webPageTeaBrewing.CreateChild( models.WebPage {
 		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Европейская"), Path:  utils.STRp("european"),
 		MetaTitle: utils.STRp("Европейская посуда для заваривания чая :: 357 грамм"),
-		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.coffee.tea-things.brewing.european"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea-things.brewing.european"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
@@ -2934,7 +2934,7 @@ func Upload357grData() {
 	_, err = webPageTeaBrewing.CreateChild( models.WebPage {
 		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Типоды"), Path:  utils.STRp("gunfu"),
 		MetaTitle: utils.STRp("Типоды (чайники с кнопкой) для заваривания чая :: 357 грамм"),
-		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.coffee.tea-things.brewing.gunfu"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea-things.brewing.gunfu"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
@@ -2943,7 +2943,7 @@ func Upload357grData() {
 	_, err = webPageTeaBrewing.CreateChild( models.WebPage {
 		AccountId: account.Id, Code:  utils.STRp("catalog"),Label:  utils.STRp("Сифон"), Path:  utils.STRp("siphons"),
 		MetaTitle: utils.STRp("Сифоны для варки чая и кофе :: 357 грамм"),
-		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.coffee.tea-things.brewing.siphons"),
+		IconName:  utils.STRp("far fa-fan-table"), RouteName:  utils.STRp("catalog.tea-things.brewing.siphons"),
 	})
 	if err != nil {
 		log.Fatal("Не удалось создать _webPageTea для 357gr webSite: ", err)
