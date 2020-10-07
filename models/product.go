@@ -86,10 +86,10 @@ type Product struct {
 	IsInteger 			bool	`json:"is_integer" gorm:"type:bool;default:true"`
 
 	// Основные атрибуты для расчета (Можно и в атрибуты)
-	// Length 	*float64 `json:"length" gorm:"type:numeric;"`
-	// Width 	*float64 `json:"width" gorm:"type:numeric;"`
-	// Height 	*float64 `json:"height" gorm:"type:numeric;"`
-	// Weight 	*float64 `json:"weight" gorm:"type:numeric;"`
+	Length 	*float64 `json:"length" gorm:"type:numeric;"`
+	Width 	*float64 `json:"width" gorm:"type:numeric;"`
+	Height 	*float64 `json:"height" gorm:"type:numeric;"`
+	Weight 	*float64 `json:"weight" gorm:"type:numeric;"`
 
 	// Производитель (не поставщик)
 	ManufacturerId	*uint		`json:"manufacturer_id" gorm:"type:int;"`

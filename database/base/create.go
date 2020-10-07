@@ -3696,8 +3696,30 @@ func Upload357grData() {
 
 func Migrate_I() {
 
-	models.ProductTagProductCard{}.PgSqlCreate()
+	pool := models.GetPool()
 
+	// models.ProductTagProductCard{}.PgSqlCreate()
+
+	if !pool.Migrator().HasColumn(&models.Product{},"length") {
+		if err := pool.Migrator().AddColumn(&models.Product{},"length"); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if !pool.Migrator().HasColumn(&models.Product{},"width") {
+		if err := pool.Migrator().AddColumn(&models.Product{},"width"); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if !pool.Migrator().HasColumn(&models.Product{},"height") {
+		if err := pool.Migrator().AddColumn(&models.Product{},"height"); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if !pool.Migrator().HasColumn(&models.Product{},"weight") {
+		if err := pool.Migrator().AddColumn(&models.Product{},"weight"); err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	// pool.Raw("")
 	// pool.Exec("alter table email_campaigns alter column email_template_id drop not null;\nalter table email_campaigns alter column email_box_id drop not null;\nalter table email_campaigns alter column users_segment_id drop not null;\n\nALTER TABLE email_campaigns\n    ADD CONSTRAINT email_campaigns_email_template_id_fkey FOREIGN KEY (email_template_id) REFERENCES email_templates(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT email_campaigns_email_box_id_fkey FOREIGN KEY (email_box_id) REFERENCES email_boxes(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT email_campaigns_users_segment_id_fkey FOREIGN KEY (users_segment_id) REFERENCES users_segments(id) ON DELETE SET NULL ON UPDATE CASCADE;")
