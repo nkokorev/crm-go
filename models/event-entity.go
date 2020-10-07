@@ -127,6 +127,8 @@ func (Event) PgSqlCreate() {
 		{Name: "Теги товара синхронизированы", 	Code: "ProductSyncProductTags", Description: "Синхронизация тегов товара."},
 		{Name: "У товара синхронизированы категории товара", 	Code: "ProductSyncProductCategories", Description: "Синхронизация категорий товара."},
 
+		{Name: "Карточки товара синхронизирована с категориями товаров", 	Code: "ProductCardSyncProductTags", Description: "Синхронизация карточки с категориями товара."},
+
 		{Name: "В карточку товара добавлен товар", 	Code: "ProductCardAppendedProduct", Description: "В карточку товара добавлен товар."},
 		{Name: "Из карточки товара убран товар", 	Code: "ProductCardRemovedProduct", 	Description: "Из карточки товара убран товар."},
 

@@ -285,7 +285,7 @@ func ProductSyncProductTags(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var input struct{
-		ProductTags []models.ProductTag `json:"product_categories"`
+		ProductTags []models.ProductTag `json:"product_tags"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 1"))
@@ -307,107 +307,6 @@ func ProductSyncProductTags(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-
-/*func ProductRemoveSourceItem(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	productCategoryId, err := utilsCr.GetUINTVarFromRequest(r, "productCategoryId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailQueueId"))
-		return
-	}
-
-	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
-		return
-	}
-
-	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
-
-	var productCategory models.ProductCategory
-	if err =account.LoadEntity(&productCategory, productCategoryId, nil); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке категории товара"}))
-		return
-	}
-
-	product := models.Product{}
-	if err =account.LoadEntity(&product, productId, nil); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
-		return
-	}
-
-	if err = productCategory.RemoveProduct(&product); err !=nil {
-		fmt.Println(err)
-		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из категории товара"))
-		return
-	}
-
-	if err = account.LoadEntity(&productCategory, productCategoryId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке категории товара"}))
-		return
-	}
-
-	resp := u.Message(true, "PATCH ProductCategory Products Remove")
-	resp["product_category"] = productCategory
-	u.Respond(w, resp)
-}
-
-func ProductAppendSourceItem(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	productCategoryId, err := utilsCr.GetUINTVarFromRequest(r, "productCategoryId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id emailQueueId"))
-		return
-	}
-
-	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
-		return
-	}
-
-	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
-
-	var productCategory models.ProductCategory
-	if err =account.LoadEntity(&productCategory, productCategoryId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке категории товара"}))
-		return
-	}
-
-	product := models.Product{}
-	if err =account.LoadEntity(&product, productId, nil); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
-		return
-	}
-
-	if err = productCategory.AppendProduct(&product); err !=nil {
-		fmt.Println(err)
-		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из категории товара"))
-		return
-	}
-
-	var _productCategory models.ProductCategory
-	if err = account.LoadEntity(&_productCategory, productCategoryId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка загрузки категории товара"}))
-		return
-	}
-
-	resp := u.Message(true, "PATCH ProductCategory Append Product")
-	resp["product_category"] = _productCategory
-	u.Respond(w, resp)
-}*/
 
 // Добавляет продукт в POST сообщение по source_id
 func ProductAppendSourceItem(w http.ResponseWriter, r *http.Request) {

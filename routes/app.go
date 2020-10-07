@@ -137,6 +137,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards/{productCardId:[0-9]+}/products", appCr.ProductCardSyncProducts).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards/{productCardId:[0-9]+}/products/{productId:[0-9]+}", appCr.ProductCardAppendProduct).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards/{productCardId:[0-9]+}/products/{productId:[0-9]+}", appCr.ProductCardRemoveProduct).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-cards/{productCardId:[0-9]+}/product-tags", appCr.ProductCardSyncProductTags).Methods(http.MethodPatch, http.MethodOptions)
 
 	// ### Product Categories ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/product-categories", appCr.ProductCategoryCreate).Methods(http.MethodPost, http.MethodOptions)

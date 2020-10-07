@@ -37,7 +37,6 @@ type Product struct {
 	Sources			[]*Product `json:"-" gorm:"many2many:product_sources;"` // ForeignKey:id;References:id;
 	SourceItems		[]*ProductSource `json:"source_items"`
 
-
 	// Этикетка товара
 	Label 			*string 	`json:"label" gorm:"type:varchar(128);"`
 	ShortLabel 		*string 	`json:"short_label" gorm:"type:varchar(128);"`
@@ -740,4 +739,5 @@ func (product *Product) ExistSourceItem(sourceId uint) bool {
 
 	return true
 }
+
 

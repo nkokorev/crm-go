@@ -25,7 +25,8 @@ type ProductTag struct {
 	// число тегов *hidden*
 	ProductCount 		int64 	`json:"_product_count" gorm:"-"`
 
-	Products 			[]Product	`json:"products" gorm:"many2many:product_tag_products;"`
+	Products 			[]Product		`json:"products" gorm:"many2many:product_tag_products;"`
+	ProductCards		[]ProductCard	`json:"product_cards" gorm:"many2many:product_tag_product_cards;"`
 }
 
 func (ProductTag) PgSqlCreate() {
@@ -54,7 +55,7 @@ func (productTag *ProductTag) GetPreloadDb(getModel bool, autoPreload bool, prel
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Products","ProductTagGroup"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Products","ProductTagGroup","ProductCards"})
 
 		for _,v := range allowed {
 			_db.Preload(v)
@@ -198,6 +199,7 @@ func (productTag *ProductTag) update(input map[string]interface{}, preloads []st
 
 	delete(input,"products")
 	delete(input,"product_tag_group")
+	delete(input,"product_cards")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","product_tag_group_id"}); err != nil {
 		return err

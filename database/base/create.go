@@ -3695,47 +3695,12 @@ func Upload357grData() {
 }
 
 func Migrate_I() {
-	// pool := models.GetPool()
-	
+
+	models.ProductTagProductCard{}.PgSqlCreate()
+
+
 	// pool.Raw("")
 	// pool.Exec("alter table email_campaigns alter column email_template_id drop not null;\nalter table email_campaigns alter column email_box_id drop not null;\nalter table email_campaigns alter column users_segment_id drop not null;\n\nALTER TABLE email_campaigns\n    ADD CONSTRAINT email_campaigns_email_template_id_fkey FOREIGN KEY (email_template_id) REFERENCES email_templates(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT email_campaigns_email_box_id_fkey FOREIGN KEY (email_box_id) REFERENCES email_boxes(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT email_campaigns_users_segment_id_fkey FOREIGN KEY (users_segment_id) REFERENCES users_segments(id) ON DELETE SET NULL ON UPDATE CASCADE;")
-	/*err := pool.Exec("drop table if exists user_segments_user_segment_conditions").Error
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	pool.DropTableIfExists(
-		models.UsersSegment{},
-		models.UserSegmentConditions{},
-		models.EmailCampaign{},
-		models.TaskScheduler{},
-	)
-
-	models.UsersSegment{}.PgSqlCreate()
-	models.UserSegmentConditions{}.PgSqlCreate()
-	models.EmailCampaign{}.PgSqlCreate()
-	models.TaskScheduler{}.PgSqlCreate()
-
-	account,err := models.GetAccount(4)
-	if err != nil { log.Fatal(err)}
-
-	userSegment := []models.UsersSegment {
-		{AccountId: account.Id, Name: "Все подписчики", StrictMatching: true},
-		{AccountId: account.Id, Name: "Все клиенты", StrictMatching: true},
-	}
-
-	for i := range userSegment {
-		_, _ = account.CreateEntity(&userSegment[i])
-	}
-
-	emailCampaigns := []models.EmailCampaign{
-		{Name: "Оповещение пользователей", Enabled: true, ScheduleRun: time.Now().UTC(), Subject: "Установите наш модуль!", PreviewText: "", EmailTemplateId: 7, EmailBoxId: 4,
-			UsersSegmentId: 1},
-	}
-
-	for i := range emailCampaigns {
-		_, _ = account.CreateEntity(&emailCampaigns[i])
-	}*/
 
 
 	return

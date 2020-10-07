@@ -20,6 +20,7 @@ type ProductCard struct {
 	EnableWholesaleSale bool 	`json:"enable_wholesale_sale" gorm:"type:bool;default:true"`
 
 	Label	 			*string 	`json:"label" gorm:"type:varchar(255);"` 	// что выводить в список товаров
+	SecondLabel 		*string 	`json:"second_label" gorm:"type:varchar(255);"`	// Второе название часто бывает
 	Path 				*string 	`json:"path" gorm:"type:varchar(255);"` 	// идентификатор страницы (syao-chzhun )
 	RouteName 			*string 	`json:"route_name" gorm:"type:varchar(50);"`    // {catalog.product} - может быть удобно в каких-то фреймворках
 	Breadcrumb 			*string 	`json:"breadcrumb" gorm:"type:varchar(255);"`
@@ -40,6 +41,8 @@ type ProductCard struct {
 
 	// Preview Images - небольшие пережатые изображения товара(ов)
 	Images 				[]Storage	`json:"images" gorm:"polymorphic:Owner;"`
+
+	ProductTags			[]ProductTag `json:"product_tags" gorm:"many2many:product_tag_product_cards;"`
 
 	Products 			[]Product 		`json:"products" gorm:"many2many:product_card_products;ForeignKey:id;References:id;"`
 }
@@ -68,13 +71,14 @@ func (productCard *ProductCard) GetPreloadDb(getModel bool, autoPreload bool, pr
 
 	if autoPreload {
 		return db.Preload("Products").Preload("Products.ProductCards").Preload("Products.PaymentSubject").Preload("Products.MeasurementUnit").
+			Preload("ProductTags").
 			Preload("Images", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		})
 	} else {
 
 		allowed := utils.FilterAllowedKeySTRArray(preloads,
-			[]string{"Images","Products","Products.ProductCards","Products.PaymentSubject","Products.MeasurementUnit"})
+			[]string{"Images","Products","Products.ProductCards","Products.PaymentSubject","Products.MeasurementUnit","ProductTags"})
 
 		for _,v := range allowed {
 			if v == "Images" {
@@ -221,6 +225,7 @@ func (productCard *ProductCard) update(input map[string]interface{}, preloads []
 	delete(input,"image")
 	delete(input,"products")
 	delete(input,"product_categories")
+	delete(input,"product_tags")
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"parent_id","web_site_id","web_page_id"}); err != nil {
 		return err
@@ -342,7 +347,6 @@ func (productCard *ProductCard) ExistProductById(productId uint) bool {
 
 	return true
 }
-
 func (productCard ProductCard) ManyToManyProductById(productId uint) (*ProductCardProduct, error) {
 	
 	var el ProductCardProduct
@@ -353,4 +357,86 @@ func (productCard ProductCard) ManyToManyProductById(productId uint) (*ProductCa
 	}
 
 	return &el, nil
+}
+
+func (productCard *ProductCard) AppendProductTag(productTag *ProductTag, strict... bool) error {
+
+	// 1. Загружаем продукт еще раз
+	if err := productTag.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить tag, она не найдена"}
+	}
+
+	if productCard.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить tag, т.к. продукта не загружен"}
+	}
+
+	// 2. Проверяем есть ли уже в этой категории этот продукт
+	if productCard.ExistProductTag(productTag.Id) {
+		if len(strict) > 0 && strict[0] {
+			return utils.Error{Message: "Tag уже числиться за товаром"}
+		} else {
+			return nil
+		}
+	}
+
+	if err := db.Create(
+		&ProductTagProductCard{
+			ProductCardId: productCard.Id, ProductTagId: productTag.Id}).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func (productCard *ProductCard) RemoveProductTag(productTag *ProductTag) error {
+
+	// 1. Загружаем продукт еще раз
+	if err := productTag.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя удалить продукт, он не найден"}
+	}
+
+	if productCard.Id < 1 || productTag.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: account id || product id || product tag id == nil"}
+	}
+
+	if err := db.Where("product_tag_id = ? AND product_card_id = ?", productTag.Id, productCard.Id).Delete(
+		&ProductTagProductCard{}).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func (productCard *ProductCard) SyncProductCardTagsByIds(ProductTags []ProductTag) error {
+
+	// 1. Загружаем продукт еще раз
+	if productCard.Id < 1 {
+		return utils.Error{Message: "Тег не найден"}
+	}
+
+	// очищаем список категорий
+	if err := db.Model(productCard).Association("ProductTags").Clear(); err != nil {
+		return err
+	}
+
+	for _,_productTag := range ProductTags {
+		if err := productCard.AppendProductTag(&ProductTag{Id: _productTag.Id}, false); err != nil {
+			return err
+		}
+	}
+
+	AsyncFire(NewEvent("ProductCardSyncProductTags", map[string]interface{}{"account_id":productCard.AccountId, "product_card_id":productCard.Id}))
+
+	return nil
+}
+func (productCard *ProductCard) ExistProductTag(tagId uint) bool {
+
+	if tagId < 1 {
+		return false
+	}
+
+	pcp := ProductTagProductCard{}
+	if err := db.Model(&ProductTagProductCard{}).First(&pcp,"product_tag_id = ? AND product_card_id = ?", tagId, productCard.Id).Error; err != nil {
+		return false
+	}
+
+	return true
 }

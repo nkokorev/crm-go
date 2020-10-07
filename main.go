@@ -39,6 +39,8 @@ func main() {
 		base.Upload357grData()
 	}
 
+	base.Migrate_I()
+
 	if err := models.SettingsDb(); err != nil {
 		log.Fatal(err)
 	}

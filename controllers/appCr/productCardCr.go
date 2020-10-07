@@ -437,3 +437,76 @@ func ProductCardProductMany2ManyGet(w http.ResponseWriter, r *http.Request) {
 	resp["product_card_product"] = m2m
 	u.Respond(w, resp)
 }
+
+func ProductCardSyncProductTags(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id productCardId"))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	productCard := models.ProductCard{}
+	if err =account.LoadEntity(&productCard, productCardId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке карточки товара"}))
+		return
+	}
+
+	var input struct{
+		ProductTags []models.ProductTag `json:"product_tags"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 1"))
+		return
+	}
+
+	if err = productCard.SyncProductCardTagsByIds(input.ProductTags); err !=nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе 2"))
+		return
+	}
+
+	if err =account.LoadEntity(&productCard, productCardId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке карточки товара"}))
+		return
+	}
+
+	resp := u.Message(true, "PATCH Product Sync Product Tags")
+	resp["product_card"] = productCard
+	u.Respond(w, resp)
+}
+
+func ProductCardGetProductTags(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		return
+	}
+
+	productCardId, err := utilsCr.GetUINTVarFromRequest(r, "productCardId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке product Id"))
+		return
+	}
+
+	var productCard models.ProductCard
+
+	err = account.LoadEntity(&productCard, productCardId,[]string{"ProductTags"})
+	if err != nil {
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить товар"))
+		return
+	}
+
+
+	resp := u.Message(true, "GET Product Tags")
+	resp["product_tags"] = productCard.ProductTags
+	u.Respond(w, resp)
+}
