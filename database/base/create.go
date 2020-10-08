@@ -1828,7 +1828,6 @@ func UploadTestDataPart_III() {
 
 	// =================================
 
-
 	numOne := uint(1)
 	num5 := uint(5)
 	num6 := uint(6)
@@ -1849,8 +1848,8 @@ func UploadTestDataPart_III() {
 			Status: models.WorkStatusPending, DelayTime: 0, Name:"Оповещение об отправке заказа",Subject: utils.STRp("Ваш заказ отправлен по почте"),  EmailTemplateId: &numOne,
 			EmailBoxId: &num7,
 		},
-
 	}
+	
 	for _,v := range emailNotifications {
 		_, err = airoAccount.CreateEntity(&v)
 		if err != nil {
