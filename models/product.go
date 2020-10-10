@@ -39,7 +39,8 @@ type Product struct {
 
 	// Этикетка товара
 	Label 			*string 	`json:"label" gorm:"type:varchar(128);"`
-	ShortLabel 		*string 	`json:"short_label" gorm:"type:varchar(128);"`
+	SecondLabel 	*string 	`json:"second_label" gorm:"type:varchar(128);"`	// Второе название часто бывает
+	ShortLabel 		*string 	`json:"short_label" gorm:"type:varchar(128);"` // Краткое / radio.label
 
 	// артикул товара
 	Article 		*string 	`json:"article" gorm:"type:varchar(128);"`
