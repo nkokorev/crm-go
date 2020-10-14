@@ -2,9 +2,9 @@ package uiApiCr
 
 import (
 	"encoding/json"
+	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"github.com/nkokorev/crm-go/models"
 	u "github.com/nkokorev/crm-go/utils"
-	"github.com/nkokorev/crm-go/controllers/utilsCr"
 	"net/http"
 )
 
@@ -107,3 +107,9 @@ func DeliveryCodeList(w http.ResponseWriter, r *http.Request) {
 	resp["delivery_code_list"] = webSite.DeliveryCodeList()
 	u.Respond(w, resp)
 }
+
+/*func Test (w http.ResponseWriter, r *http.Request) {
+	fmt.Println("123123")
+	u.Respond(w, u.Message(true, "All ok!"))
+	return
+}*/

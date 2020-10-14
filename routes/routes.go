@@ -37,7 +37,7 @@ func Handlers() *mux.Router {
 	rApp 		:= r.Host("app." + crmHost).PathPrefix("/ui-api").Subrouter() // APP [app.ratuscrm.com/ui-api]
 	rApiBeta 	:= r.Host("api." + crmHost).Subrouter() // API [api.ratuscrm.com]
 	rApiV1 		:= r.Host("api." + crmHost).PathPrefix("/v1").Subrouter() // API [api.ratuscrm.com]
-	rUiApi 		:= r.Host("ui.api." + crmHost).PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter() // UI/API [ui.api.ratuscrm.com]
+	rUiApiV1 	:= r.Host("ui.api." + crmHost).PathPrefix("/v1/accounts/{accountHashId:[a-z0-9]+}").Subrouter() // UI/API [ui.api.ratuscrm.com]
 	rCDN 		:= r.Host("cdn." + crmHost).Subrouter() // API [cdn.ratuscrm.com]
 	rTracking 	:= r.Host("tracking." + crmHost).PathPrefix("/accounts/{accountHashId:[a-z0-9]+}").Subrouter() // API [tracking.ratuscrm.com]
 	rMTA1 		:= r.Host("mta1." + crmHost).Subrouter() // API [mta1.ratuscrm.com]
@@ -80,15 +80,15 @@ func Handlers() *mux.Router {
 	rApiV1.Use		(middleware.CorsAPIAccessControl, 		middleware.CheckApiStatus, 		middleware.BearerAuthentication)
 
 	rApp.Use	(middleware.CheckAppUiApiStatus,	middleware.AddContextMainAccount)
-	// rUiApi.Use	(middleware.CorsAccessControl, 		middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccountHashId)
-	rUiApi.Use	(middleware.CorsAccessControl, 		middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccountHashId)
+
+	rUiApiV1.Use	(middleware.CorsAccessControl, 		middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccountHashId)
 	rTracking.Use	(middleware.CorsAccessControl, 	middleware.ContextMuxVarAccountHashId)
 
 	// RouteHandlers
 	AppRoutes(rApp)
 	ApiRoutesBeta(rApiBeta)
 	ApiRoutesV1(rApiV1)
-	UiApiRoutes(rUiApi)
+	UiApiRoutesV1(rUiApiV1)
 	CDNRoutes(rCDN)
 	TrackingRoutes(rTracking)
 	MTA_1_Routes(rMTA1)

@@ -1,6 +1,8 @@
 package models
 
-import "github.com/nkokorev/crm-go/utils"
+import (
+	"github.com/nkokorev/crm-go/utils"
+)
 
 type Delivery interface {
 	Entity
@@ -118,7 +120,6 @@ func GetPaymentMethodsByDelivery(delivery Delivery) ([]PaymentMethod, error){
 	if err != nil { return nil, err }
 	paymentYandexes, err := PaymentYandex{}.GetListByWebSiteAndDelivery(delivery)
 	if err != nil { return nil, err }
-
 
 	methods := make([]PaymentMethod, len(paymentYandexes) + len(paymentCashes))
 	for i := range paymentCashes {

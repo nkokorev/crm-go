@@ -96,46 +96,6 @@ func GetAccountByHashId(w http.ResponseWriter, r *http.Request) (*models.Account
 	return account, nil
 }
 
-func GetWorkAccountCheckHashIdOLD(w http.ResponseWriter, r *http.Request) (*models.Account, error) {
-
-	if r.Context().Value("account") == nil {
-		u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
-		return nil, errors.New("Issuer account is null!")
-	}
-
-	// получаем объект типа Аккаунт
-	accountI := r.Context().Value("account")
-	if reflect.TypeOf(accountI).Elem().String() != "models.Account" {
-		u.Respond(w, u.MessageError(u.Error{Message: "Account is not valid"}))
-		return nil, errors.New("Issuer account is null!")
-	}
-	account := accountI.(*models.Account)
-
-	if account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
-		return nil, errors.New("Account nil pointer")
-	}
-
-	// получаем переменную из строки запрос URL: {hashId}
-	hashId, ok := GetSTRVarFromRequest(r,"accountHashId")
-	if !ok {
-		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка hash id code of account"}))
-		return nil, errors.New("Ошибка hash id code of account")
-	}
-
-	if account.HashId != hashId {
-		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
-		return nil, errors.New("Вы авторизованы в другом аккаунте")
-	}
-
-	if account.Id < 1 {
-		u.Respond(w, u.MessageError(u.Error{Message: "Ошибка авторизации"}))
-		return nil, errors.New("Id of issuer account is zero!")
-	}
-
-	return account, nil
-}
-
 func GetUINTVarFromRequest(r *http.Request, key string) (uint, error) {
 
 	strVar := mux.Vars(r)[key]

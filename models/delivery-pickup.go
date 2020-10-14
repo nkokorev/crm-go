@@ -27,7 +27,7 @@ type DeliveryPickup struct {
 	PostalCodeRequired	bool	`json:"postal_code_required" gorm:"type:bool;default:false"` // Требуется ли индекс в адресе доставки
 
 	// Признак предмета расчета
-	PaymentSubjectId	*uint	`json:"payment_subject_id" gorm:"type:int;not null;"`//
+	PaymentSubjectId	*uint	`json:"payment_subject_id" gorm:"type:int;default:1;"`//
 	PaymentSubject 		PaymentSubject `json:"payment_subject"`
 
 	VatCodeId	uint	`json:"vat_code_id" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
@@ -138,7 +138,7 @@ func (DeliveryPickup) getListByShop(accountId, websiteId uint) ([]DeliveryPickup
 
 	deliveryPickups := make([]DeliveryPickup,0)
 
-	err := (&DeliveryPickup{}).GetPreloadDb(false,true, nil).
+	err := (&DeliveryPickup{}).GetPreloadDb(false,false, []string{"PaymentMethods"}).
 		Limit(100).Where( "account_id = ? AND web_site_id = ?", accountId, websiteId).
 		Find(&deliveryPickups).Error
 	if err != nil && err != gorm.ErrRecordNotFound{

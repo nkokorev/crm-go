@@ -17,7 +17,7 @@ import (
 * rUiApiAuth - маршрут с проверкой JWT, а также на совпадение {accountId} с accountId указаном в токене
  */
 // ... /accountHashId}/...
-var UiApiRoutes = func (rFree *mux.Router) {
+var UiApiRoutesV1 = func (rFree *mux.Router) {
 
 	// rFree.HandleFunc("/users", appCr.UserRegistration).Methods(http.MethodPost, http.MethodOptions)
 	// rFree.HandleFunc("/users/auth/username", appCr.UserAuthByUsername).Methods(http.MethodPost, http.MethodOptions)
@@ -38,6 +38,10 @@ var UiApiRoutes = func (rFree *mux.Router) {
 	rFree.HandleFunc("/yandex-payment/{paymentYandexHashId}/web-hooks", uiApiCr.PaymentYandexWebHook).Methods(http.MethodPost, http.MethodOptions)
 
 	rFree.HandleFunc("/orders", uiApiCr.UiApiOrderCreate).Methods(http.MethodPost, http.MethodOptions)
+
+
+	// rFree.HandleFunc("/test", uiApiCr.Test).Methods(http.MethodGet, http.MethodOptions)
+
 
 
 	// rFree.NotFoundHandler = NotFoundHandler()

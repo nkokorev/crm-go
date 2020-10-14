@@ -39,7 +39,7 @@ type DeliveryRussianPost struct {
 	PostalCodeRequired	bool	`json:"postal_code_required" gorm:"type:bool;default:true"` // Требуется ли индекс в адресе доставки
 
 	// Признак предмета расчета
-	PaymentSubjectId	*uint	`json:"payment_subject_id" gorm:"type:int;not null;"`//
+	PaymentSubjectId	*uint	`json:"payment_subject_id" gorm:"type:int;default:1;"`//
 	PaymentSubject 		PaymentSubject `json:"payment_subject"`
 
 	VatCodeId	uint	`json:"vat_code_id" gorm:"type:int;not null;default:1;"`// товар или услуга ? [вид номенклатуры]
@@ -153,7 +153,7 @@ func (DeliveryRussianPost) getListByShop(accountId, websiteId uint) ([]DeliveryR
 
 	deliveryRussianPosts := make([]DeliveryRussianPost,0)
 
-	err := (&DeliveryRussianPost{}).GetPreloadDb(false,true, nil).
+	err := (&DeliveryRussianPost{}).GetPreloadDb(false,false, []string{"PaymentMethods"}).
 		Limit(100).Where( "account_id = ? AND web_site_id = ?", accountId, websiteId).
 		Find(&deliveryRussianPosts).Error
 	if err != nil && err != gorm.ErrRecordNotFound{
@@ -319,7 +319,6 @@ func (deliveryRussianPost DeliveryRussianPost) CalculateDelivery(deliveryData De
 func (deliveryRussianPost DeliveryRussianPost) checkMaxWeight(weight float64) error {
 	// проверяем максимальную массу:
 	if weight > deliveryRussianPost.MaxWeight {
-		// return utils.Error{Message: fmt.Sprintf("Превышен максимальный вес посылки в %vкг.", deliveryRussianPost.MaxWeight)}
 		return utils.Error{Message: fmt.Sprintf("Превышен максимальный вес посылки в %vкг.", deliveryRussianPost.MaxWeight),
 			Errors: map[string]interface{}{"delivery":fmt.Sprintf("Превышен максимальный вес посылки в %vкг.", deliveryRussianPost.MaxWeight)}}
 	}

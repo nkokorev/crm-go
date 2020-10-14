@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
@@ -415,27 +416,19 @@ func (webSite WebSite) CalculateDelivery(deliveryRequest DeliveryRequest) (total
 		// 1. Получаем продукт
 		product, err := webSite.GetProduct(v.Id)
 		if err != nil {
+			fmt.Println("Товар не найден: ", err, " id: ", v.Id)
 			return 0, 0,err
 		}
 
-		// todo: 'что есть вес?'
-		// _w, err := product.GetAttribute(deliveryRequest.DeliveryData.ProductWeightKey)
-		_w, err := product.GetAttribute("grossWeight")
-		if err != nil || _w == nil {
-			// log.Println("Ошибка получения веса: ", err)
+		if product.Weight == nil {
 			continue
 		}
-		wg, ok := _w.(float64)
-		if !ok {
-			// fmt.Println("product.WeightKey: ", product.WeightKey)
-			// fmt.Println("Не учитываем вес!")
-			continue
-		}
-		weight += wg * float64(v.Quantity)
+
+		weight += *product.Weight * float64(v.Quantity)
 	}
 
-	// 2. Проверяем максимальный вес
-	if err := delivery.checkMaxWeight(weight); err != nil {
+	// 2. Проверяем максимальный вес, переводя граммы в Кг.
+	if err := delivery.checkMaxWeight(weight/1000); err != nil {
 		return 0, 0, err
 	}
 
