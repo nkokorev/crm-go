@@ -508,3 +508,22 @@ func (emailTemplate EmailTemplate) Validate(viewData *ViewData) error {
 
 	return nil
 }
+
+// Возвращает базовые данные для аккаунта и пользователя
+func (account Account) GetTemplateData(user *User) map[string]interface{} {
+
+	data := make(map[string]interface{})
+
+	// Подготавливаем данные для письма, чтобы можно было их использовать в шаблоне
+	data["accountId"] = account.Id
+	data["Account"] = account.GetDepersonalizedData() // << хз
+
+	if user != nil {
+		data["userId"] = user.Id
+		data["User"] = user.GetDepersonalizedData() // << хз
+	}
+
+	data["unsubscribeUrl"] = "#"
+
+	return data
+}

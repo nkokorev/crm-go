@@ -19,10 +19,10 @@ import (
 */
 
 type Product struct {
-	Id        	uint 	`json:"id" gorm:"primaryKey"`
+	Id        		uint 	`json:"id" gorm:"primaryKey"`
 
-	PublicId	uint   	`json:"public_id" gorm:"type:int;index;not null;"`
-	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
+	PublicId		uint   	`json:"public_id" gorm:"type:int;index;not null;"`
+	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Доступен ли товар для продажи в розницу
 	RetailSale 		bool 	`json:"retail_sale" gorm:"type:bool;default:false"`

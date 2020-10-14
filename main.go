@@ -55,12 +55,7 @@ func main() {
 	// controllers.Keymaker("/home/mex388/go/src/github.com/nkokorev/crm-go/")
 }
 
-func runMigration(line string) {
-	switch line {
-	case "full":
-		base.RefreshTables()
-	}
-}
+
 func examplePhone(numToParse string) {
 
 	//num, err := libphonenumber.Get

@@ -280,7 +280,14 @@ func EmailTemplatePreviewGetHTML(w http.ResponseWriter, r *http.Request) {
 
 	// Подготавливаем данные для шаблона
 	// vData, err := template.PrepareViewData(tempUser())
-	vData, err := template.PrepareViewData("Subject", "PreviewText", nil,"", nil)
+	account, err := models.GetAccount(template.AccountId)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html;charset=UTF-8")
+		w.Write([]byte(`<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Аккаунт не найден</title></head><body><h4 style="color:#5f5f5f;">Данный шаблон не может быть отображен.</h4></body></html>`))
+		return
+	}
+	user := tempUser()
+	vData, err := template.PrepareViewData(template.Name, "PreviewText", account.GetTemplateData(&user),"#", u.STRp("#"))
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html;charset=UTF-8")
 		w.Write(errorHTMLPage("Ошибка подготовки данных для отображения HTML"))
@@ -338,8 +345,8 @@ func errorHTMLPage(errorText string) []byte {
 func tempUser() models.User {
 	return models.User{
 		Username: u.STRp("serName"),
-		Name: u.STRp("Николай"),
-		Surname: u.STRp("Иваньков"),
+		Name: u.STRp("Иван"),
+		Surname: u.STRp("Иванов"),
 		Email: u.STRp("info@example.com"),
 		PhoneRegion: u.STRp("RU"),
 		Phone: u.STRp("+79251002030"),

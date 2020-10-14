@@ -10,6 +10,7 @@ import (
 
 // Простой способ показать что это за товар. Категория: "Зеленый чай", тип чая: "Зеленый"
 type ProductType struct {
+
 	Id     		uint	`json:"id" gorm:"primaryKey"`
 	PublicId	uint	`json:"public_id" gorm:"type:int;index;not null;"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
