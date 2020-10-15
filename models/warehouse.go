@@ -28,6 +28,7 @@ type Warehouse struct {
 	// Описание склада
 	Description	*string `json:"description" gorm:"type:varchar(255);"`
 
+	// Число продуктов на учете, просто высчитывается после нахождении
 	ProductCount	uint `json:"_product_count" gorm:"-"`
 
 	WarehouseItems	[]WarehouseItem `json:"warehouse_items"`

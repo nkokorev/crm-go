@@ -19,40 +19,40 @@ import (
 */
 
 type Product struct {
-	Id        		uint 	`json:"id" gorm:"primaryKey"`
+	Id        			uint 	`json:"id" gorm:"primaryKey"`
 
-	PublicId		uint   	`json:"public_id" gorm:"type:int;index;not null;"`
-	AccountId 		uint 	`json:"-" gorm:"type:int;index;not null;"`
+	PublicId			uint   	`json:"public_id" gorm:"type:int;index;not null;"`
+	AccountId 			uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Доступен ли товар для продажи в розницу
-	RetailSale 		bool 	`json:"retail_sale" gorm:"type:bool;default:false"`
+	RetailSale 			bool 	`json:"retail_sale" gorm:"type:bool;default:false"`
 
 	// Доступен ли товар для продажи оптом
-	WholesaleSale	bool	`json:"wholesale_sale" gorm:"type:bool;default:false"`
+	WholesaleSale		bool	`json:"wholesale_sale" gorm:"type:bool;default:false"`
 
 	// Сборный ли товар? При нем warehouse_items >= 1. Применяется только к payment_subject = commodity, excise и т.д.
-	IsKit			bool 		`json:"is_kit" gorm:"type:bool;default:false"`
+	IsKit				bool 		`json:"is_kit" gorm:"type:bool;default:false"`
 
 	// При isSource = true, - из каких товаров и в каком количестве состоит
-	Sources			[]*Product `json:"-" gorm:"many2many:product_sources;"` // ForeignKey:id;References:id;
-	SourceItems		[]*ProductSource `json:"source_items"`
+	Sources				[]*Product `json:"-" gorm:"many2many:product_sources;"` // ForeignKey:id;References:id;
+	SourceItems			[]*ProductSource `json:"source_items"`
 
 	// Этикетка товара
-	Label 			*string 	`json:"label" gorm:"type:varchar(128);"`
-	SecondLabel 	*string 	`json:"second_label" gorm:"type:varchar(128);"`	// Второе название часто бывает
-	ShortLabel 		*string 	`json:"short_label" gorm:"type:varchar(128);"` // Краткое / radio.label
+	Label 				*string 	`json:"label" gorm:"type:varchar(128);"`
+	SecondLabel 		*string 	`json:"second_label" gorm:"type:varchar(128);"`	// Второе название часто бывает
+	ShortLabel 			*string 	`json:"short_label" gorm:"type:varchar(128);"` // Краткое / radio.label
 
 	// артикул товара
-	Article 		*string 	`json:"article" gorm:"type:varchar(128);"`
+	Article 			*string 	`json:"article" gorm:"type:varchar(128);"`
 	
 	// торговая марка (Объект!)
-	Trademark 		*string		`json:"trademark" gorm:"type:varchar(128);"`
+	Trademark 			*string		`json:"trademark" gorm:"type:varchar(128);"`
 
 	// Маркировка товара
-	Brand 			*string		`json:"brand" gorm:"type:varchar(128);"`
+	Brand 				*string		`json:"brand" gorm:"type:varchar(128);"`
 
 	// Общая тема типа группы товаров, может повторяться для вывода в web-интерфейсе как "одного" товара
-	Model 			*string		`json:"model" gorm:"type:varchar(255);"`
+	Model 				*string		`json:"model" gorm:"type:varchar(255);"`
 
 	// Base properties
 	RetailPrice			*float64 `json:"retail_price" gorm:"type:numeric;"` 		// розничная цена
@@ -62,13 +62,7 @@ type Product struct {
 	WholesalePrice3 	*float64 `json:"wholesale_price_3" gorm:"type:numeric;column:wholesale_price_3;"` 	// оптовая цена
 	
 	RetailDiscount 		*float64 `json:"retail_discount" gorm:"type:numeric;"` 	// розничная фактическая скидка
-
-	// Вид номенклатуры - ассортиментные группы продаваемых товаров. Привязываются к карточкам..
-
-	// Товарная группа для назначения характеристик
-	// PaymentGroupId	uint	`json:"payment_group_id" gorm:"type:int;"`
-	// ProductGroup	ProductGroup `json:"product_group"`
-
+	
 	// Тип продукта: улунский, красный (чай), углозачистной станок, шлифовальный станок
 	ProductTypeId		*uint		`json:"product_type_id" gorm:"type:int;"`
 	ProductType			ProductType `json:"product_type"`
@@ -83,51 +77,47 @@ type Product struct {
 	MeasurementUnitId 	*uint	`json:"measurement_unit_id" gorm:"type:int;"` // тип измерения
 	MeasurementUnit 	MeasurementUnit `json:"measurement_unit"`// Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
 
-	// Целое или дробное количество товара
-	IsInteger 			bool	`json:"is_integer" gorm:"type:bool;default:true"`
+	// Целое или дробное количество товара при расчете
+	IsInteger 			bool		`json:"is_integer" gorm:"type:bool;default:true"`
 
 	// Основные атрибуты для расчета (Можно и в атрибуты)
-	Length 	*float64 `json:"length" gorm:"type:numeric;"`
-	Width 	*float64 `json:"width" gorm:"type:numeric;"`
-	Height 	*float64 `json:"height" gorm:"type:numeric;"`
-	Weight 	*float64 `json:"weight" gorm:"type:numeric;"`
+	Length 				*float64 	`json:"length" gorm:"type:numeric;"`
+	Width 				*float64 	`json:"width" gorm:"type:numeric;"`
+	Height 				*float64 	`json:"height" gorm:"type:numeric;"`
+	Weight 				*float64 	`json:"weight" gorm:"type:numeric;"`
 
 	// Производитель (не поставщик)
-	ManufacturerId	*uint		`json:"manufacturer_id" gorm:"type:int;"`
-	Manufacturer	Manufacturer `json:"manufacturer"`
+	ManufacturerId		*uint		`json:"manufacturer_id" gorm:"type:int;"`
+	Manufacturer		Manufacturer `json:"manufacturer"`
 
 	// Дата изготовления (условная штука т.к. зависит от поставки), дата выпуска, дата производства
-	ManufactureDate	*string 	`json:"manufacture_date" gorm:"type:varchar(255);"`
+	ManufactureDate		*string 	`json:"manufacture_date" gorm:"type:varchar(255);"`
 
 	// Условия хранения
-	StorageRequirements	*string	`json:"storage_requirements" gorm:"type:varchar(255);"`
+	StorageRequirements	*string		`json:"storage_requirements" gorm:"type:varchar(255);"`
 
 	// Срок годности, срок хранения (?)
-	ShelfLife		*string 	`json:"shelf_life" gorm:"type:varchar(255);"`
+	ShelfLife			*string 	`json:"shelf_life" gorm:"type:varchar(255);"`
 
 	//  == признак предмета расчета - товар, услуга, работа, набор (комплект) = сборный товар
 	// Признак предмета расчета (бухучет - № 54-ФЗ)
-	PaymentSubjectId	*uint	`json:"payment_subject_id" gorm:"type:int;"`
-	PaymentSubject 		PaymentSubject `json:"payment_subject"`
+	PaymentSubjectId	*uint		`json:"payment_subject_id" gorm:"type:int;"`
+	PaymentSubject 		PaymentSubject 	`json:"payment_subject"`
 	
 	// Ставка НДС или учет НДС (бухучет)
-	VatCodeId	*uint	`json:"vat_code_id" gorm:"type:int;default:1;"`// товар или услуга ? [вид номенклатуры]
-	VatCode		VatCode	`json:"vat_code"`
+	VatCodeId			*uint		`json:"vat_code_id" gorm:"type:int;default:1;"`// товар или услуга ? [вид номенклатуры]
+	VatCode				VatCode		`json:"vat_code"`
 
 	ShortDescription 	*string 	`json:"short_description" gorm:"type:varchar(255);"` // pgsql: varchar - это зачем?)
 	Description 		*string 	`json:"description" gorm:"type:text;"` // pgsql: text
 
 	// Обновлять только через AppendImage
-	Images 			[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`
+	Images 				[]Storage 	`json:"images" gorm:"polymorphic:Owner;"`
 	
-	Attributes 	datatypes.JSON `json:"attributes"`
-
-	// todo: можно изменить и сделать свойства товара
-	// ключ для расчета веса продукта
-	// WeightKey 	string `json:"weight_key" gorm:"type:varchar(32);default:'grossWeight'"`
+	Attributes 			datatypes.JSON `json:"attributes"`
 
 	// Весовой товар? = нужно ли считать вес для расчета доставки у данного продукта
-	ConsiderWeight	bool	`json:"consider_weight" gorm:"type:bool;default:true"`
+	ConsiderWeight		bool	`json:"consider_weight" gorm:"type:bool;default:true"`
 
 	// Reviews []Review // Product reviews (отзывы на товар - с рейтингом(?))
 	// Questions []Question // вопросы по товару

@@ -13,20 +13,23 @@ type WarehouseItem struct {
 	Id     		uint	`json:"id" gorm:"primaryKey"`
 	AccountId 	uint 	`json:"-" gorm:"type:int;index;not null;"`
 
-	// Уникальный складской идентификатор
+	// Уникальный складской идентификатор ???
 	SKU 		*uint 	`json:"sku" gorm:"type:int;index;"`
-	
+
+	// id-товара, хранимого на складе
 	ProductId 	uint	`json:"product_id" gorm:"type:int;index;"`
+
+	// id-склада, где хранится товар
 	WarehouseId uint	`json:"warehouse_id" gorm:"type:int;index;"`
 
-	// Остаток
+	// Объем остатка товара. Если товар в целых - должен быть также целым.
 	Stock 		float64 `json:"stock" gorm:"type:numeric;"`
 
-	// Резерв
+	// Объем резерва на складе (предзаказы и т.д.)
 	Reservation	float64 `json:"reservation" gorm:"type:numeric;"`
 
-	// Время хранения... - потом вызов уведомления (?)
-	ExpiredAt 	time.Time  `json:"expired_at"`
+	// todo: время хранения... - потом вызов уведомления (?)
+	ExpiredAt 	time.Time  `json:"expired_at"` // нужно ли??
 
 	Product 	Product 	`json:"product"`
 	Warehouse 	Warehouse 	`json:"warehouse"`
