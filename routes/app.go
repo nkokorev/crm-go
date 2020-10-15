@@ -213,6 +213,8 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}", appCr.ProductDelete).Methods(http.MethodDelete, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-categories", appCr.ProductSyncProductCategories).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-tags", appCr.ProductSyncProductTags).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-cards/{productCardId:[0-9]+}", appCr.ProductAppendToProductCard).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-cards/{productCardId:[0-9]+}", appCr.ProductRemoveFromProductCard).Methods(http.MethodDelete, http.MethodOptions)
 
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-sources", appCr.ProductAppendSourceItem).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-sources", appCr.ProductSyncSourceItems).Methods(http.MethodPatch, http.MethodOptions)

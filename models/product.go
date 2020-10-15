@@ -741,4 +741,62 @@ func (product *Product) ExistSourceItem(sourceId uint) bool {
 	return true
 }
 
+// new 15.10.2020
+func (product *Product) AppendToProductCard(productCard *ProductCard, optPriority... int) error {
 
+	priority := 10
+	if len(optPriority) > 0 {
+		priority = optPriority[0]
+	}
+
+	// 1. Загружаем продукт-карту еще раз
+	if err := productCard.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить в productCard, т.к. он не найден"}
+	}
+
+	if product.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить source, т.к. продукта не загружен"}
+	}
+
+	// Продукт уже есть
+	if productCard.ExistProductById(product.Id) {
+		// todo: Тут нужно обновить приоритет
+		return nil
+	}
+
+	// Создаем новую запись M:M
+	if err := db.Model(&ProductCardProduct{}).Create(&ProductCardProduct{ProductId: product.Id, ProductCardId: productCard.Id, Priority: priority}).Error; err != nil {
+		return err
+	}
+
+	account, err := GetAccount(productCard.AccountId)
+	if err == nil && account != nil {
+		AsyncFire(NewEvent("ProductCardAppendedProduct",
+			map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id, "product_card_id":productCard.Id}))
+	}
+
+	return nil
+}
+func (product *Product) RemoveFromProductCard(productCard *ProductCard) error {
+
+	if product.Id < 1 {
+		return utils.Error{Message: "Необходимо указать верный id товара"}
+	}
+
+	// 1. Загружаем продукт-карту еще раз
+	if err := productCard.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить в productCard, т.к. он не найден"}
+	}
+
+	if err := db.Model(productCard).Association("Products").Delete(product); err != nil {
+		return err
+	}
+
+	account, err := GetAccount(productCard.AccountId)
+	if err == nil && account != nil {
+		AsyncFire(NewEvent("ProductCardRemovedProduct",
+			map[string]interface{}{"account_id":product.AccountId, "product_id":product.Id, "product_card_id":productCard.Id}))
+	}
+
+	return nil
+}
