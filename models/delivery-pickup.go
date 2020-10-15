@@ -223,8 +223,11 @@ func (deliveryPickup *DeliveryPickup) delete () error {
 func (deliveryPickup DeliveryPickup) GetName () string {
 	return deliveryPickup.Name
 }
-func (deliveryPickup DeliveryPickup) GetVatCode () VatCode {
-	return deliveryPickup.VatCode
+func (deliveryPickup DeliveryPickup) GetVatCode () (*VatCode, error) {
+	if err := deliveryPickup.load([]string{"VatCode"}); err != nil {
+		return nil, err
+	}
+	return &deliveryPickup.VatCode, nil
 }
 func (deliveryPickup DeliveryPickup) CalculateDelivery(deliveryData DeliveryData, weight float64) (float64, error) {
 	return deliveryPickup.Price, nil

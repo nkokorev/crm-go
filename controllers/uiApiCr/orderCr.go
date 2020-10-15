@@ -375,6 +375,19 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 		return
 	}
 
+	/////////////
+
+	vt_code, err := delivery.GetVatCode()
+	if err != nil {
+		u.Respond(w, u.MessageError(err))
+		return
+	}
+	// fmt.Println("YandexCode: ", delivery.GetVatCode().YandexCode)
+	// fmt.Println("YandexCode: ", vt_code.YandexCode)
+
+	////////////
+
+
 	// 4.1. Добавляем в список заказа - доставку
 	deliveryAmount := models.PaymentAmount{AccountId: account.Id, Value: deliveryCost, Currency: "RUB"}
 	cartItems = append(cartItems, models.CartItem{
@@ -382,7 +395,7 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 		Description: delivery.GetName(),
 		Quantity: 1,
 		Amount: deliveryAmount,
-		VatCode: delivery.GetVatCode().YandexCode,
+		VatCode: vt_code.YandexCode, // todo: тут 0 ???!
 		PaymentSubjectId: delivery.GetPaymentSubject().Id, // признак предмета расчета
 		PaymentSubjectYandex: delivery.GetPaymentSubject().Code,
 	})

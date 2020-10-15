@@ -329,8 +329,11 @@ func (deliveryRussianPost DeliveryRussianPost) checkMaxWeight(weight float64) er
 func (deliveryRussianPost DeliveryRussianPost) GetName () string {
 	return deliveryRussianPost.Name
 }
-func (deliveryRussianPost DeliveryRussianPost) GetVatCode () VatCode {
-	return deliveryRussianPost.VatCode
+func (deliveryRussianPost DeliveryRussianPost) GetVatCode () (*VatCode, error) {
+	if err := deliveryRussianPost.load([]string{"VatCode"}); err != nil {
+		return nil, err
+	}
+	return &deliveryRussianPost.VatCode, nil
 }
 
 func (deliveryRussianPost DeliveryRussianPost) AppendPaymentMethods(paymentMethods []PaymentMethod) error  {

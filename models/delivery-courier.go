@@ -222,8 +222,12 @@ func (deliveryCourier *DeliveryCourier) delete () error {
 func (deliveryCourier DeliveryCourier) GetName () string {
 	return deliveryCourier.Name
 }
-func (deliveryCourier DeliveryCourier) GetVatCode () VatCode {
-	return deliveryCourier.VatCode
+func (deliveryCourier DeliveryCourier) GetVatCode () (*VatCode, error) {
+	
+	if err := deliveryCourier.load([]string{"VatCode"}); err != nil {
+		return nil, err
+	}
+	return &deliveryCourier.VatCode, nil
 }
 func (deliveryCourier DeliveryCourier) GetPaymentSubject() PaymentSubject {	return deliveryCourier.PaymentSubject }
 

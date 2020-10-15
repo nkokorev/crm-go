@@ -9,7 +9,7 @@ type Delivery interface {
 	GetCode() string
 	GetType() string
 	GetName() string
-	GetVatCode() VatCode
+	GetVatCode() (*VatCode, error)
 	GetPaymentSubject() PaymentSubject
 	GetWebSiteId() uint
 

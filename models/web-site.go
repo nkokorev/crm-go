@@ -433,7 +433,7 @@ func (webSite WebSite) CalculateDelivery(deliveryRequest DeliveryRequest) (total
 	}
 
 	// 3. Проводим расчет стоимости доставки
-	totalCost, err = delivery.CalculateDelivery(deliveryRequest.DeliveryData, weight)
+	totalCost, err = delivery.CalculateDelivery(deliveryRequest.DeliveryData, weight/1000)
 	if err != nil {
 		return 0,0, err
 	}
