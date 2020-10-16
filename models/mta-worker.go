@@ -76,20 +76,23 @@ func mtaWorker() {
 
 			} else {
 
-				// 1. удаляем задачу по отправке т.к. считаем, что она выполнена.
+				// 1. удаляем задачу по отправке т.к. считаем, что она выполнена если это не серия писем.
 				if workflows[i].OwnerType != EmailSenderQueue {
-
 					if err = workflows[i].delete(); err != nil {
 						log.Printf("Неудачное удаление workflows[%v]: %v", i, err)
 					}
+				}
 
+				if workflows[i].OwnerType == EmailSenderQueue {
+
+					// todo: проверяем на необходимость остановки
 				}
 
 				// 2. Добавляем в пул задач на проверку статуса "Выполнено" (возможны другие статусы Failed из-за проблем с отправкой)
 				// todo: create system Task if not exist for check remains workflows
-				if workflows[i].OwnerType != EmailSenderCampaign {
-					// go MTAWorkflow{}.checkActiveEmailCampaign()
-				}
+				/*if workflows[i].OwnerType != EmailSenderCampaign {
+					go MTAWorkflow{}.checkActiveEmailCampaign()
+				}*/
 
 			}
 		}

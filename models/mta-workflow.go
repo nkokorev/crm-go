@@ -507,6 +507,9 @@ func (mtaWorkflow *MTAWorkflow) Execute() error {
 	// можно и через go
 	SendEmail(pkg)
 
+	// Проверяем не нужно ли закончить серию
+	pkg.handleQueue()
+
 	return nil
 }
 func (mtaWorkflow *MTAWorkflow) UpdateByNextStep(expectedStep EmailQueueEmailTemplate) error {

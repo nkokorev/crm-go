@@ -150,8 +150,6 @@ func mtaSender(pkg EmailPkg, wg *sync.WaitGroup, m *sync.Mutex) {
 		fmt.Println("pixelURL: ", pixelURL)
 		// n := rand.Intn(3) // n will be between 0 and 10
 		// fmt.Printf("Sleeping %d seconds...\n", n)
-		// time.Sleep(time.Duration(n)*time.Second)
-
 		// time.Sleep(time.Second * 5)
 	} else {
 		

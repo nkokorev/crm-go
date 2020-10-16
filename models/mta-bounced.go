@@ -339,64 +339,65 @@ func (pkg EmailPkg) handleQueue() bool {
 		return true
 	}
 
-	if pkg.emailSender.GetType() == EmailSenderQueue {
+	if pkg.emailSender.GetType() != EmailSenderQueue {
+		return false
+	}
 
-		// удаляем задачу, если не передан workflowId
-		if pkg.workflowId < 1 {
-			if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
-				log.Printf("Невозможно исключить задачу [id = %v] по отправке: %v\n", pkg.workflowId, err)
-			}
-			return true
+	// удаляем задачу, если не передан workflowId
+	if pkg.workflowId < 1 {
+		if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
+			log.Printf("Невозможно исключить задачу [id = %v] по отправке: %v\n", pkg.workflowId, err)
 		}
+		return true
+	}
 
-		emailQueue, ok := pkg.emailSender.(*EmailQueue)
-		if !ok {
-			log.Printf("Ошибка преобразования emailSender [id = %v]", pkg.emailSender.GetId())
-			if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
-				log.Printf("Невозможно исключить задачу [id = %v] по отправке: %v\n", pkg.workflowId, err)
-			}
-			return true
+	emailQueue, ok := pkg.emailSender.(*EmailQueue)
+	if !ok {
+		log.Printf("Ошибка преобразования emailSender [id = %v]", pkg.emailSender.GetId())
+		if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
+			log.Printf("Невозможно исключить задачу [id = %v] по отправке: %v\n", pkg.workflowId, err)
 		}
+		return true
+	}
 
-		// Обновляем задачу для следующего шага или удаляем текущий
-		// fmt.Println("Обновляем задачу, следующий шаг: ", pkg.queueStepId)
-		nextStep, err := emailQueue.GetNextActiveStep(pkg.queueStepId)
+	// Обновляем задачу для следующего шага или удаляем текущий
+	// fmt.Println("Обновляем задачу, следующий шаг: ", pkg.queueStepId)
+	nextStep, err := emailQueue.GetNextActiveStep(pkg.queueStepId)
+	if err != nil {
+		// серия завершена, т.к. нет следующих шагов
+		// Удаляем задачу по отправке, т.к. нет следующего шага
+		if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
+			log.Printf("Невозможно исключить задачу [id = %v] по отправке: %v\n", pkg.workflowId, err)
+		}
+		return true
+	} else {
+		// есть следующих шаг, queueCompleted = false
+
+		var mtaWorkflow MTAWorkflow
+		err := account.LoadEntity(&mtaWorkflow, pkg.workflowId,nil)
 		if err != nil {
-			// серия завершена, т.к. нет следующих шагов
-			// Удаляем задачу по отправке, т.к. нет следующего шага
-			if err := (&MTAWorkflow{Id: pkg.workflowId}).delete(); err != nil {
-				log.Printf("Невозможно исключить задачу [id = %v] по отправке: %v\n", pkg.workflowId, err)
+			log.Printf("Невозможно получить задачу [id = %v] по отпрваке: %v\n", pkg.workflowId, err)
+			// ошибка загрузки, завершаем серию
+			return true
+		}
+
+		// Проверяем на его активность
+		if !nextStep.Enabled {
+			if err = mtaWorkflow.delete(); err != nil {
+				log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
 			}
 			return true
 		} else {
-			// есть следующих шаг, queueCompleted = false
+			// Обновляем задачу, вместо удаления / создания новой
+			if err := mtaWorkflow.UpdateByNextStep(*nextStep); err != nil {
 
-			var mtaWorkflow MTAWorkflow
-			err := account.LoadEntity(&mtaWorkflow, pkg.workflowId,nil)
-			if err != nil {
-				log.Printf("Невозможно получить задачу [id = %v] по отпрваке: %v\n", pkg.workflowId, err)
-				// ошибка загрузки, завершаем серию
-				return true
-			}
-
-			// Проверяем на его активность
-			if !nextStep.Enabled {
+				// исключаем задачу, если не удалось ее обновить
 				if err = mtaWorkflow.delete(); err != nil {
 					log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
 				}
+
+				// если не удалось обновить - значит шаг был последним
 				return true
-			} else {
-				// Обновляем задачу, вместо удаления / создания новой
-				if err := mtaWorkflow.UpdateByNextStep(*nextStep); err != nil {
-
-					// исключаем задачу, если не удалось ее обновить
-					if err = mtaWorkflow.delete(); err != nil {
-						log.Printf("Невозможно исключить задачу [id = %v] по отпрваке: %v\n", mtaWorkflow.Id, err)
-					}
-
-					// если не удалось обновить - значит шаг был последним
-					return true
-				}
 			}
 		}
 	}

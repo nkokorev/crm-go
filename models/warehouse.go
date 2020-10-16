@@ -84,7 +84,7 @@ func (warehouse *Warehouse) GetPreloadDb(getModel bool, autoPreload bool, preloa
 		return db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"WarehouseItems","WarehouseItems.Product","Products"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"WarehouseItems","WarehouseItems.Product","WarehouseItems.Product.MeasurementUnit","Products"})
 
 		for _,v := range allowed {
 			_db.Preload(v)

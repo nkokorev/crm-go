@@ -6,7 +6,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fatih/structs v1.1.0
 	github.com/go-test/deep v1.0.7 // indirect
-	github.com/golang/protobuf v1.4.2 // indirect
+	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/jackc/pgx/v4 v4.9.0
 	github.com/jinzhu/gorm v1.9.16
@@ -21,7 +21,7 @@ require (
 	github.com/toorop/go-dkim v0.0.0-20200526084421-76378ae5207e
 	github.com/ttacon/builder v0.0.0-20170518171403-c099f663e1c2 // indirect
 	github.com/ttacon/libphonenumber v1.1.0
-	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
+	golang.org/x/crypto v0.0.0-20201012173705-84dcc777aaee
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 	gorm.io/datatypes v0.0.0-20200924071644-3967db6857cf
