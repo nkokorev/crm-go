@@ -350,11 +350,14 @@ func (deliveryRussianPost DeliveryRussianPost) CreateDeliveryOrder(deliveryData 
 
 	status, err := DeliveryStatus{}.GetStatusNew()
 	if err != nil { return nil, err}
-
+	customerId := uint(0)
+	if order.CustomerId != nil {
+		customerId = *order.CustomerId
+	}
 	deliveryOrder := DeliveryOrder{
 		AccountId: deliveryRussianPost.AccountId,
 		OrderId:   &order.Id,
-		CustomerId: order.CustomerId,
+		CustomerId: customerId,
 		WebSiteId: order.WebSiteId,
 		Code:  deliveryRussianPost.Code,
 		MethodId: deliveryRussianPost.Id,

@@ -279,8 +279,8 @@ func (eventListener EventListener) uploadEntitiesData(event *Event) {
 			e.Add("Order", order)
 
 			// Добавляем заказчика
-			if order.CustomerId > 0 {
-				customer, err := account.GetUser(order.CustomerId)
+			if order.CustomerId != nil {
+				customer, err := account.GetUser(*order.CustomerId)
 				if err == nil {
 					e.Add("customer_id", order.CustomerId)
 					e.Add("Customer", customer)

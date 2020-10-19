@@ -29,12 +29,12 @@ type Order struct {
 	WebSite		WebSite	`json:"web_site"`
 
 	// Данные клиента
-	CustomerId 	uint	`json:"customer_id" gorm:"type:int;"`
+	CustomerId 	*uint	`json:"customer_id" gorm:"type:int;"` 	// << null при новом клиенте или не опознанном
 	Customer	User	`json:"customer"`
 
 	// Данные компании-заказчика
-	CompanyId 	*uint	`json:"company_id" gorm:"type:int;"`
-	Company		User	`json:"company"` //todo: создать компании
+	CompanyId 	*uint	`json:"company_id" gorm:"type:int;"` 	// << null при новой компании или не опознанной
+	Company		Company	`json:"company"` //todo: создать компании
 
 	// Способ (канал) заказа: "Заказ из корзины", "Заказ по телефону", "Пропущенный звонок", "Письмо.."
 	OrderChannelId 	uint	`json:"order_channel_id" gorm:"type:int;not null;"`
@@ -89,6 +89,31 @@ func (Order) PgSqlCreate() {
 		log.Fatal("Error: ", err)
 	}
 }
+func (order *Order) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(order)
+	} else {
+		_db = _db.Model(&Order{})
+	}
+
+	if autoPreload {
+		return _db.Preload(clause.Associations)
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Status","Payment","Customer","DeliveryOrder","Amount",
+			"CartItems","CartItems.Product","CartItems.Amount","CartItems.PaymentMode","Manager","WebSite","OrderChannel","Company","Comments"})
+
+		for _,v := range allowed {
+			_db.Preload(v)
+		}
+		return _db
+	}
+
+}
+
 func (order *Order) BeforeCreate(tx *gorm.DB) error {
 	order.Id = 0
 
@@ -164,9 +189,10 @@ func (Order) SystemEntity() bool { return false }
 
 // ######### CRUD Functions ############
 func (order Order) create() (Entity, error)  {
-
+	
 	_item := order
-	if err := db.Create(&_item).Error; err != nil {
+	// if err := db.Omit(clause.Associations).Select("Amount").Create(&_item).Error; err != nil {
+	if err := db.Omit("Customer","Manager","WebSite","Company","OrderChannel","PaymentMethod","Payment","DeliveryOrder","Comments","Status").Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
@@ -318,28 +344,5 @@ func (order *Order) AppendProducts (products []Product) error {
 	return nil
 }
 
-func (order *Order) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
 
-	_db := db
-
-	if getModel {
-		_db = _db.Model(order)
-	} else {
-		_db = _db.Model(&Order{})
-	}
-
-	if autoPreload {
-		return _db.Preload(clause.Associations)
-	} else {
-
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Status","Payment","Customer","DeliveryOrder","Amount",
-			"CartItems","CartItems.Product","CartItems.Amount","CartItems.PaymentMode","Manager","WebSite","OrderChannel","Company","Comments"})
-
-		for _,v := range allowed {
-			_db.Preload(v)
-		}
-		return _db
-	}
-
-}
 

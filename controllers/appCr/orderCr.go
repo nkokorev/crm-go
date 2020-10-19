@@ -28,6 +28,13 @@ func OrderCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 1. Создаем нового клиента
+	if input.CustomerId != nil {
+
+	}
+	// 2. Создаем что-то еще
+
+	
 	order, err := account.CreateEntity(&input.Order)
 	if err != nil {
 		fmt.Println(err)

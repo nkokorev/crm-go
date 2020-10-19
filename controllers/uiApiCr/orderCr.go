@@ -438,7 +438,7 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 	_order.ManagerId = &manager.Id
 	_order.Individual = input.Individual
 	_order.WebSiteId = webSite.Id
-	_order.CustomerId = customer.Id
+	_order.CustomerId = &customer.Id
 	// order.CompanyId = CompanyId.Id
 	_order.OrderChannelId = channel.Id
 	_order.Amount = models.PaymentAmount{Value: totalCost, Currency: totalCurrency, AccountId: account.Id}
@@ -549,7 +549,7 @@ func createOrderFromCallbackPhone(w http.ResponseWriter, input CreateOrderForm, 
 	_order.ManagerId = &manager.Id
 	_order.Individual = input.Individual
 	_order.WebSiteId = webSite.Id
-	_order.CustomerId = customer.Id
+	_order.CustomerId = &customer.Id
 	// _order.CompanyId = CompanyId.Id
 	_order.OrderChannelId = channel.Id
 
@@ -640,7 +640,7 @@ func createOrderFromCallbackForm(w http.ResponseWriter, input CreateOrderForm, a
 	_order.ManagerId = &manager.Id
 	_order.Individual = input.Individual
 	_order.WebSiteId = webSite.Id
-	_order.CustomerId = customer.Id
+	_order.CustomerId = &customer.Id
 	// _order.CompanyId = CompanyId.Id
 	_order.OrderChannelId = channel.Id
 
