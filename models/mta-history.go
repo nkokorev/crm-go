@@ -40,6 +40,7 @@ type MTAHistory struct {
 
 	// Какой конкретно шаблон был отправлен. Может пригодиться для истории, кто что кому отправлял.
 	EmailTemplateId		*uint	`json:"email_template_id" gorm:"type:int;index;"` // << index для выборки по конкретному письму
+	EmailTemplate		EmailTemplate `json:"email_template"`
 
 	// ####### Статистика #######
 
@@ -86,7 +87,7 @@ func (mtaHistory *MTAHistory) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (mtaHistory *MTAHistory) AfterCreate(tx *gorm.DB) (error) {
+func (mtaHistory *MTAHistory) AfterCreate(tx *gorm.DB) error {
 	// AsyncFire(*Event{}.PaymentCreated(mtaHistory.AccountId, mtaHistory.Id))
 	return nil
 }
@@ -118,7 +119,7 @@ func (mtaHistory *MTAHistory) GetPreloadDb(getModel bool, autoPreload bool, prel
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"User"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"User","EmailTemplate"})
 
 		for _,v := range allowed {
 			_db.Preload(v)
@@ -191,29 +192,31 @@ func (MTAHistory) getPaginationList(accountId uint, offset, limit int, sortBy, s
 		search = "%"+search+"%"
 
 		err := (&MTAHistory{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&emailQueueHistories, "name ILIKE ? OR code ILIKE ? OR description ILIKE ?", search,search,search).Error
+			Where(filter).
+			Find(&emailQueueHistories, "email ILIKE ?", search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = (&MTAHistory{}).GetPreloadDb(false,false,nil).
-			Where("account_id = ? AND name ILIKE ? OR code ILIKE ? OR description ILIKE ?", accountId, search,search,search).
+		err = (&MTAHistory{}).GetPreloadDb(false,false,nil).Where(filter).
+			Where("account_id = ? AND email ILIKE ?", accountId, search,search,search).
 			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}
 
 	} else {
-
+		
 		err := (&MTAHistory{}).GetPreloadDb(false,false,preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&emailQueueHistories).Error
+			Where(filter).Find(&emailQueueHistories).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
 
 		// Определяем total
-		err = (&MTAHistory{}).GetPreloadDb(false,false,nil).Where("account_id = ?", accountId).Count(&total).Error
+		err = (&MTAHistory{}).GetPreloadDb(false,false,nil).Where("account_id = ?", accountId).Where(filter).
+			Count(&total).Error
 		if err != nil {
 			return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
 		}

@@ -405,4 +405,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/companies/{companyId:[0-9]+}", appCr.CompanyGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/companies/{companyId:[0-9]+}", appCr.CompanyUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/companies/{companyId:[0-9]+}", appCr.CompanyDelete).Methods(http.MethodDelete, http.MethodOptions)
+
+	// ### MTA History ####
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/mta-histories", appCr.MTAHistoryGetListPagination).Methods(http.MethodGet, http.MethodOptions)
 }
