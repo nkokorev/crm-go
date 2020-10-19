@@ -354,11 +354,15 @@ func (deliveryRussianPost DeliveryRussianPost) CreateDeliveryOrder(deliveryData 
 	if order.CustomerId != nil {
 		customerId = *order.CustomerId
 	}
+	webSiteId := uint(0)
+	if order.WebSiteId != nil {
+		webSiteId = *order.WebSiteId
+	}
 	deliveryOrder := DeliveryOrder{
 		AccountId: deliveryRussianPost.AccountId,
 		OrderId:   &order.Id,
 		CustomerId: customerId,
-		WebSiteId: order.WebSiteId,
+		WebSiteId: webSiteId,
 		Code:  deliveryRussianPost.Code,
 		MethodId: deliveryRussianPost.Id,
 		Address: deliveryData.Address,

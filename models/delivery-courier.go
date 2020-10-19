@@ -262,11 +262,15 @@ func (deliveryCourier DeliveryCourier) CreateDeliveryOrder(deliveryData Delivery
 	if order.CustomerId != nil {
 		customerId = *order.CustomerId
 	}
+	webSiteId := uint(0)
+	if order.WebSiteId != nil {
+		webSiteId = *order.WebSiteId
+	}
 	deliveryOrder := DeliveryOrder {
 		AccountId: deliveryCourier.AccountId,
 		OrderId:   &order.Id,
 		CustomerId: customerId,
-		WebSiteId: order.WebSiteId,
+		WebSiteId: webSiteId,
 		Code:  deliveryCourier.Code,
 		MethodId: deliveryCourier.Id,
 		Address: deliveryData.Address,

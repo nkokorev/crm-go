@@ -25,7 +25,7 @@ type Order struct {
 	CustomerComment *string	`json:"customer_comment" gorm:"type:varchar(255);"`
 
 	// Магазин (сайт) с которого пришел заказ. НЕ может быть null.
-	WebSiteId 	uint	`json:"web_site_id" gorm:"type:int;not null;"`
+	WebSiteId 	*uint	`json:"web_site_id" gorm:"type:int;not null;"`
 	WebSite		WebSite	`json:"web_site"`
 
 	// Данные клиента

@@ -268,11 +268,15 @@ func (deliveryPickup DeliveryPickup) CreateDeliveryOrder(deliveryData DeliveryDa
 	if order.CustomerId != nil {
 		customerId = *order.CustomerId
 	}
+	webSiteId := uint(0)
+	if order.WebSiteId != nil {
+		webSiteId = *order.WebSiteId
+	}
 	deliveryOrder := DeliveryOrder{
 		AccountId: deliveryPickup.AccountId,
 		OrderId:   &order.Id,
 		CustomerId: customerId,
-		WebSiteId: order.WebSiteId,
+		WebSiteId: webSiteId,
 		Code:  deliveryPickup.Code,
 		MethodId: deliveryPickup.Id,
 		Address: deliveryData.Address,

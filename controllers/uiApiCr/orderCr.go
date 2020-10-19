@@ -35,7 +35,7 @@ type CreateOrderForm struct {
 	ManagerHashId	string	`json:"manager_hash_id"`
 
 	// ID магазина, от имени которого создается заявка
-	WebSiteId 		uint	`json:"web_site_id"`
+	WebSiteId 		*uint	`json:"web_site_id"`
 
 	// true = частное лицо, false - юрлицо
 	Individual		bool 	`json:"individual"`
@@ -103,12 +103,15 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 
 	// 1. Получаем магазин из контекста
 	var webSite models.WebSite
-	if err := account.LoadEntity(&webSite, input.WebSiteId,[]string{"EmailBoxes"}); err != nil {
-		
-		u.Respond(w, u.MessageError(err, "Ошибка в запросе: проверьте id магазина"))
-		return
+	if input.WebSiteId !=nil {
+		if err := account.LoadEntity(&webSite, *input.WebSiteId,[]string{"EmailBoxes"}); err != nil {
+
+			u.Respond(w, u.MessageError(err, "Ошибка в запросе: проверьте id магазина"))
+			return
+		}
 	}
-	
+
+
 	// 0. Находим канал заявки
 	if input.OrderChannelCode == "" {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка поиска источника заявки", Errors: map[string]interface{}{"orderChannel":"Необходимо указать канал заявки"}}))
@@ -122,13 +125,13 @@ func UiApiOrderCreate(w http.ResponseWriter, r *http.Request) {
 
 	switch channel.Code {
 	case "through_the_basket":
-		createOrderFromBasket(w, input, *account, webSite, *channel)
+		createOrderFromBasket(w, input, *account, &webSite, *channel)
 		return
 	case "callback_phone":
-		createOrderFromCallbackPhone(w, input, *account, webSite, *channel)
+		createOrderFromCallbackPhone(w, input, *account, &webSite, *channel)
 		return
 	case "callback_form":
-		createOrderFromCallbackForm(w, input, *account, webSite, *channel)
+		createOrderFromCallbackForm(w, input, *account, &webSite, *channel)
 		return
 	default:
 		u.Respond(w, u.MessageError(u.Error{Message:"Указанный канал не поддерживается",
@@ -261,7 +264,7 @@ func getCustomerFromInput(account models.Account, userHashId, email, phone, name
 	return &user, nil
 }
 
-func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account models.Account, webSite models.WebSite, channel models.OrderChannel) {
+func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account models.Account, webSite *models.WebSite, channel models.OrderChannel) {
 
 	// Итоговая стоимость заказа
 	var totalCost float64
@@ -316,6 +319,7 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 			return
 		}
 
+
 		// 1.2 Если продукт недоступен к заказу в розницу
 		if !product.RetailSale {
 			u.Respond(w, u.MessageError(u.Error{Message:fmt.Sprintf("Заказ содержит продукты недоступные к заказу: %v", product.Label), Errors: map[string]interface{}{"cart":"Не корректный список продуктов"}}))
@@ -333,8 +337,12 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 		if product.RetailPrice != nil {
 			retailPrice	= *product.RetailPrice
 		}
+
+		fmt.Println("product: ",product)
+		fmt.Println("product discount: ",product.RetailDiscount)
+		
 		retailDiscount := float64(0)
-		if product.RetailPrice != nil {
+		if product.RetailDiscount != nil {
 			retailDiscount	= *product.RetailDiscount
 		}
 		ProductCost := retailPrice - retailDiscount
@@ -434,10 +442,15 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 	// 9. Создаем заказ
 	var _order models.Order
 
+	webSiteId := uint(0)
+	if webSite != nil {
+		webSiteId = webSite.Id
+	}
+
 	_order.CustomerComment = &input.CustomerComment
 	_order.ManagerId = &manager.Id
 	_order.Individual = input.Individual
-	_order.WebSiteId = webSite.Id
+	_order.WebSiteId = &webSiteId
 	_order.CustomerId = &customer.Id
 	// order.CompanyId = CompanyId.Id
 	_order.OrderChannelId = channel.Id
@@ -498,7 +511,7 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 	u.Respond(w, resp)
 }
 
-func createOrderFromCallbackPhone(w http.ResponseWriter, input CreateOrderForm, account models.Account, webSite models.WebSite, channel models.OrderChannel) {
+func createOrderFromCallbackPhone(w http.ResponseWriter, input CreateOrderForm, account models.Account, webSite *models.WebSite, channel models.OrderChannel) {
 
 	if input.Customer.Phone == "" {
 		u.Respond(w, u.MessageError(
@@ -545,10 +558,15 @@ func createOrderFromCallbackPhone(w http.ResponseWriter, input CreateOrderForm, 
 	// 9. Создаем заказ
 	var _order models.Order
 
+	webSiteId := uint(0)
+	if webSite != nil {
+		webSiteId = webSite.Id
+	}
+
 	_order.CustomerComment = &input.CustomerComment
 	_order.ManagerId = &manager.Id
 	_order.Individual = input.Individual
-	_order.WebSiteId = webSite.Id
+	_order.WebSiteId = &webSiteId
 	_order.CustomerId = &customer.Id
 	// _order.CompanyId = CompanyId.Id
 	_order.OrderChannelId = channel.Id
@@ -571,7 +589,7 @@ func createOrderFromCallbackPhone(w http.ResponseWriter, input CreateOrderForm, 
 	u.Respond(w, resp)
 }
 
-func createOrderFromCallbackForm(w http.ResponseWriter, input CreateOrderForm, account models.Account, webSite models.WebSite, channel models.OrderChannel) {
+func createOrderFromCallbackForm(w http.ResponseWriter, input CreateOrderForm, account models.Account, webSite *models.WebSite, channel models.OrderChannel) {
 
 	if input.CustomerComment == "" {
 		u.Respond(w, u.MessageError(
@@ -631,6 +649,11 @@ func createOrderFromCallbackForm(w http.ResponseWriter, input CreateOrderForm, a
 		// todo создание / поиск компании
 	}
 
+	webSiteId := uint(0)
+	if webSite != nil {
+		webSiteId = webSite.Id
+	}
+
 	//////////////////////
 
 	// 9. Создаем заказ
@@ -639,7 +662,7 @@ func createOrderFromCallbackForm(w http.ResponseWriter, input CreateOrderForm, a
 	_order.CustomerComment = &input.CustomerComment
 	_order.ManagerId = &manager.Id
 	_order.Individual = input.Individual
-	_order.WebSiteId = webSite.Id
+	_order.WebSiteId = &webSiteId
 	_order.CustomerId = &customer.Id
 	// _order.CompanyId = CompanyId.Id
 	_order.OrderChannelId = channel.Id
