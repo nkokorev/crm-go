@@ -338,9 +338,6 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 			retailPrice	= *product.RetailPrice
 		}
 
-		fmt.Println("product: ",product)
-		fmt.Println("product discount: ",product.RetailDiscount)
-		
 		retailDiscount := float64(0)
 		if product.RetailDiscount != nil {
 			retailDiscount	= *product.RetailDiscount
