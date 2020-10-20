@@ -57,8 +57,8 @@ func (OrderStatus) PgSqlCreate() {
 		{Name: "Новый заказ", 				Code: "new", 					Group:"new", 			GroupName:"Необработанные заявки",	Description: "Необработанный заказ, первоначальный статус заказа."},
 
 		{Name: "Заказ подтвержден", 		Code: "agreement_order", 		Group: "agreement", 	GroupName:"Согласование", 	Description: "Заказ подтвержден."},
-		{Name: "Предложена замена", 		Code: "agreement_change", 		Group: "agreement", 	GroupName:"Согласование", 	Description: "Предложена замена."},
-		{Name: "Согласование с клиентом", 	Code: "agreement_approval", 	Group: "agreement", 	GroupName:"Согласование", 	Description: "Согласование с клиентом."},
+		{Name: "Предложена замена", 		Code: "agreement_change", 		Group: "agreement", 	GroupName:"Согласование", 	Description: "Предложена замена, в процессе согласования."},
+		{Name: "Согласование с клиентом", 	Code: "agreement_approval", 	Group: "agreement", 	GroupName:"Согласование", 	Description: "В процессе согласование с клиентом."},
 
 		{Name: "Комплектуется", 			Code: "equipping", 				Group: "equipment", 	GroupName:"Комплектация", 	Description: "Комплектуется."},
 		{Name: "Укомплектован", 			Code: "equipped", 				Group: "equipment", 	GroupName:"Комплектация", 	Description: "Укомплектован"},
@@ -235,6 +235,16 @@ func (OrderStatus) GetCompletedStatus() (OrderStatus, error) {
 	var status OrderStatus
 
 	err := db.First(&status, "code = 'completed'").Error
+	if err != nil {
+		return status, err
+	}
+	return status, nil
+}
+
+func (OrderStatus) GetCanceledAnyStatus() (OrderStatus, error) {
+	var status OrderStatus
+
+	err := db.First(&status, "code = 'canceled_any'").Error
 	if err != nil {
 		return status, err
 	}

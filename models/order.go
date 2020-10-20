@@ -103,7 +103,7 @@ func (order *Order) GetPreloadDb(getModel bool, autoPreload bool, preloads []str
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Status","Payment","Customer","DeliveryOrder","Amount",
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Status","Payment","Customer","DeliveryOrder","DeliveryOrder.Status","Amount",
 			"CartItems","CartItems.Product","CartItems.Amount","CartItems.PaymentMode","Manager","WebSite","OrderChannel","Company","Comments"})
 
 		for _,v := range allowed {
@@ -314,10 +314,81 @@ func (order *Order) update(input map[string]interface{}, preloads []string) erro
 		"payment_method_id","amount_id","status_id"}); err != nil {
 		return err
 	}
-	if err := order.GetPreloadDb(false, false, nil).Where("id = ?", order.Id).Omit("id", "account_id","public_id").Updates(input).
-		Error; err != nil {return err}
 
-	err := order.GetPreloadDb(false,false, preloads).First(order, order.Id).Error
+	// Отметка на будущее для события
+	_newStatusId, ok := input["status_id"].(uint)
+	_oldStatusId :=  order.StatusId
+
+	if err := order.GetPreloadDb(false, false, nil).Where("id = ?", order.Id).
+		Omit("id", "account_id","public_id").Updates(input).Error; err != nil {return err}
+
+	err := order.GetPreloadDb(false,true, []string{"Status"}).First(order, order.Id).Error
+	if err != nil {
+		return err
+	}
+
+	// Если флаг статуса заказа был изменен
+	if ok && (_newStatusId != uint(_oldStatusId)) {
+
+		switch order.Status.Group {
+		case "agreement":
+			if order.Status.Code == "agreement_order" {
+				AsyncFire(NewEvent("OrderConfirmed", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
+			}
+			if order.Status.Code == "agreement_change" {
+				AsyncFire(NewEvent("OrderChanging", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
+			}
+			if order.Status.Code == "agreement_approval" {
+				AsyncFire(NewEvent("OrderApproving", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
+			}
+
+
+		case "equipping":
+			if order.Status.Code == "equipping" {
+				AsyncFire(NewEvent("OrderEquipping", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
+			}
+			if order.Status.Code == "equipped" {
+				AsyncFire(NewEvent("OrderEquipped", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
+			}
+
+
+		case "delivery":
+			if order.Status.Code == "delivery_sent" {
+				AsyncFire(NewEvent("OrderDeliverySent", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
+			}
+			if order.Status.Code == "delivering" {
+				AsyncFire(NewEvent("OrderInDeliveryProcess", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
+			}
+			if order.Status.Code == "delivery_rescheduled" {
+				AsyncFire(NewEvent("OrderDeliveryRescheduled", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
+			}
+
+			
+		case "completed":
+			AsyncFire(NewEvent("OrderCompleted", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
+
+		case "prepend":
+			AsyncFire(NewEvent("OrderPrepending", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
+
+		case "canceled":
+			var deliveryOrder DeliveryOrder
+			err := Account{Id: order.AccountId}.LoadEntity(&deliveryOrder, order.DeliveryOrder.Id, []string{"DeliveryOrder"})
+			if err != nil {
+				log.Println("Error get delivery Order in canceled order: ", err)
+			} else {
+				// fmt.Println("prepend - set order canceled")
+				if err := deliveryOrder.SetCanceledAnyStatus(); err != nil {log.Println("SetCanceledAnyStatus deliveryOrder: ", err)}
+			}
+
+			AsyncFire(NewEvent("OrderCanceled", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
+		}
+
+		// общая информация об обновлении статуса
+		AsyncFire(NewEvent("OrderStatusUpdated", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
+
+	}
+	
+	err = order.GetPreloadDb(false,true, preloads).First(order, order.Id).Error
 	if err != nil {
 		return err
 	}
@@ -339,6 +410,49 @@ func (order *Order) delete () error {
 func (order *Order) AppendProducts (products []Product) error {
 	if err := db.Model(order).Association("CartItems").Replace(products); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+/* Изменение статуса заказа на "Выполнено" */
+func (order *Order) SetCompleted () error {
+
+	if err := order.load(nil);err != nil {
+		return err
+	}
+
+	// Получаем статус "Выполнено", для извлечения его ID
+	cStatus, err := (OrderStatus{}).GetCompletedStatus()
+	if err != nil { return err}
+
+	/* Чтобы лишний раз не вызывать событие "Выполнено" */
+	if cStatus.Id != order.StatusId {
+		if err := order.update(map[string]interface{}{"status_id": cStatus.Id},nil); err != nil {
+			return err
+		}
+	}
+
+	
+	return nil
+}
+
+/* Изменение статуса заказа на "Отмена" */
+func (order *Order) SetCanceled () error {
+
+	if err := order.load(nil);err != nil {
+		return err
+	}
+
+	// Получаем статус "Выполнено", для извлечения его ID
+	cStatus, err := (OrderStatus{}).GetCanceledAnyStatus()
+	if err != nil { return err}
+
+	/* Чтобы лишний раз не вызывать событие "Выполнено" */
+	if cStatus.Id != order.StatusId {
+		if err := order.update(map[string]interface{}{"status_id": cStatus.Id},nil); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -203,3 +203,26 @@ func (DeliveryStatus) GetStatusNew() (DeliveryStatus, error) {
 	}
 	return status, nil
 }
+
+/* Получение статуса Заказ передан клиенту */
+func (DeliveryStatus) GetCompletedStatus() (DeliveryStatus, error) {
+	var status DeliveryStatus
+
+	err := db.First(&status, "code = 'completed'").Error
+	if err != nil {
+		return status, err
+	}
+	return status, nil
+}
+
+/* Получение статуса Заказ отменен по каким-то причинам */
+func (DeliveryStatus) GetCanceledAnyStatus() (DeliveryStatus, error) {
+	var status DeliveryStatus
+
+	err := db.First(&status, "code = 'canceled_any'").Error
+	if err != nil {
+		return status, err
+	}
+	return status, nil
+}
+

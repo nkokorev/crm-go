@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -16,7 +15,7 @@ type DeliveryOrder struct {
 
 	// Данные заказа
 	OrderId 	*uint	`json:"order_id" gorm:"type:int;"`
-	// Order	*Order	`json:"-"`
+	Order		*Order	`json:"order"`
 
 	// Данные заказчика
 	CustomerId 	uint	`json:"customer_id" gorm:"type:int;not null"`
@@ -230,6 +229,9 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 	delete(input, "delivery")
 	delete(input, "amount")
 	delete(input, "status")
+	if err := deliveryOrder.load([]string{"Status"}); err != nil {
+		return err
+	}
 	
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","order_id","customer_id","web_site_id","method_id","amount_id","status_id"}); err != nil {
@@ -237,11 +239,9 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 	}
 
 	// Отметка на будущее для события
-	_newStatusId, ok := input["statusId"].(float64)
+	_newStatusId, ok := input["status_id"].(uint)
 	_oldStatusId :=  deliveryOrder.StatusId
 
-	// if err := db.Set("gorm:association_autoupdate", false).Model(deliveryOrder).Where("id = ?", deliveryOrder.Id).
-	// if err := db.Model(&DeliveryOrder{}).Where("id = ?", deliveryOrder.Id).
 	if err := deliveryOrder.GetPreloadDb(false,false, nil).Where("id = ?", deliveryOrder.Id).
 		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
 		return err
@@ -253,60 +253,70 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 	}
 
 	// Если флаг статуса доставки был изменен
-	if ok && (_newStatusId != float64(_oldStatusId)) {
+	if ok && (_newStatusId != uint(_oldStatusId)) {
 
 		switch deliveryOrder.Status.Group {
 		case "agreement":
-			// AsyncFire(*Event{}.DeliveryOrderAlimented(deliveryOrder.AccountId, deliveryOrder.PublicId))
 			AsyncFire(NewEvent("DeliveryOrderAlimented", map[string]interface{}{"account_id":deliveryOrder.AccountId, "delivery_order_id":deliveryOrder.Id}))
 
 		case "delivery":
-			// AsyncFire(*Event{}.DeliveryOrderInProcess(deliveryOrder.AccountId, deliveryOrder.PublicId))
 			AsyncFire(NewEvent("DeliveryOrderInProcess", map[string]interface{}{"account_id":deliveryOrder.AccountId, "delivery_order_id":deliveryOrder.Id}))
 		case "completed":
 			// Обновляем платеж
 			var order Order
 			err := Account{Id: deliveryOrder.AccountId}.LoadEntity(&order, *deliveryOrder.OrderId, nil)
 			if err != nil {
-				return utils.Error{Message: "Не удалось обновить статус платежа - не найден заказ"}
-			}
-
-			paymentMethod, err := Account{Id: deliveryOrder.AccountId}.GetPaymentMethodByType(order.PaymentMethodType, order.PaymentMethodId)
-			if err != nil {
-				return utils.Error{Message: "Не удалось обновить статус платежа - не найден заказ"}
-			}
-
-			// Если тип оплаты яндекс и платеж разнесен во времени
-			if paymentMethod.GetCode() == "payment_yandex" && !paymentMethod.IsInstantDelivery() {
-				// 1. Надо узнать External-ID чека
-				var payment Payment
-				err := Account{Id: deliveryOrder.AccountId}.LoadEntity(&payment, order.Payment.Id, nil)
+				// return utils.Error{Message: "Не удалось обновить статус платежа - не найден заказ"}
+				log.Println("Не удалось обновить статус платежа - не найден заказ")
+			} else {
+				paymentMethod, err := Account{Id: deliveryOrder.AccountId}.GetPaymentMethodByType(order.PaymentMethodType, order.PaymentMethodId)
 				if err != nil {
-					return utils.Error{Message: "Не удалось обновить статус платежа - не найден платеж"}
+					log.Println("GetPaymentMethodByType: Не удалось обновить статус платежа - не найден заказ: ", err)
 				}
 
-				if payment.ExternalId != "" {
-					_, err = paymentMethod.PrepaymentCheck(&payment, order)
+				/* Изменяем статус заказа */
+				if err := order.SetCompleted(); err != nil {log.Println("set completed order: ", err)}
+
+				// Если тип оплаты яндекс и платеж разнесен во времени
+				if paymentMethod.GetCode() == "payment_yandex" && !paymentMethod.IsInstantDelivery() {
+					// 1. Надо узнать External-ID чека
+					var payment Payment
+					err := Account{Id: deliveryOrder.AccountId}.LoadEntity(&payment, order.Payment.Id, nil)
 					if err != nil {
-						fmt.Println("Error: ", err)
+						log.Println("Не удалось обновить статус платежа - не найден платеж")
+					} else {
+						if payment.ExternalId != "" {
+							_, err = paymentMethod.PrepaymentCheck(&payment, order)
+							if err != nil {
+								log.Println("Error ExternalId: ", err)
+							}
+						}
 					}
-				}
 
-				status, err := OrderStatus{}.GetCompletedStatus()
-				if err == nil {
-					if err := order.update(map[string]interface{}{"statusId":status.Id},nil); err != nil {
-						log.Println(err)
+					status, err := OrderStatus{}.GetCompletedStatus()
+					if err == nil {
+						if err := order.update(map[string]interface{}{"status_id":status.Id},nil); err != nil {
+							log.Println(err)
+						}
 					}
 				}
 			}
 
-			// todo: !!! Перевести ЗАКАЗ в статус - Выполнено!!
-
-			// AsyncFire(*Event{}.DeliveryOrderCompleted(deliveryOrder.AccountId, deliveryOrder.PublicId))
 			AsyncFire(NewEvent("DeliveryOrderCompleted", map[string]interface{}{"account_id":deliveryOrder.AccountId, "delivery_order_id":deliveryOrder.Id}))
 		case "canceled":
-			// AsyncFire(*Event{}.DeliveryOrderCanceled(deliveryOrder.AccountId, deliveryOrder.PublicId))
+
+
+			var order Order
+			err := Account{Id: deliveryOrder.AccountId}.LoadEntity(&order, *deliveryOrder.OrderId, nil)
+			if err != nil {
+				return utils.Error{Message: "Не удалось обновить статус платежа - не найден заказ"}
+			} else {
+				// Не факт что нужно отменять заказ
+				// if err := order.SetCanceled(); err != nil {log.Println("SetCanceled order: ", err)}
+			}
+
 			AsyncFire(NewEvent("DeliveryOrderCanceled", map[string]interface{}{"account_id":deliveryOrder.AccountId, "delivery_order_id":deliveryOrder.Id}))
+
 		}
 
 		// общая информация об обновлении статуса
@@ -315,7 +325,10 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 
 	}
 
-	// see: AfterUpdated()
+	err = deliveryOrder.GetPreloadDb(false,false, preloads).First(deliveryOrder, deliveryOrder.Id).Error
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -348,7 +361,7 @@ func (deliveryOrder *DeliveryOrder) GetPreloadDb(getModel bool, autoPreload bool
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Amount","WebSite","Customer","Status"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Amount","WebSite","Customer","Status","Order"})
 
 		for _,v := range allowed {
 			_db.Preload(v)
@@ -358,3 +371,24 @@ func (deliveryOrder *DeliveryOrder) GetPreloadDb(getModel bool, autoPreload bool
 
 }
 
+/* Установка статуса отмена */
+func (deliveryOrder *DeliveryOrder) SetCanceledAnyStatus() error {
+
+	if err := deliveryOrder.load(nil); err != nil {
+		return err
+	}
+
+	cStatus, err := DeliveryStatus{}.GetCanceledAnyStatus()
+	if err != nil { return err}
+
+	/* Чтобы лишний раз не вызывать события */
+	if cStatus.Id == deliveryOrder.StatusId {
+		return  nil
+	}
+	
+	if err := deliveryOrder.update(map[string]interface{}{"status_id": cStatus.Id}, nil); err != nil {
+		return err
+	}
+	
+	return nil
+}
