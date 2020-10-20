@@ -18,7 +18,7 @@ type DeliveryCourier struct {
 	Type 		string	`json:"type" gorm:"type:varchar(32);default:'delivery_couriers';"` // Для идентификации
 
 	Enabled 	bool 	`json:"enabled" gorm:"type:bool;default:true"` // активен ли способ доставки
-	Name 		string `json:"name" gorm:"type:varchar(255);"` // "Курьерская доставка", "Почта России", "Самовывоз"
+	Name 		string 	`json:"name" gorm:"type:varchar(255);"` // "Курьерская доставка", "Почта России", "Самовывоз"
 	Price 		float64 `json:"price" gorm:"type:numeric;default:0"` // стоимость доставки
 
 	MaxWeight 	float64 `json:"max_weight" gorm:"type:numeric;default:40"` // максимальная масса в кг

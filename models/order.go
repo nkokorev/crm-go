@@ -55,7 +55,7 @@ type Order struct {
 
 	// Данные о доставке
 	// DeliveryOrderId	*uint	`json:"deliveryOrderId" gorm:"type:int;"`
-	DeliveryOrder	DeliveryOrder	`json:"delivery_order"`
+	DeliveryOrder	*DeliveryOrder	`json:"delivery_order"`
 
 	// Комментарии менеджеров к заказу
 	Comments	[]Comment `json:"comments" gorm:"many2many:order_comment;"`
@@ -192,7 +192,8 @@ func (order Order) create() (Entity, error)  {
 	
 	_item := order
 	// if err := db.Omit(clause.Associations).Select("Amount").Create(&_item).Error; err != nil {
-	if err := db.Omit("Customer","Manager","WebSite","Company","OrderChannel","PaymentMethod","Payment","DeliveryOrder","Comments","Status").Create(&_item).Error; err != nil {
+	if err := db.Omit("Customer","Manager","WebSite","Company","OrderChannel","PaymentMethod","Payment","DeliveryOrder","Comments","Status").
+		Create(&_item).Error; err != nil {
 		return nil, err
 	}
 
