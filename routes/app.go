@@ -234,7 +234,9 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/deliveries", appCr.DeliveryUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/deliveries", appCr.DeliveryDelete).Methods(http.MethodDelete, http.MethodOptions)
 
+	// ### Delivery Data ###
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/deliveries-code-list", uiApiCr.DeliveryCodeList).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-sites/{webSiteId:[0-9]+}/deliveries-calculate", appCr.DeliveryCalculateDeliveryCost).Methods(http.MethodPost, http.MethodOptions)
 
 	// ### WebHooks ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/web-hooks", appCr.WebHookCreate).Methods(http.MethodPost, http.MethodOptions)

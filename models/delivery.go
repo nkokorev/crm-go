@@ -40,7 +40,7 @@ type DeliveryRequest struct {
 	Cart []CartData `json:"cart"`
 
 	// Данные для доставки
-	DeliveryData	DeliveryData `json:"deliveryData"`
+	DeliveryData	DeliveryData `json:"delivery_data"`
 }
 
 type DeliveryData struct {
