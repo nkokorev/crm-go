@@ -29,9 +29,13 @@ type DeliveryOrder struct {
 	Code		string 	`json:"code" gorm:"type:varchar(32);"`
 	MethodId 	uint	`json:"method_id" gorm:"type:int;not null;"`
 
-	Address		string 	`json:"address" gorm:"type:varchar(255);"`
-	PostalCode	string 	`json:"postal_code" gorm:"type:varchar(32);"`
+	// Адрес по карте
+	Address		*string 	`json:"address" gorm:"type:varchar(255);"` // << null if pickup
+	PostalCode	*string 	`json:"postal_code" gorm:"type:varchar(32);"` // << null if pickup
 	Delivery	Delivery	`json:"delivery" gorm:"-"` // << preload
+
+	// Комментарий клиента по доставке ()
+	Comment 	*string		`json:"comment" gorm:"type:varchar(255);"`
 
 	// Фиксируем стоимость
 	AmountId  	uint			`json:"amount_id" gorm:"type:int;not null;"`

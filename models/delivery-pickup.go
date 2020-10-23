@@ -279,8 +279,8 @@ func (deliveryPickup DeliveryPickup) CreateDeliveryOrder(deliveryData DeliveryDa
 		WebSiteId: webSiteId,
 		Code:  deliveryPickup.Code,
 		MethodId: deliveryPickup.Id,
-		Address: deliveryData.Address,
-		PostalCode: deliveryData.PostalCode,
+		Address: utils.STRp(deliveryData.Address),
+		PostalCode: utils.STRp(deliveryData.PostalCode),
 		Amount: amount,
 		StatusId: status.Id,
 	}

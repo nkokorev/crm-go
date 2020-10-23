@@ -365,8 +365,8 @@ func (deliveryRussianPost DeliveryRussianPost) CreateDeliveryOrder(deliveryData 
 		WebSiteId: webSiteId,
 		Code:  deliveryRussianPost.Code,
 		MethodId: deliveryRussianPost.Id,
-		Address: deliveryData.Address,
-		PostalCode: deliveryData.PostalCode,
+		Address: utils.STRp(deliveryData.Address),
+		PostalCode: utils.STRp(deliveryData.PostalCode),
 		Amount: amount,
 		StatusId: status.Id,
 	}
