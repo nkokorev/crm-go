@@ -132,9 +132,10 @@ func (deliveryOrder DeliveryOrder) create() (Entity, error)  {
 		return nil, err
 	}
 
-	if err := _item.GetPreloadDb(false,false, nil).First(&_item,_item.Id).Error; err != nil {
+	if err := _item.GetPreloadDb(false,false, nil).Error; err != nil {
 		return nil, err
 	}
+	_ = _item.load([]string{"Status"})
 
 	var entity Entity = &_item
 
