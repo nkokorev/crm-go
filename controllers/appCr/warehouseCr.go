@@ -213,6 +213,7 @@ func WarehouseDelete(w http.ResponseWriter, r *http.Request) {
 	resp := u.Message(true, "DELETE Warehouse Successful")
 	u.Respond(w, resp)
 }
+
 func WarehouseAppendProduct(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)

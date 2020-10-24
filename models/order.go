@@ -103,7 +103,8 @@ func (order *Order) GetPreloadDb(getModel bool, autoPreload bool, preloads []str
 
 		allowed := utils.FilterAllowedKeySTRArray(preloads,
 			[]string{"Status","Payment","Customer","DeliveryOrder","DeliveryOrder.Status","DeliveryOrder.Status","DeliveryOrder.Amount",
-			"CartItems","CartItems.Product","CartItems.Amount","CartItems.PaymentMode","Manager","WebSite","OrderChannel","Company","Comments"})
+			"CartItems","CartItems.Product","CartItems.Product.MeasurementUnit","CartItems.Product.ProductCards","CartItems.Product.ProductTags","CartItems.Product.PaymentSubject",
+			"CartItems.Amount","CartItems.PaymentMode","Manager","WebSite","OrderChannel","Company","Comments"})
 
 		for _,v := range allowed {
 			_db.Preload(v)
@@ -458,5 +459,100 @@ func (order *Order) SetCanceled () error {
 	return nil
 }
 
+// Добавить/Удалить позицию товара
+func (order *Order) AppendProduct(product Product, strict... bool) error {
+
+	// 1. Загружаем продукт еще раз
+	if err := product.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить продукт, т.к. он не найден"}
+	}
+
+	// 2. Проверяем есть ли уже на этом складе этот продукт
+	if order.ExistProduct(product.Id) {
+		if len(strict) > 1 {
+			return utils.Error{Message: "Продукт уже числиться на складе"}
+		} else {
+			return nil
+		}
+	}
+
+	desc := ""
+	if product.Description != nil {
+		desc = *product.Description
+	}
+	cost := float64(0)
+	if product.RetailPrice != nil {
+
+		if product.RetailDiscount != nil {
+			cost = *product.RetailPrice - *product.RetailDiscount
+		} else {
+			cost = *product.RetailPrice
+		}
+	}
+
+	paymentSubjectId := uint(0)
+	if product.PaymentSubjectId != nil {
+		paymentSubjectId = *product.PaymentSubjectId
+	}
+
+	VatCodeId := uint(0)
+	if product.VatCodeId != nil {
+		VatCodeId = *product.VatCodeId
+	}
+
+	if err := db.Model(&CartItem{}).Create(
+		&CartItem{
+			AccountId: order.AccountId,
+			ProductId: product.Id,
+			OrderId: order.Id,
+			Description: desc,
+			Cost: cost,
+			PaymentSubjectId: paymentSubjectId,
+			VatCode:VatCodeId,
+		}).Error; err != nil {
+		return err
+	}
+
+	account, err := GetAccount(order.AccountId)
+	if err == nil && account != nil {
+		// AsyncFire(*Event{}.OrderProductAppended(account.Id, order.Id, product.Id))
+	}
+
+	return nil
+}
+func (order *Order) RemoveProduct(product Product) error {
+
+	// 1. Загружаем продукт еще раз
+	if err := product.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя удалить продукт, он не найден"}
+	}
+
+	if order.AccountId < 1 || product.Id < 1 || order.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: account id || product id || order id == nil"}
+	}
+
+	if err := db.Where("account_id = ? AND product_id = ? AND order_id = ?", order.AccountId, product.Id, order.Id).Delete(
+		&CartItem{}).Error; err != nil {
+		return err
+	}
+
+
+	return nil
+}
+func (order *Order) ExistProduct(productId uint) bool {
+
+	if productId < 1 {
+		return false
+	}
+
+	var count int64
+
+	db.Model(&CartItem{}).Where("order_id = ? AND product_id = ?", order.Id, productId).Count(&count)
+	if count > 0 {
+		return true
+	}
+
+	return false
+}
 
 

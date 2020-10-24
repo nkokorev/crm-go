@@ -203,3 +203,101 @@ func OrderDelete(w http.ResponseWriter, r *http.Request) {
 	resp := u.Message(true, "DELETE Order Successful")
 	u.Respond(w, resp)
 }
+
+func OrderAppendProduct(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	orderId, err := utilsCr.GetUINTVarFromRequest(r, "orderId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id warehouseId"))
+		return
+	}
+
+	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	var order models.Order
+	if err =account.LoadEntity(&order, orderId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке карточки товара"}))
+		return
+	}
+
+	product := models.Product{}
+	if err =account.LoadEntity(&product, productId, nil); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
+		return
+	}
+
+	if err = order.AppendProduct(product); err !=nil {
+		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из карточки товара"))
+		return
+	}
+
+	if err = account.LoadEntity(&order, orderId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка загрузки карточки товара"}))
+		return
+	}
+
+	resp := u.Message(true, "PATCH Order Append Product")
+	resp["order"] = order
+	u.Respond(w, resp)
+}
+
+func OrderRemoveProduct(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	orderId, err := utilsCr.GetUINTVarFromRequest(r, "orderId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id warehouseId"))
+		return
+	}
+
+	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
+		return
+	}
+	product := models.Product{}
+	if err =account.LoadEntity(&product, productId, nil); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	var order models.Order
+	if err = account.LoadEntity(&order, orderId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке карточки товара"}))
+		return
+	}
+
+	if err = order.RemoveProduct(product); err !=nil {
+		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из карточки товара"))
+		return
+	}
+
+	// Обновляем данные карточки
+	if err =account.LoadEntity(&order, orderId, preloads); err != nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке карточки товара"}))
+		return
+	}
+
+	resp := u.Message(true, "PATCH Order Remove Products")
+	resp["order"] = order
+	u.Respond(w, resp)
+}

@@ -18,7 +18,7 @@ type CartItem struct {
 	OrderId 	uint	`json:"order_id" gorm:"index;not null"` // заказ, к которому относится корзина
 
 	ProductId	uint 	`json:"product_id" gorm:"type:int;not null;"`// Id позиции товара
-	Description	string 	`json:"description" gorm:"type:varchar(128);not null;"`
+	Description	string 	`json:"description" gorm:"type:varchar(128);not null;"` // описание товара?
 	Quantity	uint	`json:"quantity" gorm:"type:int;not null;"`// число ед. товара
 
 	// Фиксируем стоимость 
@@ -30,7 +30,7 @@ type CartItem struct {
 	// Признак предмета расчета
 	PaymentSubjectId	uint			`json:"payment_subject_id" gorm:"type:int;not null;default:1"`// товар или услуга ? [вид номенклатуры]
 	PaymentSubject 		PaymentSubject 	`json:"payment_subject_yandex"`
-	PaymentSubjectYandex	string 		`json:"payment_subject"`
+	PaymentSubjectYandex	string 		`json:"payment_subject"` // << after find
 
 	// Признак способа расчета
 	PaymentModeId	uint	`json:"payment_mode_id" gorm:"type:int;not null;default:1"`//
@@ -38,7 +38,7 @@ type CartItem struct {
 	PaymentModeYandex 	string `json:"payment_mode"`
 
 	// Ставка НДС
-	VatCode	uint	`json:"vat_code"`
+	VatCode	uint	`json:"vat_code"` // << не vat_code_id т.к. в яндексе просто 'vat_code'
 
 	Product Product `json:"product"`
 	Order	Order `json:"-"`
