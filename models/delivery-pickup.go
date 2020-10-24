@@ -261,7 +261,7 @@ func (deliveryPickup DeliveryPickup) ExistPaymentMethod(paymentMethod PaymentMet
 	// return db.Model(&deliveryPickup).Where("payment_options.id = ?", paymentOptions.Id).Association("PaymentOptions").Find(&PaymentOption{}).Count() > 0
 }
 
-func (deliveryPickup DeliveryPickup) CreateDeliveryOrder(deliveryData DeliveryData, amount PaymentAmount, order Order) (Entity, error)  {
+func (deliveryPickup DeliveryPickup) CreateDeliveryOrder(deliveryData DeliveryData, cost float64, order Order) (Entity, error)  {
 	status, err := DeliveryStatus{}.GetStatusNew()
 	if err != nil { return nil, err}
 	customerId := uint(0)
@@ -281,7 +281,7 @@ func (deliveryPickup DeliveryPickup) CreateDeliveryOrder(deliveryData DeliveryDa
 		MethodId: deliveryPickup.Id,
 		Address: utils.STRp(deliveryData.Address),
 		PostalCode: utils.STRp(deliveryData.PostalCode),
-		Amount: amount,
+		Cost: cost,
 		StatusId: status.Id,
 	}
 

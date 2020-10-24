@@ -255,7 +255,7 @@ func (deliveryCourier DeliveryCourier) ExistPaymentMethod(paymentMethod PaymentM
 	return true
 }
 
-func (deliveryCourier DeliveryCourier) CreateDeliveryOrder(deliveryData DeliveryData, amount PaymentAmount, order Order) (Entity, error)  {
+func (deliveryCourier DeliveryCourier) CreateDeliveryOrder(deliveryData DeliveryData, cost float64, order Order) (Entity, error)  {
 	status, err := DeliveryStatus{}.GetStatusNew()
 	if err != nil { return nil, err}
 	customerId := uint(0)
@@ -276,7 +276,7 @@ func (deliveryCourier DeliveryCourier) CreateDeliveryOrder(deliveryData Delivery
 		MethodId: deliveryCourier.Id,
 		Address: utils.STRp(deliveryData.Address),
 		PostalCode: utils.STRp(deliveryData.PostalCode),
-		Amount: amount,
+		Cost: cost,
 		StatusId: status.Id,
 	}
 

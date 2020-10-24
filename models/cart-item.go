@@ -22,9 +22,12 @@ type CartItem struct {
 	Quantity	uint	`json:"quantity" gorm:"type:int;not null;"`// число ед. товара
 
 	// Фиксируем стоимость 
-	AmountId  	uint			`json:"amount_id" gorm:"type:int;not null;"`
-	Amount  	PaymentAmount	`json:"amount"`
+	// AmountId  	uint			`json:"amount_id" gorm:"type:int;not null;"`
+	// Amount  	PaymentAmount	`json:"amount"`
+	Amount		PaymentAmount	`json:"amount" gorm:"-"`
+	Cost		float64 	`json:"cost" gorm:"type:numeric;default:0"`
 	// Amount  	PaymentAmount	`json:"amount" gorm:"polymorphic:Owner;"`
+
 
 	// Признак предмета расчета
 	PaymentSubjectId	uint			`json:"payment_subject_id" gorm:"type:int;not null;default:1"`// товар или услуга ? [вид номенклатуры]
@@ -75,6 +78,8 @@ func (cartItem *CartItem) BeforeCreate(tx *gorm.DB) error {
 func (cartItem *CartItem) AfterFind(tx *gorm.DB) (err error) {
 
 	cartItem.PaymentSubjectYandex = cartItem.PaymentSubject.Code
+	cartItem.Amount.Value = cartItem.Cost
+	cartItem.Amount.Currency = "RUB"
 
 	return nil
 }

@@ -31,7 +31,7 @@ type Delivery interface {
 
 	// getListByShop(accountId, websiteId uint) (interface{}, error)
 
-	CreateDeliveryOrder(DeliveryData, PaymentAmount, Order) (Entity, error)
+	CreateDeliveryOrder(DeliveryData, float64, Order) (Entity, error)
 }
 
 type DeliveryRequest struct {

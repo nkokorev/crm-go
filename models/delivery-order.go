@@ -38,8 +38,11 @@ type DeliveryOrder struct {
 	Comment 	*string		`json:"comment" gorm:"type:varchar(255);"`
 
 	// Фиксируем стоимость
-	AmountId  	uint			`json:"amount_id" gorm:"type:int;not null;"`
-	Amount  	PaymentAmount	`json:"amount"`
+	// AmountId  	uint			`json:"amount_id" gorm:"type:int;not null;"`
+	// Amount  	PaymentAmount	`json:"amount"`
+
+	// Стоимость доставки
+	Cost		float64 	`json:"cost" gorm:"type:numeric;default:0"`
 
 	// Расчетный вес заказа
 	Weight 		*float64		`json:"weight" gorm:"type:numeric;default:0"`
@@ -236,6 +239,7 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 	delete(input, "delivery")
 	delete(input, "amount")
 	delete(input, "status")
+	delete(input, "order")
 	if err := deliveryOrder.load([]string{"Status"}); err != nil {
 		return err
 	}
@@ -248,6 +252,18 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 	// Отметка на будущее для события
 	_newStatusId, ok := input["status_id"].(uint)
 	_oldStatusId :=  deliveryOrder.StatusId
+
+	/*if pAm, ok := input["amount"]; ok {
+		paymentAmount, ok := pAm.(PaymentAmount)
+		if ok {
+			if err := deliveryOrder.Amount.update(map[string]interface{}{"value":paymentAmount.Value}, nil) ; err != nil {
+				return utils.Error{Message: "Не удалось обновить данные: ошибка в получении стоимости"}
+			}
+		}
+
+		delete(input, "amount")
+	}*/
+
 
 	if err := deliveryOrder.GetPreloadDb(false,false, nil).Where("id = ?", deliveryOrder.Id).
 		Omit("id", "account_id","created_at","public_id").Updates(input).Error; err != nil {
@@ -342,14 +358,6 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 
 func (deliveryOrder *DeliveryOrder) delete () error {
 
-	var idx = make([]uint,0)
-	idx = append(idx,deliveryOrder.AmountId)
-
-	if err := (PaymentAmount{}).deletes(idx); err != nil {
-		return err
-	}
-
-	
 	return deliveryOrder.GetPreloadDb(true,false,nil).Where("id = ?", deliveryOrder.Id).Delete(deliveryOrder).Error
 }
 // ######### END CRUD Functions ############

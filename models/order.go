@@ -46,8 +46,10 @@ type Order struct {
 	PaymentMethod 		PaymentMethod `json:"payment_method" gorm:"-"` // <<< интерфейс
 
 	// Фиксируем стоимость заказа
-	AmountId  	uint			`json:"amount_id" gorm:"type:int;"`
-	Amount		PaymentAmount	`json:"amount"`
+	// AmountId  	uint			`json:"amount_id" gorm:"type:int;"`
+
+	Amount		PaymentAmount	`json:"amount" gorm:"-"`
+	Cost		float64 	`json:"cost" gorm:"type:numeric;default:0"`
 
 	// Состав заказа
 	CartItems	[]CartItem	`json:"cart_items"`
@@ -125,9 +127,6 @@ func (order *Order) BeforeCreate(tx *gorm.DB) error {
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
 	order.PublicId = 1 + uint(lastIdx.Int64)
 
-	// 2. Fix accountId in Amount
-	order.Amount.AccountId = order.AccountId
-	
 	return nil
 }
 func (order *Order) AfterCreate(tx *gorm.DB) error {
@@ -175,6 +174,9 @@ func (order *Order) AfterFind(tx *gorm.DB) (err error) {
 		if err != nil { return err}
 		order.CartItems[i].PaymentSubjectYandex = paymentSubject.Code
 	}
+
+	order.Amount.Value = order.Cost
+	order.Amount.Currency = "RUB"
 
 	return nil
 }
