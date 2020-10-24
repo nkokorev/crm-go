@@ -37,10 +37,6 @@ type DeliveryOrder struct {
 	// Комментарий клиента по доставке ()
 	Comment 	*string		`json:"comment" gorm:"type:varchar(255);"`
 
-	// Фиксируем стоимость
-	// AmountId  	uint			`json:"amount_id" gorm:"type:int;not null;"`
-	// Amount  	PaymentAmount	`json:"amount"`
-
 	// Стоимость доставки
 	Cost		float64 	`json:"cost" gorm:"type:numeric;default:0"`
 
@@ -245,7 +241,7 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 	}
 	
 	utils.FixInputHiddenVars(&input)
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","order_id","customer_id","web_site_id","method_id","amount_id","status_id"}); err != nil {
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","order_id","customer_id","web_site_id","method_id","status_id"}); err != nil {
 		return err
 	}
 

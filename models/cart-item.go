@@ -22,8 +22,6 @@ type CartItem struct {
 	Quantity	uint	`json:"quantity" gorm:"type:int;not null;"`// число ед. товара
 
 	// Фиксируем стоимость 
-	// AmountId  	uint			`json:"amount_id" gorm:"type:int;not null;"`
-	// Amount  	PaymentAmount	`json:"amount"`
 	Amount		PaymentAmount	`json:"amount" gorm:"-"`
 	Cost		float64 	`json:"cost" gorm:"type:numeric;default:0"`
 	// Amount  	PaymentAmount	`json:"amount" gorm:"polymorphic:Owner;"`
@@ -54,13 +52,11 @@ func (CartItem) PgSqlCreate() {
 		log.Fatal(err)
 	}
 	// db.Model(&CartItem{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	// db.Model(&CartItem{}).AddForeignKey("amount_id", "payment_amounts(id)", "CASCADE", "CASCADE")
 	// db.Model(&CartItem{}).AddForeignKey("order_id", "orders(id)", "CASCADE", "CASCADE")
 	// db.Model(&CartItem{}).AddForeignKey("payment_subject_id", "payment_subjects(id)", "RESTRICT", "CASCADE")
 	// db.Model(&CartItem{}).AddForeignKey("payment_mode_id", "payment_modes(id)", "RESTRICT", "CASCADE")
 	err := db.Exec("ALTER TABLE cart_items " +
 		"ADD CONSTRAINT cart_items_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
-		"ADD CONSTRAINT cart_items_amount_id_fkey FOREIGN KEY (amount_id) REFERENCES payment_amounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
 		"ADD CONSTRAINT cart_items_order_id_fkey FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE ON UPDATE CASCADE," +
 		"ADD CONSTRAINT cart_items_payment_subject_id_fkey FOREIGN KEY (payment_subject_id) REFERENCES payment_subjects(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
 		"DROP CONSTRAINT IF EXISTS fk_cart_items_product," +

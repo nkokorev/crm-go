@@ -114,7 +114,6 @@ type Payment struct {
 func (Payment) PgSqlCreate() {
 	if err := db.Migrator().CreateTable(&Payment{}); err != nil {log.Fatal(err)}
 	// db.Model(&Payment{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	// db.Model(&Payment{}).AddForeignKey("amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
 	// db.Model(&Payment{}).AddForeignKey("income_amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
 	// db.Model(&Payment{}).AddForeignKey("refunded_amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
 	err := db.Exec("ALTER TABLE payments " +

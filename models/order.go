@@ -46,8 +46,6 @@ type Order struct {
 	PaymentMethod 		PaymentMethod `json:"payment_method" gorm:"-"` // <<< интерфейс
 
 	// Фиксируем стоимость заказа
-	// AmountId  	uint			`json:"amount_id" gorm:"type:int;"`
-
 	Amount		PaymentAmount	`json:"amount" gorm:"-"`
 	Cost		float64 	`json:"cost" gorm:"type:numeric;default:0"`
 
@@ -76,12 +74,10 @@ type Order struct {
 func (Order) PgSqlCreate() {
 	if err := db.Migrator().AutoMigrate(&Order{});err != nil {log.Fatal(err)}
 	// db.Model(&Order{}).AddForeignKey("account_id", "accounts(id)", "CASCADE", "CASCADE")
-	// db.Model(&Order{}).AddForeignKey("amount_id", "payment_amounts(id)", "RESTRICT", "CASCADE")
 	// db.Model(&Order{}).AddForeignKey("order_channel_id", "order_channels(id)", "RESTRICT", "CASCADE")
 	// db.Model(&Order{}).AddForeignKey("status_id", "order_statuses(id)", "RESTRICT", "CASCADE")
 	err := db.Exec("ALTER TABLE orders " +
 		"ADD CONSTRAINT orders_account_id_fkey FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE ON UPDATE CASCADE," +
-		"ADD CONSTRAINT orders_amount_id_fkey FOREIGN KEY (amount_id) REFERENCES payment_amounts(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
 		"ADD CONSTRAINT orders_order_channel_id_fkey FOREIGN KEY (order_channel_id) REFERENCES order_channels(id) ON DELETE RESTRICT ON UPDATE CASCADE," +
 		"DROP CONSTRAINT IF EXISTS fk_orders_customer," +
 		"DROP CONSTRAINT IF EXISTS fk_orders_manager," +
@@ -304,7 +300,6 @@ func (order *Order) update(input map[string]interface{}, preloads []string) erro
 	delete(input,"payment")
 	delete(input,"customer")
 	delete(input,"delivery_order")
-	delete(input,"amount")
 	delete(input,"cart_items")
 	delete(input,"manager")
 	delete(input,"web_site")
@@ -312,10 +307,11 @@ func (order *Order) update(input map[string]interface{}, preloads []string) erro
 	delete(input,"company")
 	delete(input,"comments")
 	delete(input,"payment_method")
+	delete(input,"amount")
 
 	utils.FixInputHiddenVars(&input)
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","manager_id","web_site_id","customer_id","company_id","order_channel_id","payment_method_id",
-		"payment_method_id","amount_id","status_id"}); err != nil {
+		"payment_method_id","status_id"}); err != nil {
 		return err
 	}
 
