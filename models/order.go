@@ -103,7 +103,8 @@ func (order *Order) GetPreloadDb(getModel bool, autoPreload bool, preloads []str
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Status","Payment","Customer","DeliveryOrder","DeliveryOrder.Status","Amount",
+		allowed := utils.FilterAllowedKeySTRArray(preloads,
+			[]string{"Status","Payment","Customer","DeliveryOrder","DeliveryOrder.Status","DeliveryOrder.Status","DeliveryOrder.Amount",
 			"CartItems","CartItems.Product","CartItems.Amount","CartItems.PaymentMode","Manager","WebSite","OrderChannel","Company","Comments"})
 
 		for _,v := range allowed {

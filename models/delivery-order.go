@@ -41,6 +41,9 @@ type DeliveryOrder struct {
 	AmountId  	uint			`json:"amount_id" gorm:"type:int;not null;"`
 	Amount  	PaymentAmount	`json:"amount"`
 
+	// Расчетный вес заказа
+	Weight 		*float64		`json:"weight" gorm:"type:numeric;default:0"`
+
 	// Статус заказа
 	StatusId  	uint			`json:"status_id" gorm:"type:int;"`
 	Status		DeliveryStatus	`json:"status" gorm:"preload"`
