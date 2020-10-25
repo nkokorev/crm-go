@@ -18,8 +18,8 @@ type CartItem struct {
 	OrderId 	uint	`json:"order_id" gorm:"index;not null"` // заказ, к которому относится корзина
 
 	ProductId	uint 	`json:"product_id" gorm:"type:int;not null;"`// Id позиции товара
-	Description	string 	`json:"description" gorm:"type:varchar(128);not null;"` // описание товара?
-	Quantity	uint	`json:"quantity" gorm:"type:int;not null;"`// число ед. товара
+	Description	string 	`json:"description" gorm:"type:varchar(255);not null;"` // краткое описание товара?
+	Quantity	float64	`json:"quantity" gorm:"type:int;default:0;"`// число ед. товара
 
 	// Фиксируем стоимость 
 	Amount		PaymentAmount	`json:"amount" gorm:"-"`
@@ -189,6 +189,9 @@ func (cartItem *CartItem) update(input map[string]interface{}, preloads []string
 	/*if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
 		return err
 	}*/
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"quantity"}); err != nil {
+		return err
+	}
 	
 	if err := cartItem.GetPreloadDb(false, false, nil).Where("id = ?", cartItem.Id).Omit("id", "account_id").Updates(input).
 		Error; err != nil {return err}

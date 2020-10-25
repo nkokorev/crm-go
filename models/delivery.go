@@ -53,7 +53,7 @@ type DeliveryData struct {
 
 type CartData struct {
 	Id 	uint	`json:"id"`	// id product
-	Quantity	uint	`json:"quantity"`	// число позиций
+	Quantity	float64	`json:"quantity"`	// число позиций
 }
 
 func (account Account) GetDeliveryMethods() []Delivery {

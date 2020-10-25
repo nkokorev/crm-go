@@ -476,9 +476,9 @@ func (order *Order) AppendProduct(product Product, strict... bool) error {
 		}
 	}
 
-	desc := ""
-	if product.Description != nil {
-		desc = *product.Description
+	shortDesc := ""
+	if product.ShortDescription != nil {
+		shortDesc = *product.ShortDescription
 	}
 	cost := float64(0)
 	if product.RetailPrice != nil {
@@ -505,7 +505,7 @@ func (order *Order) AppendProduct(product Product, strict... bool) error {
 			AccountId: order.AccountId,
 			ProductId: product.Id,
 			OrderId: order.Id,
-			Description: desc,
+			Description: shortDesc,
 			Cost: cost,
 			PaymentSubjectId: paymentSubjectId,
 			VatCode:VatCodeId,
