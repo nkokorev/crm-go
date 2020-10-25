@@ -464,7 +464,7 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 	}
 	
 	var order models.Order
-	if err := account.LoadEntity(&order, orderEntity.GetId(), []string{"Customer","CartItems","CartItems.Product","CartItems.Amount","Amount","Payment"}); err != nil {
+	if err := account.LoadEntity(&order, orderEntity.GetId(), []string{"Customer","CartItems","CartItems.Product","Payment"}); err != nil {
 		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка во время создания заказа"}))
 		return
 	}

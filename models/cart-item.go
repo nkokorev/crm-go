@@ -231,7 +231,7 @@ func (cartItem *CartItem) GetPreloadDb(getModel bool, autoPreload bool, preloads
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Amount","Product","PaymentSubject","PaymentAmount","PaymentMode"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Product","PaymentSubject","PaymentAmount","PaymentMode"})
 
 		for _,v := range allowed {
 			_db.Preload(v)

@@ -403,7 +403,7 @@ func (deliveryOrder *DeliveryOrder) GetPreloadDb(getModel bool, autoPreload bool
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Amount","WebSite","Customer","Status","Order"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"WebSite","Customer","Status","Order"})
 
 		for _,v := range allowed {
 			_db.Preload(v)
