@@ -102,6 +102,10 @@ func (cartItem CartItem) create() (Entity, error)  {
 		return nil, err
 	}
 
+	if err := (Order{Id: _item.OrderId, AccountId: _item.AccountId}).UpdateDeliveryData(); err != nil {
+		log.Println("Error update cart item: ", err)
+	}
+
 	var entity Entity = &_item
 
 	return entity, nil
@@ -202,6 +206,10 @@ func (cartItem *CartItem) update(input map[string]interface{}, preloads []string
 	if err := cartItem.GetPreloadDb(false, false, nil).Where("id = ?", cartItem.Id).Omit("id", "account_id").Updates(input).
 		Error; err != nil {return err}
 
+	if err := (Order{Id: cartItem.OrderId, AccountId: cartItem.AccountId}).UpdateDeliveryData(); err != nil {
+		log.Println("Error update cart item: ", err)
+	}
+
 	err := cartItem.GetPreloadDb(false,false, preloads).First(cartItem, cartItem.Id).Error
 	if err != nil {
 		return err
@@ -211,7 +219,16 @@ func (cartItem *CartItem) update(input map[string]interface{}, preloads []string
 }
 
 func (cartItem *CartItem) delete () error {
-	return cartItem.GetPreloadDb(true,false,nil).Where("id = ?", cartItem.Id).Delete(cartItem).Error
+	if err := cartItem.GetPreloadDb(true,false,nil).Where("id = ?", cartItem.Id).Delete(cartItem).Error; err != nil {
+		return err
+	}
+
+	if err := (Order{Id: cartItem.OrderId, AccountId: cartItem.AccountId}).UpdateDeliveryData(); err != nil {
+		log.Println("Error update cart item: ", err)
+	}
+
+	return nil
+
 }
 // ######### END CRUD Functions ############
 

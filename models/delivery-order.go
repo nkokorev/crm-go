@@ -141,13 +141,6 @@ func (deliveryOrder DeliveryOrder) create() (Entity, error)  {
 
 	_item.createDeliveryItemIfNotExist()
 
-	/*if _item.OrderId != nil {
-		order := Order{Id: *_item.OrderId}
-		if err := order.load([]string{"CartItems"}); err == nil {
-			_ = order.AppendDeliveryItem(_item.Delivery, _item.Cost)
-		}
-	}*/
-
 	var entity Entity = &_item
 
 	return entity, nil
@@ -267,7 +260,7 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 	delete(input, "amount")
 	delete(input, "status")
 	delete(input, "order")
-	if err := deliveryOrder.load([]string{"Status"}); err != nil {
+	if err := deliveryOrder.load([]string{"Status","Order","Order.CartItems.Product"}); err != nil {
 		return err
 	}
 	
@@ -285,7 +278,14 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 	if costI, ok := input["cost"]; ok {
 		cost, ok := costI.(float64)
 		if ok {
-			deliveryOrder.updateDeliveryItem(map[string]interface{}{"cost":cost})
+
+			weight := float64(0)
+			for _, v := range deliveryOrder.Order.CartItems {
+				if v.Product.Weight != nil {
+					weight += v.Quantity * *v.Product.Weight
+				}
+			}
+			deliveryOrder.updateDeliveryItem(map[string]interface{}{"cost":cost,"weight":weight})
 		}
 	}
 
@@ -403,7 +403,7 @@ func (deliveryOrder *DeliveryOrder) GetPreloadDb(getModel bool, autoPreload bool
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"WebSite","Customer","Status","Order"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"WebSite","Customer","Status","Order","Order.CartItems","Order.CartItems.Product"})
 
 		for _,v := range allowed {
 			_db.Preload(v)

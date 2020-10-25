@@ -520,6 +520,8 @@ func (order *Order) AppendProduct(product Product, strict... bool) error {
 		// AsyncFire(*Event{}.OrderProductAppended(account.Id, order.Id, product.Id))
 	}
 
+	_ = order.UpdateDeliveryData()
+
 	return nil
 }
 func (order *Order) RemoveProduct(product Product) error {
@@ -538,6 +540,7 @@ func (order *Order) RemoveProduct(product Product) error {
 		return err
 	}
 
+	_ = order.UpdateDeliveryData()
 
 	return nil
 }
@@ -582,10 +585,7 @@ func (order *Order) AppendDeliveryItem(delivery Delivery, cost float64) error {
 		return err
 	}
 
-	/*account, err := GetAccount(order.AccountId)
-	if err == nil && account != nil {
-		AsyncFire(*Event{}.OrderProductAppended(account.Id, order.Id, product.Id))
-	}*/
+	_ = order.UpdateDeliveryData()
 
 	return nil
 }
@@ -605,6 +605,8 @@ func (order *Order) UpdateDeliveryItem(input map[string]interface{}) error {
 		return err
 	}
 
+	_ = order.UpdateDeliveryData()
+
 	return nil
 }
 func (order *Order) RemoveDeliveryItem() error {
@@ -621,7 +623,6 @@ func (order *Order) RemoveDeliveryItem() error {
 
 	return nil
 }
-
 func (order *Order) ExistDeliveryItem() bool {
 
 	if order.Id < 1 {
@@ -636,6 +637,39 @@ func (order *Order) ExistDeliveryItem() bool {
 	}
 
 	return false
+
+}
+
+// Обновляет связанные данные в доставке
+func (order Order) UpdateDeliveryData() error {
+
+	if order.AccountId < 1 || order.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: account id || order id == nil"}
+	}
+
+	if err := order.load([]string{"CartItems.Product"}); err != nil { return err}
+
+	// Ищем CartItem
+	var deliveryOrder DeliveryOrder
+	if err := db.Where("account_id = ? AND order_id = ?", order.AccountId, order.Id).First(&deliveryOrder).Error; err != nil {
+		return err
+	}
+	if deliveryOrder.Id < 1 {
+		return nil
+	}
+
+	weight := float64(0)
+	for _, v := range order.CartItems {
+		if v.Product.Weight != nil {
+			weight += v.Quantity * *v.Product.Weight
+		}
+	}
+
+	if err := deliveryOrder.update(map[string]interface{}{"weight":weight}, nil); err != nil {
+		return err
+	}
+
+	return nil
 
 }
 

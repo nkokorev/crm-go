@@ -411,8 +411,19 @@ func (webSite WebSite) CalculateDelivery(deliveryRequest DeliveryRequest) (total
 		return 0, 0,err
 	}
 
+	// fmt.Println("deliveryRequest: ", deliveryRequest.Cart)
+
 	// проходим циклом по продуктам и складываем их общий вес
 	for _,v := range deliveryRequest.Cart {
+		// Если это не доставка
+		if v.Id < 1 {
+			continue
+		}
+
+		// fmt.Println("cart item: ", v)
+		// fmt.Println("cart item Id: ", v.Id)
+		// fmt.Println("cart item Quantity: ", v.Quantity)
+
 		// 1. Получаем продукт
 		product, err := webSite.GetProduct(v.Id)
 		if err != nil {
