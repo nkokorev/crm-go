@@ -154,15 +154,15 @@ func WarehouseItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	warehouseId, err := utilsCr.GetUINTVarFromRequest(r, "warehouseId")
+	warehouseItemId, err := utilsCr.GetUINTVarFromRequest(r, "warehouseItemId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
-	var warehouse models.Warehouse
+	var warehouseItem models.WarehouseItem
 
-	err = account.LoadEntity(&warehouse, warehouseId,nil)
+	err = account.LoadEntity(&warehouseItem, warehouseItemId,nil)
 
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
@@ -176,14 +176,14 @@ func WarehouseItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = account.UpdateEntity(&warehouse, input, preloads)
+	err = account.UpdateEntity(&warehouseItem, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
 
-	resp := u.Message(true, "PATCH Warehouse Update")
-	resp["warehouse"] = warehouse
+	resp := u.Message(true, "PATCH Warehouse Item Update")
+	resp["warehouse_item"] = warehouseItem
 	u.Respond(w, resp)
 }
 
