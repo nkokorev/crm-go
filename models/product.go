@@ -201,7 +201,7 @@ func (product *Product) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 
 	if autoPreload {
 		return db.Preload("ProductType","ProductCategories","PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards",
-			"Manufacturer","ProductTags","SourceItems","SourceItems.Source","SourceItems.Source.MeasurementUnit").
+			"Manufacturer","ProductTags","SourceItems","SourceItems.Source","SourceItems.Source.MeasurementUnit","WarehouseItems","WarehouseItems.Warehouse").
 			Preload("Images", func(db *gorm.DB) *gorm.DB {
 			return db.Select(Storage{}.SelectArrayWithoutDataURL())
 		})
@@ -209,7 +209,7 @@ func (product *Product) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 
 		allowed := utils.FilterAllowedKeySTRArray(preloads,
 			[]string{"Images","ProductType","ProductCategories","PaymentSubject","VatCode","MeasurementUnit","Account","ProductCards",
-				"Manufacturer","ProductTags","SourceItems","SourceItems.Source","SourceItems.Source.MeasurementUnit"})
+				"Manufacturer","ProductTags","SourceItems","SourceItems.Source","SourceItems.Source.MeasurementUnit","WarehouseItems","WarehouseItems.Warehouse"})
 
 		for _,v := range allowed {
 			if v == "Images" {

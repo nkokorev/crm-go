@@ -181,8 +181,16 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}", appCr.WarehouseGet).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}", appCr.WarehouseUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}", appCr.WarehouseDelete).Methods(http.MethodDelete, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}/products/{productId:[0-9]+}", appCr.WarehouseAppendProduct).Methods(http.MethodGet, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}/products/{productId:[0-9]+}", appCr.WarehouseAppendProduct).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}/products/{productId:[0-9]+}", appCr.WarehouseRemoveProduct).Methods(http.MethodDelete, http.MethodOptions)
+
+	// ### Warehouse Items ####
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouse-items", appCr.WarehouseItemCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouse-items", appCr.WarehouseItemListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouse-items/{warehouseItemId:[0-9]+}", appCr.WarehouseItemGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouse-items/{warehouseItemId:[0-9]+}", appCr.WarehouseItemUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouse-items/{warehouseItemId:[0-9]+}", appCr.WarehouseItemDelete).Methods(http.MethodDelete, http.MethodOptions)
 
 	// ### Shipments ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shipments", appCr.ShipmentCreate).Methods(http.MethodPost, http.MethodOptions)
@@ -195,13 +203,13 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/shipments/{shipmentId:[0-9]+}/change-status", appCr.ShipmentChangeStatus).Methods(http.MethodPatch, http.MethodOptions)
 
 	// ### Inventories ####
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses", appCr.InventoryCreate).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses", appCr.InventoryListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}", appCr.InventoryGet).Methods(http.MethodGet, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}", appCr.InventoryUpdate).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}", appCr.InventoryDelete).Methods(http.MethodDelete, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}/products/{productId:[0-9]+}", appCr.InventoryAppendProduct).Methods(http.MethodPost, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}/products/{productId:[0-9]+}", appCr.InventoryRemoveProduct).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}/inventories", appCr.InventoryCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}/inventories", appCr.InventoryListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}/inventories/{inventoryId:[0-9]+}", appCr.InventoryGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}/inventories/{inventoryId:[0-9]+}", appCr.InventoryUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}/inventories/{inventoryId:[0-9]+}", appCr.InventoryDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}/inventories/{inventoryId:[0-9]+}/products/{productId:[0-9]+}", appCr.InventoryAppendProduct).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/warehouses/{warehouseId:[0-9]+}/inventories/{inventoryId:[0-9]+}/products/{productId:[0-9]+}", appCr.InventoryRemoveProduct).Methods(http.MethodDelete, http.MethodOptions)
 
 
 	// todo: byShop - сейчас косвенная принадлежность товаров к магазину не отслеживается
@@ -220,7 +228,10 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-sources", appCr.ProductSyncSourceItems).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-sources/{productSourceId:[0-9]+}", appCr.ProductRemoveSourceItem).Methods(http.MethodDelete, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/product-sources/{productSourceId:[0-9]+}", appCr.ProductUpdateSourceItem).Methods(http.MethodPatch, http.MethodOptions)
-	
+
+	// ### Products Warehouse ####
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/products/{productId:[0-9]+}/warehouse-items", appCr.ProductUpdateSourceItem).Methods(http.MethodGet, http.MethodOptions)
+
 	// ### Measurement Units ###
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/measurement-units", appCr.MeasurementUnitStatusCreate).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/measurement-units", appCr.MeasurementUnitStatusGetList).Methods(http.MethodGet, http.MethodOptions)

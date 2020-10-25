@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func WarehouseCreate(w http.ResponseWriter, r *http.Request) {
+func WarehouseItemCreate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil {
@@ -37,7 +37,7 @@ func WarehouseCreate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func WarehouseGet(w http.ResponseWriter, r *http.Request) {
+func WarehouseItemGet(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -75,7 +75,7 @@ func WarehouseGet(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func WarehouseListPaginationGet(w http.ResponseWriter, r *http.Request) {
+func WarehouseItemListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 	var account *models.Account
 	var err error
@@ -113,11 +113,14 @@ func WarehouseListPaginationGet(w http.ResponseWriter, r *http.Request) {
 
 	// Узнаем нужен ли фильтр
 	filter := map[string]interface{}{}
-	/*
-	webSiteId, _filterWebSite := utilsCr.GetQueryUINTVarFromGET(r, "webSiteId")
-	if _filterWebSite {
-		filter["web_site_id"] = webSiteId
-	}*/
+	warehouseId, _filterWarehouse := utilsCr.GetQueryUINTVarFromGET(r, "warehouseId")
+	if _filterWarehouse {
+		filter["warehouse_id"] = warehouseId
+	}
+	productId, _filterProduct := utilsCr.GetQueryUINTVarFromGET(r, "productId")
+	if _filterProduct {
+		filter["product_id"] = productId
+	}
 
 	var total int64 = 0
 	warehouses := make([]models.Entity,0)
@@ -137,13 +140,13 @@ func WarehouseListPaginationGet(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	resp := u.Message(true, "GET product Cards PaginationList")
+	resp := u.Message(true, "GET Warehouse Item PaginationList")
 	resp["warehouses"] = warehouses
 	resp["total"] = total
 	u.Respond(w, resp)
 }
 
-func WarehouseUpdate(w http.ResponseWriter, r *http.Request) {
+func WarehouseItemUpdate(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -184,7 +187,7 @@ func WarehouseUpdate(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
-func WarehouseDelete(w http.ResponseWriter, r *http.Request) {
+func WarehouseItemDelete(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
 	if err != nil || account == nil {
@@ -192,134 +195,27 @@ func WarehouseDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	warehouseId, err := utilsCr.GetUINTVarFromRequest(r, "warehouseId")
+	warehouseItemId, err := utilsCr.GetUINTVarFromRequest(r, "warehouseItemId")
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
 		return
 	}
 
-	var warehouse models.Warehouse
-	err = account.LoadEntity(&warehouse, warehouseId,nil)
+	var warehouseItem models.WarehouseItem
+	err = account.LoadEntity(&warehouseItem, warehouseItemId,nil)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить магазин"))
 		return
 	}
 
-	if err = account.DeleteEntity(&warehouse); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении склада"))
+	if err = account.DeleteEntity(&warehouseItem); err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении объекта склада"))
 		return
 	}
 
-	resp := u.Message(true, "DELETE Warehouse Successful")
+	resp := u.Message(true, "DELETE warehouse Item Successful")
 	u.Respond(w, resp)
 }
 
-func WarehouseAppendProduct(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	warehouseId, err := utilsCr.GetUINTVarFromRequest(r, "warehouseId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id warehouseId"))
-		return
-	}
-
-	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
-		return
-	}
-
-	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
-
-	var warehouse models.Warehouse
-	if err =account.LoadEntity(&warehouse, warehouseId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке карточки товара"}))
-		return
-	}
-
-	product := models.Product{}
-	if err =account.LoadEntity(&product, productId, nil); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
-		return
-	}
-
-	// Декодируем параметры
-	/*var input struct{
-		AmountUnits float64 `json:"amount_units"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}*/
-
-	if err = warehouse.AppendProduct(product); err !=nil {
-		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из карточки товара"))
-		return
-	}
-
-	if err = account.LoadEntity(&warehouse, warehouseId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка загрузки карточки товара"}))
-		return
-	}
-
-	resp := u.Message(true, "PATCH Warehouse Append Product")
-	resp["warehouse"] = warehouse
-	u.Respond(w, resp)
-}
-
-func WarehouseRemoveProduct(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	warehouseId, err := utilsCr.GetUINTVarFromRequest(r, "warehouseId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id warehouseId"))
-		return
-	}
-
-	productId, err := utilsCr.GetUINTVarFromRequest(r, "productId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке productId"))
-		return
-	}
-	product := models.Product{}
-	if err =account.LoadEntity(&product, productId, nil); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке товара"}))
-		return
-	}
-
-	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
-
-	var warehouse models.Warehouse
-	if err = account.LoadEntity(&warehouse, warehouseId, preloads); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в загрузке карточки товара"))
-		return
-	}
-
-	if err = warehouse.RemoveProduct(product); err !=nil {
-		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из карточки товара"))
-		return
-	}
-
-	// Обновляем данные карточки
-	if err =account.LoadEntity(&warehouse, warehouseId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка в загрузке карточки товара"}))
-		return
-	}
-
-	resp := u.Message(true, "PATCH Warehouse Remove Products")
-	resp["warehouse"] = warehouse
-	u.Respond(w, resp)
-}
 
 
