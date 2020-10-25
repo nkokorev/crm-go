@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -289,37 +290,40 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 				// return utils.Error{Message: "Не удалось обновить статус платежа - не найден заказ"}
 				log.Println("Не удалось обновить статус платежа - не найден заказ")
 			} else {
+				fmt.Println("order PaymentMethodId: ", order.PaymentMethodId)
 				paymentMethod, err := Account{Id: deliveryOrder.AccountId}.GetPaymentMethodByType(order.PaymentMethodType, order.PaymentMethodId)
 				if err != nil {
 					log.Println("GetPaymentMethodByType: Не удалось обновить статус платежа - не найден заказ: ", err)
+				} else {
+					// Если тип оплаты яндекс и платеж разнесен во времени
+					if paymentMethod.GetCode() == "payment_yandex" && !paymentMethod.IsInstantDelivery() {
+						// 1. Надо узнать External-ID чека
+						var payment Payment
+						err := Account{Id: deliveryOrder.AccountId}.LoadEntity(&payment, order.Payment.Id, nil)
+						if err != nil {
+							log.Println("Не удалось обновить статус платежа - не найден платеж")
+						} else {
+							if payment.ExternalId != "" {
+								_, err = paymentMethod.PrepaymentCheck(&payment, order)
+								if err != nil {
+									log.Println("Error ExternalId: ", err)
+								}
+							}
+						}
+
+						status, err := OrderStatus{}.GetCompletedStatus()
+						if err == nil {
+							if err := order.update(map[string]interface{}{"status_id":status.Id},nil); err != nil {
+								log.Println(err)
+							}
+						}
+					}
 				}
 
 				/* Изменяем статус заказа */
 				if err := order.SetCompleted(); err != nil {log.Println("set completed order: ", err)}
 
-				// Если тип оплаты яндекс и платеж разнесен во времени
-				if paymentMethod.GetCode() == "payment_yandex" && !paymentMethod.IsInstantDelivery() {
-					// 1. Надо узнать External-ID чека
-					var payment Payment
-					err := Account{Id: deliveryOrder.AccountId}.LoadEntity(&payment, order.Payment.Id, nil)
-					if err != nil {
-						log.Println("Не удалось обновить статус платежа - не найден платеж")
-					} else {
-						if payment.ExternalId != "" {
-							_, err = paymentMethod.PrepaymentCheck(&payment, order)
-							if err != nil {
-								log.Println("Error ExternalId: ", err)
-							}
-						}
-					}
 
-					status, err := OrderStatus{}.GetCompletedStatus()
-					if err == nil {
-						if err := order.update(map[string]interface{}{"status_id":status.Id},nil); err != nil {
-							log.Println(err)
-						}
-					}
-				}
 			}
 
 			AsyncFire(NewEvent("DeliveryOrderCompleted", map[string]interface{}{"account_id":deliveryOrder.AccountId, "delivery_order_id":deliveryOrder.Id}))

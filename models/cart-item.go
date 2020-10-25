@@ -23,7 +23,8 @@ type CartItem struct {
 
 	// Фиксируем стоимость 
 	Amount		PaymentAmount	`json:"amount" gorm:"-"`
-	Cost		float64 	`json:"cost" gorm:"type:numeric;default:0"`
+	Cost		float64 		`json:"cost" gorm:"type:numeric;default:0"` // Результирующая стоимость 1 ед. товара!
+
 	// Amount  	PaymentAmount	`json:"amount" gorm:"polymorphic:Owner;"`
 
 
@@ -192,6 +193,14 @@ func (cartItem *CartItem) update(input map[string]interface{}, preloads []string
 	if err := utils.ConvertMapVarsToUINT(&input, []string{"quantity"}); err != nil {
 		return err
 	}
+
+	// Делаем загрузку товара:
+	if err := cartItem.load([]string{"Product"}); err != nil {
+		return err
+	}
+
+	// Делаем перерасчет общей стоимости:
+	fmt.Println(input[""])
 	
 	if err := cartItem.GetPreloadDb(false, false, nil).Where("id = ?", cartItem.Id).Omit("id", "account_id").Updates(input).
 		Error; err != nil {return err}

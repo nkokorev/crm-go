@@ -18,7 +18,6 @@ type Order struct {
 	ManagerId 	*uint	`json:"manager_id" gorm:"type:int;"`
 	Manager		User	`json:"manager"`
 
-	////// Данные заказа ///////
 	Individual	bool 	`json:"individual" gorm:"type:bool;default:true;not null;"` // Физ.лицо - true, Юрлицо - false
 
 	// Комментарий клиента к заказу
@@ -323,7 +322,7 @@ func (order *Order) update(input map[string]interface{}, preloads []string) erro
 	if err := order.GetPreloadDb(false, false, nil).Where("id = ?", order.Id).
 		Omit("id", "account_id","public_id").Updates(input).Error; err != nil {return err}
 
-	err := order.GetPreloadDb(false,true, []string{"Status"}).First(order, order.Id).Error
+	err := order.GetPreloadDb(false,true, preloads).First(order, order.Id).Error
 	if err != nil {
 		return err
 	}
@@ -389,7 +388,7 @@ func (order *Order) update(input map[string]interface{}, preloads []string) erro
 
 	}
 	
-	err = order.GetPreloadDb(false,true, preloads).First(order, order.Id).Error
+	err = order.GetPreloadDb(false,false, preloads).First(order, order.Id).Error
 	if err != nil {
 		return err
 	}

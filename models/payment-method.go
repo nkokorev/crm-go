@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 )
 
@@ -88,7 +89,9 @@ func (account Account) GetPaymentMethodByCode(code string, methodId uint) (Payme
 
 func (account Account) GetPaymentMethodByType(codeType string, methodId uint) (PaymentMethod, error) {
 
-	if codeType == "" || methodId < 1{
+	if codeType == "" || methodId < 1 {
+		fmt.Println("codeType: ", codeType)
+		fmt.Println("methodId: ", methodId)
 		return nil, errors.New("Не верно указаны данные типа оплаты")
 		// return nil, utils.Error{Message: "Не верно указаны данные типа оплаты"}
 	}
