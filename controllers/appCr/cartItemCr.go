@@ -213,6 +213,7 @@ func CartItemDelete(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Ошибка при удалении cartItem"))
 		return
 	}
+	
 
 	resp := u.Message(true, "DELETE Cart Item Successful")
 	u.Respond(w, resp)

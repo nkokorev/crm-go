@@ -179,7 +179,7 @@ func DeliveryOrderDelete(w http.ResponseWriter, r *http.Request) {
 	var deliveryOrder models.DeliveryOrder
 	err = account.LoadEntity(&deliveryOrder, deliveryOrderId, nil)
 	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
 	if err = account.DeleteEntity(&deliveryOrder); err != nil {

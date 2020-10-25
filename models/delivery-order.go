@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -138,9 +137,39 @@ func (deliveryOrder DeliveryOrder) create() (Entity, error)  {
 	}
 	_ = _item.load([]string{"Status"})
 
+	// Добавляем в корзину стоимость доставки
+
+	_item.createDeliveryItemIfNotExist()
+
+	/*if _item.OrderId != nil {
+		order := Order{Id: *_item.OrderId}
+		if err := order.load([]string{"CartItems"}); err == nil {
+			_ = order.AppendDeliveryItem(_item.Delivery, _item.Cost)
+		}
+	}*/
+
 	var entity Entity = &_item
 
 	return entity, nil
+}
+
+func (deliveryOrder *DeliveryOrder) createDeliveryItemIfNotExist(){
+	if deliveryOrder.OrderId != nil {
+		order := Order{Id: *deliveryOrder.OrderId}
+		if err := order.load([]string{"CartItems"}); err == nil {
+			if !order.ExistDeliveryItem() {
+				_ = order.AppendDeliveryItem(deliveryOrder.Delivery, deliveryOrder.Cost)
+			}
+		}
+	}
+}
+func (deliveryOrder *DeliveryOrder) updateDeliveryItem(input map[string]interface{}){
+	if deliveryOrder.OrderId != nil {
+		order := Order{Id: *deliveryOrder.OrderId}
+		if err := order.load([]string{"CartItems"}); err == nil {
+			_ = order.UpdateDeliveryItem(input)
+		}
+	}
 }
 
 func (DeliveryOrder) get(id uint, preloads []string) (Entity, error) {
@@ -251,16 +280,14 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 	_newStatusId, ok := input["status_id"].(uint)
 	_oldStatusId :=  deliveryOrder.StatusId
 
-	/*if pAm, ok := input["amount"]; ok {
-		paymentAmount, ok := pAm.(PaymentAmount)
+	// Создаем доставку, если ее нет
+	deliveryOrder.createDeliveryItemIfNotExist()
+	if costI, ok := input["cost"]; ok {
+		cost, ok := costI.(float64)
 		if ok {
-			if err := deliveryOrder.Amount.update(map[string]interface{}{"value":paymentAmount.Value}, nil) ; err != nil {
-				return utils.Error{Message: "Не удалось обновить данные: ошибка в получении стоимости"}
-			}
+			deliveryOrder.updateDeliveryItem(map[string]interface{}{"cost":cost})
 		}
-
-		delete(input, "amount")
-	}*/
+	}
 
 
 	if err := deliveryOrder.GetPreloadDb(false,false, nil).Where("id = ?", deliveryOrder.Id).
@@ -290,7 +317,6 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 				// return utils.Error{Message: "Не удалось обновить статус платежа - не найден заказ"}
 				log.Println("Не удалось обновить статус платежа - не найден заказ")
 			} else {
-				fmt.Println("order PaymentMethodId: ", order.PaymentMethodId)
 				paymentMethod, err := Account{Id: deliveryOrder.AccountId}.GetPaymentMethodByType(order.PaymentMethodType, order.PaymentMethodId)
 				if err != nil {
 					log.Println("GetPaymentMethodByType: Не удалось обновить статус платежа - не найден заказ: ", err)

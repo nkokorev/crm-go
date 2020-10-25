@@ -376,7 +376,6 @@ func (order *Order) update(input map[string]interface{}, preloads []string) erro
 			if err != nil {
 				log.Println("Error get delivery Order in canceled order: ", err)
 			} else {
-				// fmt.Println("prepend - set order canceled")
 				if err := deliveryOrder.SetCanceledAnyStatus(); err != nil {log.Println("SetCanceledAnyStatus deliveryOrder: ", err)}
 			}
 
@@ -478,6 +477,10 @@ func (order *Order) AppendProduct(product Product, strict... bool) error {
 	shortDesc := ""
 	if product.ShortDescription != nil {
 		shortDesc = *product.ShortDescription
+	} else {
+		if product.Label != nil {
+			shortDesc = *product.Label
+		}
 	}
 	cost := float64(0)
 	if product.RetailPrice != nil {
@@ -552,6 +555,88 @@ func (order *Order) ExistProduct(productId uint) bool {
 	}
 
 	return false
+}
+
+func (order *Order) AppendDeliveryItem(delivery Delivery, cost float64) error {
+
+	// 1. Загружаем продукт еще раз
+	if err := delivery.load(nil); err != nil {
+		return utils.Error{Message: "Техническая ошибка: нельзя добавить продукт, т.к. он не найден"}
+	}
+
+	vatCode, err :=  delivery.GetVatCode()
+	if err != nil { return err }
+
+	if err := db.Model(&CartItem{}).Create(
+		&CartItem{
+			AccountId: order.AccountId,
+			ProductId: 0, // т.к. это услуга
+			OrderId: order.Id,
+			Description: delivery.GetName(),
+			Cost: cost,
+			PaymentSubjectId: delivery.GetPaymentSubject().Id,
+			PaymentSubjectYandex: delivery.GetPaymentSubject().Code,
+			VatCode: vatCode.Id,
+			Quantity: 1,
+		}).Error; err != nil {
+		return err
+	}
+
+	/*account, err := GetAccount(order.AccountId)
+	if err == nil && account != nil {
+		AsyncFire(*Event{}.OrderProductAppended(account.Id, order.Id, product.Id))
+	}*/
+
+	return nil
+}
+func (order *Order) UpdateDeliveryItem(input map[string]interface{}) error {
+
+	if order.AccountId < 1 || order.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: account id || order id == nil"}
+	}
+
+	// Ищем CartItem
+	var cartItem CartItem
+	if err := db.Where("account_id = ? AND product_id = 0 AND order_id = ?", order.AccountId, order.Id).First(&cartItem).Error; err != nil {
+		return err
+	}
+
+	if err := cartItem.update(input, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+func (order *Order) RemoveDeliveryItem() error {
+
+	if order.AccountId < 1 || order.Id < 1 {
+		return utils.Error{Message: "Техническая ошибка: account id || order id == nil"}
+	}
+
+	if err := db.Where("account_id = ? AND product_id = 0 AND order_id = ?", order.AccountId, order.Id).Delete(
+		&CartItem{}).Error; err != nil {
+		return err
+	}
+
+
+	return nil
+}
+
+func (order *Order) ExistDeliveryItem() bool {
+
+	if order.Id < 1 {
+		return false
+	}
+
+	var count int64
+
+	db.Model(&CartItem{}).Where("order_id = ? AND product_id = 0 AND account_id = ?", order.Id, order.AccountId).Count(&count)
+	if count > 0 {
+		return true
+	}
+
+	return false
+
 }
 
 

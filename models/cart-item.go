@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -200,8 +199,6 @@ func (cartItem *CartItem) update(input map[string]interface{}, preloads []string
 	}
 
 	// Делаем перерасчет общей стоимости:
-	fmt.Println(input[""])
-	
 	if err := cartItem.GetPreloadDb(false, false, nil).Where("id = ?", cartItem.Id).Omit("id", "account_id").Updates(input).
 		Error; err != nil {return err}
 
@@ -237,7 +234,6 @@ func (cartItem *CartItem) GetPreloadDb(getModel bool, autoPreload bool, preloads
 		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Amount","Product","PaymentSubject","PaymentAmount","PaymentMode"})
 
 		for _,v := range allowed {
-			fmt.Println(v)
 			_db.Preload(v)
 		}
 		return _db

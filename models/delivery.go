@@ -12,6 +12,7 @@ type Delivery interface {
 	GetVatCode() (*VatCode, error)
 	GetPaymentSubject() PaymentSubject
 	GetWebSiteId() uint
+	
 
 	CalculateDelivery(DeliveryData, float64) (float64, error) // weight в кг
 	checkMaxWeight(float64) error // проверяет макс вес
