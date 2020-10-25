@@ -239,12 +239,13 @@ func OrderAppendProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = order.AppendProduct(product); err !=nil {
-		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из карточки товара"))
+		fmt.Println(err)
+		u.Respond(w, u.MessageError(err, "Ошибка добавления продукта в заказ"))
 		return
 	}
 
 	if err = account.LoadEntity(&order, orderId, preloads); err != nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка загрузки карточки товара"}))
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка загрузки данных заказа"}))
 		return
 	}
 
@@ -287,7 +288,7 @@ func OrderRemoveProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = order.RemoveProduct(product); err !=nil {
-		u.Respond(w, u.MessageError(err, "Ошибка удаления продукта из карточки товара"))
+		u.Respond(w, u.MessageError(err, "Ошибка удаления товара из заказа"))
 		return
 	}
 
