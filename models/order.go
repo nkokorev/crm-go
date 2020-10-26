@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -660,7 +661,7 @@ func (order Order) UpdateDeliveryData() error {
 
 	weight := float64(0)
 	for _, v := range order.CartItems {
-		if v.Product.Weight != nil {
+		if v.ProductId > 0 && v.Product.Weight != nil {
 			weight += v.Quantity * *v.Product.Weight
 		}
 	}
@@ -672,5 +673,37 @@ func (order Order) UpdateDeliveryData() error {
 	return nil
 
 }
+func (order Order) UpdateCost() error {
 
+	if err := order.load([]string{"CartItems"}); err != nil {
+		return err
+	}
+	cost := float64(0)
+
+	for i := range order.CartItems {
+		cost += order.CartItems[i].Quantity * order.CartItems[i].Cost
+	}
+	if err := order.update(map[string]interface{}{"cost":cost}, nil); err != nil { return err }
+
+	return nil
+}
+
+// Устанавливает неизвестного заказчика
+func (order *Order) SetUnknownCustomer() error {
+	if order.Id < 1 || order.AccountId < 1 {
+		return errors.New("Техническая ошибка установки неизвестного заказчика")
+	}
+
+	account, err := GetAccount(order.AccountId)
+	if err != nil { return err }
+
+	// Находим ID неизвестного пользователя
+	user, err := account.FindOrCreateUnknownUser()
+	if err != nil { return nil }
+
+	// Обновляем customer_id
+	if err := order.update(map[string]interface{}{"customer_id":user.Id}, nil); err != nil { return nil }
+
+	return nil
+}
 

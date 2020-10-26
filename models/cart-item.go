@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -103,6 +104,9 @@ func (cartItem CartItem) create() (Entity, error)  {
 	}
 
 	if err := (Order{Id: _item.OrderId, AccountId: _item.AccountId}).UpdateDeliveryData(); err != nil {
+		log.Println("Error update cart item: ", err)
+	}
+	if err := (Order{Id: _item.OrderId, AccountId: _item.AccountId}).UpdateCost(); err != nil {
 		log.Println("Error update cart item: ", err)
 	}
 
@@ -207,7 +211,10 @@ func (cartItem *CartItem) update(input map[string]interface{}, preloads []string
 		Error; err != nil {return err}
 
 	if err := (Order{Id: cartItem.OrderId, AccountId: cartItem.AccountId}).UpdateDeliveryData(); err != nil {
-		log.Println("Error update cart item: ", err)
+		log.Println("Error update order: ", err)
+	}
+	if err := (Order{Id: cartItem.OrderId, AccountId: cartItem.AccountId}).UpdateCost(); err != nil {
+		log.Println("Error update order: ", err)
 	}
 
 	err := cartItem.GetPreloadDb(false,false, preloads).First(cartItem, cartItem.Id).Error
@@ -220,11 +227,15 @@ func (cartItem *CartItem) update(input map[string]interface{}, preloads []string
 
 func (cartItem *CartItem) delete () error {
 	if err := cartItem.GetPreloadDb(true,false,nil).Where("id = ?", cartItem.Id).Delete(cartItem).Error; err != nil {
+		fmt.Println("Доставка удалена")
 		return err
 	}
 
 	if err := (Order{Id: cartItem.OrderId, AccountId: cartItem.AccountId}).UpdateDeliveryData(); err != nil {
 		log.Println("Error update cart item: ", err)
+	}
+	if err := (Order{Id: cartItem.OrderId, AccountId: cartItem.AccountId}).UpdateCost(); err != nil {
+		log.Println("Error update order: ", err)
 	}
 
 	return nil

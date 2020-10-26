@@ -283,7 +283,7 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 	}
 
 	// 5. One of username. email and phone must be!
-	if !(username || email || phone) {
+	if !(username || email || phone) && !input.IsUnknown {
 		return nil, utils.Error{Message: "Отсутствуют обязательные поля", Errors: map[string]interface{}{"username": "Необходимо заполнить поле", "email": "Необходимо заполнить поле", "phone": "Необходимо заполнить поле"}}
 	}
 
@@ -1258,4 +1258,30 @@ func (account Account) ParseAndDecryptToken(cryptToken string) (*JWT, error) {
 
 func (account Account) GetDepersonalizedData() interface{} {
 	return &account
+}
+
+func (account Account) FindOrCreateUnknownUser() (*User, error) {
+	if account.Id < 1 { return nil, errors.New("Техническая ошибка поиска неизвестного пользователя")}
+	var user User
+	err := db.Model(&User{}).Where("is_unknown = 'true' AND issuer_account_id = ?", account.Id).First(&user).Error
+	if (err != nil) && (gorm.ErrRecordNotFound != err) { return nil, err }
+
+	// Создаем пользователя
+	if err == gorm.ErrRecordNotFound {
+		NewUser, err := account.CreateUser(User{
+			IssuerAccountId: account.Id,
+			Name: utils.STRp("Неизвестный клиент"),
+			EnabledAuthFromApp: false,
+			IsUnknown: true,
+			Subscribed: false,
+		},Role{Id:7})
+
+		if err != nil {
+			fmt.Println("Ошибка создания пользователя: ", err)
+			return nil, err
+		}
+		user = *NewUser
+	}
+
+	return &user, nil
 }

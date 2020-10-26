@@ -19,9 +19,9 @@ type User struct {
 	IssuerAccountId uint 		`json:"issuer_account_id" gorm:"index;not null;"`
 	IssuerAccountIdBeta uint 	`json:"issuerAccountId" gorm:"-"`
 
-	Username 		*string 		`json:"username" gorm:"type:varchar(255);index;"` // уникальный, т.к. через него вход в главный аккаунт
-	Email 			*string 		`json:"email" gorm:"type:varchar(255);index;"`
-	PhoneRegion 	*string 		`json:"phone_region" gorm:"type:varchar(3);not null;default:'RU';"` // нужно проработать формат данных
+	Username 		*string 	`json:"username" gorm:"type:varchar(255);index;"` // уникальный, т.к. через него вход в главный аккаунт
+	Email 			*string 	`json:"email" gorm:"type:varchar(255);index;"`
+	PhoneRegion 	*string 	`json:"phone_region" gorm:"type:varchar(3);not null;default:'RU';"` // нужно проработать формат данных
 	PhoneRegionBeta *string 	`json:"phoneRegion" gorm:"-"` // нужно проработать формат данных
 
 	Phone		*string 		`json:"phone" gorm:"type:varchar(32);"` // нужно проработать формат данных
@@ -33,6 +33,7 @@ type User struct {
 
 	// Разрешен ли вход, через app.ratuscrm.com  - deprecated
 	EnabledAuthFromApp	bool	`json:"enabled_auth_from_app" gorm:"type:bool;default:false;"`
+	IsUnknown		bool			`json:"is_unknown" gorm:"type:bool;default:false;"`
 
 	// deprecated!!
 	Subscribed			bool		`json:"subscribed" gorm:"type:bool;default:true;"` // Есть ли подписка на общее рассылки.
@@ -44,9 +45,6 @@ type User struct {
 	// manual, gui, api, - deprecated!!
 	SubscriptionReason		*string 	`json:"subscription_reason" gorm:"type:varchar(32);"`
 	SubscriptionReasonBeta	*string 	`json:"subscriptionReason" gorm:"-"`
-
-	// deprecated!!
-	// UnsubscribedReason	*string `json:"unsubscribedReason" gorm:"default:null"` // << see mta-bounced...
 
 	DefaultAccountId 		*uint 	`json:"default_account_id"` // указывает какой аккаунт по дефолту загружать
 	// InvitedUserId 		*uint 	`json:"invited_user_id"` // кто его пригласил
@@ -80,7 +78,7 @@ func (User) PgSqlCreate() {
 
 	// db.Model(&User{}).AddForeignKey("issuer_account_id", "accounts(id)", "SET DEFAULT", "CASCADE")
 	// db.Model(&User{}).AddForeignKey("invited_user_id", "users(id)", "SET NULL", "CASCADE")
-	err := db.Exec("ALTER TABLE users    \n    ADD CONSTRAINT users_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,\n--     ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,\n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n\ncreate unique index uix_users_issuer_account_id_username_email_mobile_phone ON users (issuer_account_id,username,email,phone);\n-- create unique index uix_users_username_account_id_sku ON users (issuer_account_id,username) where username is not null;\ncreate unique index uix_users_username_account_id_sku ON users (issuer_account_id,username) where (length(username) > 0);\n\n-- alter table users alter column default_account_id set default null;\n-- alter table users alter column invited_user_id set default null;\n\n-- alter table  users ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n").Error
+	err := db.Exec("ALTER TABLE users    \n    ADD CONSTRAINT users_issuer_account_id_fkey FOREIGN KEY (issuer_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,\n--     ADD CONSTRAINT users_default_account_id_fkey FOREIGN KEY (default_account_id) REFERENCES accounts(id) ON DELETE SET NULL ON UPDATE CASCADE,\n--     ADD CONSTRAINT users_invited_user_id_fkey FOREIGN KEY (invited_user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,\n    ADD CONSTRAINT users_chk_unique check ((is_unknown IS TRUE) or ((username is not null) or (email is not null) or (phone is not null)));\n\ncreate unique index uix_users_issuer_account_id_username_email_mobile_phone ON users (issuer_account_id,username,email,phone);\n-- create unique index uix_users_username_account_id_sku ON users (issuer_account_id,username) where username is not null;\ncreate unique index uix_users_username_account_id_sku ON users (issuer_account_id,username) where (length(username) > 0);\n\n-- alter table users alter column default_account_id set default null;\n-- alter table users alter column invited_user_id set default null;\n\n-- alter table  users ADD CONSTRAINT users_chk_unique check ((username is not null) or (email is not null) or (phone is not null));\n").Error
 	if err != nil {
 		log.Fatal("Error PgSqlCreate User: ", err)
 	}
@@ -448,7 +446,7 @@ func (user User) ValidateCreate() error {
 	}
 
 	// 4. Проверка на одно из трех
-	if !(username || email || phone ) {
+	if !(username || email || phone ) && !user.IsUnknown {
 		return u.Error{Message:"Отсутствуют обязательные поля", Errors: map[string]interface{}{"username":"Необходимо заполнить поле", "email":"Необходимо заполнить поле", "mobilePhone":"Необходимо заполнить поле"}}
 	}
 

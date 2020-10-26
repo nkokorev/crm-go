@@ -302,3 +302,38 @@ func OrderRemoveProduct(w http.ResponseWriter, r *http.Request) {
 	resp["order"] = order
 	u.Respond(w, resp)
 }
+
+func OrderSetUnknownCustomer(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	orderId, err := utilsCr.GetUINTVarFromRequest(r, "orderId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	var order models.Order
+	err = account.LoadEntity(&order, orderId, nil)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
+		return
+	}
+
+	if err := order.SetUnknownCustomer(); err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при обновлении данных заказчика"))
+		return
+	}
+
+	_ = account.LoadEntity(&order, orderId, preloads)
+
+	resp := u.Message(true, "PATCH Order Set Unknown Customer")
+	resp["order"] = order
+	u.Respond(w, resp)
+}

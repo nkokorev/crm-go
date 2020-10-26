@@ -161,6 +161,7 @@ func (deliveryOrder *DeliveryOrder) updateDeliveryItem(input map[string]interfac
 		order := Order{Id: *deliveryOrder.OrderId}
 		if err := order.load([]string{"CartItems"}); err == nil {
 			_ = order.UpdateDeliveryItem(input)
+			_ = order.UpdateCost()
 		}
 	}
 }
@@ -285,7 +286,9 @@ func (deliveryOrder *DeliveryOrder) update(input map[string]interface{}, preload
 					weight += v.Quantity * *v.Product.Weight
 				}
 			}
-			deliveryOrder.updateDeliveryItem(map[string]interface{}{"cost":cost,"weight":weight})
+			// deliveryOrder.updateDeliveryItem(map[string]interface{}{"cost":cost,"weight":weight})
+			deliveryOrder.updateDeliveryItem(map[string]interface{}{"cost":cost})
+			input["weight"] = weight
 		}
 	}
 
