@@ -73,7 +73,7 @@ func UserCreate(w http.ResponseWriter, r *http.Request) {
 		input.User.SubscriptionReason = input.SubscriptionReason
 	}
 
-	// Т.к. пароль не передается, читаем и назначем отдельно json -
+	// Т.к. пароль не передается, читаем и назначаем отдельно json -
 	if input.Password != nil {
 		input.User.Password = input.Password
 	}

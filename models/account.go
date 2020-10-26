@@ -259,7 +259,8 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 
 	if input.Email != nil {
 		email = true
-		if err := utils.EmailValidation(*input.Email); err != nil {
+		// if err := utils.EmailValidation(*input.Email); err != nil {
+		if err := utils.EmailDeepValidation(*input.Email); err != nil {
 			if input.Email != nil && *input.Email != "demo-user@example.com" {
 				return nil, utils.Error{Message: "Проверьте правильность заполнения формы", Errors: map[string]interface{}{"email": err.Error()}}
 			}
