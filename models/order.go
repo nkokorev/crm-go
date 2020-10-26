@@ -694,6 +694,11 @@ func (order *Order) SetUnknownCustomer() error {
 		return errors.New("Техническая ошибка установки неизвестного заказчика")
 	}
 
+	if err := order.load([]string{"Customer"}); err != nil { return err}
+	if order.Customer.IsUnknown {
+		return nil
+	}
+
 	account, err := GetAccount(order.AccountId)
 	if err != nil { return err }
 
