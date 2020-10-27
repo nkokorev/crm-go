@@ -280,10 +280,10 @@ func CartItemUpdateReserve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+	// preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	var cartItem models.CartItem
-	err = account.LoadEntity(&cartItem, cartItemId, preloads)
+	err = account.LoadEntity(&cartItem, cartItemId, []string{"WarehouseItem"}) // загружаем с WhItem т.к. в нем будет warehouse_id
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
 		return

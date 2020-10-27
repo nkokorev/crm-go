@@ -42,8 +42,8 @@ type CartItem struct {
 	Reserved			bool `json:"reserved" gorm:"type:bool;default:false;"`
 
 	// null - ни в резерве, ни в списан. 
-	WarehouseItemId		*uint `json:"warehouse_item_id" gorm:"type:int;not null;default:1"`
-	WarehouseItem		WarehouseItem	`json:"warehouse_item"`
+	WarehouseItemId		*uint `json:"warehouse_item_id" gorm:"type:int;"`
+	WarehouseItem		*WarehouseItem	`json:"warehouse_item"`
 	WarehouseItems		[]WarehouseItem	`json:"warehouse_items" gorm:"-"` // AfterFind
 
 	Product Product `json:"product"`
@@ -291,9 +291,85 @@ func (cartItem *CartItem) UpdateReserve (data ReserveCartItem) error {
 		// check reserve
 	}
 
+	// Если нужно изменить wh_id
+	if data.WarehouseId != nil {
+
+		// Проверяем preload in CartItemCr
+		if cartItem.WarehouseItem == nil {
+			return utils.Error{Message: "Тех. ошибка: необходимо загрузить cartItem.WarehouseItem"}
+		}
+
+		// Проверяем, нужно ли реально менять склад
+		if cartItem.WarehouseItem.WarehouseId != *data.WarehouseId {
+			// todo: change reserve
+
+			// 1. Проверяем был ли резерв и снимаем его, если да
+			if cartItem.Reserved {
+
+				// Если есть реальный warehouse_item_id - переводим резерв запас на складе
+				if cartItem.WarehouseItemId != nil {
+
+					err := db.Exec("UPDATE warehouse_items SET (stock,reservation) = (stock + ?, reservation - ?) WHERE id = ?",
+						cartItem.Quantity,cartItem.Quantity, *cartItem.WarehouseItemId).Error
+					if err != nil && err != gorm.ErrRecordNotFound { return err }
+				}
+
+				// Снимаем статус 'Reserved'
+				err := db.Exec("UPDATE cart_items SET reserved = false WHERE id = ?", cartItem.Id).Error
+				if err != nil && err != gorm.ErrRecordNotFound { return err }
+				
+			}
+
+			// 2. Проверить есть ли место на новом складе
+
+			// Проверяем, если необходимо число на новом складе и если есть - резервируем нужный объем
+			quantity := float64(0)
+			if data.Quantity != nil {
+				quantity = *data.Quantity
+			}
+		
+
+			var warehouseItem WarehouseItem
+			err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ? AND stock >= ?", cartItem.ProductId, *data.WarehouseId, quantity).
+				First(&warehouseItem).Error
+			if err != nil && err != gorm.ErrRecordNotFound {return err }
+			if err == gorm.ErrRecordNotFound { return utils.Error{Message: "На складе отсутствует необходимо число товара"}	}
+
+			if data.Quantity != nil {
+				fmt.Println("Обновляем число: ", *data.Quantity)
+				err = db.Exec("UPDATE warehouse_items SET (stock,reservation) = (stock - ?, reservation + ?) " +
+					"WHERE id = ?",
+					*data.Quantity, *data.Quantity, warehouseItem.Id).Error
+				if err != nil {
+					fmt.Println("err 3")
+					return err
+				}
+			}
+
+
+			// Переводи в статус "Зарезервировано" и указываем warehouse_id
+			err = db.Exec("UPDATE cart_items SET reserved = true, warehouse_item_id = ? WHERE id = ?", warehouseItem.Id, cartItem.Id).Error
+			if err != nil && err != gorm.ErrRecordNotFound {
+				fmt.Println("err 4")
+				return err
+			}
+
+			fmt.Println("all ok!")
+
+			//
+			// 2. Проверяем одним запросом есть ли warehouse_item с wh_id из data
+
+
+			
+			// 3. Установить резерв на новом складе
+
+		}
+	}
+	// Проверяем изменен ли реально warehouse
+
+
 	// fmt.Println(*(data.Reserved))
 	// fmt.Println(*data.Quantity)
-	fmt.Println(*data.WarehouseId)
 
 	return nil
 
@@ -316,9 +392,6 @@ func (cartItem CartItem) GetAvailabilityWarehouseItems() []WarehouseItem {
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return warehouseItems
 	}
-	/*if err == gorm.ErrRecordNotFound {
-		return nil, utils.Error{Message: "Нет доступных складов с нужным количеством товара"}
-	}*/
 
 	return warehouseItems
 

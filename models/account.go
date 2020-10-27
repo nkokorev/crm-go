@@ -248,6 +248,17 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 	// Утверждаем main-account пользователя
 	input.IssuerAccountId = account.Id
 
+	// Проверка дублирование полей
+	if account.existUserByUsername(input.Username) {
+		return nil, utils.Error{Message: "Проверьте правильность заполнения формы", Errors: map[string]interface{}{"username": "Данный username уже используется"}}
+	}
+	if account.existUserByEmail(input.Email) {
+		return nil, utils.Error{Message: "Данные уже есть", Errors: map[string]interface{}{"email": "Этот почтовый адрес уже используется"}}
+	}
+	if account.existUserByPhone(input.Phone) {
+		return nil, utils.Error{Message: "Данные уже есть", Errors: map[string]interface{}{"phone": "Данный телефон уже используется"}}
+	}
+
 	// ### !!!! Проверка входящих данных !!! ### ///
 	if input.Username != nil {
 
@@ -288,17 +299,7 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 		return nil, utils.Error{Message: "Отсутствуют обязательные поля", Errors: map[string]interface{}{"username": "Необходимо заполнить поле", "email": "Необходимо заполнить поле", "phone": "Необходимо заполнить поле"}}
 	}
 
-	// Проверка дублирование полей
-	if account.existUserByUsername(input.Username) {
-		return nil, utils.Error{Message: "Проверьте правильность заполнения формы", Errors: map[string]interface{}{"username": "Данный username уже используется"}}
-	}
-	if account.existUserByEmail(input.Email) {
-		return nil, utils.Error{Message: "Данные уже есть", Errors: map[string]interface{}{"email": "Этот почтовый адрес уже используется"}}
-	}
-	if account.existUserByPhone(input.Phone) {
-		return nil, utils.Error{Message: "Данные уже есть", Errors: map[string]interface{}{"phone": "Данный телефон уже используется"}}
-	}
-	
+	 	
 	// создаем пользователя
 	user, err := input.create()
 	if err != nil || user == nil {
