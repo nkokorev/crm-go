@@ -18,7 +18,8 @@ type Warehouse struct {
 	Code 		*string `json:"code" gorm:"type:varchar(255);"`
 
 	// Имя склада
-	Name 		*string `json:"name" gorm:"type:varchar(255);"`
+	Label 		*string `json:"label" gorm:"type:varchar(255);"`
+	ShortLabel 	*string	`json:"short_label" gorm:"type:varchar(128);"`
 
 	// Контактные данные склада
 	Address 	*string `json:"address" gorm:"type:varchar(255);"`

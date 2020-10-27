@@ -29,17 +29,24 @@ type CartItem struct {
 
 
 	// Признак предмета расчета
-	PaymentSubjectId	uint			`json:"payment_subject_id" gorm:"type:int;not null;default:1"`// товар или услуга ? [вид номенклатуры]
-	PaymentSubject 		PaymentSubject 	`json:"payment_subject_yandex"`
+	PaymentSubjectId		uint			`json:"payment_subject_id" gorm:"type:int;not null;default:1"`// товар или услуга ? [вид номенклатуры]
+	PaymentSubject 			PaymentSubject 	`json:"payment_subject_yandex"`
 	PaymentSubjectYandex	string 		`json:"payment_subject"` // << after find
 
 	// Признак способа расчета
-	PaymentModeId	uint	`json:"payment_mode_id" gorm:"type:int;not null;default:1"`//
-	PaymentMode 	PaymentMode `json:"payment_mode_yandex"`
+	PaymentModeId		uint	`json:"payment_mode_id" gorm:"type:int;not null;default:1"`//
+	PaymentMode 		PaymentMode `json:"payment_mode_yandex"`
 	PaymentModeYandex 	string `json:"payment_mode"`
 
 	// Ставка НДС
-	VatCode	uint	`json:"vat_code"` // << не vat_code_id т.к. в яндексе просто 'vat_code'
+	VatCode				uint	`json:"vat_code"` // << не vat_code_id т.к. в яндексе просто 'vat_code'
+
+	// В резерве или списан товар: true - в резерве, false - списан
+	Reserved			bool `json:"reserved" gorm:"type:bool;default:false;"`
+
+	// null - ни в резерве, ни в списан. 
+	WarehouseItemId		*uint `json:"warehouse_item_id" gorm:"type:int;not null;default:1"`
+	WarehouseItem		WarehouseItem	`json:"warehouse_item"`
 
 	Product Product `json:"product"`
 	Order	Order `json:"-"`
@@ -79,6 +86,30 @@ func (cartItem *CartItem) AfterFind(tx *gorm.DB) (err error) {
 	cartItem.Amount.Currency = "RUB"
 
 	return nil
+}
+func (cartItem *CartItem) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
+
+	_db := db
+
+	if getModel {
+		_db = _db.Model(cartItem)
+	} else {
+		_db = _db.Model(&CartItem{})
+	}
+
+	if autoPreload {
+		return _db.Preload(clause.Associations)
+	} else {
+
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Product","PaymentSubject","PaymentAmount","PaymentMode","WarehouseItem"})
+
+		for _,v := range allowed {
+			_db.Preload("")
+			_db.Preload(v)
+		}
+		return _db
+	}
+
 }
 
 // ############# Entity interface #############
@@ -193,6 +224,7 @@ func (cartItem *CartItem) update(input map[string]interface{}, preloads []string
 	delete(input,"payment_mode")
 	delete(input,"product")
 	delete(input,"order")
+	delete(input,"warehouse_item")
 	utils.FixInputHiddenVars(&input)
 	/*if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
 		return err
@@ -245,27 +277,5 @@ func (cartItem *CartItem) delete () error {
 
 
 // ########## Work function ############
-func (cartItem *CartItem) GetPreloadDb(getModel bool, autoPreload bool, preloads []string) *gorm.DB {
 
-	_db := db
-
-	if getModel {
-		_db = _db.Model(cartItem)
-	} else {
-		_db = _db.Model(&CartItem{})
-	}
-
-	if autoPreload {
-		return _db.Preload(clause.Associations)
-	} else {
-
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Product","PaymentSubject","PaymentAmount","PaymentMode"})
-
-		for _,v := range allowed {
-			_db.Preload(v)
-		}
-		return _db
-	}
-
-}
 
