@@ -340,36 +340,16 @@ func (cartItem *CartItem) UpdateReserve (data ReserveCartItem) error {
 				err = db.Exec("UPDATE warehouse_items SET (stock,reservation) = (stock - ?, reservation + ?) " +
 					"WHERE id = ?",
 					*data.Quantity, *data.Quantity, warehouseItem.Id).Error
-				if err != nil {
-					fmt.Println("err 3")
-					return err
-				}
+				if err != nil { return err }
 			}
 
 
 			// Переводи в статус "Зарезервировано" и указываем warehouse_id
 			err = db.Exec("UPDATE cart_items SET reserved = true, warehouse_item_id = ? WHERE id = ?", warehouseItem.Id, cartItem.Id).Error
-			if err != nil && err != gorm.ErrRecordNotFound {
-				fmt.Println("err 4")
-				return err
-			}
-
-			fmt.Println("all ok!")
-
-			//
-			// 2. Проверяем одним запросом есть ли warehouse_item с wh_id из data
-
-
-			
-			// 3. Установить резерв на новом складе
+			if err != nil && err != gorm.ErrRecordNotFound {return err}
 
 		}
 	}
-	// Проверяем изменен ли реально warehouse
-
-
-	// fmt.Println(*(data.Reserved))
-	// fmt.Println(*data.Quantity)
 
 	return nil
 
