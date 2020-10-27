@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -257,7 +256,6 @@ func (cartItem *CartItem) update(input map[string]interface{}, preloads []string
 
 func (cartItem *CartItem) delete () error {
 	if err := cartItem.GetPreloadDb(true,false,nil).Where("id = ?", cartItem.Id).Delete(cartItem).Error; err != nil {
-		fmt.Println("Доставка удалена")
 		return err
 	}
 
@@ -336,9 +334,7 @@ func (cartItem *CartItem) UpdateReserve (data ReserveCartItem) error {
 			if err == gorm.ErrRecordNotFound { return utils.Error{Message: "На складе отсутствует необходимо число товара"}	}
 
 			if data.Quantity != nil {
-				fmt.Println("Обновляем число: ", *data.Quantity)
-				err = db.Exec("UPDATE warehouse_items SET (stock,reservation) = (stock - ?, reservation + ?) " +
-					"WHERE id = ?",
+				err = db.Exec("UPDATE warehouse_items SET (stock,reservation) = (stock - ?, reservation + ?) WHERE id = ?",
 					*data.Quantity, *data.Quantity, warehouseItem.Id).Error
 				if err != nil { return err }
 			}
