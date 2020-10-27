@@ -25,9 +25,6 @@ type CartItem struct {
 	Amount		PaymentAmount	`json:"amount" gorm:"-"`
 	Cost		float64 		`json:"cost" gorm:"type:numeric;default:0"` // Результирующая стоимость 1 ед. товара!
 
-	// Amount  	PaymentAmount	`json:"amount" gorm:"polymorphic:Owner;"`
-
-
 	// Признак предмета расчета
 	PaymentSubjectId		uint			`json:"payment_subject_id" gorm:"type:int;not null;default:1"`// товар или услуга ? [вид номенклатуры]
 	PaymentSubject 			PaymentSubject 	`json:"payment_subject_yandex"`
@@ -47,6 +44,7 @@ type CartItem struct {
 	// null - ни в резерве, ни в списан. 
 	WarehouseItemId		*uint `json:"warehouse_item_id" gorm:"type:int;not null;default:1"`
 	WarehouseItem		WarehouseItem	`json:"warehouse_item"`
+	WarehouseItems		[]WarehouseItem	`json:"warehouse_items" gorm:"-"` // AfterFind
 
 	Product Product `json:"product"`
 	Order	Order `json:"-"`
@@ -84,6 +82,7 @@ func (cartItem *CartItem) AfterFind(tx *gorm.DB) (err error) {
 	cartItem.PaymentSubjectYandex = cartItem.PaymentSubject.Code
 	cartItem.Amount.Value = cartItem.Cost
 	cartItem.Amount.Currency = "RUB"
+	cartItem.WarehouseItems = cartItem.GetAvailabilityWarehouseItems()
 
 	return nil
 }
@@ -104,7 +103,6 @@ func (cartItem *CartItem) GetPreloadDb(getModel bool, autoPreload bool, preloads
 		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Product","PaymentSubject","PaymentAmount","PaymentMode","WarehouseItem"})
 
 		for _,v := range allowed {
-			_db.Preload("")
 			_db.Preload(v)
 		}
 		return _db
@@ -277,5 +275,51 @@ func (cartItem *CartItem) delete () error {
 
 
 // ########## Work function ############
+type ReserveCartItem struct {
+	WarehouseId *uint `json:"warehouse_id"` // Склад на котором содержится резерв или произведено списание.
+	Quantity	*float64 `json:"quantity"`	// Объем резерва / списания
+	Reserved	*bool `json:"reserved"`		// Есть резерв или нет (??)
+}
 
+// func (cartItem *CartItem) UpdateReserve (warehouseId uint, quantity float64, reserved bool) error {
+func (cartItem *CartItem) UpdateReserve (data ReserveCartItem) error {
 
+	if cartItem.Id < 1 { return utils.Error{Message: "Техническая ошибка: не указан id of CartItem"}}
+
+	// Если резерва нет
+	if cartItem.WarehouseItemId == nil && data.Reserved != nil{
+		// check reserve
+	}
+
+	// fmt.Println(*(data.Reserved))
+	// fmt.Println(*data.Quantity)
+	fmt.Println(*data.WarehouseId)
+
+	return nil
+
+}
+
+// Возвращает склады, где есть указанный товар в нужном обхеме
+func (cartItem CartItem) GetAvailabilityWarehouseItems() []WarehouseItem {
+
+	warehouseItems := make([]WarehouseItem,0)
+
+	if cartItem.Id < 1 { return warehouseItems}
+
+	// Это доставка, она доступна (по дефолту)
+	if cartItem.ProductId < 1 { return warehouseItems }
+
+	err := db.Model(&WarehouseItem{}).
+		Where("product_id = ? AND stock >= ?", cartItem.ProductId, cartItem.Quantity).
+		Preload("Warehouse").Find(&warehouseItems).Error
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return warehouseItems
+	}
+	/*if err == gorm.ErrRecordNotFound {
+		return nil, utils.Error{Message: "Нет доступных складов с нужным количеством товара"}
+	}*/
+
+	return warehouseItems
+
+}

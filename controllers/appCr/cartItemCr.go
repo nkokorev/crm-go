@@ -219,3 +219,168 @@ func CartItemDelete(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+// -- ### Reserve ### --
+func CartItemCreateReserve(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	cartItemId, err := utilsCr.GetUINTVarFromRequest(r, "cartItemId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	var cartItem models.CartItem
+	err = account.LoadEntity(&cartItem, cartItemId, preloads)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		return
+	}
+
+	var input map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	// Статус меняется только через отдельную функцию
+	delete(input,"amount")
+	delete(input,"payment_subject_yandex")
+	delete(input,"payment_mode_yandex")
+	delete(input,"product")
+	delete(input,"order")
+
+	err = account.UpdateEntity(&cartItem, input, preloads)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
+		return
+	}
+
+	resp := u.Message(true, "PATCH Cart Item Update")
+	resp["cart_item"] = cartItem
+	u.Respond(w, resp)
+}
+func CartItemUpdateReserve(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	cartItemId, err := utilsCr.GetUINTVarFromRequest(r, "cartItemId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	var cartItem models.CartItem
+	err = account.LoadEntity(&cartItem, cartItemId, preloads)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		return
+	}
+	
+	var input models.ReserveCartItem
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	if err := cartItem.UpdateReserve(input); err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
+		return
+	}
+
+	resp := u.Message(true, "Update Cart Item reserve")
+	resp["cart_item"] = cartItem
+	u.Respond(w, resp)
+}
+func CartItemRemoveReserve(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	cartItemId, err := utilsCr.GetUINTVarFromRequest(r, "cartItemId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	var cartItem models.CartItem
+	err = account.LoadEntity(&cartItem, cartItemId, preloads)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		return
+	}
+
+	var input map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	// Статус меняется только через отдельную функцию
+	delete(input,"amount")
+	delete(input,"payment_subject_yandex")
+	delete(input,"payment_mode_yandex")
+	delete(input,"product")
+	delete(input,"order")
+
+	err = account.UpdateEntity(&cartItem, input, preloads)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
+		return
+	}
+
+	resp := u.Message(true, "PATCH Cart Item Update")
+	resp["cart_item"] = cartItem
+	u.Respond(w, resp)
+}
+
+func CartItemGetWarehouseItems(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	cartItemId, err := utilsCr.GetUINTVarFromRequest(r, "cartItemId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
+		return
+	}
+
+	// preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	var cartItem models.CartItem
+	err = account.LoadEntity(&cartItem, cartItemId, nil)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		return
+	}
+
+	var input models.ReserveCartItem
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	resp := u.Message(true, "Update Cart Item reserve")
+	resp["warehouse_items"] = cartItem.GetAvailabilityWarehouseItems()
+	u.Respond(w, resp)
+}
