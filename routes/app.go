@@ -361,9 +361,9 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/cart-items/{cartItemId:[0-9]+}", appCr.CartItemUpdate).Methods(http.MethodPatch, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/cart-items/{cartItemId:[0-9]+}", appCr.CartItemDelete).Methods(http.MethodDelete, http.MethodOptions)
 
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/cart-items/{cartItemId:[0-9]+}/reserve", appCr.CartItemCreateReserve).Methods(http.MethodPost, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/cart-items/{cartItemId:[0-9]+}/reserve", appCr.CartItemCreateReserve).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/cart-items/{cartItemId:[0-9]+}/reserve", appCr.CartItemUpdateReserve).Methods(http.MethodPatch, http.MethodOptions)
-	rAuthFull.HandleFunc("/accounts/{accountHashId}/cart-items/{cartItemId:[0-9]+}/reserve", appCr.CartItemRemoveReserve).Methods(http.MethodDelete, http.MethodOptions)
+	// rAuthFull.HandleFunc("/accounts/{accountHashId}/cart-items/{cartItemId:[0-9]+}/reserve", appCr.CartItemRemoveReserve).Methods(http.MethodDelete, http.MethodOptions)
 
 	// Возвращает список доступных warehouseItems для товара
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/cart-items/{cartItemId:[0-9]+}/warehouse-items", appCr.CartItemGetWarehouseItems).Methods(http.MethodGet, http.MethodOptions)
