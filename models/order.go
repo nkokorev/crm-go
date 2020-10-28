@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -365,8 +364,7 @@ func (order *Order) update(input map[string]interface{}, preloads []string) erro
 			}
 			
 		case "completed":
-			fmt.Println("Order completed! (2)")
-			if err := order.WriteOffFromWarehouse(); err != nil { return err}
+			if err := order.SetWastedOffFromWarehouse(); err != nil { return err}
 			AsyncFire(NewEvent("OrderCompleted", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
 
 		case "prepend":
@@ -419,8 +417,6 @@ func (order *Order) AppendProducts (products []Product) error {
 /* Изменение статуса заказа на "Выполнено" */
 func (order *Order) SetCompleted () error {
 
-	fmt.Println("Set Completed 1!")
-
 	if order.Id < 0 {
 		if err := order.load(nil);err != nil {
 			return err
@@ -438,7 +434,7 @@ func (order *Order) SetCompleted () error {
 			return err
 		}
 
-		if err := order.WriteOffFromWarehouse(); err != nil { return err}
+		if err := order.SetWastedOffFromWarehouse(); err != nil { return err}
 	}
 
 	// Перевод товаров из резерва в order
@@ -447,22 +443,17 @@ func (order *Order) SetCompleted () error {
 }
 
 // Переводит все товарные позиции в статус "Выполнено"
-func (order Order) WriteOffFromWarehouse() error {
-	fmt.Println("Списываем товары со склада!")
+func (order Order) SetWastedOffFromWarehouse() error {
 
 	// 1. Загружаем все CartItems
 
 	cartItems := make([]CartItem,0)
 	err := db.Model(&CartItem{}).Where("account_id = ? AND order_id = ? AND product_id > 0 AND reserved = true", order.AccountId, order.Id).
 		Find(&cartItems).Error
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return err
-	}
+	if err != nil {	return err	}
 
 	for i := range cartItems {
-		fmt.Println("cartItem id: ", cartItems[i].Id)
-		if err := cartItems[i].WriteOffFromWarehouse(); err != nil {
+		if err := cartItems[i].SetWastedOffFromWarehouse(); err != nil {
 			log.Printf("Ошибка списания cartItem id =[%v] со склада: %v \n", cartItems[i].Id, err)
 		}
 	}

@@ -280,7 +280,7 @@ func CartItemUpdateReserve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	var cartItem models.CartItem
 	err = account.LoadEntity(&cartItem, cartItemId, []string{"WarehouseItem"}) // загружаем с WhItem т.к. в нем будет warehouse_id
@@ -299,6 +299,8 @@ func CartItemUpdateReserve(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}
+
+	_ = account.LoadEntity(&cartItem, cartItemId, preloads)
 
 	resp := u.Message(true, "Update Cart Item reserve")
 	resp["cart_item"] = cartItem

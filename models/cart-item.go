@@ -41,7 +41,7 @@ type CartItem struct {
 	Reserved			bool `json:"reserved" gorm:"type:bool;default:false;"`
 
 	// Была ли списана ли позиция со склада
-	WrittenOff			bool `json:"written_off" gorm:"type:bool;default:false;"`
+	Wasted			bool `json:"wasted" gorm:"type:bool;default:false;"`
 
 	// null - ни в резерве, ни в списан. 
 	WarehouseItemId		*uint `json:"warehouse_item_id" gorm:"type:int;"`
@@ -102,7 +102,7 @@ func (cartItem *CartItem) GetPreloadDb(getModel bool, autoPreload bool, preloads
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Product","PaymentSubject","PaymentAmount","PaymentMode","WarehouseItem"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"Product","Product.MeasurementUnit","PaymentSubject","PaymentAmount","PaymentMode","WarehouseItem"})
 
 		for _,v := range allowed {
 			_db.Preload(v)
@@ -286,77 +286,128 @@ type ReserveCartItem struct {
 func (cartItem *CartItem) UpdateReserve (data ReserveCartItem) error {
 
 	if cartItem.Id < 1 { return utils.Error{Message: "Техническая ошибка: не указан id of CartItem"}}
-
-	// Если резерва нет
-	if cartItem.WarehouseItemId == nil && data.Reserved != nil{
-		// check reserve
+	
+	// фикс. объем
+	quantity := float64(0)
+	if data.Quantity != nil {
+		quantity = *data.Quantity
 	}
 
-	// Если нужно изменить wh_id
-	if data.WarehouseId != nil {
+	log.Println("data: ", data)
+	log.Println("data Reserved: ", *data.Reserved)
 
-		// Проверяем preload in CartItemCr
-		if cartItem.WarehouseItem == nil {
-			return utils.Error{Message: "Тех. ошибка: необходимо загрузить cartItem.WarehouseItem"}
+	// Меняем локально статус, если нам известен новый статус и не меняется warehouseId
+	if (data.Reserved != nil && data.WarehouseId == nil) && (cartItem.Reserved != *data.Reserved) && cartItem.WarehouseItemId != nil {
+
+		log.Println("log 1")
+		// Ставим новый резерв
+		if *data.Reserved {
+
+			log.Println("log 2: new reserve")
+			if err := cartItem.SetReserve(nil, quantity); err != nil {
+				return err
+			}
+		} else {
+			log.Println("log 3: drop reserve")
+			// снимаем резерв
+			if err := cartItem.CancelReserve(); err != nil { return err }
 		}
+	} else {
+		// 1. Если нужно изменить warehouse_id
+		if data.WarehouseId != nil {
 
-		// Проверяем, нужно ли реально менять склад
-		if cartItem.WarehouseItem.WarehouseId != *data.WarehouseId {
-			// todo: change reserve
-
-			// 1. Проверяем был ли резерв и снимаем его, если да
+			// Узнаем, надо ли снять текущий резерв
 			if cartItem.Reserved {
 
-				// Если есть реальный warehouse_item_id - переводим резерв запас на складе
-				if cartItem.WarehouseItemId != nil {
+				// снимаем резерв
+				if err := cartItem.CancelReserve(); err != nil { return err }
 
-					err := db.Exec("UPDATE warehouse_items SET (stock,reservation) = (stock + ?, reservation - ?) WHERE id = ?",
-						cartItem.Quantity,cartItem.Quantity, *cartItem.WarehouseItemId).Error
-					if err != nil && err != gorm.ErrRecordNotFound { return err }
-				}
-
-				// Снимаем статус 'Reserved'
-				err := db.Exec("UPDATE cart_items SET reserved = false WHERE id = ?", cartItem.Id).Error
-				if err != nil && err != gorm.ErrRecordNotFound { return err }
-				
 			}
 
-			// 2. Проверить есть ли место на новом складе
-
-			// Проверяем, если необходимо число на новом складе и если есть - резервируем нужный объем
-			quantity := float64(0)
-			if data.Quantity != nil {
-				quantity = *data.Quantity
-			}
-		
-
-			var warehouseItem WarehouseItem
-			err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ? AND stock >= ?", cartItem.ProductId, *data.WarehouseId, quantity).
-				First(&warehouseItem).Error
-			if err != nil && err != gorm.ErrRecordNotFound {return err }
-			if err == gorm.ErrRecordNotFound { return utils.Error{Message: "На складе отсутствует необходимо число товара"}	}
-
-			if data.Quantity != nil {
-				err = db.Exec("UPDATE warehouse_items SET (stock,reservation) = (stock - ?, reservation + ?) WHERE id = ?",
-					*data.Quantity, *data.Quantity, warehouseItem.Id).Error
-				if err != nil { return err }
+			// Ставим новый резерв (в любом случае)
+			if err := cartItem.SetReserve(data.WarehouseId, quantity); err != nil {
+				return err
 			}
 
+		} else {
+			// Тут надо изменить (и/или): quantity, reserved, wasted
+			if data.Reserved != nil {
 
-			// Переводим в статус "Зарезервировано" и указываем warehouse_id
-			err = db.Exec("UPDATE cart_items SET reserved = true, warehouse_item_id = ? WHERE id = ?", warehouseItem.Id, cartItem.Id).Error
-			if err != nil && err != gorm.ErrRecordNotFound {return err}
-
+			}
 		}
 	}
+	
+
+	return nil
+}
+
+
+// Резервирует товар на Wh в нужном объеме, НЕ снимая старый резерв
+func (cartItem *CartItem) SetReserve(warehouseId *uint, quantity float64) error {
+
+	if cartItem.Id < 1 || cartItem.ProductId < 1 { return utils.Error{Message: "Тех.ошибка cartItem.Id < 1"}}
+	var warehouseItem WarehouseItem
+
+	// 1. Находим wh_item на нужном складе с порверкой на доступный объем
+	if warehouseId != nil {
+
+		err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ? AND stock >= ?", cartItem.ProductId, warehouseId, quantity).
+			First(&warehouseItem).Error
+		if err != nil && err != gorm.ErrRecordNotFound {return err }
+		if err == gorm.ErrRecordNotFound { return utils.Error{Message: "На складе отсутствует необходимо число товара"}	}
+
+	} else {
+
+		if cartItem.WarehouseItemId == nil {
+			return utils.Error{Message: "Тех.ошибка cartItem.WarehouseItemId == nil"}
+		}
+
+		err := db.Model(&WarehouseItem{}).Where("id = ? AND product_id = ? AND stock >= ?", *cartItem.WarehouseItemId, cartItem.ProductId, quantity).
+			First(&warehouseItem).Error
+		if err != nil && err != gorm.ErrRecordNotFound {return err }
+		if err == gorm.ErrRecordNotFound { return utils.Error{Message: "На складе отсутствует необходимо число товара"}	}
+	}
+
+
+	// 2. Резервируем на wh_item, если q > 0
+	if quantity > 0 {
+		err := db.Exec("UPDATE warehouse_items SET (stock,reservation) = (stock - ?, reservation + ?) WHERE id = ?",
+			quantity, quantity, warehouseItem.Id).Error
+		if err != nil { return err }
+	}
+
+	// 3. Переводим cartItem в статус "Зарезервировано" и указываем warehouse_id
+	err := db.Exec("UPDATE cart_items SET reserved = true, warehouse_item_id = ? WHERE id = ?", warehouseItem.Id, cartItem.Id).Error
+	if err != nil && err != gorm.ErrRecordNotFound {return err}
+
+	return nil
+}
+
+// Снимает статус резерва и снимает объем из резерва со склада
+func (cartItem *CartItem) CancelReserve() error {
+
+	// Проверяем текущее состояние
+	if cartItem.Id < 1 || !cartItem.Reserved { return nil }
+
+	// 1. Если (а должен) указан whItem_id -> переводим резерв запас на складе, если q > 0
+	if cartItem.WarehouseItemId != nil && cartItem.Quantity > 0 {
+
+		err := db.Exec("UPDATE warehouse_items SET (stock,reservation) = (stock + ?, reservation - ?) WHERE id = ?",
+			cartItem.Quantity,cartItem.Quantity, *cartItem.WarehouseItemId).Error
+		if err != nil && err != gorm.ErrRecordNotFound { return err }
+	}
+
+	// 2. Снимаем статус 'Reserved' c CartItem в любом случае (т.к. Reserved = true )
+	err := db.Exec("UPDATE cart_items SET reserved = false WHERE id = ?", cartItem.Id).Error
+	if err != nil && err != gorm.ErrRecordNotFound { return err }
 
 	return nil
 }
 
 // Списывает позицию со склада, если она была в резерве
-func (cartItem *CartItem) WriteOffFromWarehouse() error {
+func (cartItem *CartItem) SetWastedOffFromWarehouse() error {
 
-	if cartItem.Id < 1 || cartItem.WrittenOff {
+	if cartItem.Id < 1 || cartItem.Wasted {
 		return nil
 	}
 
@@ -378,7 +429,7 @@ func (cartItem *CartItem) WriteOffFromWarehouse() error {
 	}
 
 	// Переводим в статус Списано и снимаем статус зарезервировано
-	err := db.Exec("UPDATE cart_items SET reserved = false, written_off = true, warehouse_item_id = ? WHERE id = ?", *cartItem.WarehouseItemId, cartItem.Id).Error
+	err := db.Exec("UPDATE cart_items SET reserved = false, wasted = true, warehouse_item_id = ? WHERE id = ?", *cartItem.WarehouseItemId, cartItem.Id).Error
 	if err != nil && err != gorm.ErrRecordNotFound {return err}
 
 	return nil
