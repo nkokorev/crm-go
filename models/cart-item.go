@@ -40,6 +40,9 @@ type CartItem struct {
 	// В резерве или списан товар: true - в резерве, false - списан
 	Reserved			bool `json:"reserved" gorm:"type:bool;default:false;"`
 
+	// Была ли списана ли позиция со склада
+	WrittenOff			bool `json:"written_off" gorm:"type:bool;default:false;"`
+
 	// null - ни в резерве, ни в списан. 
 	WarehouseItemId		*uint `json:"warehouse_item_id" gorm:"type:int;"`
 	WarehouseItem		*WarehouseItem	`json:"warehouse_item"`
@@ -340,7 +343,7 @@ func (cartItem *CartItem) UpdateReserve (data ReserveCartItem) error {
 			}
 
 
-			// Переводи в статус "Зарезервировано" и указываем warehouse_id
+			// Переводим в статус "Зарезервировано" и указываем warehouse_id
 			err = db.Exec("UPDATE cart_items SET reserved = true, warehouse_item_id = ? WHERE id = ?", warehouseItem.Id, cartItem.Id).Error
 			if err != nil && err != gorm.ErrRecordNotFound {return err}
 
@@ -348,7 +351,37 @@ func (cartItem *CartItem) UpdateReserve (data ReserveCartItem) error {
 	}
 
 	return nil
+}
 
+// Списывает позицию со склада, если она была в резерве
+func (cartItem *CartItem) WriteOffFromWarehouse() error {
+
+	if cartItem.Id < 1 || cartItem.WrittenOff {
+		return nil
+	}
+
+	// Списываем, если объем > 0 и он был либо в резерве либо из общего хранилища
+	if cartItem.Quantity > 0 && cartItem.WarehouseItemId != nil {
+
+		reserve := float64(0)
+		stock := float64(0)
+
+		if cartItem.Reserved {
+			reserve = cartItem.Quantity
+		} else {
+			stock = cartItem.Quantity
+		}
+
+		err := db.Exec("UPDATE warehouse_items SET (stock,reservation) = (stock - ?, reservation - ?) WHERE id = ?",
+			stock, reserve, *cartItem.WarehouseItemId).Error
+		if err != nil { return err }
+	}
+
+	// Переводим в статус Списано и снимаем статус зарезервировано
+	err := db.Exec("UPDATE cart_items SET reserved = false, written_off = true, warehouse_item_id = ? WHERE id = ?", *cartItem.WarehouseItemId, cartItem.Id).Error
+	if err != nil && err != gorm.ErrRecordNotFound {return err}
+
+	return nil
 }
 
 // Возвращает склады, где есть указанный товар в нужном обхеме
