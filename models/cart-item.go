@@ -280,6 +280,7 @@ type ReserveCartItem struct {
 	WarehouseId *uint `json:"warehouse_id"` // Склад на котором содержится резерв или произведено списание.
 	Quantity	*float64 `json:"quantity"`	// Объем резерва / списания
 	Reserved	*bool `json:"reserved"`		// Есть резерв или нет (??)
+	Wasted		*bool `json:"wasted"`		// Есть резерв или нет (??)
 }
 
 // func (cartItem *CartItem) UpdateReserve (warehouseId uint, quantity float64, reserved bool) error {
@@ -293,51 +294,59 @@ func (cartItem *CartItem) UpdateReserve (data ReserveCartItem) error {
 		quantity = *data.Quantity
 	}
 
-	// Меняем локально статус, если нам известен новый статус и не меняется warehouseId
-	if (data.Reserved != nil && data.WarehouseId == nil) && (cartItem.Reserved != *data.Reserved) && cartItem.WarehouseItemId != nil {
+	// 1. Если нужно изменить warehouse_id
+	if data.WarehouseId != nil {
+		// Узнаем, надо ли снять текущий резерв
+		if cartItem.Reserved {
 
-		// Ставим новый резерв
-		if *data.Reserved {
-
-			if err := cartItem.SetReserve(nil, quantity); err != nil {
-				return err
-			}
-		} else {
 			// снимаем резерв
-			if err := cartItem.CancelReserve(); err != nil { return err }
+			if err := cartItem.cancelReserve(); err != nil { return err }
+
 		}
+
+		// Ставим новый резерв (в любом случае)
+		if err := cartItem.setReserve(data.WarehouseId, quantity); err != nil {
+			return err
+		}
+
 	} else {
-		// 1. Если нужно изменить warehouse_id
-		if data.WarehouseId != nil {
 
-			// Узнаем, надо ли снять текущий резерв
-			if cartItem.Reserved {
+		// Меняем локально статус, если нам известен новый статус и не меняется warehouseId
+		if (data.Reserved != nil && data.WarehouseId == nil) && (cartItem.Reserved != *data.Reserved) && cartItem.WarehouseItemId != nil {
+			// Ставим новый резерв
+			if *data.Reserved {
 
+				if err := cartItem.setReserve(nil, quantity); err != nil {
+					return err
+				}
+			} else {
 				// снимаем резерв
-				if err := cartItem.CancelReserve(); err != nil { return err }
-
+				if err := cartItem.cancelReserve(); err != nil { return err }
 			}
+		}
 
-			// Ставим новый резерв (в любом случае)
-			if err := cartItem.SetReserve(data.WarehouseId, quantity); err != nil {
-				return err
-			}
+		if (data.Wasted != nil && data.WarehouseId == nil) && (cartItem.Wasted != *data.Wasted) && cartItem.WarehouseItemId != nil {
 
-		} else {
-			// Тут надо изменить (и/или): quantity, reserved, wasted
-			if data.Reserved != nil {
-
+			// Новое значение - возврат
+			if *data.Wasted {
+				if err := cartItem.wasted(); err != nil {
+					return err
+				}
+			} else {
+				// Делаем возврат товара на склад
+				if err := cartItem.wastedRollBack(); err != nil {
+					return err
+				}
 			}
 		}
 	}
-	
 
 	return nil
 }
 
 
 // Резервирует товар на Wh в нужном объеме, НЕ снимая старый резерв
-func (cartItem *CartItem) SetReserve(warehouseId *uint, quantity float64) error {
+func (cartItem *CartItem) setReserve(warehouseId *uint, quantity float64) error {
 
 	if cartItem.Id < 1 || cartItem.ProductId < 1 { return utils.Error{Message: "Тех.ошибка cartItem.Id < 1"}}
 	var warehouseItem WarehouseItem
@@ -378,7 +387,7 @@ func (cartItem *CartItem) SetReserve(warehouseId *uint, quantity float64) error 
 }
 
 // Снимает статус резерва и снимает объем из резерва со склада
-func (cartItem *CartItem) CancelReserve() error {
+func (cartItem *CartItem) cancelReserve() error {
 
 	// Проверяем текущее состояние
 	if cartItem.Id < 1 || !cartItem.Reserved { return nil }
@@ -394,6 +403,62 @@ func (cartItem *CartItem) CancelReserve() error {
 	// 2. Снимаем статус 'Reserved' c CartItem в любом случае (т.к. Reserved = true )
 	err := db.Exec("UPDATE cart_items SET reserved = false WHERE id = ?", cartItem.Id).Error
 	if err != nil && err != gorm.ErrRecordNotFound { return err }
+
+	return nil
+}
+
+// Списывает товар со склада, либо из резерва, либо из общего числа
+func (cartItem *CartItem) wasted() error {
+
+	if cartItem.Id < 1 || cartItem.ProductId < 1 { return utils.Error{Message: "Тех.ошибка cartItem.Id < 1"}}
+
+	if cartItem.WarehouseItemId == nil { return utils.Error{Message: "Не указан склад списания: warehouse_item_id"}}
+
+	// 1. Списываем товар из резерва или из stock, если q > 0
+	if cartItem.Quantity > 0 {
+		// Списываем с резерва
+		if cartItem.Reserved {
+
+			// 1. Списываем с Warehouse_item из резерва
+			err := db.Exec("UPDATE warehouse_items SET reservation = reservation - ? WHERE id = ?",
+				cartItem.Quantity, *cartItem.WarehouseItemId).Error
+			if err != nil { return err }
+			
+		} else {
+
+			// Списываем из stock нужное число товара
+			err := db.Exec("UPDATE warehouse_items SET stock = stock - ? WHERE id = ?",
+				cartItem.Quantity, *cartItem.WarehouseItemId).Error
+			if err != nil { return err }
+		}
+	}
+
+	// 3. Переводим cartItem в статус "Не Зарезервировано" && "Потрачено"
+	err := db.Exec("UPDATE cart_items SET reserved = false,wasted = true WHERE id = ?", cartItem.Id).Error
+	if err != nil && err != gorm.ErrRecordNotFound {return err}
+
+	return nil
+}
+
+// Возврат товара на склад без резерва
+func (cartItem *CartItem) wastedRollBack() error {
+
+	if cartItem.Id < 1 || cartItem.ProductId < 1 { return utils.Error{Message: "Тех.ошибка cartItem.Id < 1"}}
+
+	if cartItem.WarehouseItemId == nil { return utils.Error{Message: "Не указан склад списания: warehouse_item_id"}}
+
+	// 1. Делаем возврат товара
+	if cartItem.Quantity > 0 {
+
+		// Добавляем объем в stock
+		err := db.Exec("UPDATE warehouse_items SET stock = stock + ? WHERE id = ?",
+			cartItem.Quantity, *cartItem.WarehouseItemId).Error
+		if err != nil { return err }
+	}
+
+	// 3. Переводим cartItem в статус "НЕ Потрачено"
+	err := db.Exec("UPDATE cart_items SET wasted = false WHERE id = ?", cartItem.Id).Error
+	if err != nil && err != gorm.ErrRecordNotFound {return err}
 
 	return nil
 }

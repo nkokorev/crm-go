@@ -34,6 +34,10 @@ type WebSite struct {
 	Type		string 	`json:"type" gorm:"type:varchar(50);not null;"` // имя типа shop, site, ... хз как это использовать, на будущее
 	Description *string `json:"description" gorm:"type:text;"` // html-описание магазина
 
+	// Склад по умолчанию для магазина
+	WarehouseId		*uint `json:"warehouse_id" gorm:"type:int;"`
+	Warehouse		*Warehouse	`json:"warehouse"`
+
 	Deliveries 		[]Delivery  `json:"deliveries" gorm:"-"`// `gorm:"polymorphic:Owner;"`
 	// ProductGroups 	[]ProductGroup `json:"productGroups" gorm:"-"`
 	WebPages 		[]WebPage 	`json:"web_pages"`
