@@ -293,22 +293,16 @@ func (cartItem *CartItem) UpdateReserve (data ReserveCartItem) error {
 		quantity = *data.Quantity
 	}
 
-	log.Println("data: ", data)
-	log.Println("data Reserved: ", *data.Reserved)
-
 	// Меняем локально статус, если нам известен новый статус и не меняется warehouseId
 	if (data.Reserved != nil && data.WarehouseId == nil) && (cartItem.Reserved != *data.Reserved) && cartItem.WarehouseItemId != nil {
 
-		log.Println("log 1")
 		// Ставим новый резерв
 		if *data.Reserved {
 
-			log.Println("log 2: new reserve")
 			if err := cartItem.SetReserve(nil, quantity); err != nil {
 				return err
 			}
 		} else {
-			log.Println("log 3: drop reserve")
 			// снимаем резерв
 			if err := cartItem.CancelReserve(); err != nil { return err }
 		}
@@ -445,8 +439,10 @@ func (cartItem CartItem) GetAvailabilityWarehouseItems() []WarehouseItem {
 	// Это доставка, она доступна (по дефолту)
 	if cartItem.ProductId < 1 { return warehouseItems }
 
+	// if cartItem.Quantity == 0 { return warehouseItems }
+
 	err := db.Model(&WarehouseItem{}).
-		Where("product_id = ? AND stock >= ?", cartItem.ProductId, cartItem.Quantity).
+		Where("product_id = ? AND stock >= ? AND stock > 0", cartItem.ProductId, cartItem.Quantity).
 		Preload("Warehouse").Find(&warehouseItems).Error
 
 	if err != nil && err != gorm.ErrRecordNotFound {
