@@ -333,7 +333,7 @@ func ProductAppendSourceItem(w http.ResponseWriter, r *http.Request) {
 	
 	var input struct{
 		SourceId		uint		`json:"source_id"`
-		AmountUnits 	float64 	`json:"amount_units"`
+		Quantity 		float64 	`json:"quantity"`
 		EnableViewing	bool 		`json:"enable_viewing"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -348,7 +348,7 @@ func ProductAppendSourceItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = product.AppendSourceItem(&productSource,input.AmountUnits, input.EnableViewing, true); err !=nil {
+	if err = product.AppendSourceItem(&productSource,input.Quantity, input.EnableViewing, true); err !=nil {
 		u.Respond(w, u.MessageError(err, "Ошибка добавления товара как источник"))
 		return
 	}
@@ -447,7 +447,7 @@ func ProductUpdateSourceItem(w http.ResponseWriter, r *http.Request) {
 
 	// Данные по обновлению
 	var input struct {
-		AmountUnits 	float64 `json:"amount_units"`
+		Quantity 		float64 	`json:"quantity"`
 		EnableViewing	bool	`json:"enable_viewing"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {

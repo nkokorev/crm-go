@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -499,12 +500,19 @@ func (cartItem *CartItem) SetWastedOffFromWarehouse() error {
 	return nil
 }
 
-// Возвращает склады, где есть указанный товар в нужном обхеме
+// Возвращает склады, где есть указанный товар в нужном обхеме или все компоненты (на одном складе)
 func (cartItem CartItem) GetAvailabilityWarehouseItems() []WarehouseItem {
 
 	warehouseItems := make([]WarehouseItem,0)
 
-	if cartItem.Id < 1 { return warehouseItems}
+	if cartItem.Id < 1 || cartItem.ProductId < 1 { return warehouseItems}
+
+	var product Product
+	if err := (Account{Id: cartItem.AccountId}).LoadEntity(&product, cartItem.ProductId, []string{"SourceItems"}); err != nil {
+		return warehouseItems
+	}
+
+	fmt.Println("product S: ", product.SourceItems[0].Quantity)
 
 	// Это доставка, она доступна (по дефолту)
 	if cartItem.ProductId < 1 { return warehouseItems }

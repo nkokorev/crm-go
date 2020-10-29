@@ -1647,7 +1647,7 @@ TsAWKRB/H4nLPV8gbADJAwlz75F035Z/E7SN4RdruEX6TA==
 			log.Fatal("Не удалось создать Product для airoClimat: ", err)
 		}
 
-		if err := product.SyncSourceItems([]models.ProductSource{{SourceId: utils.ParseUINTp(&product.Id), ProductId: utils.ParseUINTp(&product.Id), AmountUnits: 1, EnableViewing: true}}); err != nil {
+		if err := product.SyncSourceItems([]models.ProductSource{{SourceId: utils.ParseUINTp(&product.Id), ProductId: utils.ParseUINTp(&product.Id), Quantity: 1, EnableViewing: true}}); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -3677,7 +3677,7 @@ func Upload357grData() {
 		}
 		product := _product.(*models.Product)
 		if !product.IsKit {
-			if err := product.SyncSourceItems([]models.ProductSource{{SourceId: utils.ParseUINTp(&product.Id), ProductId: utils.ParseUINTp(&product.Id), AmountUnits: 1, EnableViewing: true}}); err != nil {
+			if err := product.SyncSourceItems([]models.ProductSource{{SourceId: utils.ParseUINTp(&product.Id), ProductId: utils.ParseUINTp(&product.Id), Quantity: 1, EnableViewing: true}}); err != nil {
 				log.Fatal(err)
 			}
 		}

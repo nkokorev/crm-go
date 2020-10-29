@@ -14,7 +14,8 @@ type ProductSource struct {
 	SourceId 	uint `json:"source_id" gorm:"type:int;index;not null;"`
 
 	// Сколько ед. в одном товаре ()
-	AmountUnits 	float64 `json:"amount_units" gorm:"type:numeric;"`
+	Quantity 	float64 `json:"quantity" gorm:"type:numeric;"`
+	// AmountUnits 	float64 `json:"amount_units" gorm:"type:numeric;"`
 
 	// Отображать или нет в списке содержание
 	EnableViewing	bool 	`json:"enable_viewing" gorm:"type:bool;default:true"`

@@ -623,7 +623,7 @@ func (product *Product) ExistProductTag(tagId uint) bool {
 	return true
 }
 
-func (product *Product) AppendSourceItem(source *Product, amountUnits float64, enableViewing bool, strict bool) error {
+func (product *Product) AppendSourceItem(source *Product, quantity float64, enableViewing bool, strict bool) error {
 
 	// 1. Загружаем продукт-источник еще раз
 	if err := source.load(nil); err != nil {
@@ -649,7 +649,7 @@ func (product *Product) AppendSourceItem(source *Product, amountUnits float64, e
 
 			// update
 			if err := db.Model(&ProductSource{}).Where("source_id = ? AND product_id = ?", source.Id, product.Id).
-				Updates(map[string]interface{}{"amount_units": amountUnits,"enable_viewing":enableViewing}).Error; err != nil {
+				Updates(map[string]interface{}{"quantity": quantity,"enable_viewing":enableViewing}).Error; err != nil {
 				return err
 			}
 			return nil
@@ -658,7 +658,7 @@ func (product *Product) AppendSourceItem(source *Product, amountUnits float64, e
 
 	if err := db.Create(
 		&ProductSource {
-			ProductId: product.Id, SourceId: source.Id, AmountUnits: amountUnits, EnableViewing: enableViewing}).Error; err != nil {
+			ProductId: product.Id, SourceId: source.Id, Quantity: quantity, EnableViewing: enableViewing}).Error; err != nil {
 		return err
 	}
 
@@ -710,7 +710,7 @@ func (product *Product) SyncSourceItems(productSources []ProductSource) error {
 		if product.IsKit && product.Id == sourceItem.ProductId {
 			continue
 		}
-		if err := product.AppendSourceItem( &Product{Id: sourceItem.ProductId}, sourceItem.AmountUnits, sourceItem.EnableViewing, false); err != nil {
+		if err := product.AppendSourceItem( &Product{Id: sourceItem.ProductId}, sourceItem.Quantity, sourceItem.EnableViewing, false); err != nil {
 			return err
 		}
 	}
