@@ -25,7 +25,7 @@ type Product struct {
 	AccountId 			uint 	`json:"-" gorm:"type:int;index;not null;"`
 
 	// Доступен ли товар для продажи в розницу
-	RetailSale 			bool 	`json:"retail_sale" gorm:"type:bool;default:false"`
+	EnableRetailSale 	bool 	`json:"enable_retail_sale" gorm:"type:bool;default:false"`
 
 	// Доступен ли товар для продажи оптом
 	WholesaleSale		bool	`json:"wholesale_sale" gorm:"type:bool;default:false"`
