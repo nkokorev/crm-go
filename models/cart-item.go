@@ -219,6 +219,7 @@ func (CartItem) getPaginationList(accountId uint, offset, limit int, sortBy, sea
 	return entities, total, nil
 }
 func (cartItem *CartItem) update(input map[string]interface{}, preloads []string) error {
+
 	delete(input,"amount")
 	delete(input,"payment_subject")
 	delete(input,"payment_mode")
@@ -351,7 +352,11 @@ func (cartItem *CartItem) setReserve(warehouseId *uint, quantity float64) error 
 	if cartItem.Id < 1 || cartItem.ProductId < 1 { return utils.Error{Message: "Тех.ошибка cartItem.Id < 1"}}
 	var warehouseItem WarehouseItem
 
-	// 1. Находим wh_item на нужном складе с порверкой на доступный объем
+	// Получаем product источник(и)
+	var product Product
+	(Account{Id: cartItem.AccountId}).LoadEntity(&product, cartItem.ProductId, []string{""})
+
+	// 1. Находим wh_item на нужном складе с проверкой на доступный объем
 	if warehouseId != nil {
 
 		err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ? AND stock >= ?", cartItem.ProductId, warehouseId, quantity).
