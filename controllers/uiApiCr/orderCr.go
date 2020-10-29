@@ -356,6 +356,7 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 			Description: desc,
 			Quantity: v.Quantity,
 			Amount: models.PaymentAmount{Value: ProductCost, Currency: "RUB"},
+			Cost: ProductCost,
 			VatCode: utils.ParseUINTp(product.VatCodeId),
 			PaymentSubjectId: utils.ParseUINTp(product.PaymentSubjectId), // признак предмета расчета
 			PaymentSubjectYandex: product.PaymentSubject.Code,
@@ -403,6 +404,7 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 		VatCode: vt_code.YandexCode, // todo: тут 0 ???!
 		PaymentSubjectId: delivery.GetPaymentSubject().Id, // признак предмета расчета
 		PaymentSubjectYandex: delivery.GetPaymentSubject().Code,
+		Cost: deliveryCost, // Стоимость доставки
 	})
 
 	// 4.2 Добавляем стоимость доставки к общей стоимости
@@ -452,6 +454,7 @@ func createOrderFromBasket(w http.ResponseWriter, input CreateOrderForm, account
 	// order.CompanyId = CompanyId.Id
 	_order.OrderChannelId = channel.Id
 	_order.Amount = models.PaymentAmount{Value: totalCost, Currency: totalCurrency, AccountId: account.Id}
+	_order.Cost = totalCost
 	_order.CartItems = cartItems
 	_order.PaymentMethodId = paymentMethod.GetId()
 	_order.PaymentMethodType = paymentMethod.GetType()
