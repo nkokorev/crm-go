@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -43,7 +44,7 @@ type CartItem struct {
 	// Была ли списана ли позиция со склада
 	Wasted			bool `json:"wasted" gorm:"type:bool;default:false;"`
 
-	// null - ни в резерве, ни в списан. 
+	// warehouseItemId -   
 	WarehouseItemId		*uint `json:"warehouse_item_id" gorm:"type:int;"`
 	WarehouseItem		*WarehouseItem	`json:"warehouse_item"`
 	WarehouseItems		[]WarehouseItem	`json:"warehouse_items" gorm:"-"` // AfterFind
@@ -353,21 +354,31 @@ func (cartItem *CartItem) setReserve(warehouseId *uint, quantity float64) error 
 
 	// Получаем product источник(и)
 	var product Product
-	if err := (Account{Id: cartItem.AccountId}).LoadEntity(&product, cartItem.ProductId, []string{""}); err != nil {return err}
+	if err := (Account{Id: cartItem.AccountId}).LoadEntity(&product, cartItem.ProductId, []string{"SourceItems"}); err != nil {return err}
 
 
 	// 1. Находим wh_item на нужном складе с проверкой на доступный объем
 	if warehouseId != nil {
 
+		for _,v := range product.SourceItems {
+			fmt.Printf("Source item: id: %v || q: %v \n", v.SourceId, v.Quantity)
+			err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ? AND stock >= ?", v.SourceId, warehouseId, v.Quantity).
+				First(&warehouseItem).Error
+			if err != nil && err != gorm.ErrRecordNotFound {return err }
+			if err == gorm.ErrRecordNotFound { return utils.Error{Message: "На складе отсутствует необходимо число товара"}	}
+		}
+
 		// Если сборный товар надо идти по sourceItem
-		if product.IsKit {
+		/*if product.IsKit {
+
+
 
 		} else {
 			err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ? AND stock >= ?", cartItem.ProductId, warehouseId, quantity).
 				First(&warehouseItem).Error
 			if err != nil && err != gorm.ErrRecordNotFound {return err }
 			if err == gorm.ErrRecordNotFound { return utils.Error{Message: "На складе отсутствует необходимо число товара"}	}
-		}
+		}*/
 
 
 	} else {
@@ -375,6 +386,14 @@ func (cartItem *CartItem) setReserve(warehouseId *uint, quantity float64) error 
 		if cartItem.WarehouseItemId == nil {
 			return utils.Error{Message: "Тех.ошибка cartItem.WarehouseItemId == nil"}
 		}
+
+		/*for _,v := range product.SourceItems {
+			fmt.Printf("Source item: id: %v || q: %v \n", v.SourceId, v.Quantity)
+			err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ? AND stock >= ?", v.SourceId, warehouseId, v.Quantity).
+				First(&warehouseItem).Error
+			if err != nil && err != gorm.ErrRecordNotFound {return err }
+			if err == gorm.ErrRecordNotFound { return utils.Error{Message: "На складе отсутствует необходимо число товара"}	}
+		}*/
 
 		err := db.Model(&WarehouseItem{}).Where("id = ? AND product_id = ? AND stock >= ?", *cartItem.WarehouseItemId, cartItem.ProductId, quantity).
 			First(&warehouseItem).Error
@@ -517,9 +536,6 @@ func (cartItem CartItem) GetAvailabilityWarehouseItems() []WarehouseItem {
 		return warehouseItems
 	}
 
-	/*fmt.Println("is Kit: ", product.IsKit)
-	fmt.Println("product S: ", product.SourceItems[0].Quantity)*/
-
 	// Это доставка, она доступна (по дефолту)
 	if cartItem.ProductId < 1 { return warehouseItems }
 
@@ -612,14 +628,6 @@ func FindUINT(slice []uint, val uint) (int, bool) {
 		}
 	}
 	return -1, false
-}
-
-func RemoveIndex(s []uint, index int) []uint {
-	return append(s[:index], s[index+1:]...)
-}
-
-func RemoveIndexWarehouseItem(s []WarehouseItem, index int) []WarehouseItem {
-	return append(s[:index], s[index+1:]...)
 }
 
 func RemoveWarehouseFromItems(warehouseItems []WarehouseItem, warehouseId uint) []WarehouseItem {
