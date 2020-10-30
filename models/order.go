@@ -671,12 +671,13 @@ func (order Order) UpdateDeliveryData() error {
 		return utils.Error{Message: "Техническая ошибка: account id || order id == nil"}
 	}
 
+	// Загружаем еще раз заказ
 	if err := order.load([]string{"CartItems.Product"}); err != nil { return err}
-
+	
 	// Ищем CartItem
 	var deliveryOrder DeliveryOrder
 	if err := db.Where("account_id = ? AND order_id = ?", order.AccountId, order.Id).First(&deliveryOrder).Error; err != nil {
-		return err
+		return nil
 	}
 	if deliveryOrder.Id < 1 {
 		return nil

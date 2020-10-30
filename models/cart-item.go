@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -245,10 +244,10 @@ func (cartItem *CartItem) update(input map[string]interface{}, preloads []string
 		Error; err != nil {return err}
 
 	if err := (Order{Id: cartItem.OrderId, AccountId: cartItem.AccountId}).UpdateDeliveryData(); err != nil {
-		log.Println("Error update order: ", err)
+		log.Println("Error UpdateDeliveryData 1: ", err)
 	}
 	if err := (Order{Id: cartItem.OrderId, AccountId: cartItem.AccountId}).UpdateCost(); err != nil {
-		log.Println("Error update order: ", err)
+		log.Println("Error UpdateCost 2: ", err)
 	}
 
 	err := cartItem.GetPreloadDb(false,false, preloads).First(cartItem, cartItem.Id).Error
@@ -313,15 +312,15 @@ func (cartItem *CartItem) UpdateReserve (data ReserveCartItem) error {
 			if data.WarehouseId != nil { whId = *data.WarehouseId }
 
 			if err := cartItem.setReserve(whId, quantity); err != nil {
-				fmt.Println(err)
 				return err
 			}
 		}
 
 	} else {  // Если не надо менять
-
+		log.Println("1..")
 		// Меняем локально статус, если нам известен новый статус и не меняется warehouseId
-		if (data.Reserved != nil && data.WarehouseId == nil) && (cartItem.Reserved != *data.Reserved) && cartItem.WarehouseId != nil {
+		if data.Reserved != nil || ((data.WarehouseId != nil && data.Reserved != nil && (cartItem.Reserved != *data.Reserved)) && cartItem.WarehouseId != nil) {
+			log.Println("Ставим новый резерв")
 			// Ставим новый резерв
 			if *data.Reserved {
 
@@ -373,7 +372,7 @@ func (cartItem *CartItem) setReserve(warehouseId uint, quantity float64) error {
 
 		// Объем для резерва
 		var warehouseItem WarehouseItem
-
+		
 		// Находим нужный Item
 		err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ? AND stock >= ?", v.SourceId, warehouseId, v.Quantity).
 			First(&warehouseItem).Error
@@ -383,7 +382,7 @@ func (cartItem *CartItem) setReserve(warehouseId uint, quantity float64) error {
 		// Резервируем нужный объем
 		if quantity > 0 {
 			err := db.Exec("UPDATE warehouse_items SET (stock,reservation) = (stock - ?, reservation + ?) WHERE id = ?",
-				quantity, quantity, warehouseItem.Id).Error
+				quantity*v.Quantity, quantity*v.Quantity, warehouseItem.Id).Error
 			if err != nil { return err }
 		}
 	}
@@ -406,6 +405,28 @@ func (cartItem *CartItem) cancelReserve() error {
 	// Получаем product источник(и) / может быть is_kit
 	var product Product
 	if err := (Account{Id: cartItem.AccountId}).LoadEntity(&product, cartItem.ProductId, []string{"SourceItems"}); err != nil {return err}
+
+	// 1. Идем по исходникам и находим wh_item на нужном складе с проверкой на доступный объем
+	for _,v := range product.SourceItems {
+		
+		// Снимаем резерв для каждого элемента
+		if cartItem.Quantity > 0 && cartItem.WarehouseId != nil {
+
+			// Объем для резерва
+			var warehouseItem WarehouseItem
+
+			// Находим нужный Item
+			err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ? AND stock >= ?", v.SourceId, *cartItem.WarehouseId, v.Quantity).
+				First(&warehouseItem).Error
+			if err != nil && err != gorm.ErrRecordNotFound {return err }
+			if err == gorm.ErrRecordNotFound { return utils.Error{Message: "На складе отсутствует необходимо число товара"}	}
+
+
+			err = db.Exec("UPDATE warehouse_items SET (stock,reservation) = (stock + ?, reservation - ?) WHERE id = ?",
+				cartItem.Quantity*v.Quantity, cartItem.Quantity*v.Quantity, warehouseItem.Id).Error
+			if err != nil { return err }
+		}
+	}
 
 	if cartItem.WarehouseId == nil && cartItem.Quantity > 0 {
 		return utils.Error{Message: "Тех.ошибка снятия резерва с неуказанным складом."}
