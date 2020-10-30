@@ -103,11 +103,10 @@ func (order *Order) GetPreloadDb(getModel bool, autoPreload bool, preloads []str
 
 		allowed := utils.FilterAllowedKeySTRArray(preloads,
 			[]string{"Status","Payment","Customer","DeliveryOrder","DeliveryOrder.Status","DeliveryOrder.Status","DeliveryOrder.Amount",
-			"CartItems","CartItems.Product","CartItems.WarehouseItem","CartItems.Product.MeasurementUnit","CartItems.Product.ProductCards","CartItems.Product.ProductTags","CartItems.Product.PaymentSubject",
+			"CartItems","CartItems.Product","CartItems.Warehouse","CartItems.Product.MeasurementUnit","CartItems.Product.ProductCards","CartItems.Product.ProductTags","CartItems.Product.PaymentSubject",
 			"CartItems.Amount","CartItems.PaymentMode","Manager","WebSite","OrderChannel","Company","Comments"})
 
 		for _,v := range allowed {
-			_db.Preload("CartItems.WarehouseItem")
 			_db.Preload(v)
 		}
 		return _db
