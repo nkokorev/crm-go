@@ -113,20 +113,34 @@ func ProductListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	// 2. Узнаем, какой список нужен
 	all := utilsCr.GetQueryBoolVarFromGET(r, "all")
 
+	// Узнаем нужен ли фильтр
+	filter := map[string]interface{}{}
+
+	strVar := r.URL.Query().Get("isKit")
+	if strVar != "" {
+		switch strVar {
+		case "false":
+			filter["is_kit"] = false
+		case "true":
+			filter["is_kit"] = true
+		}
+	}
+
+
 	var total int64 = 0
-	webSites := make([]models.Entity,0)
+	products := make([]models.Entity,0)
 
 	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
 
 	if all {
-		webSites, total, err = account.GetListEntity(&models.Product{}, sortBy,preloads)
+		products, total, err = account.GetListEntity(&models.Product{}, sortBy,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список страниц"))
 			return
 		}
 	} else {
 		// webHooks, total, err = account.GetWebHooksPaginationList(offset, limit, search)
-		webSites, total, err = account.GetPaginationListEntity(&models.Product{}, offset, limit, sortBy, search, nil,preloads)
+		products, total, err = account.GetPaginationListEntity(&models.Product{}, offset, limit, sortBy, search, filter,preloads)
 		if err != nil {
 			u.Respond(w, u.MessageError(err, "Не удалось получить список страниц"))
 			return
@@ -134,7 +148,7 @@ func ProductListPaginationGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "GET Product PaginationList")
-	resp["products"] = webSites
+	resp["products"] = products
 	resp["total"] = total
 	u.Respond(w, resp)
 }

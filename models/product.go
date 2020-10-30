@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/nkokorev/crm-go/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -314,6 +315,7 @@ func (Product) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 		search = "%"+search+"%"
 
 		err := (&Product{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+			Where(filter).
 			Find(&products, "label ILIKE ? OR short_label ILIKE ? OR article ILIKE ? OR brand ILIKE ? OR model ILIKE ? OR description ILIKE ?", search,search,search,search,search,search).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
@@ -329,8 +331,9 @@ func (Product) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 
 	} else {
 
+		fmt.Println(filter)
 		err := (&Product{}).GetPreloadDb(false, false, preloads).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
-			Find(&products).Error
+			Where(filter).Find(&products).Error
 		if err != nil && err != gorm.ErrRecordNotFound{
 			return nil, 0, err
 		}
