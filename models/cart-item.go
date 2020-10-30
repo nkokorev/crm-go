@@ -299,10 +299,9 @@ func (cartItem *CartItem) UpdateReserve (data ReserveCartItem) error {
 	if data.WarehouseId != nil {
 		// Узнаем, надо ли снять текущий резерв
 		if cartItem.Reserved {
-
+			
 			// снимаем резерв
 			if err := cartItem.cancelReserve(); err != nil { return err }
-
 		}
 
 		// Ставим новый резерв (в любом случае)
@@ -354,15 +353,22 @@ func (cartItem *CartItem) setReserve(warehouseId *uint, quantity float64) error 
 
 	// Получаем product источник(и)
 	var product Product
-	(Account{Id: cartItem.AccountId}).LoadEntity(&product, cartItem.ProductId, []string{""})
+	if err := (Account{Id: cartItem.AccountId}).LoadEntity(&product, cartItem.ProductId, []string{""}); err != nil {return err}
+
 
 	// 1. Находим wh_item на нужном складе с проверкой на доступный объем
 	if warehouseId != nil {
 
-		err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ? AND stock >= ?", cartItem.ProductId, warehouseId, quantity).
-			First(&warehouseItem).Error
-		if err != nil && err != gorm.ErrRecordNotFound {return err }
-		if err == gorm.ErrRecordNotFound { return utils.Error{Message: "На складе отсутствует необходимо число товара"}	}
+		// Если сборный товар надо идти по sourceItem
+		if product.IsKit {
+
+		} else {
+			err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ? AND stock >= ?", cartItem.ProductId, warehouseId, quantity).
+				First(&warehouseItem).Error
+			if err != nil && err != gorm.ErrRecordNotFound {return err }
+			if err == gorm.ErrRecordNotFound { return utils.Error{Message: "На складе отсутствует необходимо число товара"}	}
+		}
+
 
 	} else {
 
@@ -516,109 +522,86 @@ func (cartItem CartItem) GetAvailabilityWarehouseItems() []WarehouseItem {
 
 	// Это доставка, она доступна (по дефолту)
 	if cartItem.ProductId < 1 { return warehouseItems }
-	
-	if product.IsKit {
 
-		/*log.Printf("\n-------------------")
-		log.Println("SourceItems: ", len(product.SourceItems))
-		log.Println("Quantity: ", product.SourceItems[0].Quantity)
-		log.Println("Source product Id: ", product.SourceItems[0].SourceId)
-		log.Println("Source product Id: ", product.SourceItems[1].SourceId)
-		log.Printf("\n")*/
+	// Список item для резерва
+	whItems := make([]WarehouseItem,0)
 
-		// Список item для резерва
-		whItems := make([]WarehouseItem,0)
+	for itemId := range product.SourceItems {
 
-		for itemId := range product.SourceItems {
+		// товар ли это > 0 ?
+		if product.SourceItems[itemId].ProductId > 0 {
 
-			// товар ли это > 0 ?
-			if product.SourceItems[itemId].ProductId > 0 {
+			// ProductId - id товара ДЛЯ которого собираем
+			// SourceId - id товаров ИЗ которых собираем
 
-				// ProductId - id товара ДЛЯ которого собираем
-				// SourceId - id товаров ИЗ которых собираем
+			// Список позиций на складах, где хранится один из source' товара
+			wIs := make([]WarehouseItem,0)
 
-				// Список позиций на складах, где хранится один из source' товара
-				wIs := make([]WarehouseItem,0)
+			// min cписок складов для исходника товара
+			warehouses := make([]uint,0)
 
-				// min cписок складов для исходника товара
-				warehouses := make([]uint,0)
+			// Загружаем список позиций на складах подходящих по объему
+			err := db.Model(&WarehouseItem{}).
+				Where("product_id = ? AND stock >= ? AND stock > 0", product.SourceItems[itemId].SourceId, product.SourceItems[itemId].Quantity).
+				Preload("Warehouse").Find(&wIs).Error
 
-				// Загружаем список позиций на складах подходящих по объему
-				err := db.Model(&WarehouseItem{}).
-					Where("product_id = ? AND stock >= ? AND stock > 0", product.SourceItems[itemId].SourceId, product.SourceItems[itemId].Quantity).
-					Preload("Warehouse").Find(&wIs).Error
+			// Если ничего не найдено или список 0 => возвращаем  []
+			if err != nil || len(wIs) == 0 { return warehouseItems }
 
-				// Если ничего не найдено или список 0 => возвращаем  []
-				if err != nil || len(wIs) == 0 { return warehouseItems }
-
-				// Если это первый проход, то без проверок
-				// Если нашли позицию(ии) добавляем id склада
-				if itemId == 0 {
-					for y := range wIs {
-						warehouses = append(warehouses, wIs[y].WarehouseId)
-						whItems = append(whItems,wIs[y]) // << добавляем warehouseItem для товара
-						continue
-					}
-				} else {
-
-					// если это не первый товар в исходниках
-
-					// arr := make([]WarehouseItem,0)
-					arr := whItems
-					// идем по найденным позициям на складах и проверяем есть ли эти склады у нового товара в исходниках
-					for _, vh := range arr {
-						needWarehouseId := vh.WarehouseId
-					
-						existOfOne := false // если есть = true
-
-						// Идем по найденным whItems
-						for y, v := range wIs {
-
-							if v.WarehouseId == needWarehouseId {
-								existOfOne = true
-								whItems = append(whItems,wIs[y]) // << добавляем warehouseItem для товара
-							}
-						}
-
-						// Если не найден склад, то исключаем все позиции с wh = needWarehouseId
-						if !existOfOne {
-							whItems = RemoveWarehouseFromItems(whItems, needWarehouseId)
-						}
-
-
-					}
+			// Если это первый проход, то без проверок
+			// Если нашли позицию(ии) добавляем id склада
+			if itemId == 0 {
+				for y := range wIs {
+					warehouses = append(warehouses, wIs[y].WarehouseId)
+					whItems = append(whItems,wIs[y]) // << добавляем warehouseItem для товара
+					continue
 				}
+			} else {
 
+				// если это не первый товар в исходниках
+
+				// arr := make([]WarehouseItem,0)
+				arr := whItems
+				// идем по найденным позициям на складах и проверяем есть ли эти склады у нового товара в исходниках
+				for _, vh := range arr {
+					needWarehouseId := vh.WarehouseId
+
+					existOfOne := false // если есть = true
+
+					// Идем по найденным whItems
+					for y, v := range wIs {
+
+						if v.WarehouseId == needWarehouseId {
+							existOfOne = true
+							whItems = append(whItems,wIs[y]) // << добавляем warehouseItem для товара
+						}
+					}
+
+					// Если не найден склад, то исключаем все позиции с wh = needWarehouseId
+					if !existOfOne {
+						whItems = RemoveWarehouseFromItems(whItems, needWarehouseId)
+					}
+
+
+				}
 			}
-		}
 
-		warehouses := make([]uint,0)
-		for _, v := range whItems {
-			// Добавляем ID склада
-			if _, ok := FindUINT(warehouses,v.WarehouseId); !ok {
-				warehouses = append(warehouses, v.WarehouseId)
-			}
-		}
-
-		// Просто возвращаем ID складов, где найдено необходимо число товаров
-
-		arr := make([]WarehouseItem,0)
-		for _, v := range warehouses {
-			arr = append(arr, WarehouseItem{WarehouseId: v})
-		}
-
-		return arr
-		
-	} else {
-		err := db.Model(&WarehouseItem{}).
-			Where("product_id = ? AND stock >= ? AND stock > 0", cartItem.ProductId, cartItem.Quantity).
-			Preload("Warehouse").Find(&warehouseItems).Error
-
-		if err != nil && err != gorm.ErrRecordNotFound {
-			return warehouseItems
 		}
 	}
-	
+
+	warehouses := make([]uint,0)
+	for _, v := range whItems {
+		// Добавляем ID склада
+		if _, ok := FindUINT(warehouses,v.WarehouseId); !ok {
+			warehouses = append(warehouses, v.WarehouseId)
+		}
+	}
+
+	// Просто возвращаем ID складов, где найдено необходимо число товаров
+	for _, v := range warehouses {
+		warehouseItems = append(warehouseItems, WarehouseItem{WarehouseId: v})
+	}
+
 	return warehouseItems
 }
 
