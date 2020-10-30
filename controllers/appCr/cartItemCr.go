@@ -249,6 +249,8 @@ func CartItemUpdateReserve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if input.Quantity != nil && *input.Quantity < 0 { *input.Quantity = -1 * *input.Quantity}
+
 	if err := cartItem.UpdateReserve(input); err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return

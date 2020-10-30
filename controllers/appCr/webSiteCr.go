@@ -168,16 +168,12 @@ func WebSiteUpdate(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
 		return
 	}
-
-	// fix variables
-	/*if err := u.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
-		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
-		return
-	}*/
+	
 
 	// webSite, err := account.UpdateWebSite(webSiteId, &input.WebSite)
 	err = account.UpdateEntity(&webSite, input,preloads)
 	if err != nil {
+		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))
 		return
 	}

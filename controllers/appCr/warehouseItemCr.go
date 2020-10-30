@@ -176,6 +176,23 @@ func WarehouseItemUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if valStr, ok := input["stock"]; ok {
+		f64, ok1 := valStr.(float64)
+		if ok1 {
+			if f64 < 0 {
+				input["stock"] = -1*f64
+			}
+		}
+	}
+	if valStr, ok2 := input["reservation"]; ok2 {
+		f64, ok3 := valStr.(float64)
+		if ok3 {
+			if f64 < 0 {
+				input["reservation"] = -1*f64
+			}
+		}
+	}
+
 	err = account.UpdateEntity(&warehouseItem, input, preloads)
 	if err != nil {
 		u.Respond(w, u.MessageError(err, "Ошибка при обновлении"))

@@ -359,7 +359,6 @@ func (cartItem *CartItem) UpdateReserve (data ReserveCartItem) error {
 	return nil
 }
 
-
 // Резервирует товар на warehouseId в нужном объеме, НЕ снимая старый резерв
 func (cartItem *CartItem) setReserve(warehouseId uint, quantity float64) error {
 
@@ -448,8 +447,12 @@ func (cartItem *CartItem) wasted() error {
 
 	if cartItem.Id < 1 || cartItem.ProductId < 1 { return utils.Error{Message: "Тех.ошибка cartItem.Id < 1"}}
 
-	if cartItem.WarehouseId == nil { return utils.Error{Message: "Не указан склад списания: warehouse id"}}
+	// Загружаем еще раз т.к. остатки могли обновиться
+	if err := cartItem.load([]string{""}); err != nil {
+		return err
+	}
 
+	if cartItem.WarehouseId == nil { return utils.Error{Message: "Не указан склад списания: warehouse id"}}
 
 	var product Product
 	if err := (Account{Id: cartItem.AccountId}).LoadEntity(&product, cartItem.ProductId, []string{"SourceItems"}); err != nil {return err}
@@ -461,25 +464,32 @@ func (cartItem *CartItem) wasted() error {
 		// Объем для резерва
 		var warehouseItem WarehouseItem
 
-		// Находим нужный Item
-		err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ? AND stock >= ?", v.SourceId, *cartItem.WarehouseId, v.Quantity).
-			First(&warehouseItem).Error
-		if err != nil {
-			return utils.Error{Message: "На складе отсутствует указанный товар"}
-		}
-
 		if cartItem.Quantity > 0 {
 			if cartItem.Reserved {
 
+				err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ? AND reservation >= ?", v.SourceId, *cartItem.WarehouseId, cartItem.Quantity*v.Quantity).
+					First(&warehouseItem).Error
+				if err != nil {
+					log.Println("err :: ", err)
+					return utils.Error{Message: "На складе в резерве отсутствует указанный товар в нужном объеме"}
+				}
+
 				// 1. Списываем с Warehouse_item из резерва
-				err := db.Exec("UPDATE warehouse_items SET reservation = reservation - ? WHERE id = ?",
+				err = db.Exec("UPDATE warehouse_items SET reservation = reservation - ? WHERE id = ?",
 					cartItem.Quantity*v.Quantity, warehouseItem.Id).Error
 				if err != nil { return err }
 
 			} else {
 
+				err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ? AND stock >= ?", v.SourceId, *cartItem.WarehouseId, cartItem.Quantity*v.Quantity).
+					First(&warehouseItem).Error
+				if err != nil {
+					log.Println("err :: ", err)
+					return utils.Error{Message: "На складе отсутствует указанный товар"}
+				}
+
 				// Списываем из stock нужное число товара
-				err := db.Exec("UPDATE warehouse_items SET stock = stock - ? WHERE id = ?",
+				err = db.Exec("UPDATE warehouse_items SET stock = stock - ? WHERE id = ?",
 					cartItem.Quantity*v.Quantity, warehouseItem.Id).Error
 				if err != nil { return err }
 			}
@@ -498,7 +508,8 @@ func (cartItem *CartItem) wastedRollBack() error {
 
 	if cartItem.Id < 1 || cartItem.ProductId < 1 { return utils.Error{Message: "Тех.ошибка cartItem.Id < 1"}}
 
-	if cartItem.WarehouseId == nil { return utils.Error{Message: "Не указан склад списания: warehouse id"}}
+	if cartItem.WarehouseId == nil { return  nil }
+	// if cartItem.WarehouseId == nil { return utils.Error{Message: "Не указан склад списания: warehouse id"}}
 
 	if cartItem.Quantity == 0 || !cartItem.Wasted {return nil }
 

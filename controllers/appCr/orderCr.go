@@ -337,3 +337,58 @@ func OrderSetUnknownCustomer(w http.ResponseWriter, r *http.Request) {
 	resp["order"] = order
 	u.Respond(w, resp)
 }
+
+func OrderUpdateReserve(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	orderId, err := utilsCr.GetUINTVarFromRequest(r, "orderId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	var order models.Order
+	err = account.LoadEntity(&order, orderId, nil)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
+		return
+	}
+
+	/*var input map[string]interface{}*/
+	var input models.ReserveCartItem
+	
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}
+
+	// обнуляем лишнее
+	input.Quantity = nil
+	input.WarehouseId = nil
+	input.Wasted = nil
+
+	if input.Reserved != nil {
+		err = order.UpdateReserveCartItems(&input)
+		if err != nil {
+			u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
+			return
+		}
+	}
+
+	err = account.LoadEntity(&order, orderId, preloads)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
+		return
+	}
+
+	resp := u.Message(true, "PATCH Order Update")
+	resp["order"] = order
+	u.Respond(w, resp)
+}

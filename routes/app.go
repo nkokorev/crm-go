@@ -339,6 +339,7 @@ var AppRoutes = func(r *mux.Router) {
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/orders/{orderId:[0-9]+}/products/{productId:[0-9]+}", appCr.OrderAppendProduct).Methods(http.MethodPost, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/orders/{orderId:[0-9]+}/products/{productId:[0-9]+}", appCr.OrderRemoveProduct).Methods(http.MethodDelete, http.MethodOptions)
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/orders/{orderId:[0-9]+}/customer/unknown", appCr.OrderSetUnknownCustomer).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/orders/{orderId:[0-9]+}/cart-items/reserve", appCr.OrderUpdateReserve).Methods(http.MethodPatch, http.MethodOptions)
 
 	// ### Order Channel Items ###
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/order-channels", appCr.OrderChannelCreate).Methods(http.MethodPost, http.MethodOptions)

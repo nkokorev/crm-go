@@ -744,3 +744,35 @@ func (order *Order) SetUnknownCustomer() error {
 	return nil
 }
 
+// Устанавливает или снимает резерв со всех 
+func (order *Order) UpdateReserveCartItems (data *ReserveCartItem) error {
+
+	if order.Id < 1 || order.WebSiteId == nil {
+		return utils.Error{Message: "Тех. ошибка: can't set reserve K731U"}
+	}
+
+	if err := order.load([]string{"CartItems"});err != nil {
+		return err
+	}
+
+	var webSite WebSite
+	if err := (Account{Id: order.AccountId}).LoadEntity(&webSite, *order.WebSiteId, nil); err != nil {
+		return err
+	}
+
+	// Ставим склад по умолчанию
+	if webSite.WarehouseId != nil {
+		data.WarehouseId = webSite.WarehouseId
+	}
+	
+	for _,v := range order.CartItems {
+		if err := v.UpdateReserve(*data); err != nil {
+			// continue
+			return err
+		}
+	}
+
+	return nil
+}
+
+

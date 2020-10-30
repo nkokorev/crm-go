@@ -71,7 +71,7 @@ func (webSite *WebSite) GetPreloadDb(getModel bool, autoPreload bool, preloads [
 		return _db.Preload(clause.Associations)
 	} else {
 
-		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"EmailBoxes","WebPages"})
+		allowed := utils.FilterAllowedKeySTRArray(preloads,[]string{"EmailBoxes","WebPages","Warehouse"})
 
 		for _,v := range allowed {
 			_db.Preload(v)
@@ -105,15 +105,7 @@ func (webSite *WebSite) BeforeCreate(tx *gorm.DB) error {
 	webSite.PublicId = 1 + uint(lastIdx.Int64)
 	return nil
 }
-func (webSite *WebSite) BeforeUpdate(tx *gorm.DB) (err error) {
-	// fmt.Println(tx.Statement.Select("public_id"))
-	// fmt.Println(tx.Statement.Clauses)
-	// fmt.Println(tx.Statement.Context.Value("public_id"))
-	/*if tx.Statement.Changed("public_id") {
-		tx.Statement.SetColumn("public_id", webSite.PublicId)
-	}*/
-	return
-}
+
 func (webSite *WebSite) AfterFind(tx *gorm.DB) (err error) {
 	
 	webSite.Deliveries = webSite.GetDeliveryMethods()
@@ -150,15 +142,14 @@ func (WebSite) get(id uint, preloads []string) (Entity, error) {
 
 	var webSite WebSite
 
-	err := (&WebSite{}).GetPreloadDb(false,false,nil).First(&webSite, id).Error
+	err := (&WebSite{}).GetPreloadDb(false,false,preloads).First(&webSite, id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &webSite, nil
 }
 func (webSite *WebSite) load(preloads []string) error {
-
-	err := webSite.GetPreloadDb(false, false, nil).First(webSite,webSite.Id).Error
+	err := webSite.GetPreloadDb(false, false, preloads).First(webSite,webSite.Id).Error
 	if err != nil {
 		return err
 	}
@@ -171,7 +162,7 @@ func (webSite *WebSite) loadByPublicId(preloads []string) error {
 		return utils.Error{Message: "Невозможно загрузить Payment - не указан  Id"}
 	}
 
-	if err := webSite.GetPreloadDb(false,false,nil).
+	if err := webSite.GetPreloadDb(false,false,preloads).
 		First(webSite, "account_id = ? AND public_id = ?", webSite.AccountId, webSite.PublicId).Error; err != nil {
 		return err
 	}
@@ -230,12 +221,14 @@ func (WebSite) getPaginationList(accountId uint, offset, limit int, sortBy, sear
 	return entities, total, nil
 }
 func (webSite *WebSite) update(input map[string]interface{}, preloads []string) error {
+
 	delete(input,"email_boxes")
 	delete(input,"web_pages")
 	delete(input,"deliveries")
-	
-	// fmt.Printf("Type: %T | %v\n", input["public_id"], input["public_id"])
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id"}); err != nil {
+	delete(input,"warehouse")
+
+	utils.FixInputHiddenVars(&input)
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","warehouse_id"}); err != nil {
 		return err
 	}
 
