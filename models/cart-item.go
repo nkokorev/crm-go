@@ -259,6 +259,13 @@ func (cartItem *CartItem) update(input map[string]interface{}, preloads []string
 }
 
 func (cartItem *CartItem) delete () error {
+	if err := cartItem.cancelReserve(); err != nil {
+		return err
+	}
+	if err := cartItem.wastedRollBack(); err != nil {
+		return err
+	}
+
 	if err := cartItem.GetPreloadDb(true,false,nil).Where("id = ?", cartItem.Id).Delete(cartItem).Error; err != nil {
 		return err
 	}
@@ -294,7 +301,6 @@ func (cartItem *CartItem) UpdateReserve (data ReserveCartItem) error {
 	if data.Quantity != nil {
 		quantity = *data.Quantity
 	}
-
 
 	// 1. Если нужно изменить или установить warehouse_id
 	if (data.WarehouseId != nil && cartItem.WarehouseId == nil) || (data.WarehouseId != nil && cartItem.WarehouseId != nil && *cartItem.WarehouseId != *data.WarehouseId){
@@ -414,7 +420,7 @@ func (cartItem *CartItem) cancelReserve() error {
 			var warehouseItem WarehouseItem
 
 			// Находим нужный Item
-			err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ? AND stock >= ?", v.SourceId, *cartItem.WarehouseId, v.Quantity).
+			err := db.Model(&WarehouseItem{}).Where("product_id = ? AND warehouse_id = ?", v.SourceId, *cartItem.WarehouseId).
 				First(&warehouseItem).Error
 			if err != nil && err != gorm.ErrRecordNotFound {return err }
 			if err == gorm.ErrRecordNotFound { return utils.Error{Message: "На складе отсутствует необходимо число товара"}	}
@@ -494,7 +500,7 @@ func (cartItem *CartItem) wastedRollBack() error {
 
 	if cartItem.WarehouseId == nil { return utils.Error{Message: "Не указан склад списания: warehouse id"}}
 
-	if cartItem.Quantity == 0 {return nil }
+	if cartItem.Quantity == 0 || !cartItem.Wasted {return nil }
 
 	var product Product
 	if err := (Account{Id: cartItem.AccountId}).LoadEntity(&product, cartItem.ProductId, []string{"SourceItems"}); err != nil {return err}

@@ -559,10 +559,18 @@ func (order *Order) RemoveProduct(product Product) error {
 		return utils.Error{Message: "Техническая ошибка: account id || product id || order id == nil"}
 	}
 
-	if err := db.Where("account_id = ? AND product_id = ? AND order_id = ?", order.AccountId, product.Id, order.Id).Delete(
-		&CartItem{}).Error; err != nil {
+	var cartItem CartItem
+	if err := db.Model(&CartItem{}).Where("account_id = ? AND product_id = ? AND order_id = ?", order.AccountId, product.Id, order.Id).First(&cartItem).Error; err != nil {
 		return err
 	}
+	if err := cartItem.delete(); err != nil {
+		return err
+	}
+
+	/*if err := db.Where("account_id = ? AND product_id = ? AND order_id = ?", order.AccountId, product.Id, order.Id).Delete(
+		&CartItem{}).Error; err != nil {
+		return err
+	}*/
 
 	_ = order.UpdateDeliveryData()
 
