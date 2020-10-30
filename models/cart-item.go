@@ -317,10 +317,8 @@ func (cartItem *CartItem) UpdateReserve (data ReserveCartItem) error {
 		}
 
 	} else {  // Если не надо менять
-		log.Println("1..")
 		// Меняем локально статус, если нам известен новый статус и не меняется warehouseId
 		if data.Reserved != nil || ((data.WarehouseId != nil && data.Reserved != nil && (cartItem.Reserved != *data.Reserved)) && cartItem.WarehouseId != nil) {
-			log.Println("Ставим новый резерв")
 			// Ставим новый резерв
 			if *data.Reserved {
 
@@ -469,14 +467,14 @@ func (cartItem *CartItem) wasted() error {
 
 				// 1. Списываем с Warehouse_item из резерва
 				err := db.Exec("UPDATE warehouse_items SET reservation = reservation - ? WHERE id = ?",
-					cartItem.Quantity, warehouseItem.Id).Error
+					cartItem.Quantity*v.Quantity, warehouseItem.Id).Error
 				if err != nil { return err }
 
 			} else {
 
 				// Списываем из stock нужное число товара
 				err := db.Exec("UPDATE warehouse_items SET stock = stock - ? WHERE id = ?",
-					cartItem.Quantity, warehouseItem.Id).Error
+					cartItem.Quantity*v.Quantity, warehouseItem.Id).Error
 				if err != nil { return err }
 			}
 		}
@@ -518,7 +516,7 @@ func (cartItem *CartItem) wastedRollBack() error {
 		// 1. Делаем возврат товара
 		// Добавляем объем в stock
 		err = db.Exec("UPDATE warehouse_items SET stock = stock + ? WHERE id = ?",
-			cartItem.Quantity, warehouseItem.Id).Error
+			cartItem.Quantity*v.Quantity, warehouseItem.Id).Error
 		if err != nil { return err }
 	}
 
@@ -560,9 +558,9 @@ func (cartItem *CartItem) SetWastedOffFromWarehouse() error {
 			}
 
 			if cartItem.Reserved {
-				reserve = cartItem.Quantity
+				reserve = cartItem.Quantity*v.Quantity
 			} else {
-				stock = cartItem.Quantity
+				stock = cartItem.Quantity*v.Quantity
 			}
 
 			err = db.Exec("UPDATE warehouse_items SET (stock,reservation) = (stock - ?, reservation - ?) WHERE id = ?",
@@ -573,7 +571,7 @@ func (cartItem *CartItem) SetWastedOffFromWarehouse() error {
 	}
 
 	// Переводим в статус Списано и снимаем статус зарезервировано
-	err := db.Exec("UPDATE cart_items SET reserved = false, wasted = true, WHERE id = ?", cartItem.Id).Error
+	err := db.Exec("UPDATE cart_items SET reserved = false, wasted = true WHERE id = ?", cartItem.Id).Error
 	if err != nil && err != gorm.ErrRecordNotFound {return err}
 
 	return nil
