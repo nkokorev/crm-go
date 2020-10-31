@@ -69,7 +69,7 @@ func (productCard *ProductCard) GetPreloadDb(getModel bool, autoPreload bool, pr
 		_db = _db.Model(&ProductCard{})
 	}
 
-	if autoPreload {
+	if autoPreload {                                                                                   
 		return db.Preload("Products").Preload("Products.ProductCards").Preload("Products.PaymentSubject").Preload("Products.MeasurementUnit").
 			Preload("ProductTags").
 			Preload("Images", func(db *gorm.DB) *gorm.DB {
@@ -78,7 +78,7 @@ func (productCard *ProductCard) GetPreloadDb(getModel bool, autoPreload bool, pr
 	} else {
 
 		allowed := utils.FilterAllowedKeySTRArray(preloads,
-			[]string{"Images","Products","Products.ProductCards","Products.PaymentSubject","Products.MeasurementUnit","ProductTags"})
+			[]string{"Images","Products","Products.ProductCards","Products.ProductTags","Products.PaymentSubject","Products.MeasurementUnit","ProductTags"})
 
 		for _,v := range allowed {
 			if v == "Images" {
