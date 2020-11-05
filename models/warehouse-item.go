@@ -196,6 +196,15 @@ func (warehouseItem *WarehouseItem) update(input map[string]interface{}, preload
 		return err
 	}
 
+	// AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":warehouseItem.AccountId, "product_id":warehouseItem.ProductId}))
+	AsyncFire(NewEvent("WarehouseItemUpdated",
+		map[string]interface{}{
+		"account_id":warehouseItem.AccountId,
+		"warehouse_item_id":warehouseItem.Id,
+		"warehouse_id":warehouseItem.WarehouseId,
+		"product_id":warehouseItem.ProductId,
+		}))
+
 	err := warehouseItem.GetPreloadDb(false,false,preloads).First(warehouseItem, warehouseItem.Id).Error
 	if err != nil {
 		return err

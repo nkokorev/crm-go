@@ -292,7 +292,7 @@ func CartItemGetWarehouseItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := u.Message(true, "Update Cart Item reserve")
-	resp["warehouse_items"] = cartItem.GetAvailabilityWarehouseItems()
+	resp["warehouse_items"] = models.GetAvailabilityProductWarehouseItems(cartItem.AccountId, cartItem.ProductId)
 	u.Respond(w, resp)
 }
 

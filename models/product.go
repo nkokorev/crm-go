@@ -9,6 +9,7 @@ import (
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"log"
+	"time"
 )
 
 /*
@@ -73,6 +74,9 @@ type Product struct {
 	WarehouseItems		[]WarehouseItem `json:"warehouse_items"`
 	Warehouses			[]Warehouse 	`json:"warehouses" gorm:"many2many:warehouse_item;"`
 
+	// Склады, на которых доступен данный товар
+	AvailabilityWarehouseItems		[]WarehouseItem `json:"availability_warehouse_items" gorm:"-"`
+
 	// Ед. измерения товара: штуки, метры, литры, граммы и т.д.  !!!!
 	MeasurementUnitId 	*uint	`json:"measurement_unit_id" gorm:"type:int;"` // тип измерения
 	MeasurementUnit 	MeasurementUnit `json:"measurement_unit"`// Ед. измерения: штуки, коробки, комплекты, кг, гр, пог.м.
@@ -85,13 +89,15 @@ type Product struct {
 	Width 				*float64 	`json:"width" gorm:"type:numeric;"`
 	Height 				*float64 	`json:"height" gorm:"type:numeric;"`
 	Weight 				*float64 	`json:"weight" gorm:"type:numeric;"`
+	Volume				*float64 	`json:"volume" gorm:"type:numeric;"`
+	ManufactureDate		*time.Time  `json:"manufacture_date"`
 
 	// Производитель (не поставщик)
 	ManufacturerId		*uint		`json:"manufacturer_id" gorm:"type:int;"`
 	Manufacturer		Manufacturer `json:"manufacturer"`
 
 	// Дата изготовления (условная штука т.к. зависит от поставки), дата выпуска, дата производства
-	ManufactureDate		*string 	`json:"manufacture_date" gorm:"type:varchar(255);"`
+	// ManufactureDate		*string 	`json:"manufacture_date" gorm:"type:varchar(255);"`
 
 	// Условия хранения
 	StorageRequirements	*string		`json:"storage_requirements" gorm:"type:varchar(255);"`
@@ -125,7 +131,7 @@ type Product struct {
 
 	// Список поставок товара, в которых он был
 	Shipments 			[]Shipment 	`json:"shipments" gorm:"many2many:shipment_items"`
-	ShipmentItems 		[]ShipmentItem 	`json:"shipment_items" gorm:"many2many:shipment_items"`
+	ShipmentItems 		[]ShipmentItem 	`json:"-" gorm:"many2many:shipment_items"`
 
 	Inventories 		[]Inventory	`json:"inventories" gorm:"many2many:inventory_items"`
 
@@ -239,6 +245,15 @@ func (product *Product) AfterCreate(tx *gorm.DB) error {
 		}
 
 	}*/
+
+	return nil
+}
+func (product *Product) AfterFind(tx *gorm.DB) (err error) {
+
+	if product.AccountId > 0 && product.Id > 0 {
+		product.AvailabilityWarehouseItems = GetAvailabilityProductWarehouseItems(product.AccountId, product.Id)
+	}
+
 
 	return nil
 }

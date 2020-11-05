@@ -84,7 +84,8 @@ func (cartItem *CartItem) AfterFind(tx *gorm.DB) (err error) {
 	cartItem.PaymentSubjectYandex = cartItem.PaymentSubject.Code
 	cartItem.Amount.Value = cartItem.Cost
 	cartItem.Amount.Currency = "RUB"
-	cartItem.WarehouseItems = cartItem.GetAvailabilityWarehouseItems()
+
+	cartItem.WarehouseItems = GetAvailabilityProductWarehouseItems(cartItem.AccountId, cartItem.ProductId)
 
 	return nil
 }
@@ -595,27 +596,38 @@ func (cartItem *CartItem) SetWastedOffFromWarehouse() error {
 }
 
 // Возвращает склады, где есть указанный товар в нужном обхеме или все компоненты (на одном складе)
-func (cartItem CartItem) GetAvailabilityWarehouseItems() []WarehouseItem {
+// func (cartItem CartItem) GetAvailabilityWarehouseItems() []WarehouseItem {
+func GetAvailabilityProductWarehouseItems(accountId, productId uint) []WarehouseItem {
+
 
 	warehouseItems := make([]WarehouseItem,0)
 
-	if cartItem.Id < 1 || cartItem.ProductId < 1 { return warehouseItems}
+	if accountId < 1 || productId < 1 { return warehouseItems}
 
-	var product Product
-	if err := (Account { Id: cartItem.AccountId }).LoadEntity(&product, cartItem.ProductId, []string{"SourceItems"}); err != nil {
+	if productId < 1 { return warehouseItems}
+
+	/*var product Product
+	if err := db.Table("products").Preload("SourceItems").First(&product,productId).Error; err != nil {
+		return warehouseItems
+	}*/
+	sourceItems := make([]ProductSource,0)
+	if err := db.Model(&ProductSource{}).Where("product_id = ?", productId).Find(&sourceItems).Error; err != nil {
 		return warehouseItems
 	}
+	/*if err := (Account { Id: accountId }).LoadEntity(&product, productId, []string{"SourceItems"}); err != nil {
+		return warehouseItems
+	}*/
 
 	// Это доставка, она доступна (по дефолту)
-	if cartItem.ProductId < 1 { return warehouseItems }
+	if productId < 1 { return warehouseItems }
 
 	// Список item для резерва
 	whItems := make([]WarehouseItem,0)
 
-	for itemId := range product.SourceItems {
+	for itemId := range sourceItems {
 
 		// товар ли это > 0 ?
-		if product.SourceItems[itemId].ProductId > 0 {
+		if sourceItems[itemId].ProductId > 0 {
 
 			// ProductId - id товара ДЛЯ которого собираем
 			// SourceId - id товаров ИЗ которых собираем
@@ -628,7 +640,7 @@ func (cartItem CartItem) GetAvailabilityWarehouseItems() []WarehouseItem {
 
 			// Загружаем список позиций на складах подходящих по объему
 			err := db.Model(&WarehouseItem{}).
-				Where("product_id = ? AND stock >= ? AND stock > 0", product.SourceItems[itemId].SourceId, product.SourceItems[itemId].Quantity).
+				Where("product_id = ? AND stock >= ? AND stock > 0", sourceItems[itemId].SourceId, sourceItems[itemId].Quantity).
 				Preload("Warehouse").Find(&wIs).Error
 
 			// Если ничего не найдено или список 0 => возвращаем  []

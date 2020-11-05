@@ -120,7 +120,7 @@ func (webPage *WebPage) AfterFind(tx *gorm.DB) (err error) {
 }
 func (webPage *WebPage) AfterCreate(tx *gorm.DB) error {
 	// AsyncFire(*Event{}.WebSiteCreated(webSite.AccountId, webSite.Id))
-	AsyncFire(NewEvent("WebPageCreated", map[string]interface{}{"account_id":webPage.AccountId, "web_page_id":webPage.Id}))
+	// AsyncFire(NewEvent("WebPageCreated", map[string]interface{}{"account_id":webPage.AccountId, "web_page_id":webPage.Id}))
 	return nil
 }
 // ############# Entity interface #############
@@ -145,6 +145,8 @@ func (webPage WebPage) create() (Entity, error)  {
 	if err != nil {
 		return nil, err
 	}
+
+	AsyncFire(NewEvent("WebPageCreated", map[string]interface{}{"account_id":item.AccountId, "web_page_id":item.Id}))
 
 	var newItem Entity = &item
 
