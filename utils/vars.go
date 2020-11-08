@@ -42,6 +42,9 @@ func ConvertMapVarsToUINT(input *map[string]interface{}, keys []string) error {
 					return Error{Message: "Техническая ошибка в запросе", Errors: map[string]interface{}{key:"не удается разобрать значение"}}
 				}
 				(*input)[key] = uint(_vFInt)
+			case "string":
+				(*input)[key] = nil
+				// fmt.Println("Char")
 			default:
 				_vF64, ok := _vI.(float64)
 				if !ok {

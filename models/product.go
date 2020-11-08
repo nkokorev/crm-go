@@ -75,7 +75,7 @@ type Product struct {
 	Warehouses			[]Warehouse 	`json:"warehouses" gorm:"many2many:warehouse_item;"`
 
 	// Склады, на которых доступен данный товар
-	AvailabilityWarehouseItems		[]WarehouseItem `json:"availability_warehouse_items" gorm:"-"`
+	AvailabilityWarehouseItems		[]WarehouseItem `json:"_availability_warehouse_items" gorm:"-"`
 
 	// Ед. измерения товара: штуки, метры, литры, граммы и т.д.  !!!!
 	MeasurementUnitId 	*uint	`json:"measurement_unit_id" gorm:"type:int;"` // тип измерения
@@ -384,10 +384,11 @@ func (product *Product) update(input map[string]interface{}, preloads []string) 
 	delete(input,"sources")
 	delete(input,"source_items")
 	utils.FixInputHiddenVars(&input)
-	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","payment_subject_id","vat_code_id","measurement_unit_id","manufacturer_id","product_type_id"}); err != nil {
+	if err := utils.ConvertMapVarsToUINT(&input, []string{"public_id","payment_subject_id","vat_code_id","measurement_unit_id","manufacturer_id",
+		"product_type_id","volume","weight"}); err != nil {
 		return err
 	}
-
+	
 	if err := product.GetPreloadDb(false, false, nil).Where("id = ?", product.Id).Omit("id", "account_id").Updates(input).
 		Error; err != nil {return err}
 

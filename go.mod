@@ -8,7 +8,7 @@ require (
 	github.com/go-test/deep v1.0.7 // indirect
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/gorilla/mux v1.8.0
-	github.com/jackc/pgx/v4 v4.9.0
+	github.com/jackc/pgx/v4 v4.9.2
 	github.com/jinzhu/gorm v1.9.16
 	github.com/joho/godotenv v1.3.0
 	github.com/json-iterator/go v1.1.10
@@ -18,7 +18,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/segmentio/ksuid v1.0.3
-	github.com/toorop/go-dkim v0.0.0-20200526084421-76378ae5207e
+	github.com/toorop/go-dkim v0.0.0-20201103131630-e1cd1a0a5208
 	github.com/ttacon/builder v0.0.0-20170518171403-c099f663e1c2 // indirect
 	github.com/ttacon/libphonenumber v1.1.0
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
@@ -27,5 +27,5 @@ require (
 	google.golang.org/protobuf v1.25.0 // indirect
 	gorm.io/datatypes v1.0.0
 	gorm.io/driver/postgres v1.0.5
-	gorm.io/gorm v1.20.5
+	gorm.io/gorm v1.20.6
 )
