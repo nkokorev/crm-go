@@ -375,6 +375,8 @@ func (emailQueue EmailQueue) AppendUser(userId uint) error {
 	if err != nil {
 		return err
 	}
+
+	// todo: проверка на статус подписки пользователя
 	
 
 	// todo: проверка на запуск письма в серии.
@@ -733,4 +735,57 @@ func (emailQueue *EmailQueue) RemoveRunTask() error {
 	}
 
 	return nil
+}
+
+func (emailQueue *EmailQueue) AppendAllUsers() (uint, error) {
+
+	offset := int64(0)
+	limit := uint(20)
+	total := int64(1)
+
+	emailQueueAdded := uint(0)
+
+	for offset < total {
+
+		_aUsers, _total, err := (AccountUser{}).getPaginationListByRole(emailQueue.AccountId, nil, int(offset), int(limit), "public_id")
+		if err != nil {
+			break
+		}
+
+		// Проверяем пользователей по истории
+		for i := range _aUsers {
+			
+			if !emailQueue.ExistUserById(_aUsers[i].UserId) {
+				_ = emailQueue.AppendUser(_aUsers[i].UserId)
+				emailQueueAdded++
+			}
+		}
+
+		// Обновляем данные по цепочке
+		offset = offset + int64(len(_aUsers))
+		total = _total
+	}
+
+
+	return emailQueueAdded, nil
+
+}
+
+// Проверяет по истории и по наличию в очереди
+func (emailQueue *EmailQueue) ExistUserById(userId uint) bool {
+	if emailQueue.Id < 1 || userId < 1 {
+		return false
+	}
+
+	// Проверяет историю
+	if (MTAHistory{}).ExistUserById(userId, emailQueue) {
+		return true
+	}
+
+	// Проверяем очередь
+	if (MTAWorkflow{}).ExistUserById(userId, emailQueue) {
+		return true
+	}
+
+	return false
 }

@@ -788,3 +788,5 @@ func (emailCampaign EmailCampaign) CheckDoubleFromHistoryTest() (uint, error) {
 	users, err := emailCampaign.getUsersBySegment()
 	return uint(len(users)), err
 }
+
+

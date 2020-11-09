@@ -302,3 +302,14 @@ func (mtaHistory *MTAHistory) UpdateOpenUser(ipV4 string) error {
 
 	return mtaHistory.update(input,nil)
 }
+
+func (MTAHistory) ExistUserById(userId uint, owner EmailSender) bool {
+
+	// Проверяет историю
+	if err := db.Model(&MTAHistory{}).Where("owner_id = ? AND owner_type = ? AND user_id = ?",
+		owner.GetId(), owner.GetType(), userId).First(&MTAHistory{}).Error; err != nil {
+		return false
+	} else {
+		return true
+	}
+}

@@ -251,3 +251,54 @@ func EmailQueueChangeStatus(w http.ResponseWriter, r *http.Request) {
 	resp["email_queue"] = emailQueue
 	u.Respond(w, resp)
 }
+
+func EmailQueueAppendAll(w http.ResponseWriter, r *http.Request) {
+
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	emailQueueId, err := utilsCr.GetUINTVarFromRequest(r, "emailQueueId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
+		return
+	}
+
+	preloads := utilsCr.GetQueryStringArrayFromGET(r, "preloads")
+
+	var emailQueue models.EmailQueue
+	err = account.LoadEntity(&emailQueue, emailQueueId, nil)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить серию писем"))
+		return
+	}
+
+	/*var input struct{
+		Status string `json:"status"`
+		Reason string `json:"reason"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		u.Respond(w, u.MessageError(err, "Техническая ошибка в запросе"))
+		return
+	}*/
+
+	count, err := emailQueue.AppendAllUsers()
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		return
+	}
+
+	err = account.LoadEntity(&emailQueue, emailQueueId, preloads)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить серию писем"))
+		return
+	}
+
+	resp := u.Message(true, "PATH Email Queue Append All Users")
+	resp["email_queue"] = emailQueue
+	resp["count"] = count
+	u.Respond(w, resp)
+}

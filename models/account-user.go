@@ -146,3 +146,23 @@ func (AccountUser) SelectArrayWithoutBigObject() []string {
 	fields = utils.RemoveKey(fields, "Role")
 	return utils.ToLowerSnakeCaseArr(fields)
 }
+
+func (AccountUser) getPaginationListByRole(accountId uint, role *Role, offset, limit int, sortBy string) ([]AccountUser, int64, error) {
+
+	aUsers := make([]AccountUser,0)
+	var total int64
+
+	err := db.Model(&AccountUser{}).Limit(limit).Offset(offset).Order(sortBy).Where( "account_id = ?", accountId).
+		Preload("User").Find(&aUsers).Error
+	if err != nil && err != gorm.ErrRecordNotFound{
+		return nil, 0, err
+	}
+
+	// Определяем total
+	err = db.Model(&AccountUser{}).Where("account_id = ?", accountId).Count(&total).Error
+	if err != nil {
+		return nil, 0, utils.Error{Message: "Ошибка определения объема базы"}
+	}
+
+	return aUsers, total, nil
+}

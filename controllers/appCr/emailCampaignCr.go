@@ -268,6 +268,35 @@ func EmailCampaignChangeStatus(w http.ResponseWriter, r *http.Request) {
 	u.Respond(w, resp)
 }
 
+func EmailCampaignDelete(w http.ResponseWriter, r *http.Request) {
+
+	account, err := utilsCr.GetWorkAccount(w,r)
+	if err != nil || account == nil {
+		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
+		return
+	}
+
+	emailCampaignId, err := utilsCr.GetUINTVarFromRequest(r, "emailCampaignId")
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
+		return
+	}
+
+	var emailCampaign models.EmailCampaign
+	err = account.LoadEntity(&emailCampaign, emailCampaignId, nil)
+	if err != nil {
+		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
+		return
+	}
+	if err = account.DeleteEntity(&emailCampaign); err != nil {
+		u.Respond(w, u.MessageError(err, "Ошибка при удалении email company"))
+		return
+	}
+
+	resp := u.Message(true, "DELETE EmailCampaign Successful")
+	u.Respond(w, resp)
+}
+
 func EmailCampaignCheckDouble(w http.ResponseWriter, r *http.Request) {
 
 	account, err := utilsCr.GetWorkAccount(w,r)
@@ -301,34 +330,5 @@ func EmailCampaignCheckDouble(w http.ResponseWriter, r *http.Request) {
 
 	resp := u.Message(true, "GET Email Campaign Check doubles")
 	resp["count"] = count
-	u.Respond(w, resp)
-}
-
-func EmailCampaignDelete(w http.ResponseWriter, r *http.Request) {
-
-	account, err := utilsCr.GetWorkAccount(w,r)
-	if err != nil || account == nil {
-		u.Respond(w, u.MessageError(u.Error{Message:"Ошибка авторизации"}))
-		return
-	}
-
-	emailCampaignId, err := utilsCr.GetUINTVarFromRequest(r, "emailCampaignId")
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка в обработке Id шаблона"))
-		return
-	}
-
-	var emailCampaign models.EmailCampaign
-	err = account.LoadEntity(&emailCampaign, emailCampaignId, nil)
-	if err != nil {
-		u.Respond(w, u.MessageError(err, "Не удалось получить список"))
-		return
-	}
-	if err = account.DeleteEntity(&emailCampaign); err != nil {
-		u.Respond(w, u.MessageError(err, "Ошибка при удалении email company"))
-		return
-	}
-
-	resp := u.Message(true, "DELETE EmailCampaign Successful")
 	u.Respond(w, resp)
 }

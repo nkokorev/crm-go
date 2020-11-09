@@ -597,3 +597,14 @@ func (mtaWorkflow *MTAWorkflow) removeWorkflowUser(userId uint) {
 	db.Where("owner_id = ? AND owner_type = ? AND user_id = ?", mtaWorkflow.OwnerId, mtaWorkflow.OwnerType,userId).Delete(&MTAWorkflow{})
 
 }
+
+func (MTAWorkflow) ExistUserById(userId uint, owner EmailSender) bool {
+
+	// Проверяет историю
+	if err := db.Model(&MTAWorkflow{}).Where("owner_id = ? AND owner_type = ? AND user_id = ?",
+		owner.GetId(), owner.GetType(), userId).First(&MTAWorkflow{}).Error; err != nil {
+		return false
+	} else {
+		return true
+	}
+}
