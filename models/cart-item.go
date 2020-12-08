@@ -357,6 +357,8 @@ func (cartItem *CartItem) UpdateReserve (data ReserveCartItem) error {
 		}
 	}
 
+	ProductSource{}.CreateEventUpdateByProductId(cartItem.AccountId, cartItem.ProductId, false)
+
 	return nil
 }
 
@@ -372,7 +374,6 @@ func (cartItem *CartItem) setReserve(warehouseId uint, quantity float64) error {
 
 	// 1. Идем по исходникам и находим wh_item на нужном складе с проверкой на доступный объем
 	for _,v := range product.SourceItems {
-		// fmt.Printf("Source item: id: %v || q: %v \n", v.SourceId, v.Quantity)
 
 		// Объем для резерва
 		var warehouseItem WarehouseItem
@@ -460,7 +461,6 @@ func (cartItem *CartItem) wasted() error {
 
 	// 1. Идем по исходникам и находим wh_item на нужном складе с проверкой на доступный объем
 	for _,v := range product.SourceItems {
-		// fmt.Printf("Source item: id: %v || q: %v \n", v.SourceId, v.Quantity)
 
 		// Объем для резерва
 		var warehouseItem WarehouseItem
@@ -563,7 +563,6 @@ func (cartItem *CartItem) SetWastedOffFromWarehouse() error {
 
 		// 1. Идем по исходникам и находим wh_item на нужном складе с проверкой на доступный объем
 		for _,v := range product.SourceItems {
-			// fmt.Printf("Source item: id: %v || q: %v \n", v.SourceId, v.Quantity)
 
 			// Объем для резерва
 			var warehouseItem WarehouseItem
@@ -591,6 +590,8 @@ func (cartItem *CartItem) SetWastedOffFromWarehouse() error {
 	// Переводим в статус Списано и снимаем статус зарезервировано
 	err := db.Exec("UPDATE cart_items SET reserved = false, wasted = true WHERE id = ?", cartItem.Id).Error
 	if err != nil && err != gorm.ErrRecordNotFound {return err}
+
+	ProductSource{}.CreateEventUpdateByProductId(cartItem.AccountId, cartItem.ProductId, false)
 
 	return nil
 }
@@ -716,8 +717,7 @@ func RemoveWarehouseFromItems(warehouseItems []WarehouseItem, warehouseId uint) 
 	arr := make([]WarehouseItem,0)
 
 	for index,v := range warehouseItems {
-		// fmt.Println("in Id: ", warehouseItems[index].WarehouseId)
-		// fmt.Println("wh Id: ", warehouseId)
+
 		if v.WarehouseId != warehouseId {
 			// warehouseItems = append(warehouseItems[:index], warehouseItems[index+1:]...)
 			arr = append(arr, warehouseItems[index])

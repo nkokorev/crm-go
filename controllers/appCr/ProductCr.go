@@ -471,7 +471,7 @@ func ProductUpdateSourceItem(w http.ResponseWriter, r *http.Request) {
 
 	maps := structs.Map(&input)
 
-	if err = product.UpdateSourceItem(productSourceId, maps); err !=nil {
+	if err = product.UpdateSourceItem(productSourceId, maps); err != nil {
 		fmt.Println(err)
 		u.Respond(w, u.MessageError(err, "Ошибка обновления товара из source"))
 		return
@@ -482,7 +482,7 @@ func ProductUpdateSourceItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := u.Message(true, "DELETE Product remove source item")
+	resp := u.Message(true, "Patch product source item")
 	resp["product"] = product
 	u.Respond(w, resp)
 }

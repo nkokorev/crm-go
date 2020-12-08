@@ -703,9 +703,9 @@ func (product *Product) UpdateSourceItem(sourceId uint, input map[string]interfa
 	if err := db.Model(&ProductSource{}).Where("source_id = ? AND product_id = ?", sourceId, product.Id).
 		Omit("source_id", "product_id").Updates(input).Error; err != nil {return err}
 
-	/*if err := db.Model().Where("source_id = ? AND product_id = ?", sourceId, product.Id).Updates(input).Error; err != nil {
-		return err
-	}*/
+	// Событие обновления остатков
+	ProductSource{}.CreateEventUpdateBySourceId(product.AccountId,sourceId, false)
+	
 
 	return nil
 }
@@ -722,8 +722,6 @@ func (product *Product) SyncSourceItems(productSources []ProductSource) error {
 	}
 
 	for _,sourceItem := range productSources {
-		// fmt.Println("sourceItem.ProductId: ", sourceItem.ProductId)
-		// fmt.Println("sourceItem.AmountUnits: ", sourceItem.AmountUnits)
 		if product.IsKit && product.Id == sourceItem.ProductId {
 			continue
 		}
@@ -807,3 +805,5 @@ func (product *Product) RemoveFromProductCard(productCard *ProductCard) error {
 
 	return nil
 }
+
+

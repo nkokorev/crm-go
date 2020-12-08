@@ -739,6 +739,7 @@ func (emailQueue *EmailQueue) RemoveRunTask() error {
 
 func (emailQueue *EmailQueue) AppendAllUsers() (uint, error) {
 
+	return 0, nil
 	offset := int64(0)
 	limit := uint(20)
 	total := int64(1)
@@ -764,6 +765,8 @@ func (emailQueue *EmailQueue) AppendAllUsers() (uint, error) {
 		// Обновляем данные по цепочке
 		offset = offset + int64(len(_aUsers))
 		total = _total
+
+		time.Sleep(time.Second*2)
 	}
 
 

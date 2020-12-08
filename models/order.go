@@ -132,7 +132,7 @@ func (order *Order) AfterCreate(tx *gorm.DB) error {
 	return nil
 }
 func (order *Order) AfterUpdate(tx *gorm.DB) (err error) {
-	// AsyncFire(*Event{}.OrderUpdated(order.AccountId, order.Id))
+	
 	AsyncFire(NewEvent("OrderUpdated", map[string]interface{}{"account_id":order.AccountId, "order_id":order.Id}))
 
 	orderStatusEntity, err := OrderStatus{}.get(order.StatusId,nil)

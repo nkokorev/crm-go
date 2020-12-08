@@ -205,6 +205,9 @@ func (warehouseItem *WarehouseItem) update(input map[string]interface{}, preload
 		"product_id":warehouseItem.ProductId,
 		}))
 
+	// обновляем связанные продукты
+	ProductSource{}.CreateEventUpdateBySourceId(warehouseItem.AccountId,warehouseItem.ProductId, true)
+
 	err := warehouseItem.GetPreloadDb(false,false,preloads).First(warehouseItem, warehouseItem.Id).Error
 	if err != nil {
 		return err

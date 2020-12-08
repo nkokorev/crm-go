@@ -35,3 +35,44 @@ func (ProductSource) PgSqlCreate() {
 func (ProductSource) BeforeCreate(db *gorm.DB) error {
 	return nil
 }
+
+// Вызывает событие обновления доступных складских запасов для всех товаров имеющих в составе source_id
+func (ProductSource) CreateEventUpdateBySourceId(accountId, sourceId uint, updateKitOnly bool )  {
+
+	if accountId < 1 || sourceId < 1 {
+		return
+	}
+	productSources := make([]ProductSource,0)
+	// if err := db.Model(&ProductSource{}).Where("source_id = ? AND product_id <> ?", sourceId, sourceId).
+	if err := db.Model(&ProductSource{}).Where("source_id = ?", sourceId).
+		Find(&productSources).Error; err != nil {return}
+
+	for i := range productSources {
+
+		// Обновление не составного продукта 1 = 1
+		if updateKitOnly && (sourceId == productSources[i].ProductId) {
+			continue
+		}
+		AsyncFire(NewEvent("ProductUpdated", map[string]interface{}{"account_id":accountId, "product_id":productSources[i].ProductId}))
+	}
+
+}
+
+func (ProductSource) CreateEventUpdateByProductId(accountId, productId uint, updateKitOnly bool )  {
+
+	if accountId < 1 || productId < 1 {
+		return
+	}
+
+	productSources := make([]ProductSource,0)
+	
+	if err := db.Model(&ProductSource{}).Where("product_id = ?", productId).
+		Find(&productSources).Error; err != nil {
+			return
+		}
+
+	for i := range productSources {
+		ProductSource{}.CreateEventUpdateBySourceId(accountId,productSources[i].SourceId,updateKitOnly)
+	}
+
+}

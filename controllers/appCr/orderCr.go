@@ -360,8 +360,7 @@ func OrderUpdateReserve(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(err, "Не удалось загрузить данные"))
 		return
 	}
-
-	/*var input map[string]interface{}*/
+	
 	var input models.ReserveCartItem
 	
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
