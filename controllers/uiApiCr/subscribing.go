@@ -88,7 +88,7 @@ func UiApiSubscribe(w http.ResponseWriter, r *http.Request) {
 		e.AddErrors("patronymic", "Отчество слишком длинное" )
 	}
 	if input.Subscriber.SubscriptionReason == nil {
-		input.Subscriber.SubscriptionReason = u.STRp("tea-357.shop, footer")
+		input.Subscriber.SubscriptionReason = u.STRp("ui.api from web")
 	}
 	if input.Subscriber.SubscriptionReason != nil && len([]rune(*input.Subscriber.SubscriptionReason)) > 32 {
 		e.AddErrors("subscription_reason", "Причина подписки слишком длинная, max 32 символа")
@@ -100,7 +100,7 @@ func UiApiSubscribe(w http.ResponseWriter, r *http.Request) {
 		u.Respond(w, u.MessageError(e))
 		return
 	}
-
+	
 	// 3. Если есть такой клиент по email - проверяем его статус подписки
 	if account.ExistUserByEmail(input.Subscriber.Email) {
 
@@ -117,6 +117,10 @@ func UiApiSubscribe(w http.ResponseWriter, r *http.Request) {
 			u.Respond(w, u.MessageError(u.Error{Message: "Ошибка оформления подписки", Errors: map[string]interface{}{"email": "Этот email уже отписан от всех рассылок"}}))
 			return
 		}
+
+		// Уже подписан => все ок!
+		u.Respond(w, u.Message(true, "Пользователь успешно подписан!"))
+		return
 
 	}
 

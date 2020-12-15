@@ -253,10 +253,10 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 		return nil, utils.Error{Message: "Проверьте правильность заполнения формы", Errors: map[string]interface{}{"username": "Данный username уже используется"}}
 	}
 	if account.ExistUserByEmail(input.Email) {
-		return nil, utils.Error{Message: "Данные уже есть", Errors: map[string]interface{}{"email": "Этот почтовый адрес уже используется"}}
+		return nil, utils.Error{Message: "Дублирование данных пользователя", Errors: map[string]interface{}{"email": "Этот почтовый адрес уже используется"}}
 	}
 	if account.ExistUserByPhone(input.Phone) {
-		return nil, utils.Error{Message: "Данные уже есть", Errors: map[string]interface{}{"phone": "Данный телефон уже используется"}}
+		return nil, utils.Error{Message: "Дублирование данных пользователя", Errors: map[string]interface{}{"phone": "Данный телефон уже используется"}}
 	}
 
 	// ### !!!! Проверка входящих данных !!! ### ///
@@ -1025,12 +1025,14 @@ func (account Account) ExistUserByUsername(username *string) bool {
 }
 
 func (account Account) ExistUserByEmail(email *string) bool {
+
 	if email == nil {
 		return false
 	}
-	var user User
-	if err := db.Model(&User{}).First(&user,"issuer_account_id = ? AND email = ?", account.Id, email).Error;
-	err != nil {
+
+	var count int64
+	if err := db.Model(&User{}).Group("id").Where("issuer_account_id = ? AND email = ?", account.Id, email).Count(&count).Error;
+	err != nil || count < 1 {
 		return false
 	}
 	return true

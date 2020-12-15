@@ -29,9 +29,10 @@ func Handlers() *mux.Router {
 	}
 
 	// Set CORS politic for local development
-	if AppEnv == "local" {
+	/*if AppEnv == "local" {
 		r.Use(middleware.CorsAccessControl)
-	}
+	}*/
+	r.Use(middleware.CorsAccessControl)
 
 	// Mount all root point of routes
 	rApp 		:= r.Host("app." + crmHost).PathPrefix("/ui-api").Subrouter() // APP [app.ratuscrm.com/ui-api]

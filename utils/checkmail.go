@@ -96,7 +96,7 @@ func EmailDeepValidation(email string) error {
 	if err != nil {
 		return errors.New("Похоже, почтовый адрес не сущесвует")
 	}
-
+	
 	return nil
 }
 
