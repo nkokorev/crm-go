@@ -468,6 +468,9 @@ func (user User) ValidateCreate() error {
 	if user.Patronymic != nil && len([]rune(*user.Patronymic)) > 64 {
 		e.AddErrors("patronymic", "Отчетство слишком длинное" )
 	}
+	if user.Phone != nil && len([]rune(*user.Phone)) > 32 {
+		e.AddErrors("patronymic", "Слишком длинный номер телефона" )
+	}
 
 	// Чекаем мелкие ошибки
 	if e.HasErrors() {

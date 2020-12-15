@@ -33,10 +33,12 @@ func (e *Error) AddErrors(key string, value interface{}) {
 }
 
 func (e *Error) GetErrors() map[string]interface{} {
-	if e.Errors == nil {
-		e.Errors = make(map[string]interface{})
-	}
 	return e.Errors
+	/*if e.Errors == nil {
+		// e.Errors = make(map[string]interface{})
+		e.Errors = nil
+	}
+	return e.Errors*/
 }
 
 func (e *Error) GetError(key string) interface{} {

@@ -16,6 +16,7 @@ import (
 * rUiApi - маршруты без проверки JWT
 * rUiApiAuth - маршрут с проверкой JWT, а также на совпадение {accountId} с accountId указаном в токене
  */
+
 // ... /accountHashId}/...
 var UiApiRoutesV1 = func (rFree *mux.Router) {
 
@@ -29,7 +30,6 @@ var UiApiRoutesV1 = func (rFree *mux.Router) {
 
 	rFree.HandleFunc("/web-sites/{webSiteId:[0-9]+}/deliveries-code-list", uiApiCr.DeliveryCodeList).Methods(http.MethodGet, http.MethodOptions)
 
-
 	// YandexPayment
 	// Адрес для вебхуков от Яндекс.Кассы. Код ответа 200 в случае обработки.
 	// rFree.HandleFunc("/payments/yandex-payment/{yandexPayment:[0-9]+}/notifications/", uiApiCr.DeliveryListOptions).Methods(http.MethodGet, http.MethodOptions)
@@ -39,12 +39,13 @@ var UiApiRoutesV1 = func (rFree *mux.Router) {
 
 	rFree.HandleFunc("/orders", uiApiCr.UiApiOrderCreate).Methods(http.MethodPost, http.MethodOptions)
 
+	// rFree.HandleFunc("/subscribe", uiApiCr.UiApiSubscribe).Methods(http.MethodPost, http.MethodOptions)
+	rFree.HandleFunc("/subscribe", uiApiCr.UiApiSubscribe).Methods(http.MethodPost, http.MethodOptions)
+
 
 	// rFree.HandleFunc("/test", uiApiCr.Test).Methods(http.MethodGet, http.MethodOptions)
-
-
-
 	// rFree.NotFoundHandler = NotFoundHandler()
 	// rFree.MethodNotAllowedHandler = NotFoundHandler()
 
+	
 }

@@ -249,13 +249,13 @@ func (account Account) CreateUser(input User, role Role) (*User, error) {
 	input.IssuerAccountId = account.Id
 
 	// Проверка дублирование полей
-	if account.existUserByUsername(input.Username) {
+	if account.ExistUserByUsername(input.Username) {
 		return nil, utils.Error{Message: "Проверьте правильность заполнения формы", Errors: map[string]interface{}{"username": "Данный username уже используется"}}
 	}
-	if account.existUserByEmail(input.Email) {
+	if account.ExistUserByEmail(input.Email) {
 		return nil, utils.Error{Message: "Данные уже есть", Errors: map[string]interface{}{"email": "Этот почтовый адрес уже используется"}}
 	}
-	if account.existUserByPhone(input.Phone) {
+	if account.ExistUserByPhone(input.Phone) {
 		return nil, utils.Error{Message: "Данные уже есть", Errors: map[string]interface{}{"phone": "Данный телефон уже используется"}}
 	}
 
@@ -328,13 +328,13 @@ func (account Account) UploadUsers(users []User, role Role) error {
 		var err error
 
 		// Проверка дублирование полей
-		if account.existUserByUsername(user.Username) {
+		if account.ExistUserByUsername(user.Username) {
 			continue
 		}
-		if account.existUserByEmail(user.Email) {
+		if account.ExistUserByEmail(user.Email) {
 			continue
 		}
-		if account.existUserByPhone(user.Phone) {
+		if account.ExistUserByPhone(user.Phone) {
 			continue
 		}
 
@@ -502,14 +502,14 @@ func (account Account) GetUserByEmail(email string) (*User, error) {
 	}
 
 	var user User
-
-	err := db.Table("users").Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
-		Select("account_users.public_id, account_users.account_id, users.*").
-		Where("account_users.account_id = ? AND users.email = ?", account.Id, email).
-		First(&user).Error
-	if err != nil {
-		return nil, err
-	}
+	// err := db.Model(&User{}).
+	err := db.Table("users").
+		Select("users.*, account_users.public_id, account_users.account_id").
+		Joins("LEFT JOIN account_users ON account_users.user_id = users.id").
+		First(&user,"issuer_account_id = ? AND email = ?", account.Id, email).Error
+		if err != nil {
+			return nil, err
+		}
 
 	return &user, err
 }
@@ -661,7 +661,7 @@ func (account Account) ExistAccountUser(userId uint) bool {
 		return false
 	}
 	if count > 0 {
-		fmt.Println(account.Id, " - ",userId)
+		// fmt.Println(account.Id, " - ",userId)
 		return true
 	}
 	return false
@@ -1013,7 +1013,7 @@ func (account Account) getUserJwt(userId uint) (jwt string, err error) {
 }
 
 // Дотошно ищет схожего пользователя по username, email и телефону.
-func (account Account) existUserByUsername(username *string) bool {
+func (account Account) ExistUserByUsername(username *string) bool {
 	if username == nil {
 		return false
 	}
@@ -1024,18 +1024,19 @@ func (account Account) existUserByUsername(username *string) bool {
 	}
 }
 
-func (account Account) existUserByEmail(email *string) bool {
+func (account Account) ExistUserByEmail(email *string) bool {
 	if email == nil {
 		return false
 	}
-	if err := db.Model(&User{}).Where("issuer_account_id = ? AND email = ?", account.Id, email).First(&User{}).Error; err != nil {
+	var user User
+	if err := db.Model(&User{}).First(&user,"issuer_account_id = ? AND email = ?", account.Id, email).Error;
+	err != nil {
 		return false
-	} else {
-		return true
 	}
+	return true
 }
 
-func (account Account) existUserByPhone(phone *string) bool {
+func (account Account) ExistUserByPhone(phone *string) bool {
 	if phone == nil {
 		return false
 	}

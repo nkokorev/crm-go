@@ -684,4 +684,3 @@ func createOrderFromCallbackForm(w http.ResponseWriter, input CreateOrderForm, a
 	resp["order"] = order
 	u.Respond(w, resp)
 }
-
