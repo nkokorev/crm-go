@@ -76,13 +76,13 @@ func Handlers() *mux.Router {
 		8. middleware.JwtFullAuthentication - проверяет JWT и устанавливает в контекст userId & user, accountId && account
 
 	******************************************************************************************************************/
-
+	// r.Use(middleware.LimitMiddleware)
 	rApiBeta.Use	(middleware.CorsAPIAccessControl, 		middleware.CheckApiStatus, 		middleware.BearerAuthentication)
 	rApiV1.Use		(middleware.CorsAPIAccessControl, 		middleware.CheckApiStatus, 		middleware.BearerAuthentication)
 
 	rApp.Use	(middleware.CheckAppUiApiStatus,	middleware.AddContextMainAccount)
 
-	rUiApiV1.Use	(middleware.CorsAccessControl, 		middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccountHashId)
+	rUiApiV1.Use	(middleware.CorsAccessControl, 		middleware.CheckUiApiStatus, 	middleware.ContextMuxVarAccountHashId, middleware.LimitMiddleware)
 	rTracking.Use	(middleware.CorsAccessControl, 	middleware.ContextMuxVarAccountHashId)
 
 	// RouteHandlers

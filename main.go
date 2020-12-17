@@ -39,6 +39,8 @@ func main() {
 		base.Upload357grData()
 	}
 
+	base.MigrateQuestions()
+
 	if err := models.SettingsDb(); err != nil {
 		log.Fatal(err)
 	}
@@ -66,7 +68,6 @@ func examplePhone(numToParse string) {
 	}
 	formattedNum := libphonenumber.Format(num, libphonenumber.NATIONAL)
 
-	//fmt.Println("Num: ", num)
 	fmt.Println("CountryCode: ", *num.CountryCode)
 	fmt.Println("National Number: ", *num.NationalNumber)
 	fmt.Println("National Formatted: ", formattedNum)

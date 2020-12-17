@@ -53,8 +53,6 @@ func EmailValidation(email string) error {
 		//return nil // хоть это и валидный адрес, лесом....
 	}
 
-
-
 	return nil
 }
 

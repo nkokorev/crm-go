@@ -3727,3 +3727,7 @@ func Migrate_I() {
 	return
 
 }
+
+func MigrateQuestions() {
+	models.Question{}.PgSqlCreate()
+}

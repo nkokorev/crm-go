@@ -444,4 +444,12 @@ var AppRoutes = func(r *mux.Router) {
 
 	// ### MTA History ####
 	rAuthFull.HandleFunc("/accounts/{accountHashId}/mta-histories", appCr.MTAHistoryGetListPagination).Methods(http.MethodGet, http.MethodOptions)
+
+	// ### Questions ####
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/questions", appCr.QuestionCreate).Methods(http.MethodPost, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/questions", appCr.QuestionListPaginationGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/questions/{questionId}", appCr.QuestionGet).Methods(http.MethodGet, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/questions/{questionId}", appCr.QuestionUpdate).Methods(http.MethodPatch, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/questions/{questionId}", appCr.QuestionDelete).Methods(http.MethodDelete, http.MethodOptions)
+	rAuthFull.HandleFunc("/accounts/{accountHashId}/questions/{questionId:[0-9]+}/change-status", appCr.QuestionStatus).Methods(http.MethodPatch, http.MethodOptions)
 }

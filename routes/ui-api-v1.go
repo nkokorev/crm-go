@@ -41,6 +41,8 @@ var UiApiRoutesV1 = func (rFree *mux.Router) {
 
 	// rFree.HandleFunc("/subscribe", uiApiCr.UiApiSubscribe).Methods(http.MethodPost, http.MethodOptions)
 	rFree.HandleFunc("/subscribe", uiApiCr.UiApiSubscribe).Methods(http.MethodPost, http.MethodOptions)
+	// rFree.HandleFunc("/questions", uiApiCr.UiApiQuestions).Methods(http.MethodPost, http.MethodOptions)
+	rFree.HandleFunc("/form", uiApiCr.UiApiForm).Methods(http.MethodPost, http.MethodOptions)
 
 
 	// rFree.HandleFunc("/test", uiApiCr.Test).Methods(http.MethodGet, http.MethodOptions)
