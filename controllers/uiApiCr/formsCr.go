@@ -122,7 +122,7 @@ func UiApiForm(w http.ResponseWriter, r *http.Request) {
 
 	} else {
 
-		// Create new User
+		// Create new User or Find older
 		var e u.Error
 
 		if input.Customer.Email == nil && input.Customer.Phone == nil {
@@ -176,74 +176,81 @@ func UiApiForm(w http.ResponseWriter, r *http.Request) {
 
 		// 3. Если есть такой клиент по email - проверяем его статус подписки
 		if account.ExistUserByEmail(input.Customer.Email) {
-
+			
 			// Находим пользователя
-			user, err := account.GetUserByEmail(*input.Customer.Email)
-			if err != nil || user == nil {
+			oldUser, err := account.GetUserByEmail(*input.Customer.Email)
+			if err != nil || oldUser == nil {
 				e.Message = "Ошибка заполнения формы"
 				u.Respond(w, u.MessageError(e))
 				return
 			}
+			
+			// Если это подписка пользователя
+			if input.Question == nil {
+				// Проверяем статус подписки
+				if !oldUser.Subscribed {
+					u.Respond(w, u.MessageError(u.Error{Message: "Ошибка заполнения формы", Errors: map[string]interface{}{"email": "Этот email уже отписан от всех рассылок"}}))
+					return
+				}
 
-			// Проверяем статус отподписки
-			if !user.Subscribed {
-				u.Respond(w, u.MessageError(u.Error{Message: "Ошибка заполнения формы", Errors: map[string]interface{}{"email": "Этот email уже отписан от всех рассылок"}}))
+				// Уже подписан => все ок!
+				u.Respond(w, u.Message(true, "Email успешно подписан!"))
 				return
 			}
 
-			// Уже подписан => все ок!
-			u.Respond(w, u.Message(true, "Запрос успешно отправлен!"))
-			return
-
+			// Мы нашли нашего пользователя!
+			user = *oldUser
 		}
 
-		// 4. Если есть такой клиент по phone - проверяем его статус подписки
-		if account.ExistUserByPhone(input.Customer.Phone) {
-			user, err := account.GetUserByPhone(*input.Customer.Phone)
-			if (err != nil || user == nil) && err != gorm.ErrRecordNotFound {
+		// 4. Если есть такой клиент по phone - проверяем его статус подписки и/или находим пользователя
+		if user.Id < 1 && account.ExistUserByPhone(input.Customer.Phone) {
+			oldUser, err := account.GetUserByPhone(*input.Customer.Phone)
+			if (err != nil || oldUser == nil) && err != gorm.ErrRecordNotFound {
 				e.Message = "Ошибка заполнения формы"
 				u.Respond(w, u.MessageError(e))
 				return
 			}
 
 			// Проверяем статус подписки
-			if !user.Subscribed {
+			if input.Question == nil && !oldUser.Subscribed {
 				u.Respond(w, u.MessageError(u.Error{Message: "Ошибка заполнения формы", Errors: map[string]interface{}{"phone": "Этот адрес уже уже отписан от всех рассылок"}}))
 				return
 			}
+			// Мы нашли нашего пользователя!
+			user = *oldUser
 		}
 
-		// 5. Создаем нового пользователя
-		// var user models.User
+		// 5. Создаем нового пользователя, если он так и не найден
+		if user.Id < 1 {
+			user.Email = input.Customer.Email
+			user.Phone = input.Customer.Phone
 
-		user.Email = input.Customer.Email
-		user.Phone = input.Customer.Phone
+			user.Name 		= input.Customer.Name
+			user.Surname 	= input.Customer.Surname
+			user.Patronymic = input.Customer.Patronymic
 
-		user.Name 		= input.Customer.Name
-		user.Surname 	= input.Customer.Surname
-		user.Patronymic = input.Customer.Patronymic
+			if input.Customer.Subscribing != nil && *input.Customer.Subscribing {
+				user.SubscriptionReason = input.Customer.SubscriptionReason
+				user.Subscribed = true
+			} else {
+				user.Subscribed = false
+			}
 
-		if input.Customer.Subscribing != nil && *input.Customer.Subscribing {
-			user.SubscriptionReason = input.Customer.SubscriptionReason
-			user.Subscribed = true
-		} else {
-			user.Subscribed = false
+			// Получаем роль клиента
+			role, err := account.GetRoleByTag(models.RoleClient)
+			if err != nil {
+				u.Respond(w, u.MessageError(u.Error{Message: "Ошибка оформления вопроса"}))
+				return
+			}
+
+			// Создаем пользователя
+			newUser, err := account.CreateUser(user, *role)
+			if err != nil || newUser == nil{
+				u.Respond(w, u.MessageError(err))
+				return
+			}
+			user = *newUser
 		}
-
-		// Получаем роль клиента
-		role, err := account.GetRoleByTag(models.RoleClient)
-		if err != nil {
-			u.Respond(w, u.MessageError(u.Error{Message: "Ошибка оформления вопроса"}))
-			return
-		}
-
-		// Создаем пользователя
-		newUser, err := account.CreateUser(user, *role)
-		if err != nil || newUser == nil{
-			u.Respond(w, u.MessageError(err))
-			return
-		}
-		user = *newUser
 	}
 
 	// Если это запрос от пользователя / подписка

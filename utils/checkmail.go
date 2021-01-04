@@ -43,6 +43,7 @@ func EmailValidation(email string) error {
 		return errors.New("Email-адрес указан не верно")
 	}
 
+	// wtf
 	if userDotRegexp.MatchString(user) || !userRegexp.MatchString(user) || !hostRegexp.MatchString(host) {
 		return errors.New("Не верный формат email-адреса")
 	}

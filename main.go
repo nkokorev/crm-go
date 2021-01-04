@@ -39,7 +39,7 @@ func main() {
 		base.Upload357grData()
 	}
 
-	base.MigrateQuestions()
+	// base.MigrateQuestions()
 
 	if err := models.SettingsDb(); err != nil {
 		log.Fatal(err)
